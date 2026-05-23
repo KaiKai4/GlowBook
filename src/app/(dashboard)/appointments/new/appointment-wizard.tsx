@@ -1,0 +1,559 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatCurrency, addMinutes, formatTimeTz } from "@/lib/utils/dates";
+import { evaluateTimeRange } from "@/features/appointments/domain/availability";
+import type { BusinessHour, SalonConfig, WorkSchedule } from "@/features/appointments/domain/types";
+import { Trash2, Plus, Check, GripVertical, UserPlus, Users, Tag, Scissors, User } from "lucide-react";
+import { createAppointmentAction, getOccupiedSlotsForDate, type OccupiedByEmployee } from "../actions";
+import { createCustomerAction } from "../../customers/actions";
+import { cn } from "@/lib/utils/cn";
+
+interface Customer { id: string; name: string }
+interface Category { id: string; name: string }
+interface Service { id: string; name: string; category_id: string; duration_minutes: number; price: number }
+interface Employee {
+  id: string; name: string; service_ids: string[]; category_ids: string[]; work_schedules: WorkSchedule[];
+}
+interface Row { key: string; categoryId: string; serviceId: string; employeeId: string }
+
+let rowSeq = 0;
+const newRow = (): Row => ({ key: `r${rowSeq++}`, categoryId: "", serviceId: "", employeeId: "" });
+
+const STEPS = ["Cliente", "Servicios", "Resumen"] as const;
+
+export function AppointmentWizard({
+  customers, categories, services, employees, salonConfig, businessHours,
+}: {
+  customers: Customer[];
+  categories: Category[];
+  services: Service[];
+  employees: Employee[];
+  salonConfig: SalonConfig;
+  businessHours: BusinessHour[];
+}) {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+
+  // Step 1 — customer
+  const [mode, setMode] = useState<"existing" | "new">(customers.length ? "existing" : "new");
+  const [customerId, setCustomerId] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [newFirst, setNewFirst] = useState("");
+  const [newLast, setNewLast] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [creatingCustomer, startCreateCustomer] = useTransition();
+  const [custError, setCustError] = useState<string | null>(null);
+
+  // Step 2 — date/time/services
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("09:00");
+  const [rows, setRows] = useState<Row[]>([newRow()]);
+  const [occupied, setOccupied] = useState<OccupiedByEmployee>({});
+  const [loadingAvail, startAvail] = useTransition();
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  // Step 3 — submit
+  const [notes, setNotes] = useState("");
+  const [submitting, startSubmit] = useTransition();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const serviceMap = useMemo(() => new Map(services.map((s) => [s.id, s])), [services]);
+
+  // ── Customer step ──────────────────────────────────────────────
+  function continueFromCustomer() {
+    setCustError(null);
+    if (mode === "existing") {
+      if (!customerId) return;
+      setCustomerName(customers.find((c) => c.id === customerId)?.name ?? "");
+      setStep(2);
+      return;
+    }
+    if (!newFirst || !newLast) {
+      setCustError("Nombre y apellido son obligatorios.");
+      return;
+    }
+    const fd = new FormData();
+    fd.set("first_name", newFirst);
+    fd.set("last_name", newLast);
+    if (newPhone) fd.set("phone", newPhone);
+    startCreateCustomer(async () => {
+      const res = await createCustomerAction(null, fd);
+      if (res.ok) {
+        setCustomerId(res.value);
+        setCustomerName(`${newFirst} ${newLast}`);
+        setStep(2);
+      } else {
+        setCustError(res.error);
+      }
+    });
+  }
+
+  // ── Availability ───────────────────────────────────────────────
+  function loadAvailability(d: string) {
+    if (!d) return;
+    startAvail(async () => {
+      const slots = await getOccupiedSlotsForDate(d);
+      setOccupied(slots);
+    });
+  }
+
+  // Sequential schedule
+  const schedule = useMemo(() => {
+    if (!date) return [] as Array<{ row: Row; svc: Service | undefined; start: Date | null; end: Date | null }>;
+    const base = new Date(`${date}T${time}:00`);
+    return rows.reduce<Array<{ row: Row; svc: Service | undefined; start: Date | null; end: Date | null }>>(
+      (acc, r) => {
+        const svc = serviceMap.get(r.serviceId);
+        const start = acc.length ? acc[acc.length - 1].end : base;
+        const end = svc && start ? addMinutes(start, svc.duration_minutes) : start;
+        return [...acc, { row: r, svc, start, end }];
+      },
+      []
+    );
+  }, [rows, date, time, serviceMap]);
+
+  function eligibleEmployees(serviceId: string, start: Date | null, end: Date | null): Employee[] {
+    const svc = serviceMap.get(serviceId);
+    if (!svc) return [];
+    const candidates = employees.filter(
+      (e) => e.service_ids.includes(serviceId) && e.category_ids.includes(svc.category_id)
+    );
+    if (!start || !end) return candidates;
+    return candidates.filter((e) => {
+      const violations = evaluateTimeRange({
+        start, end, salonConfig, businessHours,
+        workSchedules: e.work_schedules,
+        occupiedSlots: occupied[e.id] ?? [],
+        enforceSalonSchedule: false,
+        enforceNotice: false,
+        enforceMinDuration: false,
+      });
+      return violations.length === 0;
+    });
+  }
+
+  function updateRow(key: string, patch: Partial<Row>) {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+  function addRowFn() { setRows((prev) => [...prev, newRow()]); }
+  function removeRow(key: string) { setRows((prev) => prev.filter((r) => r.key !== key)); }
+
+  function reorder(from: number, to: number) {
+    if (from === to) return;
+    setRows((prev) => {
+      const copy = [...prev];
+      const [moved] = copy.splice(from, 1);
+      copy.splice(to, 0, moved);
+      return copy;
+    });
+  }
+
+  const validRows = rows.filter((r) => r.serviceId && r.employeeId);
+  const total = validRows.reduce((s, r) => s + (serviceMap.get(r.serviceId)?.price ?? 0), 0);
+  const step2Valid = rows.length > 0 && rows.every((r) => r.serviceId && r.employeeId) && !!date && !!time;
+
+  function handleConfirm() {
+    setSubmitError(null);
+    const base = new Date(`${date}T${time}:00`);
+    const fd = new FormData();
+    fd.set("customer_id", customerId);
+    fd.set("start_time", base.toISOString());
+    fd.set("notes", notes);
+    fd.set("assignments", JSON.stringify(rows.map((r) => ({ service_id: r.serviceId, employee_id: r.employeeId }))));
+    startSubmit(async () => {
+      const res = await createAppointmentAction(null, fd);
+      if (res.ok) {
+        router.push(`/appointments?date=${date}`);
+        router.refresh();
+      } else {
+        setSubmitError(res.error);
+      }
+    });
+  }
+
+  return (
+    <div className="w-full max-w-3xl mx-auto space-y-8">
+
+      {/* ── Stepper ─────────────────────────────────────────────── */}
+      <div className="flex items-center">
+        {STEPS.map((label, i) => {
+          const idx = i + 1;
+          const done = step > idx;
+          const active = step === idx;
+          return (
+            <div key={label} className={cn("flex items-center", i < STEPS.length - 1 && "flex-1")}>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <div className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all",
+                  done
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : active
+                      ? "bg-violet-600 text-white shadow-[0_0_0_4px_rgba(124,58,237,0.15)]"
+                      : "bg-stone-100 text-stone-400"
+                )}>
+                  {done ? <Check className="h-4 w-4" /> : idx}
+                </div>
+                <div>
+                  <p className={cn(
+                    "text-xs font-medium leading-none",
+                    active ? "text-violet-600" : done ? "text-emerald-600" : "text-stone-400"
+                  )}>
+                    Paso {idx}
+                  </p>
+                  <p className={cn(
+                    "text-sm font-semibold",
+                    active ? "text-stone-900" : done ? "text-stone-500" : "text-stone-300"
+                  )}>
+                    {label}
+                  </p>
+                </div>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className={cn(
+                  "flex-1 mx-4 h-0.5 rounded-full",
+                  done ? "bg-emerald-400" : "bg-stone-200"
+                )} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Step 1 — Cliente ────────────────────────────────────── */}
+      {step === 1 && (
+        <Card>
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-violet-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50">
+              <Users className="h-4 w-4 text-violet-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-stone-800">Seleccionar cliente</h2>
+              <p className="text-xs text-stone-400">Cliente existente o registrar uno nuevo</p>
+            </div>
+          </div>
+          <CardContent className="space-y-5 pt-5">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setMode("existing")}
+                disabled={customers.length === 0}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all disabled:opacity-40",
+                  mode === "existing"
+                    ? "border-violet-400 bg-violet-50 text-violet-700"
+                    : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
+                )}
+              >
+                <Users className="h-4 w-4" /> Cliente existente
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("new")}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all",
+                  mode === "new"
+                    ? "border-violet-400 bg-violet-50 text-violet-700"
+                    : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
+                )}
+              >
+                <UserPlus className="h-4 w-4" /> Cliente nuevo
+              </button>
+            </div>
+
+            {mode === "existing" ? (
+              <Select label="Cliente" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+                <option value="">Selecciona un cliente...</option>
+                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Input label="Nombre" value={newFirst} onChange={(e) => setNewFirst(e.target.value)} />
+                  <Input label="Apellido" value={newLast} onChange={(e) => setNewLast(e.target.value)} />
+                </div>
+                <Input label="Teléfono (opcional)" type="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+              </div>
+            )}
+
+            {custError && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                {custError}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={continueFromCustomer}
+                loading={creatingCustomer}
+                disabled={mode === "existing" ? !customerId : false}
+              >
+                Continuar →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Step 2 — Servicios y horario ────────────────────────── */}
+      {step === 2 && (
+        <Card>
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-violet-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-choco-50">
+              <Scissors className="h-4 w-4 text-choco-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-stone-800">Servicios y horario</h2>
+              <p className="text-xs text-stone-400">Define fecha, hora y los servicios a realizar</p>
+            </div>
+          </div>
+          <CardContent className="space-y-6 pt-5">
+            {/* Date & Time */}
+            <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-stone-50 border border-stone-100">
+              <Input
+                label="Fecha"
+                type="date"
+                value={date}
+                onChange={(e) => { setDate(e.target.value); loadAvailability(e.target.value); }}
+                required
+              />
+              <Input
+                label="Hora de inicio"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                required
+              />
+            </div>
+
+            {!date ? (
+              <div className="rounded-xl border border-dashed border-stone-200 py-8 text-center">
+                <p className="text-sm text-stone-400">Elige una fecha para ver la disponibilidad.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Servicios</p>
+                  {loadingAvail && (
+                    <span className="text-xs text-violet-500 animate-pulse">Cargando disponibilidad...</span>
+                  )}
+                </div>
+
+                <p className="text-xs text-stone-400 flex items-center gap-1">
+                  <GripVertical className="h-3 w-3" />
+                  Arrastra para cambiar el orden de los servicios
+                </p>
+
+                {schedule.map((item, i) => {
+                  const filteredServices = item.row.categoryId
+                    ? services.filter((s) => s.category_id === item.row.categoryId)
+                    : [];
+                  const eligibles = item.row.serviceId
+                    ? eligibleEmployees(item.row.serviceId, item.start, item.end)
+                    : [];
+                  const selectedStillEligible =
+                    !item.row.employeeId || eligibles.some((e) => e.id === item.row.employeeId);
+
+                  return (
+                    <div
+                      key={item.row.key}
+                      draggable
+                      onDragStart={() => setDragIndex(i)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => { if (dragIndex !== null) reorder(dragIndex, i); setDragIndex(null); }}
+                      className={cn(
+                        "rounded-xl border bg-white p-4 transition-all",
+                        dragIndex === i
+                          ? "border-violet-400 shadow-[0_0_0_2px_rgba(124,58,237,0.15)]"
+                          : "border-violet-100 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
+                      )}
+                    >
+                      {/* Row header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="cursor-grab text-stone-300 hover:text-stone-400 transition-colors">
+                            <GripVertical className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-semibold text-stone-700">
+                            Servicio {i + 1}
+                          </span>
+                          {item.start && (
+                            <span className="text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                              {formatTimeTz(item.start, salonConfig.timezone)}
+                              {item.end && ` – ${formatTimeTz(item.end, salonConfig.timezone)}`}
+                            </span>
+                          )}
+                        </div>
+                        {rows.length > 1 && (
+                          <button
+                            onClick={() => removeRow(item.row.key)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                            aria-label="Quitar servicio"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Row selects */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <Select
+                          label="Categoría"
+                          value={item.row.categoryId}
+                          onChange={(e) =>
+                            updateRow(item.row.key, { categoryId: e.target.value, serviceId: "", employeeId: "" })
+                          }
+                        >
+                          <option value="">Selecciona categoría...</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </Select>
+
+                        <Select
+                          label="Servicio"
+                          value={item.row.serviceId}
+                          onChange={(e) => updateRow(item.row.key, { serviceId: e.target.value, employeeId: "" })}
+                          disabled={!item.row.categoryId}
+                        >
+                          <option value="">
+                            {!item.row.categoryId ? "Elige categoría primero" : filteredServices.length ? "Selecciona servicio..." : "Sin servicios"}
+                          </option>
+                          {filteredServices.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} ({s.duration_minutes}min)
+                            </option>
+                          ))}
+                        </Select>
+
+                        <Select
+                          label="Profesional"
+                          value={item.row.employeeId}
+                          onChange={(e) => updateRow(item.row.key, { employeeId: e.target.value })}
+                          disabled={!item.row.serviceId}
+                          error={!selectedStillEligible ? "Ya no disponible" : undefined}
+                        >
+                          <option value="">
+                            {!item.row.serviceId
+                              ? "Elige servicio primero"
+                              : eligibles.length
+                                ? "Selecciona profesional..."
+                                : "Nadie disponible"}
+                          </option>
+                          {eligibles.map((emp) => (
+                            <option key={emp.id} value={emp.id}>{emp.name}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <Button variant="outline" size="sm" onClick={addRowFn} className="w-full border-dashed">
+                  <Plus className="h-4 w-4" /> Agregar otro servicio
+                </Button>
+              </div>
+            )}
+
+            <div className="flex justify-between pt-2 border-t border-stone-100">
+              <Button variant="ghost" onClick={() => setStep(1)}>← Atrás</Button>
+              <Button variant="primary" size="lg" onClick={() => setStep(3)} disabled={!step2Valid}>
+                Continuar →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Step 3 — Resumen ────────────────────────────────────── */}
+      {step === 3 && (
+        <Card>
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-violet-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
+              <Check className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-stone-800">Confirmar cita</h2>
+              <p className="text-xs text-stone-400">Revisa los detalles antes de confirmar</p>
+            </div>
+          </div>
+          <CardContent className="space-y-5 pt-5">
+            {/* Cliente */}
+            <div className="flex items-center gap-3 rounded-xl bg-violet-50 border border-violet-100 px-4 py-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
+                <User className="h-4 w-4 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-xs text-violet-500 font-medium">Cliente</p>
+                <p className="text-sm font-semibold text-stone-800">{customerName}</p>
+              </div>
+            </div>
+
+            {/* Servicios */}
+            <div className="rounded-xl border border-stone-100 overflow-hidden">
+              {schedule.map((item, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "flex items-center justify-between px-4 py-3.5 gap-3",
+                    i < schedule.length - 1 && "border-b border-stone-100"
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-stone-800">{item.svc?.name}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      <span className="text-violet-600 font-medium">
+                        {item.start && formatTimeTz(item.start, salonConfig.timezone)}
+                        {item.end && ` – ${formatTimeTz(item.end, salonConfig.timezone)}`}
+                      </span>
+                      {" · "}
+                      {employees.find((e) => e.id === item.row.employeeId)?.name}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-stone-700 shrink-0">
+                    {formatCurrency(item.svc?.price ?? 0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Total */}
+            <div className="flex items-center justify-between rounded-xl bg-choco-50 border border-choco-100 px-4 py-3">
+              <span className="text-sm font-semibold text-choco-700">Total</span>
+              <span className="text-lg font-bold text-choco-700">{formatCurrency(total)}</span>
+            </div>
+
+            <Textarea
+              label="Notas (opcional)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Instrucciones especiales, alergias, preferencias..."
+            />
+
+            {submitError && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                {submitError}
+              </div>
+            )}
+
+            <div className="flex justify-between pt-2 border-t border-stone-100">
+              <Button variant="ghost" onClick={() => setStep(2)}>← Atrás</Button>
+              <Button variant="primary" size="lg" onClick={handleConfirm} loading={submitting}>
+                <Check className="h-4 w-4" />
+                Confirmar cita
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

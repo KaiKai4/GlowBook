@@ -1,0 +1,111 @@
+"use client";
+
+import { useRef, useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Trash2, Plus } from "lucide-react";
+import { addWorkScheduleAction, deleteWorkScheduleAction } from "../actions";
+
+const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+interface Schedule {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
+export function WorkScheduleEditor({
+  employeeId,
+  schedules,
+}: {
+  employeeId: string;
+  schedules: Schedule[];
+}) {
+  const [pending, startAdd] = useTransition();
+  const [isDeleting, startDelete] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function handleAdd(formData: FormData) {
+    setError(null);
+    startAdd(async () => {
+      const res = await addWorkScheduleAction(null, formData);
+      if (res.ok) {
+        formRef.current?.reset();
+        setOpen(false);
+      } else {
+        setError(res.error);
+      }
+    });
+  }
+
+  const sorted = [...schedules].sort((a, b) =>
+    a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time)
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-neutral-700">Horario laboral</h2>
+        <Button variant="ghost" size="sm" onClick={() => setOpen((v) => !v)}>
+          <Plus className="h-4 w-4" />
+          Agregar bloque
+        </Button>
+      </div>
+
+      {open && (
+        <form ref={formRef} action={handleAdd} className="flex flex-wrap items-end gap-2 rounded-lg border border-neutral-100 p-3">
+          <input type="hidden" name="employee_id" value={employeeId} />
+          <div className="w-36">
+            <Select name="day_of_week" label="Día" defaultValue="0">
+              {DAYS.map((d, i) => (
+                <option key={i} value={i}>{d}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="w-28">
+            <Input name="start_time" label="Inicio" type="time" defaultValue="09:00" required />
+          </div>
+          <div className="w-28">
+            <Input name="end_time" label="Fin" type="time" defaultValue="17:00" required />
+          </div>
+          <Button type="submit" variant="primary" size="sm" loading={pending}>
+            Guardar
+          </Button>
+        </form>
+      )}
+
+      {error && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+      )}
+
+      {sorted.length === 0 ? (
+        <p className="text-sm text-neutral-400">
+          Sin horario configurado. (Si no hay horario, se usa el del salón.)
+        </p>
+      ) : (
+        <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-100">
+          {sorted.map((s) => (
+            <li key={s.id} className="flex items-center justify-between px-3 py-2">
+              <span className="text-sm text-neutral-700">
+                <span className="font-medium">{DAYS[s.day_of_week]}</span>{" "}
+                {s.start_time.slice(0, 5)} – {s.end_time.slice(0, 5)}
+              </span>
+              <button
+                onClick={() => startDelete(() => { void deleteWorkScheduleAction(s.id, employeeId); })}
+                disabled={isDeleting}
+                className="text-neutral-400 hover:text-red-600 disabled:opacity-50"
+                aria-label="Eliminar"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

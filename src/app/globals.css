@@ -10,6 +10,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Chocolate/warm-brown accent palette */
+  --color-choco-50:  #fdf5f1;
+  --color-choco-100: #f6e6dd;
+  --color-choco-200: #eac9b8;
+  --color-choco-400: #c07850;
+  --color-choco-600: #8b4a26;
+  --color-choco-700: #6f3a1d;
+  --color-choco-800: #4d2710;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +31,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }

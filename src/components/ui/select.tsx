@@ -1,0 +1,44 @@
+import { cn } from "@/lib/utils/cn";
+import { forwardRef } from "react";
+import { ChevronDown } from "lucide-react";
+
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label?: string;
+  error?: string;
+}
+
+const Select = forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, label, error, id, children, ...props }, ref) => {
+    const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
+    return (
+      <div className="flex flex-col gap-1.5">
+        {label && (
+          <label htmlFor={selectId} className="text-sm font-semibold text-stone-700">
+            {label}
+          </label>
+        )}
+        <div className="relative">
+          <select
+            ref={ref}
+            id={selectId}
+            className={cn(
+              "h-10 w-full appearance-none rounded-lg border border-stone-200 bg-white pl-3 pr-9 text-sm text-stone-900",
+              "focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow",
+              "disabled:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400",
+              error && "border-red-400 focus:ring-red-500",
+              className
+            )}
+            {...props}
+          >
+            {children}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+        </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+      </div>
+    );
+  }
+);
+Select.displayName = "Select";
+
+export { Select };
