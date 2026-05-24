@@ -43,7 +43,13 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
   });
 
   if (createErr) {
-    const { data: list } = await admin.auth.admin.listUsers();
+    // Only attempt the email-lookup fallback for duplicate-email errors.
+    if (!createErr.message?.toLowerCase().includes("already")) {
+      return err("No se pudo crear la cuenta. Intenta de nuevo.");
+    }
+    // Supabase Auth doesn't expose getUserByEmail, so we paginate.
+    // This is a rare path (email already registered) on an invite-only platform.
+    const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
     const existing = list?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
     if (!existing) return err("No se pudo crear la cuenta. Intenta de nuevo.");
     userId = existing.id;

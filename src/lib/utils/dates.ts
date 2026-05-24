@@ -60,10 +60,34 @@ export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("es-PA", { style: "currency", currency: "USD" }).format(amount);
 }
 
-export function getDayOfWeek(date: Date): number {
-  // 0=Monday ... 6=Sunday (blueprint convention)
-  const day = date.getDay(); // 0=Sunday, 1=Monday...
-  return day === 0 ? 6 : day - 1;
+// Returns the UTC timestamps for the start (00:00:00.000) and end (23:59:59.999)
+// of the calendar day that `date` falls on in the given IANA timezone.
+// Uses the wall-clock parts of `date` in that timezone to compute the offset, so
+// it is correct across DST transitions and never relies on the server's local time.
+export function getUtcDayBoundaries(
+  date: Date,
+  timezone: string
+): { start: Date; end: Date } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  const s = parseInt(parts.find((p) => p.type === "second")?.value ?? "0", 10);
+
+  const secondsFromMidnight = (h === 24 ? 0 : h) * 3600 + m * 60 + s;
+  const startMs =
+    date.getTime() - secondsFromMidnight * 1_000 - date.getUTCMilliseconds();
+
+  return {
+    start: new Date(startMs),
+    end: new Date(startMs + 24 * 60 * 60 * 1_000 - 1),
+  };
 }
 
 export function timeToMinutes(time: string): number {

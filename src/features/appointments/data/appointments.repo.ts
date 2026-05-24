@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUtcDayBoundaries } from "@/lib/utils/dates";
 import type { Database } from "@/types/database.types";
 import type { OccupiedSlot, WorkSchedule } from "../domain/types";
 
@@ -11,6 +12,7 @@ export interface AppointmentWithDetails extends AppointmentRow {
     last_name: string;
     phone: string | null;
     email: string | null;
+    is_temporary: boolean;
   } | null;
   items: Array<{
     id: string;
@@ -32,7 +34,7 @@ export async function findAppointmentById(id: string): Promise<AppointmentWithDe
     .from("appointments")
     .select(`
       *,
-      customer:customers(id, first_name, last_name, phone, email),
+      customer:customers(id, first_name, last_name, phone, email, is_temporary),
       items:appointment_items(
         id, service_id, employee_id, start_time, end_time,
         duration_minutes, price, ordering,
@@ -56,7 +58,7 @@ export async function findAppointmentsBySalon(
     .from("appointments")
     .select(`
       *,
-      customer:customers(id, first_name, last_name, phone, email),
+      customer:customers(id, first_name, last_name, phone, email, is_temporary),
       items:appointment_items(
         id, service_id, employee_id, start_time, end_time,
         duration_minutes, price, ordering,
@@ -79,13 +81,11 @@ export async function findAppointmentsBySalon(
 export async function findOccupiedSlots(
   employeeId: string,
   date: Date,
+  timezone: string,
   excludeAppointmentId?: string
 ): Promise<OccupiedSlot[]> {
   const supabase = await createSupabaseServerClient();
-  const dayStart = new Date(date);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(date);
-  dayEnd.setHours(23, 59, 59, 999);
+  const { start: dayStart, end: dayEnd } = getUtcDayBoundaries(date, timezone);
 
   let query = supabase
     .from("appointment_items")

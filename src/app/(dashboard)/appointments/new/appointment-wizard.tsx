@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Clock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, addMinutes, formatTimeTz } from "@/lib/utils/dates";
@@ -12,7 +13,7 @@ import { evaluateTimeRange } from "@/features/appointments/domain/availability";
 import type { BusinessHour, SalonConfig, WorkSchedule } from "@/features/appointments/domain/types";
 import { Trash2, Plus, Check, GripVertical, UserPlus, Users, Tag, Scissors, User } from "lucide-react";
 import { createAppointmentAction, getOccupiedSlotsForDate, type OccupiedByEmployee } from "../actions";
-import { createCustomerAction } from "../../customers/actions";
+import { findOrCreateCustomerAction, checkCustomerPhoneAction } from "../../customers/actions";
 import { cn } from "@/lib/utils/cn";
 
 interface Customer { id: string; name: string }
@@ -25,6 +26,63 @@ interface Row { key: string; categoryId: string; serviceId: string; employeeId: 
 
 let rowSeq = 0;
 const newRow = (): Row => ({ key: `r${rowSeq++}`, categoryId: "", serviceId: "", employeeId: "" });
+
+// Time options 6:00 AM → 9:30 PM in 15-min increments with 12h display.
+// Hours 1–7 are always PM so staff never accidentally books at 3 AM.
+const TIME_OPTIONS: { value: string; label: string }[] = (() => {
+  const opts = [];
+  for (let h = 6; h <= 21; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 21 && m > 30) break;
+      const h24 = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
+      const ampm = h >= 12 ? "p.m." : "a.m.";
+      opts.push({ value: h24, label: `${h12}:${String(m).padStart(2, "0")} ${ampm}` });
+    }
+  }
+  return opts;
+})();
+
+function TimePicker({
+  label, value, onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  // Snap to nearest available option if value isn't in the list
+  const snapped = useMemo(() => {
+    if (TIME_OPTIONS.some((o) => o.value === value)) return value;
+    const [h, m] = value.split(":").map(Number);
+    const mins = h * 60 + m;
+    let nearest = TIME_OPTIONS[0].value;
+    let minDiff = Infinity;
+    for (const o of TIME_OPTIONS) {
+      const [oh, om] = o.value.split(":").map(Number);
+      const diff = Math.abs(oh * 60 + om - mins);
+      if (diff < minDiff) { minDiff = diff; nearest = o.value; }
+    }
+    return nearest;
+  }, [value]);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-stone-700">{label}</label>
+      <div className="relative">
+        <select
+          value={snapped}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-full appearance-none rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow cursor-pointer"
+        >
+          {TIME_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <Clock className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+      </div>
+    </div>
+  );
+}
 
 const STEPS = ["Cliente", "Servicios", "Resumen"] as const;
 
@@ -48,7 +106,7 @@ export function AppointmentWizard({
   const [newFirst, setNewFirst] = useState("");
   const [newLast, setNewLast] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [creatingCustomer, startCreateCustomer] = useTransition();
+  const [checkingPhone, startCheckPhone] = useTransition();
   const [custError, setCustError] = useState<string | null>(null);
 
   // Step 2 — date/time/services
@@ -79,20 +137,20 @@ export function AppointmentWizard({
       setCustError("Nombre y apellido son obligatorios.");
       return;
     }
-    const fd = new FormData();
-    fd.set("first_name", newFirst);
-    fd.set("last_name", newLast);
-    if (newPhone) fd.set("phone", newPhone);
-    startCreateCustomer(async () => {
-      const res = await createCustomerAction(null, fd);
-      if (res.ok) {
-        setCustomerId(res.value);
+    if (newPhone) {
+      startCheckPhone(async () => {
+        const { exists } = await checkCustomerPhoneAction(newPhone);
+        if (exists) {
+          setCustError("Este número ya está registrado. Búscalo en \"Cliente existente\".");
+          return;
+        }
         setCustomerName(`${newFirst} ${newLast}`);
         setStep(2);
-      } else {
-        setCustError(res.error);
-      }
-    });
+      });
+    } else {
+      setCustomerName(`${newFirst} ${newLast}`);
+      setStep(2);
+    }
   }
 
   // ── Availability ───────────────────────────────────────────────
@@ -161,13 +219,24 @@ export function AppointmentWizard({
 
   function handleConfirm() {
     setSubmitError(null);
-    const base = new Date(`${date}T${time}:00`);
-    const fd = new FormData();
-    fd.set("customer_id", customerId);
-    fd.set("start_time", base.toISOString());
-    fd.set("notes", notes);
-    fd.set("assignments", JSON.stringify(rows.map((r) => ({ service_id: r.serviceId, employee_id: r.employeeId }))));
     startSubmit(async () => {
+      let finalCustomerId = customerId;
+
+      if (mode === "new") {
+        const custRes = await findOrCreateCustomerAction(
+          newFirst, newLast, newPhone || undefined
+        );
+        if (!custRes.ok) { setSubmitError(custRes.error); return; }
+        finalCustomerId = custRes.value;
+      }
+
+      const base = new Date(`${date}T${time}:00`);
+      const fd = new FormData();
+      fd.set("customer_id", finalCustomerId);
+      fd.set("start_time", base.toISOString());
+      fd.set("notes", notes);
+      fd.set("assignments", JSON.stringify(rows.map((r) => ({ service_id: r.serviceId, employee_id: r.employeeId }))));
+
       const res = await createAppointmentAction(null, fd);
       if (res.ok) {
         router.push(`/appointments?date=${date}`);
@@ -242,7 +311,7 @@ export function AppointmentWizard({
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setMode("existing")}
+                onClick={() => { setCustError(null); setMode("existing"); }}
                 disabled={customers.length === 0}
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all disabled:opacity-40",
@@ -255,7 +324,7 @@ export function AppointmentWizard({
               </button>
               <button
                 type="button"
-                onClick={() => setMode("new")}
+                onClick={() => { setCustError(null); setMode("new"); }}
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all",
                   mode === "new"
@@ -268,17 +337,17 @@ export function AppointmentWizard({
             </div>
 
             {mode === "existing" ? (
-              <Select label="Cliente" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+              <Select label="Cliente" value={customerId} onChange={(e) => { setCustError(null); setCustomerId(e.target.value); }}>
                 <option value="">Selecciona un cliente...</option>
                 {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </Select>
             ) : (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Input label="Nombre" value={newFirst} onChange={(e) => setNewFirst(e.target.value)} />
-                  <Input label="Apellido" value={newLast} onChange={(e) => setNewLast(e.target.value)} />
+                  <Input label="Nombre" value={newFirst} onChange={(e) => { setCustError(null); setNewFirst(e.target.value); }} />
+                  <Input label="Apellido" value={newLast} onChange={(e) => { setCustError(null); setNewLast(e.target.value); }} />
                 </div>
-                <Input label="Teléfono (opcional)" type="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+                <Input label="Teléfono (opcional)" type="tel" value={newPhone} onChange={(e) => { setCustError(null); setNewPhone(e.target.value); }} />
               </div>
             )}
 
@@ -293,7 +362,7 @@ export function AppointmentWizard({
                 variant="primary"
                 size="lg"
                 onClick={continueFromCustomer}
-                loading={creatingCustomer}
+                loading={checkingPhone}
                 disabled={mode === "existing" ? !customerId : false}
               >
                 Continuar →
@@ -325,12 +394,10 @@ export function AppointmentWizard({
                 onChange={(e) => { setDate(e.target.value); loadAvailability(e.target.value); }}
                 required
               />
-              <Input
+              <TimePicker
                 label="Hora de inicio"
-                type="time"
                 value={time}
-                onChange={(e) => setTime(e.target.value)}
-                required
+                onChange={setTime}
               />
             </div>
 

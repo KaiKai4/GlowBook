@@ -3,9 +3,8 @@ import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findCustomers } from "@/features/customers/data/customers.repo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import { Plus, Phone, Mail } from "lucide-react";
+import { NewCustomerModal } from "./new-customer-modal";
+import { CustomersList } from "./customers-list";
 
 export default async function CustomersPage({
   searchParams,
@@ -37,12 +36,7 @@ export default async function CustomersPage({
           <h1 className="text-2xl font-bold text-neutral-900">Clientes</h1>
           <p className="text-sm text-neutral-500 mt-1">{total} clientes activos</p>
         </div>
-        <Link href="/customers/new">
-          <Button variant="primary">
-            <Plus className="h-4 w-4" />
-            Nuevo cliente
-          </Button>
-        </Link>
+        <NewCustomerModal />
       </div>
 
       <form action="/customers" className="flex gap-2">
@@ -66,42 +60,7 @@ export default async function CustomersPage({
             </CardContent>
           </Card>
         ) : (
-          customers.map((customer) => (
-            <Card key={customer.id} className="hover:shadow-sm transition-shadow">
-              <CardContent className="py-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-medium text-neutral-900">
-                      {customer.first_name} {customer.last_name}
-                      {customer.is_temporary && (
-                        <Badge variant="warning" className="ml-2">Temporal</Badge>
-                      )}
-                    </p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      {customer.phone && (
-                        <span className="flex items-center gap-1 text-xs text-neutral-500">
-                          <Phone className="h-3 w-3" />
-                          {customer.phone}
-                        </span>
-                      )}
-                      {customer.email && (
-                        <span className="flex items-center gap-1 text-xs text-neutral-500">
-                          <Mail className="h-3 w-3" />
-                          {customer.email}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <Link
-                    href={`/customers/${customer.id}`}
-                    className="text-xs text-rose-600 hover:underline shrink-0"
-                  >
-                    Ver ficha
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+          <CustomersList customers={customers} />
         )}
       </div>
     </div>

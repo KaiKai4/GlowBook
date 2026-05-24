@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
 import { Button } from "@/components/ui/button";
@@ -10,16 +10,17 @@ import { CompleteAppointmentDialog } from "./dialogs/complete-appointment";
 import { CancelAppointmentDialog } from "./dialogs/cancel-appointment";
 import { confirmAppointmentAction } from "./actions";
 import { cn } from "@/lib/utils/cn";
-import { CheckCircle2, XCircle, ThumbsUp, Eye, ListFilter } from "lucide-react";
+import {
+  CheckCircle2, XCircle, ThumbsUp, Eye, ListFilter, Search, X,
+} from "lucide-react";
+import type { CalView } from "./date-nav";
 
 const STATUS_LABEL: Record<string, string> = {
   scheduled: "Agendada", confirmed: "Confirmada", completed: "Completada",
   cancelled: "Cancelada", no_show: "No asistió",
 };
 const STATUS_ROW_BG: Record<string, string> = {
-  completed: "bg-emerald-50/40",
-  cancelled: "opacity-50",
-  no_show: "bg-amber-50/40",
+  completed: "bg-emerald-50/40", cancelled: "opacity-50", no_show: "bg-amber-50/40",
 };
 const STATUS_BADGE: Record<string, string> = {
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
@@ -30,46 +31,60 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export interface ApptFull {
-  id: string;
-  status: string;
-  start_time: string | null;
-  end_time: string | null;
-  total_price: string | null;
-  notes: string | null;
-  customer: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    phone: string | null;
-    email: string | null;
-  } | null;
+  id: string; status: string;
+  start_time: string | null; end_time: string | null;
+  total_price: string | null; notes: string | null;
+  customer: { id: string; first_name: string; last_name: string; phone: string | null; email: string | null; is_temporary: boolean } | null;
   items: Array<{
-    id: string;
-    start_time: string;
-    end_time: string;
-    price: number;
+    id: string; start_time: string; end_time: string; price: number;
     service: { id: string; name: string; duration_minutes: number } | null;
     employee: { id: string; first_name: string; last_name: string } | null;
   }>;
 }
 
+interface Employee { id: string; first_name: string; last_name: string }
+
 export function AppointmentsDayView({
-  appointments,
-  tz,
-  canManage,
+  appointments, tz, canManage,
+  view = "diaria", weekDates, employees = [],
 }: {
   appointments: ApptFull[];
   tz: string;
   canManage: boolean;
+  view?: CalView;
+  weekDates?: string[];
+  employees?: Employee[];
 }) {
   const router = useRouter();
   const [pending, startConfirm] = useTransition();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
-
   const [detailAppt, setDetailAppt] = useState<ApptFull | null>(null);
   const [completeAppt, setCompleteAppt] = useState<ApptFull | null>(null);
   const [cancelAppt, setCancelAppt] = useState<ApptFull | null>(null);
+
+  // Worker search
+  const [empSearch, setEmpSearch] = useState("");
+  const [selectedEmpId, setSelectedEmpId] = useState<string | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const selectedEmp = employees.find((e) => e.id === selectedEmpId);
+
+  const filteredEmps = useMemo(() => {
+    if (!empSearch) return employees;
+    const q = empSearch.toLowerCase();
+    return employees.filter((e) =>
+      `${e.first_name} ${e.last_name}`.toLowerCase().includes(q)
+    );
+  }, [employees, empSearch]);
+
+  // Filter appointments by selected employee (trabajador view)
+  const calendarAppts = useMemo(() => {
+    if (view !== "trabajador" || !selectedEmpId) return appointments;
+    return appointments.filter((a) =>
+      a.items.some((it) => it.employee?.id === selectedEmpId)
+    );
+  }, [appointments, view, selectedEmpId]);
 
   function handleConfirm(apptId: string) {
     setConfirmingId(apptId);
@@ -80,10 +95,6 @@ export function AppointmentsDayView({
     });
   }
 
-  const listAppts = filterStatus
-    ? appointments.filter((a) => a.status === filterStatus)
-    : appointments;
-
   const statusFilters = [
     { value: null, label: "Todas" },
     { value: "scheduled", label: "Agendadas" },
@@ -92,18 +103,86 @@ export function AppointmentsDayView({
     { value: "cancelled", label: "Canceladas" },
   ];
 
+  const listAppts = filterStatus
+    ? appointments.filter((a) => a.status === filterStatus)
+    : appointments;
+
+  const calendarTitle =
+    view === "trabajador" && selectedEmp
+      ? `${selectedEmp.first_name} ${selectedEmp.last_name}`
+      : undefined;
+
   return (
     <div className="space-y-6">
-      {/* ── Calendario ─────────────────────────────────────── */}
+      {/* Worker search bar */}
+      {view === "trabajador" && (
+        <div className="relative">
+          <div className="flex items-center gap-3 rounded-2xl border border-violet-100 bg-white shadow-sm px-4 py-3">
+            <Search className="h-4 w-4 text-stone-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar profesional por nombre..."
+              value={selectedEmp
+                ? `${selectedEmp.first_name} ${selectedEmp.last_name}`
+                : empSearch}
+              onChange={(e) => {
+                if (selectedEmpId) setSelectedEmpId(null);
+                setEmpSearch(e.target.value);
+                setDropdownOpen(true);
+              }}
+              onFocus={() => setDropdownOpen(true)}
+              onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+              className="flex-1 text-sm text-stone-800 placeholder:text-stone-400 outline-none bg-transparent"
+            />
+            {selectedEmpId ? (
+              <button
+                onClick={() => { setSelectedEmpId(null); setEmpSearch(""); }}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-stone-500 hover:bg-red-50 hover:text-red-500 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              <span className="text-xs text-stone-400">{employees.length} profesionales</span>
+            )}
+          </div>
+
+          {dropdownOpen && !selectedEmpId && (
+            <div className="absolute top-full left-0 right-0 z-20 mt-1 rounded-xl border border-stone-200 bg-white shadow-xl overflow-hidden">
+              {filteredEmps.length === 0 ? (
+                <p className="px-4 py-3 text-sm text-stone-400">Sin resultados</p>
+              ) : (
+                filteredEmps.map((emp) => (
+                  <button
+                    key={emp.id}
+                    className="w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                    onMouseDown={() => {
+                      setSelectedEmpId(emp.id);
+                      setEmpSearch("");
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    {emp.first_name} {emp.last_name}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Calendar */}
       <AppointmentsCalendar
-        appointments={appointments}
+        appointments={calendarAppts as unknown as Parameters<typeof AppointmentsCalendar>[0]["appointments"]}
         tz={tz}
         onApptClick={(a) => setDetailAppt(a as ApptFull)}
+        mode={view === "semanal" ? "semanal" : "diaria"}
+        weekDates={view === "semanal" ? weekDates : undefined}
+        title={calendarTitle}
       />
 
-      {/* ── Lista de citas ──────────────────────────────────── */}
+      {/* Appointment list */}
       <div className="rounded-2xl border border-violet-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-violet-50 bg-gradient-to-r from-choco-50 to-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-choco-50 to-white">
           <h2 className="text-sm font-bold text-choco-700 uppercase tracking-wide">
             <ListFilter className="inline h-3.5 w-3.5 mr-1" />
             Resumen de citas
@@ -117,7 +196,7 @@ export function AppointmentsDayView({
                   "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
                   filterStatus === f.value
                     ? "border-violet-400 bg-violet-50 text-violet-700"
-                    : "border-stone-200 text-stone-500 hover:bg-stone-50"
+                    : "border-stone-200 text-stone-600 hover:bg-stone-50"
                 )}
               >
                 {f.label}
@@ -140,7 +219,6 @@ export function AppointmentsDayView({
                   STATUS_ROW_BG[appt.status] ?? ""
                 )}
               >
-                {/* Time */}
                 <div className="w-24 shrink-0">
                   {appt.start_time && (
                     <p className="text-sm font-bold text-violet-700 tabular-nums">
@@ -148,29 +226,27 @@ export function AppointmentsDayView({
                     </p>
                   )}
                   {appt.end_time && (
-                    <p className="text-xs text-stone-400 tabular-nums">
+                    <p className="text-xs text-stone-500 tabular-nums">
                       – {formatTimeTz(new Date(appt.end_time), tz)}
                     </p>
                   )}
                 </div>
 
-                {/* Cliente */}
                 <div className="min-w-[140px] flex-1">
                   <p className="text-sm font-semibold text-stone-800">
                     {appt.customer?.first_name} {appt.customer?.last_name}
                   </p>
                   {appt.customer?.phone && (
-                    <p className="text-xs text-stone-400">{appt.customer.phone}</p>
+                    <p className="text-xs text-stone-500">{appt.customer.phone}</p>
                   )}
                 </div>
 
-                {/* Servicios */}
                 <div className="flex-1 min-w-[160px]">
                   <div className="flex flex-wrap gap-1">
                     {appt.items.map((item) => (
                       <span
                         key={item.id}
-                        className="rounded-full bg-choco-50 border border-choco-100 px-2 py-0.5 text-[11px] text-choco-600 font-medium"
+                        className="rounded-full bg-choco-50 border border-choco-100 px-2 py-0.5 text-[11px] text-choco-700 font-medium"
                       >
                         {item.service?.name} · {item.employee?.first_name}
                       </span>
@@ -178,7 +254,6 @@ export function AppointmentsDayView({
                   </div>
                 </div>
 
-                {/* Status + total */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[appt.status] ?? ""}`}>
                     {STATUS_LABEL[appt.status]}
@@ -188,40 +263,33 @@ export function AppointmentsDayView({
                   </span>
                 </div>
 
-                {/* Actions */}
                 {canManage && !["completed", "cancelled", "no_show"].includes(appt.status) && (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => setDetailAppt(appt)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 text-stone-400 hover:bg-stone-50 hover:text-stone-700 transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
                       title="Ver detalle"
                     >
                       <Eye className="h-3.5 w-3.5" />
                     </button>
-
                     {appt.status === "scheduled" && (
                       <button
                         onClick={() => handleConfirm(appt.id)}
                         disabled={pending && confirmingId === appt.id}
                         className="flex h-8 items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                        title="Confirmar"
                       >
                         <ThumbsUp className="h-3.5 w-3.5" /> Confirmar
                       </button>
                     )}
-
                     <button
                       onClick={() => setCompleteAppt(appt)}
                       className="flex h-8 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
-                      title="Completar"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Completar
                     </button>
-
                     <button
                       onClick={() => setCancelAppt(appt)}
                       className="flex h-8 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
-                      title="Cancelar"
                     >
                       <XCircle className="h-3.5 w-3.5" /> Cancelar
                     </button>
@@ -233,27 +301,19 @@ export function AppointmentsDayView({
         )}
       </div>
 
-      {/* ── Dialogs ─────────────────────────────────────────── */}
       {detailAppt && (
         <AppointmentDetailDialog
-          appt={detailAppt}
-          tz={tz}
-          open={!!detailAppt}
-          onClose={() => setDetailAppt(null)}
+          appt={detailAppt} tz={tz} open={!!detailAppt} onClose={() => setDetailAppt(null)}
         />
       )}
       {completeAppt && (
         <CompleteAppointmentDialog
-          appt={completeAppt}
-          open={!!completeAppt}
-          onClose={() => setCompleteAppt(null)}
+          appt={completeAppt} open={!!completeAppt} onClose={() => setCompleteAppt(null)}
         />
       )}
       {cancelAppt && (
         <CancelAppointmentDialog
-          appt={cancelAppt}
-          open={!!cancelAppt}
-          onClose={() => setCancelAppt(null)}
+          appt={cancelAppt} open={!!cancelAppt} onClose={() => setCancelAppt(null)}
         />
       )}
     </div>

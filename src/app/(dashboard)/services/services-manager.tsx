@@ -169,7 +169,7 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
             visibleCategories.map((cat) => (
               <section key={cat.id}>
                 <div className="mb-3 flex items-center gap-2">
-                  <h2 className="font-serif text-lg italic text-neutral-800">{cat.name}</h2>
+                  <h2 className="text-lg font-semibold text-neutral-800">{cat.name}</h2>
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-neutral-100 px-1.5 text-xs font-medium text-neutral-500">
                     {cat.services.length}
                   </span>

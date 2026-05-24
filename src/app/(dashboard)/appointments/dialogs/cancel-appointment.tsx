@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cancelAppointmentAction, deactivateCustomerAction } from "../actions";
+import { cancelAppointmentAction } from "../actions";
+import { promoteCustomerAction, deleteTemporaryCustomerAction } from "../../customers/actions";
 import { MessageCircle, UserX, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -16,13 +17,11 @@ interface ApptForCancel {
     first_name: string;
     last_name: string;
     phone: string | null;
+    is_temporary: boolean;
   } | null;
 }
 
-type ClientAction = "keep" | "permanent";
-
-const CANCEL_TEMPLATE = (name: string, time: string) =>
-  `Hola ${name}, lamentamos informarte que tu cita para el ${time} ha sido cancelada. Contáctanos para reagendar. ¡Gracias por tu comprensión!`;
+type SaveChoice = "save" | "discard";
 
 function buildWhatsAppUrl(phone: string, message: string): string {
   const clean = phone.replace(/\D/g, "");
@@ -37,7 +36,8 @@ export function CancelAppointmentDialog({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [clientAction, setClientAction] = useState<ClientAction>("keep");
+  const isTemp = appt.customer?.is_temporary ?? false;
+  const [saveChoice, setSaveChoice] = useState<SaveChoice>(isTemp ? "discard" : "save");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -55,13 +55,17 @@ export function CancelAppointmentDialog({
       const res = await cancelAppointmentAction(appt.id);
       if (!res.ok) { setError(res.error ?? "Error al cancelar."); return; }
 
-      // If keeping only for history → deactivate customer
-      if (clientAction === "keep" && appt.customer?.id) {
-        await deactivateCustomerAction(appt.customer.id);
+      if (appt.customer?.id) {
+        if (isTemp && saveChoice === "save") {
+          await promoteCustomerAction(appt.customer.id);
+        } else if (isTemp && saveChoice === "discard") {
+          await deleteTemporaryCustomerAction(appt.customer.id);
+        }
+        // Permanent customer: no changes to customer record
       }
 
       if (withWhatsApp && appt.customer?.phone) {
-        const msg = CANCEL_TEMPLATE(appt.customer.first_name, apptTime);
+        const msg = `Hola ${appt.customer.first_name}, lamentamos informarte que tu cita para el ${apptTime} ha sido cancelada. Contáctanos para reagendar. ¡Gracias por tu comprensión!`;
         window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank");
       }
 
@@ -79,69 +83,73 @@ export function CancelAppointmentDialog({
       className="max-w-md"
     >
       <div className="space-y-5">
-        {/* Client disposition */}
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
-          <p className="text-sm font-semibold text-amber-800">¿Qué hacemos con este cliente?</p>
-          <p className="text-xs text-amber-700">
-            La cita puede cancelarse sin eliminar al cliente de la base de datos.
-          </p>
+        {/* Only show customer disposition when the customer was created just for this appointment */}
+        {isTemp && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+            <p className="text-sm font-semibold text-amber-800">
+              ¿Guardar los datos del cliente?
+            </p>
+            <p className="text-xs text-amber-700">
+              Este cliente aún no está registrado. Puedes guardarlo o descartarlo.
+            </p>
 
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setClientAction("keep")}
-              className={cn(
-                "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
-                clientAction === "keep"
-                  ? "border-amber-400 bg-white"
-                  : "border-transparent bg-white/60 hover:bg-white"
-              )}
-            >
-              <div className={cn(
-                "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                clientAction === "keep" ? "border-amber-500 bg-amber-500" : "border-stone-300"
-              )}>
-                {clientAction === "keep" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <UserX className="h-3.5 w-3.5 text-amber-600" />
-                  <p className="text-sm font-semibold text-stone-800">Solo para historial</p>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setSaveChoice("save")}
+                className={cn(
+                  "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
+                  saveChoice === "save"
+                    ? "border-violet-400 bg-white"
+                    : "border-transparent bg-white/60 hover:bg-white"
+                )}
+              >
+                <div className={cn(
+                  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
+                  saveChoice === "save" ? "border-violet-500 bg-violet-500" : "border-stone-300"
+                )}>
+                  {saveChoice === "save" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                 </div>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  No aparecerá en el buscador de clientes, pero quedará el registro de la cita.
-                </p>
-              </div>
-            </button>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <UserCheck className="h-3.5 w-3.5 text-violet-600" />
+                    <p className="text-sm font-semibold text-stone-800">Sí, guardar cliente</p>
+                  </div>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Quedará registrado y podrá usarse en futuras citas.
+                  </p>
+                </div>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setClientAction("permanent")}
-              className={cn(
-                "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
-                clientAction === "permanent"
-                  ? "border-violet-400 bg-white"
-                  : "border-transparent bg-white/60 hover:bg-white"
-              )}
-            >
-              <div className={cn(
-                "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                clientAction === "permanent" ? "border-violet-500 bg-violet-500" : "border-stone-300"
-              )}>
-                {clientAction === "permanent" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <UserCheck className="h-3.5 w-3.5 text-violet-600" />
-                  <p className="text-sm font-semibold text-stone-800">Convertirlo en cliente permanente</p>
+              <button
+                type="button"
+                onClick={() => setSaveChoice("discard")}
+                className={cn(
+                  "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
+                  saveChoice === "discard"
+                    ? "border-amber-400 bg-white"
+                    : "border-transparent bg-white/60 hover:bg-white"
+                )}
+              >
+                <div className={cn(
+                  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
+                  saveChoice === "discard" ? "border-amber-500 bg-amber-500" : "border-stone-300"
+                )}>
+                  {saveChoice === "discard" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                 </div>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  Aparecerá en clientes y podrá reutilizarse en próximas citas.
-                </p>
-              </div>
-            </button>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <UserX className="h-3.5 w-3.5 text-amber-600" />
+                    <p className="text-sm font-semibold text-stone-800">No, descartar datos</p>
+                  </div>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    No se guardará ningún registro del cliente.
+                  </p>
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {error && (
           <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
@@ -149,7 +157,6 @@ export function CancelAppointmentDialog({
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex flex-col gap-2">
           {appt.customer?.phone && (
             <Button

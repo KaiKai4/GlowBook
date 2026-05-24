@@ -16,6 +16,7 @@ export async function findCustomers(
     .from("customers")
     .select("*", { count: "exact" })
     .eq("salon_id", salonId)
+    .eq("is_temporary", false)
     .order("last_name", { ascending: true })
     .range(from, to);
 
@@ -54,6 +55,31 @@ export async function createCustomer(
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function findCustomerByPhone(
+  salonId: string,
+  phone: string
+): Promise<CustomerRow | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("salon_id", salonId)
+    .eq("phone", phone)
+    .maybeSingle();
+  return data;
+}
+
+export async function deleteCustomer(id: string, salonId: string): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("customers")
+    .delete()
+    .eq("id", id)
+    .eq("salon_id", salonId)
+    .eq("is_temporary", true);
+  if (error) throw error;
 }
 
 export async function updateCustomer(

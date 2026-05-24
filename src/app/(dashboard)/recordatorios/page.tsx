@@ -32,22 +32,27 @@ export default async function RecordatoriosPage() {
   const tz = salon?.timezone ?? "America/Panama";
 
   const today = new Date();
-  const days = [0, 1, 2].map((offset) => addDays(today, offset));
+  const in7Days = addDays(today, 7);
 
-  const appointmentsByDay = await Promise.all(
-    days.map(async (day) => {
-      const isoDate = toISO(day);
-      const appts = await findAppointmentsBySalon(profile.salon_id, {
-        startDate: `${isoDate}T00:00:00`,
-        endDate: `${isoDate}T23:59:59`,
-      });
-      return {
-        date: isoDate,
-        label: day.toLocaleDateString("es-PA", { weekday: "long", day: "numeric", month: "long" }),
-        appointments: appts.filter((a) => !["cancelled", "completed"].includes(a.status)),
-      };
-    })
-  );
+  // Fetch all pending appointments for the next 7 days in one query
+  const appointments = await findAppointmentsBySalon(profile.salon_id, {
+    startDate: `${toISO(today)}T00:00:00`,
+    endDate: `${toISO(in7Days)}T23:59:59`,
+  });
+
+  const pending = appointments.filter((a) => !["cancelled", "completed"].includes(a.status));
+
+  // All active employees (not just those with appointments in this window)
+  const { data: empRows } = await supabase
+    .from("employees")
+    .select("id, first_name, last_name")
+    .eq("salon_id", profile.salon_id)
+    .eq("is_active", true)
+    .order("first_name");
+  const employees = (empRows ?? []).map((e) => ({
+    id: e.id,
+    name: `${e.first_name} ${e.last_name}`,
+  }));
 
   return (
     <div className="space-y-6">
@@ -57,12 +62,13 @@ export default async function RecordatoriosPage() {
           Recordatorios
         </h1>
         <p className="text-sm text-stone-400 mt-0.5">
-          Envía recordatorios de citas de hoy, mañana y pasado mañana.
+          Envía recordatorios de citas de los próximos 7 días.
         </p>
       </div>
 
       <RemindersView
-        appointmentsByDay={appointmentsByDay as unknown as Parameters<typeof RemindersView>[0]["appointmentsByDay"]}
+        appointments={pending as unknown as Parameters<typeof RemindersView>[0]["appointments"]}
+        employees={employees}
         tz={tz}
       />
     </div>

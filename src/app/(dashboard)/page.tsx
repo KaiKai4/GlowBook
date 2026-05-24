@@ -2,21 +2,43 @@ import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatDate } from "@/lib/utils/dates";
+import { formatCurrency, formatDate, getUtcDayBoundaries } from "@/lib/utils/dates";
 import { CalendarDays, Users, DollarSign, TrendingUp } from "lucide-react";
 
 async function getReportMetrics(salonId: string) {
   const supabase = await createSupabaseServerClient();
-  const today = new Date();
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const { data: salonData } = await supabase
+    .from("salons")
+    .select("timezone")
+    .eq("id", salonId)
+    .single();
+
+  const timezone = salonData?.timezone ?? "UTC";
+  const now = new Date();
+
+  // Day boundaries in the salon's local timezone (not server/UTC time)
+  const { start: todayStart, end: todayEnd } = getUtcDayBoundaries(now, timezone);
+
+  // First day of the current month in the salon's timezone.
+  // Strategy: use noon UTC on the local 1st and adjust if we land on the wrong day.
+  const localDateStr = new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);
+  const [yearStr, monthStr] = localDateStr.split("-");
+  let monthProbe = new Date(`${yearStr}-${monthStr}-01T12:00:00.000Z`);
+  const probeLocal = new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(monthProbe);
+  if (probeLocal !== `${yearStr}-${monthStr}-01`) {
+    const delta = probeLocal > `${yearStr}-${monthStr}-01` ? -12 : 12;
+    monthProbe = new Date(monthProbe.getTime() + delta * 60 * 60_000);
+  }
+  const { start: monthStart } = getUtcDayBoundaries(monthProbe, timezone);
 
   const [todayAppts, monthAppts, totalCustomers] = await Promise.all([
     supabase
       .from("appointments")
       .select("id, status", { count: "exact" })
       .eq("salon_id", salonId)
-      .gte("start_time", new Date(today.setHours(0, 0, 0, 0)).toISOString())
-      .lte("start_time", new Date(today.setHours(23, 59, 59, 999)).toISOString()),
+      .gte("start_time", todayStart.toISOString())
+      .lte("start_time", todayEnd.toISOString()),
 
     supabase
       .from("appointments")

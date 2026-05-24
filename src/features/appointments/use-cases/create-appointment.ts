@@ -88,7 +88,7 @@ export async function createAppointment(
     }
     const key = `${employee.id}-${startTime.toDateString()}`;
     if (!slotsCache.has(key)) {
-      slotsCache.set(key, await findOccupiedSlots(employee.id, startTime));
+      slotsCache.set(key, await findOccupiedSlots(employee.id, startTime, salon.timezone));
     }
   }
 

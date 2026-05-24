@@ -2,49 +2,82 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
+
+export type CalView = "diaria" | "semanal" | "trabajador";
 
 function toISODate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function DateNav({ date }: { date: string }) {
+const VIEWS: { id: CalView; label: string }[] = [
+  { id: "diaria", label: "Diaria" },
+  { id: "semanal", label: "Semanal" },
+  { id: "trabajador", label: "Por trabajador" },
+];
+
+export function DateNav({ date, view }: { date: string; view: CalView }) {
   const router = useRouter();
 
-  function go(value: string) {
-    router.push(`/appointments?date=${value}`);
+  function go(newDate: string, newView?: CalView) {
+    router.push(`/appointments?date=${newDate}&view=${newView ?? view}`);
   }
-  function shift(days: number) {
+
+  function shift(n: number) {
     const d = new Date(`${date}T12:00:00`);
-    d.setDate(d.getDate() + days);
+    d.setDate(d.getDate() + (view === "semanal" ? n * 7 : n));
     go(toISODate(d));
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <button
-        onClick={() => shift(-1)}
-        className="flex h-10 w-10 items-center justify-center rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
-        aria-label="Día anterior"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => go(e.target.value)}
-        className="h-10 rounded-lg border border-stone-200 px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
-      />
-      <button
-        onClick={() => shift(1)}
-        className="flex h-10 w-10 items-center justify-center rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
-        aria-label="Día siguiente"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
-      <Button variant="outline" size="sm" onClick={() => go(toISODate(new Date()))}>
-        Hoy
-      </Button>
+    <div className="flex items-center gap-2 flex-wrap justify-end">
+      {/* Date navigation */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => shift(-1)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+          aria-label={view === "semanal" ? "Semana anterior" : "Día anterior"}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => go(e.target.value)}
+          className="h-9 rounded-lg border border-stone-200 px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
+        />
+        <button
+          onClick={() => shift(1)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+          aria-label={view === "semanal" ? "Semana siguiente" : "Día siguiente"}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => go(toISODate(new Date()))}
+          className="h-9 rounded-lg border border-stone-200 px-3 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+        >
+          Hoy
+        </button>
+      </div>
+
+      {/* View toggle */}
+      <div className="flex items-center rounded-lg border border-stone-200 bg-stone-50 p-0.5">
+        {VIEWS.map((v) => (
+          <button
+            key={v.id}
+            onClick={() => go(date, v.id)}
+            className={cn(
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-all whitespace-nowrap",
+              view === v.id
+                ? "bg-white text-violet-700 shadow-sm border border-violet-100"
+                : "text-stone-500 hover:text-stone-800"
+            )}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
