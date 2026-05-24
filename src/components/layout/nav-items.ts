@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import {
+  LayoutDashboard,
   CalendarDays,
   Users,
   UserCog,
@@ -19,6 +20,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  { label: "Inicio", href: "/", icon: LayoutDashboard },
   { label: "Citas", href: "/appointments", icon: CalendarDays, permissions: ["appointments.view", "appointments.manage"] },
   { label: "Recordatorios", href: "/recordatorios", icon: Bell, permissions: ["reminders.send"] },
   { label: "Clientes", href: "/customers", icon: Users, permissions: ["customers.manage"] },

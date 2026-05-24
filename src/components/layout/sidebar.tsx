@@ -40,7 +40,7 @@ export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
         ) : (
           <ul className="space-y-0.5">
             {visibleItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+              const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
                 <li key={item.href}>
                   <Link

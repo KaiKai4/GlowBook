@@ -90,6 +90,15 @@ export function getUtcDayBoundaries(
   };
 }
 
+// UTC instant range covering the local days [from, to] (YYYY-MM-DD) in the salon's
+// timezone. Use for date-range queries against timestamptz columns so near-midnight
+// rows land in the right day regardless of the server/connection timezone.
+export function utcBounds(from: string, to: string, tz: string): { start: string; end: string } {
+  const { start } = getUtcDayBoundaries(new Date(`${from}T12:00:00.000Z`), tz);
+  const { end } = getUtcDayBoundaries(new Date(`${to}T12:00:00.000Z`), tz);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
 export function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;

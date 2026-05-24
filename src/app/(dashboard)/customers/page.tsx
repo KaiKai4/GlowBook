@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findCustomers } from "@/features/customers/data/customers.repo";
@@ -5,6 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { NewCustomerModal } from "./new-customer-modal";
 import { CustomersList } from "./customers-list";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const PER_PAGE = 20;
 
 export default async function CustomersPage({
   searchParams,
@@ -22,12 +26,21 @@ export default async function CustomersPage({
     );
   }
 
-  const page = Number(params.page ?? 1);
+  const page = Math.max(1, Number(params.page ?? 1) || 1);
   const { data: customers, total } = await findCustomers(profile.salon_id, {
     q: params.q,
     page,
+    perPage: PER_PAGE,
     isActive: true,
   });
+
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const pageHref = (n: number) => {
+    const sp = new URLSearchParams();
+    if (params.q) sp.set("q", params.q);
+    sp.set("page", String(n));
+    return `/customers?${sp.toString()}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -63,6 +76,40 @@ export default async function CustomersPage({
           <CustomersList customers={customers} />
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-neutral-100 pt-3">
+          <p className="text-xs text-neutral-400">
+            Página {page} de {totalPages}
+          </p>
+          <div className="flex gap-2">
+            {page > 1 ? (
+              <Link
+                href={pageHref(page - 1)}
+                className="flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" /> Anterior
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 rounded-lg border border-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-300">
+                <ChevronLeft className="h-4 w-4" /> Anterior
+              </span>
+            )}
+            {page < totalPages ? (
+              <Link
+                href={pageHref(page + 1)}
+                className="flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+              >
+                Siguiente <ChevronRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 rounded-lg border border-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-300">
+                Siguiente <ChevronRight className="h-4 w-4" />
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

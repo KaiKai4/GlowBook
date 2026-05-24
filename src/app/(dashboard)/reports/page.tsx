@@ -1,7 +1,7 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getUtcDayBoundaries } from "@/lib/utils/dates";
+import { utcBounds } from "@/lib/utils/dates";
 import { ReportsView } from "./reports-view";
 
 type Preset = "hoy" | "semana" | "mes" | "mes_anterior" | "30dias" | "90dias";
@@ -50,12 +50,6 @@ function getPresetRange(preset: Preset, tz: string): { from: string; to: string 
       return { from: localStr(d, tz), to: today };
     }
   }
-}
-
-function utcBounds(from: string, to: string, tz: string) {
-  const { start } = getUtcDayBoundaries(new Date(`${from}T12:00:00.000Z`), tz);
-  const { end } = getUtcDayBoundaries(new Date(`${to}T12:00:00.000Z`), tz);
-  return { start: start.toISOString(), end: end.toISOString() };
 }
 
 export default async function ReportsPage({

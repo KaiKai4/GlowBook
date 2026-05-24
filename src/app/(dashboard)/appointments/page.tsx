@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
 import { findBusinessHours } from "@/features/salon/data/salon.repo";
+import { utcBounds } from "@/lib/utils/dates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { DateNav, type CalView } from "./date-nav";
@@ -97,9 +98,11 @@ export default async function AppointmentsPage({
   const startDate = view === "semanal" ? weekDates[0] : date;
   const endDate = view === "semanal" ? weekDates[6] : date;
 
+  // tz-aware UTC range so near-midnight appointments land on the correct day.
+  const { start: rangeStart, end: rangeEnd } = utcBounds(startDate, endDate, tz);
   const appointments = await findAppointmentsBySalon(profile.salon_id, {
-    startDate: `${startDate}T00:00:00`,
-    endDate: `${endDate}T23:59:59`,
+    startDate: rangeStart,
+    endDate: rangeEnd,
   });
 
   let dateLabel: string;

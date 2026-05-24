@@ -2,17 +2,15 @@ import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { utcBounds } from "@/lib/utils/dates";
 import { RemindersView } from "./reminders-view";
 import { Bell } from "lucide-react";
 
-function addDays(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-function toISO(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+// Add days to a YYYY-MM-DD string (noon UTC avoids DST edges).
+function addDaysISO(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 export default async function RecordatoriosPage() {
@@ -31,13 +29,14 @@ export default async function RecordatoriosPage() {
     .from("salons").select("timezone").eq("id", profile.salon_id).single();
   const tz = salon?.timezone ?? "America/Panama";
 
-  const today = new Date();
-  const in7Days = addDays(today, 7);
+  // "Today" in the salon's timezone + the next 7 days, as a tz-aware UTC range.
+  const localToday = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+  const { start, end } = utcBounds(localToday, addDaysISO(localToday, 7), tz);
 
   // Fetch all pending appointments for the next 7 days in one query
   const appointments = await findAppointmentsBySalon(profile.salon_id, {
-    startDate: `${toISO(today)}T00:00:00`,
-    endDate: `${toISO(in7Days)}T23:59:59`,
+    startDate: start,
+    endDate: end,
   });
 
   const pending = appointments.filter((a) => !["cancelled", "completed"].includes(a.status));
