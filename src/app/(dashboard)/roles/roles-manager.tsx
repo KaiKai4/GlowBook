@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock, Trash2, Plus } from "lucide-react";
+import {
+  Shield, Lock, Trash2, Plus,
+  CalendarCheck, Users, Bell, BarChart3, Settings,
+} from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 import {
   createRoleAction,
   updateRolePermissionsAction,
@@ -20,6 +24,100 @@ interface Role {
   permissionKeys: string[];
 }
 
+const PERMISSION_GROUPS = [
+  {
+    group: "Citas",
+    icon: CalendarCheck,
+    items: [
+      { key: "appointments.manage", label: "Crear y gestionar citas", description: "Agendar, editar, confirmar, completar y cancelar citas" },
+      { key: "appointments.view_all", label: "Ver todas las citas del salón", description: "Sin esto, el colaborador solo ve las citas donde está asignado" },
+    ],
+  },
+  {
+    group: "Clientes",
+    icon: Users,
+    items: [
+      { key: "customers.manage", label: "Gestionar clientes", description: "Crear, editar y consultar la ficha de clientes" },
+    ],
+  },
+  {
+    group: "Recordatorios",
+    icon: Bell,
+    items: [
+      { key: "reminders.send", label: "Enviar recordatorios", description: "Enviar mensajes de recordatorio a los clientes" },
+    ],
+  },
+  {
+    group: "Reportes",
+    icon: BarChart3,
+    items: [
+      { key: "reports.view", label: "Ver reportes e indicadores", description: "Acceder al dashboard y métricas del salón" },
+    ],
+  },
+  {
+    group: "Configuración",
+    icon: Settings,
+    items: [
+      { key: "employees.manage", label: "Gestionar colaboradores", description: "Crear, editar y dar acceso a colaboradores" },
+      { key: "services.manage", label: "Gestionar servicios", description: "Crear y editar categorías y servicios del catálogo" },
+      { key: "roles.manage", label: "Gestionar roles y permisos", description: "Crear roles y definir qué puede hacer cada colaborador" },
+      { key: "salon.manage", label: "Editar datos del salón", description: "Nombre, dirección, horarios y configuración general" },
+    ],
+  },
+] as const;
+
+type PermKey = string;
+
+function PermissionGroupList({
+  selected,
+  onChange,
+  disabled = false,
+}: {
+  selected: PermKey[];
+  onChange?: (key: PermKey) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      {PERMISSION_GROUPS.map(({ group, icon: Icon, items }) => (
+        <div key={group}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Icon className="h-3.5 w-3.5 text-stone-400" />
+            <span className="text-xs font-bold uppercase tracking-wide text-stone-400">{group}</span>
+          </div>
+          <div className="space-y-2 pl-5">
+            {items.map((item) => {
+              const checked = disabled ? true : selected.includes(item.key);
+              return (
+                <label
+                  key={item.key}
+                  className={cn(
+                    "flex items-start gap-3 rounded-lg p-2 transition-colors",
+                    !disabled && "cursor-pointer hover:bg-stone-50",
+                    disabled && "opacity-60"
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onChange?.(item.key)}
+                    disabled={disabled}
+                    className="mt-0.5 h-4 w-4 rounded accent-violet-600"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-stone-800">{item.label}</span>
+                    <span className="block text-xs text-stone-400 mt-0.5">{item.description}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function RolesManager({
   roles,
   allPermissions,
@@ -31,6 +129,9 @@ export function RolesManager({
   const [newPerms, setNewPerms] = useState<string[]>([]);
   const [creating, startCreate] = useTransition();
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // keep allPermissions in scope for the form serialization
+  void allPermissions;
 
   function handleCreate(formData: FormData) {
     formData.set("permission_keys", JSON.stringify(newPerms));
@@ -54,8 +155,8 @@ export function RolesManager({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Roles y Permisos</h1>
-          <p className="text-sm text-neutral-500 mt-1">Define qué puede hacer cada rol en tu salón.</p>
+          <h1 className="text-2xl font-bold text-stone-900">Roles y Permisos</h1>
+          <p className="text-sm text-stone-400 mt-1">Define qué puede hacer cada rol en tu salón.</p>
         </div>
         <Button variant="primary" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -65,7 +166,7 @@ export function RolesManager({
 
       <div className="grid gap-4 lg:grid-cols-2">
         {roles.map((role) => (
-          <RoleCard key={role.id} role={role} allPermissions={allPermissions} />
+          <RoleCard key={role.id} role={role} />
         ))}
       </div>
 
@@ -73,25 +174,12 @@ export function RolesManager({
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="Nuevo rol"
-        description="Asigna los permisos que tendrá este rol."
+        description="Elige qué puede hacer este rol en el salón."
       >
         <form action={handleCreate} className="space-y-4">
-          <Input name="name" label="Nombre del rol" placeholder="Estilista Senior" required />
-          <div className="space-y-1.5 max-h-64 overflow-y-auto rounded-lg border border-neutral-100 p-3">
-            {allPermissions.map((p) => (
-              <label key={p.id} className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={newPerms.includes(p.key)}
-                  onChange={() => toggleNewPerm(p.key)}
-                  className="mt-0.5 rounded"
-                />
-                <span>
-                  <span className="font-mono text-xs text-neutral-900">{p.key}</span>
-                  <span className="block text-xs text-neutral-500">{p.description}</span>
-                </span>
-              </label>
-            ))}
+          <Input name="name" label="Nombre del rol" placeholder="Estilista, Manicurista..." required autoFocus />
+          <div className="max-h-[380px] overflow-y-auto rounded-xl border border-stone-100 bg-stone-50/50 p-4">
+            <PermissionGroupList selected={newPerms} onChange={toggleNewPerm} />
           </div>
           {createError && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{createError}</p>
@@ -106,7 +194,7 @@ export function RolesManager({
   );
 }
 
-function RoleCard({ role, allPermissions }: { role: Role; allPermissions: Permission[] }) {
+function RoleCard({ role }: { role: Role }) {
   const [selected, setSelected] = useState<string[]>(role.permissionKeys);
   const [saving, startSave] = useTransition();
   const [isDeleting, startDelete] = useTransition();
@@ -138,15 +226,20 @@ function RoleCard({ role, allPermissions }: { role: Role; allPermissions: Permis
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-rose-600" />
-          <CardTitle>{role.name}</CardTitle>
+          <div className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-lg",
+            role.is_system ? "bg-amber-50" : "bg-violet-50"
+          )}>
+            <Shield className={cn("h-4 w-4", role.is_system ? "text-amber-500" : "text-violet-500")} />
+          </div>
+          <CardTitle className="text-base">{role.name}</CardTitle>
           {role.is_system ? (
-            <Lock className="h-3.5 w-3.5 text-neutral-400 ml-auto" />
+            <Lock className="h-3.5 w-3.5 text-stone-300 ml-auto" />
           ) : (
             <button
               onClick={() => startDelete(() => { void deleteRoleAction(role.id); })}
               disabled={isDeleting}
-              className="ml-auto text-neutral-400 hover:text-red-600 disabled:opacity-50"
+              className="ml-auto text-stone-300 hover:text-red-500 disabled:opacity-40 transition-colors"
               aria-label="Eliminar rol"
             >
               <Trash2 className="h-4 w-4" />
@@ -154,31 +247,22 @@ function RoleCard({ role, allPermissions }: { role: Role; allPermissions: Permis
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-1">
-          {allPermissions.map((p) => (
-            <label key={p.id} className="flex items-center gap-2 text-sm text-neutral-700">
-              <input
-                type="checkbox"
-                checked={role.is_system ? true : selected.includes(p.key)}
-                onChange={() => toggle(p.key)}
-                disabled={role.is_system}
-                className="rounded disabled:opacity-50"
-              />
-              <span className="font-mono text-xs">{p.key}</span>
-            </label>
-          ))}
-        </div>
+      <CardContent>
         {role.is_system ? (
-          <p className="text-xs text-neutral-400">Rol de sistema — siempre tiene todos los permisos.</p>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Button variant="primary" size="sm" onClick={handleSave} loading={saving} disabled={!dirty}>
-              Guardar
-            </Button>
-            {error && <span className="text-xs text-red-600">{error}</span>}
-            {saved && !dirty && <span className="text-xs text-emerald-600">Guardado</span>}
+          <div className="rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-700">
+            Este rol siempre tiene todos los permisos del salón y no se puede modificar.
           </div>
+        ) : (
+          <>
+            <PermissionGroupList selected={selected} onChange={toggle} />
+            <div className="mt-4 flex items-center gap-3 border-t border-stone-100 pt-4">
+              <Button variant="primary" size="sm" onClick={handleSave} loading={saving} disabled={!dirty}>
+                Guardar cambios
+              </Button>
+              {error && <span className="text-xs text-red-600">{error}</span>}
+              {saved && !dirty && <span className="text-xs text-emerald-600">Guardado</span>}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

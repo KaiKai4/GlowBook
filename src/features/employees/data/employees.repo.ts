@@ -167,3 +167,31 @@ export async function deleteWorkSchedule(id: string, salonId: string) {
     .eq("salon_id", salonId);
   if (error) throw error;
 }
+
+export interface EmployeeInvitationRow {
+  id: string;
+  token: string;
+  email: string;
+  role_id: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+}
+
+export async function findLatestEmployeeInvitation(
+  employeeId: string,
+  salonId: string
+): Promise<EmployeeInvitationRow | null> {
+  const supabase = await createSupabaseServerClient();
+  // employee_invitations is a new table added in migration 00007.
+  // Types will be available after `npm run db:types` is re-run post-migration.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
+    .from("employee_invitations")
+    .select("id, token, email, role_id, expires_at, accepted_at")
+    .eq("employee_id", employeeId)
+    .eq("salon_id", salonId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data ?? null) as EmployeeInvitationRow | null;
+}

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
@@ -10,8 +11,10 @@ import {
   updateEmployeeCategories,
   upsertWorkSchedule,
   deleteWorkSchedule,
+  findEmployeeById,
 } from "@/features/employees/data/employees.repo";
 import { CreateEmployeeSchema, WorkScheduleSchema } from "@/features/employees/schemas";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
@@ -127,4 +130,49 @@ export async function deleteWorkScheduleAction(
   } catch {
     return { ok: false, error: "Error al eliminar el horario." };
   }
+}
+
+export async function generateEmployeeInviteAction(
+  employeeId: string,
+  roleId: string | null
+): Promise<Result<{ token: string; expiresAt: string }>> {
+  const profile = await requireProfile();
+  if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
+    return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
+  }
+
+  const employee = await findEmployeeById(employeeId, profile.salon_id);
+  if (!employee) return { ok: false, error: "Colaborador no encontrado." };
+  if (!employee.email?.trim()) return { ok: false, error: "Este colaborador no tiene email registrado." };
+  if (employee.profile_id) return { ok: false, error: "Este colaborador ya tiene acceso al sistema." };
+
+  const token = randomBytes(24).toString("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const supabase = await createSupabaseServerClient();
+
+  // Replace any existing pending invitation for this employee
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any)
+    .from("employee_invitations")
+    .delete()
+    .eq("employee_id", employeeId)
+    .is("accepted_at", null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from("employee_invitations")
+    .insert({
+      employee_id: employeeId,
+      salon_id: profile.salon_id,
+      email: employee.email.trim(),
+      role_id: roleId || null,
+      token,
+      expires_at: expiresAt,
+    });
+
+  if (error) return { ok: false, error: "Error al generar el enlace de acceso." };
+
+  revalidatePath(`/employees/${employeeId}`);
+  return { ok: true, value: { token, expiresAt } };
 }

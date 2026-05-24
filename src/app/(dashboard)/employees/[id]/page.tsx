@@ -1,12 +1,14 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { findEmployeeById } from "@/features/employees/data/employees.repo";
+import { findEmployeeById, findLatestEmployeeInvitation } from "@/features/employees/data/employees.repo";
+import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkScheduleEditor } from "./work-schedule-editor";
+import { EmployeeAccessPanel } from "./employee-access-panel";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Phone, Mail, Percent } from "lucide-react";
+import { ArrowLeft, Phone, Mail, Percent, KeyRound } from "lucide-react";
 
 interface AssignedService { service: { id: string; name: string } | null }
 interface AssignedCategory { category: { id: string; name: string } | null }
@@ -27,7 +29,11 @@ export default async function EmployeeDetailPage({
     );
   }
 
-  const employee = await findEmployeeById(id, profile.salon_id);
+  const [employee, allRoles] = await Promise.all([
+    findEmployeeById(id, profile.salon_id),
+    findRolesWithPermissions(profile.salon_id),
+  ]);
+
   if (!employee) notFound();
 
   const services = ((employee.services ?? []) as AssignedService[])
@@ -42,6 +48,20 @@ export default async function EmployeeDetailPage({
     start_time: w.start_time,
     end_time: w.end_time,
   }));
+
+  const roleOptions = allRoles
+    .filter((r) => !r.is_system)
+    .map((r) => ({ id: r.id, name: r.name }));
+
+  // Only load invitation if employee doesn't have a linked profile yet
+  const invitation = !employee.profile_id
+    ? await findLatestEmployeeInvitation(id, profile.salon_id)
+    : null;
+
+  const pendingInvitation =
+    invitation && !invitation.accepted_at && new Date(invitation.expires_at) >= new Date()
+      ? { token: invitation.token, expiresAt: invitation.expires_at, roleId: invitation.role_id }
+      : null;
 
   return (
     <div className="space-y-6">
@@ -95,6 +115,24 @@ export default async function EmployeeDetailPage({
           <CardHeader><CardTitle>Disponibilidad</CardTitle></CardHeader>
           <CardContent>
             <WorkScheduleEditor employeeId={employee.id} schedules={schedules} />
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-violet-500" />
+              Acceso al sistema
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EmployeeAccessPanel
+              employeeId={employee.id}
+              employeeEmail={employee.email ?? ""}
+              profileId={employee.profile_id}
+              initialInvitation={pendingInvitation}
+              roles={roleOptions}
+            />
           </CardContent>
         </Card>
       </div>

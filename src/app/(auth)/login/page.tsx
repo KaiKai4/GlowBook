@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, CheckCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justJoined = searchParams.get("joined") === "1";
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +48,13 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-neutral-900">GlowBook</h1>
           <p className="text-sm text-neutral-500 mt-1">Gestión inteligente para tu salón</p>
         </div>
+
+        {justJoined && (
+          <div className="mb-4 flex items-center gap-2.5 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
+            <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+            <p className="text-sm text-emerald-700">¡Cuenta creada! Ingresa con tu email y contraseña.</p>
+          </div>
+        )}
 
         <div className="rounded-2xl border border-neutral-100 bg-white p-8 shadow-sm">
           <h2 className="text-lg font-semibold text-neutral-900 mb-6">Iniciar sesión</h2>
