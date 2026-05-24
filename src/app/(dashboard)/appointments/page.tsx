@@ -1,6 +1,7 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
+import { findBusinessHours } from "@/features/salon/data/salon.repo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { DateNav, type CalView } from "./date-nav";
@@ -59,7 +60,7 @@ export default async function AppointmentsPage({
 
   // The employee list only feeds the "Por trabajador" view, which is hidden for
   // collaborators who can't see others' appointments — skip the query for them.
-  const [salonResult, employeesResult] = await Promise.all([
+  const [salonResult, employeesResult, businessHours] = await Promise.all([
     supabase.from("salons").select("timezone").eq("id", profile.salon_id).single(),
     canViewAll
       ? supabase
@@ -69,9 +70,23 @@ export default async function AppointmentsPage({
           .eq("is_active", true)
           .order("first_name")
       : null,
+    findBusinessHours(profile.salon_id),
   ]);
 
   const tz = salonResult.data?.timezone ?? "America/Panama";
+
+  // Calendar grid spans the salon's open hours (8–21 fallback). The component
+  // widens it automatically if any appointment falls outside this range.
+  const openDays = businessHours.filter((h) => h.is_open && h.open_time && h.close_time);
+  const businessStart = openDays.length
+    ? Math.min(...openDays.map((h) => parseInt(h.open_time!.slice(0, 2), 10)))
+    : 8;
+  const businessEnd = openDays.length
+    ? Math.max(...openDays.map((h) => {
+        const [hh, mm] = h.close_time!.split(":").map(Number);
+        return mm > 0 ? hh + 1 : hh;
+      }))
+    : 21;
   const employees = (employeesResult?.data ?? []) as {
     id: string;
     first_name: string;
@@ -139,6 +154,8 @@ export default async function AppointmentsPage({
         view={view}
         weekDates={weekDates}
         employees={employees}
+        businessStart={businessStart}
+        businessEnd={businessEnd}
       />
     </div>
   );

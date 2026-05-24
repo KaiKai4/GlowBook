@@ -46,6 +46,7 @@ interface Employee { id: string; first_name: string; last_name: string }
 export function AppointmentsDayView({
   appointments, tz, canManage,
   view = "diaria", weekDates, employees = [],
+  businessStart, businessEnd,
 }: {
   appointments: ApptFull[];
   tz: string;
@@ -53,6 +54,8 @@ export function AppointmentsDayView({
   view?: CalView;
   weekDates?: string[];
   employees?: Employee[];
+  businessStart?: number;
+  businessEnd?: number;
 }) {
   const router = useRouter();
   const [pending, startConfirm] = useTransition();
@@ -177,6 +180,8 @@ export function AppointmentsDayView({
         mode={view === "semanal" ? "semanal" : "diaria"}
         weekDates={view === "semanal" ? weekDates : undefined}
         title={calendarTitle}
+        businessStart={businessStart}
+        businessEnd={businessEnd}
       />
 
       {/* Appointment list */}

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Clock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, addMinutes, formatTimeTz } from "@/lib/utils/dates";
+import { formatCurrency, addMinutes, formatTimeTz, getZonedTimeParts } from "@/lib/utils/dates";
 import { evaluateTimeRange } from "@/features/appointments/domain/availability";
 import type { BusinessHour, SalonConfig, WorkSchedule } from "@/features/appointments/domain/types";
 import { Trash2, Plus, Check, GripVertical, UserPlus, Users, Scissors, User } from "lucide-react";
@@ -43,27 +43,51 @@ const TIME_OPTIONS: { value: string; label: string }[] = (() => {
   return opts;
 })();
 
+// Salon open window ("HH:MM") for a given YYYY-MM-DD, or null if closed that day.
+// day_of_week is 0 = Monday … 6 = Sunday, matching the salon_business_hours table.
+function salonWindowFor(
+  dateStr: string,
+  timezone: string,
+  businessHours: BusinessHour[]
+): { open: string; close: string } | null {
+  if (!dateStr) return null;
+  const dow = getZonedTimeParts(new Date(`${dateStr}T12:00:00Z`), timezone).dayOfWeek;
+  const cfg = businessHours.find((h) => h.day_of_week === dow);
+  if (!cfg || !cfg.is_open || !cfg.open_time || !cfg.close_time) return null;
+  return { open: cfg.open_time.slice(0, 5), close: cfg.close_time.slice(0, 5) };
+}
+
 function TimePicker({
-  label, value, onChange,
+  label, value, onChange, minTime, maxTime,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  minTime?: string;
+  maxTime?: string;
 }) {
+  // Restrict the selectable times to the salon's open window for the chosen day.
+  const options = useMemo(() => {
+    const filtered = TIME_OPTIONS.filter(
+      (o) => (!minTime || o.value >= minTime) && (!maxTime || o.value < maxTime)
+    );
+    return filtered.length > 0 ? filtered : TIME_OPTIONS;
+  }, [minTime, maxTime]);
+
   // Snap to nearest available option if value isn't in the list
   const snapped = useMemo(() => {
-    if (TIME_OPTIONS.some((o) => o.value === value)) return value;
+    if (options.some((o) => o.value === value)) return value;
     const [h, m] = value.split(":").map(Number);
     const mins = h * 60 + m;
-    let nearest = TIME_OPTIONS[0].value;
+    let nearest = options[0].value;
     let minDiff = Infinity;
-    for (const o of TIME_OPTIONS) {
+    for (const o of options) {
       const [oh, om] = o.value.split(":").map(Number);
       const diff = Math.abs(oh * 60 + om - mins);
       if (diff < minDiff) { minDiff = diff; nearest = o.value; }
     }
     return nearest;
-  }, [value]);
+  }, [value, options]);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -74,7 +98,7 @@ function TimePicker({
           onChange={(e) => onChange(e.target.value)}
           className="h-10 w-full appearance-none rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow cursor-pointer"
         >
-          {TIME_OPTIONS.map((o) => (
+          {options.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
@@ -162,6 +186,13 @@ export function AppointmentWizard({
     });
   }
 
+  // Salon open window for the selected day — drives the time picker + closed-day notice.
+  const selectedWindow = useMemo(
+    () => salonWindowFor(date, salonConfig.timezone, businessHours),
+    [date, salonConfig.timezone, businessHours]
+  );
+  const isClosedDay = !!date && selectedWindow === null;
+
   // Sequential schedule
   const schedule = useMemo(() => {
     if (!date) return [] as Array<{ row: Row; svc: Service | undefined; start: Date | null; end: Date | null }>;
@@ -215,7 +246,7 @@ export function AppointmentWizard({
 
   const validRows = rows.filter((r) => r.serviceId && r.employeeId);
   const total = validRows.reduce((s, r) => s + (serviceMap.get(r.serviceId)?.price ?? 0), 0);
-  const step2Valid = rows.length > 0 && rows.every((r) => r.serviceId && r.employeeId) && !!date && !!time;
+  const step2Valid = rows.length > 0 && rows.every((r) => r.serviceId && r.employeeId) && !!date && !!time && !isClosedDay;
 
   function handleConfirm() {
     setSubmitError(null);
@@ -391,19 +422,32 @@ export function AppointmentWizard({
                 label="Fecha"
                 type="date"
                 value={date}
-                onChange={(e) => { setDate(e.target.value); loadAvailability(e.target.value); }}
+                onChange={(e) => {
+                  const d = e.target.value;
+                  setDate(d);
+                  loadAvailability(d);
+                  const w = salonWindowFor(d, salonConfig.timezone, businessHours);
+                  if (w && (time < w.open || time >= w.close)) setTime(w.open);
+                }}
                 required
               />
               <TimePicker
                 label="Hora de inicio"
                 value={time}
                 onChange={setTime}
+                minTime={selectedWindow?.open}
+                maxTime={selectedWindow?.close}
               />
             </div>
 
             {!date ? (
               <div className="rounded-xl border border-dashed border-stone-200 py-8 text-center">
                 <p className="text-sm text-stone-400">Elige una fecha para ver la disponibilidad.</p>
+              </div>
+            ) : isClosedDay ? (
+              <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50 py-8 text-center">
+                <p className="text-sm font-medium text-amber-700">El salón está cerrado ese día.</p>
+                <p className="text-xs text-amber-600 mt-0.5">Elige otra fecha o ajusta los horarios en Configuración del salón.</p>
               </div>
             ) : (
               <div className="space-y-3">

@@ -4,10 +4,53 @@ import { formatTimeTz, formatCurrency } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
 
 const HOUR_HEIGHT = 72;
-const CAL_START = 8;
-const CAL_END = 21;
-const TOTAL_HOURS = CAL_END - CAL_START;
+const DEFAULT_START = 8;
+const DEFAULT_END = 21;
 const PX_PER_MIN = HOUR_HEIGHT / 60;
+
+// 24h hour → { num, period } in 12h format (13 → 1 pm, 20 → 8 pm, 0 → 12 am).
+function hourLabel(h24: number): { num: number; period: string } {
+  const hour = ((h24 % 24) + 24) % 24;
+  const num = hour % 12 === 0 ? 12 : hour % 12;
+  return { num, period: hour < 12 ? "am" : "pm" };
+}
+
+function getLocalHM(isoStr: string, tz: string): { h: number; m: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date(isoStr));
+  let h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0");
+  if (h === 24) h = 0;
+  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return { h, m };
+}
+
+// Effective grid range: starts at the salon's open hour but always widens to keep
+// any out-of-hours appointments visible (e.g. ones booked before hours changed).
+function computeRange(
+  appts: ApptCalItem[],
+  tz: string,
+  businessStart: number,
+  businessEnd: number
+): { calStart: number; calEnd: number } {
+  let calStart = businessStart;
+  let calEnd = businessEnd;
+  for (const a of appts) {
+    if (!a.start_time) continue;
+    const s = getLocalHM(a.start_time, tz);
+    calStart = Math.min(calStart, s.h);
+    if (a.end_time) {
+      const e = getLocalHM(a.end_time, tz);
+      calEnd = Math.max(calEnd, e.m > 0 ? e.h + 1 : e.h);
+    } else {
+      calEnd = Math.max(calEnd, s.h + 1);
+    }
+  }
+  calStart = Math.max(0, calStart);
+  calEnd = Math.min(24, calEnd);
+  if (calEnd <= calStart) calEnd = Math.min(24, calStart + 1);
+  return { calStart, calEnd };
+}
 
 const STATUS_CARD: Record<string, string> = {
   scheduled: "bg-blue-50 border-blue-400 text-blue-900",
@@ -37,27 +80,22 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function getMinutesFromCalStart(isoStr: string, tz: string): number {
-  const date = new Date(isoStr);
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
-  }).formatToParts(date);
-  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0");
-  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0");
-  return (h - CAL_START) * 60 + m;
+function getMinutesFromCalStart(isoStr: string, tz: string, calStart: number): number {
+  const { h, m } = getLocalHM(isoStr, tz);
+  return (h - calStart) * 60 + m;
 }
 
 function getLocalDate(isoStr: string, tz: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(isoStr));
 }
 
-function assignColumns(appts: ApptCalItem[], tz: string) {
+function assignColumns(appts: ApptCalItem[], tz: string, calStart: number) {
   const result: Array<{ appt: ApptCalItem; col: number; startMin: number; endMin: number }> = [];
   const colEnds: number[] = [];
   for (const appt of appts) {
     if (!appt.start_time) continue;
-    const startMin = getMinutesFromCalStart(appt.start_time, tz);
-    const endMin = appt.end_time ? getMinutesFromCalStart(appt.end_time, tz) : startMin + 30;
+    const startMin = getMinutesFromCalStart(appt.start_time, tz, calStart);
+    const endMin = appt.end_time ? getMinutesFromCalStart(appt.end_time, tz, calStart) : startMin + 30;
     let col = colEnds.findIndex((e) => e <= startMin);
     if (col === -1) { col = colEnds.length; colEnds.push(endMin); }
     else colEnds[col] = endMin;
@@ -67,27 +105,29 @@ function assignColumns(appts: ApptCalItem[], tz: string) {
 }
 
 function DayColumn({
-  appointments, tz, onApptClick, compact = false,
+  appointments, tz, onApptClick, calStart, totalHours, compact = false,
 }: {
   appointments: ApptCalItem[];
   tz: string;
   onApptClick: (appt: ApptCalItem) => void;
+  calStart: number;
+  totalHours: number;
   compact?: boolean;
 }) {
   const visible = appointments.filter((a) => a.status !== "cancelled" && a.start_time);
-  const { items, totalCols } = assignColumns(visible, tz);
+  const { items, totalCols } = assignColumns(visible, tz, calStart);
 
   return (
-    <div className="relative" style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT}px` }}>
-      {Array.from({ length: TOTAL_HOURS }, (_, i) => (
+    <div className="relative" style={{ height: `${totalHours * HOUR_HEIGHT}px` }}>
+      {Array.from({ length: totalHours + 1 }, (_, i) => (
         <div key={i} style={{ top: `${i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0 border-t border-stone-200" />
       ))}
-      {Array.from({ length: TOTAL_HOURS }, (_, i) => (
+      {Array.from({ length: totalHours }, (_, i) => (
         <div key={`h${i}`} style={{ top: `${i * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }} className="absolute left-0 right-0 border-t border-dashed border-stone-100" />
       ))}
 
       {items.map(({ appt, col, startMin, endMin }) => {
-        if (startMin >= TOTAL_HOURS * 60 || endMin <= 0) return null;
+        if (startMin >= totalHours * 60 || endMin <= 0) return null;
         const topPx = Math.max(startMin * PX_PER_MIN, 0);
         const heightPx = Math.max((endMin - startMin) * PX_PER_MIN, compact ? 22 : 32);
         const widthPct = 100 / totalCols;
@@ -149,17 +189,21 @@ function DayColumn({
 
 const TIME_GUTTER_CLASSES = "w-14 shrink-0 border-r border-stone-200 bg-stone-50/80";
 
-function TimeGutter() {
+function TimeGutter({ calStart, totalHours }: { calStart: number; totalHours: number }) {
   return (
     <div className={TIME_GUTTER_CLASSES}>
-      <div style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT}px` }} className="relative">
-        {Array.from({ length: TOTAL_HOURS }, (_, i) => (
-          <div key={i} style={{ top: `${i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0">
-            <span className="absolute -top-2.5 right-1.5 text-[10px] font-bold text-stone-600 tabular-nums select-none">
-              {String(CAL_START + i).padStart(2, "0")}:00
-            </span>
-          </div>
-        ))}
+      <div style={{ height: `${totalHours * HOUR_HEIGHT}px` }} className="relative">
+        {Array.from({ length: totalHours + 1 }, (_, i) => {
+          const { num, period } = hourLabel(calStart + i);
+          return (
+            <div key={i} style={{ top: `${i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0">
+              <span className="absolute -top-2 right-1.5 text-right select-none leading-none">
+                <span className="text-xs font-bold text-stone-700 tabular-nums">{num}</span>
+                <span className="ml-0.5 text-[9px] font-medium text-stone-400">{period}</span>
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -172,6 +216,8 @@ export function AppointmentsCalendar({
   mode = "diaria",
   weekDates,
   title,
+  businessStart = DEFAULT_START,
+  businessEnd = DEFAULT_END,
 }: {
   appointments: ApptCalItem[];
   tz: string;
@@ -179,9 +225,13 @@ export function AppointmentsCalendar({
   mode?: "diaria" | "semanal";
   weekDates?: string[];
   title?: string;
+  businessStart?: number;
+  businessEnd?: number;
 }) {
   const today = todayISO();
   const visible = appointments.filter((a) => a.status !== "cancelled" && a.start_time);
+  const { calStart, calEnd } = computeRange(visible, tz, businessStart, businessEnd);
+  const totalHours = calEnd - calStart;
 
   if (mode === "semanal" && weekDates?.length === 7) {
     const byDate: Record<string, ApptCalItem[]> = {};
@@ -228,7 +278,7 @@ export function AppointmentsCalendar({
 
           {/* Calendar body */}
           <div className="flex min-w-[640px]">
-            <TimeGutter />
+            <TimeGutter calStart={calStart} totalHours={totalHours} />
             {weekDates.map((d) => {
               const isToday = d === today;
               return (
@@ -243,6 +293,8 @@ export function AppointmentsCalendar({
                     appointments={byDate[d] ?? []}
                     tz={tz}
                     onApptClick={onApptClick}
+                    calStart={calStart}
+                    totalHours={totalHours}
                     compact
                   />
                 </div>
@@ -265,9 +317,15 @@ export function AppointmentsCalendar({
       </div>
 
       <div className="flex">
-        <TimeGutter />
+        <TimeGutter calStart={calStart} totalHours={totalHours} />
         <div className="flex-1">
-          <DayColumn appointments={appointments} tz={tz} onApptClick={onApptClick} />
+          <DayColumn
+            appointments={appointments}
+            tz={tz}
+            onApptClick={onApptClick}
+            calStart={calStart}
+            totalHours={totalHours}
+          />
         </div>
       </div>
     </div>
