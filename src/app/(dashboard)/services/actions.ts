@@ -96,7 +96,8 @@ export async function updateServiceAction(
     await updateService(serviceId, g.value.salonId, parsed.data);
     revalidatePath("/services");
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[services]", err);
     return { ok: false, error: "Error al actualizar el servicio." };
   }
 }

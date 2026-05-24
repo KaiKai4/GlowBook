@@ -23,7 +23,7 @@ export default async function DashboardLayout({
   const supabase = await createSupabaseServerClient();
   const { data: salon } = await supabase
     .from("salons")
-    .select("name, is_active")
+    .select("name, is_active, theme")
     .eq("id", profile.salon_id)
     .single();
 
@@ -31,6 +31,7 @@ export default async function DashboardLayout({
 
   const permissions = getPermissions(profile);
   const visibleNav = getVisibleNavItems(permissions, profile.is_owner);
+  const theme = salon.theme || "violet";
 
   if (!salon.is_active) {
     return (
@@ -54,15 +55,15 @@ export default async function DashboardLayout({
 
   if (minimalChrome) {
     return (
-      <div className="flex h-screen flex-col overflow-hidden bg-neutral-50">
-        <header className="flex items-center justify-between border-b border-violet-100 bg-white px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <div data-theme={theme} className="flex h-screen flex-col overflow-hidden bg-neutral-50">
+        <header className="flex items-center justify-between border-b border-brand-100 bg-white px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-sm">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-stone-900 truncate">{salon.name}</p>
-              <p className="text-xs text-violet-400 font-medium">GlowBook</p>
+              <p className="text-xs text-brand-400 font-medium">GlowBook</p>
             </div>
           </div>
           <form action="/api/auth/signout" method="post">
@@ -83,7 +84,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-50">
+    <div data-theme={theme} className="flex h-screen overflow-hidden bg-neutral-50">
       <Sidebar
         salonName={salon.name}
         userPermissions={permissions}

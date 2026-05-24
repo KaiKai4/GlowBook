@@ -59,7 +59,7 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
     <Dialog open={open} onClose={handleClose} title="Editar cliente" description="Actualiza los datos del cliente." className="max-w-sm">
       <div className="space-y-4">
         <div className="flex justify-center pb-1">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 shadow-[0_4px_14px_rgba(124,58,237,0.35)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_14px_rgba(124,58,237,0.35)]">
             <UserPen className="h-5 w-5 text-white" />
           </div>
         </div>

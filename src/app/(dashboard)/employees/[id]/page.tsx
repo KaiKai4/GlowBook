@@ -134,7 +134,7 @@ export default async function EmployeeDetailPage({
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-violet-500" />
+              <KeyRound className="h-4 w-4 text-brand-500" />
               Acceso al sistema
             </CardTitle>
           </CardHeader>

@@ -149,8 +149,8 @@ export function EmployeeAccessPanel({
 
       {/* Pending invite link */}
       {invitation && inviteUrl && (
-        <div className="rounded-lg border border-violet-100 bg-violet-50/50 p-3 space-y-2">
-          <p className="text-xs text-violet-700 font-medium flex items-center gap-1.5">
+        <div className="rounded-lg border border-brand-100 bg-brand-50/50 p-3 space-y-2">
+          <p className="text-xs text-brand-700 font-medium flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 shrink-0" />
             Enlace generado — expira el{" "}
             {new Date(invitation.expiresAt).toLocaleDateString("es-PA", {
@@ -161,7 +161,7 @@ export function EmployeeAccessPanel({
             <input
               readOnly
               value={inviteUrl}
-              className="h-8 flex-1 min-w-0 rounded-md border border-violet-200 bg-white px-2.5 text-xs text-stone-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-text select-all"
+              className="h-8 flex-1 min-w-0 rounded-md border border-brand-200 bg-white px-2.5 text-xs text-stone-600 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-text select-all"
               onClick={(e) => (e.target as HTMLInputElement).select()}
             />
             <button
@@ -170,7 +170,7 @@ export function EmployeeAccessPanel({
                 "flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors shrink-0",
                 copied
                   ? "bg-emerald-100 text-emerald-700"
-                  : "bg-white border border-violet-200 text-violet-700 hover:bg-violet-50"
+                  : "bg-white border border-brand-200 text-brand-700 hover:bg-brand-50"
               )}
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}

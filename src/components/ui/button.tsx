@@ -12,7 +12,7 @@ const buttonVariants = cva(
         outline: "border border-stone-200 bg-white text-stone-800 hover:bg-stone-50 focus-visible:ring-stone-400",
         ghost: "text-stone-600 hover:bg-stone-100 hover:text-stone-900 focus-visible:ring-stone-400",
         link: "text-stone-900 underline-offset-4 hover:underline",
-        primary: "bg-violet-600 text-white hover:bg-violet-700 focus-visible:ring-violet-600 shadow-sm",
+        primary: "bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-600 shadow-sm",
       },
       size: {
         sm: "h-8 px-3 text-xs",

@@ -96,7 +96,7 @@ function TimePicker({
         <select
           value={snapped}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-full appearance-none rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow cursor-pointer"
+          className="h-10 w-full appearance-none rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow cursor-pointer"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -295,7 +295,7 @@ export function AppointmentWizard({
                   done
                     ? "bg-emerald-500 text-white shadow-sm"
                     : active
-                      ? "bg-violet-600 text-white shadow-[0_0_0_4px_rgba(124,58,237,0.15)]"
+                      ? "bg-brand-600 text-white shadow-[0_0_0_4px_rgba(124,58,237,0.15)]"
                       : "bg-stone-100 text-stone-400"
                 )}>
                   {done ? <Check className="h-4 w-4" /> : idx}
@@ -303,7 +303,7 @@ export function AppointmentWizard({
                 <div>
                   <p className={cn(
                     "text-xs font-medium leading-none",
-                    active ? "text-violet-600" : done ? "text-emerald-600" : "text-stone-400"
+                    active ? "text-brand-600" : done ? "text-emerald-600" : "text-stone-400"
                   )}>
                     Paso {idx}
                   </p>
@@ -329,9 +329,9 @@ export function AppointmentWizard({
       {/* ── Step 1 — Cliente ────────────────────────────────────── */}
       {step === 1 && (
         <Card>
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-violet-50">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50">
-              <Users className="h-4 w-4 text-violet-600" />
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-brand-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50">
+              <Users className="h-4 w-4 text-brand-600" />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-stone-800">Seleccionar cliente</h2>
@@ -347,7 +347,7 @@ export function AppointmentWizard({
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all disabled:opacity-40",
                   mode === "existing"
-                    ? "border-violet-400 bg-violet-50 text-violet-700"
+                    ? "border-brand-400 bg-brand-50 text-brand-700"
                     : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
                 )}
               >
@@ -359,7 +359,7 @@ export function AppointmentWizard({
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all",
                   mode === "new"
-                    ? "border-violet-400 bg-violet-50 text-violet-700"
+                    ? "border-brand-400 bg-brand-50 text-brand-700"
                     : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
                 )}
               >
@@ -406,7 +406,7 @@ export function AppointmentWizard({
       {/* ── Step 2 — Servicios y horario ────────────────────────── */}
       {step === 2 && (
         <Card>
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-violet-50">
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-brand-50">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-choco-50">
               <Scissors className="h-4 w-4 text-choco-600" />
             </div>
@@ -454,7 +454,7 @@ export function AppointmentWizard({
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Servicios</p>
                   {loadingAvail && (
-                    <span className="text-xs text-violet-500 animate-pulse">Cargando disponibilidad...</span>
+                    <span className="text-xs text-brand-500 animate-pulse">Cargando disponibilidad...</span>
                   )}
                 </div>
 
@@ -483,8 +483,8 @@ export function AppointmentWizard({
                       className={cn(
                         "rounded-xl border bg-white p-4 transition-all",
                         dragIndex === i
-                          ? "border-violet-400 shadow-[0_0_0_2px_rgba(124,58,237,0.15)]"
-                          : "border-violet-100 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
+                          ? "border-brand-400 shadow-[0_0_0_2px_rgba(124,58,237,0.15)]"
+                          : "border-brand-100 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
                       )}
                     >
                       {/* Row header */}
@@ -497,7 +497,7 @@ export function AppointmentWizard({
                             Servicio {i + 1}
                           </span>
                           {item.start && (
-                            <span className="text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
                               {formatTimeTz(item.start, salonConfig.timezone)}
                               {item.end && ` – ${formatTimeTz(item.end, salonConfig.timezone)}`}
                             </span>
@@ -587,7 +587,7 @@ export function AppointmentWizard({
       {/* ── Step 3 — Resumen ────────────────────────────────────── */}
       {step === 3 && (
         <Card>
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-violet-50">
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-brand-50">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
               <Check className="h-4 w-4 text-emerald-600" />
             </div>
@@ -598,12 +598,12 @@ export function AppointmentWizard({
           </div>
           <CardContent className="space-y-5 pt-5">
             {/* Cliente */}
-            <div className="flex items-center gap-3 rounded-xl bg-violet-50 border border-violet-100 px-4 py-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
-                <User className="h-4 w-4 text-violet-600" />
+            <div className="flex items-center gap-3 rounded-xl bg-brand-50 border border-brand-100 px-4 py-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100">
+                <User className="h-4 w-4 text-brand-600" />
               </div>
               <div>
-                <p className="text-xs text-violet-500 font-medium">Cliente</p>
+                <p className="text-xs text-brand-500 font-medium">Cliente</p>
                 <p className="text-sm font-semibold text-stone-800">{customerName}</p>
               </div>
             </div>
@@ -621,7 +621,7 @@ export function AppointmentWizard({
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-stone-800">{item.svc?.name}</p>
                     <p className="text-xs text-stone-400 mt-0.5">
-                      <span className="text-violet-600 font-medium">
+                      <span className="text-brand-600 font-medium">
                         {item.start && formatTimeTz(item.start, salonConfig.timezone)}
                         {item.end && ` – ${formatTimeTz(item.end, salonConfig.timezone)}`}
                       </span>

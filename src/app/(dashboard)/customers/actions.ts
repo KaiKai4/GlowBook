@@ -96,7 +96,8 @@ export async function promoteCustomerAction(customerId: string): Promise<Result<
     await updateCustomer(customerId, profile.salon_id, { is_temporary: false, is_active: true });
     revalidatePath("/customers");
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[customers]", err);
     return { ok: false, error: "Error al guardar el cliente." };
   }
 }
@@ -111,7 +112,8 @@ export async function deleteTemporaryCustomerAction(customerId: string): Promise
   try {
     await deleteCustomer(customerId, profile.salon_id);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[customers]", err);
     return { ok: false, error: "Error al descartar el cliente." };
   }
 }
@@ -134,7 +136,8 @@ export async function updateCustomerAction(
     await updateCustomer(customerId, profile.salon_id, parsed.data);
     revalidatePath("/customers");
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[customers]", err);
     return { ok: false, error: "Error al actualizar el cliente." };
   }
 }

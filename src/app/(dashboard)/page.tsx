@@ -139,9 +139,9 @@ export default async function DashboardPage() {
       {!metrics && quickLinks.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 max-w-lg">
           {quickLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="group flex items-center gap-4 rounded-xl border border-violet-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50">
-                <link.icon className="h-5 w-5 text-violet-600" />
+            <Link key={link.href} href={link.href} className="group flex items-center gap-4 rounded-xl border border-brand-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50">
+                <link.icon className="h-5 w-5 text-brand-600" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-stone-900">{link.label}</p>
@@ -179,7 +179,7 @@ function MetricCard({
   const colors = {
     blue: "bg-blue-50 text-blue-600",
     emerald: "bg-emerald-50 text-emerald-600",
-    violet: "bg-violet-50 text-violet-600",
+    violet: "bg-brand-50 text-brand-600",
     rose: "bg-rose-50 text-rose-600",
   };
 

@@ -100,19 +100,19 @@ export function CancelAppointmentDialog({
                 className={cn(
                   "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
                   saveChoice === "save"
-                    ? "border-violet-400 bg-white"
+                    ? "border-brand-400 bg-white"
                     : "border-transparent bg-white/60 hover:bg-white"
                 )}
               >
                 <div className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                  saveChoice === "save" ? "border-violet-500 bg-violet-500" : "border-stone-300"
+                  saveChoice === "save" ? "border-brand-500 bg-brand-500" : "border-stone-300"
                 )}>
                   {saveChoice === "save" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <UserCheck className="h-3.5 w-3.5 text-violet-600" />
+                    <UserCheck className="h-3.5 w-3.5 text-brand-600" />
                     <p className="text-sm font-semibold text-stone-800">Sí, guardar cliente</p>
                   </div>
                   <p className="text-xs text-stone-500 mt-0.5">

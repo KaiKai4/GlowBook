@@ -810,6 +810,7 @@ export type Database = {
           phone: string
           primary_color: string
           secondary_color: string
+          theme: string
           timezone: string
           updated_at: string
         }
@@ -826,6 +827,7 @@ export type Database = {
           phone?: string
           primary_color?: string
           secondary_color?: string
+          theme?: string
           timezone?: string
           updated_at?: string
         }
@@ -842,6 +844,7 @@ export type Database = {
           phone?: string
           primary_color?: string
           secondary_color?: string
+          theme?: string
           timezone?: string
           updated_at?: string
         }

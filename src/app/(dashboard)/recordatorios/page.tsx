@@ -58,7 +58,7 @@ export default async function RecordatoriosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-          <Bell className="h-6 w-6 text-violet-500" />
+          <Bell className="h-6 w-6 text-brand-500" />
           Recordatorios
         </h1>
         <p className="text-sm text-stone-400 mt-0.5">

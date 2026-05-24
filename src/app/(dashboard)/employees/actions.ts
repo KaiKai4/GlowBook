@@ -77,7 +77,8 @@ export async function createEmployeeAction(
     }
 
     return { ok: true, value: { id: created.id } };
-  } catch {
+  } catch (err) {
+    console.error("[employees]", err);
     return { ok: false, error: "Error al crear el colaborador." };
   }
 }
@@ -112,7 +113,8 @@ export async function updateEmployeeAction(
     revalidatePath("/employees");
     revalidatePath(`/employees/${employeeId}`);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[employees]", err);
     return { ok: false, error: "Error al actualizar el colaborador." };
   }
 }
@@ -158,7 +160,8 @@ export async function addWorkScheduleAction(
     await upsertWorkSchedule(g.value.salonId, parsed.data);
     revalidatePath(`/employees/${parsed.data.employee_id}`);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[employees]", err);
     return { ok: false, error: "Error al guardar el horario (¿ya existe ese bloque?)." };
   }
 }
@@ -174,7 +177,8 @@ export async function deleteWorkScheduleAction(
     await deleteWorkSchedule(scheduleId, g.value.salonId);
     revalidatePath(`/employees/${employeeId}`);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[employees]", err);
     return { ok: false, error: "Error al eliminar el horario." };
   }
 }

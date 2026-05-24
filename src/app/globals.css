@@ -21,6 +21,85 @@
   --color-choco-800: #4d2710;
 }
 
+/* Brand accent scale — utilities (bg-brand-600, border-brand-200, …) resolve to
+   these CSS variables at runtime, so a [data-theme] wrapper can swap the whole
+   accent palette per salon. Defaults to violet (panel looks unchanged). */
+@theme {
+  --color-brand-50:  #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+}
+
+/* Per-salon palettes. Only the accent (buttons, lines, links) changes — the
+   white background is never touched. 'violet' uses the defaults above. */
+[data-theme="mocco"] {
+  --color-brand-50:  #faf6f3;
+  --color-brand-100: #f1e7df;
+  --color-brand-200: #e2cdbd;
+  --color-brand-300: #cdae98;
+  --color-brand-400: #b58a6b;
+  --color-brand-500: #9c6f50;
+  --color-brand-600: #835741;
+  --color-brand-700: #6b4636;
+  --color-brand-800: #503529;
+  --color-brand-900: #3e2522;
+}
+[data-theme="tiffany"] {
+  --color-brand-50:  #effbfa;
+  --color-brand-100: #cdf3f0;
+  --color-brand-200: #9fe7e2;
+  --color-brand-300: #66d4ce;
+  --color-brand-400: #34bdb8;
+  --color-brand-500: #16a8a3;
+  --color-brand-600: #0d8884;
+  --color-brand-700: #116b68;
+  --color-brand-800: #135553;
+  --color-brand-900: #134645;
+}
+[data-theme="viridian"] {
+  --color-brand-50:  #eef6f1;
+  --color-brand-100: #d6ebdd;
+  --color-brand-200: #aed3bd;
+  --color-brand-300: #8eb69b;
+  --color-brand-400: #5b9077;
+  --color-brand-500: #3c715a;
+  --color-brand-600: #2f6750;
+  --color-brand-700: #235347;
+  --color-brand-800: #163832;
+  --color-brand-900: #0b2b26;
+}
+[data-theme="yellow"] {
+  --color-brand-50:  #fffaf0;
+  --color-brand-100: #fdeecb;
+  --color-brand-200: #fbd88f;
+  --color-brand-300: #f8be53;
+  --color-brand-400: #f5a623;
+  --color-brand-500: #e08a0b;
+  --color-brand-600: #bd6e08;
+  --color-brand-700: #97530c;
+  --color-brand-800: #6b3d10;
+  --color-brand-900: #4d2c0c;
+}
+[data-theme="rosewater"] {
+  --color-brand-50:  #fdf2f4;
+  --color-brand-100: #fbe1e8;
+  --color-brand-200: #f6c3d3;
+  --color-brand-300: #ee9bb7;
+  --color-brand-400: #e06e95;
+  --color-brand-500: #cf4d77;
+  --color-brand-600: #a83a64;
+  --color-brand-700: #7e2f50;
+  --color-brand-800: #522b5b;
+  --color-brand-900: #2b124c;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

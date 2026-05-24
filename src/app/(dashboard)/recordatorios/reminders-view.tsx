@@ -35,7 +35,7 @@ const STATUS_OPTIONS = [
 
 const STATUS_BADGE: Record<string, string> = {
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-  confirmed: "bg-violet-50 text-violet-700 border-violet-200",
+  confirmed: "bg-brand-50 text-brand-700 border-brand-200",
 };
 const STATUS_LABEL: Record<string, string> = {
   scheduled: "Agendada",
@@ -124,7 +124,7 @@ export function RemindersView({
     window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank");
   }
 
-  const selectClass = "h-10 rounded-xl border border-stone-200 bg-white px-3 pr-8 text-sm text-stone-700 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer";
+  const selectClass = "h-10 rounded-xl border border-stone-200 bg-white px-3 pr-8 text-sm text-stone-700 appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer";
 
   return (
     <div className="space-y-4">
@@ -170,7 +170,7 @@ export function RemindersView({
           className={cn(
             "h-10 rounded-xl px-6 text-sm font-semibold text-white transition-all shrink-0",
             isDirty
-              ? "bg-violet-600 hover:bg-violet-700 shadow-[0_0_0_3px_rgba(124,58,237,0.2)]"
+              ? "bg-brand-600 hover:bg-brand-700 shadow-[0_0_0_3px_rgba(124,58,237,0.2)]"
               : "bg-choco-600 hover:bg-choco-700"
           )}
         >
@@ -179,9 +179,9 @@ export function RemindersView({
       </div>
 
       {/* Summary */}
-      <div className="flex items-center gap-3 rounded-xl bg-violet-50 border border-violet-100 px-5 py-3">
-        <Bell className="h-4 w-4 text-violet-500 shrink-0" />
-        <p className="text-sm font-semibold text-violet-700">
+      <div className="flex items-center gap-3 rounded-xl bg-brand-50 border border-brand-100 px-5 py-3">
+        <Bell className="h-4 w-4 text-brand-500 shrink-0" />
+        <p className="text-sm font-semibold text-brand-700">
           {filtered.length} {filtered.length === 1 ? "cita" : "citas"} pendiente{filtered.length !== 1 ? "s" : ""} de recordatorio
         </p>
       </div>
@@ -243,7 +243,7 @@ export function RemindersView({
                       <td className="px-4 py-3 whitespace-nowrap">
                         {appt.start_time ? (
                           <>
-                            <p className="font-semibold text-violet-700">
+                            <p className="font-semibold text-brand-700">
                               {formatTimeTz(new Date(appt.start_time), tz)}
                             </p>
                             <p className="text-xs text-stone-400 mt-0.5 capitalize">

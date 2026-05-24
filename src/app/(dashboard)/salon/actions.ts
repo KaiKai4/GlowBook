@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { SalonInfoSchema, BusinessHoursSchema } from "@/features/salon/schemas";
+import { SalonInfoSchema, BusinessHoursSchema, SALON_THEMES, type SalonTheme } from "@/features/salon/schemas";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
@@ -37,6 +37,26 @@ export async function updateSalonInfoAction(
   return { ok: true, value: undefined };
 }
 
+export async function updateSalonThemeAction(theme: string): Promise<Result<void>> {
+  const g = await guard();
+  if (!g.ok) return g;
+
+  if (!SALON_THEMES.includes(theme as SalonTheme)) {
+    return { ok: false, error: "Tema inválido." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("salons")
+    .update({ theme })
+    .eq("id", g.value.salonId);
+  if (error) return { ok: false, error: "Error al guardar la gama de colores." };
+
+  // The accent palette lives in the dashboard layout, so refresh it everywhere.
+  revalidatePath("/", "layout");
+  return { ok: true, value: undefined };
+}
+
 export async function updateBusinessHoursAction(
   hoursJson: string
 ): Promise<Result<void>> {
@@ -46,7 +66,8 @@ export async function updateBusinessHoursAction(
   let raw: unknown;
   try {
     raw = JSON.parse(hoursJson);
-  } catch {
+  } catch (err) {
+    console.error("[salon] invalid hours JSON", err);
     return { ok: false, error: "Datos de horario inválidos." };
   }
 

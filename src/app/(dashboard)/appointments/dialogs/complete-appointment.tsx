@@ -103,7 +103,7 @@ export function CompleteAppointmentDialog({
             className={cn(
               "w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors",
               showDiscount
-                ? "bg-violet-50 text-violet-700"
+                ? "bg-brand-50 text-brand-700"
                 : "bg-white text-stone-700 hover:bg-stone-50"
             )}
           >
@@ -113,7 +113,7 @@ export function CompleteAppointmentDialog({
             </div>
             <div className={cn(
               "h-5 w-9 rounded-full transition-colors relative",
-              showDiscount ? "bg-violet-500" : "bg-stone-200"
+              showDiscount ? "bg-brand-500" : "bg-stone-200"
             )}>
               <div className={cn(
                 "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
@@ -123,8 +123,8 @@ export function CompleteAppointmentDialog({
           </button>
 
           {showDiscount && (
-            <div className="px-4 pb-4 pt-2 bg-violet-50 border-t border-violet-100">
-              <label className="text-xs font-medium text-violet-700 block mb-1.5">
+            <div className="px-4 pb-4 pt-2 bg-brand-50 border-t border-brand-100">
+              <label className="text-xs font-medium text-brand-700 block mb-1.5">
                 Porcentaje de descuento
               </label>
               <div className="flex items-center gap-2">
@@ -136,9 +136,9 @@ export function CompleteAppointmentDialog({
                   placeholder="0"
                   value={discountInput}
                   onChange={(e) => setDiscountInput(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-violet-200 bg-white px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="h-10 w-full rounded-lg border border-brand-200 bg-white px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
-                <span className="text-sm font-bold text-violet-700 shrink-0">%</span>
+                <span className="text-sm font-bold text-brand-700 shrink-0">%</span>
               </div>
             </div>
           )}

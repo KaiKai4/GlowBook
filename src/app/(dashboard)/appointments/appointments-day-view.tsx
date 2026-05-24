@@ -23,7 +23,7 @@ const STATUS_ROW_BG: Record<string, string> = {
 };
 const STATUS_BADGE: Record<string, string> = {
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-  confirmed: "bg-violet-50 text-violet-700 border-violet-200",
+  confirmed: "bg-brand-50 text-brand-700 border-brand-200",
   completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-stone-100 text-stone-500 border-stone-200",
   no_show: "bg-amber-50 text-amber-700 border-amber-200",
@@ -119,7 +119,7 @@ export function AppointmentsDayView({
       {/* Worker search bar */}
       {view === "trabajador" && (
         <div className="relative">
-          <div className="flex items-center gap-3 rounded-2xl border border-violet-100 bg-white shadow-sm px-4 py-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-white shadow-sm px-4 py-3">
             <Search className="h-4 w-4 text-stone-400 shrink-0" />
             <input
               type="text"
@@ -156,7 +156,7 @@ export function AppointmentsDayView({
                 filteredEmps.map((emp) => (
                   <button
                     key={emp.id}
-                    className="w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                    className="w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
                     onMouseDown={() => {
                       setSelectedEmpId(emp.id);
                       setEmpSearch("");
@@ -185,7 +185,7 @@ export function AppointmentsDayView({
       />
 
       {/* Appointment list */}
-      <div className="rounded-2xl border border-violet-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
+      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-choco-50 to-white">
           <h2 className="text-sm font-bold text-choco-700 uppercase tracking-wide">
             <ListFilter className="inline h-3.5 w-3.5 mr-1" />
@@ -199,7 +199,7 @@ export function AppointmentsDayView({
                 className={cn(
                   "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
                   filterStatus === f.value
-                    ? "border-violet-400 bg-violet-50 text-violet-700"
+                    ? "border-brand-400 bg-brand-50 text-brand-700"
                     : "border-stone-200 text-stone-600 hover:bg-stone-50"
                 )}
               >
@@ -225,7 +225,7 @@ export function AppointmentsDayView({
               >
                 <div className="w-24 shrink-0">
                   {appt.start_time && (
-                    <p className="text-sm font-bold text-violet-700 tabular-nums">
+                    <p className="text-sm font-bold text-brand-700 tabular-nums">
                       {formatTimeTz(new Date(appt.start_time), tz)}
                     </p>
                   )}

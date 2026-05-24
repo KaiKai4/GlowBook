@@ -134,7 +134,7 @@ export function EmployeesManager({
             placeholder="Buscar colaborador..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            className="h-10 w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
           />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -146,7 +146,7 @@ export function EmployeesManager({
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               !filterCatId
-                ? "border-violet-400 bg-violet-50 text-violet-700"
+                ? "border-brand-400 bg-brand-50 text-brand-700"
                 : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
             )}
           >
@@ -159,7 +159,7 @@ export function EmployeesManager({
               className={cn(
                 "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                 filterCatId === cat.id
-                  ? "border-violet-400 bg-violet-50 text-violet-700"
+                  ? "border-brand-400 bg-brand-50 text-brand-700"
                   : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
               )}
             >
@@ -171,9 +171,9 @@ export function EmployeesManager({
 
       {/* Employee grid */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-violet-200 bg-white py-16 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-violet-50">
-            <Users className="h-5 w-5 text-violet-400" />
+        <div className="rounded-xl border border-dashed border-brand-200 bg-white py-16 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50">
+            <Users className="h-5 w-5 text-brand-400" />
           </div>
           <p className="mt-3 text-sm font-medium text-stone-500">
             {employees.length === 0 ? "Aún no hay colaboradores." : "No hay coincidencias."}
@@ -181,7 +181,7 @@ export function EmployeesManager({
           {(search || filterCatId) ? (
             <button
               onClick={() => { setSearch(""); setFilterCatId(null); }}
-              className="mt-2 text-xs text-violet-600 hover:underline"
+              className="mt-2 text-xs text-brand-600 hover:underline"
             >
               Limpiar filtros
             </button>
@@ -191,8 +191,8 @@ export function EmployeesManager({
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((emp) => (
             <Link key={emp.id} href={`/employees/${emp.id}`} className="group">
-              <div className="flex items-center gap-3 rounded-xl border border-violet-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:shadow-[0_4px_16px_rgba(124,58,237,0.12)] hover:-translate-y-0.5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-choco-100 text-sm font-bold text-violet-700">
+              <div className="flex items-center gap-3 rounded-xl border border-brand-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:shadow-[0_4px_16px_rgba(124,58,237,0.12)] hover:-translate-y-0.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-100 to-choco-100 text-sm font-bold text-brand-700">
                   {`${emp.first_name[0] ?? ""}${emp.last_name[0] ?? ""}`.toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -205,7 +205,7 @@ export function EmployeesManager({
                   <p className="truncate text-xs text-stone-400">
                     {emp.categories.length > 0 ? emp.categories.join(" · ") : "Sin categorías"}
                   </p>
-                  <p className="mt-0.5 text-xs text-violet-500 font-medium">{emp.serviceCount} servicios</p>
+                  <p className="mt-0.5 text-xs text-brand-500 font-medium">{emp.serviceCount} servicios</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   {emp.profile_id ? (
@@ -243,8 +243,8 @@ export function EmployeesManager({
               </div>
             </div>
 
-            <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-4 space-y-3">
-              <p className="text-xs font-semibold text-violet-700 flex items-center gap-1.5">
+            <div className="rounded-xl border border-brand-100 bg-brand-50/50 p-4 space-y-3">
+              <p className="text-xs font-semibold text-brand-700 flex items-center gap-1.5">
                 <Link2 className="h-3.5 w-3.5" />
                 Enlace de acceso (válido 7 días)
               </p>
@@ -252,7 +252,7 @@ export function EmployeesManager({
                 <input
                   readOnly
                   value={inviteUrl}
-                  className="h-9 flex-1 min-w-0 rounded-lg border border-violet-200 bg-white px-3 text-xs text-stone-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-text"
+                  className="h-9 flex-1 min-w-0 rounded-lg border border-brand-200 bg-white px-3 text-xs text-stone-600 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-text"
                   onClick={(e) => (e.target as HTMLInputElement).select()}
                 />
                 <button
@@ -261,7 +261,7 @@ export function EmployeesManager({
                     "flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors",
                     copied
                       ? "bg-emerald-100 text-emerald-700"
-                      : "bg-violet-600 text-white hover:bg-violet-700"
+                      : "bg-brand-600 text-white hover:bg-brand-700"
                   )}
                 >
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -321,7 +321,7 @@ export function EmployeesManager({
                         className={cn(
                           "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
                           sel
-                            ? "border-violet-400 bg-violet-50 text-violet-700"
+                            ? "border-brand-400 bg-brand-50 text-brand-700"
                             : "border-stone-200 text-stone-600 hover:bg-stone-50"
                         )}
                       >
@@ -339,17 +339,17 @@ export function EmployeesManager({
             {selectedCategoryObjs.length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-semibold text-stone-700">2. Servicios que realiza</p>
-                <div className="space-y-3 max-h-52 overflow-y-auto rounded-xl border border-violet-100 p-3 bg-violet-50/30">
+                <div className="space-y-3 max-h-52 overflow-y-auto rounded-xl border border-brand-100 p-3 bg-brand-50/30">
                   {selectedCategoryObjs.map((cat) => (
                     <div key={cat.id}>
-                      <p className="text-xs font-bold uppercase tracking-wide text-violet-400">{cat.name}</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-brand-400">{cat.name}</p>
                       {cat.services.length === 0 ? (
                         <p className="mt-1 text-xs text-stone-400">Sin servicios en esta categoría.</p>
                       ) : (
                         <div className="mt-1 space-y-1">
                           {cat.services.map((svc) => (
                             <label key={svc.id} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer hover:text-stone-900">
-                              <input type="checkbox" name="service_ids" value={svc.id} className="rounded accent-violet-600" />
+                              <input type="checkbox" name="service_ids" value={svc.id} className="rounded accent-brand-600" />
                               {svc.name}
                             </label>
                           ))}

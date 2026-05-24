@@ -4,6 +4,7 @@ export interface SalonSettings {
   id: string;
   name: string;
   timezone: string;
+  theme: string;
 }
 
 export interface BusinessHourRow {
@@ -17,7 +18,7 @@ export async function findSalonSettings(salonId: string): Promise<SalonSettings 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("salons")
-    .select("id, name, timezone")
+    .select("id, name, timezone, theme")
     .eq("id", salonId)
     .single();
   return data ?? null;

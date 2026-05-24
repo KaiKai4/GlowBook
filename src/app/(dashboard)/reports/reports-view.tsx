@@ -26,14 +26,14 @@ const STATUS_LABEL: Record<string, string> = {
 };
 const STATUS_BAR: Record<string, string> = {
   completed: "bg-emerald-500",
-  confirmed: "bg-violet-500",
+  confirmed: "bg-brand-500",
   scheduled: "bg-blue-400",
   cancelled: "bg-stone-300",
   no_show: "bg-amber-400",
 };
 const STATUS_TEXT: Record<string, string> = {
   completed: "text-emerald-700",
-  confirmed: "text-violet-700",
+  confirmed: "text-brand-700",
   scheduled: "text-blue-700",
   cancelled: "text-stone-500",
   no_show: "text-amber-700",
@@ -105,7 +105,7 @@ export function ReportsView({
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-violet-500" />
+          <BarChart3 className="h-6 w-6 text-brand-500" />
           Reportes
         </h1>
         <p className="text-sm text-stone-400 mt-0.5">{dateLabel(from, to)}</p>
@@ -121,7 +121,7 @@ export function ReportsView({
               className={cn(
                 "rounded-full border px-4 py-1.5 text-sm font-medium transition-all",
                 preset === p.value
-                  ? "border-violet-400 bg-violet-50 text-violet-700"
+                  ? "border-brand-400 bg-brand-50 text-brand-700"
                   : "border-stone-200 text-stone-600 hover:bg-stone-50"
               )}
             >
@@ -136,19 +136,19 @@ export function ReportsView({
             type="date"
             value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
-            className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <span className="text-stone-300">→</span>
           <input
             type="date"
             value={customTo}
             onChange={(e) => setCustomTo(e.target.value)}
-            className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
             onClick={applyCustom}
             disabled={!customFrom || !customTo || customFrom > customTo}
-            className="h-8 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-40 transition-colors"
+            className="h-8 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40 transition-colors"
           >
             Aplicar
           </button>
@@ -164,7 +164,7 @@ export function ReportsView({
           },
           {
             label: "Citas completadas", value: `${completedCount} de ${totalCount}`,
-            icon: <CalendarCheck className="h-5 w-5" />, color: "text-violet-600 bg-violet-50",
+            icon: <CalendarCheck className="h-5 w-5" />, color: "text-brand-600 bg-brand-50",
           },
           {
             label: "Ticket promedio", value: formatCurrency(avgTicket),
@@ -216,7 +216,7 @@ export function ReportsView({
 
         <Section title="Clientes nuevos" icon={<Users className="h-4 w-4 text-stone-400" />}>
           <div className="flex flex-col items-center justify-center px-5 py-10 text-center h-full">
-            <p className="text-5xl font-bold text-violet-600">{newCustomers}</p>
+            <p className="text-5xl font-bold text-brand-600">{newCustomers}</p>
             <p className="text-sm text-stone-500 mt-2">clientes registrados en el período</p>
             <p className="text-xs text-stone-400 mt-3 max-w-[160px]">
               Incluye clientes captados al completar citas
@@ -236,7 +236,7 @@ export function ReportsView({
                 <div key={emp.name} className="px-5 py-3.5 space-y-1.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-bold text-violet-600">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-600">
                         {i + 1}
                       </span>
                       <span className="text-sm font-semibold text-stone-800 truncate">{emp.name}</span>
@@ -246,7 +246,7 @@ export function ReportsView({
                       <span className="text-sm font-bold text-emerald-700">{formatCurrency(emp.revenue)}</span>
                     </div>
                   </div>
-                  <Bar pct={emp.pct} color="bg-violet-400" />
+                  <Bar pct={emp.pct} color="bg-brand-400" />
                 </div>
               ))}
             </div>

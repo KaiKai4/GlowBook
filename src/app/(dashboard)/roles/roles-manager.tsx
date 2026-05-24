@@ -103,7 +103,7 @@ function PermissionGroupList({
                     checked={checked}
                     onChange={() => onChange?.(item.key)}
                     disabled={disabled}
-                    className="mt-0.5 h-4 w-4 rounded accent-violet-600"
+                    className="mt-0.5 h-4 w-4 rounded accent-brand-600"
                   />
                   <span>
                     <span className="block text-sm font-medium text-stone-800">{item.label}</span>
@@ -229,9 +229,9 @@ function RoleCard({ role }: { role: Role }) {
         <div className="flex items-center gap-2">
           <div className={cn(
             "flex h-8 w-8 items-center justify-center rounded-lg",
-            role.is_system ? "bg-amber-50" : "bg-violet-50"
+            role.is_system ? "bg-amber-50" : "bg-brand-50"
           )}>
-            <Shield className={cn("h-4 w-4", role.is_system ? "text-amber-500" : "text-violet-500")} />
+            <Shield className={cn("h-4 w-4", role.is_system ? "text-amber-500" : "text-brand-500")} />
           </div>
           <CardTitle className="text-base">{role.name}</CardTitle>
           {role.is_system ? (

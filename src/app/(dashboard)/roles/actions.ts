@@ -64,7 +64,8 @@ export async function updateRolePermissionsAction(
     await setRolePermissions(parsed.data.role_id, profile.salon_id, parsed.data.permission_keys);
     revalidatePath("/roles");
     return { ok: true, value: undefined };
-  } catch {
+  } catch (err) {
+    console.error("[roles]", err);
     return { ok: false, error: "Error al actualizar permisos." };
   }
 }

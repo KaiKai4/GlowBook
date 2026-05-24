@@ -19,15 +19,15 @@ export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
   const visibleItems = getVisibleNavItems(userPermissions, isOwner);
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-violet-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
+    <aside className="flex h-full w-64 flex-col border-r border-brand-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-violet-50">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 shadow-sm">
+      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-brand-50">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-sm">
           <Sparkles className="h-4 w-4 text-white" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-stone-900 truncate">{salonName}</p>
-          <p className="text-xs text-violet-400 font-medium">GlowBook</p>
+          <p className="text-xs text-brand-400 font-medium">GlowBook</p>
         </div>
       </div>
 
@@ -48,11 +48,11 @@ export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-violet-50 text-violet-700"
+                        ? "bg-brand-50 text-brand-700"
                         : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
                     )}
                   >
-                    <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-violet-600" : "text-stone-400")} />
+                    <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-brand-600" : "text-stone-400")} />
                     {item.label}
                   </Link>
                 </li>
@@ -63,7 +63,7 @@ export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-violet-50 p-3">
+      <div className="border-t border-brand-50 p-3">
         <form action="/api/auth/signout" method="post">
           <button
             type="submit"

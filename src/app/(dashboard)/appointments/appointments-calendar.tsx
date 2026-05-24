@@ -54,13 +54,13 @@ function computeRange(
 
 const STATUS_CARD: Record<string, string> = {
   scheduled: "bg-blue-50 border-blue-400 text-blue-900",
-  confirmed: "bg-violet-100 border-violet-500 text-violet-900",
+  confirmed: "bg-brand-100 border-brand-500 text-brand-900",
   completed: "bg-emerald-50 border-emerald-400 text-emerald-900",
   no_show: "bg-amber-50 border-amber-400 text-amber-900",
 };
 const STATUS_DOT: Record<string, string> = {
   scheduled: "bg-blue-500",
-  confirmed: "bg-violet-600",
+  confirmed: "bg-brand-600",
   completed: "bg-emerald-500",
   no_show: "bg-amber-400",
 };
@@ -243,9 +243,9 @@ export function AppointmentsCalendar({
     }
 
     return (
-      <div className="rounded-2xl border border-violet-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-violet-50 to-white">
-          <h2 className="text-sm font-bold text-violet-700 uppercase tracking-wide">Vista semanal</h2>
+      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
+          <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
           <span className="text-xs text-stone-500 font-medium">{visible.length} citas esta semana</span>
         </div>
 
@@ -264,12 +264,12 @@ export function AppointmentsCalendar({
                   <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">{dayName}</p>
                   <div className={cn(
                     "mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold",
-                    isToday ? "bg-violet-600 text-white shadow-sm" : "text-stone-800"
+                    isToday ? "bg-brand-600 text-white shadow-sm" : "text-stone-800"
                   )}>
                     {dayNum}
                   </div>
                   {count > 0 && (
-                    <p className="text-[10px] text-violet-500 font-semibold mt-0.5">{count} cita{count > 1 ? "s" : ""}</p>
+                    <p className="text-[10px] text-brand-500 font-semibold mt-0.5">{count} cita{count > 1 ? "s" : ""}</p>
                   )}
                 </div>
               );
@@ -286,7 +286,7 @@ export function AppointmentsCalendar({
                   key={d}
                   className={cn(
                     "flex-1 min-w-[80px] border-l border-stone-200",
-                    isToday && "bg-violet-50/25"
+                    isToday && "bg-brand-50/25"
                   )}
                 >
                   <DayColumn
@@ -308,9 +308,9 @@ export function AppointmentsCalendar({
 
   // Day / trabajador view
   return (
-    <div className="rounded-2xl border border-violet-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-violet-50 to-white">
-        <h2 className="text-sm font-bold text-violet-700 uppercase tracking-wide">
+    <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
+        <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">
           {title ?? "Vista del día"}
         </h2>
         <span className="text-xs text-stone-500 font-medium">{visible.length} citas activas</span>

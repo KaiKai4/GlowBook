@@ -23,7 +23,7 @@ interface ApptForDetail {
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-  confirmed: "bg-violet-50 text-violet-700 border-violet-200",
+  confirmed: "bg-brand-50 text-brand-700 border-brand-200",
   completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-stone-50 text-stone-500 border-stone-200",
   no_show: "bg-amber-50 text-amber-700 border-amber-200",
@@ -34,7 +34,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 const ITEM_ACCENT: Record<string, string> = {
   scheduled: "border-l-blue-400",
-  confirmed: "border-l-violet-500",
+  confirmed: "border-l-brand-500",
   completed: "border-l-emerald-400",
   no_show: "border-l-amber-400",
 };
@@ -62,12 +62,12 @@ export function AppointmentDetailDialog({
         </span>
 
         {/* Cliente */}
-        <div className="flex items-start gap-3 rounded-xl bg-violet-50 border border-violet-200 p-3 shadow-[0_1px_4px_rgba(109,40,217,0.08)]">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 shrink-0">
-            <User className="h-4 w-4 text-violet-600" />
+        <div className="flex items-start gap-3 rounded-xl bg-brand-50 border border-brand-200 p-3 shadow-[0_1px_4px_rgba(109,40,217,0.08)]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 shrink-0">
+            <User className="h-4 w-4 text-brand-600" />
           </div>
           <div>
-            <p className="text-xs text-violet-500 font-semibold">Cliente</p>
+            <p className="text-xs text-brand-500 font-semibold">Cliente</p>
             <p className="text-sm font-bold text-stone-800">{customerName}</p>
             {appt.customer?.phone && (
               <div className="flex items-center gap-1 mt-0.5">
@@ -81,8 +81,8 @@ export function AppointmentDetailDialog({
         {/* Horario */}
         {appt.start_time && (
           <div className="flex items-center gap-2 text-sm">
-            <Clock className="h-4 w-4 text-violet-400 shrink-0" />
-            <span className="font-bold text-violet-700">
+            <Clock className="h-4 w-4 text-brand-400 shrink-0" />
+            <span className="font-bold text-brand-700">
               {formatTimeTz(new Date(appt.start_time), tz)}
               {appt.end_time && ` – ${formatTimeTz(new Date(appt.end_time), tz)}`}
             </span>
@@ -101,7 +101,7 @@ export function AppointmentDetailDialog({
                 <p className="text-xs text-stone-500 mt-0.5 flex items-center gap-1.5">
                   <span>{item.employee?.first_name} {item.employee?.last_name}</span>
                   <span className="text-stone-300">·</span>
-                  <span className="text-violet-600 font-medium tabular-nums">
+                  <span className="text-brand-600 font-medium tabular-nums">
                     {formatTimeTz(new Date(item.start_time), tz)}–{formatTimeTz(new Date(item.end_time), tz)}
                   </span>
                 </p>

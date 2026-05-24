@@ -54,7 +54,7 @@ export function DateNav({
           type="date"
           value={date}
           onChange={(e) => go(e.target.value)}
-          className="h-9 rounded-lg border border-stone-200 px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
+          className="h-9 rounded-lg border border-stone-200 px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
         />
         <button
           onClick={() => shift(1)}
@@ -80,7 +80,7 @@ export function DateNav({
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-all whitespace-nowrap",
               view === v.id
-                ? "bg-white text-violet-700 shadow-sm border border-violet-100"
+                ? "bg-white text-brand-700 shadow-sm border border-brand-100"
                 : "text-stone-500 hover:text-stone-800"
             )}
           >

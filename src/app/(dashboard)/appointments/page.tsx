@@ -126,12 +126,12 @@ export default async function AppointmentsPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-            <CalendarDays className="h-6 w-6 text-violet-500" />
+            <CalendarDays className="h-6 w-6 text-brand-500" />
             Agenda
           </h1>
           <p className="text-sm text-stone-500 mt-0.5 capitalize">
             {dateLabel} ·{" "}
-            <span className="text-violet-600 font-semibold">{activeCount} citas activas</span>
+            <span className="text-brand-600 font-semibold">{activeCount} citas activas</span>
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">

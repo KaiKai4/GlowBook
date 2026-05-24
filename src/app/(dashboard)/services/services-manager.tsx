@@ -292,7 +292,7 @@ function ServiceCard({ service }: { service: ServiceItem }) {
             <span
               key={e.id}
               title={e.name}
-              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-violet-100 text-[10px] font-semibold text-violet-700"
+              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-brand-100 text-[10px] font-semibold text-brand-700"
             >
               {e.initials}
             </span>

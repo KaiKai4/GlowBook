@@ -5,19 +5,31 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
-import { Settings, Clock, Check, Store } from "lucide-react";
-import { updateSalonInfoAction, updateBusinessHoursAction } from "./actions";
+import { Settings, Clock, Check, Store, Palette } from "lucide-react";
+import { updateSalonInfoAction, updateBusinessHoursAction, updateSalonThemeAction } from "./actions";
 import type { BusinessDay } from "./page";
 
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
+// Representative swatches per palette (must match the scales in globals.css).
+const THEMES: { key: string; label: string; swatches: string[] }[] = [
+  { key: "violet", label: "Violeta", swatches: ["#ede9fe", "#a78bfa", "#7c3aed", "#4c1d95"] },
+  { key: "mocco", label: "Mocco", swatches: ["#f1e7df", "#b58a6b", "#835741", "#3e2522"] },
+  { key: "tiffany", label: "Tiffany Blue", swatches: ["#cdf3f0", "#34bdb8", "#0d8884", "#134645"] },
+  { key: "viridian", label: "Viridian", swatches: ["#d6ebdd", "#5b9077", "#2f6750", "#0b2b26"] },
+  { key: "yellow", label: "Yellow", swatches: ["#fdeecb", "#f5a623", "#bd6e08", "#4d2c0c"] },
+  { key: "rosewater", label: "Rosewater", swatches: ["#fbe1e8", "#e06e95", "#a83a64", "#2b124c"] },
+];
+
 export function SalonSettings({
   salonName,
   timezone,
+  theme,
   businessHours,
 }: {
   salonName: string;
   timezone: string;
+  theme: string;
   businessHours: BusinessDay[];
 }) {
   // ── Salon name ──────────────────────────────────────────────────
@@ -63,11 +75,38 @@ export function SalonSettings({
     });
   }
 
+  // ── Color theme ─────────────────────────────────────────────────
+  const [selectedTheme, setSelectedTheme] = useState(theme);
+  const [, startTheme] = useTransition();
+  const [themeError, setThemeError] = useState<string | null>(null);
+
+  function applyTheme(key: string) {
+    if (typeof document !== "undefined") {
+      document.querySelectorAll("[data-theme]").forEach((el) => el.setAttribute("data-theme", key));
+    }
+  }
+
+  function pickTheme(key: string) {
+    if (key === selectedTheme) return;
+    const previous = selectedTheme;
+    setSelectedTheme(key);
+    setThemeError(null);
+    applyTheme(key); // instant preview across the dashboard
+    startTheme(async () => {
+      const res = await updateSalonThemeAction(key);
+      if (!res.ok) {
+        setThemeError(res.error);
+        setSelectedTheme(previous);
+        applyTheme(previous);
+      }
+    });
+  }
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-          <Settings className="h-6 w-6 text-violet-500" />
+          <Settings className="h-6 w-6 text-brand-500" />
           Configuración del salón
         </h1>
         <p className="text-sm text-stone-400 mt-0.5">
@@ -79,7 +118,7 @@ export function SalonSettings({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Store className="h-4 w-4 text-violet-500" />
+            <Store className="h-4 w-4 text-brand-500" />
             Información general
           </CardTitle>
         </CardHeader>
@@ -89,6 +128,7 @@ export function SalonSettings({
               name="name"
               label="Nombre del salón"
               defaultValue={salonName}
+              onChange={() => { setNameSaved(false); setNameError(null); }}
               required
               maxLength={120}
             />
@@ -115,7 +155,7 @@ export function SalonSettings({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-violet-500" />
+            <Clock className="h-4 w-4 text-brand-500" />
             Días y horarios de atención
           </CardTitle>
         </CardHeader>
@@ -137,7 +177,7 @@ export function SalonSettings({
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors shrink-0",
                     day.is_open
-                      ? "border-violet-400 bg-violet-50 text-violet-700"
+                      ? "border-brand-400 bg-brand-50 text-brand-700"
                       : "border-stone-200 bg-stone-50 text-stone-400 hover:border-stone-300"
                   )}
                 >
@@ -151,7 +191,7 @@ export function SalonSettings({
                       value={day.open_time}
                       step={1800}
                       onChange={(e) => updateDay(day.day_of_week, { open_time: e.target.value })}
-                      className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                     />
                     <span className="text-stone-400 text-sm">a</span>
                     <input
@@ -159,7 +199,7 @@ export function SalonSettings({
                       value={day.close_time}
                       step={1800}
                       onChange={(e) => updateDay(day.day_of_week, { close_time: e.target.value })}
-                      className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                     />
                   </div>
                 ) : (
@@ -182,6 +222,62 @@ export function SalonSettings({
           {hoursError && (
             <p className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
               {hoursError}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Color theme ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-brand-500" />
+            Gama de colores
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-stone-400 mb-4">
+            Cambia el color de botones, líneas y acentos del panel. El fondo se mantiene blanco.
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {THEMES.map((t) => {
+              const active = selectedTheme === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => pickTheme(t.key)}
+                  className={cn(
+                    "group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all",
+                    active
+                      ? "border-brand-400 ring-2 ring-brand-400 bg-brand-50"
+                      : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={cn("text-sm font-semibold", active ? "text-brand-700" : "text-stone-700")}>
+                      {t.label}
+                    </span>
+                    {active && <Check className="h-4 w-4 text-brand-600" />}
+                  </div>
+                  <div className="flex gap-1">
+                    {t.swatches.map((c) => (
+                      <span
+                        key={c}
+                        className="h-6 flex-1 rounded-md border border-black/5"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {themeError && (
+            <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+              {themeError}
             </p>
           )}
         </CardContent>
