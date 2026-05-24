@@ -6,6 +6,7 @@ export const PERMISSIONS = {
   EMPLOYEES_MANAGE: "employees.manage",
   SERVICES_MANAGE: "services.manage",
   CUSTOMERS_MANAGE: "customers.manage",
+  APPOINTMENTS_VIEW: "appointments.view",
   APPOINTMENTS_MANAGE: "appointments.manage",
   APPOINTMENTS_VIEW_ALL: "appointments.view_all",
   REPORTS_VIEW: "reports.view",

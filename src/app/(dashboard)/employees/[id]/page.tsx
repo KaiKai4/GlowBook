@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findEmployeeById, findLatestEmployeeInvitation } from "@/features/employees/data/employees.repo";
 import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkScheduleEditor } from "./work-schedule-editor";
@@ -53,7 +54,19 @@ export default async function EmployeeDetailPage({
     .filter((r) => !r.is_system)
     .map((r) => ({ id: r.id, name: r.name }));
 
-  // Only load invitation if employee doesn't have a linked profile yet
+  // Load current role of the linked profile (if any)
+  let currentRoleId: string | null = null;
+  if (employee.profile_id) {
+    const supabase = await createSupabaseServerClient();
+    const { data: linkedProfile } = await supabase
+      .from("profiles")
+      .select("role_id")
+      .eq("id", employee.profile_id)
+      .single();
+    currentRoleId = linkedProfile?.role_id ?? null;
+  }
+
+  // Only load invitation if employee has no account yet
   const invitation = !employee.profile_id
     ? await findLatestEmployeeInvitation(id, profile.salon_id)
     : null;
@@ -130,6 +143,7 @@ export default async function EmployeeDetailPage({
               employeeId={employee.id}
               employeeEmail={employee.email ?? ""}
               profileId={employee.profile_id}
+              currentRoleId={currentRoleId}
               initialInvitation={pendingInvitation}
               roles={roleOptions}
             />

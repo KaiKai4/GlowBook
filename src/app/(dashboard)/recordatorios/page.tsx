@@ -18,7 +18,7 @@ function toISO(date: Date): string {
 export default async function RecordatoriosPage() {
   const profile = await requireProfile();
 
-  if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
+  if (!hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return (
       <div className="py-16 text-center">
         <p className="text-stone-400">No tienes permiso para ver recordatorios.</p>

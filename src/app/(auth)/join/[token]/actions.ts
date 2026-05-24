@@ -15,8 +15,7 @@ export async function acceptEmployeeInvitationAction(
   const admin = createSupabaseAdminClient();
 
   // Load invitation (admin client bypasses RLS)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: inv } = await (admin as any)
+  const { data: inv } = await admin
     .from("employee_invitations")
     .select("id, employee_id, salon_id, email, role_id, expires_at, accepted_at")
     .eq("token", token)
@@ -80,8 +79,7 @@ export async function acceptEmployeeInvitationAction(
   }
 
   // Mark invitation as accepted
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (admin as any)
+  await admin
     .from("employee_invitations")
     .update({ accepted_at: new Date().toISOString() })
     .eq("id", inv.id);

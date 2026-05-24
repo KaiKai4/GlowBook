@@ -3,7 +3,6 @@
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
-import { Button } from "@/components/ui/button";
 import { AppointmentsCalendar } from "./appointments-calendar";
 import { AppointmentDetailDialog } from "./dialogs/appointment-detail";
 import { CompleteAppointmentDialog } from "./dialogs/complete-appointment";

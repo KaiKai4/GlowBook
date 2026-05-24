@@ -3,38 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
-import {
-  CalendarDays,
-  Users,
-  UserCog,
-  Scissors,
-  BarChart3,
-  Settings,
-  Shield,
-  LogOut,
-  Sparkles,
-  Bell,
-} from "lucide-react";
+import { LogOut, Sparkles } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  permission?: Permission;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { label: "Citas", href: "/appointments", icon: CalendarDays, permission: "appointments.manage" },
-  { label: "Recordatorios", href: "/recordatorios", icon: Bell, permission: "appointments.manage" },
-  { label: "Clientes", href: "/customers", icon: Users, permission: "customers.manage" },
-  { label: "Empleados", href: "/employees", icon: UserCog, permission: "employees.manage" },
-  { label: "Servicios", href: "/services", icon: Scissors, permission: "services.manage" },
-  { label: "Reportes", href: "/reports", icon: BarChart3, permission: "reports.view" },
-  { label: "Equipo", href: "/team", icon: Users, permission: "employees.manage" },
-  { label: "Roles", href: "/roles", icon: Shield, permission: "roles.manage" },
-  { label: "Salón", href: "/salon", icon: Settings, permission: "salon.manage" },
-];
+import { getVisibleNavItems } from "./nav-items";
 
 interface SidebarProps {
   salonName: string;
@@ -45,9 +16,7 @@ interface SidebarProps {
 export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
   const pathname = usePathname();
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.permission || isOwner || userPermissions.includes(item.permission)
-  );
+  const visibleItems = getVisibleNavItems(userPermissions, isOwner);
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-violet-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
@@ -64,27 +33,33 @@ export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-0.5">
-          {visibleItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-violet-50 text-violet-700"
-                      : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
-                  )}
-                >
-                  <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-violet-600" : "text-stone-400")} />
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {visibleItems.length === 0 ? (
+          <p className="px-3 py-4 text-xs text-stone-400 leading-relaxed">
+            No tienes módulos asignados. Pide al administrador que configure tu rol.
+          </p>
+        ) : (
+          <ul className="space-y-0.5">
+            {visibleItems.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-violet-50 text-violet-700"
+                        : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
+                    )}
+                  >
+                    <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-violet-600" : "text-stone-400")} />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </nav>
 
       {/* Footer */}

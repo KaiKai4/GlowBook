@@ -11,8 +11,7 @@ export default async function JoinPage({
   const admin = createSupabaseAdminClient();
 
   // Use admin client to bypass RLS — invitation lookup must work without a session
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: inv } = await (admin as any)
+  const { data: inv } = await admin
     .from("employee_invitations")
     .select(`
       id, email, expires_at, accepted_at,

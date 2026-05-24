@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
+import { formatTimeTz } from "@/lib/utils/dates";
 import { MessageCircle, Bell } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -214,7 +214,6 @@ export function RemindersView({
                   const empNames = [...new Set(
                     appt.items.map((it) => it.employee ? `${it.employee.first_name} ${it.employee.last_name}` : null).filter(Boolean)
                   )].join(", ");
-                  const serviceNames = appt.items.map((it) => it.service?.name).filter(Boolean).join(", ");
 
                   return (
                     <tr key={appt.id} className="hover:bg-stone-50/60 transition-colors">

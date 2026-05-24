@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, addMinutes, formatTimeTz } from "@/lib/utils/dates";
 import { evaluateTimeRange } from "@/features/appointments/domain/availability";
 import type { BusinessHour, SalonConfig, WorkSchedule } from "@/features/appointments/domain/types";
-import { Trash2, Plus, Check, GripVertical, UserPlus, Users, Tag, Scissors, User } from "lucide-react";
+import { Trash2, Plus, Check, GripVertical, UserPlus, Users, Scissors, User } from "lucide-react";
 import { createAppointmentAction, getOccupiedSlotsForDate, type OccupiedByEmployee } from "../actions";
 import { findOrCreateCustomerAction, checkCustomerPhoneAction } from "../../customers/actions";
 import { cn } from "@/lib/utils/cn";

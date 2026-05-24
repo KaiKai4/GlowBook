@@ -29,8 +29,9 @@ const PERMISSION_GROUPS = [
     group: "Citas",
     icon: CalendarCheck,
     items: [
+      { key: "appointments.view", label: "Ver el calendario y sus citas", description: "Acceso de solo lectura: ve su calendario con las citas asignadas, sin poder crear ni editar" },
       { key: "appointments.manage", label: "Crear y gestionar citas", description: "Agendar, editar, confirmar, completar y cancelar citas" },
-      { key: "appointments.view_all", label: "Ver todas las citas del salón", description: "Sin esto, el colaborador solo ve las citas donde está asignado" },
+      { key: "appointments.view_all", label: "Ver todas las citas del salón", description: "Complemento de los permisos de citas: sin esto, el colaborador solo ve las citas donde está asignado" },
     ],
   },
   {

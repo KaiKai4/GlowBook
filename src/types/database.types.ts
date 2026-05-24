@@ -341,6 +341,64 @@ export type Database = {
           },
         ]
       }
+      employee_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          employee_id: string
+          expires_at: string
+          id: string
+          role_id: string | null
+          salon_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          employee_id: string
+          expires_at?: string
+          id?: string
+          role_id?: string | null
+          salon_id: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          role_id?: string | null
+          salon_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_invitations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_invitations_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_invitations_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_services: {
         Row: {
           employee_id: string
@@ -955,10 +1013,19 @@ export type Database = {
         Returns: string
       }
       create_appointment: { Args: { payload: Json }; Returns: string }
-      create_salon_with_owner: {
-        Args: { p_full_name: string; p_owner_id: string; p_salon_name: string }
-        Returns: string
-      }
+      create_salon_with_owner:
+        | {
+            Args: {
+              p_full_name: string
+              p_owner_id: string
+              p_salon_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: { p_full_name: string; p_salon_name: string }
+            Returns: string
+          }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       has_permission: { Args: { perm: string }; Returns: boolean }
       invite_salon: { Args: { p_email: string }; Returns: string }

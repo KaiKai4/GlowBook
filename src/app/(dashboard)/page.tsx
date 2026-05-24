@@ -1,9 +1,12 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, getPermissions, PERMISSIONS } from "@/lib/auth/permissions";
+import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatDate, getUtcDayBoundaries } from "@/lib/utils/dates";
-import { CalendarDays, Users, DollarSign, TrendingUp } from "lucide-react";
+import { CalendarDays, Users, DollarSign, TrendingUp, ChevronRight, AlertCircle } from "lucide-react";
 
 async function getReportMetrics(salonId: string) {
   const supabase = await createSupabaseServerClient();
@@ -66,9 +69,32 @@ async function getReportMetrics(salonId: string) {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
+  const visibleNav = getVisibleNavItems(getPermissions(profile), profile.is_owner);
+
+  // Collaborators with access to a single module skip the home page and land
+  // directly on it (e.g. a view-only stylist goes straight to their calendar).
+  if (!profile.is_owner && visibleNav.length === 1) {
+    redirect(visibleNav[0].href);
+  }
+
   const canViewReports = hasPermission(profile, PERMISSIONS.REPORTS_VIEW);
+  const canManageAppointments = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
+  const canViewAppointments = canManageAppointments || hasPermission(profile, PERMISSIONS.APPOINTMENTS_VIEW);
+  const canManageCustomers = hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE);
 
   const metrics = canViewReports ? await getReportMetrics(profile.salon_id) : null;
+
+  const quickLinks = [
+    canViewAppointments && {
+      href: "/appointments",
+      icon: CalendarDays,
+      label: "Citas",
+      description: canManageAppointments ? "Ver y gestionar el calendario de citas" : "Ver tu calendario de citas",
+    },
+    canManageCustomers && { href: "/customers", icon: Users, label: "Clientes", description: "Consultar y registrar clientes" },
+  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; description: string }[];
+
+  const hasAnyAccess = visibleNav.length > 0;
 
   return (
     <div className="space-y-6">
@@ -107,6 +133,32 @@ export default async function DashboardPage() {
             icon={TrendingUp}
             color="rose"
           />
+        </div>
+      )}
+
+      {!metrics && quickLinks.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 max-w-lg">
+          {quickLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="group flex items-center gap-4 rounded-xl border border-violet-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50">
+                <link.icon className="h-5 w-5 text-violet-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-stone-900">{link.label}</p>
+                <p className="text-xs text-stone-400 truncate">{link.description}</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-stone-300 shrink-0 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {!hasAnyAccess && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 max-w-md">
+          <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            No tienes módulos asignados. Pide al administrador del salón que configure tu rol en la sección <strong>Empleados</strong>.
+          </p>
         </div>
       )}
     </div>

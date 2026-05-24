@@ -3,10 +3,9 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Link2, Copy, Check, RefreshCw, ShieldCheck, Clock, UserX } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { generateEmployeeInviteAction } from "../actions";
+import { generateEmployeeInviteAction, changeEmployeeRoleAction } from "../actions";
 
 interface RoleOption { id: string; name: string }
 interface PendingInvitation { token: string; expiresAt: string; roleId: string | null }
@@ -15,6 +14,7 @@ interface Props {
   employeeId: string;
   employeeEmail: string;
   profileId: string | null;
+  currentRoleId: string | null;
   initialInvitation: PendingInvitation | null;
   roles: RoleOption[];
 }
@@ -23,29 +23,92 @@ export function EmployeeAccessPanel({
   employeeId,
   employeeEmail,
   profileId,
+  currentRoleId,
   initialInvitation,
   roles,
 }: Props) {
+  // ── State for "has account" case (role change) ──────────────────
+  const [roleId, setRoleId] = useState(currentRoleId ?? "");
+  const [roleSaving, startRoleSave] = useTransition();
+  const [roleSaved, setRoleSaved] = useState(false);
+  const [roleError, setRoleError] = useState<string | null>(null);
+
+  // ── State for "no account yet" case (invite) ────────────────────
   const [invitation, setInvitation] = useState<PendingInvitation | null>(initialInvitation);
   const [selectedRole, setSelectedRole] = useState<string>(
     initialInvitation?.roleId ?? roles[0]?.id ?? ""
   );
   const [copied, setCopied] = useState(false);
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [invitePending, startInvite] = useTransition();
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   const inviteUrl = invitation
-    ? `${window.location.origin}/join/${invitation.token}`
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${invitation.token}`
     : null;
 
+  // ── Employee already has a linked account ────────────────────────
+  if (profileId) {
+    const roleDirty = roleId !== (currentRoleId ?? "");
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2.5 rounded-lg bg-emerald-50 border border-emerald-100 px-4 py-3">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
+          <p className="text-sm font-medium text-emerald-800">Acceso activo</p>
+          <span className="ml-auto text-xs text-emerald-600">Este colaborador puede iniciar sesión.</span>
+        </div>
+
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-stone-600 mb-1.5">Rol asignado</label>
+            <Select
+              value={roleId}
+              onChange={(e) => { setRoleId(e.target.value); setRoleSaved(false); setRoleError(null); }}
+              disabled={roleSaving}
+              className="w-full"
+            >
+              <option value="">Sin rol</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </Select>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setRoleError(null);
+              startRoleSave(async () => {
+                const res = await changeEmployeeRoleAction(profileId, roleId || null);
+                if (res.ok) setRoleSaved(true);
+                else setRoleError(res.error);
+              });
+            }}
+            loading={roleSaving}
+            disabled={!roleDirty}
+          >
+            Guardar
+          </Button>
+        </div>
+
+        {roleSaved && !roleDirty && (
+          <p className="text-xs text-emerald-600 flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Rol actualizado</p>
+        )}
+        {roleError && (
+          <p className="rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-sm text-red-600">{roleError}</p>
+        )}
+      </div>
+    );
+  }
+
+  // ── No account yet: generate / show invite link ──────────────────
   function handleGenerate() {
-    setError(null);
-    startTransition(async () => {
+    setInviteError(null);
+    startInvite(async () => {
       const res = await generateEmployeeInviteAction(employeeId, selectedRole || null);
       if (res.ok) {
         setInvitation({ token: res.value.token, expiresAt: res.value.expiresAt, roleId: selectedRole || null });
       } else {
-        setError(res.error);
+        setInviteError(res.error);
       }
     });
   }
@@ -57,41 +120,24 @@ export function EmployeeAccessPanel({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // Employee already has a linked account
-  if (profileId) {
-    return (
-      <div className="flex items-center gap-2.5 rounded-lg bg-emerald-50 border border-emerald-100 px-4 py-3">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
-        <div>
-          <p className="text-sm font-medium text-emerald-800">Acceso activo</p>
-          <p className="text-xs text-emerald-600 mt-0.5">
-            Este colaborador ya tiene una cuenta vinculada al salón.
-          </p>
-        </div>
-        <Badge variant="success" className="ml-auto shrink-0">Activo</Badge>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {/* Email indicator */}
       <div className="flex items-center gap-2 text-sm text-stone-500">
         <span>Correo:</span>
-        <span className="font-medium text-stone-700">{employeeEmail}</span>
+        <span className="font-medium text-stone-700">{employeeEmail || "—"}</span>
       </div>
 
       {/* Role selector */}
       <div>
         <label className="block text-xs font-medium text-stone-600 mb-1.5">Rol al unirse</label>
         {roles.length === 0 ? (
-          <p className="text-xs text-stone-400">No hay roles definidos. Crea uno en <strong>Roles y Permisos</strong> primero.</p>
+          <p className="text-xs text-stone-400">No hay roles. Crea uno en <strong>Roles y Permisos</strong> primero.</p>
         ) : (
           <Select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
-            disabled={pending}
-            className="w-full"
+            disabled={invitePending}
+            className="w-full max-w-xs"
           >
             <option value="">Sin rol asignado</option>
             {roles.map((r) => (
@@ -101,18 +147,16 @@ export function EmployeeAccessPanel({
         )}
       </div>
 
-      {/* Pending invitation */}
+      {/* Pending invite link */}
       {invitation && inviteUrl && (
         <div className="rounded-lg border border-violet-100 bg-violet-50/50 p-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <Clock className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-            <p className="text-xs text-violet-700 font-medium">
-              Enlace generado — expira el{" "}
-              {new Date(invitation.expiresAt).toLocaleDateString("es-PA", {
-                day: "numeric", month: "long", year: "numeric",
-              })}
-            </p>
-          </div>
+          <p className="text-xs text-violet-700 font-medium flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            Enlace generado — expira el{" "}
+            {new Date(invitation.expiresAt).toLocaleDateString("es-PA", {
+              day: "numeric", month: "long", year: "numeric",
+            })}
+          </p>
           <div className="flex items-center gap-2">
             <input
               readOnly
@@ -123,7 +167,7 @@ export function EmployeeAccessPanel({
             <button
               onClick={handleCopy}
               className={cn(
-                "flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors shrink-0",
+                "flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors shrink-0",
                 copied
                   ? "bg-emerald-100 text-emerald-700"
                   : "bg-white border border-violet-200 text-violet-700 hover:bg-violet-50"
@@ -143,19 +187,14 @@ export function EmployeeAccessPanel({
             variant="primary"
             size="sm"
             onClick={handleGenerate}
-            loading={pending}
+            loading={invitePending}
             disabled={!employeeEmail}
           >
             <Link2 className="h-3.5 w-3.5" />
             Generar enlace de acceso
           </Button>
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleGenerate}
-            loading={pending}
-          >
+          <Button variant="outline" size="sm" onClick={handleGenerate} loading={invitePending}>
             <RefreshCw className="h-3.5 w-3.5" />
             Regenerar enlace
           </Button>
@@ -164,14 +203,14 @@ export function EmployeeAccessPanel({
         {!employeeEmail && (
           <p className="flex items-center gap-1.5 text-xs text-amber-600">
             <UserX className="h-3.5 w-3.5" />
-            Este colaborador no tiene email registrado.
+            Sin email registrado — edita el colaborador primero.
           </p>
         )}
       </div>
 
-      {error && (
+      {inviteError && (
         <p className="rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-sm text-red-600">
-          {error}
+          {inviteError}
         </p>
       )}
     </div>

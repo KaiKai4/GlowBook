@@ -16,8 +16,18 @@ const VIEWS: { id: CalView; label: string }[] = [
   { id: "trabajador", label: "Por trabajador" },
 ];
 
-export function DateNav({ date, view }: { date: string; view: CalView }) {
+export function DateNav({
+  date,
+  view,
+  showWorkerView = true,
+}: {
+  date: string;
+  view: CalView;
+  showWorkerView?: boolean;
+}) {
   const router = useRouter();
+
+  const views = showWorkerView ? VIEWS : VIEWS.filter((v) => v.id !== "trabajador");
 
   function go(newDate: string, newView?: CalView) {
     router.push(`/appointments?date=${newDate}&view=${newView ?? view}`);
@@ -63,7 +73,7 @@ export function DateNav({ date, view }: { date: string; view: CalView }) {
 
       {/* View toggle */}
       <div className="flex items-center rounded-lg border border-stone-200 bg-stone-50 p-0.5">
-        {VIEWS.map((v) => (
+        {views.map((v) => (
           <button
             key={v.id}
             onClick={() => go(date, v.id)}

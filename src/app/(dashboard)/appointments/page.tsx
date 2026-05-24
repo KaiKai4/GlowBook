@@ -37,24 +37,42 @@ export default async function AppointmentsPage({
   const profile = await requireProfile();
   const params = await searchParams;
   const date = params.date ?? todayISO();
-  const view = (params.view ?? "semanal") as CalView;
+  const rawView = (params.view ?? "semanal") as CalView;
 
   const canManage = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
+  const canView = canManage || hasPermission(profile, PERMISSIONS.APPOINTMENTS_VIEW);
+  const canViewAll = profile.is_owner || hasPermission(profile, PERMISSIONS.APPOINTMENTS_VIEW_ALL);
+
+  if (!canView) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-stone-400">No tienes permiso para ver las citas.</p>
+      </div>
+    );
+  }
+
+  // "Por trabajador" only makes sense when the user can see other people's
+  // appointments; scoped collaborators fall back to the weekly view.
+  const view: CalView = !canViewAll && rawView === "trabajador" ? "semanal" : rawView;
 
   const supabase = await createSupabaseServerClient();
 
+  // The employee list only feeds the "Por trabajador" view, which is hidden for
+  // collaborators who can't see others' appointments — skip the query for them.
   const [salonResult, employeesResult] = await Promise.all([
     supabase.from("salons").select("timezone").eq("id", profile.salon_id).single(),
-    supabase
-      .from("employees")
-      .select("id, first_name, last_name")
-      .eq("salon_id", profile.salon_id)
-      .eq("is_active", true)
-      .order("first_name"),
+    canViewAll
+      ? supabase
+          .from("employees")
+          .select("id, first_name, last_name")
+          .eq("salon_id", profile.salon_id)
+          .eq("is_active", true)
+          .order("first_name")
+      : null,
   ]);
 
   const tz = salonResult.data?.timezone ?? "America/Panama";
-  const employees = (employeesResult.data ?? []) as {
+  const employees = (employeesResult?.data ?? []) as {
     id: string;
     first_name: string;
     last_name: string;
@@ -102,7 +120,7 @@ export default async function AppointmentsPage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <DateNav date={date} view={view} />
+          <DateNav date={date} view={view} showWorkerView={canViewAll} />
           {canManage && (
             <Link href="/appointments/new">
               <Button variant="primary">

@@ -25,12 +25,20 @@ async function guard(): Promise<Result<{ salonId: string }>> {
   return { ok: true, value: { salonId: profile.salon_id } };
 }
 
+export interface CreateEmployeeResult {
+  id: string;
+  inviteToken?: string;
+  inviteExpiresAt?: string;
+}
+
 export async function createEmployeeAction(
-  _prev: Result<string> | null,
+  _prev: Result<CreateEmployeeResult> | null,
   formData: FormData
-): Promise<Result<string>> {
+): Promise<Result<CreateEmployeeResult>> {
   const g = await guard();
   if (!g.ok) return g;
+
+  const roleId = (formData.get("role_id") as string)?.trim() || null;
 
   const parsed = CreateEmployeeSchema.safeParse({
     first_name: formData.get("first_name"),
@@ -48,7 +56,27 @@ export async function createEmployeeAction(
     const { service_ids, category_ids, ...employee } = parsed.data;
     const created = await createEmployee(g.value.salonId, employee, service_ids, category_ids);
     revalidatePath("/employees");
-    return { ok: true, value: created.id };
+
+    // Auto-generate invite when email + role are provided
+    const email = employee.email?.trim();
+    if (email && roleId) {
+      const token = randomBytes(24).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const supabase = await createSupabaseServerClient();
+      const { error: invErr } = await supabase.from("employee_invitations").insert({
+        employee_id: created.id,
+        salon_id: g.value.salonId,
+        email,
+        role_id: roleId,
+        token,
+        expires_at: expiresAt,
+      });
+      if (!invErr) {
+        return { ok: true, value: { id: created.id, inviteToken: token, inviteExpiresAt: expiresAt } };
+      }
+    }
+
+    return { ok: true, value: { id: created.id } };
   } catch {
     return { ok: false, error: "Error al crear el colaborador." };
   }
@@ -87,6 +115,25 @@ export async function updateEmployeeAction(
   } catch {
     return { ok: false, error: "Error al actualizar el colaborador." };
   }
+}
+
+export async function changeEmployeeRoleAction(
+  profileId: string,
+  roleId: string | null
+): Promise<Result<void>> {
+  const profile = await requireProfile();
+  if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
+    return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
+  }
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role_id: roleId || null })
+    .eq("id", profileId)
+    .eq("salon_id", profile.salon_id);
+  if (error) return { ok: false, error: "Error al cambiar el rol." };
+  revalidatePath("/employees");
+  return { ok: true, value: undefined };
 }
 
 export async function addWorkScheduleAction(
@@ -148,28 +195,23 @@ export async function generateEmployeeInviteAction(
 
   const token = randomBytes(24).toString("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
   const supabase = await createSupabaseServerClient();
 
   // Replace any existing pending invitation for this employee
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
+  await supabase
     .from("employee_invitations")
     .delete()
     .eq("employee_id", employeeId)
     .is("accepted_at", null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
-    .from("employee_invitations")
-    .insert({
-      employee_id: employeeId,
-      salon_id: profile.salon_id,
-      email: employee.email.trim(),
-      role_id: roleId || null,
-      token,
-      expires_at: expiresAt,
-    });
+  const { error } = await supabase.from("employee_invitations").insert({
+    employee_id: employeeId,
+    salon_id: profile.salon_id,
+    email: employee.email.trim(),
+    role_id: roleId || null,
+    token,
+    expires_at: expiresAt,
+  });
 
   if (error) return { ok: false, error: "Error al generar el enlace de acceso." };
 

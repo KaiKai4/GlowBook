@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findEmployees } from "@/features/employees/data/employees.repo";
 import { findCategoriesWithServices } from "@/features/services/data/services.repo";
+import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
 import { EmployeesManager } from "./employees-manager";
 
 export default async function EmployeesPage() {
@@ -15,9 +16,10 @@ export default async function EmployeesPage() {
     );
   }
 
-  const [employees, categories] = await Promise.all([
+  const [employees, categories, allRoles] = await Promise.all([
     findEmployees(profile.salon_id),
     findCategoriesWithServices(profile.salon_id),
+    findRolesWithPermissions(profile.salon_id),
   ]);
 
   const employeeList = employees.map((e) => ({
@@ -25,6 +27,7 @@ export default async function EmployeesPage() {
     first_name: e.first_name,
     last_name: e.last_name,
     is_active: e.is_active,
+    profile_id: e.profile_id,
     serviceCount: (e.services ?? []).length,
     categories: ((e.categories ?? []) as Array<{ category: { id: string; name: string } | null }>)
       .map((c) => c.category?.name)
@@ -40,5 +43,15 @@ export default async function EmployeesPage() {
     services: (c.services ?? []).map((s) => ({ id: s.id, name: s.name })),
   }));
 
-  return <EmployeesManager employees={employeeList} categories={catOptions} />;
+  const roleOptions = allRoles
+    .filter((r) => !r.is_system)
+    .map((r) => ({ id: r.id, name: r.name }));
+
+  return (
+    <EmployeesManager
+      employees={employeeList}
+      categories={catOptions}
+      roles={roleOptions}
+    />
+  );
 }

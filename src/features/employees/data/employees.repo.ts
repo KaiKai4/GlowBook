@@ -182,10 +182,7 @@ export async function findLatestEmployeeInvitation(
   salonId: string
 ): Promise<EmployeeInvitationRow | null> {
   const supabase = await createSupabaseServerClient();
-  // employee_invitations is a new table added in migration 00007.
-  // Types will be available after `npm run db:types` is re-run post-migration.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from("employee_invitations")
     .select("id, token, email, role_id, expires_at, accepted_at")
     .eq("employee_id", employeeId)

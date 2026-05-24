@@ -1,63 +1,91 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
-import { Plus, ChevronRight, Users, Search, Filter } from "lucide-react";
-import { createEmployeeAction } from "./actions";
+import {
+  Plus, ChevronRight, Users, Search, Filter,
+  Copy, Check, Link2, CheckCircle, ShieldCheck,
+} from "lucide-react";
+import { createEmployeeAction, type CreateEmployeeResult } from "./actions";
+import type { Result } from "@/lib/result";
 
 interface EmployeeListItem {
   id: string;
   first_name: string;
   last_name: string;
   is_active: boolean;
+  profile_id: string | null;
   serviceCount: number;
   categories: string[];
   categoryIds: string[];
 }
-
 interface CategoryOption {
   id: string;
   name: string;
   services: { id: string; name: string }[];
 }
+interface RoleOption { id: string; name: string }
 
 export function EmployeesManager({
   employees,
   categories,
+  roles,
 }: {
   employees: EmployeeListItem[];
   categories: CategoryOption[];
+  roles: RoleOption[];
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [inviteResult, setInviteResult] = useState<CreateEmployeeResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  // Filters
   const [search, setSearch] = useState("");
   const [filterCatId, setFilterCatId] = useState<string | null>(null);
 
   function reset() {
     setSelectedCats([]);
     setError(null);
+    setInviteResult(null);
+    setCopied(false);
   }
 
   function handleCreate(formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const res = await createEmployeeAction(null, formData);
+      const res: Result<CreateEmployeeResult> = await createEmployeeAction(null, formData);
       if (res.ok) {
-        setOpen(false);
-        reset();
+        if (res.value.inviteToken) {
+          setInviteResult(res.value);
+        } else {
+          setOpen(false);
+          reset();
+        }
       } else {
         setError(res.error);
       }
     });
+  }
+
+  async function handleCopyLink() {
+    if (!inviteResult?.inviteToken) return;
+    const url = `${window.location.origin}/join/${inviteResult.inviteToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  }
+
+  function handleCloseSuccess() {
+    setOpen(false);
+    reset();
   }
 
   function toggleCat(id: string) {
@@ -66,7 +94,7 @@ export function EmployeesManager({
 
   const selectedCategoryObjs = categories.filter((c) => selectedCats.includes(c.id));
 
-  const filtered = employees.filter((emp) => {
+  const filtered = useMemo(() => employees.filter((emp) => {
     const q = search.toLowerCase();
     const matchSearch =
       !search ||
@@ -75,7 +103,11 @@ export function EmployeesManager({
       emp.categories.some((c) => c.toLowerCase().includes(q));
     const matchCat = !filterCatId || emp.categoryIds.includes(filterCatId);
     return matchSearch && matchCat;
-  });
+  }), [employees, search, filterCatId]);
+
+  const inviteUrl = inviteResult?.inviteToken
+    ? (typeof window !== "undefined" ? `${window.location.origin}/join/${inviteResult.inviteToken}` : "")
+    : "";
 
   return (
     <div className="space-y-6">
@@ -105,7 +137,6 @@ export function EmployeesManager({
             className="h-10 w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
           />
         </div>
-
         <div className="flex items-center gap-2 flex-wrap">
           <span className="flex items-center gap-1 text-xs font-medium text-stone-400">
             <Filter className="h-3.5 w-3.5" /> Categoría:
@@ -147,7 +178,7 @@ export function EmployeesManager({
           <p className="mt-3 text-sm font-medium text-stone-500">
             {employees.length === 0 ? "Aún no hay colaboradores." : "No hay coincidencias."}
           </p>
-          {search || filterCatId ? (
+          {(search || filterCatId) ? (
             <button
               onClick={() => { setSearch(""); setFilterCatId(null); }}
               className="mt-2 text-xs text-violet-600 hover:underline"
@@ -176,7 +207,14 @@ export function EmployeesManager({
                   </p>
                   <p className="mt-0.5 text-xs text-violet-500 font-medium">{emp.serviceCount} servicios</p>
                 </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5" />
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  {emp.profile_id ? (
+                    <span title="Con acceso al sistema"><ShieldCheck className="h-4 w-4 text-emerald-500" /></span>
+                  ) : (
+                    <span title="Sin acceso al sistema"><Link2 className="h-4 w-4 text-stone-300" /></span>
+                  )}
+                  <ChevronRight className="h-4 w-4 text-stone-300 transition-transform group-hover:translate-x-0.5" />
+                </div>
               </div>
             </Link>
           ))}
@@ -186,91 +224,161 @@ export function EmployeesManager({
       {/* Create dialog */}
       <Dialog
         open={open}
-        onClose={() => { setOpen(false); reset(); }}
-        title="Nuevo colaborador"
-        description="Elige las categorías y los servicios que realiza."
+        onClose={() => { if (!pending) { setOpen(false); reset(); } }}
+        title={inviteResult ? "¡Colaborador creado!" : "Nuevo colaborador"}
+        description={inviteResult ? undefined : "Elige las categorías y los servicios que realiza."}
         className="max-w-lg"
       >
-        <form action={handleCreate} className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            <Input name="first_name" label="Nombre" required />
-            <Input name="last_name" label="Apellido" required />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input name="phone" label="Teléfono" type="tel" />
-            <Input name="email" label="Email" type="email" />
-          </div>
-          <Input name="commission_percentage" label="Comisión (%)" type="number" min={0} max={100} defaultValue={0} />
-
-          <div>
-            <p className="mb-2 text-sm font-semibold text-stone-700">1. Categorías que atiende</p>
-            {categories.length === 0 ? (
-              <p className="text-xs text-stone-400">No hay categorías. Crea servicios primero.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {categories.map((c) => {
-                  const sel = selectedCats.includes(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => toggleCat(c.id)}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-                        sel
-                          ? "border-violet-400 bg-violet-50 text-violet-700"
-                          : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                      )}
-                    >
-                      {c.name}
-                    </button>
-                  );
-                })}
+        {/* ── Success state: show invite link ── */}
+        {inviteResult ? (
+          <div className="space-y-5">
+            <div className="flex flex-col items-center gap-3 pt-2 pb-1 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
+                <CheckCircle className="h-7 w-7 text-emerald-500" />
               </div>
-            )}
-            {selectedCats.map((id) => (
-              <input key={id} type="hidden" name="category_ids" value={id} />
-            ))}
-          </div>
-
-          {selectedCategoryObjs.length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold text-stone-700">2. Servicios que realiza</p>
-              <div className="space-y-3 max-h-52 overflow-y-auto rounded-xl border border-violet-100 p-3 bg-violet-50/30">
-                {selectedCategoryObjs.map((cat) => (
-                  <div key={cat.id}>
-                    <p className="text-xs font-bold uppercase tracking-wide text-violet-400">{cat.name}</p>
-                    {cat.services.length === 0 ? (
-                      <p className="mt-1 text-xs text-stone-400">Sin servicios en esta categoría.</p>
-                    ) : (
-                      <div className="mt-1 space-y-1">
-                        {cat.services.map((svc) => (
-                          <label key={svc.id} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer hover:text-stone-900">
-                            <input type="checkbox" name="service_ids" value={svc.id} className="rounded accent-violet-600" />
-                            {svc.name}
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div>
+                <p className="text-sm text-stone-600">
+                  El colaborador fue registrado. Copia el enlace de acceso y envíalo por WhatsApp o correo.
+                </p>
               </div>
             </div>
-          )}
 
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">{error}</div>
-          )}
+            <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-4 space-y-3">
+              <p className="text-xs font-semibold text-violet-700 flex items-center gap-1.5">
+                <Link2 className="h-3.5 w-3.5" />
+                Enlace de acceso (válido 7 días)
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={inviteUrl}
+                  className="h-9 flex-1 min-w-0 rounded-lg border border-violet-200 bg-white px-3 text-xs text-stone-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-text"
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className={cn(
+                    "flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors",
+                    copied
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-violet-600 text-white hover:bg-violet-700"
+                  )}
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? "Copiado" : "Copiar"}
+                </button>
+              </div>
+              <p className="text-xs text-stone-400">
+                El colaborador abrirá este link para crear su contraseña y acceder al sistema.
+              </p>
+            </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => { setOpen(false); reset(); }}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" loading={pending}>
-              Crear colaborador
+            <Button variant="primary" className="w-full" onClick={handleCloseSuccess}>
+              Listo
             </Button>
           </div>
-        </form>
+        ) : (
+        /* ── Create form ── */
+          <form action={handleCreate} className="space-y-5">
+            <div className="grid grid-cols-2 gap-3">
+              <Input name="first_name" label="Nombre" required />
+              <Input name="last_name" label="Apellido" required />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input name="phone" label="Teléfono" type="tel" />
+              <Input name="email" label="Email" type="email" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input name="commission_percentage" label="Comisión (%)" type="number" min={0} max={100} defaultValue={0} />
+              <div>
+                <label className="block text-xs font-medium text-stone-600 mb-1.5">Rol</label>
+                {roles.length === 0 ? (
+                  <p className="text-xs text-stone-400 pt-1">Sin roles — crea uno en <strong>Roles</strong> primero.</p>
+                ) : (
+                  <Select name="role_id" className="w-full">
+                    <option value="">Sin rol por ahora</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </Select>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-semibold text-stone-700">1. Categorías que atiende</p>
+              {categories.length === 0 ? (
+                <p className="text-xs text-stone-400">No hay categorías. Crea servicios primero.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((c) => {
+                    const sel = selectedCats.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleCat(c.id)}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                          sel
+                            ? "border-violet-400 bg-violet-50 text-violet-700"
+                            : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                        )}
+                      >
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {selectedCats.map((id) => (
+                <input key={id} type="hidden" name="category_ids" value={id} />
+              ))}
+            </div>
+
+            {selectedCategoryObjs.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-semibold text-stone-700">2. Servicios que realiza</p>
+                <div className="space-y-3 max-h-52 overflow-y-auto rounded-xl border border-violet-100 p-3 bg-violet-50/30">
+                  {selectedCategoryObjs.map((cat) => (
+                    <div key={cat.id}>
+                      <p className="text-xs font-bold uppercase tracking-wide text-violet-400">{cat.name}</p>
+                      {cat.services.length === 0 ? (
+                        <p className="mt-1 text-xs text-stone-400">Sin servicios en esta categoría.</p>
+                      ) : (
+                        <div className="mt-1 space-y-1">
+                          {cat.services.map((svc) => (
+                            <label key={svc.id} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer hover:text-stone-900">
+                              <input type="checkbox" name="service_ids" value={svc.id} className="rounded accent-violet-600" />
+                              {svc.name}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-stone-400 bg-stone-50 rounded-lg px-3 py-2">
+              Si ingresas email y seleccionas un rol, se generará automáticamente el enlace de acceso.
+            </p>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">{error}</div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => { setOpen(false); reset(); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" loading={pending}>
+                Crear colaborador
+              </Button>
+            </div>
+          </form>
+        )}
       </Dialog>
     </div>
   );
