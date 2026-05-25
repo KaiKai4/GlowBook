@@ -43,7 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Gestión",
     items: [
       { label: "Clientes", href: "/customers", icon: Users, permissions: ["customers.manage"] },
-      { label: "Empleados", href: "/employees", icon: UserCog, permissions: ["employees.manage"] },
+      { label: "Colaboradores", href: "/employees", icon: UserCog, permissions: ["employees.manage"] },
       { label: "Servicios", href: "/services", icon: Scissors, permissions: ["services.manage"] },
     ],
   },

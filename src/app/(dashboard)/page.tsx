@@ -230,7 +230,7 @@ export default async function DashboardPage() {
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 max-w-md">
           <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800">
-            No tienes módulos asignados. Pide al administrador del salón que configure tu rol en la sección <strong>Empleados</strong>.
+            No tienes módulos asignados. Pide al administrador del salón que configure tu rol en la sección <strong>Colaboradores</strong>.
           </p>
         </div>
       )}

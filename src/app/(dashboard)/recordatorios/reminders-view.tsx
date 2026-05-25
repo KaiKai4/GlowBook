@@ -103,7 +103,7 @@ export function RemindersView({
       if (applied.period === "manana" && apptDate !== tomorrow) return false;
       if (applied.period === "48h" && apptTime > cutoff48) return false;
 
-      // Employee filter
+      // Collaborator filter
       if (applied.empId && !appt.items.some((it) => it.employee?.id === applied.empId)) return false;
 
       // Status filter
@@ -141,12 +141,12 @@ export function RemindersView({
           </div>
         </div>
 
-        {/* Employee */}
+        {/* Colaborador */}
         <div className="flex flex-col gap-1.5 min-w-[200px] flex-1">
           <label className="text-xs font-medium text-stone-500">Profesional</label>
           <div className="relative">
             <select value={empId} onChange={(e) => setEmpId(e.target.value)} className={selectClass}>
-              <option value="">Todos los empleados</option>
+              <option value="">Todos los colaboradores</option>
               {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
             <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400">▾</span>
@@ -198,7 +198,7 @@ export function RemindersView({
             <table className="w-full min-w-[700px] text-sm">
               <thead>
                 <tr className="border-b border-stone-200 bg-stone-50">
-                  {["Cliente", "Empleado", "Servicios", "Fecha", "Estado", "Recordatorio"].map((h) => (
+                  {["Cliente", "Colaborador", "Servicios", "Fecha", "Estado", "Recordatorio"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-bold text-stone-500 uppercase tracking-wide">
                       {h}
                     </th>
@@ -225,7 +225,7 @@ export function RemindersView({
                         )}
                       </td>
 
-                      {/* Empleado */}
+                      {/* Colaborador */}
                       <td className="px-4 py-3 text-stone-700">{empNames || "—"}</td>
 
                       {/* Servicios */}

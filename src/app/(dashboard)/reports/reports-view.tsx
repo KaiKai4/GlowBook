@@ -225,7 +225,7 @@ export function ReportsView({
         </Section>
       </div>
 
-      {/* Por empleado + Por servicio */}
+      {/* Por colaborador + Por servicio */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Section title="Por profesional" icon={<Users className="h-4 w-4 text-stone-400" />}>
           {byEmployee.length === 0 ? (
