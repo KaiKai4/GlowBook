@@ -32,6 +32,7 @@ export async function deleteSalonAction(
     return { ok: true, value: undefined };
   } catch (err) {
     console.error("[platform]", err);
-    return { ok: false, error: "No se pudo eliminar el salón y sus datos." };
+    const message = err instanceof Error ? err.message : "Error desconocido";
+    return { ok: false, error: `No se pudo eliminar el salón y sus datos. Detalle: ${message}` };
   }
 }

@@ -138,26 +138,28 @@ export async function deleteSalonCompletely(salonId: string): Promise<void> {
     .eq("salon_id", salonId);
   if (profilesError) throw profilesError;
 
-  for (const profile of profiles ?? []) {
-    const { error } = await admin.auth.admin.deleteUser(profile.id);
-    if (error) throw error;
-  }
-
   // Delete in dependency order. Several tenant FKs are restrict by design, so
   // deleting the salon row first would fail or leave operational data behind.
-  let result = await admin.from("appointment_reminder_log").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("appointment_items").delete().eq("salon_id", salonId);
+  const deleteResult = await Promise.all([
+    admin.from("appointment_reminder_log").delete().eq("salon_id", salonId),
+    admin.from("employee_invitations").delete().eq("salon_id", salonId),
+    admin.from("employee_services").delete().eq("salon_id", salonId),
+    admin.from("employee_categories").delete().eq("salon_id", salonId),
+    admin.from("work_schedules").delete().eq("salon_id", salonId),
+    admin.from("notification_templates").delete().eq("salon_id", salonId),
+    admin.from("salon_business_hours").delete().eq("salon_id", salonId),
+    admin.from("feedback_reports").delete().eq("salon_id", salonId),
+    admin.from("role_permissions").delete().eq("salon_id", salonId),
+    admin.from("salon_invitations").delete().eq("salon_id", salonId),
+  ]);
+  const firstDeleteError = deleteResult.find((result) => result.error)?.error;
+  if (firstDeleteError) throw firstDeleteError;
+
+  let result = await admin.from("appointment_items").delete().eq("salon_id", salonId);
   if (result.error) throw result.error;
   result = await admin.from("appointments").delete().eq("salon_id", salonId);
   if (result.error) throw result.error;
-  result = await admin.from("employee_invitations").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("employee_services").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("employee_categories").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("work_schedules").delete().eq("salon_id", salonId);
+  result = await admin.from("employees").update({ profile_id: null }).eq("salon_id", salonId);
   if (result.error) throw result.error;
   result = await admin.from("employees").delete().eq("salon_id", salonId);
   if (result.error) throw result.error;
@@ -167,23 +169,20 @@ export async function deleteSalonCompletely(salonId: string): Promise<void> {
   if (result.error) throw result.error;
   result = await admin.from("customers").delete().eq("salon_id", salonId);
   if (result.error) throw result.error;
-  result = await admin.from("notification_templates").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("salon_business_hours").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("feedback_reports").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("role_permissions").delete().eq("salon_id", salonId);
+  result = await admin.from("profiles").update({ role_id: null }).eq("salon_id", salonId);
   if (result.error) throw result.error;
   result = await admin.from("profiles").delete().eq("salon_id", salonId);
   if (result.error) throw result.error;
   result = await admin.from("roles").delete().eq("salon_id", salonId);
   if (result.error) throw result.error;
-  result = await admin.from("salon_invitations").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
 
   const { error } = await admin.from("salons").delete().eq("id", salonId);
   if (error) throw error;
+
+  for (const profile of profiles ?? []) {
+    const { error: authError } = await admin.auth.admin.deleteUser(profile.id);
+    if (authError && authError.status !== 404) throw authError;
+  }
 }
 
 export async function revokeInvitation(invitationId: string): Promise<void> {
