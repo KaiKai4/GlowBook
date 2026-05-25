@@ -14,6 +14,84 @@ export async function findAllSalons() {
   return data ?? [];
 }
 
+export interface SalonOverview {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  is_active: boolean;
+  created_at: string;
+  owner_names: string[];
+  owner_count: number;
+  customer_count: number;
+  collaborator_count: number;
+  appointment_count: number;
+  service_count: number;
+  invitation_count: number;
+}
+
+export async function findSalonOverviews(): Promise<SalonOverview[]> {
+  const admin = createSupabaseAdminClient();
+  const { data: salons, error } = await admin
+    .from("salons")
+    .select("id, name, email, phone, is_active, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return Promise.all((salons ?? []).map(async (salon) => {
+    const [
+      owners,
+      customers,
+      collaborators,
+      appointments,
+      services,
+      invitations,
+    ] = await Promise.all([
+      admin
+        .from("profiles")
+        .select("full_name", { count: "exact" })
+        .eq("salon_id", salon.id)
+        .eq("is_owner", true),
+      admin
+        .from("customers")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", salon.id),
+      admin
+        .from("employees")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", salon.id),
+      admin
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", salon.id),
+      admin
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", salon.id),
+      admin
+        .from("salon_invitations")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", salon.id),
+    ]);
+
+    return {
+      id: salon.id,
+      name: salon.name,
+      email: salon.email,
+      phone: salon.phone,
+      is_active: salon.is_active,
+      created_at: salon.created_at,
+      owner_names: (owners.data ?? []).map((owner) => owner.full_name).filter(Boolean),
+      owner_count: owners.count ?? 0,
+      customer_count: customers.count ?? 0,
+      collaborator_count: collaborators.count ?? 0,
+      appointment_count: appointments.count ?? 0,
+      service_count: services.count ?? 0,
+      invitation_count: invitations.count ?? 0,
+    };
+  }));
+}
+
 export async function findSalonOwners() {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -40,6 +118,71 @@ export async function setSalonActive(salonId: string, isActive: boolean): Promis
   const admin = createSupabaseAdminClient();
   const update: Database["public"]["Tables"]["salons"]["Update"] = { is_active: isActive };
   const { error } = await admin.from("salons").update(update).eq("id", salonId);
+  if (error) throw error;
+}
+
+export async function deleteSalonCompletely(salonId: string): Promise<void> {
+  const admin = createSupabaseAdminClient();
+
+  const { data: salon, error: salonError } = await admin
+    .from("salons")
+    .select("id")
+    .eq("id", salonId)
+    .maybeSingle();
+  if (salonError) throw salonError;
+  if (!salon) throw new Error("Salón no encontrado.");
+
+  const { data: profiles, error: profilesError } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("salon_id", salonId);
+  if (profilesError) throw profilesError;
+
+  for (const profile of profiles ?? []) {
+    const { error } = await admin.auth.admin.deleteUser(profile.id);
+    if (error) throw error;
+  }
+
+  // Delete in dependency order. Several tenant FKs are restrict by design, so
+  // deleting the salon row first would fail or leave operational data behind.
+  let result = await admin.from("appointment_reminder_log").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("appointment_items").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("appointments").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("employee_invitations").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("employee_services").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("employee_categories").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("work_schedules").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("employees").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("services").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("service_categories").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("customers").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("notification_templates").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("salon_business_hours").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("feedback_reports").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("role_permissions").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("profiles").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("roles").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+  result = await admin.from("salon_invitations").delete().eq("salon_id", salonId);
+  if (result.error) throw result.error;
+
+  const { error } = await admin.from("salons").delete().eq("id", salonId);
   if (error) throw error;
 }
 
