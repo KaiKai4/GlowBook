@@ -71,6 +71,20 @@ export async function findCustomerByPhone(
   return data;
 }
 
+export async function findCustomerByEmail(
+  salonId: string,
+  email: string
+): Promise<CustomerRow | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("salon_id", salonId)
+    .ilike("email", email)
+    .maybeSingle();
+  return data;
+}
+
 export async function deleteCustomer(id: string, salonId: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
@@ -79,6 +93,16 @@ export async function deleteCustomer(id: string, salonId: string): Promise<void>
     .eq("id", id)
     .eq("salon_id", salonId)
     .eq("is_temporary", true);
+  if (error) throw error;
+}
+
+export async function removeCustomer(id: string, salonId: string): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("customers")
+    .delete()
+    .eq("id", id)
+    .eq("salon_id", salonId);
   if (error) throw error;
 }
 

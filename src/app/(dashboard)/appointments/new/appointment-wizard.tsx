@@ -163,8 +163,12 @@ export function AppointmentWizard({
     }
     if (newPhone) {
       startCheckPhone(async () => {
-        const { exists } = await checkCustomerPhoneAction(newPhone);
+        const { exists, archived } = await checkCustomerPhoneAction(newPhone);
         if (exists) {
+          if (archived) {
+            setCustError("Este numero pertenece a un cliente archivado. Reactivalo en Clientes > Archivados antes de agendar.");
+            return;
+          }
           setCustError("Este número ya está registrado. Búscalo en \"Cliente existente\".");
           return;
         }

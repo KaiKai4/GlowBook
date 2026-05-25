@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, UserPlus } from "lucide-react";
-import { createCustomerAction } from "./actions";
+import {
+  createCustomerAction,
+  findArchivedCustomerByContactAction,
+  reactivateCustomerAction,
+  type ArchivedCustomerMatch,
+} from "./actions";
 
 export function NewCustomerModal() {
   const router = useRouter();
@@ -15,14 +20,45 @@ export function NewCustomerModal() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [archivedMatch, setArchivedMatch] = useState<ArchivedCustomerMatch | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  function reset() {
+    setFirstName("");
+    setLastName("");
+    setPhone("");
+    setEmail("");
+    setNotes("");
+    setArchivedMatch(null);
+    setError(null);
+  }
 
   function handleClose() {
     if (pending) return;
     setOpen(false);
-    setFirstName(""); setLastName(""); setPhone(""); setNotes(""); setError(null);
+    reset();
+  }
+
+  async function checkArchivedMatch(nextPhone = phone, nextEmail = email) {
+    const match = await findArchivedCustomerByContactAction(nextPhone, nextEmail);
+    setArchivedMatch(match);
+  }
+
+  function handleReactivate() {
+    if (!archivedMatch) return;
+    setError(null);
+    start(async () => {
+      const res = await reactivateCustomerAction(archivedMatch.id);
+      if (res.ok) {
+        handleClose();
+        router.refresh();
+      } else {
+        setError(res.error ?? "No se pudo reactivar el cliente.");
+      }
+    });
   }
 
   function handleSubmit() {
@@ -35,11 +71,16 @@ export function NewCustomerModal() {
     fd.set("first_name", firstName.trim());
     fd.set("last_name", lastName.trim());
     if (phone.trim()) fd.set("phone", phone.trim());
+    if (email.trim()) fd.set("email", email.trim());
     if (notes.trim()) fd.set("notes", notes.trim());
     start(async () => {
       const res = await createCustomerAction(null, fd);
-      if (res.ok) { handleClose(); router.refresh(); }
-      else setError(res.error ?? "Error al crear el cliente.");
+      if (res.ok) {
+        handleClose();
+        router.refresh();
+      } else {
+        setError(res.error ?? "Error al crear el cliente.");
+      }
     });
   }
 
@@ -59,13 +100,39 @@ export function NewCustomerModal() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Nombre" value={firstName} onChange={(e) => { setFirstName(e.target.value); setError(null); }} placeholder="María" autoFocus />
-            <Input label="Apellido" value={lastName} onChange={(e) => { setLastName(e.target.value); setError(null); }} placeholder="García" />
+            <Input label="Nombre" value={firstName} onChange={(e) => { setFirstName(e.target.value); setError(null); }} placeholder="Maria" autoFocus />
+            <Input label="Apellido" value={lastName} onChange={(e) => { setLastName(e.target.value); setError(null); }} placeholder="Garcia" />
           </div>
 
-          <Input label="Teléfono" type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} placeholder="+507 6000-0000" />
+          <Input
+            label="Telefono"
+            type="tel"
+            value={phone}
+            onChange={(e) => { setPhone(e.target.value); setArchivedMatch(null); setError(null); }}
+            onBlur={() => checkArchivedMatch()}
+            placeholder="+507 6000-0000"
+          />
+
+          <Input
+            label="Email (opcional)"
+            type="email"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setArchivedMatch(null); setError(null); }}
+            onBlur={() => checkArchivedMatch()}
+            placeholder="cliente@email.com"
+          />
 
           <Textarea label="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Alergias, preferencias, observaciones..." rows={3} />
+
+          {archivedMatch && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+              <p className="font-semibold">Ya existe un cliente archivado: {archivedMatch.name}</p>
+              <p className="mt-1 text-xs">Reactivarlo conserva su historial y evita duplicados.</p>
+              <Button variant="primary" className="mt-3 w-full" onClick={handleReactivate} loading={pending}>
+                Reactivar cliente
+              </Button>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-600">{error}</div>
@@ -73,7 +140,7 @@ export function NewCustomerModal() {
 
           <div className="flex gap-2 pt-1">
             <Button variant="ghost" className="flex-1" onClick={handleClose} disabled={pending}>Cancelar</Button>
-            <Button variant="primary" className="flex-1" onClick={handleSubmit} loading={pending}>Crear cliente</Button>
+            <Button variant="primary" className="flex-1" onClick={handleSubmit} loading={pending} disabled={!!archivedMatch}>Crear cliente</Button>
           </div>
         </div>
       </Dialog>

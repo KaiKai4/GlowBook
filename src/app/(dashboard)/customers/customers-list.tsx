@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail } from "lucide-react";
 import { EditCustomerModal } from "./edit-customer-modal";
+import { reactivateCustomerAction } from "./actions";
 
 interface Customer {
   id: string;
@@ -17,8 +19,11 @@ interface Customer {
   is_temporary: boolean;
 }
 
-export function CustomersList({ customers }: { customers: Customer[] }) {
+export function CustomersList({ customers, mode }: { customers: Customer[]; mode: "active" | "archived" }) {
+  const router = useRouter();
   const [editing, setEditing] = useState<Customer | null>(null);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+  const isArchived = mode === "archived";
 
   if (customers.length === 0) return null;
 
@@ -50,13 +55,30 @@ export function CustomersList({ customers }: { customers: Customer[] }) {
                   )}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                className="text-xs text-rose-600 hover:underline shrink-0 h-auto px-2 py-1"
-                onClick={() => setEditing(customer)}
-              >
-                Editar
-              </Button>
+              {isArchived ? (
+                <Button
+                  variant="primary"
+                  className="text-xs shrink-0 h-auto px-3 py-1.5"
+                  loading={reactivatingId === customer.id}
+                  onClick={async () => {
+                    setReactivatingId(customer.id);
+                    const res = await reactivateCustomerAction(customer.id);
+                    setReactivatingId(null);
+                    if (res.ok) router.refresh();
+                    else window.alert(res.error ?? "No se pudo reactivar el cliente.");
+                  }}
+                >
+                  Reactivar
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="text-xs text-rose-600 hover:underline shrink-0 h-auto px-2 py-1"
+                  onClick={() => setEditing(customer)}
+                >
+                  Editar
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

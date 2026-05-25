@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,7 +13,13 @@ import {
   Plus, ChevronRight, Users, Search, Filter,
   Copy, Check, Link2, CheckCircle, ShieldCheck,
 } from "lucide-react";
-import { createEmployeeAction, type CreateEmployeeResult } from "./actions";
+import {
+  createEmployeeAction,
+  findArchivedEmployeeByEmailAction,
+  reactivateEmployeeAction,
+  type ArchivedEmployeeMatch,
+  type CreateEmployeeResult,
+} from "./actions";
 import type { Result } from "@/lib/result";
 
 interface EmployeeListItem {
@@ -36,26 +43,36 @@ export function EmployeesManager({
   employees,
   categories,
   roles,
+  mode,
 }: {
   employees: EmployeeListItem[];
   categories: CategoryOption[];
   roles: RoleOption[];
+  mode: "active" | "archived";
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [reactivationPending, startReactivation] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [inviteResult, setInviteResult] = useState<CreateEmployeeResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [email, setEmail] = useState("");
+  const [archivedMatch, setArchivedMatch] = useState<ArchivedEmployeeMatch | null>(null);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [filterCatId, setFilterCatId] = useState<string | null>(null);
+  const isArchived = mode === "archived";
 
   function reset() {
     setSelectedCats([]);
     setError(null);
     setInviteResult(null);
     setCopied(false);
+    setEmail("");
+    setArchivedMatch(null);
   }
 
   function handleCreate(formData: FormData) {
@@ -109,6 +126,26 @@ export function EmployeesManager({
     ? (typeof window !== "undefined" ? `${window.location.origin}/join/${inviteResult.inviteToken}` : "")
     : "";
 
+  async function checkArchivedEmail(nextEmail = email) {
+    const match = await findArchivedEmployeeByEmailAction(nextEmail);
+    setArchivedMatch(match);
+  }
+
+  function handleReactivateEmployee(employeeId: string) {
+    setReactivatingId(employeeId);
+    startReactivation(async () => {
+      const res = await reactivateEmployeeAction(employeeId);
+      setReactivatingId(null);
+      if (res.ok) {
+        setOpen(false);
+        reset();
+        router.refresh();
+      } else {
+        window.alert(res.error ?? "No se pudo reactivar el colaborador.");
+      }
+    });
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -116,13 +153,40 @@ export function EmployeesManager({
         <div>
           <h1 className="text-2xl font-bold text-stone-900">Colaboradores</h1>
           <p className="text-sm text-stone-400 mt-0.5">
-            {filtered.length} de {employees.length} colaboradores
+            {filtered.length} de {employees.length} colaboradores {isArchived ? "archivados" : "activos"}
           </p>
         </div>
-        <Button variant="primary" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Nuevo colaborador
-        </Button>
+        {!isArchived && (
+          <Button variant="primary" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Nuevo colaborador
+          </Button>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <Link
+          href="/employees"
+          className={cn(
+            "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+            !isArchived
+              ? "border-brand-400 bg-brand-50 text-brand-700"
+              : "border-stone-200 text-stone-500 hover:bg-stone-50"
+          )}
+        >
+          Activos
+        </Link>
+        <Link
+          href="/employees?status=archived"
+          className={cn(
+            "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+            isArchived
+              ? "border-brand-400 bg-brand-50 text-brand-700"
+              : "border-stone-200 text-stone-500 hover:bg-stone-50"
+          )}
+        >
+          Archivados
+        </Link>
       </div>
 
       {/* Search + Filter */}
@@ -189,8 +253,8 @@ export function EmployeesManager({
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((emp) => (
-            <Link key={emp.id} href={`/employees/${emp.id}`} className="group">
+          {filtered.map((emp) => {
+            const card = (
               <div className="flex items-center gap-3 rounded-xl border border-brand-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:shadow-[0_4px_16px_rgba(124,58,237,0.12)] hover:-translate-y-0.5">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-100 to-choco-100 text-sm font-bold text-brand-700">
                   {`${emp.first_name[0] ?? ""}${emp.last_name[0] ?? ""}`.toUpperCase()}
@@ -208,16 +272,40 @@ export function EmployeesManager({
                   <p className="mt-0.5 text-xs text-brand-500 font-medium">{emp.serviceCount} servicios</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  {emp.profile_id ? (
-                    <span title="Con acceso al sistema"><ShieldCheck className="h-4 w-4 text-emerald-500" /></span>
+                  {isArchived ? (
+                    <Button
+                      variant="primary"
+                      className="h-8 px-3 text-xs"
+                      loading={reactivatingId === emp.id}
+                      disabled={reactivationPending}
+                      onClick={() => handleReactivateEmployee(emp.id)}
+                    >
+                      Reactivar
+                    </Button>
                   ) : (
-                    <span title="Sin acceso al sistema"><Link2 className="h-4 w-4 text-stone-300" /></span>
+                    <>
+                      {emp.profile_id ? (
+                        <span title="Con acceso al sistema"><ShieldCheck className="h-4 w-4 text-emerald-500" /></span>
+                      ) : (
+                        <span title="Sin acceso al sistema"><Link2 className="h-4 w-4 text-stone-300" /></span>
+                      )}
+                      <ChevronRight className="h-4 w-4 text-stone-300 transition-transform group-hover:translate-x-0.5" />
+                    </>
                   )}
-                  <ChevronRight className="h-4 w-4 text-stone-300 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </div>
-            </Link>
-          ))}
+            );
+
+            return isArchived ? (
+              <div key={emp.id} className="group">
+                {card}
+              </div>
+            ) : (
+              <Link key={emp.id} href={`/employees/${emp.id}`} className="group">
+                {card}
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -286,7 +374,14 @@ export function EmployeesManager({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input name="phone" label="Teléfono" type="tel" />
-              <Input name="email" label="Email" type="email" />
+              <Input
+                name="email"
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setArchivedMatch(null); setError(null); }}
+                onBlur={() => checkArchivedEmail()}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input name="commission_percentage" label="Comisión (%)" type="number" min={0} max={100} defaultValue={0} />
@@ -365,6 +460,22 @@ export function EmployeesManager({
               Si ingresas email y seleccionas un rol, se generará automáticamente el enlace de acceso.
             </p>
 
+            {archivedMatch && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                <p className="font-semibold">Ya existe un colaborador archivado: {archivedMatch.name}</p>
+                <p className="mt-1 text-xs">Reactivarlo conserva su historial. Luego puedes editar servicios, categorias, horarios y generar un nuevo enlace.</p>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="mt-3 w-full"
+                  loading={reactivatingId === archivedMatch.id}
+                  onClick={() => handleReactivateEmployee(archivedMatch.id)}
+                >
+                  Reactivar colaborador
+                </Button>
+              </div>
+            )}
+
             {error && (
               <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">{error}</div>
             )}
@@ -373,7 +484,7 @@ export function EmployeesManager({
               <Button type="button" variant="ghost" onClick={() => { setOpen(false); reset(); }}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary" loading={pending}>
+              <Button type="submit" variant="primary" loading={pending} disabled={!!archivedMatch}>
                 Crear colaborador
               </Button>
             </div>

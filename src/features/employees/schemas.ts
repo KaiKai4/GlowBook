@@ -4,7 +4,7 @@ export const CreateEmployeeSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio").max(100),
   last_name: z.string().min(1, "El apellido es obligatorio").max(100),
   phone: z.string().max(30).optional().default(""),
-  email: z.string().email("Email inválido").max(255).optional().default(""),
+  email: z.union([z.literal(""), z.string().email("Email inválido").max(255)]).optional().default(""),
   specialty: z.string().max(100).optional().default(""),
   commission_percentage: z.number().min(0).max(100).optional().default(0),
   hire_date: z.string().date().optional().nullable(),

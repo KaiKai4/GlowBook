@@ -3,7 +3,7 @@ import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findServicesCatalog } from "@/features/services/data/services.repo";
 import { ServicesManager } from "./services-manager";
 
-interface EmpRef { employee: { id: string; first_name: string; last_name: string } | null }
+interface EmpRef { employee: { id: string; first_name: string; last_name: string; is_active: boolean } | null }
 
 export default async function ServicesPage() {
   const profile = await requireProfile();
@@ -29,7 +29,7 @@ export default async function ServicesPage() {
       is_active: s.is_active,
       employees: ((s.employee_services ?? []) as EmpRef[])
         .map((es) => es.employee)
-        .filter((e): e is { id: string; first_name: string; last_name: string } => e !== null)
+        .filter((e): e is { id: string; first_name: string; last_name: string; is_active: boolean } => e !== null && e.is_active)
         .map((e) => ({ id: e.id, initials: `${e.first_name[0] ?? ""}${e.last_name[0] ?? ""}`.toUpperCase(), name: `${e.first_name} ${e.last_name}` })),
     })),
   }));

@@ -5,8 +5,15 @@ import { findCategoriesWithServices } from "@/features/services/data/services.re
 import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
 import { EmployeesManager } from "./employees-manager";
 
-export default async function EmployeesPage() {
+export default async function EmployeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   const profile = await requireProfile();
+  const params = await searchParams;
+  const mode = params.status === "archived" ? "archived" : "active";
+  const isArchived = mode === "archived";
 
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return (
@@ -17,7 +24,7 @@ export default async function EmployeesPage() {
   }
 
   const [employees, categories, allRoles] = await Promise.all([
-    findEmployees(profile.salon_id),
+    findEmployees(profile.salon_id, !isArchived),
     findCategoriesWithServices(profile.salon_id),
     findRolesWithPermissions(profile.salon_id),
   ]);
@@ -52,6 +59,7 @@ export default async function EmployeesPage() {
       employees={employeeList}
       categories={catOptions}
       roles={roleOptions}
+      mode={mode}
     />
   );
 }

@@ -13,7 +13,7 @@ const PER_PAGE = 20;
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; status?: string }>;
 }) {
   const profile = await requireProfile();
   const params = await searchParams;
@@ -27,19 +27,28 @@ export default async function CustomersPage({
   }
 
   const page = Math.max(1, Number(params.page ?? 1) || 1);
+  const mode = params.status === "archived" ? "archived" : "active";
+  const isArchived = mode === "archived";
   const { data: customers, total } = await findCustomers(profile.salon_id, {
     q: params.q,
     page,
     perPage: PER_PAGE,
-    isActive: true,
+    isActive: !isArchived,
   });
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
   const pageHref = (n: number) => {
     const sp = new URLSearchParams();
     if (params.q) sp.set("q", params.q);
+    if (isArchived) sp.set("status", "archived");
     sp.set("page", String(n));
     return `/customers?${sp.toString()}`;
+  };
+  const statusHref = (status: "active" | "archived") => {
+    const sp = new URLSearchParams();
+    if (params.q) sp.set("q", params.q);
+    if (status === "archived") sp.set("status", "archived");
+    return `/customers${sp.toString() ? `?${sp.toString()}` : ""}`;
   };
 
   return (
@@ -47,12 +56,34 @@ export default async function CustomersPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Clientes</h1>
-          <p className="text-sm text-neutral-500 mt-1">{total} clientes activos</p>
+          <p className="text-sm text-neutral-500 mt-1">
+            {total} clientes {isArchived ? "archivados" : "activos"}
+          </p>
         </div>
-        <NewCustomerModal />
+        {!isArchived && <NewCustomerModal />}
+      </div>
+
+      <div className="flex gap-2">
+        <Link
+          href={statusHref("active")}
+          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+            !isArchived ? "border-rose-300 bg-rose-50 text-rose-700" : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+          }`}
+        >
+          Activos
+        </Link>
+        <Link
+          href={statusHref("archived")}
+          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+            isArchived ? "border-rose-300 bg-rose-50 text-rose-700" : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+          }`}
+        >
+          Archivados
+        </Link>
       </div>
 
       <form action="/customers" className="flex gap-2">
+        {isArchived && <input type="hidden" name="status" value="archived" />}
         <input
           type="search"
           name="q"
@@ -73,7 +104,7 @@ export default async function CustomersPage({
             </CardContent>
           </Card>
         ) : (
-          <CustomersList customers={customers} />
+          <CustomersList customers={customers} mode={mode} />
         )}
       </div>
 

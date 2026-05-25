@@ -61,6 +61,17 @@ export async function findEmployeeById(id: string, salonId: string) {
   return data;
 }
 
+export async function findEmployeeByEmail(email: string, salonId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("employees")
+    .select("*")
+    .eq("salon_id", salonId)
+    .ilike("email", email)
+    .maybeSingle();
+  return data;
+}
+
 export async function createEmployee(
   salonId: string,
   input: Omit<Database["public"]["Tables"]["employees"]["Insert"], "salon_id">,
@@ -142,6 +153,16 @@ export async function updateEmployee(
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function deleteEmployee(id: string, salonId: string): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("employees")
+    .delete()
+    .eq("id", id)
+    .eq("salon_id", salonId);
+  if (error) throw error;
 }
 
 export async function upsertWorkSchedule(

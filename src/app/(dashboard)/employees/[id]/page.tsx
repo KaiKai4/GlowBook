@@ -1,12 +1,15 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findEmployeeById, findLatestEmployeeInvitation } from "@/features/employees/data/employees.repo";
+import { findCategoriesWithServices } from "@/features/services/data/services.repo";
 import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkScheduleEditor } from "./work-schedule-editor";
 import { EmployeeAccessPanel } from "./employee-access-panel";
+import { DeleteEmployeeButton } from "./delete-employee-button";
+import { EditEmployeeModal } from "./edit-employee-modal";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Phone, Mail, Percent, KeyRound } from "lucide-react";
@@ -30,9 +33,10 @@ export default async function EmployeeDetailPage({
     );
   }
 
-  const [employee, allRoles] = await Promise.all([
+  const [employee, allRoles, allCategories] = await Promise.all([
     findEmployeeById(id, profile.salon_id),
     findRolesWithPermissions(profile.salon_id),
+    findCategoriesWithServices(profile.salon_id),
   ]);
 
   if (!employee) notFound();
@@ -53,8 +57,15 @@ export default async function EmployeeDetailPage({
   const roleOptions = allRoles
     .filter((r) => !r.is_system)
     .map((r) => ({ id: r.id, name: r.name }));
+  const categoryOptions = allCategories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    services: (category.services ?? []).map((service) => ({
+      id: service.id,
+      name: service.name,
+    })),
+  }));
 
-  // Load current role of the linked profile (if any)
   let currentRoleId: string | null = null;
   if (employee.profile_id) {
     const supabase = await createSupabaseServerClient();
@@ -66,7 +77,6 @@ export default async function EmployeeDetailPage({
     currentRoleId = linkedProfile?.role_id ?? null;
   }
 
-  // Only load invitation if employee has no account yet
   const invitation = !employee.profile_id
     ? await findLatestEmployeeInvitation(id, profile.salon_id)
     : null;
@@ -83,13 +93,37 @@ export default async function EmployeeDetailPage({
           <ArrowLeft className="h-4 w-4" />
           Colaboradores
         </Link>
-        <h1 className="text-2xl font-bold text-neutral-900 mt-2">
-          {employee.first_name} {employee.last_name}
-          {!employee.is_active && <Badge variant="default" className="ml-2">Inactivo</Badge>}
-        </h1>
-        <p className="text-sm text-neutral-500">
-          {categories.length > 0 ? categories.map((c) => c.name).join(" · ") : "Sin categorías"}
-        </p>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-900">
+              {employee.first_name} {employee.last_name}
+              {!employee.is_active && <Badge variant="default" className="ml-2">Inactivo</Badge>}
+            </h1>
+            <p className="text-sm text-neutral-500">
+              {categories.length > 0 ? categories.map((c) => c.name).join(" · ") : "Sin categorías"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <EditEmployeeModal
+              employee={{
+                id: employee.id,
+                first_name: employee.first_name,
+                last_name: employee.last_name,
+                phone: employee.phone ?? "",
+                email: employee.email ?? "",
+                specialty: employee.specialty ?? "",
+                commission_percentage: Number(employee.commission_percentage ?? 0),
+              }}
+              categories={categoryOptions}
+              selectedCategoryIds={categories.map((category) => category.id)}
+              selectedServiceIds={services.map((service) => service.id)}
+            />
+            <DeleteEmployeeButton
+              employeeId={employee.id}
+              employeeName={`${employee.first_name} ${employee.last_name}`}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

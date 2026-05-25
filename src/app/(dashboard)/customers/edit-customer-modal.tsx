@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UserPen } from "lucide-react";
-import { updateCustomerAction } from "./actions";
+import { deleteCustomerAction, updateCustomerAction } from "./actions";
 
 interface Customer {
   id: string;
   first_name: string;
   last_name: string;
   phone: string | null;
+  email?: string | null;
   notes: string | null;
 }
 
@@ -28,12 +29,14 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
   const [firstName, setFirstName] = useState(customer.first_name);
   const [lastName, setLastName] = useState(customer.last_name);
   const [phone, setPhone] = useState(customer.phone ?? "");
+  const [email, setEmail] = useState(customer.email ?? "");
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [deleting, startDelete] = useTransition();
 
   function handleClose() {
-    if (pending) return;
+    if (pending || deleting) return;
     onClose();
   }
 
@@ -47,11 +50,39 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
     fd.set("first_name", firstName.trim());
     fd.set("last_name", lastName.trim());
     if (phone.trim()) fd.set("phone", phone.trim());
+    if (email.trim()) fd.set("email", email.trim());
     fd.set("notes", notes.trim());
     start(async () => {
       const res = await updateCustomerAction(customer.id, null, fd);
-      if (res.ok) { handleClose(); router.refresh(); }
-      else setError(res.error ?? "Error al actualizar el cliente.");
+      if (res.ok) {
+        handleClose();
+        router.refresh();
+      } else {
+        setError(res.error ?? "Error al actualizar el cliente.");
+      }
+    });
+  }
+
+  function handleDelete() {
+    const confirmed = window.confirm(
+      `Seguro que quieres eliminar a ${customer.first_name} ${customer.last_name}?`
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    startDelete(async () => {
+      const res = await deleteCustomerAction(customer.id);
+      if (!res.ok) {
+        setError(res.error ?? "Error al eliminar el cliente.");
+        return;
+      }
+
+      if (res.value.outcome === "archived") {
+        window.alert(res.value.message);
+      }
+
+      onClose();
+      router.refresh();
     });
   }
 
@@ -65,11 +96,12 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Nombre" value={firstName} onChange={(e) => { setFirstName(e.target.value); setError(null); }} placeholder="María" autoFocus />
-          <Input label="Apellido" value={lastName} onChange={(e) => { setLastName(e.target.value); setError(null); }} placeholder="García" />
+          <Input label="Nombre" value={firstName} onChange={(e) => { setFirstName(e.target.value); setError(null); }} placeholder="Maria" autoFocus />
+          <Input label="Apellido" value={lastName} onChange={(e) => { setLastName(e.target.value); setError(null); }} placeholder="Garcia" />
         </div>
 
-        <Input label="Teléfono" type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} placeholder="+507 6000-0000" />
+        <Input label="Telefono" type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} placeholder="+507 6000-0000" />
+        <Input label="Email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} placeholder="cliente@email.com" />
 
         <Textarea label="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Alergias, preferencias, observaciones..." rows={3} />
 
@@ -78,8 +110,11 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
         )}
 
         <div className="flex gap-2 pt-1">
-          <Button variant="ghost" className="flex-1" onClick={handleClose} disabled={pending}>Cancelar</Button>
-          <Button variant="primary" className="flex-1" onClick={handleSubmit} loading={pending}>Guardar cambios</Button>
+          <Button variant="destructive" className="flex-1" onClick={handleDelete} loading={deleting} disabled={pending}>
+            Eliminar
+          </Button>
+          <Button variant="ghost" className="flex-1" onClick={handleClose} disabled={pending || deleting}>Cancelar</Button>
+          <Button variant="primary" className="flex-1" onClick={handleSubmit} loading={pending} disabled={deleting}>Guardar cambios</Button>
         </div>
       </div>
     </Dialog>

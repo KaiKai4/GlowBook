@@ -23,7 +23,7 @@ export async function findServicesCatalog(salonId: string) {
       id, name, ordering,
       services(
         id, name, duration_minutes, price, is_active,
-        employee_services(employee:employees(id, first_name, last_name))
+        employee_services(employee:employees(id, first_name, last_name, is_active))
       )
     `)
     .eq("salon_id", salonId)
