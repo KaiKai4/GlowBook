@@ -1,5 +1,5 @@
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { Building2, MailOpen, LayoutDashboard, Sparkles, MessageSquareWarning } from "lucide-react";
+import { Building2, MailOpen, LayoutDashboard, Sparkles, MessageSquareWarning, LogOut } from "lucide-react";
 import Link from "next/link";
 
 export default async function PlatformAdminLayout({
@@ -42,6 +42,17 @@ export default async function PlatformAdminLayout({
             ))}
           </ul>
         </nav>
+        <div className="border-t border-neutral-800 p-3">
+          <form action="/api/auth/signout" method="post">
+            <button
+              type="submit"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
       </aside>
       <main className="flex-1 overflow-y-auto bg-white">
         <div className="mx-auto max-w-5xl px-6 py-8">{children}</div>

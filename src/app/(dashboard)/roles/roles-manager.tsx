@@ -10,6 +10,7 @@ import {
   CalendarCheck, Users, Bell, BarChart3, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
 import {
   createRoleAction,
   updateRolePermissionsAction,
@@ -205,6 +206,8 @@ function RoleCard({ role }: { role: Role }) {
   const dirty =
     selected.length !== role.permissionKeys.length ||
     selected.some((k) => !role.permissionKeys.includes(k));
+
+  useUnsavedChanges(dirty);
 
   function toggle(key: string) {
     setSaved(false);

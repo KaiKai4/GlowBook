@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { Settings, Clock, Check, Store, Palette } from "lucide-react";
 import { updateSalonInfoAction, updateBusinessHoursAction, updateSalonThemeAction } from "./actions";
+import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
 import type { BusinessDay } from "./page";
 
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -34,6 +35,8 @@ export function SalonSettings({
 }) {
   // ── Salon name ──────────────────────────────────────────────────
   const [savingName, startName] = useTransition();
+  const [nameValue, setNameValue] = useState(salonName);
+  const [savedName, setSavedName] = useState(salonName);
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
 
@@ -42,13 +45,16 @@ export function SalonSettings({
     setNameSaved(false);
     startName(async () => {
       const res = await updateSalonInfoAction(null, formData);
-      if (res.ok) setNameSaved(true);
-      else setNameError(res.error);
+      if (res.ok) {
+        setNameSaved(true);
+        setSavedName(nameValue);
+      } else setNameError(res.error);
     });
   }
 
   // ── Business hours ──────────────────────────────────────────────
   const [hours, setHours] = useState<BusinessDay[]>(businessHours);
+  const [savedHours, setSavedHours] = useState<BusinessDay[]>(businessHours);
   const [savingHours, startHours] = useTransition();
   const [hoursSaved, setHoursSaved] = useState(false);
   const [hoursError, setHoursError] = useState<string | null>(null);
@@ -70,8 +76,10 @@ export function SalonSettings({
     }
     startHours(async () => {
       const res = await updateBusinessHoursAction(JSON.stringify(hours));
-      if (res.ok) setHoursSaved(true);
-      else setHoursError(res.error);
+      if (res.ok) {
+        setHoursSaved(true);
+        setSavedHours(hours);
+      } else setHoursError(res.error);
     });
   }
 
@@ -102,6 +110,11 @@ export function SalonSettings({
     });
   }
 
+  // ── Unsaved-changes guard (theme saves instantly, so it isn't tracked) ──
+  const nameDirty = nameValue.trim() !== savedName.trim();
+  const hoursDirty = JSON.stringify(hours) !== JSON.stringify(savedHours);
+  useUnsavedChanges(nameDirty || hoursDirty);
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
@@ -127,8 +140,8 @@ export function SalonSettings({
             <Input
               name="name"
               label="Nombre del salón"
-              defaultValue={salonName}
-              onChange={() => { setNameSaved(false); setNameError(null); }}
+              value={nameValue}
+              onChange={(e) => { setNameValue(e.target.value); setNameSaved(false); setNameError(null); }}
               required
               maxLength={120}
             />

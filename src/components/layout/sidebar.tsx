@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { LogOut, Sparkles } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
-import { getVisibleNavItems } from "./nav-items";
+import { getVisibleNavGroups } from "./nav-items";
+import { useNavigationGuard } from "./unsaved-changes";
 
 interface SidebarProps {
   salonName: string;
@@ -15,8 +16,18 @@ interface SidebarProps {
 
 export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
   const pathname = usePathname();
+  const confirmNavigate = useNavigationGuard();
 
-  const visibleItems = getVisibleNavItems(userPermissions, isOwner);
+  const groups = getVisibleNavGroups(userPermissions, isOwner);
+
+  // Route clicks through the unsaved-changes guard, but let modifier-clicks
+  // (open in new tab/window) behave normally.
+  function handleNav(e: React.MouseEvent, href: string) {
+    if (!confirmNavigate) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    confirmNavigate(href);
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-brand-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
@@ -33,32 +44,44 @@ export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {visibleItems.length === 0 ? (
+        {groups.length === 0 ? (
           <p className="px-3 py-4 text-xs text-stone-400 leading-relaxed">
             No tienes módulos asignados. Pide al administrador que configure tu rol.
           </p>
         ) : (
-          <ul className="space-y-0.5">
-            {visibleItems.map((item) => {
-              const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-brand-50 text-brand-700"
-                        : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
-                    )}
-                  >
-                    <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-brand-600" : "text-stone-400")} />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-5">
+            {groups.map((group, gi) => (
+              <div key={group.label ?? `group-${gi}`}>
+                {group.label && (
+                  <p className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                    {group.label}
+                  </p>
+                )}
+                <ul className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={(e) => handleNav(e, item.href)}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                            isActive
+                              ? "bg-brand-50 text-brand-700"
+                              : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
+                          )}
+                        >
+                          <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-brand-600" : "text-stone-400")} />
+                          {item.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </nav>
 
