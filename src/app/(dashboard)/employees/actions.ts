@@ -26,11 +26,6 @@ import {
 } from "@/features/employees/use-cases/employee-profile";
 import type { Result } from "@/lib/result";
 
-export type {
-  ArchivedEmployeeMatch,
-  CreateEmployeeResult,
-} from "@/features/employees/use-cases/employee-profile";
-
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireProfile();
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {

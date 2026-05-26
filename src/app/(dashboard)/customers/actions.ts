@@ -61,8 +61,6 @@ export async function checkCustomerPhoneAction(
   return checkPermanentCustomerByPhone(profile.salon_id, phone);
 }
 
-export type { ArchivedCustomerMatch };
-
 export async function findArchivedCustomerByContactAction(
   phone?: string,
   email?: string

@@ -4,6 +4,7 @@ import {
   findCustomerByPhone,
   updateCustomer,
 } from "@/features/customers/data/customers.repo";
+import { isValidOptionalPhone, phoneValidationMessage } from "@/lib/utils/phone";
 import type { Result } from "@/lib/result";
 
 export async function findOrCreateTemporaryCustomer({
@@ -17,6 +18,10 @@ export async function findOrCreateTemporaryCustomer({
   lastName: string;
   phone?: string;
 }): Promise<Result<string>> {
+  if (!isValidOptionalPhone(phone)) {
+    return { ok: false, error: phoneValidationMessage() };
+  }
+
   try {
     const customer = await createCustomer(salonId, {
       first_name: firstName,

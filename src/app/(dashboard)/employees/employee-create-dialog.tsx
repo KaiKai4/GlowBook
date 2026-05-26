@@ -7,7 +7,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { EmployeeCreateForm } from "./employee-create-form";
 import { EmployeeInviteLinkCard } from "./employee-invite-link-card";
 import type { CategoryOption, RoleOption } from "./types";
-import type { CreateEmployeeResult } from "./actions";
+import type { CreateEmployeeResult } from "@/features/employees/use-cases/employee-profile";
 
 interface EmployeeCreateDialogProps {
   open: boolean;

@@ -1,7 +1,8 @@
+import { promoteCustomer } from "@/features/customers/use-cases/customer-temporary";
 import { err, ok, type Result } from "@/lib/result";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { assertTransition, type AppointmentStatus } from "../domain/lifecycle";
 import type { Database } from "@/types/database.types";
+import { assertTransition, type AppointmentStatus } from "../domain/lifecycle";
 
 type PaymentMethod = Database["public"]["Tables"]["appointments"]["Row"]["payment_method"];
 
@@ -15,7 +16,7 @@ export async function completeAppointment(
 
   const { data: appointment } = await supabase
     .from("appointments")
-    .select("id, status, salon_id")
+    .select("id, status, salon_id, customer_id")
     .eq("id", appointmentId)
     .eq("salon_id", salonId)
     .single();
@@ -24,8 +25,8 @@ export async function completeAppointment(
 
   try {
     assertTransition(appointment.status as AppointmentStatus, "completed");
-  } catch (e) {
-    return err((e as Error).message);
+  } catch (error) {
+    return err((error as Error).message);
   }
 
   if (discountPercentage > 0) {
@@ -64,7 +65,14 @@ export async function completeAppointment(
     .eq("appointment_id", appointmentId)
     .eq("salon_id", salonId);
 
-  if (itemsError) return err("La cita se completó, pero no se pudo liberar la agenda.");
+  if (itemsError) return err("La cita se completo, pero no se pudo liberar la agenda.");
+
+  if (appointment.customer_id) {
+    const promoted = await promoteCustomer(appointment.customer_id, salonId);
+    if (!promoted.ok) {
+      console.error("[appointments:complete]", promoted.error);
+    }
+  }
 
   return ok(undefined);
 }

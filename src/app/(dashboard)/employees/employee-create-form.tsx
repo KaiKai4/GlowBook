@@ -9,9 +9,11 @@ import {
   createEmployeeAction,
   findArchivedEmployeeByEmailAction,
   reactivateEmployeeAction,
-  type ArchivedEmployeeMatch,
-  type CreateEmployeeResult,
 } from "./actions";
+import type {
+  ArchivedEmployeeMatch,
+  CreateEmployeeResult,
+} from "@/features/employees/use-cases/employee-profile";
 import { CategoryServicePicker } from "./category-service-picker";
 import type { CategoryOption, RoleOption } from "./types";
 import type { Result } from "@/lib/result";

@@ -11,8 +11,8 @@ import {
   createCustomerAction,
   findArchivedCustomerByContactAction,
   reactivateCustomerAction,
-  type ArchivedCustomerMatch,
 } from "./actions";
+import type { ArchivedCustomerMatch } from "@/features/customers/use-cases/customer-duplicates";
 
 export function NewCustomerModal() {
   const router = useRouter();
