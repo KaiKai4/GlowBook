@@ -70,6 +70,8 @@ export interface ServiceAssignment {
     salon_id: string;
     is_active: boolean;
     profile_id: string | null;
+    service_ids: string[];
+    category_ids: string[];
   };
 }
 

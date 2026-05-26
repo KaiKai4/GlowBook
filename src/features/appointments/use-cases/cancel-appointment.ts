@@ -26,14 +26,16 @@ export async function cancelAppointment(
   const { error: itemsError } = await supabase
     .from("appointment_items")
     .update({ blocks_calendar: false })
-    .eq("appointment_id", appointmentId);
+    .eq("appointment_id", appointmentId)
+    .eq("salon_id", salonId);
 
   if (itemsError) return err("Error al liberar la agenda.");
 
   const { error: apptError } = await supabase
     .from("appointments")
     .update({ status: "cancelled" as const })
-    .eq("id", appointmentId);
+    .eq("id", appointmentId)
+    .eq("salon_id", salonId);
 
   if (apptError) return err("Error al cancelar la cita.");
 

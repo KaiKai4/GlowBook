@@ -68,9 +68,16 @@ export async function createAppointmentAction(
   }
 
   const raw = Object.fromEntries(formData);
+  let assignments: unknown;
+  try {
+    assignments = JSON.parse(raw.assignments as string);
+  } catch {
+    return { ok: false, error: "Datos de servicios inválidos." };
+  }
+
   const parsed = CreateAppointmentSchema.safeParse({
     ...raw,
-    assignments: JSON.parse(raw.assignments as string),
+    assignments,
   });
 
   if (!parsed.success) {
@@ -141,32 +148,14 @@ export async function completeAppointmentAction(
   }
 
   const supabase = await createSupabaseServerClient();
-
-  // Apply discount to item prices before completing.
-  // The recalc_appointment trigger recalculates total_price automatically after each update.
   const discountPct = parseFloat(formData.get("discount_percentage") as string ?? "0");
-  if (!isNaN(discountPct) && discountPct > 0 && discountPct <= 100) {
-    const factor = 1 - discountPct / 100;
-    const { data: items } = await supabase
-      .from("appointment_items")
-      .select("id, price")
-      .eq("appointment_id", parsed.data.appointment_id);
-
-    if (items) {
-      for (const item of items) {
-        const newPrice = Math.round(Number(item.price) * factor * 100) / 100;
-        await supabase
-          .from("appointment_items")
-          .update({ price: newPrice })
-          .eq("id", item.id);
-      }
-    }
-  }
+  const validDiscountPct = !isNaN(discountPct) && discountPct > 0 && discountPct <= 100 ? discountPct : 0;
 
   const result = await completeAppointment(
     parsed.data.appointment_id,
     profile.salon_id,
-    parsed.data.payment_method ?? ""
+    parsed.data.payment_method ?? "",
+    validDiscountPct
   );
 
   if (result.ok) {
@@ -185,6 +174,7 @@ export async function completeAppointmentAction(
         .eq("is_temporary", true);
     }
     revalidatePath("/appointments");
+    revalidatePath(`/appointments/${parsed.data.appointment_id}`);
     revalidatePath("/customers");
   }
   return result;

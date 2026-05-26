@@ -26,7 +26,8 @@ export async function confirmAppointment(
   const { error } = await supabase
     .from("appointments")
     .update({ status: "confirmed" as const })
-    .eq("id", appointmentId);
+    .eq("id", appointmentId)
+    .eq("salon_id", salonId);
 
   if (error) return err("Error al confirmar la cita.");
   return ok(undefined);

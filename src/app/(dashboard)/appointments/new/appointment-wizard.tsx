@@ -250,7 +250,12 @@ export function AppointmentWizard({
 
   const validRows = rows.filter((r) => r.serviceId && r.employeeId);
   const total = validRows.reduce((s, r) => s + (serviceMap.get(r.serviceId)?.price ?? 0), 0);
-  const step2Valid = rows.length > 0 && rows.every((r) => r.serviceId && r.employeeId) && !!date && !!time && !isClosedDay;
+  const assignmentsStillValid = schedule.length > 0 && schedule.every((item) => {
+    if (!item.row.serviceId || !item.row.employeeId || !item.start || !item.end) return false;
+    return eligibleEmployees(item.row.serviceId, item.start, item.end)
+      .some((employee) => employee.id === item.row.employeeId);
+  });
+  const step2Valid = assignmentsStillValid && !!date && !!time && !isClosedDay && !loadingAvail;
 
   function handleConfirm() {
     setSubmitError(null);

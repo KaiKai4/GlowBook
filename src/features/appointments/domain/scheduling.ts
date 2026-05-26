@@ -33,6 +33,12 @@ function validateAssignment(
   if (!assignment.employee.is_active) {
     throw new Error("El profesional no está activo.");
   }
+  if (!assignment.employee.service_ids.includes(assignment.service.id)) {
+    throw new Error("El profesional seleccionado no realiza ese servicio.");
+  }
+  if (!assignment.employee.category_ids.includes(assignment.service.category_id)) {
+    throw new Error("El profesional seleccionado no atiende esa categoría.");
+  }
 }
 
 // Builds item payloads using a sequential cursor (services chain one after another).

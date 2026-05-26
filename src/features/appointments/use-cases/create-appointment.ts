@@ -60,8 +60,49 @@ export async function createAppointment(
 
   if (!services || !employees) return err("Datos inválidos.");
 
+  const [employeeServicesResult, employeeCategoriesResult] = await Promise.all([
+    supabase
+      .from("employee_services")
+      .select("employee_id, service_id")
+      .in("employee_id", employeeIds)
+      .in("service_id", serviceIds)
+      .eq("salon_id", salonId),
+    supabase
+      .from("employee_categories")
+      .select("employee_id, category_id")
+      .in("employee_id", employeeIds)
+      .eq("salon_id", salonId),
+  ]);
+
+  if (employeeServicesResult.error || employeeCategoriesResult.error) {
+    return err("No se pudo validar los servicios del profesional.");
+  }
+
+  const serviceIdsByEmployee = new Map<string, string[]>();
+  for (const row of employeeServicesResult.data ?? []) {
+    const list = serviceIdsByEmployee.get(row.employee_id) ?? [];
+    list.push(row.service_id);
+    serviceIdsByEmployee.set(row.employee_id, list);
+  }
+
+  const categoryIdsByEmployee = new Map<string, string[]>();
+  for (const row of employeeCategoriesResult.data ?? []) {
+    const list = categoryIdsByEmployee.get(row.employee_id) ?? [];
+    list.push(row.category_id);
+    categoryIdsByEmployee.set(row.employee_id, list);
+  }
+
   const serviceMap = new Map(services.map((s) => [s.id, s]));
-  const employeeMap = new Map(employees.map((e) => [e.id, e]));
+  const employeeMap = new Map(
+    employees.map((e) => [
+      e.id,
+      {
+        ...e,
+        service_ids: serviceIdsByEmployee.get(e.id) ?? [],
+        category_ids: categoryIdsByEmployee.get(e.id) ?? [],
+      },
+    ])
+  );
 
   const assignments = input.assignments.map((a) => ({
     service: serviceMap.get(a.service_id),
