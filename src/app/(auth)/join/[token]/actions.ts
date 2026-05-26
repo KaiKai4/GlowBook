@@ -36,6 +36,28 @@ export async function acceptEmployeeInvitationAction(
 
   if (!emp) return { ok: false, error: "Colaborador no encontrado." };
 
+  let roleId: string | null = null;
+  if (inv.role_id) {
+    const { data: role, error: roleError } = await admin
+      .from("roles")
+      .select("id")
+      .eq("id", inv.role_id)
+      .eq("salon_id", inv.salon_id)
+      .eq("is_system", false)
+      .maybeSingle();
+
+    if (roleError) {
+      console.error("[employee-join]", roleError);
+      return { ok: false, error: "No se pudo verificar el rol de la invitacion." };
+    }
+
+    if (!role) {
+      return { ok: false, error: "Este enlace tiene un rol invalido. Solicita un enlace nuevo." };
+    }
+
+    roleId = role.id;
+  }
+
   // Create the auth user (pre-confirmed, no email needed)
   const { data: created, error: authError } = await admin.auth.admin.createUser({
     email: inv.email,
@@ -58,7 +80,7 @@ export async function acceptEmployeeInvitationAction(
     salon_id: inv.salon_id,
     full_name: `${emp.first_name} ${emp.last_name}`,
     is_owner: false,
-    role_id: inv.role_id ?? null,
+    role_id: roleId,
   });
 
   if (profileError) {

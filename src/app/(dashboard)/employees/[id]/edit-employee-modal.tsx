@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils/cn";
 import { UserPen } from "lucide-react";
 import { updateEmployeeAction } from "../actions";
+import { CategoryServicePicker } from "../category-service-picker";
+import type { CategoryOption } from "../types";
 
 interface EmployeeForEdit {
   id: string;
@@ -17,12 +18,6 @@ interface EmployeeForEdit {
   email: string;
   specialty: string;
   commission_percentage: number;
-}
-
-interface CategoryOption {
-  id: string;
-  name: string;
-  services: { id: string; name: string }[];
 }
 
 interface Props {
@@ -51,11 +46,6 @@ export function EditEmployeeModal({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const selectedCategories = useMemo(
-    () => categories.filter((category) => categoryIds.includes(category.id)),
-    [categories, categoryIds]
-  );
-
   function reset() {
     setFirstName(employee.first_name);
     setLastName(employee.last_name);
@@ -72,30 +62,6 @@ export function EditEmployeeModal({
     if (pending) return;
     setOpen(false);
     reset();
-  }
-
-  function toggleCategory(categoryId: string) {
-    setCategoryIds((prev) => {
-      const next = prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId];
-
-      const allowedServiceIds = new Set(
-        categories
-          .filter((category) => next.includes(category.id))
-          .flatMap((category) => category.services.map((service) => service.id))
-      );
-      setServiceIds((current) => current.filter((serviceId) => allowedServiceIds.has(serviceId)));
-      return next;
-    });
-  }
-
-  function toggleService(serviceId: string) {
-    setServiceIds((prev) =>
-      prev.includes(serviceId)
-        ? prev.filter((id) => id !== serviceId)
-        : [...prev, serviceId]
-    );
   }
 
   function handleSubmit() {
@@ -144,63 +110,13 @@ export function EditEmployeeModal({
             <Input label="Comision (%)" type="number" min={0} max={100} value={commission} onChange={(e) => { setCommission(e.target.value); setError(null); }} />
           </div>
 
-          <div>
-            <p className="mb-2 text-sm font-semibold text-stone-700">Categorias que atiende</p>
-            {categories.length === 0 ? (
-              <p className="text-sm text-stone-400">No hay categorias configuradas.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => {
-                  const selected = categoryIds.includes(category.id);
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => toggleCategory(category.id)}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-                        selected
-                          ? "border-brand-400 bg-brand-50 text-brand-700"
-                          : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                      )}
-                    >
-                      {category.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {selectedCategories.length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-semibold text-stone-700">Servicios que realiza</p>
-              <div className="max-h-56 space-y-3 overflow-y-auto rounded-xl border border-brand-100 bg-brand-50/30 p-3">
-                {selectedCategories.map((category) => (
-                  <div key={category.id}>
-                    <p className="text-xs font-bold uppercase tracking-wide text-brand-400">{category.name}</p>
-                    {category.services.length === 0 ? (
-                      <p className="mt-1 text-xs text-stone-400">Sin servicios en esta categoria.</p>
-                    ) : (
-                      <div className="mt-1 space-y-1">
-                        {category.services.map((service) => (
-                          <label key={service.id} className="flex cursor-pointer items-center gap-2 text-sm text-stone-700 hover:text-stone-900">
-                            <input
-                              type="checkbox"
-                              checked={serviceIds.includes(service.id)}
-                              onChange={() => toggleService(service.id)}
-                              className="rounded accent-brand-600"
-                            />
-                            {service.name}
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <CategoryServicePicker
+            categories={categories}
+            categoryIds={categoryIds}
+            serviceIds={serviceIds}
+            onCategoryIdsChange={setCategoryIds}
+            onServiceIdsChange={setServiceIds}
+          />
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>

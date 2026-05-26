@@ -116,7 +116,11 @@ export async function updateEmployeeServices(
   serviceIds: string[]
 ) {
   const supabase = await createSupabaseServerClient();
-  await supabase.from("employee_services").delete().eq("employee_id", employeeId);
+  await supabase
+    .from("employee_services")
+    .delete()
+    .eq("employee_id", employeeId)
+    .eq("salon_id", salonId);
   if (serviceIds.length > 0) {
     await supabase.from("employee_services").insert(
       serviceIds.map((service_id) => ({ employee_id: employeeId, service_id, salon_id: salonId }))
@@ -130,7 +134,11 @@ export async function updateEmployeeCategories(
   categoryIds: string[]
 ) {
   const supabase = await createSupabaseServerClient();
-  await supabase.from("employee_categories").delete().eq("employee_id", employeeId);
+  await supabase
+    .from("employee_categories")
+    .delete()
+    .eq("employee_id", employeeId)
+    .eq("salon_id", salonId);
   if (categoryIds.length > 0) {
     await supabase.from("employee_categories").insert(
       categoryIds.map((category_id) => ({ employee_id: employeeId, category_id, salon_id: salonId }))
