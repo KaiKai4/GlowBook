@@ -8,6 +8,8 @@ import { cancelAppointmentAction } from "../actions";
 import { promoteCustomerAction, deleteTemporaryCustomerAction } from "../../customers/actions";
 import { MessageCircle, UserX, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { formatTimeTz } from "@/lib/utils/dates";
+import { renderMessageTemplate } from "@/features/notifications/domain/templates";
 
 interface ApptForCancel {
   id: string;
@@ -19,6 +21,10 @@ interface ApptForCancel {
     phone: string | null;
     is_temporary: boolean;
   } | null;
+  items?: Array<{
+    service: { name: string } | null;
+    employee: { first_name: string; last_name: string } | null;
+  }>;
 }
 
 type SaveChoice = "save" | "discard";
@@ -29,11 +35,14 @@ function buildWhatsAppUrl(phone: string, message: string): string {
 }
 
 export function CancelAppointmentDialog({
-  appt, open, onClose,
+  appt, open, onClose, tz, salonName, template,
 }: {
   appt: ApptForCancel;
   open: boolean;
   onClose: () => void;
+  tz: string;
+  salonName: string;
+  template: string;
 }) {
   const router = useRouter();
   const isTemp = appt.customer?.is_temporary ?? false;
@@ -45,9 +54,15 @@ export function CancelAppointmentDialog({
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
     : "el cliente";
 
-  const apptTime = appt.start_time
-    ? new Date(appt.start_time).toLocaleString("es-PA", { dateStyle: "medium", timeStyle: "short" })
-    : "la cita";
+  const apptDate = appt.start_time
+    ? new Date(appt.start_time).toLocaleDateString("es-PA", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: tz,
+      })
+    : "la fecha programada";
+  const apptTime = appt.start_time ? formatTimeTz(new Date(appt.start_time), tz) : "la hora programada";
 
   function handleCancel(withWhatsApp: boolean) {
     setError(null);
@@ -65,7 +80,20 @@ export function CancelAppointmentDialog({
       }
 
       if (withWhatsApp && appt.customer?.phone) {
-        const msg = `Hola ${appt.customer.first_name}, lamentamos informarte que tu cita para el ${apptTime} ha sido cancelada. Contáctanos para reagendar. ¡Gracias por tu comprensión!`;
+        const services = appt.items?.map((it) => it.service?.name).filter(Boolean).join(", ") || "Servicios de belleza";
+        const collaborators = [...new Set(
+          appt.items
+            ?.map((it) => it.employee ? `${it.employee.first_name} ${it.employee.last_name}` : null)
+            .filter(Boolean) ?? []
+        )].join(", ") || "nuestro equipo";
+        const msg = renderMessageTemplate(template, {
+          cliente: appt.customer.first_name,
+          fecha: apptDate,
+          hora: apptTime,
+          servicios: services,
+          colaboradores: collaborators,
+          salon: salonName,
+        });
         window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank");
       }
 

@@ -98,7 +98,7 @@ export function EmployeeAccessPanel({
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-semibold text-amber-900">Reiniciar acceso</p>
           <p className="mt-1 text-xs text-amber-700">
-            Revoca la cuenta actual y genera un nuevo enlace para que el colaborador cree otra contraseÃ±a.
+            Revoca la cuenta actual y genera un nuevo enlace para que el colaborador cree otra contraseña.
           </p>
           <Button
             variant="outline"

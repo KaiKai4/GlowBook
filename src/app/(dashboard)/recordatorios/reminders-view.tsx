@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { formatTimeTz } from "@/lib/utils/dates";
 import { MessageCircle, Bell } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { renderMessageTemplate } from "@/features/notifications/domain/templates";
 
 interface ApptReminder {
   id: string;
@@ -56,18 +57,18 @@ function buildWhatsAppUrl(phone: string, message: string): string {
   return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
 }
 
-function reminderMsg(name: string, date: string, time: string, services: string): string {
-  return `Hola ${name} 👋 Te recordamos que tienes una cita el *${date}* a las *${time}*.\n\n📌 Servicios: ${services}\n\nSi necesitas reagendar, contáctanos. ¡Te esperamos!`;
-}
-
 export function RemindersView({
   appointments,
   employees,
   tz,
+  salonName,
+  template,
 }: {
   appointments: ApptReminder[];
   employees: { id: string; name: string }[];
   tz: string;
+  salonName: string;
+  template: string;
 }) {
   const [period, setPeriod] = useState<Period>("7dias");
   const [empId, setEmpId] = useState("");
@@ -119,8 +120,20 @@ export function RemindersView({
     const dateLabel = new Date(appt.start_time).toLocaleDateString("es-PA", {
       weekday: "long", day: "numeric", month: "long", timeZone: tz,
     });
-    const services = appt.items.map((it) => it.service?.name).filter(Boolean).join(", ");
-    const msg = reminderMsg(appt.customer.first_name, dateLabel, time, services);
+    const services = appt.items.map((it) => it.service?.name).filter(Boolean).join(", ") || "Servicios de belleza";
+    const collaborators = [...new Set(
+      appt.items
+        .map((it) => it.employee ? `${it.employee.first_name} ${it.employee.last_name}` : null)
+        .filter(Boolean)
+    )].join(", ") || "nuestro equipo";
+    const msg = renderMessageTemplate(template, {
+      cliente: appt.customer.first_name,
+      fecha: dateLabel,
+      hora: time,
+      servicios: services,
+      colaboradores: collaborators,
+      salon: salonName,
+    });
     window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank");
   }
 

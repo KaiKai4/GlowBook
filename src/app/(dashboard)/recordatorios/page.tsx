@@ -1,6 +1,7 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
+import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { utcBounds } from "@/lib/utils/dates";
 import { RemindersView } from "./reminders-view";
@@ -26,7 +27,7 @@ export default async function RecordatoriosPage() {
 
   const supabase = await createSupabaseServerClient();
   const { data: salon } = await supabase
-    .from("salons").select("timezone").eq("id", profile.salon_id).single();
+    .from("salons").select("name, timezone").eq("id", profile.salon_id).single();
   const tz = salon?.timezone ?? "America/Panama";
 
   // "Today" in the salon's timezone + the next 7 days, as a tz-aware UTC range.
@@ -34,10 +35,13 @@ export default async function RecordatoriosPage() {
   const { start, end } = utcBounds(localToday, addDaysISO(localToday, 7), tz);
 
   // Fetch all pending appointments for the next 7 days in one query
-  const appointments = await findAppointmentsBySalon(profile.salon_id, {
-    startDate: start,
-    endDate: end,
-  });
+  const [appointments, reminderTemplate] = await Promise.all([
+    findAppointmentsBySalon(profile.salon_id, {
+      startDate: start,
+      endDate: end,
+    }),
+    findActiveMessageTemplate(profile.salon_id, "appointment_reminder"),
+  ]);
 
   const pending = appointments.filter((a) => !["cancelled", "completed"].includes(a.status));
 
@@ -69,6 +73,8 @@ export default async function RecordatoriosPage() {
         appointments={pending as unknown as Parameters<typeof RemindersView>[0]["appointments"]}
         employees={employees}
         tz={tz}
+        salonName={salon?.name ?? "tu salón"}
+        template={reminderTemplate.body_text}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
 import { findBusinessHours } from "@/features/salon/data/salon.repo";
+import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
 import { utcBounds } from "@/lib/utils/dates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -61,8 +62,8 @@ export default async function AppointmentsPage({
 
   // The employee list only feeds the "Por trabajador" view, which is hidden for
   // collaborators who can't see others' appointments — skip the query for them.
-  const [salonResult, employeesResult, businessHours] = await Promise.all([
-    supabase.from("salons").select("timezone").eq("id", profile.salon_id).single(),
+  const [salonResult, employeesResult, businessHours, cancellationTemplate] = await Promise.all([
+    supabase.from("salons").select("name, timezone").eq("id", profile.salon_id).single(),
     canViewAll
       ? supabase
           .from("employees")
@@ -72,9 +73,11 @@ export default async function AppointmentsPage({
           .order("first_name")
       : null,
     findBusinessHours(profile.salon_id),
+    findActiveMessageTemplate(profile.salon_id, "appointment_cancelled"),
   ]);
 
   const tz = salonResult.data?.timezone ?? "America/Panama";
+  const salonName = salonResult.data?.name ?? "tu salón";
 
   // Calendar grid spans the salon's open hours (8–21 fallback). The component
   // widens it automatically if any appointment falls outside this range.
@@ -159,6 +162,8 @@ export default async function AppointmentsPage({
         employees={employees}
         businessStart={businessStart}
         businessEnd={businessEnd}
+        salonName={salonName}
+        cancellationTemplate={cancellationTemplate.body_text}
       />
     </div>
   );

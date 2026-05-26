@@ -9,6 +9,7 @@ import {
   Settings,
   Shield,
   Bell,
+  MessageSquareText,
 } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
 
@@ -52,6 +53,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Reportes", href: "/reports", icon: BarChart3, permissions: ["reports.view"] },
       { label: "Roles", href: "/roles", icon: Shield, permissions: ["roles.manage"] },
+      { label: "Plantillas", href: "/plantillas", icon: MessageSquareText, permissions: ["reminders.send"] },
       { label: "Salón", href: "/salon", icon: Settings, permissions: ["salon.manage"] },
     ],
   },

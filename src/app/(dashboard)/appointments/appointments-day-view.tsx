@@ -46,7 +46,7 @@ interface Employee { id: string; first_name: string; last_name: string }
 export function AppointmentsDayView({
   appointments, tz, canManage,
   view = "diaria", weekDates, employees = [],
-  businessStart, businessEnd,
+  businessStart, businessEnd, salonName, cancellationTemplate,
 }: {
   appointments: ApptFull[];
   tz: string;
@@ -56,6 +56,8 @@ export function AppointmentsDayView({
   employees?: Employee[];
   businessStart?: number;
   businessEnd?: number;
+  salonName: string;
+  cancellationTemplate: string;
 }) {
   const router = useRouter();
   const [pending, startConfirm] = useTransition();
@@ -317,7 +319,12 @@ export function AppointmentsDayView({
       )}
       {cancelAppt && (
         <CancelAppointmentDialog
-          appt={cancelAppt} open={!!cancelAppt} onClose={() => setCancelAppt(null)}
+          appt={cancelAppt}
+          open={!!cancelAppt}
+          onClose={() => setCancelAppt(null)}
+          tz={tz}
+          salonName={salonName}
+          template={cancellationTemplate}
         />
       )}
     </div>
