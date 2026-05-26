@@ -96,16 +96,6 @@ export async function deleteCustomer(id: string, salonId: string): Promise<void>
   if (error) throw error;
 }
 
-export async function removeCustomer(id: string, salonId: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("customers")
-    .delete()
-    .eq("id", id)
-    .eq("salon_id", salonId);
-  if (error) throw error;
-}
-
 export async function updateCustomer(
   id: string,
   salonId: string,
