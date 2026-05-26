@@ -32,7 +32,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: Record<NotificationTemplateEvent, Messag
     name: "Recordatorio WhatsApp",
     is_active: true,
     body_text:
-      "Hola {cliente} 👋 Te recordamos que tienes una cita en {salon} el {fecha} a las {hora}.\n\nServicios: {servicios}\nProfesional: {colaboradores}\n\nSi necesitas reagendar, contáctanos. ¡Te esperamos!",
+      "Hola {cliente}. Te recordamos que tienes una cita en {salon} el {fecha} a las {hora}.\n\nServicios: {servicios}\nProfesional: {colaboradores}\n\nSi necesitas reagendar, contáctanos. ¡Te esperamos!",
   },
   appointment_cancelled: {
     event: "appointment_cancelled",

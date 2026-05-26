@@ -1075,6 +1075,10 @@ export type Database = {
             Returns: string
           }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      delete_salon_completely: {
+        Args: { p_salon_id: string }
+        Returns: { user_id: string }[]
+      }
       has_permission: { Args: { perm: string }; Returns: boolean }
       invite_salon: { Args: { p_email: string }; Returns: string }
       is_owner: { Args: never; Returns: boolean }

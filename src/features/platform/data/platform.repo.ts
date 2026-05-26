@@ -132,56 +132,23 @@ export async function deleteSalonCompletely(salonId: string): Promise<void> {
   if (salonError) throw salonError;
   if (!salon) throw new Error("Salón no encontrado.");
 
-  const { data: profiles, error: profilesError } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("salon_id", salonId);
-  if (profilesError) throw profilesError;
-
-  // Delete in dependency order. Several tenant FKs are restrict by design, so
-  // deleting the salon row first would fail or leave operational data behind.
-  const deleteResult = await Promise.all([
-    admin.from("appointment_reminder_log").delete().eq("salon_id", salonId),
-    admin.from("employee_invitations").delete().eq("salon_id", salonId),
-    admin.from("employee_services").delete().eq("salon_id", salonId),
-    admin.from("employee_categories").delete().eq("salon_id", salonId),
-    admin.from("work_schedules").delete().eq("salon_id", salonId),
-    admin.from("notification_templates").delete().eq("salon_id", salonId),
-    admin.from("salon_business_hours").delete().eq("salon_id", salonId),
-    admin.from("feedback_reports").delete().eq("salon_id", salonId),
-    admin.from("role_permissions").delete().eq("salon_id", salonId),
-    admin.from("salon_invitations").delete().eq("salon_id", salonId),
-  ]);
-  const firstDeleteError = deleteResult.find((result) => result.error)?.error;
-  if (firstDeleteError) throw firstDeleteError;
-
-  let result = await admin.from("appointment_items").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("appointments").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("employees").update({ profile_id: null }).eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("employees").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("services").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("service_categories").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("customers").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("profiles").update({ role_id: null }).eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("profiles").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-  result = await admin.from("roles").delete().eq("salon_id", salonId);
-  if (result.error) throw result.error;
-
-  const { error } = await admin.from("salons").delete().eq("id", salonId);
+  const { data: deletedUsers, error } = await admin.rpc("delete_salon_completely", {
+    p_salon_id: salonId,
+  });
   if (error) throw error;
 
-  for (const profile of profiles ?? []) {
-    const { error: authError } = await admin.auth.admin.deleteUser(profile.id);
-    if (authError && authError.status !== 404) throw authError;
+  const authCleanupErrors: string[] = [];
+  for (const profile of deletedUsers ?? []) {
+    const { error: authError } = await admin.auth.admin.deleteUser(profile.user_id);
+    if (authError && authError.status !== 404) {
+      authCleanupErrors.push(`${profile.user_id}: ${authError.message}`);
+    }
+  }
+
+  if (authCleanupErrors.length > 0) {
+    throw new Error(
+      `Los datos del salon fueron eliminados, pero no se pudieron borrar ${authCleanupErrors.length} cuenta(s) Auth: ${authCleanupErrors.join("; ")}`
+    );
   }
 }
 
