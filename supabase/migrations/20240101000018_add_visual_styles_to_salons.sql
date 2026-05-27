@@ -1,0 +1,2 @@
+ALTER TABLE salons ADD COLUMN IF NOT EXISTS sidebar_style VARCHAR DEFAULT 'light';
+ALTER TABLE salons ADD COLUMN IF NOT EXISTS card_style VARCHAR DEFAULT 'elevated';

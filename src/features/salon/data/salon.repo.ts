@@ -5,7 +5,7 @@ export interface SalonSettings {
   name: string;
   timezone: string;
   theme: string;
-  bg_style: string;
+  bg_style: string | null;
 }
 
 export interface BusinessHourRow {

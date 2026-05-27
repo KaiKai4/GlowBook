@@ -845,6 +845,8 @@ export type Database = {
         Row: {
           address: string
           allow_off_hours_bookings: boolean
+          bg_style: string | null
+          card_style: string | null
           created_at: string
           email: string
           id: string
@@ -855,6 +857,7 @@ export type Database = {
           phone: string
           primary_color: string
           secondary_color: string
+          sidebar_style: string | null
           theme: string
           timezone: string
           updated_at: string
@@ -862,6 +865,8 @@ export type Database = {
         Insert: {
           address?: string
           allow_off_hours_bookings?: boolean
+          bg_style?: string | null
+          card_style?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -872,6 +877,7 @@ export type Database = {
           phone?: string
           primary_color?: string
           secondary_color?: string
+          sidebar_style?: string | null
           theme?: string
           timezone?: string
           updated_at?: string
@@ -879,6 +885,8 @@ export type Database = {
         Update: {
           address?: string
           allow_off_hours_bookings?: boolean
+          bg_style?: string | null
+          card_style?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -889,6 +897,7 @@ export type Database = {
           phone?: string
           primary_color?: string
           secondary_color?: string
+          sidebar_style?: string | null
           theme?: string
           timezone?: string
           updated_at?: string
@@ -1077,7 +1086,9 @@ export type Database = {
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_salon_completely: {
         Args: { p_salon_id: string }
-        Returns: { user_id: string }[]
+        Returns: {
+          user_id: string
+        }[]
       }
       has_permission: { Args: { perm: string }; Returns: boolean }
       invite_salon: { Args: { p_email: string }; Returns: string }

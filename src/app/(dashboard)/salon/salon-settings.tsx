@@ -339,7 +339,6 @@ export function SalonSettings({
           </p>
 
           <div className="grid grid-cols-2 gap-3">
-            {/* Neutral option */}
             <button
               type="button"
               onClick={() => pickBg("neutral")}
@@ -361,7 +360,6 @@ export function SalonSettings({
               </div>
             </button>
 
-            {/* Colored option */}
             <button
               type="button"
               onClick={() => pickBg("colored")}

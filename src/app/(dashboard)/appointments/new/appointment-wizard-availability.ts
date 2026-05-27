@@ -101,7 +101,7 @@ export function findEligibleEmployees({
       businessHours,
       workSchedules: employee.work_schedules,
       occupiedSlots: occupied[employee.id] ?? [],
-      enforceSalonSchedule: false,
+      enforceSalonSchedule: true,
       enforceNotice: false,
       enforceMinDuration: false,
     });

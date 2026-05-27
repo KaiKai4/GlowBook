@@ -20,8 +20,6 @@ export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
 
   const groups = getVisibleNavGroups(userPermissions, isOwner);
 
-  // Route clicks through the unsaved-changes guard, but let modifier-clicks
-  // (open in new tab/window) behave normally.
   function handleNav(e: React.MouseEvent, href: string) {
     if (!confirmNavigate) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
