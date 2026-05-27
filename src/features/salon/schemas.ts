@@ -3,6 +3,9 @@ import { z } from "zod";
 export const SALON_THEMES = ["violet", "mocco", "tiffany", "viridian", "yellow", "rosewater"] as const;
 export type SalonTheme = (typeof SALON_THEMES)[number];
 
+export const SALON_BG_STYLES = ["neutral", "colored"] as const;
+export type SalonBgStyle = (typeof SALON_BG_STYLES)[number];
+
 export const SalonInfoSchema = z.object({
   name: z.string().min(1, "El nombre del salón es obligatorio").max(120),
 });

@@ -48,6 +48,7 @@ export default async function SalonSettingsPage() {
       salonName={salon?.name ?? ""}
       timezone={salon?.timezone ?? "America/Panama"}
       theme={salon?.theme ?? "violet"}
+      bgStyle={salon?.bg_style ?? "neutral"}
       businessHours={businessHours}
     />
   );

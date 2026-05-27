@@ -25,7 +25,7 @@ export default async function DashboardLayout({
   const supabase = await createSupabaseServerClient();
   const { data: salon } = await supabase
     .from("salons")
-    .select("name, is_active, theme")
+    .select("name, is_active, theme, bg_style")
     .eq("id", profile.salon_id)
     .single();
 
@@ -34,6 +34,7 @@ export default async function DashboardLayout({
   const permissions = getPermissions(profile);
   const visibleNav = getVisibleNavItems(permissions, profile.is_owner);
   const theme = salon.theme || "violet";
+  const bgStyle = salon.bg_style || "neutral";
 
   if (!salon.is_active) {
     return (
@@ -88,7 +89,7 @@ export default async function DashboardLayout({
 
   return (
     <UnsavedChangesProvider>
-      <div data-theme={theme} className="flex h-screen overflow-hidden bg-neutral-50">
+      <div data-theme={theme} data-bg={bgStyle} className="flex h-screen overflow-hidden bg-neutral-50">
         <Sidebar
           salonName={salon.name}
           userPermissions={permissions}

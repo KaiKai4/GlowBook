@@ -1,0 +1,1 @@
+ALTER TABLE salons ADD COLUMN IF NOT EXISTS bg_style VARCHAR DEFAULT 'neutral';

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { Settings, Clock, Check, Store, Palette } from "lucide-react";
-import { updateSalonInfoAction, updateBusinessHoursAction, updateSalonThemeAction } from "./actions";
+import { updateSalonInfoAction, updateBusinessHoursAction, updateSalonThemeAction, updateSalonBgAction } from "./actions";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
 import type { BusinessDay } from "./page";
 
@@ -26,11 +26,13 @@ export function SalonSettings({
   salonName,
   timezone,
   theme,
+  bgStyle,
   businessHours,
 }: {
   salonName: string;
   timezone: string;
   theme: string;
+  bgStyle: string;
   businessHours: BusinessDay[];
 }) {
   // ── Salon name ──────────────────────────────────────────────────
@@ -99,13 +101,40 @@ export function SalonSettings({
     const previous = selectedTheme;
     setSelectedTheme(key);
     setThemeError(null);
-    applyTheme(key); // instant preview across the dashboard
+    applyTheme(key);
     startTheme(async () => {
       const res = await updateSalonThemeAction(key);
       if (!res.ok) {
         setThemeError(res.error);
         setSelectedTheme(previous);
         applyTheme(previous);
+      }
+    });
+  }
+
+  // ── Background style ────────────────────────────────────────────
+  const [selectedBg, setSelectedBg] = useState(bgStyle);
+  const [, startBg] = useTransition();
+  const [bgError, setBgError] = useState<string | null>(null);
+
+  function applyBg(key: string) {
+    if (typeof document !== "undefined") {
+      document.querySelectorAll("[data-bg]").forEach((el) => el.setAttribute("data-bg", key));
+    }
+  }
+
+  function pickBg(key: string) {
+    if (key === selectedBg) return;
+    const previous = selectedBg;
+    setSelectedBg(key);
+    setBgError(null);
+    applyBg(key);
+    startBg(async () => {
+      const res = await updateSalonBgAction(key);
+      if (!res.ok) {
+        setBgError(res.error);
+        setSelectedBg(previous);
+        applyBg(previous);
       }
     });
   }
@@ -291,6 +320,78 @@ export function SalonSettings({
           {themeError && (
             <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
               {themeError}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Background style ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-brand-500" />
+            Fondo del panel
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-stone-400 mb-4">
+            Elige entre un fondo neutro o un fondo de color degradado que combina con la gama seleccionada.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Neutral option */}
+            <button
+              type="button"
+              onClick={() => pickBg("neutral")}
+              className={cn(
+                "group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all",
+                selectedBg === "neutral"
+                  ? "border-brand-400 ring-2 ring-brand-400 bg-brand-50"
+                  : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className={cn("text-sm font-semibold", selectedBg === "neutral" ? "text-brand-700" : "text-stone-700")}>
+                  Neutro
+                </span>
+                {selectedBg === "neutral" && <Check className="h-4 w-4 text-brand-600" />}
+              </div>
+              <div className="h-14 w-full rounded-lg border border-black/5 bg-neutral-100 flex items-center justify-center gap-2 px-2">
+                <div className="h-6 w-full rounded-md bg-white border border-stone-200 shadow-sm" />
+              </div>
+            </button>
+
+            {/* Colored option */}
+            <button
+              type="button"
+              onClick={() => pickBg("colored")}
+              className={cn(
+                "group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all",
+                selectedBg === "colored"
+                  ? "border-brand-400 ring-2 ring-brand-400 bg-brand-50"
+                  : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className={cn("text-sm font-semibold", selectedBg === "colored" ? "text-brand-700" : "text-stone-700")}>
+                  De color
+                </span>
+                {selectedBg === "colored" && <Check className="h-4 w-4 text-brand-600" />}
+              </div>
+              <div
+                className="h-14 w-full rounded-lg flex items-center justify-center gap-2 px-2"
+                style={{
+                  background: "linear-gradient(150deg, var(--color-brand-300) 0%, var(--color-brand-100) 55%, var(--color-brand-200) 100%)",
+                }}
+              >
+                <div className="h-6 w-full rounded-md bg-white border border-white/60 shadow-sm" />
+              </div>
+            </button>
+          </div>
+
+          {bgError && (
+            <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+              {bgError}
             </p>
           )}
         </CardContent>

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { SalonInfoSchema, BusinessHoursSchema, SALON_THEMES, type SalonTheme } from "@/features/salon/schemas";
+import { SalonInfoSchema, BusinessHoursSchema, SALON_THEMES, type SalonTheme, SALON_BG_STYLES, type SalonBgStyle } from "@/features/salon/schemas";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
@@ -53,6 +53,25 @@ export async function updateSalonThemeAction(theme: string): Promise<Result<void
   if (error) return { ok: false, error: "Error al guardar la gama de colores." };
 
   // The accent palette lives in the dashboard layout, so refresh it everywhere.
+  revalidatePath("/", "layout");
+  return { ok: true, value: undefined };
+}
+
+export async function updateSalonBgAction(bgStyle: string): Promise<Result<void>> {
+  const g = await guard();
+  if (!g.ok) return g;
+
+  if (!SALON_BG_STYLES.includes(bgStyle as SalonBgStyle)) {
+    return { ok: false, error: "Estilo de fondo inválido." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("salons")
+    .update({ bg_style: bgStyle })
+    .eq("id", g.value.salonId);
+  if (error) return { ok: false, error: "Error al guardar el fondo." };
+
   revalidatePath("/", "layout");
   return { ok: true, value: undefined };
 }
