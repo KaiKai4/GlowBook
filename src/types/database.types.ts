@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -94,13 +94,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "appointment_items_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "appointment_items_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
@@ -108,11 +101,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "appointment_items_service_id_fkey"
-            columns: ["service_id"]
+            foreignKeyName: "fk_appointment_items_employee_same_salon"
+            columns: ["employee_id", "salon_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id", "salon_id"]
+          },
+          {
+            foreignKeyName: "fk_appointment_items_service_same_salon"
+            columns: ["service_id", "salon_id"]
             isOneToOne: false
             referencedRelation: "services"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "salon_id"]
           },
         ]
       }
@@ -233,18 +233,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "appointments_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "appointments_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_customer_same_salon"
+            columns: ["customer_id", "salon_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "salon_id"]
           },
         ]
       }
@@ -319,25 +319,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "employee_categories_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "service_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_categories_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "employee_categories_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_employee_categories_category_same_salon"
+            columns: ["category_id", "salon_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id", "salon_id"]
+          },
+          {
+            foreignKeyName: "fk_employee_categories_employee_same_salon"
+            columns: ["employee_id", "salon_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id", "salon_id"]
           },
         ]
       }
@@ -417,13 +417,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "employee_services_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "employee_services_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
@@ -431,11 +424,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employee_services_service_id_fkey"
-            columns: ["service_id"]
+            foreignKeyName: "fk_employee_services_employee_same_salon"
+            columns: ["employee_id", "salon_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id", "salon_id"]
+          },
+          {
+            foreignKeyName: "fk_employee_services_service_same_salon"
+            columns: ["service_id", "salon_id"]
             isOneToOne: false
             referencedRelation: "services"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "salon_id"]
           },
         ]
       }
@@ -984,11 +984,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "services_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "fk_services_category_same_salon"
+            columns: ["category_id", "salon_id"]
             isOneToOne: false
             referencedRelation: "service_categories"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "salon_id"]
           },
           {
             foreignKeyName: "services_salon_id_fkey"
@@ -1035,11 +1035,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "work_schedules_employee_id_fkey"
-            columns: ["employee_id"]
+            foreignKeyName: "fk_work_schedules_employee_same_salon"
+            columns: ["employee_id", "salon_id"]
             isOneToOne: false
             referencedRelation: "employees"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "salon_id"]
           },
           {
             foreignKeyName: "work_schedules_salon_id_fkey"

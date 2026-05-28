@@ -205,16 +205,6 @@ export async function updateEmployee(
   return data;
 }
 
-export async function deleteEmployee(id: string, salonId: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("employees")
-    .delete()
-    .eq("id", id)
-    .eq("salon_id", salonId);
-  if (error) throw error;
-}
-
 export async function upsertWorkSchedule(
   salonId: string,
   schedule: Omit<Database["public"]["Tables"]["work_schedules"]["Insert"], "salon_id">

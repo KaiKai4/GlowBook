@@ -5,16 +5,15 @@ export async function findCategoriesWithServices(salonId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("service_categories")
-    .select(`*, services(*)`)
+    .select("*, services(*)")
     .eq("salon_id", salonId)
     .eq("is_active", true)
     .order("ordering", { ascending: true });
+
   if (error) throw error;
   return data ?? [];
 }
 
-// Catalog view: categories + their services + the employees who perform each service
-// (for showing initials on the service cards).
 export async function findServicesCatalog(salonId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -29,41 +28,6 @@ export async function findServicesCatalog(salonId: string) {
     .eq("salon_id", salonId)
     .eq("is_active", true)
     .order("ordering", { ascending: true });
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function findServiceById(id: string, salonId: string) {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("services")
-    .select("*")
-    .eq("id", id)
-    .eq("salon_id", salonId)
-    .eq("is_active", true)
-    .single();
-  return data;
-}
-
-// §6.7: candidates for a service must (1) perform the service and (2) have its
-// category assigned. The time-availability check is applied later in the domain layer.
-export async function findEmployeesForService(serviceId: string, salonId: string) {
-  const supabase = await createSupabaseServerClient();
-
-  const service = await findServiceById(serviceId, salonId);
-  if (!service) return [];
-
-  const { data, error } = await supabase
-    .from("employees")
-    .select(`
-      *,
-      employee_services!inner(service_id),
-      employee_categories!inner(category_id)
-    `)
-    .eq("salon_id", salonId)
-    .eq("is_active", true)
-    .eq("employee_services.service_id", serviceId)
-    .eq("employee_categories.category_id", service.category_id);
 
   if (error) throw error;
   return data ?? [];
@@ -80,6 +44,7 @@ export async function createCategory(
     .insert({ ...input, salon_id: salonId })
     .select()
     .single();
+
   if (error) throw error;
   return data;
 }
@@ -90,7 +55,6 @@ export async function createService(
 ) {
   const supabase = await createSupabaseServerClient();
 
-  // Verify category belongs to salon
   const { data: category } = await supabase
     .from("service_categories")
     .select("id")
@@ -106,6 +70,7 @@ export async function createService(
     .insert({ ...input, salon_id: salonId })
     .select()
     .single();
+
   if (error) throw error;
   return data;
 }
@@ -126,7 +91,7 @@ export async function updateService(
       .eq("is_active", true)
       .single();
 
-    if (!category) throw new Error("La categoria no pertenece al salon o esta inactiva.");
+    if (!category) throw new Error("La categoría no pertenece al salón o está inactiva.");
   }
 
   const { data, error } = await supabase
@@ -136,6 +101,7 @@ export async function updateService(
     .eq("salon_id", salonId)
     .select()
     .single();
+
   if (error) throw error;
   return data;
 }
