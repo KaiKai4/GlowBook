@@ -71,6 +71,9 @@ export async function createServiceAction(
   } catch (e) {
     const msg = (e as Error).message;
     if (msg.includes("unique")) return { ok: false, error: "Ya existe un servicio con ese nombre." };
+    if (msg.includes("categoria no pertenece") || msg.includes("pertenece")) {
+      return { ok: false, error: "La categoria no pertenece al salon o esta inactiva." };
+    }
     return { ok: false, error: "Error al crear el servicio." };
   }
 }
@@ -98,6 +101,10 @@ export async function updateServiceAction(
     return { ok: true, value: undefined };
   } catch (err) {
     console.error("[services]", err);
+    const msg = (err as Error).message;
+    if (msg.includes("categoria no pertenece") || msg.includes("pertenece")) {
+      return { ok: false, error: "La categoria no pertenece al salon o esta inactiva." };
+    }
     return { ok: false, error: "Error al actualizar el servicio." };
   }
 }

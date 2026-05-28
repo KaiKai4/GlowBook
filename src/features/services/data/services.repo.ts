@@ -40,6 +40,7 @@ export async function findServiceById(id: string, salonId: string) {
     .select("*")
     .eq("id", id)
     .eq("salon_id", salonId)
+    .eq("is_active", true)
     .single();
   return data;
 }
@@ -73,6 +74,7 @@ export async function createCategory(
   input: Omit<Database["public"]["Tables"]["service_categories"]["Insert"], "salon_id">
 ) {
   const supabase = await createSupabaseServerClient();
+
   const { data, error } = await supabase
     .from("service_categories")
     .insert({ ...input, salon_id: salonId })
@@ -94,6 +96,7 @@ export async function createService(
     .select("id")
     .eq("id", input.category_id!)
     .eq("salon_id", salonId)
+    .eq("is_active", true)
     .single();
 
   if (!category) throw new Error("La categoría no pertenece al salón.");
@@ -113,6 +116,19 @@ export async function updateService(
   input: Database["public"]["Tables"]["services"]["Update"]
 ) {
   const supabase = await createSupabaseServerClient();
+
+  if (input.category_id) {
+    const { data: category } = await supabase
+      .from("service_categories")
+      .select("id")
+      .eq("id", input.category_id)
+      .eq("salon_id", salonId)
+      .eq("is_active", true)
+      .single();
+
+    if (!category) throw new Error("La categoria no pertenece al salon o esta inactiva.");
+  }
+
   const { data, error } = await supabase
     .from("services")
     .update(input)

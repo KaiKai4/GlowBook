@@ -5,6 +5,7 @@ import {
   updateEmployee,
   updateEmployeeCategories,
   updateEmployeeServices,
+  validateEmployeeAssignments,
 } from "@/features/employees/data/employees.repo";
 import {
   generateEmployeeInvitation,
@@ -62,6 +63,7 @@ export async function createEmployeeProfile(
       }
     }
 
+    await validateEmployeeAssignments(salonId, service_ids, category_ids);
     const created = await insertEmployee(salonId, employee, service_ids, category_ids);
 
     if (email && roleId) {
@@ -122,6 +124,7 @@ export async function updateEmployeeProfile(
       updateFields.profile_id = null;
     }
 
+    await validateEmployeeAssignments(salonId, service_ids ?? [], category_ids ?? []);
     await updateEmployee(employeeId, salonId, updateFields);
     await updateEmployeeServices(employeeId, salonId, service_ids ?? []);
     await updateEmployeeCategories(employeeId, salonId, category_ids ?? []);

@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertServicesHaveAssignedCategories } from "@/features/services/domain/service-assignment-integrity";
 import type { Database } from "@/types/database.types";
 
 export interface EmployeeWithDetails {
@@ -70,6 +71,47 @@ export async function findEmployeeByEmail(email: string, salonId: string) {
     .ilike("email", email)
     .maybeSingle();
   return data;
+}
+
+export async function validateEmployeeAssignments(
+  salonId: string,
+  serviceIds: string[],
+  categoryIds: string[]
+): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const uniqueServiceIds = [...new Set(serviceIds)];
+  const uniqueCategoryIds = [...new Set(categoryIds)];
+  const categorySet = new Set(uniqueCategoryIds);
+
+  if (uniqueCategoryIds.length > 0) {
+    const { data: categories, error } = await supabase
+      .from("service_categories")
+      .select("id")
+      .eq("salon_id", salonId)
+      .eq("is_active", true)
+      .in("id", uniqueCategoryIds);
+
+    if (error) throw error;
+    if ((categories ?? []).length !== uniqueCategoryIds.length) {
+      throw new Error("Una o mas categorias no pertenecen al salon o estan inactivas.");
+    }
+  }
+
+  if (uniqueServiceIds.length === 0) return;
+
+  const { data: services, error } = await supabase
+    .from("services")
+    .select("id, category_id")
+    .eq("salon_id", salonId)
+    .eq("is_active", true)
+    .in("id", uniqueServiceIds);
+
+  if (error) throw error;
+  if ((services ?? []).length !== uniqueServiceIds.length) {
+    throw new Error("Uno o mas servicios no pertenecen al salon o estan inactivos.");
+  }
+
+  assertServicesHaveAssignedCategories(services ?? [], [...categorySet]);
 }
 
 export async function createEmployee(
