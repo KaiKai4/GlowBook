@@ -1,14 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireProfile } from "@/lib/auth/session";
+import { requireActiveProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SalonInfoSchema, BusinessHoursSchema, SALON_THEMES, type SalonTheme, SALON_BG_STYLES, type SalonBgStyle } from "@/features/salon/schemas";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.SALON_MANAGE)) {
     return { ok: false, error: "No tienes permiso para editar el salón." };
   }

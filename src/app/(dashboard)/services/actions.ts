@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireProfile } from "@/lib/auth/session";
+import { requireActiveProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import {
   createCategory,
@@ -16,7 +16,7 @@ import {
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.SERVICES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar servicios." };
   }

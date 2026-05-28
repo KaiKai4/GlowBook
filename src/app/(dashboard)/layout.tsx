@@ -22,6 +22,8 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  if (!profile.is_active) redirect("/login");
+
   const supabase = await createSupabaseServerClient();
   const { data: salon } = await supabase
     .from("salons")

@@ -24,6 +24,24 @@ export async function requireProfile(): Promise<ProfileWithRole> {
   return profile;
 }
 
+export async function requireActiveProfile(): Promise<ProfileWithRole> {
+  const profile = await requireProfile();
+
+  if (!profile.is_active) redirect("/login");
+
+  const supabase = await createSupabaseServerClient();
+  const { data: salon } = await supabase
+    .from("salons")
+    .select("id, is_active")
+    .eq("id", profile.salon_id)
+    .maybeSingle();
+
+  if (!salon) redirect("/login");
+  if (!salon.is_active) redirect("/");
+
+  return profile;
+}
+
 export async function isPlatformAdmin(): Promise<boolean> {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireProfile } from "@/lib/auth/session";
+import { requireActiveProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import {
   createRole,
@@ -20,7 +20,7 @@ export async function createRoleAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar roles." };
   }
@@ -49,7 +49,7 @@ export async function updateRolePermissionsAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar roles." };
   }
@@ -74,7 +74,7 @@ export async function assignRoleAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para asignar roles." };
   }
@@ -95,7 +95,7 @@ export async function assignRoleAction(
 }
 
 export async function deleteRoleAction(roleId: string): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para eliminar roles." };
   }

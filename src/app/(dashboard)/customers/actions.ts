@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireProfile } from "@/lib/auth/session";
+import { requireActiveProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { CreateCustomerSchema, UpdateCustomerSchema } from "@/features/customers/schemas";
 import {
@@ -24,7 +24,7 @@ import {
 } from "@/features/customers/use-cases/customer-temporary";
 import type { Result } from "@/lib/result";
 
-function canManageCustomers(profile: Awaited<ReturnType<typeof requireProfile>>): Result<void> {
+function canManageCustomers(profile: Awaited<ReturnType<typeof requireActiveProfile>>): Result<void> {
   if (hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE)) {
     return { ok: true, value: undefined };
   }
@@ -41,7 +41,7 @@ export async function createCustomerAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return permission;
 
@@ -57,7 +57,7 @@ export async function createCustomerAction(
 export async function checkCustomerPhoneAction(
   phone: string
 ): Promise<{ exists: boolean; archived?: boolean }> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   return checkPermanentCustomerByPhone(profile.salon_id, phone);
 }
 
@@ -65,12 +65,12 @@ export async function findArchivedCustomerByContactAction(
   phone?: string,
   email?: string
 ): Promise<ArchivedCustomerMatch | null> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   return findArchivedCustomerByContact(profile.salon_id, phone, email);
 }
 
 export async function reactivateCustomerAction(customerId: string): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return permission;
 
@@ -86,7 +86,7 @@ export async function findOrCreateCustomerAction(
   lastName: string,
   phone?: string
 ): Promise<Result<string>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return permission;
 
@@ -100,7 +100,7 @@ export async function findOrCreateCustomerAction(
 
 // Promotes a temporary customer to permanent (visible in customer list, active).
 export async function promoteCustomerAction(customerId: string): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return { ok: false, error: "Sin permiso para gestionar clientes." };
 
@@ -112,7 +112,7 @@ export async function promoteCustomerAction(customerId: string): Promise<Result<
 // Hard-deletes a temporary customer so the phone number is freed for future bookings.
 // Only works if the customer is still marked is_temporary=true.
 export async function deleteTemporaryCustomerAction(customerId: string): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return { ok: false, error: "Sin permiso para gestionar clientes." };
 
@@ -124,7 +124,7 @@ export async function updateCustomerAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return permission;
 
@@ -139,7 +139,7 @@ export async function updateCustomerAction(
 export async function deleteCustomerAction(
   customerId: string
 ): Promise<Result<{ outcome: "deleted" | "archived"; message: string }>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return permission;
 

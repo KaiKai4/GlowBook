@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireProfile } from "@/lib/auth/session";
+import { requireActiveProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { upsertMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
 import { NotificationTemplateSchema, templateNameForEvent } from "@/features/notifications/schemas";
@@ -11,7 +11,7 @@ export async function updateNotificationTemplateAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireProfile();
+  const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return { ok: false, error: "No tienes permiso para editar plantillas." };
   }
