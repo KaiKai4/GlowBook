@@ -1,4 +1,4 @@
-import { requireProfile } from "@/lib/auth/session";
+﻿import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
 import { findBusinessHours } from "@/features/salon/data/salon.repo";
@@ -32,6 +32,27 @@ function getWeekDates(date: string): string[] {
   });
 }
 
+function businessDayFromISO(date: string): number {
+  const jsDay = new Date(`${date}T12:00:00`).getDay();
+  return jsDay === 0 ? 6 : jsDay - 1;
+}
+
+function getOpenBusinessDays(
+  businessHours: Awaited<ReturnType<typeof findBusinessHours>>
+): Set<number> {
+  if (businessHours.length === 0) return new Set([0, 1, 2, 3, 4, 5]);
+
+  return new Set(
+    businessHours
+      .filter((h) => h.is_open && h.open_time && h.close_time)
+      .map((h) => h.day_of_week)
+  );
+}
+
+function localDateISO(iso: string, timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date(iso));
+}
+
 export default async function AppointmentsPage({
   searchParams,
 }: {
@@ -61,7 +82,7 @@ export default async function AppointmentsPage({
   const supabase = await createSupabaseServerClient();
 
   // The employee list only feeds the "Por trabajador" view, which is hidden for
-  // collaborators who can't see others' appointments — skip the query for them.
+  // collaborators who can't see others' appointments â€” skip the query for them.
   const [salonResult, employeesResult, businessHours, cancellationTemplate] = await Promise.all([
     supabase.from("salons").select("name, timezone").eq("id", profile.salon_id).single(),
     canViewAll
@@ -77,9 +98,9 @@ export default async function AppointmentsPage({
   ]);
 
   const tz = salonResult.data?.timezone ?? "America/Panama";
-  const salonName = salonResult.data?.name ?? "tu salón";
+  const salonName = salonResult.data?.name ?? "tu salÃ³n";
 
-  // Calendar grid spans the salon's open hours (8–21 fallback). The component
+  // Calendar grid spans the salon's open hours (8â€“21 fallback). The component
   // widens it automatically if any appointment falls outside this range.
   const openDays = businessHours.filter((h) => h.is_open && h.open_time && h.close_time);
   const businessStart = openDays.length
@@ -98,6 +119,10 @@ export default async function AppointmentsPage({
   }[];
 
   const weekDates = getWeekDates(date);
+  const openBusinessDays = getOpenBusinessDays(businessHours);
+  const visibleWeekDates = weekDates.filter((weekDate) =>
+    openBusinessDays.has(businessDayFromISO(weekDate))
+  );
   const startDate = view === "semanal" ? weekDates[0] : date;
   const endDate = view === "semanal" ? weekDates[6] : date;
 
@@ -110,11 +135,12 @@ export default async function AppointmentsPage({
 
   let dateLabel: string;
   if (view === "semanal") {
-    const start = new Date(`${weekDates[0]}T12:00:00`);
-    const end = new Date(`${weekDates[6]}T12:00:00`);
+    const displayDates = visibleWeekDates.length > 0 ? visibleWeekDates : weekDates;
+    const start = new Date(`${displayDates[0]}T12:00:00`);
+    const end = new Date(`${displayDates[displayDates.length - 1]}T12:00:00`);
     const fmtDay = (d: Date) => d.toLocaleDateString("es-PA", { day: "numeric" });
     const fmtMonth = (d: Date) => d.toLocaleDateString("es-PA", { month: "long" });
-    dateLabel = `${fmtDay(start)} – ${fmtDay(end)} de ${fmtMonth(end)}`;
+    dateLabel = `${fmtDay(start)} - ${fmtDay(end)} de ${fmtMonth(end)}`;
   } else {
     dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString("es-PA", {
       weekday: "long",
@@ -123,9 +149,11 @@ export default async function AppointmentsPage({
     });
   }
 
-  const activeCount = appointments.filter(
-    (a) => a.status !== "cancelled" && a.status !== "no_show"
-  ).length;
+  const activeCount = appointments.filter((appointment) => {
+    if (appointment.status === "cancelled" || appointment.status === "no_show") return false;
+    if (view !== "semanal" || !appointment.start_time) return true;
+    return visibleWeekDates.includes(localDateISO(appointment.start_time, tz));
+  }).length;
 
   return (
     <div className="space-y-5">
@@ -158,7 +186,7 @@ export default async function AppointmentsPage({
         tz={tz}
         canManage={canManage}
         view={view}
-        weekDates={weekDates}
+        weekDates={visibleWeekDates}
         employees={employees}
         businessStart={businessStart}
         businessEnd={businessEnd}

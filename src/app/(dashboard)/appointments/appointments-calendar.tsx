@@ -233,7 +233,22 @@ export function AppointmentsCalendar({
   const { calStart, calEnd } = computeRange(visible, tz, businessStart, businessEnd);
   const totalHours = calEnd - calStart;
 
-  if (mode === "semanal" && weekDates?.length === 7) {
+  if (mode === "semanal" && weekDates?.length === 0) {
+    return (
+      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
+          <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
+          <span className="text-xs text-stone-500 font-medium">Sin días abiertos</span>
+        </div>
+        <div className="px-5 py-12 text-center">
+          <p className="text-sm font-semibold text-stone-500">No hay días de atención abiertos esta semana.</p>
+          <p className="mt-1 text-xs text-stone-400">Puedes cambiarlo desde Configuración del salón.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "semanal" && weekDates && weekDates.length > 0) {
     const byDate: Record<string, ApptCalItem[]> = {};
     for (const d of weekDates) byDate[d] = [];
     for (const appt of visible) {
@@ -241,12 +256,13 @@ export function AppointmentsCalendar({
       const localDate = getLocalDate(appt.start_time, tz);
       if (byDate[localDate]) byDate[localDate].push(appt);
     }
+    const visibleCount = weekDates.reduce((sum, d) => sum + (byDate[d]?.length ?? 0), 0);
 
     return (
       <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
           <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
-          <span className="text-xs text-stone-500 font-medium">{visible.length} citas esta semana</span>
+          <span className="text-xs text-stone-500 font-medium">{visibleCount} citas esta semana</span>
         </div>
 
         <div className="overflow-x-auto">
