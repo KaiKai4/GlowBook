@@ -11,13 +11,23 @@ export async function findAllSalons() {
     .select("id, name, email, phone, is_active, created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+
+  const salons = data ?? [];
+  const acceptedInviteEmailBySalon = await findAcceptedInvitationEmailBySalon(
+    salons.map((salon) => salon.id)
+  );
+
+  return salons.map((salon) => ({
+    ...salon,
+    contact_email: salon.email || acceptedInviteEmailBySalon.get(salon.id) || "",
+  }));
 }
 
 export interface SalonOverview {
   id: string;
   name: string;
   email: string;
+  contact_email: string;
   phone: string;
   is_active: boolean;
   created_at: string;
@@ -37,6 +47,10 @@ export async function findSalonOverviews(): Promise<SalonOverview[]> {
     .select("id, name, email, phone, is_active, created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;
+
+  const acceptedInviteEmailBySalon = await findAcceptedInvitationEmailBySalon(
+    (salons ?? []).map((salon) => salon.id)
+  );
 
   return Promise.all((salons ?? []).map(async (salon) => {
     const [
@@ -78,6 +92,7 @@ export async function findSalonOverviews(): Promise<SalonOverview[]> {
       id: salon.id,
       name: salon.name,
       email: salon.email,
+      contact_email: salon.email || acceptedInviteEmailBySalon.get(salon.id) || "",
       phone: salon.phone,
       is_active: salon.is_active,
       created_at: salon.created_at,
@@ -90,6 +105,29 @@ export async function findSalonOverviews(): Promise<SalonOverview[]> {
       invitation_count: invitations.count ?? 0,
     };
   }));
+}
+
+async function findAcceptedInvitationEmailBySalon(salonIds: string[]): Promise<Map<string, string>> {
+  if (salonIds.length === 0) return new Map();
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("salon_invitations")
+    .select("salon_id, email, accepted_at")
+    .in("salon_id", salonIds)
+    .eq("status", "accepted")
+    .order("accepted_at", { ascending: false });
+
+  if (error) throw error;
+
+  const emailsBySalon = new Map<string, string>();
+  for (const invitation of data ?? []) {
+    if (invitation.salon_id && invitation.email && !emailsBySalon.has(invitation.salon_id)) {
+      emailsBySalon.set(invitation.salon_id, invitation.email);
+    }
+  }
+
+  return emailsBySalon;
 }
 
 export async function findSalonOwners() {

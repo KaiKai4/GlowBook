@@ -44,6 +44,7 @@ export default async function PlatformSalonsPage() {
                 <thead>
                   <tr className="border-b border-neutral-100 text-left text-xs font-semibold uppercase tracking-wide text-neutral-400">
                     <th className="px-3 py-3">Salón</th>
+                    <th className="px-3 py-3">Correo</th>
                     <th className="px-3 py-3">Owners</th>
                     <th className="px-3 py-3">Datos</th>
                     <th className="px-3 py-3">Estado</th>
@@ -56,9 +57,16 @@ export default async function PlatformSalonsPage() {
                     <tr key={salon.id} className="align-top">
                       <td className="px-3 py-4">
                         <p className="font-semibold text-neutral-900">{salon.name}</p>
-                        <p className="text-xs text-neutral-500">{salon.email || "Sin email"}</p>
                         <p className="text-xs text-neutral-400">{salon.phone || "Sin teléfono"}</p>
                         <p className="mt-1 font-mono text-[11px] text-neutral-400">{salon.id}</p>
+                      </td>
+                      <td className="px-3 py-4">
+                        <p className="max-w-[220px] truncate text-sm font-medium text-neutral-800">
+                          {salon.contact_email || "Sin correo registrado"}
+                        </p>
+                        {!salon.email && salon.contact_email ? (
+                          <p className="mt-1 text-[11px] text-neutral-400">Tomado de la invitación aceptada</p>
+                        ) : null}
                       </td>
                       <td className="px-3 py-4">
                         {salon.owner_names.length > 0 ? (

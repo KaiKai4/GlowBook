@@ -81,7 +81,7 @@ export default async function PlatformAdminPage() {
                 name="email"
                 placeholder="email@salon.com"
                 required
-                className="h-9 flex-1 rounded-lg border border-neutral-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                className="h-9 flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
               />
               <Button type="submit" variant="primary">
                 Invitar
@@ -129,9 +129,11 @@ export default async function PlatformAdminPage() {
           <div className="divide-y divide-neutral-100">
             {salons.slice(0, 10).map((salon) => (
               <div key={salon.id} className="py-3 flex items-center justify-between">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-neutral-900">{salon.name}</p>
-                  <p className="text-xs text-neutral-400">{salon.email}</p>
+                  <p className="truncate text-xs text-neutral-500">
+                    {salon.contact_email || "Sin correo registrado"}
+                  </p>
                 </div>
                 <Badge variant={salon.is_active ? "success" : "danger"}>
                   {salon.is_active ? "Activo" : "Suspendido"}
