@@ -12,8 +12,8 @@ import {
   MessageSquareText,
 } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
-import type { SalonFeatureKey } from "@/features/platform/domain/salon-features";
-import { normalizeDisabledSalonFeatures } from "@/features/platform/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-features";
 
 export interface NavItem {
   label: string;

@@ -24,6 +24,20 @@ src/lib/supabase/admin.ts
 
 That Module must import `server-only` and must never be imported by client Modules.
 
+Supabase Auth Admin operations have a narrower Adapter:
+
+```text
+src/lib/supabase/auth-admin.ts
+```
+
+Use-cases and route files must not call `admin.auth.admin.*` directly. They must use this Adapter for creating, deleting, updating or searching Auth users.
+
+The currently authorized service-role data Adapters are:
+
+- `src/features/platform/data/platform.repo.ts` for Platform cross-tenant reads/writes and protected Salon RPC workflows.
+- `src/features/employees/data/employee-access.repo.ts` for collaborator invitations, profile linkage and collaborator-access cleanup.
+- `src/lib/auth/session.ts` for Platform admin detection.
+
 Allowed use cases:
 
 1. Platform administration after `requirePlatformAdmin()` or equivalent verification:
@@ -66,7 +80,7 @@ The system keeps RLS as the default data safety model.
 
 Privileged operations become auditable because there is a short list of allowed reasons.
 
-Some current use-cases may still import `createSupabaseAdminClient()` directly. Future refactors should move repeated privileged behavior behind narrower server-only Adapters, especially for Supabase Auth account management.
+Legacy use-cases previously imported `createSupabaseAdminClient()` directly. After Phase 6, Auth Admin operations are isolated in `src/lib/supabase/auth-admin.ts`; future Auth Admin use outside that Adapter requires updating this ADR.
 
 If a Module uses `service_role`, it must return explicit errors and must not hide partial failure. This matters for destructive operations such as complete Salon deletion and Auth cleanup.
 

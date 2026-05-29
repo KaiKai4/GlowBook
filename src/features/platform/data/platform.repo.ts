@@ -1,7 +1,8 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { deleteAuthUser } from "@/lib/supabase/auth-admin";
 import type { Database } from "@/types/database.types";
-import { normalizeDisabledSalonFeatures } from "../domain/salon-features";
-import type { SalonFeatureKey } from "../domain/salon-features";
+import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
 
 // All platform reads use service_role to bypass tenant RLS.
 // Only called server-side after verifying is_platform_admin().
@@ -156,6 +157,63 @@ export async function findPendingInvitations() {
   return data ?? [];
 }
 
+export interface SalonInvitationForAcceptance {
+  email: string;
+  status: string;
+  expires_at: string;
+}
+
+export async function findSalonInvitationForAcceptance(
+  token: string
+): Promise<SalonInvitationForAcceptance | null> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("salon_invitations")
+    .select("email, status, expires_at")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function profileExists(profileId: string): Promise<boolean> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data !== null;
+}
+
+export async function acceptSalonInvitationAsAdmin({
+  token,
+  userId,
+  email,
+  salonName,
+  fullName,
+}: {
+  token: string;
+  userId: string;
+  email: string;
+  salonName: string;
+  fullName: string;
+}): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.rpc("accept_invitation_admin", {
+    p_token: token,
+    p_user_id: userId,
+    p_email: email,
+    p_salon_name: salonName,
+    p_full_name: fullName,
+  });
+
+  if (error) throw error;
+}
+
 export async function setSalonActive(salonId: string, isActive: boolean): Promise<void> {
   const admin = createSupabaseAdminClient();
   const update: Database["public"]["Tables"]["salons"]["Update"] = { is_active: isActive };
@@ -193,7 +251,7 @@ export async function deleteSalonCompletely(salonId: string): Promise<void> {
 
   const authCleanupErrors: string[] = [];
   for (const profile of deletedUsers ?? []) {
-    const { error: authError } = await admin.auth.admin.deleteUser(profile.user_id);
+    const { error: authError } = await deleteAuthUser(profile.user_id);
     if (authError && authError.status !== 404) {
       authCleanupErrors.push(`${profile.user_id}: ${authError.message}`);
     }

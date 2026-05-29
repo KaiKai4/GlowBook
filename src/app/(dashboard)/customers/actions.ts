@@ -58,6 +58,9 @@ export async function checkCustomerPhoneAction(
   phone: string
 ): Promise<{ exists: boolean; archived?: boolean }> {
   const profile = await requireActiveProfile();
+  const permission = canManageCustomers(profile);
+  if (!permission.ok) return { exists: false };
+
   return checkPermanentCustomerByPhone(profile.salon_id, phone);
 }
 
@@ -66,6 +69,9 @@ export async function findArchivedCustomerByContactAction(
   email?: string
 ): Promise<ArchivedCustomerMatch | null> {
   const profile = await requireActiveProfile();
+  const permission = canManageCustomers(profile);
+  if (!permission.ok) return null;
+
   return findArchivedCustomerByContact(profile.salon_id, phone, email);
 }
 

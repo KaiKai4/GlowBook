@@ -378,12 +378,28 @@ Trabajo:
 3. Reducir `employee-access.ts` a reglas de orquestacion.
 4. Reducir `employee-profile.ts` para que no conozca detalles de Auth Admin.
 5. Documentar en ADR los Modules autorizados a usar el Adapter admin.
+6. Ajustar la nueva configuracion de Plataforma para funciones por salon:
+   - `salons.disabled_features` es contrato Supabase.
+   - Las reglas viven en `features/salon/domain/salon-features.ts`.
+   - Plataforma solo administra el contrato; dashboard y Server Actions lo hacen cumplir.
 
 Criterio de terminado:
 
 - `createSupabaseAdminClient()` no aparece en use-cases de forma repetida.
 - Operaciones privilegiadas pasan por un Adapter con Interface pequena.
 - Los tests pueden mockear el Adapter sin mockear Supabase global.
+- Las funciones deshabilitadas por Plataforma no quedan solo ocultas en UI; tambien se validan en rutas/acciones sensibles.
+
+Implementacion aplicada:
+
+- Se creo `src/lib/supabase/auth-admin.ts` como Adapter server-only para `createUser`, `deleteUser`, `updateUserById` y busqueda paginada por email.
+- Se creo `src/features/employees/data/employee-access.repo.ts` para lecturas/escrituras privilegiadas de invitaciones, perfiles y roles de colaborador.
+- Se creo `src/features/employees/use-cases/employee-invitations.ts` para que `/join/[token]` no use `service_role` directamente.
+- Se movio el contrato de funciones del salon a `src/features/salon/domain/salon-features.ts`, porque `salons.disabled_features` pertenece al tenant Salon aunque Plataforma lo administre.
+- Se creo `src/features/platform/use-cases/update-salon-features.ts` para actualizar funciones desde Superadmin sin que la Server Action conozca detalles de Supabase.
+- Se agrego `supabase/migrations/20240101000024_salon_disabled_features_constraint.sql` para limpiar valores invalidos y rechazar keys desconocidas en `salons.disabled_features`.
+- `employee-access.ts`, `employee-profile.ts`, `accept-invitation.ts` y `/auth/join/[token]` dejaron de importar `createSupabaseAdminClient()`.
+- `appointments/[id]` y acciones auxiliares de clientes ahora respetan el bloqueo de modulo/permisos y no dependen solo de esconder navegacion.
 
 ## Fase 7 - Profundizar Plataforma Y Operaciones Cross-Tenant
 

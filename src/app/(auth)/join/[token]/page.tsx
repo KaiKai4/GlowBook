@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getEmployeeInvitationJoinView } from "@/features/employees/use-cases/employee-invitations";
 import { JoinForm } from "./join-form";
 
 export default async function JoinPage({
@@ -8,44 +8,30 @@ export default async function JoinPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const admin = createSupabaseAdminClient();
+  const invitation = await getEmployeeInvitationJoinView(token);
 
-  // Use admin client to bypass RLS — invitation lookup must work without a session
-  const { data: inv } = await admin
-    .from("employee_invitations")
-    .select(`
-      id, email, expires_at, accepted_at,
-      employees(first_name, last_name),
-      salons(name)
-    `)
-    .eq("token", token)
-    .single();
+  if (invitation.status === "not_found") notFound();
 
-  if (!inv) notFound();
-
-  const employee = inv.employees as { first_name: string; last_name: string } | null;
-  const salon = inv.salons as { name: string } | null;
-
-  if (inv.accepted_at) {
+  if (invitation.status === "accepted") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
         <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
           <p className="text-lg font-semibold text-stone-900">Enlace ya utilizado</p>
           <p className="mt-2 text-sm text-stone-500">
-            Esta invitación ya fue aceptada. Si tienes problemas para acceder, contacta al administrador del salón.
+            Esta invitacion ya fue aceptada. Si tienes problemas para acceder, contacta al administrador del salon.
           </p>
         </div>
       </div>
     );
   }
 
-  if (new Date(inv.expires_at) < new Date()) {
+  if (invitation.status === "expired") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
         <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
           <p className="text-lg font-semibold text-stone-900">Enlace expirado</p>
           <p className="mt-2 text-sm text-stone-500">
-            Este enlace de invitación ha vencido. Solicita uno nuevo al administrador del salón.
+            Este enlace de invitacion ha vencido. Solicita uno nuevo al administrador del salon.
           </p>
         </div>
       </div>
@@ -55,9 +41,9 @@ export default async function JoinPage({
   return (
     <JoinForm
       token={token}
-      email={inv.email}
-      employeeName={employee ? `${employee.first_name} ${employee.last_name}` : "Colaborador"}
-      salonName={salon?.name ?? "tu salón"}
+      email={invitation.email}
+      employeeName={invitation.employeeName}
+      salonName={invitation.salonName}
     />
   );
 }

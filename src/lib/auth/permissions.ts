@@ -3,7 +3,7 @@ import {
   isSalonFeatureDisabled,
   normalizeDisabledSalonFeatures,
   type SalonFeatureKey,
-} from "@/features/platform/domain/salon-features";
+} from "@/features/salon/domain/salon-features";
 
 export const PERMISSIONS = {
   SALON_MANAGE: "salon.manage",

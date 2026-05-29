@@ -40,6 +40,8 @@ El sistema tiene tres niveles:
 
 **Salon** es la raiz del tenant. Vive en `salons` y contiene datos del negocio, estado activo, zona horaria, colores y reglas de agenda.
 
+**Funcion del salon** es un modulo operativo que la Plataforma puede habilitar o deshabilitar para un salon, por ejemplo `plantillas`, `roles`, `reports` o `appointments`. La fuente de verdad vive en `salons.disabled_features`; la logica TypeScript vive en `src/features/salon/domain/salon-features.ts`.
+
 **Horario del salon** vive en `salon_business_hours`. Define cuando el negocio atiende. Si no hay configuracion, la logica de disponibilidad usa horario por defecto.
 
 **Horario laboral del colaborador** vive en `work_schedules`. Define cuando un colaborador puede atender. Si el colaborador no tiene horarios configurados, se usa el horario del salon como fallback.
@@ -100,3 +102,4 @@ El sistema tiene tres niveles:
 - Al reactivar, el registro vuelve a flujos activos.
 - La eliminacion completa de salon no es lo mismo que archivar colaborador o cliente.
 - `service_role` nunca debe usarse en el navegador.
+- Una funcion del salon deshabilitada por Plataforma no debe aparecer en navegacion ni poder ejecutarse saltando por URL o Server Action.

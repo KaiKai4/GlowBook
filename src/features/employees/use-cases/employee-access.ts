@@ -1,6 +1,15 @@
 import { randomBytes } from "crypto";
 import { findEmployeeById } from "@/features/employees/data/employees.repo";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  deleteEmployeeInvitations,
+  deletePendingEmployeeInvitations,
+  findAssignableEmployeeRole,
+  findEmployeeAccessProfile,
+  insertEmployeeInvitation,
+  unlinkEmployeeProfile,
+  updateEmployeeProfileRole,
+} from "@/features/employees/data/employee-access.repo";
+import { deleteAuthUser } from "@/lib/supabase/auth-admin";
 import type { Result } from "@/lib/result";
 
 export interface EmployeeInviteResult {
@@ -14,14 +23,7 @@ async function validateAssignableRoleId(
 ): Promise<Result<string | null>> {
   if (!roleId) return { ok: true, value: null };
 
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from("roles")
-    .select("id")
-    .eq("id", roleId)
-    .eq("salon_id", salonId)
-    .eq("is_system", false)
-    .maybeSingle();
+  const { data, error } = await findAssignableEmployeeRole(salonId, roleId);
 
   if (error) {
     console.error("[employees:access]", error);
@@ -46,16 +48,13 @@ export async function replacePendingEmployeeInvitation({
   email: string;
   roleId: string | null;
 }): Promise<Result<EmployeeInviteResult>> {
-  const admin = createSupabaseAdminClient();
   const assignableRole = await validateAssignableRoleId(salonId, roleId);
   if (!assignableRole.ok) return assignableRole;
 
-  const { error: deleteInviteError } = await admin
-    .from("employee_invitations")
-    .delete()
-    .eq("employee_id", employeeId)
-    .eq("salon_id", salonId)
-    .is("accepted_at", null);
+  const { error: deleteInviteError } = await deletePendingEmployeeInvitations(
+    employeeId,
+    salonId
+  );
 
   if (deleteInviteError) {
     console.error("[employees:access]", deleteInviteError);
@@ -64,7 +63,7 @@ export async function replacePendingEmployeeInvitation({
 
   const token = randomBytes(24).toString("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { error: inviteError } = await admin.from("employee_invitations").insert({
+  const { error: inviteError } = await insertEmployeeInvitation({
     employee_id: employeeId,
     salon_id: salonId,
     email,
@@ -105,13 +104,10 @@ export async function revokeEmployeeAuthAccess(
   salonId: string,
   profileId: string
 ): Promise<Result<{ roleId: string | null }>> {
-  const admin = createSupabaseAdminClient();
-  const { data: linkedProfile, error: profileError } = await admin
-    .from("profiles")
-    .select("role_id, is_owner")
-    .eq("id", profileId)
-    .eq("salon_id", salonId)
-    .maybeSingle();
+  const { data: linkedProfile, error: profileError } = await findEmployeeAccessProfile(
+    profileId,
+    salonId
+  );
 
   if (profileError) {
     console.error("[employees:access]", profileError);
@@ -122,17 +118,13 @@ export async function revokeEmployeeAuthAccess(
     return { ok: false, error: "No se puede reiniciar el acceso de un owner desde colaboradores." };
   }
 
-  const { error: deleteUserError } = await admin.auth.admin.deleteUser(profileId);
+  const { error: deleteUserError } = await deleteAuthUser(profileId);
   if (deleteUserError) {
     console.error("[employees:access]", deleteUserError);
     return { ok: false, error: "No se pudo revocar la cuenta anterior del colaborador." };
   }
 
-  const { error: unlinkError } = await admin
-    .from("employees")
-    .update({ profile_id: null })
-    .eq("id", employeeId)
-    .eq("salon_id", salonId);
+  const { error: unlinkError } = await unlinkEmployeeProfile(employeeId, salonId);
 
   if (unlinkError) {
     console.error("[employees:access]", unlinkError);
@@ -151,15 +143,11 @@ export async function revokeEmployeeAccessForArchive({
   salonId: string;
   profileId: string | null;
 }): Promise<Result<void>> {
-  const admin = createSupabaseAdminClient();
-
   if (profileId) {
-    const { data: linkedProfile, error: profileError } = await admin
-      .from("profiles")
-      .select("is_owner")
-      .eq("id", profileId)
-      .eq("salon_id", salonId)
-      .maybeSingle();
+    const { data: linkedProfile, error: profileError } = await findEmployeeAccessProfile(
+      profileId,
+      salonId
+    );
 
     if (profileError) {
       console.error("[employees:access]", profileError);
@@ -170,18 +158,14 @@ export async function revokeEmployeeAccessForArchive({
       return { ok: false, error: "No se puede eliminar un owner desde colaboradores." };
     }
 
-    const { error: authDeleteError } = await admin.auth.admin.deleteUser(profileId);
+    const { error: authDeleteError } = await deleteAuthUser(profileId);
     if (authDeleteError) {
       console.error("[employees:access]", authDeleteError);
       return { ok: false, error: "No se pudo revocar el acceso del colaborador." };
     }
   }
 
-  const { error: inviteCleanupError } = await admin
-    .from("employee_invitations")
-    .delete()
-    .eq("employee_id", employeeId)
-    .eq("salon_id", salonId);
+  const { error: inviteCleanupError } = await deleteEmployeeInvitations(employeeId, salonId);
 
   if (inviteCleanupError) {
     console.error("[employees:access]", inviteCleanupError);
@@ -196,15 +180,14 @@ export async function changeEmployeeRole(
   profileId: string,
   roleId: string | null
 ): Promise<Result<void>> {
-  const admin = createSupabaseAdminClient();
   const assignableRole = await validateAssignableRoleId(salonId, roleId);
   if (!assignableRole.ok) return assignableRole;
 
-  const { error } = await admin
-    .from("profiles")
-    .update({ role_id: assignableRole.value })
-    .eq("id", profileId)
-    .eq("salon_id", salonId);
+  const { error } = await updateEmployeeProfileRole(
+    profileId,
+    salonId,
+    assignableRole.value
+  );
 
   if (error) {
     console.error("[employees:access]", error);

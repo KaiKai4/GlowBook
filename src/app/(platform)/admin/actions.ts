@@ -2,12 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import {
-  deleteSalonCompletely,
-  setSalonDisabledFeatures,
-} from "@/features/platform/data/platform.repo";
-import { normalizeDisabledSalonFeatures } from "@/features/platform/domain/salon-features";
+import { deleteSalonCompletely } from "@/features/platform/data/platform.repo";
 import { inviteSalon } from "@/features/platform/use-cases/invite-salon";
+import { updateSalonFeatures } from "@/features/platform/use-cases/update-salon-features";
 import type { Result } from "@/lib/result";
 
 // Server Action wrapper: React form actions must return void.
@@ -47,16 +44,9 @@ export async function updateSalonDisabledFeaturesAction(
 ): Promise<Result<void>> {
   await requirePlatformAdmin();
 
-  try {
-    await setSalonDisabledFeatures(
-      salonId,
-      normalizeDisabledSalonFeatures(disabledFeatures)
-    );
-    revalidatePath("/admin/salons");
-    return { ok: true, value: undefined };
-  } catch (err) {
-    console.error("[platform]", err);
-    const message = err instanceof Error ? err.message : "Error desconocido";
-    return { ok: false, error: `No se pudieron actualizar las funciones. Detalle: ${message}` };
-  }
+  const result = await updateSalonFeatures({ salonId, disabledFeatures });
+  if (!result.ok) return result;
+
+  revalidatePath("/admin/salons");
+  return { ok: true, value: undefined };
 }

@@ -12,7 +12,7 @@ import {
   replacePendingEmployeeInvitation,
   revokeEmployeeAuthAccess,
 } from "./employee-access";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { findLatestPendingEmployeeInvitationRole } from "@/features/employees/data/employee-access.repo";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@/features/employees/schemas";
 import type { Result } from "@/lib/result";
 
@@ -107,7 +107,6 @@ export async function updateEmployeeProfile(
     const nextEmail = typeof fields.email === "string" ? fields.email.trim() : currentEmployee.email?.trim() ?? "";
     const currentEmail = currentEmployee.email?.trim() ?? "";
     const emailChanged = nextEmail.toLowerCase() !== currentEmail.toLowerCase();
-    const admin = createSupabaseAdminClient();
     let roleForNewInvite: string | null = null;
 
     if (emailChanged && currentEmployee.profile_id) {
@@ -130,15 +129,13 @@ export async function updateEmployeeProfile(
     await updateEmployeeCategories(employeeId, salonId, category_ids ?? []);
 
     if (emailChanged && !currentEmployee.profile_id) {
-      const { data: latestInvite } = await admin
-        .from("employee_invitations")
-        .select("role_id")
-        .eq("employee_id", employeeId)
-        .eq("salon_id", salonId)
-        .is("accepted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data: latestInvite, error: latestInviteError } =
+        await findLatestPendingEmployeeInvitationRole(employeeId, salonId);
+
+      if (latestInviteError) {
+        console.error("[employees:profile]", latestInviteError);
+        return { ok: false, error: "No se pudo verificar la invitacion pendiente." };
+      }
 
       if (nextEmail) {
         const invite = await replacePendingEmployeeInvitation({

@@ -26,11 +26,19 @@ export default async function AppointmentDetailPage({
 }) {
   const profile = await requireProfile();
   const { id } = await params;
+  const canManage = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
+  const canView = canManage || hasPermission(profile, PERMISSIONS.APPOINTMENTS_VIEW);
+
+  if (!canView) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-stone-400">No tienes permiso para ver las citas.</p>
+      </div>
+    );
+  }
 
   const appt = await findAppointmentById(id);
   if (!appt || appt.salon_id !== profile.salon_id) notFound();
-
-  const canManage = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
 
   const supabase = await createSupabaseServerClient();
   const { data: salon } = await supabase
