@@ -1,5 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database.types";
+import { normalizeDisabledSalonFeatures } from "../domain/salon-features";
+import type { SalonFeatureKey } from "../domain/salon-features";
 
 // All platform reads use service_role to bypass tenant RLS.
 // Only called server-side after verifying is_platform_admin().
@@ -8,7 +10,7 @@ export async function findAllSalons() {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("salons")
-    .select("id, name, email, phone, is_active, created_at")
+    .select("id, name, email, phone, is_active, created_at, disabled_features")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -31,6 +33,7 @@ export interface SalonOverview {
   phone: string;
   is_active: boolean;
   created_at: string;
+  disabled_features: SalonFeatureKey[];
   owner_names: string[];
   owner_count: number;
   customer_count: number;
@@ -44,7 +47,7 @@ export async function findSalonOverviews(): Promise<SalonOverview[]> {
   const admin = createSupabaseAdminClient();
   const { data: salons, error } = await admin
     .from("salons")
-    .select("id, name, email, phone, is_active, created_at")
+    .select("id, name, email, phone, is_active, created_at, disabled_features")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -96,6 +99,7 @@ export async function findSalonOverviews(): Promise<SalonOverview[]> {
       phone: salon.phone,
       is_active: salon.is_active,
       created_at: salon.created_at,
+      disabled_features: normalizeDisabledSalonFeatures(salon.disabled_features),
       owner_names: (owners.data ?? []).map((owner) => owner.full_name).filter(Boolean),
       owner_count: owners.count ?? 0,
       customer_count: customers.count ?? 0,
@@ -155,6 +159,18 @@ export async function findPendingInvitations() {
 export async function setSalonActive(salonId: string, isActive: boolean): Promise<void> {
   const admin = createSupabaseAdminClient();
   const update: Database["public"]["Tables"]["salons"]["Update"] = { is_active: isActive };
+  const { error } = await admin.from("salons").update(update).eq("id", salonId);
+  if (error) throw error;
+}
+
+export async function setSalonDisabledFeatures(
+  salonId: string,
+  disabledFeatures: readonly string[]
+): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const update: Database["public"]["Tables"]["salons"]["Update"] = {
+    disabled_features: normalizeDisabledSalonFeatures(disabledFeatures),
+  };
   const { error } = await admin.from("salons").update(update).eq("id", salonId);
   if (error) throw error;
 }

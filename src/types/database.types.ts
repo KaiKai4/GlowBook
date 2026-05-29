@@ -848,6 +848,7 @@ export type Database = {
           bg_style: string | null
           card_style: string | null
           created_at: string
+          disabled_features: string[]
           email: string
           id: string
           is_active: boolean
@@ -868,6 +869,7 @@ export type Database = {
           bg_style?: string | null
           card_style?: string | null
           created_at?: string
+          disabled_features?: string[]
           email?: string
           id?: string
           is_active?: boolean
@@ -888,6 +890,7 @@ export type Database = {
           bg_style?: string | null
           card_style?: string | null
           created_at?: string
+          disabled_features?: string[]
           email?: string
           id?: string
           is_active?: boolean

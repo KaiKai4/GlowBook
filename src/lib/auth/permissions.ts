@@ -1,4 +1,9 @@
 import type { ProfileWithRole } from "@/types/app.types";
+import {
+  isSalonFeatureDisabled,
+  normalizeDisabledSalonFeatures,
+  type SalonFeatureKey,
+} from "@/features/platform/domain/salon-features";
 
 export const PERMISSIONS = {
   SALON_MANAGE: "salon.manage",
@@ -15,10 +20,39 @@ export const PERMISSIONS = {
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
+const PERMISSION_FEATURES: Partial<Record<Permission, SalonFeatureKey>> = {
+  [PERMISSIONS.SALON_MANAGE]: "salon",
+  [PERMISSIONS.ROLES_MANAGE]: "roles",
+  [PERMISSIONS.EMPLOYEES_MANAGE]: "employees",
+  [PERMISSIONS.SERVICES_MANAGE]: "services",
+  [PERMISSIONS.CUSTOMERS_MANAGE]: "customers",
+  [PERMISSIONS.APPOINTMENTS_VIEW]: "appointments",
+  [PERMISSIONS.APPOINTMENTS_MANAGE]: "appointments",
+  [PERMISSIONS.APPOINTMENTS_VIEW_ALL]: "appointments",
+  [PERMISSIONS.REPORTS_VIEW]: "reports",
+};
+
+export function getDisabledSalonFeatures(profile: ProfileWithRole): SalonFeatureKey[] {
+  return normalizeDisabledSalonFeatures(profile.salon?.disabled_features);
+}
+
+export function hasSalonFeature(
+  profile: ProfileWithRole,
+  feature: SalonFeatureKey
+): boolean {
+  return !isSalonFeatureDisabled(profile.salon?.disabled_features, feature);
+}
+
+function isPermissionEnabled(profile: ProfileWithRole, permission: Permission): boolean {
+  const feature = PERMISSION_FEATURES[permission];
+  return !feature || hasSalonFeature(profile, feature);
+}
+
 export function hasPermission(
   profile: ProfileWithRole,
   permission: Permission
 ): boolean {
+  if (!isPermissionEnabled(profile, permission)) return false;
   if (profile.is_owner) return true;
   return (
     profile.role?.role_permissions.some(
@@ -28,12 +62,15 @@ export function hasPermission(
 }
 
 export function getPermissions(profile: ProfileWithRole): Permission[] {
-  if (profile.is_owner) return Object.values(PERMISSIONS) as Permission[];
-  return (
-    profile.role?.role_permissions
-      .map((rp) => rp.permission?.key)
-      .filter((key): key is Permission =>
-        key !== undefined && (Object.values(PERMISSIONS) as string[]).includes(key)
-      ) ?? []
-  );
+  const permissions = profile.is_owner
+    ? (Object.values(PERMISSIONS) as Permission[])
+    : (
+        profile.role?.role_permissions
+          .map((rp) => rp.permission?.key)
+          .filter((key): key is Permission =>
+            key !== undefined && (Object.values(PERMISSIONS) as string[]).includes(key)
+          ) ?? []
+      );
+
+  return permissions.filter((permission) => isPermissionEnabled(profile, permission));
 }

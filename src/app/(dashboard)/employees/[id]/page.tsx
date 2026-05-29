@@ -1,5 +1,5 @@
 import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { findEmployeeById, findLatestEmployeeInvitation } from "@/features/employees/data/employees.repo";
 import { findCategoriesWithServices } from "@/features/services/data/services.repo";
 import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
@@ -33,9 +33,10 @@ export default async function EmployeeDetailPage({
     );
   }
 
+  const rolesEnabled = hasSalonFeature(profile, "roles");
   const [employee, allRoles, allCategories] = await Promise.all([
     findEmployeeById(id, profile.salon_id),
-    findRolesWithPermissions(profile.salon_id),
+    rolesEnabled ? findRolesWithPermissions(profile.salon_id) : Promise.resolve([]),
     findCategoriesWithServices(profile.salon_id),
   ]);
 
@@ -165,24 +166,26 @@ export default async function EmployeeDetailPage({
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-brand-500" />
-              Acceso al sistema
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <EmployeeAccessPanel
-              employeeId={employee.id}
-              employeeEmail={employee.email ?? ""}
-              profileId={employee.profile_id}
-              currentRoleId={currentRoleId}
-              initialInvitation={pendingInvitation}
-              roles={roleOptions}
-            />
-          </CardContent>
-        </Card>
+        {rolesEnabled ? (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-brand-500" />
+                Acceso al sistema
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EmployeeAccessPanel
+                employeeId={employee.id}
+                employeeEmail={employee.email ?? ""}
+                profileId={employee.profile_id}
+                currentRoleId={currentRoleId}
+                initialInvitation={pendingInvitation}
+                roles={roleOptions}
+              />
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ export async function getProfile(): Promise<ProfileWithRole | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, salon_id, role_id, is_owner, full_name, is_active, role:roles(id, name, role_permissions(permission:permissions(id, key, description)))")
+    .select("id, salon_id, role_id, is_owner, full_name, is_active, salon:salons(disabled_features), role:roles(id, name, role_permissions(permission:permissions(id, key, description)))")
     .eq("id", user.id)
     .single();
 

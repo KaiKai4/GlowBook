@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getProfile, isPlatformAdmin } from "@/lib/auth/session";
-import { getPermissions } from "@/lib/auth/permissions";
+import { getDisabledSalonFeatures, getPermissions } from "@/lib/auth/permissions";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
@@ -28,14 +28,19 @@ export default async function DashboardLayout({
   const supabase = await createSupabaseServerClient();
   const { data: salon } = await supabase
     .from("salons")
-    .select("name, is_active, theme, bg_style")
+    .select("name, is_active, theme, bg_style, disabled_features")
     .eq("id", profile.salon_id)
     .single();
 
   if (!salon) redirect("/login");
 
-  const permissions = getPermissions(profile);
-  const visibleNav = getVisibleNavItems(permissions, profile.is_owner);
+  const profileForAccess = {
+    ...profile,
+    salon: { disabled_features: salon.disabled_features },
+  };
+  const permissions = getPermissions(profileForAccess);
+  const disabledFeatures = getDisabledSalonFeatures(profileForAccess);
+  const visibleNav = getVisibleNavItems(permissions, profile.is_owner, disabledFeatures);
   const theme = salon.theme || "violet";
   const bgStyle = salon.bg_style || "neutral";
 
@@ -97,6 +102,7 @@ export default async function DashboardLayout({
           salonName={salon.name}
           userPermissions={permissions}
           isOwner={profile.is_owner}
+          disabledFeatures={disabledFeatures}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="w-full px-6 py-8">{children}</div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, getPermissions, PERMISSIONS } from "@/lib/auth/permissions";
+import { getDisabledSalonFeatures, hasPermission, getPermissions, PERMISSIONS } from "@/lib/auth/permissions";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import {
   getDashboardOverview,
@@ -18,7 +18,11 @@ import {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const visibleNav = getVisibleNavItems(getPermissions(profile), profile.is_owner);
+  const visibleNav = getVisibleNavItems(
+    getPermissions(profile),
+    profile.is_owner,
+    getDisabledSalonFeatures(profile)
+  );
 
   // Collaborators with access to a single module skip the home page and land
   // directly on it (e.g. a view-only stylist goes straight to their calendar).

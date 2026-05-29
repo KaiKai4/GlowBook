@@ -8,6 +8,9 @@ export interface ProfileWithRole {
   is_owner: boolean;
   full_name: string;
   is_active: boolean;
+  salon?: {
+    disabled_features: string[] | null;
+  } | null;
   role?: {
     id: string;
     name: string;

@@ -1,5 +1,5 @@
 import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { findEmployees } from "@/features/employees/data/employees.repo";
 import { findCategoriesWithServices } from "@/features/services/data/services.repo";
 import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
@@ -23,10 +23,11 @@ export default async function EmployeesPage({
     );
   }
 
+  const rolesEnabled = hasSalonFeature(profile, "roles");
   const [employees, categories, allRoles] = await Promise.all([
     findEmployees(profile.salon_id, !isArchived),
     findCategoriesWithServices(profile.salon_id),
-    findRolesWithPermissions(profile.salon_id),
+    rolesEnabled ? findRolesWithPermissions(profile.salon_id) : Promise.resolve([]),
   ]);
 
   const employeeList = employees.map((e) => ({

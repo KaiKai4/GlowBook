@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { deleteSalonCompletely } from "@/features/platform/data/platform.repo";
+import {
+  deleteSalonCompletely,
+  setSalonDisabledFeatures,
+} from "@/features/platform/data/platform.repo";
+import { normalizeDisabledSalonFeatures } from "@/features/platform/domain/salon-features";
 import { inviteSalon } from "@/features/platform/use-cases/invite-salon";
 import type { Result } from "@/lib/result";
 
@@ -34,5 +38,25 @@ export async function deleteSalonAction(
     console.error("[platform]", err);
     const message = err instanceof Error ? err.message : "Error desconocido";
     return { ok: false, error: `No se pudo eliminar el salón y sus datos. Detalle: ${message}` };
+  }
+}
+
+export async function updateSalonDisabledFeaturesAction(
+  salonId: string,
+  disabledFeatures: string[]
+): Promise<Result<void>> {
+  await requirePlatformAdmin();
+
+  try {
+    await setSalonDisabledFeatures(
+      salonId,
+      normalizeDisabledSalonFeatures(disabledFeatures)
+    );
+    revalidatePath("/admin/salons");
+    return { ok: true, value: undefined };
+  } catch (err) {
+    console.error("[platform]", err);
+    const message = err instanceof Error ? err.message : "Error desconocido";
+    return { ok: false, error: `No se pudieron actualizar las funciones. Detalle: ${message}` };
   }
 }

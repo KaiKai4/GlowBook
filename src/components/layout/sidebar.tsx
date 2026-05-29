@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { LogOut, Sparkles } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
+import type { SalonFeatureKey } from "@/features/platform/domain/salon-features";
 import { getVisibleNavGroups } from "./nav-items";
 import { useNavigationGuard } from "./unsaved-changes";
 
@@ -12,13 +13,14 @@ interface SidebarProps {
   salonName: string;
   userPermissions: Permission[];
   isOwner: boolean;
+  disabledFeatures: SalonFeatureKey[];
 }
 
-export function Sidebar({ salonName, userPermissions, isOwner }: SidebarProps) {
+export function Sidebar({ salonName, userPermissions, isOwner, disabledFeatures }: SidebarProps) {
   const pathname = usePathname();
   const confirmNavigate = useNavigationGuard();
 
-  const groups = getVisibleNavGroups(userPermissions, isOwner);
+  const groups = getVisibleNavGroups(userPermissions, isOwner, disabledFeatures);
 
   function handleNav(e: React.MouseEvent, href: string) {
     if (!confirmNavigate) return;

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { CreateEmployeeSchema, WorkScheduleSchema } from "@/features/employees/schemas";
 import {
   changeEmployeeRole,
@@ -26,12 +26,18 @@ import {
 } from "@/features/employees/use-cases/employee-profile";
 import type { Result } from "@/lib/result";
 
-async function guard(): Promise<Result<{ salonId: string }>> {
+async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean }>> {
   const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
   }
-  return { ok: true, value: { salonId: profile.salon_id } };
+  return {
+    ok: true,
+    value: {
+      salonId: profile.salon_id,
+      rolesEnabled: hasSalonFeature(profile, "roles"),
+    },
+  };
 }
 
 export async function createEmployeeAction(
@@ -41,7 +47,9 @@ export async function createEmployeeAction(
   const g = await guard();
   if (!g.ok) return g;
 
-  const roleId = (formData.get("role_id") as string)?.trim() || null;
+  const roleId = g.value.rolesEnabled
+    ? (formData.get("role_id") as string)?.trim() || null
+    : null;
 
   const parsed = CreateEmployeeSchema.safeParse({
     first_name: formData.get("first_name"),
@@ -118,6 +126,9 @@ export async function changeEmployeeRoleAction(
 ): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!g.value.rolesEnabled) {
+    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
+  }
 
   const result = await changeEmployeeRole(g.value.salonId, profileId, roleId);
   if (result.ok) {
@@ -132,6 +143,9 @@ export async function resetEmployeeAccessAction(
 ): Promise<Result<{ token: string; expiresAt: string }>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!g.value.rolesEnabled) {
+    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
+  }
 
   const invite = await resetEmployeeAccess({
     employeeId,
@@ -186,6 +200,9 @@ export async function generateEmployeeInviteAction(
 ): Promise<Result<{ token: string; expiresAt: string }>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!g.value.rolesEnabled) {
+    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
+  }
 
   const invite = await createEmployeeInviteForExistingEmployee({
     employeeId,

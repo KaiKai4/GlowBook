@@ -5,6 +5,7 @@ import { findSalonOverviews } from "@/features/platform/data/platform.repo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteSalonButton } from "./delete-salon-button";
+import { SalonFeaturesControl } from "./salon-features-control";
 
 export default async function PlatformSalonsPage() {
   await requirePlatformAdmin();
@@ -19,8 +20,8 @@ export default async function PlatformSalonsPage() {
         </Link>
         <div className="mt-2">
           <h1 className="text-2xl font-bold text-neutral-900">Salones</h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Información global de salones registrados y eliminación completa de tenants.
+          <p className="mt-1 text-sm text-neutral-500">
+            Informacion global de salones registrados, funciones disponibles y eliminacion completa de tenants.
           </p>
         </div>
       </div>
@@ -40,15 +41,16 @@ export default async function PlatformSalonsPage() {
             <p className="py-10 text-center text-sm text-neutral-400">No hay salones registrados.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] text-sm">
+              <table className="w-full min-w-[1240px] text-sm">
                 <thead>
                   <tr className="border-b border-neutral-100 text-left text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    <th className="px-3 py-3">Salón</th>
+                    <th className="px-3 py-3">Salon</th>
                     <th className="px-3 py-3">Correo</th>
                     <th className="px-3 py-3">Owners</th>
                     <th className="px-3 py-3">Datos</th>
                     <th className="px-3 py-3">Estado</th>
-                    <th className="px-3 py-3">Creado</th>
+                    <th className="px-3 py-3">Registrado</th>
+                    <th className="px-3 py-3">Funciones</th>
                     <th className="px-3 py-3 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -57,7 +59,7 @@ export default async function PlatformSalonsPage() {
                     <tr key={salon.id} className="align-top">
                       <td className="px-3 py-4">
                         <p className="font-semibold text-neutral-900">{salon.name}</p>
-                        <p className="text-xs text-neutral-400">{salon.phone || "Sin teléfono"}</p>
+                        <p className="text-xs text-neutral-400">{salon.phone || "Sin telefono"}</p>
                         <p className="mt-1 font-mono text-[11px] text-neutral-400">{salon.id}</p>
                       </td>
                       <td className="px-3 py-4">
@@ -65,7 +67,7 @@ export default async function PlatformSalonsPage() {
                           {salon.contact_email || "Sin correo registrado"}
                         </p>
                         {!salon.email && salon.contact_email ? (
-                          <p className="mt-1 text-[11px] text-neutral-400">Tomado de la invitación aceptada</p>
+                          <p className="mt-1 text-[11px] text-neutral-400">Tomado de la invitacion aceptada</p>
                         ) : null}
                       </td>
                       <td className="px-3 py-4">
@@ -93,11 +95,14 @@ export default async function PlatformSalonsPage() {
                         </Badge>
                       </td>
                       <td className="px-3 py-4 text-xs text-neutral-500">
-                        {new Date(salon.created_at).toLocaleDateString("es-PA", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {formatRegistrationDate(salon.created_at)}
+                      </td>
+                      <td className="px-3 py-4">
+                        <SalonFeaturesControl
+                          key={`${salon.id}-${salon.disabled_features.join(",")}`}
+                          salonId={salon.id}
+                          disabledFeatures={salon.disabled_features}
+                        />
                       </td>
                       <td className="px-3 py-4 text-right">
                         <DeleteSalonButton salonId={salon.id} salonName={salon.name} />
@@ -112,6 +117,16 @@ export default async function PlatformSalonsPage() {
       </Card>
     </div>
   );
+}
+
+function formatRegistrationDate(value: string): string {
+  return new Intl.DateTimeFormat("es-PA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {

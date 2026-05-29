@@ -1,5 +1,5 @@
 import { getReminderQueue } from "@/features/notifications/use-cases/get-reminder-queue";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { Bell } from "lucide-react";
 import { RemindersView } from "./reminders-view";
@@ -7,7 +7,7 @@ import { RemindersView } from "./reminders-view";
 export default async function RecordatoriosPage() {
   const profile = await requireProfile();
 
-  if (!hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
+  if (!hasSalonFeature(profile, "recordatorios") || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return (
       <div className="py-16 text-center">
         <p className="text-stone-400">No tienes permiso para ver recordatorios.</p>

@@ -98,7 +98,7 @@ export function EmployeeCreateForm({
         <div>
           <label className="mb-1.5 block text-xs font-medium text-stone-600">Rol</label>
           {roles.length === 0 ? (
-            <p className="pt-1 text-xs text-stone-400">Sin roles. Crea uno en <strong>Roles</strong> primero.</p>
+            <p className="pt-1 text-xs text-stone-400">Roles no disponibles para este salon.</p>
           ) : (
             <Select name="role_id" className="w-full">
               <option value="">Sin rol por ahora</option>
