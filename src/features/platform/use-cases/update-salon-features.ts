@@ -1,4 +1,4 @@
-import { setSalonDisabledFeatures } from "@/features/platform/data/platform.repo";
+import { setSalonDisabledFeatures } from "@/features/platform/data/salons.repo";
 import {
   normalizeDisabledSalonFeatures,
   type SalonFeatureKey,

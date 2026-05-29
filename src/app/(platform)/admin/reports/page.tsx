@@ -1,5 +1,5 @@
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { findFeedbackReports } from "@/features/platform/data/platform.repo";
+import { findFeedbackReports } from "@/features/platform/data/feedback-moderation.repo";
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from "@/features/feedback/schemas";
 import { Badge } from "@/components/ui/badge";
 import { setFeedbackStatusAction } from "./actions";

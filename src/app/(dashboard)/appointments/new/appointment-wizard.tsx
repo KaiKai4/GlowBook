@@ -14,7 +14,7 @@ import {
   createAppointmentRow,
   findEligibleEmployees,
   salonWindowFor,
-} from "./appointment-wizard-availability";
+} from "@/features/appointments/domain/wizard-availability";
 import type {
   AppointmentServiceRow,
   AppointmentWizardProps,

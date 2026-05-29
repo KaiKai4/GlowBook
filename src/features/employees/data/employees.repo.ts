@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { assertServicesHaveAssignedCategories } from "@/features/services/domain/service-assignment-integrity";
+import { assertServicesHaveAssignedCategories } from "@/features/employees/domain/collaborator-assignment";
 import type { Database } from "@/types/database.types";
 
 export interface EmployeeWithDetails {

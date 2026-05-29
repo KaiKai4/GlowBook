@@ -1,5 +1,6 @@
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { findAllSalons, findPendingInvitations } from "@/features/platform/data/platform.repo";
+import { findAllSalons } from "@/features/platform/data/salons.repo";
+import { findPendingInvitations } from "@/features/platform/data/invitations.repo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

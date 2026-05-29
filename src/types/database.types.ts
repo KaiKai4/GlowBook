@@ -1097,6 +1097,26 @@ export type Database = {
       invite_salon: { Args: { p_email: string }; Returns: string }
       is_owner: { Args: never; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      platform_salon_overviews: {
+        Args: never
+        Returns: {
+          appointment_count: number
+          collaborator_count: number
+          contact_email: string
+          created_at: string
+          customer_count: number
+          disabled_features: string[]
+          email: string
+          id: string
+          invitation_count: number
+          is_active: boolean
+          name: string
+          owner_count: number
+          owner_names: string[]
+          phone: string
+          service_count: number
+        }[]
+      }
       salon_id: { Args: never; Returns: string }
     }
     Enums: {

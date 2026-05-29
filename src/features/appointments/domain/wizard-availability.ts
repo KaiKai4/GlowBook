@@ -1,17 +1,49 @@
-import { evaluateTimeRange } from "@/features/appointments/domain/availability";
+import { addMinutes, getZonedTimeParts } from "@/lib/utils/dates";
+import { evaluateTimeRange } from "./availability";
 import type {
   BusinessHour,
+  OccupiedSlot,
   SalonConfig,
-} from "@/features/appointments/domain/types";
-import { addMinutes, getZonedTimeParts } from "@/lib/utils/dates";
-import type {
-  AppointmentScheduleItem,
-  AppointmentServiceRow,
-  EmployeeOption,
-  OccupiedByEmployee,
-  SalonWindow,
-  ServiceOption,
-} from "./appointment-wizard-types";
+  WorkSchedule,
+} from "./types";
+
+export interface AppointmentServiceRow {
+  key: string;
+  categoryId: string;
+  serviceId: string;
+  employeeId: string;
+}
+
+export type OccupiedByEmployee = Record<string, OccupiedSlot[]>;
+
+export interface WizardServiceOption {
+  id: string;
+  name: string;
+  category_id: string;
+  duration_minutes: number;
+  price: number;
+}
+
+export interface WizardEmployeeOption {
+  id: string;
+  service_ids: string[];
+  category_ids: string[];
+  work_schedules: WorkSchedule[];
+}
+
+export interface AppointmentScheduleItem<
+  TService extends WizardServiceOption = WizardServiceOption,
+> {
+  row: AppointmentServiceRow;
+  service: TService | undefined;
+  start: Date | null;
+  end: Date | null;
+}
+
+export interface SalonWindow {
+  open: string;
+  close: string;
+}
 
 export function createAppointmentRow(seq: number): AppointmentServiceRow {
   return {
@@ -40,7 +72,7 @@ export function salonWindowFor(
   };
 }
 
-export function buildSequentialSchedule({
+export function buildSequentialSchedule<TService extends WizardServiceOption>({
   rows,
   date,
   time,
@@ -49,13 +81,13 @@ export function buildSequentialSchedule({
   rows: AppointmentServiceRow[];
   date: string;
   time: string;
-  serviceMap: Map<string, ServiceOption>;
-}): AppointmentScheduleItem[] {
+  serviceMap: Map<string, TService>;
+}): AppointmentScheduleItem<TService>[] {
   if (!date) return [];
 
   const base = new Date(`${date}T${time}:00`);
 
-  return rows.reduce<AppointmentScheduleItem[]>((schedule, row) => {
+  return rows.reduce<AppointmentScheduleItem<TService>[]>((schedule, row) => {
     const service = serviceMap.get(row.serviceId);
     const start = schedule.length ? schedule[schedule.length - 1].end : base;
     const end = service && start ? addMinutes(start, service.duration_minutes) : start;
@@ -63,7 +95,10 @@ export function buildSequentialSchedule({
   }, []);
 }
 
-export function findEligibleEmployees({
+export function findEligibleEmployees<
+  TEmployee extends WizardEmployeeOption,
+  TService extends WizardServiceOption,
+>({
   serviceId,
   start,
   end,
@@ -76,12 +111,12 @@ export function findEligibleEmployees({
   serviceId: string;
   start: Date | null;
   end: Date | null;
-  employees: EmployeeOption[];
-  serviceMap: Map<string, ServiceOption>;
+  employees: TEmployee[];
+  serviceMap: Map<string, TService>;
   salonConfig: SalonConfig;
   businessHours: BusinessHour[];
   occupied: OccupiedByEmployee;
-}): EmployeeOption[] {
+}): TEmployee[] {
   const service = serviceMap.get(serviceId);
   if (!service) return [];
 

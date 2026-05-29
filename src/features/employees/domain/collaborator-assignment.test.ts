@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   assertServicesHaveAssignedCategories,
   findServicesMissingAssignedCategory,
-} from "./service-assignment-integrity";
+} from "./collaborator-assignment";
 
 const services = [
   { id: "cut", category_id: "hair" },
   { id: "manicure", category_id: "nails" },
 ];
 
-describe("service assignment integrity", () => {
+describe("collaborator assignment", () => {
   it("allows services when their categories are assigned", () => {
     expect(() =>
       assertServicesHaveAssignedCategories(services, ["hair", "nails"])

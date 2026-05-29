@@ -45,6 +45,7 @@ RLS is enabled for tenant and platform tables in `supabase/migrations/2024010100
 | `recalc_appointment()` trigger | `20240101000001_rls_and_functions.sql` | `src/features/appointments/data/appointments.repo.ts` | Keeps appointment header start/end/total derived from items. |
 | `create_appointment(payload jsonb)` | `20240101000003_create_appointment_rpc.sql`, hardened by `20240101000013`, `20240101000015`, `20240101000019` | `src/features/appointments/use-cases/create-appointment.ts` | Atomic appointment creation and final schedule integrity. |
 | `blocks_calendar` behavior | schema + lifecycle updates | `src/features/appointments/domain/lifecycle.ts` | Scheduled/confirmed block calendar; cancelled/no_show/completed do not block new slots. |
+| Agenda configuration consumption | `salons` fields, `salon_business_hours` | `src/features/salon` owns configuration; `src/features/appointments/domain/availability.ts` and `src/features/appointments/domain/wizard-availability.ts` consume it | Salon stores schedule policy; appointments applies it when calculating availability. |
 
 TypeScript should prevalidate appointment availability for UX, but SQL must reject invalid or overlapping writes.
 
@@ -55,8 +56,8 @@ Migration `20240101000020_enforce_service_assignment_tenant_integrity.sql` adds 
 | Relationship | Constraint family | TypeScript owner |
 |---|---|---|
 | Service -> Category | `fk_services_category_same_salon` | `src/features/services` |
-| Employee service assignment | `fk_employee_services_employee_same_salon`, `fk_employee_services_service_same_salon` | `src/features/employees`, `src/features/services/domain/service-assignment-integrity.ts` |
-| Employee category assignment | `fk_employee_categories_employee_same_salon`, `fk_employee_categories_category_same_salon` | `src/features/employees` |
+| Employee service assignment | `fk_employee_services_employee_same_salon`, `fk_employee_services_service_same_salon` | `src/features/employees/domain/collaborator-assignment.ts` |
+| Employee category assignment | `fk_employee_categories_employee_same_salon`, `fk_employee_categories_category_same_salon` | `src/features/employees/domain/collaborator-assignment.ts` |
 | Work schedule -> Employee | `fk_work_schedules_employee_same_salon` | `src/features/employees/use-cases/employee-schedule.ts` |
 | Appointment item -> Service/Employee | `fk_appointment_items_service_same_salon`, `fk_appointment_items_employee_same_salon` | `src/features/appointments` |
 | Appointment -> Customer | `fk_appointments_customer_same_salon` | `src/features/appointments`, `src/features/customers` |
@@ -71,7 +72,8 @@ These constraints are final data-integrity guards. TypeScript should still valid
 | `accept_invitation(...)` | `20240101000002_rbac_seed_and_platform.sql`, updated by `20240101000006`, `20240101000021` | `src/features/platform/use-cases/accept-invitation.ts` | Invited user accepts Salon invitation. |
 | `accept_invitation_admin(...)` | `20240101000006_invite_admin_accept.sql`, updated by `20240101000021` | `src/features/platform/use-cases/accept-invitation.ts` | Server-side creation of Salon + Owner after Auth account handling. |
 | `create_salon_with_owner(...)` | `20240101000002_rbac_seed_and_platform.sql`, `20240101000006`, `20240101000009` | `src/features/platform` | Atomic Salon + Owner setup. |
-| `delete_salon_completely(p_salon_id uuid)` | `20240101000016_delete_salon_completely_rpc.sql` | `src/features/platform/data/platform.repo.ts` | Transactional public data deletion for a Salon. Auth cleanup happens after RPC. |
+| `platform_salon_overviews()` | `20240101000025_platform_salon_overviews.sql`, `20240101000026_platform_salon_overviews_grants.sql` | `src/features/platform/data/salon-overviews.repo.ts` | Platform read model for `/admin/salons`. Keeps Salon overview reads at one RPC instead of N queries per Salon; executable only through `service_role`. |
+| `delete_salon_completely(p_salon_id uuid)` | `20240101000016_delete_salon_completely_rpc.sql` | `src/features/platform/data/delete-salon.repo.ts` | Transactional public data deletion for a Salon. Auth cleanup happens after RPC. |
 
 Complete Salon deletion is irreversible and must remain Platform-only.
 
@@ -88,7 +90,8 @@ Complete Salon deletion is irreversible and must remain Platform-only.
 |---|---|---|---|
 | `notification_templates` table/RLS | `20240101000000_initial_schema.sql`, `20240101000001_rls_and_functions.sql` | `src/features/notifications` | Stores Salon-level Plantilla records. |
 | Template events/placeholders | ADR 0007 | `src/features/notifications/domain/templates.ts`, `src/features/notifications/schemas.ts` | Defines supported operational messages and allowed placeholders. |
-| `appointment_reminder_log` table/RLS | `20240101000000_initial_schema.sql`, `20240101000001_rls_and_functions.sql` | Future reminders Module | Stores reminder send/audit records when the flow becomes active. |
+| Reminder queue | appointments, employees, salons, `notification_templates` | `src/features/reminders/use-cases/get-reminder-queue.ts` | Builds the operational worklist for reminder sending. |
+| `appointment_reminder_log` table/RLS | `20240101000000_initial_schema.sql`, `20240101000001_rls_and_functions.sql` | `src/features/reminders` | Stores reminder send/audit records when the flow becomes active. |
 
 ## Archive And Reactivation Contracts
 
@@ -104,6 +107,7 @@ ADR 0004 is the product-level contract. SQL stores the flags; TypeScript owns us
 Allowed duplication exists when TypeScript improves UX and SQL remains final authority:
 
 - appointment availability prechecks in TypeScript + no-overlap/assignment checks in SQL.
+- collaborator assignment checks in TypeScript + same-Salon assignment constraints in SQL.
 - tenant ownership checks in repos + RLS policies.
 - permission checks in Server Actions/use-cases + SQL policies.
 - form validation in Zod + database constraints.

@@ -2,7 +2,7 @@ import {
   acceptSalonInvitationAsAdmin,
   findSalonInvitationForAcceptance,
   profileExists,
-} from "@/features/platform/data/platform.repo";
+} from "@/features/platform/data/invitations.repo";
 import { err, ok, type Result } from "@/lib/result";
 import {
   createAuthUser,

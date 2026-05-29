@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildSequentialSchedule, findEligibleEmployees } from "./appointment-wizard-availability";
+import { buildSequentialSchedule, findEligibleEmployees } from "./wizard-availability";
 import type {
   AppointmentServiceRow,
-  EmployeeOption,
   OccupiedByEmployee,
-  ServiceOption,
-} from "./appointment-wizard-types";
+} from "./wizard-availability";
+import type { EmployeeOption, ServiceOption } from "../view-models";
 
 const salonConfig = {
   timezone: "America/Panama",

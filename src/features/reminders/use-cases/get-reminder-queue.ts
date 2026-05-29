@@ -2,9 +2,9 @@ import "server-only";
 
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
 import { findActiveEmployeeNames } from "@/features/employees/data/employees.repo";
+import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
 import { findSalonIdentity } from "@/features/salon/data/salon.repo";
 import { addDaysToDateISO, formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
-import { findActiveMessageTemplate } from "../data/notification-templates.repo";
 import type { ReminderAppointment, ReminderQueueViewModel } from "../view-models";
 
 export interface GetReminderQueueInput {

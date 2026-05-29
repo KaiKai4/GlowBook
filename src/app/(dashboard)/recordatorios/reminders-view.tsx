@@ -8,7 +8,7 @@ import { renderMessageTemplate } from "@/features/notifications/domain/templates
 import type {
   ReminderAppointment,
   ReminderEmployee,
-} from "@/features/notifications/view-models";
+} from "@/features/reminders/view-models";
 
 type ApptReminder = ReminderAppointment;
 

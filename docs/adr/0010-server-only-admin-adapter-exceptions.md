@@ -34,7 +34,11 @@ Use-cases and route files must not call `admin.auth.admin.*` directly. They must
 
 The currently authorized service-role data Adapters are:
 
-- `src/features/platform/data/platform.repo.ts` for Platform cross-tenant reads/writes and protected Salon RPC workflows.
+- `src/features/platform/data/salons.repo.ts` for Platform Salon administration reads/writes.
+- `src/features/platform/data/salon-overviews.repo.ts` for the Platform Salon overview read model.
+- `src/features/platform/data/invitations.repo.ts` for Platform invitation reads and protected invitation acceptance RPCs.
+- `src/features/platform/data/delete-salon.repo.ts` for protected Salon deletion RPC workflows.
+- `src/features/platform/data/feedback-moderation.repo.ts` for Platform feedback moderation.
 - `src/features/employees/data/employee-access.repo.ts` for collaborator invitations, profile linkage and collaborator-access cleanup.
 - `src/lib/auth/session.ts` for Platform admin detection.
 

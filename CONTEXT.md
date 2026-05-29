@@ -46,7 +46,7 @@ El sistema tiene tres niveles:
 
 **Horario laboral del colaborador** vive en `work_schedules`. Define cuando un colaborador puede atender. Si el colaborador no tiene horarios configurados, se usa el horario del salon como fallback.
 
-**Configuracion de agenda** incluye anticipacion minima, duracion minima, zona horaria y si se permiten reservas fuera del horario del salon.
+**Configuracion de agenda** incluye anticipacion minima, duracion minima, zona horaria y si se permiten reservas fuera del horario del salon. El owner de configuracion y persistencia es `features/salon`; `features/appointments` la consume para calcular disponibilidad y validar agenda.
 
 ## Catalogo Operativo
 
@@ -54,7 +54,7 @@ El sistema tiene tres niveles:
 
 **Servicio** define nombre, duracion, precio, categoria y estado activo. La duracion del servicio es la unidad que mueve el cursor al crear citas itemizadas.
 
-**Asignacion de colaborador** indica que un colaborador puede atender una categoria y realizar servicios especificos. Para aparecer en el wizard de citas debe cumplir categoria, servicio, estado activo y disponibilidad horaria.
+**Asignacion de colaborador** indica que un colaborador puede atender una categoria y realizar servicios especificos. El owner de la regla es `features/employees`, porque la asignacion describe capacidades del colaborador. `features/services` define el catalogo y `features/appointments` consume la asignacion al calcular disponibilidad.
 
 ## Citas
 
@@ -84,7 +84,7 @@ El sistema tiene tres niveles:
 
 **Placeholder** es una variable dentro de una plantilla, por ejemplo `{cliente}`, `{fecha}`, `{hora}`, `{servicios}`, `{colaboradores}` o `{salon}`.
 
-**Recordatorio operativo** es un mensaje enviado desde el apartado de recordatorios. Debe usar plantillas activas y respetar permisos de `reminders.send`.
+**Recordatorio operativo** es un mensaje enviado desde el apartado de recordatorios. El owner del flujo operativo es `features/reminders`; `features/notifications` solo owns plantillas, placeholders y renderizado de mensajes. Debe usar plantillas activas y respetar permisos de `reminders.send`.
 
 ## Invitaciones
 

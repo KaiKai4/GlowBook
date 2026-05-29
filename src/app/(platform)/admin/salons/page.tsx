@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Building2, CalendarDays, Users } from "lucide-react";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { findSalonOverviews } from "@/features/platform/data/platform.repo";
+import { findSalonOverviews } from "@/features/platform/data/salon-overviews.repo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteSalonButton } from "./delete-salon-button";

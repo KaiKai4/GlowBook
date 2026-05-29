@@ -313,7 +313,7 @@ Estado: **mixto**.
 Lo bueno:
 
 - `actions.ts` llama use-cases para crear, cancelar, confirmar y completar.
-- El wizard tiene helpers testeados en `appointment-wizard-availability.test.ts`.
+- El wizard tiene helpers testeados en `features/appointments/domain/wizard-availability.test.ts`.
 - Usa `features/appointments/domain` para disponibilidad.
 
 Friccion:
@@ -321,7 +321,7 @@ Friccion:
 - `appointments/page.tsx` hace lectura y armado de calendario con Supabase directo.
 - La pagina mezcla permisos, consulta de salon, empleados, business hours, plantilla de cancelacion, calculo de semana y rango UTC.
 - `new/page.tsx` tambien consulta clientes, categorias, colaboradores y salon directo.
-- `appointment-wizard-availability.ts` vive en `app`, pero contiene reglas de elegibilidad de colaboradores. Ese Module podria tener mas Locality dentro de `features/appointments`.
+- La disponibilidad del wizard ya vive en `features/appointments/domain/wizard-availability.ts` desde Fase 8.
 
 Recomendacion: crear Modules de lectura:
 
@@ -437,14 +437,14 @@ Recomendacion: crear use-case `updateMessageTemplate`. Mantener el render como M
 
 #### `src/app/(dashboard)/recordatorios/`
 
-Estado: **shallow page con lectura compleja**.
+Estado: **pagina fina con lectura en Module de negocio desde Fase 8**.
 
-Friccion:
+Antes de Fase 8:
 
 - `page.tsx` calcula rango de 7 dias, obtiene salon, citas, plantilla y empleados.
 - El Module de recordatorio operativo no existe como `features/reminders`.
 
-Recomendacion: crear un Module de lectura `getReminderQueue` en `features/notifications` o un nuevo `features/reminders` si el concepto crece. Hoy puede quedarse en notifications porque `Recordatorio operativo` esta en CONTEXT.md, pero si agrega envio real, historial y canales, merece feature propia.
+Resultado: `features/reminders/use-cases/get-reminder-queue.ts` owns la cola operativa. `features/notifications` conserva plantillas, placeholders y renderizado.
 
 #### `src/app/(dashboard)/reports/`
 
@@ -705,9 +705,9 @@ Lo bueno:
 Friccion:
 
 - No hay use-cases para actualizar o resolver plantilla activa.
-- Recordatorios viven en ruta, no como Module de negocio.
+- Recordatorios ya viven en `features/reminders` como Module de negocio.
 
-Recomendacion: crear use-cases de plantilla y, si se implementa envio, crear `features/reminders` o submodulo de notifications.
+Recomendacion: crear use-cases de plantilla y mantener `features/reminders` como owner del flujo operativo.
 
 ### `src/features/platform/`
 
@@ -760,13 +760,11 @@ Estado: **parcial**.
 Contenido:
 
 - `schemas.ts`
-- `domain/service-assignment-integrity.ts`
 - `data/services.repo.ts`
-- `use-cases/` vacio
+- `use-cases/`
 
 Lo bueno:
 
-- El dominio de integridad de asignacion esta testeado.
 - El repo valida categoria activa al crear/actualizar Servicio.
 
 Friccion:
@@ -774,7 +772,7 @@ Friccion:
 - Las actions saltan directo a repo.
 - El concepto "Asignacion de colaborador" cruza `services`, `employees` y `appointments`.
 
-Recomendacion: crear use-cases de catalogo y decidir un owner claro para asignaciones.
+Resultado Fase 8: la regla de asignacion vive en `features/employees/domain/collaborator-assignment.ts`; `services` conserva el catalogo.
 
 ## `src/lib/`
 
@@ -872,9 +870,9 @@ Pruebas detectadas:
 - `src/features/appointments/use-cases/create-appointment.rpc.test.ts`
 - `src/features/employees/use-cases/employee-access.test.ts`
 - `src/features/employees/use-cases/employee-lifecycle.test.ts`
+- `src/features/employees/domain/collaborator-assignment.test.ts`
 - `src/features/notifications/domain/templates.test.ts`
-- `src/features/services/domain/service-assignment-integrity.test.ts`
-- `src/app/(dashboard)/appointments/new/appointment-wizard-availability.test.ts`
+- `src/features/appointments/domain/wizard-availability.test.ts`
 - `src/lib/auth/session.test.ts`
 - `src/lib/utils/phone.test.ts`
 
@@ -1008,7 +1006,7 @@ Primeros candidatos:
 
 - `features/reports/use-cases/get-operational-report.ts`
 - `features/appointments/use-cases/get-calendar-view.ts`
-- `features/notifications/use-cases/get-reminder-queue.ts`
+- `features/reminders/use-cases/get-reminder-queue.ts`
 - `features/dashboard/use-cases/get-dashboard-overview.ts`
 
 No conviene disenar todas las Interfaces al mismo tiempo. Empezaria por reports porque hoy concentra muchas reglas y no tiene feature propia.

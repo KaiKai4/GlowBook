@@ -1,4 +1,4 @@
-import { getReminderQueue } from "@/features/notifications/use-cases/get-reminder-queue";
+import { getReminderQueue } from "@/features/reminders/use-cases/get-reminder-queue";
 import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { Bell } from "lucide-react";

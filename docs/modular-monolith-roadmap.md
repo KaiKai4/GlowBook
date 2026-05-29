@@ -191,7 +191,7 @@ Trabajo:
 1. Crear `src/features/dashboard/use-cases/get-dashboard-overview.ts`.
 2. Crear `src/features/appointments/use-cases/get-calendar-view.ts`.
 3. Crear `src/features/appointments/use-cases/get-appointment-wizard-data.ts`.
-4. Crear `src/features/notifications/use-cases/get-reminder-queue.ts`.
+4. Crear `src/features/reminders/use-cases/get-reminder-queue.ts`.
 5. Mover helpers de fecha/calendario route-local a Modules de dominio o use-case si contienen reglas del negocio.
 6. Evitar casts `as unknown as Parameters<...>` creando view models tipados.
 
@@ -222,8 +222,8 @@ Resultado:
   - normalizacion de vista
 - Se creo `src/features/appointments/use-cases/get-calendar-view.ts`.
 - Se creo `src/features/appointments/use-cases/get-appointment-wizard-data.ts`.
-- Se creo `src/features/notifications/view-models.ts`.
-- Se creo `src/features/notifications/use-cases/get-reminder-queue.ts`.
+- Se creo `src/features/reminders/view-models.ts`.
+- Se creo `src/features/reminders/use-cases/get-reminder-queue.ts`.
 - Se agregaron lecturas compartidas en repos existentes:
   - `findActiveEmployeeNames()`
   - `findSalonIdentity()`
@@ -428,9 +428,29 @@ Criterio de terminado:
 - Los use-cases no dependen de FormData.
 - La lectura de overview no escala con N queries por salon si el numero de salones crece.
 
+Implementacion aplicada:
+
+- Se elimino el Adapter ancho `src/features/platform/data/platform.repo.ts`.
+- Se separo Plataforma en Adapters con razones de cambio distintas:
+  - `src/features/platform/data/salons.repo.ts`
+  - `src/features/platform/data/invitations.repo.ts`
+  - `src/features/platform/data/salon-overviews.repo.ts`
+  - `src/features/platform/data/delete-salon.repo.ts`
+  - `src/features/platform/data/feedback-moderation.repo.ts`
+- `inviteSalon` ahora recibe `InviteSalonInput` tipado; la Server Action es quien traduce `FormData`.
+- Se agrego `src/features/platform/use-cases/delete-salon.ts` para mantener la confirmacion y los errores fuera de la Server Action.
+- Se agrego `src/features/platform/use-cases/set-feedback-report-status.ts` para que moderacion de feedback pase por use-case tipado.
+- Se agrego `supabase/migrations/20240101000025_platform_salon_overviews.sql` con el RPC `platform_salon_overviews()`.
+- Se agrego `supabase/migrations/20240101000026_platform_salon_overviews_grants.sql` para dejar el read model ejecutable solo por `service_role`.
+- `src/app/(platform)/admin/salons/page.tsx` ahora lee `SalonOverview` desde ese RPC, evitando el N+1 previo de `findSalonOverviews()`.
+- Se mantuvo `delete_salon_completely` como fuente de verdad transaccional para borrar datos publicos del Salon; la limpieza de Auth queda despues del RPC en `delete-salon.repo.ts`.
+- Se agregaron tests para el input tipado de invitaciones y el mapeo del read model de Salon overview.
+
 ## Fase 8 - Consolidar Conceptos Cruzados Del Dominio
 
 Objetivo: decidir ownership de conceptos que cruzan features.
+
+Estado: implementada el 2026-05-29.
 
 Problemas que resuelve:
 
@@ -454,6 +474,15 @@ Criterio de terminado:
 - Los imports entre features tienen una razon de dominio, no de conveniencia.
 - Las reglas duplicadas entre TypeScript y SQL estan documentadas como defensa en profundidad.
 
+Implementacion aplicada:
+
+- `Asignacion de colaborador` quedo owned por `features/employees/domain/collaborator-assignment.ts`; `features/services` solo mantiene el catalogo y `features/appointments` consume asignaciones para disponibilidad.
+- `Configuracion de agenda` quedo owned por `features/salon` como persistencia/configuracion; `features/appointments/domain/availability.ts` y `features/appointments/domain/wizard-availability.ts` la consumen para calcular horarios validos.
+- `Recordatorio operativo` quedo owned por `features/reminders`; `features/notifications` conserva plantillas, placeholders y renderizado.
+- Se movio la disponibilidad del wizard de nueva cita desde `src/app/(dashboard)/appointments/new` hacia `src/features/appointments/domain/wizard-availability.ts`.
+- Se movio la cola de recordatorios desde `features/notifications` hacia `features/reminders`.
+- Se documento en `CONTEXT.md` y `docs/database-contracts.md` la razon de cada import cruzado y que SQL sigue siendo la autoridad final para integridad.
+
 ## Fase 9 - Tests Y Guardrails Arquitectonicos
 
 Objetivo: que el monolito modular sea mantenible cuando crezca.
@@ -470,7 +499,7 @@ Trabajo:
    - `features/salon/use-cases/update-business-hours.test.ts`
    - `features/services/use-cases/*.test.ts`
    - `features/access/use-cases/*.test.ts`
-   - `features/notifications/use-cases/get-reminder-queue.test.ts`
+   - `features/reminders/use-cases/get-reminder-queue.test.ts`
    - `src/lib/utils/dates.test.ts`
 2. Evaluar una regla de lint o script que bloquee:
    - imports desde `components` hacia `app`
