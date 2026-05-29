@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
 import { UnsavedChangesProvider } from "@/components/layout/unsaved-changes";
+import { submitFeedbackAction } from "./feedback/actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LogOut, Sparkles } from "lucide-react";
 
@@ -84,7 +85,7 @@ export default async function DashboardLayout({
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-6xl px-6 py-8">{children}</div>
         </main>
-        <FeedbackBubble />
+        <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />
       </div>
     );
   }
@@ -100,7 +101,7 @@ export default async function DashboardLayout({
         <main className="flex-1 overflow-y-auto">
           <div className="w-full px-6 py-8">{children}</div>
         </main>
-        <FeedbackBubble />
+        <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />
       </div>
     </UnsavedChangesProvider>
   );

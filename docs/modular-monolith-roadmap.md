@@ -320,6 +320,8 @@ Resultado:
 
 Objetivo: asegurar que `components` no dependa de `app`.
 
+Estado: implementada el 2026-05-28.
+
 Problemas que resuelve:
 
 - `src/components/layout/feedback-bubble.tsx` importa `@/app/(dashboard)/feedback/actions`.
@@ -336,6 +338,23 @@ Criterio de terminado:
 - Ningun archivo en `src/components` importa desde `src/app`.
 - `feedback-bubble.tsx` solo conoce props, UI y schemas necesarios.
 - El submit de feedback tiene un use-case testeable.
+
+Resultado:
+
+- Se creo `src/features/feedback/use-cases/submit-feedback.ts`.
+- Se agrego `src/features/feedback/use-cases/submit-feedback.test.ts`.
+- `src/app/(dashboard)/feedback/actions.ts` quedo como Adapter fino:
+  - requiere perfil activo
+  - valida input con `SubmitFeedbackSchema`
+  - llama al use-case
+- `src/app/(dashboard)/layout.tsx` ahora inyecta `submitFeedbackAction` en `FeedbackBubble`.
+- `src/components/layout/feedback-bubble.tsx` se reemplazo por un Module de UI organizado:
+  - `components/layout/feedback-bubble/index.tsx`
+  - `components/layout/feedback-bubble/panel.tsx`
+  - `components/layout/feedback-bubble/category-picker.tsx`
+  - `components/layout/feedback-bubble/success-state.tsx`
+  - `components/layout/feedback-bubble/types.ts`
+- La UI de feedback ya no importa desde `src/app` y solo conoce props, estado visual y schemas de feedback.
 
 ## Fase 6 - Aislar Adapters Privilegiados Y Acceso De Colaboradores
 
