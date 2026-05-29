@@ -76,6 +76,8 @@ Criterio de terminado:
 
 Objetivo: quitar carpetas y assets que parecen arquitectura, pero no tienen Implementation real.
 
+Estado: implementada el 2026-05-28.
+
 Problemas que resuelve:
 
 - Carpetas vacias que simulan Seams inexistentes.
@@ -100,6 +102,20 @@ Criterio de terminado:
 - No quedan carpetas vacias sin explicacion.
 - La estructura deja de prometer Modules que no existen.
 - El arbol de carpetas es mas navegable para humanos y agentes.
+
+Resultado:
+
+- Se verificaron y eliminaron las carpetas vacias:
+  - `src/app/(platform)/admin/invitations`
+  - `src/app/api/webhooks`
+  - `src/features/access/use-cases`
+  - `src/features/customers/domain`
+  - `src/features/employees/domain`
+  - `src/features/services/use-cases`
+- Se verifico que los SVG default de Next en `public/` no se usaban en codigo y se eliminaron.
+- Se elimino `public/` al quedar vacia.
+- Se verifico que la carpeta externa `supabase/.temp` contiene metadata de Supabase CLI y se conservo.
+- Se documento en `README.md` que `glowbook/supabase/migrations` es la fuente real de migraciones.
 
 ## Fase 2 - Sacar Reportes De `src/app`
 

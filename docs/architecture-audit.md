@@ -110,10 +110,10 @@ Esto esta alineado con ADR 0002.
 | `.agents/` | Metadatos de skills del workspace. No es runtime. Bien separado. |
 | `.claude/` | Configuracion de asistentes. No afecta la arquitectura de producto. |
 | `glowbook/` | App principal. Es donde vive casi todo el sistema real. |
-| `supabase/` | Solo contiene `.temp`. Parece remanente externo al proyecto real. |
+| `supabase/` | Contiene `.temp` con metadata de Supabase CLI. No es fuente de migraciones. |
 | `skills-lock.json` | Lock de skills. Correcto fuera de la app. |
 
-Recomendacion: mantener `glowbook/` como raiz operacional. Si la carpeta externa `supabase/.temp` no tiene uso activo, documentar que es temporal o eliminarla en una limpieza controlada.
+Recomendacion: mantener `glowbook/` como raiz operacional. La fuente real de migraciones es `glowbook/supabase/migrations`; la carpeta externa `supabase/.temp` se conserva como metadata de Supabase CLI.
 
 ## App Raiz: `glowbook/`
 
@@ -163,19 +163,11 @@ Recomendacion: crear `0009-modular-monolith-feature-architecture.md` y, si se ma
 
 ## `public/`
 
-Estado: **aceptable con limpieza pendiente**.
+Estado: **limpio tras Fase 1**.
 
-Archivos:
+Los SVG default de Next (`file.svg`, `globe.svg`, `next.svg`, `vercel.svg`, `window.svg`) fueron verificados como no usados en codigo y eliminados. La carpeta `public/` tambien fue retirada al quedar vacia.
 
-- `file.svg`
-- `globe.svg`
-- `next.svg`
-- `vercel.svg`
-- `window.svg`
-
-Observacion: parecen assets default de Next. No aportan al dominio GlowBook.
-
-Recomendacion: borrar assets no usados o reemplazarlos por assets reales del producto. Esto no es deuda arquitectonica critica, pero si ruido.
+Recomendacion: recrear `public/` solo cuando existan assets reales de GlowBook.
 
 ## `scripts/`
 
