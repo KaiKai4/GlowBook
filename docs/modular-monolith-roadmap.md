@@ -121,6 +121,8 @@ Resultado:
 
 Objetivo: convertir `reports` en un Module profundo y testeable.
 
+Estado: implementada el 2026-05-28.
+
 Por que primero:
 
 - `src/app/(dashboard)/reports/page.tsx` concentra mucha logica de negocio.
@@ -159,6 +161,17 @@ Criterio de terminado:
 - `reports/page.tsx` ya no calcula metricas.
 - Las metricas se prueban sin Next runtime.
 - El use-case devuelve un view model estable para `ReportsView`.
+
+Resultado:
+
+- Se creo `src/features/reports` con:
+  - `schemas.ts` para validar filtros de periodo.
+  - `domain/period.ts` para rangos de presets por zona horaria.
+  - `domain/metrics.ts` para calculos puros de reportes.
+  - `data/reports.repo.ts` como Adapter Supabase server-only.
+  - `use-cases/get-operational-report.ts` como Interface de lectura.
+- `src/app/(dashboard)/reports/page.tsx` quedo reducido a perfil, permiso, parseo de params, llamada al use-case y render.
+- Se agregaron tests unitarios en `src/features/reports/domain/metrics.test.ts`.
 
 ## Fase 3 - Crear Modules De Lectura Para Dashboard, Agenda Y Recordatorios
 
