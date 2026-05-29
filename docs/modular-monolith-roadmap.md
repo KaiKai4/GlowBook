@@ -177,6 +177,8 @@ Resultado:
 
 Objetivo: sacar queries y agregaciones de paginas de dashboard.
 
+Estado: implementada el 2026-05-28.
+
 Problemas que resuelve:
 
 - `src/app/(dashboard)/page.tsx` mezcla metricas, queries y UI.
@@ -205,6 +207,29 @@ Criterio de terminado:
 - Las paginas solo autentican, autorizan, llaman use-cases y renderizan.
 - Cada pantalla recibe un view model tipado.
 - Las reglas de rango/timezone no quedan duplicadas en paginas.
+
+Resultado:
+
+- Se creo `src/features/dashboard` con:
+  - `data/dashboard.repo.ts` para lecturas Supabase del overview.
+  - `use-cases/get-dashboard-overview.ts` para metricas, servicios mas usados y citas por confirmar.
+- Se creo `src/features/appointments/view-models.ts` para contratos de agenda y wizard.
+- Se creo `src/features/appointments/domain/calendar.ts` para reglas puras de calendario:
+  - semana visible
+  - dias abiertos
+  - rango horario del calendario
+  - conteo de citas activas
+  - normalizacion de vista
+- Se creo `src/features/appointments/use-cases/get-calendar-view.ts`.
+- Se creo `src/features/appointments/use-cases/get-appointment-wizard-data.ts`.
+- Se creo `src/features/notifications/view-models.ts`.
+- Se creo `src/features/notifications/use-cases/get-reminder-queue.ts`.
+- Se agregaron lecturas compartidas en repos existentes:
+  - `findActiveEmployeeNames()`
+  - `findSalonIdentity()`
+  - `findAppointmentSalonConfig()`
+- `src/app/(dashboard)/page.tsx`, `appointments/page.tsx`, `appointments/new/page.tsx` y `recordatorios/page.tsx` quedaron sin queries Supabase directas.
+- Se eliminaron los casts `as unknown as Parameters<...>` en agenda y recordatorios usando view models tipados.
 
 ## Fase 4 - Normalizar Server Actions Como Interfaces Finas
 

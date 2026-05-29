@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils/cn";
 
 interface ApptForComplete {
   id: string;
-  total_price: string | null;
+  total_price: number | string | null;
   customer: { first_name: string; last_name: string } | null;
 }
 

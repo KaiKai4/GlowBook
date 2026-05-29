@@ -25,6 +25,12 @@ export interface EmployeeWithDetails {
   }>;
 }
 
+export interface EmployeeNameRow {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 export async function findEmployees(salonId: string, isActive?: boolean) {
   const supabase = await createSupabaseServerClient();
   let query = supabase
@@ -41,6 +47,19 @@ export async function findEmployees(salonId: string, isActive?: boolean) {
   if (isActive !== undefined) query = query.eq("is_active", isActive);
 
   const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function findActiveEmployeeNames(salonId: string): Promise<EmployeeNameRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("employees")
+    .select("id, first_name, last_name")
+    .eq("salon_id", salonId)
+    .eq("is_active", true)
+    .order("first_name");
+
   if (error) throw error;
   return data ?? [];
 }

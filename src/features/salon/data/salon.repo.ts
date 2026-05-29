@@ -8,6 +8,18 @@ export interface SalonSettings {
   bg_style: string | null;
 }
 
+export interface SalonIdentity {
+  name: string;
+  timezone: string;
+}
+
+export interface AppointmentSalonConfig {
+  min_booking_notice_minutes: number;
+  min_appointment_duration_minutes: number;
+  allow_off_hours_bookings: boolean;
+  timezone: string;
+}
+
 export interface BusinessHourRow {
   day_of_week: number;
   is_open: boolean;
@@ -22,6 +34,32 @@ export async function findSalonSettings(salonId: string): Promise<SalonSettings 
     .select("id, name, timezone, theme, bg_style")
     .eq("id", salonId)
     .single();
+  return data ?? null;
+}
+
+export async function findSalonIdentity(salonId: string): Promise<SalonIdentity | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("salons")
+    .select("name, timezone")
+    .eq("id", salonId)
+    .single();
+
+  return data ?? null;
+}
+
+export async function findAppointmentSalonConfig(
+  salonId: string
+): Promise<AppointmentSalonConfig | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("salons")
+    .select(
+      "min_booking_notice_minutes, min_appointment_duration_minutes, allow_off_hours_bookings, timezone"
+    )
+    .eq("id", salonId)
+    .single();
+
   return data ?? null;
 }
 

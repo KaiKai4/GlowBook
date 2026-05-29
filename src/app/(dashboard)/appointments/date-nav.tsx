@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import type { CalendarView } from "@/features/appointments/view-models";
 
-export type CalView = "diaria" | "semanal" | "trabajador";
+export type CalView = CalendarView;
 
 function toISODate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

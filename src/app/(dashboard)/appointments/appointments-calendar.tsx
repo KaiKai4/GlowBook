@@ -2,6 +2,7 @@
 
 import { formatTimeTz, formatCurrency } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
+import type { CalendarAppointment } from "@/features/appointments/view-models";
 
 const HOUR_HEIGHT = 72;
 const DEFAULT_START = 8;
@@ -65,15 +66,7 @@ const STATUS_DOT: Record<string, string> = {
   no_show: "bg-amber-400",
 };
 
-export interface ApptCalItem {
-  id: string;
-  status: string;
-  start_time: string | null;
-  end_time: string | null;
-  total_price: string | null;
-  customer: { first_name: string; last_name: string } | null;
-  items: Array<{ service: { name: string } | null; employee: { first_name: string } | null }>;
-}
+export type ApptCalItem = CalendarAppointment;
 
 function todayISO() {
   const d = new Date();

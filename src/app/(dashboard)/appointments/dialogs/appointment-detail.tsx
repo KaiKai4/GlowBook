@@ -16,7 +16,7 @@ interface ApptItem {
 interface ApptForDetail {
   id: string; status: string;
   start_time: string | null; end_time: string | null;
-  total_price: string | null; notes: string | null;
+  total_price: number | string | null; notes: string | null;
   customer: { first_name: string; last_name: string; phone: string | null } | null;
   items: ApptItem[];
 }

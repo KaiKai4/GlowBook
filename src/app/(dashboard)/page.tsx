@@ -3,129 +3,18 @@ import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, getPermissions, PERMISSIONS } from "@/lib/auth/permissions";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  getDashboardOverview,
+  type PendingAppointmentConfirmation,
+  type TopService,
+} from "@/features/dashboard/use-cases/get-dashboard-overview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency, formatDate, getUtcDayBoundaries } from "@/lib/utils/dates";
+import { formatCurrency, formatDate } from "@/lib/utils/dates";
 import {
   CalendarDays, Users, DollarSign, TrendingUp, ChevronRight, AlertCircle,
   BellRing, Phone, Scissors, Clock,
 } from "lucide-react";
-
-interface TopService { name: string; count: number; pct: number }
-interface PendingAppt { id: string; customerName: string; phone: string | null; when: string }
-
-async function getDashboardData(
-  salonId: string,
-  opts: { wantsReports: boolean; wantsConfirmations: boolean }
-) {
-  const supabase = await createSupabaseServerClient();
-
-  const { data: salonData } = await supabase
-    .from("salons")
-    .select("timezone")
-    .eq("id", salonId)
-    .single();
-
-  const timezone = salonData?.timezone ?? "UTC";
-  const now = new Date();
-
-  // Day boundaries in the salon's local timezone (not server/UTC time)
-  const { start: todayStart, end: todayEnd } = getUtcDayBoundaries(now, timezone);
-
-  // First day of the current month in the salon's timezone.
-  const localDateStr = new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);
-  const [yearStr, monthStr] = localDateStr.split("-");
-  let monthProbe = new Date(`${yearStr}-${monthStr}-01T12:00:00.000Z`);
-  const probeLocal = new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(monthProbe);
-  if (probeLocal !== `${yearStr}-${monthStr}-01`) {
-    const delta = probeLocal > `${yearStr}-${monthStr}-01` ? -12 : 12;
-    monthProbe = new Date(monthProbe.getTime() + delta * 60 * 60_000);
-  }
-  const { start: monthStart } = getUtcDayBoundaries(monthProbe, timezone);
-
-  let metrics: {
-    todayAppointments: number; monthRevenue: number;
-    totalCustomers: number; completedThisMonth: number;
-  } | null = null;
-  let topServices: TopService[] = [];
-  let pending: PendingAppt[] = [];
-
-  if (opts.wantsReports) {
-    const [todayAppts, monthAppts, totalCustomers, monthBooked] = await Promise.all([
-      supabase
-        .from("appointments")
-        .select("id, status", { count: "exact" })
-        .eq("salon_id", salonId)
-        .gte("start_time", todayStart.toISOString())
-        .lte("start_time", todayEnd.toISOString()),
-      supabase
-        .from("appointments")
-        .select("total_price, status")
-        .eq("salon_id", salonId)
-        .eq("status", "completed")
-        .gte("start_time", monthStart.toISOString()),
-      supabase
-        .from("customers")
-        .select("id", { count: "exact" })
-        .eq("salon_id", salonId)
-        .eq("is_active", true),
-      supabase
-        .from("appointment_items")
-        .select("service:services(name), appointment:appointments(status)")
-        .eq("salon_id", salonId)
-        .gte("start_time", monthStart.toISOString()),
-    ]);
-
-    const monthRevenue = (monthAppts.data ?? []).reduce((sum, a) => sum + Number(a.total_price), 0);
-    metrics = {
-      todayAppointments: todayAppts.count ?? 0,
-      monthRevenue,
-      totalCustomers: totalCustomers.count ?? 0,
-      completedThisMonth: monthAppts.data?.length ?? 0,
-    };
-
-    // Most-used services this month (exclude cancelled / no-show).
-    const counts = new Map<string, number>();
-    for (const item of monthBooked.data ?? []) {
-      const status = (item.appointment as { status: string } | null)?.status;
-      if (status === "cancelled" || status === "no_show") continue;
-      const name = (item.service as { name: string } | null)?.name;
-      if (!name) continue;
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const max = sorted[0]?.[1] ?? 0;
-    topServices = sorted.map(([name, count]) => ({ name, count, pct: max ? (count / max) * 100 : 0 }));
-  }
-
-  if (opts.wantsConfirmations) {
-    const { data: pendingData } = await supabase
-      .from("appointments")
-      .select("id, start_time, customer:customers(first_name, last_name, phone)")
-      .eq("salon_id", salonId)
-      .eq("status", "scheduled")
-      .gte("start_time", now.toISOString())
-      .order("start_time", { ascending: true })
-      .limit(6);
-
-    const fmt = new Intl.DateTimeFormat("es-PA", {
-      timeZone: timezone, weekday: "short", day: "numeric", month: "short",
-      hour: "2-digit", minute: "2-digit",
-    });
-    pending = (pendingData ?? []).map((a) => {
-      const c = a.customer as { first_name: string; last_name: string; phone: string | null } | null;
-      return {
-        id: a.id,
-        customerName: c ? `${c.first_name} ${c.last_name}` : "Cliente",
-        phone: c?.phone ?? null,
-        when: a.start_time ? fmt.format(new Date(a.start_time)) : "",
-      };
-    });
-  }
-
-  return { metrics, topServices, pending };
-}
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
@@ -144,7 +33,8 @@ export default async function DashboardPage() {
 
   const { metrics, topServices, pending } =
     canViewReports || canManageAppointments
-      ? await getDashboardData(profile.salon_id, {
+      ? await getDashboardOverview({
+          salonId: profile.salon_id,
           wantsReports: canViewReports,
           wantsConfirmations: canManageAppointments,
         })
@@ -273,7 +163,7 @@ function MetricCard({
   );
 }
 
-function PendingConfirmations({ pending }: { pending: PendingAppt[] }) {
+function PendingConfirmations({ pending }: { pending: PendingAppointmentConfirmation[] }) {
   return (
     <Card>
       <CardHeader>

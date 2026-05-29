@@ -13,6 +13,7 @@ import {
   CheckCircle2, XCircle, ThumbsUp, Eye, ListFilter, Search, X,
 } from "lucide-react";
 import type { CalView } from "./date-nav";
+import type { CalendarAppointment, CalendarEmployee } from "@/features/appointments/view-models";
 
 const STATUS_LABEL: Record<string, string> = {
   scheduled: "Agendada", confirmed: "Confirmada", completed: "Completada",
@@ -29,19 +30,8 @@ const STATUS_BADGE: Record<string, string> = {
   no_show: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
-export interface ApptFull {
-  id: string; status: string;
-  start_time: string | null; end_time: string | null;
-  total_price: string | null; notes: string | null;
-  customer: { id: string; first_name: string; last_name: string; phone: string | null; email: string | null; is_temporary: boolean } | null;
-  items: Array<{
-    id: string; start_time: string; end_time: string; price: number;
-    service: { id: string; name: string; duration_minutes: number } | null;
-    employee: { id: string; first_name: string; last_name: string } | null;
-  }>;
-}
-
-interface Employee { id: string; first_name: string; last_name: string }
+export type ApptFull = CalendarAppointment;
+type Employee = CalendarEmployee;
 
 export function AppointmentsDayView({
   appointments, tz, canManage,
@@ -176,9 +166,9 @@ export function AppointmentsDayView({
 
       {/* Calendar */}
       <AppointmentsCalendar
-        appointments={calendarAppts as unknown as Parameters<typeof AppointmentsCalendar>[0]["appointments"]}
+        appointments={calendarAppts}
         tz={tz}
-        onApptClick={(a) => setDetailAppt(a as ApptFull)}
+        onApptClick={setDetailAppt}
         mode={view === "semanal" ? "semanal" : "diaria"}
         weekDates={view === "semanal" ? weekDates : undefined}
         title={calendarTitle}

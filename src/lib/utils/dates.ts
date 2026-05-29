@@ -60,6 +60,26 @@ export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("es-PA", { style: "currency", currency: "USD" }).format(amount);
 }
 
+export function formatLocalDateISO(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const map: Record<string, string> = {};
+  for (const part of parts) map[part.type] = part.value;
+
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+export function addDaysToDateISO(date: string, days: number): string {
+  const value = new Date(`${date}T12:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
 // Returns the UTC timestamps for the start (00:00:00.000) and end (23:59:59.999)
 // of the calendar day that `date` falls on in the given IANA timezone.
 // Uses the wall-clock parts of `date` in that timezone to compute the offset, so

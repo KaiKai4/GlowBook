@@ -5,19 +5,12 @@ import { formatTimeTz } from "@/lib/utils/dates";
 import { MessageCircle, Bell } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
+import type {
+  ReminderAppointment,
+  ReminderEmployee,
+} from "@/features/notifications/view-models";
 
-interface ApptReminder {
-  id: string;
-  status: string;
-  start_time: string | null;
-  total_price: string | null;
-  customer: { first_name: string; last_name: string; phone: string | null } | null;
-  items: Array<{
-    id: string;
-    service: { name: string } | null;
-    employee: { id: string; first_name: string; last_name: string } | null;
-  }>;
-}
+type ApptReminder = ReminderAppointment;
 
 type Period = "hoy" | "manana" | "48h" | "7dias";
 
@@ -65,7 +58,7 @@ export function RemindersView({
   template,
 }: {
   appointments: ApptReminder[];
-  employees: { id: string; name: string }[];
+  employees: ReminderEmployee[];
   tz: string;
   salonName: string;
   template: string;
