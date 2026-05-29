@@ -235,6 +235,8 @@ Resultado:
 
 Objetivo: hacer que todas las Server Actions sigan la misma forma.
 
+Estado: implementada el 2026-05-28.
+
 Regla objetivo:
 
 ```text
@@ -285,6 +287,34 @@ Criterio de terminado:
 - Las actions no importan repositorios de `data` directamente.
 - Los errores de negocio viven en use-cases.
 - Hay tests para al menos los use-cases con reglas no triviales.
+
+Resultado:
+
+- Se crearon use-cases de servicios:
+  - `src/features/services/use-cases/create-category.ts`
+  - `src/features/services/use-cases/create-service.ts`
+  - `src/features/services/use-cases/update-service.ts`
+- Se crearon use-cases de salon:
+  - `src/features/salon/use-cases/update-salon-info.ts`
+  - `src/features/salon/use-cases/update-salon-theme.ts`
+  - `src/features/salon/use-cases/update-salon-background.ts`
+  - `src/features/salon/use-cases/update-business-hours.ts`
+- Se creo `src/features/notifications/use-cases/update-message-template.ts`.
+- Se crearon use-cases de acceso:
+  - `src/features/access/use-cases/create-role.ts`
+  - `src/features/access/use-cases/update-role-permissions.ts`
+  - `src/features/access/use-cases/assign-role.ts`
+  - `src/features/access/use-cases/delete-role.ts`
+- Las actions de `services`, `salon`, `plantillas` y `roles` quedaron sin imports directos a repositorios `data` ni `createSupabaseServerClient`.
+- Se movio el mapeo de errores de negocio hacia use-cases.
+- Se reforzaron adapters Supabase existentes:
+  - `roles.repo.ts` ahora verifica errores al resolver permisos, borrar permisos e insertar permisos.
+  - `deleteRole()` borra por `id` y `salon_id`.
+  - `salon.repo.ts` concentra escrituras de nombre, tema, fondo y horarios.
+- Se sincronizo `src/features/access/domain/permissions.ts` con Supabase agregando `appointments.view`, que ya existe en migraciones y en `src/lib/auth/permissions.ts`.
+- Se agregaron tests para use-cases:
+  - `src/features/services/use-cases/service-catalog.test.ts`
+  - `src/features/access/use-cases/roles.test.ts`
 
 ## Fase 5 - Corregir Dependencias Invertidas De UI Y Layout
 

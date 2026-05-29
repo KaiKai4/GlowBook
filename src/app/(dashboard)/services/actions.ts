@@ -1,18 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import {
-  createCategory,
-  createService,
-  updateService,
-} from "@/features/services/data/services.repo";
+import { createServiceCategory } from "@/features/services/use-cases/create-category";
+import { createCatalogService } from "@/features/services/use-cases/create-service";
+import { updateCatalogService } from "@/features/services/use-cases/update-service";
 import {
   CreateCategorySchema,
   CreateServiceSchema,
   UpdateServiceSchema,
 } from "@/features/services/schemas";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireActiveProfile } from "@/lib/auth/session";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
@@ -20,6 +18,7 @@ async function guard(): Promise<Result<{ salonId: string }>> {
   if (!hasPermission(profile, PERMISSIONS.SERVICES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar servicios." };
   }
+
   return { ok: true, value: { salonId: profile.salon_id } };
 }
 
@@ -27,8 +26,8 @@ export async function createCategoryAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const g = await guard();
-  if (!g.ok) return g;
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
 
   const parsed = CreateCategorySchema.safeParse({
     name: formData.get("name"),
@@ -37,23 +36,17 @@ export async function createCategoryAction(
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  try {
-    const cat = await createCategory(g.value.salonId, parsed.data);
-    revalidatePath("/services");
-    return { ok: true, value: cat.id };
-  } catch (e) {
-    const msg = (e as Error).message;
-    if (msg.includes("unique")) return { ok: false, error: "Ya existe una categoría con ese nombre." };
-    return { ok: false, error: "Error al crear la categoría." };
-  }
+  const result = await createServiceCategory(guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/services");
+  return result;
 }
 
 export async function createServiceAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const g = await guard();
-  if (!g.ok) return g;
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
 
   const parsed = CreateServiceSchema.safeParse({
     category_id: formData.get("category_id"),
@@ -64,18 +57,9 @@ export async function createServiceAction(
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  try {
-    const svc = await createService(g.value.salonId, parsed.data);
-    revalidatePath("/services");
-    return { ok: true, value: svc.id };
-  } catch (e) {
-    const msg = (e as Error).message;
-    if (msg.includes("unique")) return { ok: false, error: "Ya existe un servicio con ese nombre." };
-    if (msg.includes("categoria no pertenece") || msg.includes("pertenece")) {
-      return { ok: false, error: "La categoria no pertenece al salon o esta inactiva." };
-    }
-    return { ok: false, error: "Error al crear el servicio." };
-  }
+  const result = await createCatalogService(guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/services");
+  return result;
 }
 
 export async function updateServiceAction(
@@ -83,28 +67,26 @@ export async function updateServiceAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
 
   const parsed = UpdateServiceSchema.safeParse({
     name: formData.get("name") ?? undefined,
     description: formData.get("description") ?? undefined,
-    duration_minutes: formData.get("duration_minutes") ? Number(formData.get("duration_minutes")) : undefined,
+    duration_minutes: formData.get("duration_minutes")
+      ? Number(formData.get("duration_minutes"))
+      : undefined,
     price: formData.get("price") ? Number(formData.get("price")) : undefined,
-    is_active: formData.get("is_active") === "true" ? true : formData.get("is_active") === "false" ? false : undefined,
+    is_active:
+      formData.get("is_active") === "true"
+        ? true
+        : formData.get("is_active") === "false"
+          ? false
+          : undefined,
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  try {
-    await updateService(serviceId, g.value.salonId, parsed.data);
-    revalidatePath("/services");
-    return { ok: true, value: undefined };
-  } catch (err) {
-    console.error("[services]", err);
-    const msg = (err as Error).message;
-    if (msg.includes("categoria no pertenece") || msg.includes("pertenece")) {
-      return { ok: false, error: "La categoria no pertenece al salon o esta inactiva." };
-    }
-    return { ok: false, error: "Error al actualizar el servicio." };
-  }
+  const result = await updateCatalogService(serviceId, guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/services");
+  return result;
 }

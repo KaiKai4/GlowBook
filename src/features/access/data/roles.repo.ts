@@ -49,19 +49,44 @@ export async function setRolePermissions(
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
 
-  // Resolve keys to permission IDs
-  const { data: perms } = await supabase
+  const { data: role, error: roleError } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("id", roleId)
+    .eq("salon_id", salonId)
+    .single();
+
+  if (roleError) throw roleError;
+  if (!role) throw new Error("Rol no encontrado.");
+
+  const { data: permissions, error: permissionsError } = await supabase
     .from("permissions")
     .select("id, key")
     .in("key", permissionKeys);
 
-  // Replace all permissions for this role
-  await supabase.from("role_permissions").delete().eq("role_id", roleId);
+  if (permissionsError) throw permissionsError;
+  if ((permissions ?? []).length !== permissionKeys.length) {
+    throw new Error("Uno o mas permisos no existen.");
+  }
 
-  if (perms && perms.length > 0) {
-    await supabase.from("role_permissions").insert(
-      perms.map((p) => ({ role_id: roleId, permission_id: p.id, salon_id: salonId }))
+  const { error: deleteError } = await supabase
+    .from("role_permissions")
+    .delete()
+    .eq("role_id", roleId)
+    .eq("salon_id", salonId);
+
+  if (deleteError) throw deleteError;
+
+  if (permissions && permissions.length > 0) {
+    const { error: insertError } = await supabase.from("role_permissions").insert(
+      permissions.map((permission) => ({
+        role_id: roleId,
+        permission_id: permission.id,
+        salon_id: salonId,
+      }))
     );
+
+    if (insertError) throw insertError;
   }
 }
 
@@ -72,15 +97,15 @@ export async function assignRoleToProfile(
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
 
-  // Verify role belongs to the salon
-  const { data: role } = await supabase
+  const { data: role, error: roleError } = await supabase
     .from("roles")
     .select("id")
     .eq("id", roleId)
     .eq("salon_id", salonId)
     .single();
 
-  if (!role) throw new Error("El rol no pertenece a este salón.");
+  if (roleError) throw roleError;
+  if (!role) throw new Error("El rol no pertenece a este salon.");
 
   const { error } = await supabase
     .from("profiles")
@@ -94,17 +119,22 @@ export async function assignRoleToProfile(
 export async function deleteRole(roleId: string, salonId: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
 
-  // System roles (Owner) cannot be deleted
-  const { data: role } = await supabase
+  const { data: role, error: roleError } = await supabase
     .from("roles")
     .select("is_system")
     .eq("id", roleId)
     .eq("salon_id", salonId)
     .single();
 
+  if (roleError) throw roleError;
   if (!role) throw new Error("Rol no encontrado.");
   if (role.is_system) throw new Error("Los roles de sistema no se pueden eliminar.");
 
-  const { error } = await supabase.from("roles").delete().eq("id", roleId);
+  const { error } = await supabase
+    .from("roles")
+    .delete()
+    .eq("id", roleId)
+    .eq("salon_id", salonId);
+
   if (error) throw error;
 }

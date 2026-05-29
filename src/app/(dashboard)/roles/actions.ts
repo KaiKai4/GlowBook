@@ -1,83 +1,92 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { assignRole } from "@/features/access/use-cases/assign-role";
+import { createRoleWithPermissions } from "@/features/access/use-cases/create-role";
+import { deleteSalonRole } from "@/features/access/use-cases/delete-role";
+import { updateRolePermissions } from "@/features/access/use-cases/update-role-permissions";
 import {
-  createRole,
-  setRolePermissions,
-  assignRoleToProfile,
-  deleteRole,
-} from "@/features/access/data/roles.repo";
-import {
+  AssignRoleSchema,
   CreateRoleSchema,
   UpdateRolePermissionsSchema,
-  AssignRoleSchema,
 } from "@/features/access/schemas";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireActiveProfile } from "@/lib/auth/session";
 import type { Result } from "@/lib/result";
 
-export async function createRoleAction(
-  _prev: Result<string> | null,
-  formData: FormData
-): Promise<Result<string>> {
+async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar roles." };
   }
 
+  return { ok: true, value: { salonId: profile.salon_id } };
+}
+
+function parsePermissionKeys(formData: FormData): Result<string[]> {
+  const raw = formData.get("permission_keys");
+  if (typeof raw !== "string" || raw.trim() === "") return { ok: true, value: [] };
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string")) {
+      return { ok: false, error: "Permisos invalidos." };
+    }
+
+    return { ok: true, value: parsed };
+  } catch {
+    return { ok: false, error: "Permisos invalidos." };
+  }
+}
+
+export async function createRoleAction(
+  _prev: Result<string> | null,
+  formData: FormData
+): Promise<Result<string>> {
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
+
+  const permissionKeys = parsePermissionKeys(formData);
+  if (!permissionKeys.ok) return permissionKeys;
+
   const parsed = CreateRoleSchema.safeParse({
     name: formData.get("name"),
-    permission_keys: JSON.parse((formData.get("permission_keys") as string) ?? "[]"),
+    permission_keys: permissionKeys.value,
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  try {
-    const roleId = await createRole(profile.salon_id, parsed.data.name);
-    if (parsed.data.permission_keys.length > 0) {
-      await setRolePermissions(roleId, profile.salon_id, parsed.data.permission_keys);
-    }
-    revalidatePath("/roles");
-    return { ok: true, value: roleId };
-  } catch (e) {
-    const msg = (e as Error).message;
-    if (msg.includes("unique")) return { ok: false, error: "Ya existe un rol con ese nombre." };
-    return { ok: false, error: "Error al crear el rol." };
-  }
+  const result = await createRoleWithPermissions(guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/roles");
+  return result;
 }
 
 export async function updateRolePermissionsAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar roles." };
-  }
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
+
+  const permissionKeys = parsePermissionKeys(formData);
+  if (!permissionKeys.ok) return permissionKeys;
 
   const parsed = UpdateRolePermissionsSchema.safeParse({
     role_id: formData.get("role_id"),
-    permission_keys: JSON.parse((formData.get("permission_keys") as string) ?? "[]"),
+    permission_keys: permissionKeys.value,
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  try {
-    await setRolePermissions(parsed.data.role_id, profile.salon_id, parsed.data.permission_keys);
-    revalidatePath("/roles");
-    return { ok: true, value: undefined };
-  } catch (err) {
-    console.error("[roles]", err);
-    return { ok: false, error: "Error al actualizar permisos." };
-  }
+  const result = await updateRolePermissions(guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/roles");
+  return result;
 }
 
 export async function assignRoleAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para asignar roles." };
-  }
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
 
   const parsed = AssignRoleSchema.safeParse({
     profile_id: formData.get("profile_id"),
@@ -85,26 +94,16 @@ export async function assignRoleAction(
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  try {
-    await assignRoleToProfile(parsed.data.profile_id, parsed.data.role_id, profile.salon_id);
-    revalidatePath("/roles");
-    return { ok: true, value: undefined };
-  } catch (e) {
-    return { ok: false, error: (e as Error).message };
-  }
+  const result = await assignRole(guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/roles");
+  return result;
 }
 
 export async function deleteRoleAction(roleId: string): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para eliminar roles." };
-  }
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
 
-  try {
-    await deleteRole(roleId, profile.salon_id);
-    revalidatePath("/roles");
-    return { ok: true, value: undefined };
-  } catch (e) {
-    return { ok: false, error: (e as Error).message };
-  }
+  const result = await deleteSalonRole(guarded.value.salonId, roleId);
+  if (result.ok) revalidatePath("/roles");
+  return result;
 }
