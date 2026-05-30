@@ -245,6 +245,21 @@ Criterio de terminado:
 - `service_role` sigue limitado a los Adapters autorizados por ADR 0010.
 - `platform_salon_overviews()` sigue siendo el read model de Salon overview.
 
+Resultado implementado:
+
+- Se agregaron los read Modules de Plataforma:
+  - `src/features/platform/use-cases/get-platform-admin-home.ts`
+  - `src/features/platform/use-cases/get-platform-feedback-reports.ts`
+  - `src/features/platform/use-cases/get-platform-salon-overviews.ts`
+- `src/app/(platform)/admin/page.tsx`, `src/app/(platform)/admin/reports/page.tsx` y `src/app/(platform)/admin/salons/page.tsx` consumen view models y ya no importan `features/platform/data`.
+- Los Adapters con `service_role` se mantienen en `src/features/platform/data`, alineados con ADR 0010.
+- `get-platform-salon-overviews.ts` conserva `findSalonOverviews()` como Interface del read model respaldado por `platform_salon_overviews()`.
+- Se agregaron tests:
+  - `src/features/platform/use-cases/get-platform-admin-home.test.ts`
+  - `src/features/platform/use-cases/get-platform-feedback-reports.test.ts`
+  - `src/features/platform/use-cases/get-platform-salon-overviews.test.ts`
+- `architecture:check` ya no reporta imports `app -> data` pendientes.
+
 Riesgo: medio-bajo.
 
 ## Fase 14 - Profundizar Commands De Citas

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Building2, CalendarDays, Users } from "lucide-react";
+import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { findSalonOverviews } from "@/features/platform/data/salon-overviews.repo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteSalonButton } from "./delete-salon-button";
@@ -9,7 +9,7 @@ import { SalonFeaturesControl } from "./salon-features-control";
 
 export default async function PlatformSalonsPage() {
   await requirePlatformAdmin();
-  const salons = await findSalonOverviews();
+  const view = await getPlatformSalonOverviews();
 
   return (
     <div className="space-y-6">
@@ -21,15 +21,15 @@ export default async function PlatformSalonsPage() {
         <div className="mt-2">
           <h1 className="text-2xl font-bold text-neutral-900">Salones</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            Informacion global de salones registrados, funciones disponibles y eliminacion completa de tenants.
+            Información global de salones registrados, funciones disponibles y eliminación completa de tenants.
           </p>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard icon={<Building2 className="h-5 w-5 text-blue-600" />} label="Total salones" value={salons.length} />
-        <MetricCard icon={<Users className="h-5 w-5 text-emerald-600" />} label="Activos" value={salons.filter((s) => s.is_active).length} />
-        <MetricCard icon={<CalendarDays className="h-5 w-5 text-brand-600" />} label="Citas totales" value={salons.reduce((sum, salon) => sum + salon.appointment_count, 0)} />
+        <MetricCard icon={<Building2 className="h-5 w-5 text-blue-600" />} label="Total salones" value={view.metrics.totalSalons} />
+        <MetricCard icon={<Users className="h-5 w-5 text-emerald-600" />} label="Activos" value={view.metrics.activeSalons} />
+        <MetricCard icon={<CalendarDays className="h-5 w-5 text-brand-600" />} label="Citas totales" value={view.metrics.totalAppointments} />
       </div>
 
       <Card>
@@ -37,14 +37,14 @@ export default async function PlatformSalonsPage() {
           <CardTitle>Salones registrados</CardTitle>
         </CardHeader>
         <CardContent>
-          {salons.length === 0 ? (
+          {view.salons.length === 0 ? (
             <p className="py-10 text-center text-sm text-neutral-400">No hay salones registrados.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1240px] text-sm">
                 <thead>
                   <tr className="border-b border-neutral-100 text-left text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    <th className="px-3 py-3">Salon</th>
+                    <th className="px-3 py-3">Salón</th>
                     <th className="px-3 py-3">Correo</th>
                     <th className="px-3 py-3">Owners</th>
                     <th className="px-3 py-3">Datos</th>
@@ -55,11 +55,11 @@ export default async function PlatformSalonsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {salons.map((salon) => (
+                  {view.salons.map((salon) => (
                     <tr key={salon.id} className="align-top">
                       <td className="px-3 py-4">
                         <p className="font-semibold text-neutral-900">{salon.name}</p>
-                        <p className="text-xs text-neutral-400">{salon.phone || "Sin telefono"}</p>
+                        <p className="text-xs text-neutral-400">{salon.phone || "Sin teléfono"}</p>
                         <p className="mt-1 font-mono text-[11px] text-neutral-400">{salon.id}</p>
                       </td>
                       <td className="px-3 py-4">
@@ -67,7 +67,7 @@ export default async function PlatformSalonsPage() {
                           {salon.contact_email || "Sin correo registrado"}
                         </p>
                         {!salon.email && salon.contact_email ? (
-                          <p className="mt-1 text-[11px] text-neutral-400">Tomado de la invitacion aceptada</p>
+                          <p className="mt-1 text-[11px] text-neutral-400">Tomado de la invitación aceptada</p>
                         ) : null}
                       </td>
                       <td className="px-3 py-4">
