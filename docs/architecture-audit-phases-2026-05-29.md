@@ -192,6 +192,25 @@ Criterio de terminado:
 - Las paginas no conocen query shape.
 - Se mantiene la validacion de tenant y permisos.
 
+Resultado implementado:
+
+- Se agregaron los read Modules:
+  - `src/features/salon/use-cases/get-dashboard-shell.ts`
+  - `src/features/employees/use-cases/get-employees-page.ts`
+  - `src/features/employees/use-cases/get-employee-detail.ts`
+  - `src/features/appointments/use-cases/get-appointment-detail.ts`
+- Se agrego `findDashboardShellSalon` en `src/features/salon/data/salon.repo.ts` para concentrar la lectura del shell del dashboard.
+- `src/app/(dashboard)/layout.tsx` ya no crea Supabase client ni conoce el `select` de Salon; solo arma la navegacion con el view model.
+- `src/app/(dashboard)/employees/page.tsx`, `src/app/(dashboard)/employees/[id]/page.tsx` y `src/app/(dashboard)/appointments/[id]/page.tsx` ya no importan repositorios `data`.
+- `employees/[id]` mantiene roles, categorias, servicios, horarios e invitacion pendiente desde `getEmployeeDetail`.
+- `appointments/[id]` mantiene validacion de tenant, timezone y estado desde `getAppointmentDetail`.
+- Se agregaron tests de mapeo:
+  - `src/features/salon/use-cases/get-dashboard-shell.test.ts`
+  - `src/features/employees/use-cases/get-employees-page.test.ts`
+  - `src/features/employees/use-cases/get-employee-detail.test.ts`
+  - `src/features/appointments/use-cases/get-appointment-detail.test.ts`
+- `architecture:check` queda reducido a los imports `app -> data` de Plataforma, que pertenecen a Fase 13.
+
 Riesgo: medio.
 
 ## Fase 13 - Normalizar Lecturas De Plataforma

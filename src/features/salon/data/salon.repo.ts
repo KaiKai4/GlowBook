@@ -14,6 +14,14 @@ export interface SalonIdentity {
   timezone: string;
 }
 
+export interface DashboardShellSalon {
+  name: string;
+  is_active: boolean;
+  theme: string;
+  bg_style: string | null;
+  disabled_features: string[];
+}
+
 export interface AppointmentSalonConfig {
   min_booking_notice_minutes: number;
   min_appointment_duration_minutes: number;
@@ -46,6 +54,19 @@ export async function findSalonIdentity(salonId: string): Promise<SalonIdentity 
   const { data } = await supabase
     .from("salons")
     .select("name, timezone")
+    .eq("id", salonId)
+    .single();
+
+  return data ?? null;
+}
+
+export async function findDashboardShellSalon(
+  salonId: string
+): Promise<DashboardShellSalon | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("salons")
+    .select("name, is_active, theme, bg_style, disabled_features")
     .eq("id", salonId)
     .single();
 

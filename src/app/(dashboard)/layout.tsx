@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
 import { getProfile, isPlatformAdmin } from "@/lib/auth/session";
-import { getDisabledSalonFeatures, getPermissions } from "@/lib/auth/permissions";
+import { getDashboardShell } from "@/features/salon/use-cases/get-dashboard-shell";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
 import { UnsavedChangesProvider } from "@/components/layout/unsaved-changes";
 import { submitFeedbackAction } from "./feedback/actions";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LogOut, Sparkles } from "lucide-react";
 
 export default async function DashboardLayout({
@@ -25,26 +24,16 @@ export default async function DashboardLayout({
 
   if (!profile.is_active) redirect("/login");
 
-  const supabase = await createSupabaseServerClient();
-  const { data: salon } = await supabase
-    .from("salons")
-    .select("name, is_active, theme, bg_style, disabled_features")
-    .eq("id", profile.salon_id)
-    .single();
+  const shell = await getDashboardShell(profile);
+  if (!shell) redirect("/login");
 
-  if (!salon) redirect("/login");
-
-  const profileForAccess = {
-    ...profile,
-    salon: { disabled_features: salon.disabled_features },
-  };
-  const permissions = getPermissions(profileForAccess);
-  const disabledFeatures = getDisabledSalonFeatures(profileForAccess);
+  const permissions = shell.permissions;
+  const disabledFeatures = shell.disabledFeatures;
   const visibleNav = getVisibleNavItems(permissions, profile.is_owner, disabledFeatures);
-  const theme = salon.theme || "violet";
-  const bgStyle = salon.bg_style || "neutral";
+  const theme = shell.theme;
+  const bgStyle = shell.bgStyle;
 
-  if (!salon.is_active) {
+  if (!shell.isActive) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-50 px-4">
         <div className="max-w-md text-center">
@@ -73,7 +62,7 @@ export default async function DashboardLayout({
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-stone-900 truncate">{salon.name}</p>
+              <p className="text-sm font-semibold text-stone-900 truncate">{shell.salonName}</p>
               <p className="text-xs text-brand-400 font-medium">GlowBook</p>
             </div>
           </div>
@@ -99,7 +88,7 @@ export default async function DashboardLayout({
     <UnsavedChangesProvider>
       <div data-theme={theme} data-bg={bgStyle} className="flex h-screen overflow-hidden bg-neutral-50">
         <Sidebar
-          salonName={salon.name}
+          salonName={shell.salonName}
           userPermissions={permissions}
           isOwner={profile.is_owner}
           disabledFeatures={disabledFeatures}

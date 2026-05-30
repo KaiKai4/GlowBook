@@ -1,0 +1,91 @@
+import "server-only";
+
+import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { findAppointmentById } from "../data/appointments.repo";
+
+export type AppointmentStatusVariant =
+  | "default"
+  | "info"
+  | "success"
+  | "danger"
+  | "warning"
+  | "primary";
+
+const STATUS_LABEL: Record<string, string> = {
+  scheduled: "Agendada",
+  confirmed: "Confirmada",
+  completed: "Completada",
+  cancelled: "Cancelada",
+  no_show: "No asistió",
+};
+
+const STATUS_VARIANT: Record<string, AppointmentStatusVariant> = {
+  scheduled: "info",
+  confirmed: "primary",
+  completed: "success",
+  cancelled: "danger",
+  no_show: "warning",
+};
+
+export interface AppointmentDetailItemViewModel {
+  id: string;
+  serviceName: string;
+  employeeName: string;
+  start_time: string;
+  end_time: string;
+  price: number;
+}
+
+export interface AppointmentDetailViewModel {
+  id: string;
+  status: string;
+  statusLabel: string;
+  statusVariant: AppointmentStatusVariant;
+  customerName: string;
+  start_time: string | null;
+  end_time: string | null;
+  total_price: number;
+  notes: string | null;
+  timezone: string;
+  items: AppointmentDetailItemViewModel[];
+}
+
+export interface GetAppointmentDetailInput {
+  appointmentId: string;
+  salonId: string;
+}
+
+export async function getAppointmentDetail({
+  appointmentId,
+  salonId,
+}: GetAppointmentDetailInput): Promise<AppointmentDetailViewModel | null> {
+  const appointment = await findAppointmentById(appointmentId);
+  if (!appointment || appointment.salon_id !== salonId) return null;
+
+  const salon = await findSalonIdentity(salonId);
+
+  return {
+    id: appointment.id,
+    status: appointment.status,
+    statusLabel: STATUS_LABEL[appointment.status] ?? appointment.status,
+    statusVariant: STATUS_VARIANT[appointment.status] ?? "default",
+    customerName: appointment.customer
+      ? `${appointment.customer.first_name} ${appointment.customer.last_name}`.trim()
+      : "Cliente sin nombre",
+    start_time: appointment.start_time,
+    end_time: appointment.end_time,
+    total_price: Number(appointment.total_price ?? 0),
+    notes: appointment.notes,
+    timezone: salon?.timezone ?? "America/Panama",
+    items: appointment.items.map((item) => ({
+      id: item.id,
+      serviceName: item.service?.name ?? "Servicio eliminado",
+      employeeName: item.employee
+        ? `${item.employee.first_name} ${item.employee.last_name}`.trim()
+        : "Colaborador no asignado",
+      start_time: item.start_time,
+      end_time: item.end_time,
+      price: Number(item.price ?? 0),
+    })),
+  };
+}

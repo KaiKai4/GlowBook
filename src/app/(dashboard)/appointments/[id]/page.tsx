@@ -1,23 +1,13 @@
-import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { findAppointmentById } from "@/features/appointments/data/appointments.repo";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate, formatTimeTz } from "@/lib/utils/dates";
-import { AppointmentActions } from "./appointment-actions";
-import { notFound } from "next/navigation";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-
-const STATUS_LABEL: Record<string, string> = {
-  scheduled: "Agendada", confirmed: "Confirmada", completed: "Completada",
-  cancelled: "Cancelada", no_show: "No asistió",
-};
-const STATUS_VARIANT: Record<string, "info" | "success" | "danger" | "warning" | "primary"> = {
-  scheduled: "info", confirmed: "primary", completed: "success",
-  cancelled: "danger", no_show: "warning",
-};
+import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appointment-detail";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireProfile } from "@/lib/auth/session";
+import { formatCurrency, formatDate, formatTimeTz } from "@/lib/utils/dates";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AppointmentActions } from "./appointment-actions";
 
 export default async function AppointmentDetailPage({
   params,
@@ -37,13 +27,12 @@ export default async function AppointmentDetailPage({
     );
   }
 
-  const appt = await findAppointmentById(id);
-  if (!appt || appt.salon_id !== profile.salon_id) notFound();
+  const appointment = await getAppointmentDetail({
+    appointmentId: id,
+    salonId: profile.salon_id,
+  });
 
-  const supabase = await createSupabaseServerClient();
-  const { data: salon } = await supabase
-    .from("salons").select("timezone").eq("id", profile.salon_id).single();
-  const tz = salon?.timezone ?? "America/Panama";
+  if (!appointment) notFound();
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -53,15 +42,13 @@ export default async function AppointmentDetailPage({
           Agenda
         </Link>
         <div className="mt-2 flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-neutral-900">
-            {appt.customer?.first_name} {appt.customer?.last_name}
-          </h1>
-          <Badge variant={STATUS_VARIANT[appt.status]}>{STATUS_LABEL[appt.status]}</Badge>
+          <h1 className="text-2xl font-bold text-neutral-900">{appointment.customerName}</h1>
+          <Badge variant={appointment.statusVariant}>{appointment.statusLabel}</Badge>
         </div>
-        {appt.start_time && (
+        {appointment.start_time && (
           <p className="text-sm text-neutral-500 mt-1">
-            {formatDate(new Date(appt.start_time))} · {formatTimeTz(new Date(appt.start_time), tz)}
-            {appt.end_time && ` – ${formatTimeTz(new Date(appt.end_time), tz)}`}
+            {formatDate(new Date(appointment.start_time))} · {formatTimeTz(new Date(appointment.start_time), appointment.timezone)}
+            {appointment.end_time && ` – ${formatTimeTz(new Date(appointment.end_time), appointment.timezone)}`}
           </p>
         )}
       </div>
@@ -70,30 +57,30 @@ export default async function AppointmentDetailPage({
         <CardHeader><CardTitle>Servicios</CardTitle></CardHeader>
         <CardContent>
           <div className="divide-y divide-neutral-100">
-            {appt.items?.map((item) => (
+            {appointment.items.map((item) => (
               <div key={item.id} className="flex items-center justify-between py-2">
                 <div>
-                  <p className="text-sm font-medium text-neutral-900">{item.service?.name}</p>
+                  <p className="text-sm font-medium text-neutral-900">{item.serviceName}</p>
                   <p className="text-xs text-neutral-500">
-                    {formatTimeTz(new Date(item.start_time), tz)}–{formatTimeTz(new Date(item.end_time), tz)} ·{" "}
-                    {item.employee?.first_name} {item.employee?.last_name}
+                    {formatTimeTz(new Date(item.start_time), appointment.timezone)}–{formatTimeTz(new Date(item.end_time), appointment.timezone)} ·{" "}
+                    {item.employeeName}
                   </p>
                 </div>
-                <span className="text-sm text-neutral-700">{formatCurrency(Number(item.price))}</span>
+                <span className="text-sm text-neutral-700">{formatCurrency(item.price)}</span>
               </div>
             ))}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-neutral-100 pt-3 font-semibold text-neutral-900">
             <span>Total</span>
-            <span>{formatCurrency(Number(appt.total_price))}</span>
+            <span>{formatCurrency(appointment.total_price)}</span>
           </div>
         </CardContent>
       </Card>
 
-      {appt.notes && (
+      {appointment.notes && (
         <Card>
           <CardHeader><CardTitle>Notas</CardTitle></CardHeader>
-          <CardContent><p className="text-sm text-neutral-600">{appt.notes}</p></CardContent>
+          <CardContent><p className="text-sm text-neutral-600">{appointment.notes}</p></CardContent>
         </Card>
       )}
 
@@ -101,7 +88,7 @@ export default async function AppointmentDetailPage({
         <Card>
           <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
           <CardContent>
-            <AppointmentActions appointmentId={appt.id} status={appt.status} />
+            <AppointmentActions appointmentId={appointment.id} status={appointment.status} />
           </CardContent>
         </Card>
       )}
