@@ -1,9 +1,7 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { findServicesCatalog } from "@/features/services/data/services.repo";
+import { getServiceCatalog } from "@/features/services/use-cases/get-service-catalog";
 import { ServicesManager } from "./services-manager";
-
-interface EmpRef { employee: { id: string; first_name: string; last_name: string; is_active: boolean } | null }
 
 export default async function ServicesPage() {
   const profile = await requireProfile();
@@ -16,23 +14,6 @@ export default async function ServicesPage() {
     );
   }
 
-  const catalog = await findServicesCatalog(profile.salon_id);
-
-  const categories = catalog.map((c) => ({
-    id: c.id,
-    name: c.name,
-    services: (c.services ?? []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      duration_minutes: s.duration_minutes,
-      price: Number(s.price),
-      is_active: s.is_active,
-      employees: ((s.employee_services ?? []) as EmpRef[])
-        .map((es) => es.employee)
-        .filter((e): e is { id: string; first_name: string; last_name: string; is_active: boolean } => e !== null && e.is_active)
-        .map((e) => ({ id: e.id, initials: `${e.first_name[0] ?? ""}${e.last_name[0] ?? ""}`.toUpperCase(), name: `${e.first_name} ${e.last_name}` })),
-    })),
-  }));
-
+  const categories = await getServiceCatalog(profile.salon_id);
   return <ServicesManager categories={categories} />;
 }

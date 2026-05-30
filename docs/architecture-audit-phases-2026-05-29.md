@@ -93,6 +93,8 @@ Implementacion aplicada:
 
 Objetivo: reducir imports directos desde paginas de Salon hacia `features/*/data`.
 
+Estado: implementada el 2026-05-29.
+
 Problemas que resuelve:
 
 - `services/page.tsx` importa `services.repo`.
@@ -129,6 +131,27 @@ Criterio de terminado:
 - `npm run test`, `npm run type-check`, `npm run lint` y `npm run build` pasan.
 
 Riesgo: medio-bajo.
+
+Implementacion aplicada:
+
+- Se crearon Modules de lectura:
+  - `src/features/services/use-cases/get-service-catalog.ts`
+  - `src/features/salon/use-cases/get-salon-settings.ts`
+  - `src/features/customers/use-cases/get-customers-page.ts`
+  - `src/features/notifications/use-cases/get-template-settings.ts`
+  - `src/features/access/use-cases/get-roles-page.ts`
+- Se actualizaron las paginas:
+  - `src/app/(dashboard)/services/page.tsx`
+  - `src/app/(dashboard)/salon/page.tsx`
+  - `src/app/(dashboard)/customers/page.tsx`
+  - `src/app/(dashboard)/plantillas/page.tsx`
+  - `src/app/(dashboard)/roles/page.tsx`
+- Se agregaron tests para los Modules con transformaciones:
+  - `src/features/services/use-cases/get-service-catalog.test.ts`
+  - `src/features/salon/use-cases/get-salon-settings.test.ts`
+  - `src/features/customers/use-cases/get-customers-page.test.ts`
+  - `src/features/access/use-cases/get-roles-page.test.ts`
+- El reporte `app -> data` de `architecture:check` queda reducido a lecturas complejas de Fase 12 y Plataforma de Fase 13.
 
 ## Fase 12 - Profundizar Lecturas Complejas De Detalle Y Layout
 

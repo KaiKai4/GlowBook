@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { findCustomers } from "@/features/customers/data/customers.repo";
+import { getCustomersPage } from "@/features/customers/use-cases/get-customers-page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { NewCustomerModal } from "./new-customer-modal";
 import { CustomersList } from "./customers-list";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-const PER_PAGE = 20;
 
 export default async function CustomersPage({
   searchParams,
@@ -26,30 +24,12 @@ export default async function CustomersPage({
     );
   }
 
-  const page = Math.max(1, Number(params.page ?? 1) || 1);
-  const mode = params.status === "archived" ? "archived" : "active";
-  const isArchived = mode === "archived";
-  const { data: customers, total } = await findCustomers(profile.salon_id, {
+  const view = await getCustomersPage({
+    salonId: profile.salon_id,
     q: params.q,
-    page,
-    perPage: PER_PAGE,
-    isActive: !isArchived,
+    page: params.page,
+    status: params.status,
   });
-
-  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const pageHref = (n: number) => {
-    const sp = new URLSearchParams();
-    if (params.q) sp.set("q", params.q);
-    if (isArchived) sp.set("status", "archived");
-    sp.set("page", String(n));
-    return `/customers?${sp.toString()}`;
-  };
-  const statusHref = (status: "active" | "archived") => {
-    const sp = new URLSearchParams();
-    if (params.q) sp.set("q", params.q);
-    if (status === "archived") sp.set("status", "archived");
-    return `/customers${sp.toString() ? `?${sp.toString()}` : ""}`;
-  };
 
   return (
     <div className="space-y-6">
@@ -57,25 +37,29 @@ export default async function CustomersPage({
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Clientes</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {total} clientes {isArchived ? "archivados" : "activos"}
+            {view.total} clientes {view.isArchived ? "archivados" : "activos"}
           </p>
         </div>
-        {!isArchived && <NewCustomerModal />}
+        {!view.isArchived && <NewCustomerModal />}
       </div>
 
       <div className="flex gap-2">
         <Link
-          href={statusHref("active")}
+          href={view.statusHref("active")}
           className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-            !isArchived ? "border-rose-300 bg-rose-50 text-rose-700" : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+            !view.isArchived
+              ? "border-rose-300 bg-rose-50 text-rose-700"
+              : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
           }`}
         >
           Activos
         </Link>
         <Link
-          href={statusHref("archived")}
+          href={view.statusHref("archived")}
           className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-            isArchived ? "border-rose-300 bg-rose-50 text-rose-700" : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+            view.isArchived
+              ? "border-rose-300 bg-rose-50 text-rose-700"
+              : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
           }`}
         >
           Archivados
@@ -83,40 +67,42 @@ export default async function CustomersPage({
       </div>
 
       <form action="/customers" className="flex gap-2">
-        {isArchived && <input type="hidden" name="status" value="archived" />}
+        {view.isArchived && <input type="hidden" name="status" value="archived" />}
         <input
           type="search"
           name="q"
-          defaultValue={params.q ?? ""}
-          placeholder="Buscar por nombre, teléfono o email..."
+          defaultValue={view.query}
+          placeholder="Buscar por nombre, telefono o email..."
           className="h-9 flex-1 rounded-lg border border-neutral-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
         />
-        <Button type="submit" variant="outline">Buscar</Button>
+        <Button type="submit" variant="outline">
+          Buscar
+        </Button>
       </form>
 
       <div className="space-y-2">
-        {customers.length === 0 ? (
+        {view.customers.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
               <p className="text-neutral-400">
-                {params.q ? "No se encontraron clientes." : "Aún no hay clientes."}
+                {view.query ? "No se encontraron clientes." : "Aun no hay clientes."}
               </p>
             </CardContent>
           </Card>
         ) : (
-          <CustomersList customers={customers} mode={mode} />
+          <CustomersList customers={view.customers} mode={view.mode} />
         )}
       </div>
 
-      {totalPages > 1 && (
+      {view.totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-neutral-100 pt-3">
           <p className="text-xs text-neutral-400">
-            Página {page} de {totalPages}
+            Pagina {view.page} de {view.totalPages}
           </p>
           <div className="flex gap-2">
-            {page > 1 ? (
+            {view.page > 1 ? (
               <Link
-                href={pageHref(page - 1)}
+                href={view.pageHref(view.page - 1)}
                 className="flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" /> Anterior
@@ -126,9 +112,9 @@ export default async function CustomersPage({
                 <ChevronLeft className="h-4 w-4" /> Anterior
               </span>
             )}
-            {page < totalPages ? (
+            {view.page < view.totalPages ? (
               <Link
-                href={pageHref(page + 1)}
+                href={view.pageHref(view.page + 1)}
                 className="flex items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
               >
                 Siguiente <ChevronRight className="h-4 w-4" />

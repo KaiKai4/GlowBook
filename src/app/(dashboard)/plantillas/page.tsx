@@ -1,7 +1,7 @@
 import { MessageSquareText } from "lucide-react";
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
-import { findMessageTemplates } from "@/features/notifications/data/notification-templates.repo";
+import { getTemplateSettings } from "@/features/notifications/use-cases/get-template-settings";
 import { TemplatesManager } from "./templates-manager";
 
 export default async function PlantillasPage() {
@@ -15,7 +15,7 @@ export default async function PlantillasPage() {
     );
   }
 
-  const templates = await findMessageTemplates(profile.salon_id);
+  const { templates } = await getTemplateSettings(profile.salon_id);
 
   return (
     <div className="space-y-6">

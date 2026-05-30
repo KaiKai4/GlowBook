@@ -1,6 +1,6 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { findRolesWithPermissions, findAllPermissions } from "@/features/access/data/roles.repo";
+import { getRolesPage } from "@/features/access/use-cases/get-roles-page";
 import { RolesManager } from "./roles-manager";
 
 export default async function RolesPage() {
@@ -14,19 +14,7 @@ export default async function RolesPage() {
     );
   }
 
-  const [roles, allPermissions] = await Promise.all([
-    findRolesWithPermissions(profile.salon_id),
-    findAllPermissions(),
-  ]);
+  const { roles, allPermissions } = await getRolesPage(profile.salon_id);
 
-  const roleList = roles.map((r) => ({
-    id: r.id,
-    name: r.name,
-    is_system: r.is_system,
-    permissionKeys: r.role_permissions
-      .map((rp) => rp.permission?.key)
-      .filter((k): k is string => !!k),
-  }));
-
-  return <RolesManager roles={roleList} allPermissions={allPermissions} />;
+  return <RolesManager roles={roles} allPermissions={allPermissions} />;
 }
