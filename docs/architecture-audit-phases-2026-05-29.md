@@ -308,6 +308,28 @@ Criterio de terminado:
 - RPC `create_appointment` sigue siendo autoridad final.
 - Tests unitarios y RPC test pasan.
 
+Resultado implementado:
+
+- Se creo `src/features/appointments/data/appointment-commands.repo.ts` como Adapter de comandos de citas.
+- Se movieron al Adapter:
+  - lectura de estado de cita para transiciones
+  - lectura de customer/salon/business hours/services/employees para crear cita
+  - lectura de capacidades por colaborador
+  - horarios y slots ocupados por colaborador
+  - actualizacion de estado de cita
+  - liberacion de `blocks_calendar`
+  - descuento por item
+  - llamada a RPC `create_appointment`
+  - slots ocupados por dia local del Salon para el wizard
+- `create-appointment.ts`, `cancel-appointment.ts`, `confirm-appointment.ts`, `complete-appointment.ts` y `appointment-availability.ts` ya no importan `createSupabaseServerClient`.
+- `appointments.repo.ts` queda enfocado en lecturas de calendario/detalle y se removieron funciones de comando que quedaron sin uso.
+- La RPC `create_appointment` sigue siendo el contrato final de escritura para crear citas.
+- Se agregaron tests unitarios con Adapter mockeado:
+  - `src/features/appointments/use-cases/create-appointment.test.ts`
+  - `src/features/appointments/use-cases/appointment-lifecycle-commands.test.ts`
+  - `src/features/appointments/use-cases/appointment-availability.test.ts`
+- El test RPC existente se mantiene para validar el contrato SQL cuando existan `SUPABASE_TEST_EMAIL` y `SUPABASE_TEST_PASSWORD`.
+
 Riesgo: medio.
 
 ## Fase 15 - Tests Secundarios Donde La Interface Ya Existe
@@ -345,6 +367,23 @@ Criterio de terminado:
 - Cambios en dashboard, periodos, customers, plantillas y Plataforma fallan rapido.
 - Tests cruzan la Interface real del Module.
 - No se mockea mas de lo necesario.
+
+Resultado implementado:
+
+- Se agregaron tests de dashboard:
+  - `src/features/dashboard/use-cases/get-dashboard-overview.test.ts`
+- Se agregaron tests de periodos de reportes:
+  - `src/features/reports/domain/period.test.ts`
+- Se agregaron tests de reglas de clientes:
+  - `src/features/customers/use-cases/customer-lifecycle.test.ts`
+  - `src/features/customers/use-cases/customer-temporary.test.ts`
+  - `src/features/customers/use-cases/customer-duplicates.test.ts`
+- Se agrego test de plantillas:
+  - `src/features/notifications/use-cases/update-message-template.test.ts`
+- Se agregaron tests de Plataforma:
+  - `src/features/platform/use-cases/delete-salon.test.ts`
+  - `src/features/platform/use-cases/set-feedback-report-status.test.ts`
+- Los tests cubren errores de negocio, mapeos de view model, ownership por `salonId`, proteccion contra duplicados archivados y confirmaciones destructivas.
 
 Riesgo: bajo.
 

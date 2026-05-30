@@ -1,7 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getUtcDayBoundaries } from "@/lib/utils/dates";
 import type { Database } from "@/types/database.types";
-import type { OccupiedSlot, WorkSchedule } from "../domain/types";
 
 type AppointmentRow = Database["public"]["Tables"]["appointments"]["Row"];
 
@@ -77,42 +75,3 @@ export async function findAppointmentsBySalon(
   if (error) throw error;
   return (data ?? []) as unknown as AppointmentWithDetails[];
 }
-
-export async function findOccupiedSlots(
-  employeeId: string,
-  date: Date,
-  timezone: string,
-  excludeAppointmentId?: string
-): Promise<OccupiedSlot[]> {
-  const supabase = await createSupabaseServerClient();
-  const { start: dayStart, end: dayEnd } = getUtcDayBoundaries(date, timezone);
-
-  let query = supabase
-    .from("appointment_items")
-    .select("start_time, end_time")
-    .eq("employee_id", employeeId)
-    .eq("blocks_calendar", true)
-    .gte("start_time", dayStart.toISOString())
-    .lte("start_time", dayEnd.toISOString());
-
-  if (excludeAppointmentId) {
-    query = query.neq("appointment_id", excludeAppointmentId);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data ?? []) as OccupiedSlot[];
-}
-
-export async function findWorkSchedules(employeeId: string): Promise<WorkSchedule[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("work_schedules")
-    .select("day_of_week, start_time, end_time, is_active")
-    .eq("employee_id", employeeId)
-    .eq("is_active", true);
-
-  if (error) throw error;
-  return (data ?? []) as WorkSchedule[];
-}
-

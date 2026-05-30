@@ -1,43 +1,48 @@
 import { err, ok, type Result } from "@/lib/result";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { assertTransition, type AppointmentStatus } from "../domain/lifecycle";
+import {
+  findAppointmentForCommand,
+  setAppointmentItemsCalendarBlocking,
+  updateAppointmentStatus,
+} from "../data/appointment-commands.repo";
+import { assertTransition } from "../domain/lifecycle";
 
 export async function cancelAppointment(
   appointmentId: string,
   salonId: string
 ): Promise<Result<void>> {
-  const supabase = await createSupabaseServerClient();
-
-  const { data: appointment } = await supabase
-    .from("appointments")
-    .select("id, status, salon_id")
-    .eq("id", appointmentId)
-    .eq("salon_id", salonId)
-    .single();
+  let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
+  try {
+    appointment = await findAppointmentForCommand(appointmentId, salonId);
+  } catch (error) {
+    console.error("[appointments:cancel]", error);
+    return err("Cita no encontrada.");
+  }
 
   if (!appointment) return err("Cita no encontrada.");
 
   try {
-    assertTransition(appointment.status as AppointmentStatus, "cancelled");
-  } catch (e) {
-    return err((e as Error).message);
+    assertTransition(appointment.status, "cancelled");
+  } catch (error) {
+    return err((error as Error).message);
   }
 
-  const { error: itemsError } = await supabase
-    .from("appointment_items")
-    .update({ blocks_calendar: false })
-    .eq("appointment_id", appointmentId)
-    .eq("salon_id", salonId);
+  try {
+    await setAppointmentItemsCalendarBlocking({
+      appointmentId,
+      salonId,
+      blocksCalendar: false,
+    });
+  } catch (error) {
+    console.error("[appointments:cancel]", error);
+    return err("Error al liberar la agenda.");
+  }
 
-  if (itemsError) return err("Error al liberar la agenda.");
-
-  const { error: apptError } = await supabase
-    .from("appointments")
-    .update({ status: "cancelled" as const })
-    .eq("id", appointmentId)
-    .eq("salon_id", salonId);
-
-  if (apptError) return err("Error al cancelar la cita.");
+  try {
+    await updateAppointmentStatus({ appointmentId, salonId, status: "cancelled" });
+  } catch (error) {
+    console.error("[appointments:cancel]", error);
+    return err("Error al cancelar la cita.");
+  }
 
   return ok(undefined);
 }

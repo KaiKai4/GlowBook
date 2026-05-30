@@ -1,71 +1,67 @@
 import { promoteCustomer } from "@/features/customers/use-cases/customer-temporary";
 import { err, ok, type Result } from "@/lib/result";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Database } from "@/types/database.types";
-import { assertTransition, type AppointmentStatus } from "../domain/lifecycle";
-
-type PaymentMethod = Database["public"]["Tables"]["appointments"]["Row"]["payment_method"];
+import {
+  applyAppointmentItemDiscount,
+  findAppointmentForCommand,
+  setAppointmentItemsCalendarBlocking,
+  updateAppointmentStatus,
+  type AppointmentPaymentMethod,
+} from "../data/appointment-commands.repo";
+import { assertTransition } from "../domain/lifecycle";
 
 export async function completeAppointment(
   appointmentId: string,
   salonId: string,
-  paymentMethod: PaymentMethod,
+  paymentMethod: AppointmentPaymentMethod,
   discountPercentage = 0
 ): Promise<Result<void>> {
-  const supabase = await createSupabaseServerClient();
-
-  const { data: appointment } = await supabase
-    .from("appointments")
-    .select("id, status, salon_id, customer_id")
-    .eq("id", appointmentId)
-    .eq("salon_id", salonId)
-    .single();
+  let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
+  try {
+    appointment = await findAppointmentForCommand(appointmentId, salonId);
+  } catch (error) {
+    console.error("[appointments:complete]", error);
+    return err("Cita no encontrada.");
+  }
 
   if (!appointment) return err("Cita no encontrada.");
 
   try {
-    assertTransition(appointment.status as AppointmentStatus, "completed");
+    assertTransition(appointment.status, "completed");
   } catch (error) {
     return err((error as Error).message);
   }
 
   if (discountPercentage > 0) {
-    const { data: items, error: itemsReadError } = await supabase
-      .from("appointment_items")
-      .select("id, price")
-      .eq("appointment_id", appointmentId)
-      .eq("salon_id", salonId);
-
-    if (itemsReadError) return err("Error al calcular el descuento.");
-
-    for (const item of items ?? []) {
-      const factor = 1 - discountPercentage / 100;
-      const newPrice = Math.round(Number(item.price) * factor * 100) / 100;
-      const { error: itemError } = await supabase
-        .from("appointment_items")
-        .update({ price: newPrice })
-        .eq("id", item.id)
-        .eq("salon_id", salonId);
-
-      if (itemError) return err("Error al aplicar el descuento.");
+    try {
+      await applyAppointmentItemDiscount({ appointmentId, salonId, discountPercentage });
+    } catch (error) {
+      console.error("[appointments:complete]", error);
+      return err("Error al aplicar el descuento.");
     }
   }
 
-  const { error } = await supabase
-    .from("appointments")
-    .update({ status: "completed" as const, payment_method: paymentMethod })
-    .eq("id", appointmentId)
-    .eq("salon_id", salonId);
+  try {
+    await updateAppointmentStatus({
+      appointmentId,
+      salonId,
+      status: "completed",
+      paymentMethod,
+    });
+  } catch (error) {
+    console.error("[appointments:complete]", error);
+    return err("Error al completar la cita.");
+  }
 
-  if (error) return err("Error al completar la cita.");
-
-  const { error: itemsError } = await supabase
-    .from("appointment_items")
-    .update({ blocks_calendar: false })
-    .eq("appointment_id", appointmentId)
-    .eq("salon_id", salonId);
-
-  if (itemsError) return err("La cita se completo, pero no se pudo liberar la agenda.");
+  try {
+    await setAppointmentItemsCalendarBlocking({
+      appointmentId,
+      salonId,
+      blocksCalendar: false,
+    });
+  } catch (error) {
+    console.error("[appointments:complete]", error);
+    return err("La cita se completo, pero no se pudo liberar la agenda.");
+  }
 
   if (appointment.customer_id) {
     const promoted = await promoteCustomer(appointment.customer_id, salonId);
