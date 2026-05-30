@@ -100,3 +100,22 @@ Creating an abstract Interface is not required for every Module. Per the archite
 - `features/domain -> Supabase`, `features/domain -> Next`, `features/domain -> React` are forbidden.
 - `components -> app` is forbidden.
 - Direct `service_role` access is governed by ADR 0010.
+
+### Excepcion controlada: `components/layout -> features`
+
+`src/components/layout` puede importar Interfaces estables de `features` solo para construir la navegacion global y el chrome compartido de la aplicacion.
+
+Permitido:
+
+- tipos de permisos y feature flags del Salon;
+- Modules puros de dominio que no importen Next, React, Supabase ni Server Actions;
+- view-only constants necesarias para decidir visibilidad de navegacion.
+
+No permitido:
+
+- imports a `features/*/data`;
+- imports a Server Actions;
+- imports a use-case que ejecute lecturas o escrituras;
+- imports que obliguen a `components/layout` a conocer query shape, tenant data o Supabase.
+
+Esta excepcion existe porque el layout es infraestructura de UI compartida, no un flujo de negocio. Si empieza a necesitar datos, debe recibirlos desde `src/app` o desde un read Module llamado por `src/app`, no buscarlos directamente.

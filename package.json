@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint && node scripts/check-architecture.mjs",
     "architecture:check": "node scripts/check-architecture.mjs",
+    "architecture:health": "node scripts/architecture-health.mjs",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "type-check": "tsc --noEmit",
     "db:types": "npx supabase gen types typescript --linked > src/types/database.types.ts",
     "db:migrate": "npx supabase db push",
@@ -28,6 +31,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

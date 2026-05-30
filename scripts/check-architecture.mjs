@@ -16,6 +16,12 @@ const allowedAdminClientImporters = new Set([
   "src/lib/supabase/auth-admin.ts",
 ]);
 
+const allowedAuthAdminImporters = new Set([
+  "src/features/employees/data/employee-auth.repo.ts",
+  "src/features/platform/data/delete-salon.repo.ts",
+  "src/features/platform/data/platform-auth.repo.ts",
+]);
+
 const importPatterns = [
   /import\s+(?:type\s+)?[^'"]*?\s+from\s*["']([^"']+)["']/g,
   /import\s*["']([^"']+)["']/g,
@@ -98,6 +104,10 @@ function isFeatureDomain(projectPath) {
   return /^src\/features\/[^/]+\/domain(\/|$)/.test(projectPath);
 }
 
+function isFeatureUseCase(projectPath) {
+  return /^src\/features\/[^/]+\/use-cases(\/|$)/.test(projectPath);
+}
+
 function isForbiddenDomainImport(specifier, resolvedPath) {
   if (specifier === "react" || specifier.startsWith("react/")) return true;
   if (specifier === "next" || specifier.startsWith("next/")) return true;
@@ -109,8 +119,27 @@ function isForbiddenDomainImport(specifier, resolvedPath) {
   return false;
 }
 
+function isSupabaseLibImport(specifier, resolvedPath) {
+  return (
+    specifier === "@/lib/supabase" ||
+    specifier.startsWith("@/lib/supabase/") ||
+    (resolvedPath && isInside(resolvedPath, "src/lib/supabase"))
+  );
+}
+
+function isSupabaseAdminImport(specifier, resolvedPath) {
+  return specifier === "@/lib/supabase/admin" || resolvedPath === "src/lib/supabase/admin";
+}
+
+function isSupabaseAuthAdminImport(specifier, resolvedPath) {
+  return (
+    specifier === "@/lib/supabase/auth-admin" ||
+    resolvedPath === "src/lib/supabase/auth-admin"
+  );
+}
+
 const violations = [];
-const appDataImports = [];
+const warnings = [];
 
 for (const directory of collectDirectories(path.join(srcRoot, "features"))) {
   const entries = readdirSync(directory);
@@ -153,8 +182,7 @@ for (const file of collectSourceFiles(srcRoot)) {
     }
 
     if (
-      (specifier === "@/lib/supabase/admin" ||
-        (resolvedPath && resolvedPath === "src/lib/supabase/admin")) &&
+      isSupabaseAdminImport(specifier, resolvedPath) &&
       !allowedAdminClientImporters.has(projectPath)
     ) {
       violations.push({
@@ -165,11 +193,45 @@ for (const file of collectSourceFiles(srcRoot)) {
     }
 
     if (
+      isSupabaseAuthAdminImport(specifier, resolvedPath) &&
+      !allowedAuthAdminImporters.has(projectPath)
+    ) {
+      violations.push({
+        file: projectPath,
+        import: specifier,
+        rule: "Supabase Auth Admin imports are limited to ADR 0010 feature data Adapters",
+      });
+    }
+
+    if (isInside(projectPath, "src/components") && isSupabaseLibImport(specifier, resolvedPath)) {
+      violations.push({
+        file: projectPath,
+        import: specifier,
+        rule: "components must not import Supabase Adapters; pass data/actions through app or layout Interfaces",
+      });
+    }
+
+    if (
       isInside(projectPath, "src/app") &&
       resolvedPath &&
       /^src\/features\/[^/]+\/data(\/|$)/.test(resolvedPath)
     ) {
-      appDataImports.push({ file: projectPath, import: specifier });
+      violations.push({
+        file: projectPath,
+        import: specifier,
+        rule: "app routes must consume feature use-cases/read Modules, not feature data Adapters",
+      });
+    }
+
+    if (
+      isFeatureUseCase(projectPath) &&
+      (specifier === "@/lib/supabase/server" || resolvedPath === "src/lib/supabase/server")
+    ) {
+      warnings.push({
+        file: projectPath,
+        import: specifier,
+        rule: "features/*/use-cases should keep Supabase access behind data Adapters",
+      });
     }
   }
 }
@@ -184,10 +246,11 @@ if (violations.length > 0) {
   console.log("Architecture guardrails passed.");
 }
 
-if (appDataImports.length > 0) {
+if (warnings.length > 0) {
   console.log("");
-  console.log("Architecture migration report: app -> data imports still pending (non-blocking):");
-  for (const item of appDataImports) {
+  console.log("Architecture warnings:");
+  for (const item of warnings) {
     console.log(`- ${item.file} imports ${item.import}`);
+    console.log(`  ${item.rule}`);
   }
 }

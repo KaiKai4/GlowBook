@@ -1,33 +1,19 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { type SupabaseClient } from "@supabase/supabase-js";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  cleanupSalonOwnerFixture,
+  createIntegrationAdminClient,
+  createIntegrationUserClient,
+  createSalonOwnerFixture,
+  getSupabaseIntegrationEnv,
+  type SalonOwnerFixture,
+} from "@/test/supabase-integration-fixtures";
 import type { Database } from "@/types/database.types";
 
-function loadEnvFileIfPresent() {
-  const envPath = join(process.cwd(), ".env.local");
-  if (!existsSync(envPath)) return;
-
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
-
-    const [key, ...valueParts] = trimmed.split("=");
-    if (!process.env[key]) {
-      process.env[key] = valueParts.join("=");
-    }
-  }
-}
-
-loadEnvFileIfPresent();
-
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const testEmail = process.env.SUPABASE_TEST_EMAIL;
-const testPassword = process.env.SUPABASE_TEST_PASSWORD;
-
-const runRpcTests = Boolean(url && anonKey && serviceRoleKey && testEmail && testPassword);
+const integrationEnv = getSupabaseIntegrationEnv();
+const configuredTestEmail = process.env.SUPABASE_TEST_EMAIL;
+const configuredTestPassword = process.env.SUPABASE_TEST_PASSWORD;
+const runRpcTests = Boolean(integrationEnv);
 
 type Db = SupabaseClient<Database>;
 
@@ -203,23 +189,36 @@ async function cleanup(admin: Db) {
   }
 }
 
-describe.skipIf(!runRpcTests)("create_appointment RPC", () => {
+describe.skipIf(!runRpcTests)(
+  "create_appointment RPC (requires Supabase integration env vars)",
+  () => {
   let user: Db;
   let admin: Db;
   let salonId: string;
   let fixture: Fixture;
+  let ownerFixture: SalonOwnerFixture | null = null;
 
   beforeAll(async () => {
-    user = createClient<Database>(url!, anonKey!);
-    admin = createClient<Database>(url!, serviceRoleKey!, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    admin = createIntegrationAdminClient(integrationEnv!);
+    user = createIntegrationUserClient(integrationEnv!);
+
+    let email = configuredTestEmail;
+    let password = configuredTestPassword;
+
+    if (!email || !password) {
+      ownerFixture = await createSalonOwnerFixture(admin, "RPC");
+      email = ownerFixture.email;
+      password = ownerFixture.password;
+      salonId = ownerFixture.salonId;
+    }
 
     const { data: session, error: signInError } = await user.auth.signInWithPassword({
-      email: testEmail!,
-      password: testPassword!,
+      email,
+      password,
     });
     if (signInError) throw signInError;
+
+    if (ownerFixture) return;
 
     const { data: profile, error: profileError } = await admin
       .from("profiles")
@@ -229,6 +228,11 @@ describe.skipIf(!runRpcTests)("create_appointment RPC", () => {
     if (profileError) throw profileError;
 
     salonId = profile.salon_id;
+  }, 30_000);
+
+  afterAll(async () => {
+    await cleanup(admin);
+    await cleanupSalonOwnerFixture(admin, ownerFixture);
   }, 30_000);
 
   beforeEach(async () => {
@@ -327,4 +331,89 @@ describe.skipIf(!runRpcTests)("create_appointment RPC", () => {
     expect(Number(appointment?.total_price)).toBe(10);
     expect(appointment?.appointment_items).toHaveLength(1);
   });
-});
+
+  it("rejects overlapping bookings for the same employee", async () => {
+    const payload = {
+      customer_id: fixture.customerId,
+      notes: "AUDIT RPC overlap guard",
+      items: [
+        {
+          service_id: fixture.serviceId,
+          employee_id: fixture.employeeId,
+          start_time: fixture.startTime,
+          end_time: fixture.endTime,
+          ordering: 1,
+        },
+      ],
+    };
+
+    const { data: appointmentId, error } = await user.rpc("create_appointment", { payload });
+    expect(error).toBeNull();
+    expect(appointmentId).toEqual(expect.any(String));
+    createdAppointmentIds.push(appointmentId as string);
+
+    const { error: overlapError } = await user.rpc("create_appointment", { payload });
+    expect(overlapError?.message).toMatch(/overlap|conflict|no_overlap|violates/i);
+
+    const { count, error: countError } = await admin
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", fixture.customerId);
+
+    expect(countError).toBeNull();
+    expect(count).toBe(1);
+  });
+
+  it("rejects cross-tenant customers and services", async () => {
+    let otherTenant: SalonOwnerFixture | null = null;
+
+    try {
+      otherTenant = await createSalonOwnerFixture(admin, "RPC Tenant");
+
+      const { error: customerError } = await user.rpc("create_appointment", {
+        payload: {
+          customer_id: otherTenant.customerId,
+          notes: "AUDIT RPC cross-tenant customer",
+          items: [
+            {
+              service_id: fixture.serviceId,
+              employee_id: fixture.employeeId,
+              start_time: fixture.startTime,
+              end_time: fixture.endTime,
+              ordering: 1,
+            },
+          ],
+        },
+      });
+      expect(customerError?.message).toContain("Cliente invalido");
+
+      const { error: serviceError } = await user.rpc("create_appointment", {
+        payload: {
+          customer_id: fixture.customerId,
+          notes: "AUDIT RPC cross-tenant service",
+          items: [
+            {
+              service_id: otherTenant.serviceId,
+              employee_id: fixture.employeeId,
+              start_time: fixture.startTime,
+              end_time: fixture.endTime,
+              ordering: 1,
+            },
+          ],
+        },
+      });
+      expect(serviceError?.message).toContain("Servicio invalido");
+
+      const { count, error: countError } = await admin
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", fixture.customerId);
+
+      expect(countError).toBeNull();
+      expect(count).toBe(0);
+    } finally {
+      await cleanupSalonOwnerFixture(admin, otherTenant);
+    }
+  }, 30_000);
+  }
+);

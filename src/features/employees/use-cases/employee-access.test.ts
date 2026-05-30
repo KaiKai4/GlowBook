@@ -13,7 +13,7 @@ import {
   unlinkEmployeeProfile,
   updateEmployeeProfileRole,
 } from "../data/employee-access.repo";
-import { deleteAuthUser } from "@/lib/supabase/auth-admin";
+import { deleteEmployeeAuthUser } from "../data/employee-auth.repo";
 
 vi.mock("../data/employees.repo", () => ({
   findEmployeeById: vi.fn(),
@@ -29,8 +29,8 @@ vi.mock("../data/employee-access.repo", () => ({
   updateEmployeeProfileRole: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/auth-admin", () => ({
-  deleteAuthUser: vi.fn(),
+vi.mock("../data/employee-auth.repo", () => ({
+  deleteEmployeeAuthUser: vi.fn(),
 }));
 
 const mockedFindEmployeeById = vi.mocked(findEmployeeById);
@@ -40,7 +40,7 @@ const mockedFindEmployeeAccessProfile = vi.mocked(findEmployeeAccessProfile);
 const mockedInsertEmployeeInvitation = vi.mocked(insertEmployeeInvitation);
 const mockedUnlinkEmployeeProfile = vi.mocked(unlinkEmployeeProfile);
 const mockedUpdateEmployeeProfileRole = vi.mocked(updateEmployeeProfileRole);
-const mockedDeleteAuthUser = vi.mocked(deleteAuthUser);
+const mockedDeleteEmployeeAuthUser = vi.mocked(deleteEmployeeAuthUser);
 
 describe("employee access", () => {
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe("employee access", () => {
     mockedInsertEmployeeInvitation.mockResolvedValue({ error: null });
     mockedUnlinkEmployeeProfile.mockResolvedValue({ error: null });
     mockedUpdateEmployeeProfileRole.mockResolvedValue({ error: null });
-    mockedDeleteAuthUser.mockResolvedValue({ data: undefined, error: null });
+    mockedDeleteEmployeeAuthUser.mockResolvedValue({ data: undefined, error: null });
   });
 
   it("rejects role assignment when the role does not belong to the salon", async () => {
@@ -121,7 +121,7 @@ describe("employee access", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(mockedDeleteAuthUser).toHaveBeenCalledWith("profile-1");
+    expect(mockedDeleteEmployeeAuthUser).toHaveBeenCalledWith("profile-1");
     expect(mockedUnlinkEmployeeProfile).toHaveBeenCalledWith("employee-1", "salon-1");
     expect(mockedInsertEmployeeInvitation).toHaveBeenCalledWith(
       expect.objectContaining({

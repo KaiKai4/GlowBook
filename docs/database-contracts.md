@@ -124,3 +124,15 @@ Before changing migrations, RPCs, triggers or RLS:
 4. Update generated database types if schema changed.
 5. Add or update tests for the TypeScript Interface.
 6. Add integration/manual checks for RLS or RPC behavior when security is affected.
+
+## Supabase Test Contract
+
+RPC/RLS tests that need a real Supabase project are documented in `docs/testing.md`.
+
+At minimum, security-sensitive database changes should verify:
+
+- tenant isolation through RLS.
+- `create_appointment(payload jsonb)` behavior when appointment payloads are manipulated.
+- `appointment_items` overlap protection.
+- Platform-only access for cross-tenant reads and destructive operations.
+- `database.types.ts` regenerated after schema changes.

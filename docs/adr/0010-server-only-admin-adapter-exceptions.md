@@ -30,7 +30,13 @@ Supabase Auth Admin operations have a narrower Adapter:
 src/lib/supabase/auth-admin.ts
 ```
 
-Use-cases and route files must not call `admin.auth.admin.*` directly. They must use this Adapter for creating, deleting, updating or searching Auth users.
+Use-cases and route files must not call `admin.auth.admin.*` directly. They also must not import `src/lib/supabase/auth-admin.ts` directly. Feature data Adapters wrap that technical Adapter so privileged Auth operations stay behind an auditable Seam.
+
+The currently authorized Auth Admin feature Adapters are:
+
+- `src/features/employees/data/employee-auth.repo.ts` for collaborator Auth account creation and revocation.
+- `src/features/platform/data/platform-auth.repo.ts` for invited Owner Auth account creation, reuse and update.
+- `src/features/platform/data/delete-salon.repo.ts` for Auth cleanup during complete Salon deletion.
 
 The currently authorized service-role data Adapters are:
 
@@ -40,6 +46,8 @@ The currently authorized service-role data Adapters are:
 - `src/features/platform/data/delete-salon.repo.ts` for protected Salon deletion RPC workflows.
 - `src/features/platform/data/feedback-moderation.repo.ts` for Platform feedback moderation.
 - `src/features/employees/data/employee-access.repo.ts` for collaborator invitations, profile linkage and collaborator-access cleanup.
+- `src/features/employees/data/employee-auth.repo.ts` for collaborator Auth account creation and revocation.
+- `src/features/platform/data/platform-auth.repo.ts` for invited Owner Auth account creation, reuse and update.
 - `src/lib/auth/session.ts` for Platform admin detection.
 
 Allowed use cases:
@@ -84,7 +92,7 @@ The system keeps RLS as the default data safety model.
 
 Privileged operations become auditable because there is a short list of allowed reasons.
 
-Legacy use-cases previously imported `createSupabaseAdminClient()` directly. After Phase 6, Auth Admin operations are isolated in `src/lib/supabase/auth-admin.ts`; future Auth Admin use outside that Adapter requires updating this ADR.
+Legacy use-cases previously imported privileged Supabase Adapters directly. After Phase 17, Auth Admin operations are isolated in feature data Adapters, which call `src/lib/supabase/auth-admin.ts` internally. Future Auth Admin use outside the authorized feature data Adapters requires updating this ADR.
 
 If a Module uses `service_role`, it must return explicit errors and must not hide partial failure. This matters for destructive operations such as complete Salon deletion and Auth cleanup.
 

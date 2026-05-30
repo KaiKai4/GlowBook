@@ -1,0 +1,327 @@
+import { existsSync, readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { join } from "node:path";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database.types";
+
+export type TestSupabaseClient = SupabaseClient<Database>;
+
+export interface SupabaseIntegrationEnv {
+  url: string;
+  anonKey: string;
+  serviceRoleKey: string;
+}
+
+export interface AuthCredentials {
+  email: string;
+  password: string;
+}
+
+export interface SalonOwnerFixture extends AuthCredentials {
+  userId: string;
+  salonId: string;
+  customerId: string;
+  employeeId: string;
+  serviceId: string;
+}
+
+export interface PlatformAdminFixture extends AuthCredentials {
+  userId: string;
+}
+
+export interface AppointmentFixture {
+  appointmentId: string;
+  startDate: string;
+}
+
+export function loadEnvFileIfPresent() {
+  const envPath = join(process.cwd(), ".env.local");
+  if (!existsSync(envPath)) return;
+
+  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
+
+    const [key, ...valueParts] = trimmed.split("=");
+    if (!process.env[key]) {
+      process.env[key] = valueParts.join("=");
+    }
+  }
+}
+
+export function getSupabaseIntegrationEnv(): SupabaseIntegrationEnv | null {
+  loadEnvFileIfPresent();
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !anonKey || !serviceRoleKey) return null;
+  return { url, anonKey, serviceRoleKey };
+}
+
+export function createIntegrationAdminClient(
+  env: SupabaseIntegrationEnv
+): TestSupabaseClient {
+  return createClient<Database>(env.url, env.serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+export function createIntegrationUserClient(
+  env: SupabaseIntegrationEnv
+): TestSupabaseClient {
+  return createClient<Database>(env.url, env.anonKey);
+}
+
+function uniqueEmail(prefix: string): string {
+  return `${prefix}.${Date.now()}.${randomUUID()}@example.com`;
+}
+
+export async function createSalonOwnerFixture(
+  admin: TestSupabaseClient,
+  label = "E2E",
+  disabledFeatures: string[] = []
+): Promise<SalonOwnerFixture> {
+  const email = uniqueEmail("glowbook.owner");
+  const password = "GlowBookTest123!";
+
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (authError || !authData.user) throw authError ?? new Error("Auth user not created");
+
+  const userId = authData.user.id;
+
+  try {
+    const { data: salon, error: salonError } = await admin
+      .from("salons")
+      .insert({
+        name: `${label} Salon ${Date.now()}`,
+        email,
+        phone: "60000000",
+        timezone: "America/Panama",
+        theme: "violet",
+        bg_style: "neutral",
+        disabled_features: disabledFeatures,
+        min_booking_notice_minutes: 0,
+      })
+      .select("id")
+      .single();
+    if (salonError) throw salonError;
+
+    const salonId = salon.id;
+
+    const { error: profileError } = await admin.from("profiles").insert({
+      id: userId,
+      salon_id: salonId,
+      full_name: `${label} Owner`,
+      is_owner: true,
+      is_active: true,
+    });
+    if (profileError) throw profileError;
+
+    const businessHours = Array.from({ length: 7 }, (_, day) => ({
+      salon_id: salonId,
+      day_of_week: day,
+      is_open: true,
+      open_time: "09:00",
+      close_time: "17:00",
+    }));
+
+    const { error: hoursError } = await admin
+      .from("salon_business_hours")
+      .insert(businessHours);
+    if (hoursError) throw hoursError;
+
+    const operationalData = await seedSalonOperationalData(admin, salonId);
+
+    return { email, password, userId, salonId, ...operationalData };
+  } catch (error) {
+    await admin.auth.admin.deleteUser(userId);
+    throw error;
+  }
+}
+
+async function seedSalonOperationalData(admin: TestSupabaseClient, salonId: string) {
+  const stamp = Date.now();
+
+  const { data: category, error: categoryError } = await admin
+    .from("service_categories")
+    .insert({
+      salon_id: salonId,
+      name: `E2E Categoria ${stamp}`,
+      is_active: true,
+    })
+    .select("id")
+    .single();
+  if (categoryError) throw categoryError;
+
+  const { data: service, error: serviceError } = await admin
+    .from("services")
+    .insert({
+      salon_id: salonId,
+      category_id: category.id,
+      name: `E2E Servicio ${stamp}`,
+      duration_minutes: 30,
+      price: 15,
+      is_active: true,
+    })
+    .select("id")
+    .single();
+  if (serviceError) throw serviceError;
+
+  const { data: employee, error: employeeError } = await admin
+    .from("employees")
+    .insert({
+      salon_id: salonId,
+      first_name: "E2E",
+      last_name: "Colaborador",
+      email: uniqueEmail("glowbook.employee"),
+      phone: "61111111",
+      is_active: true,
+    })
+    .select("id")
+    .single();
+  if (employeeError) throw employeeError;
+
+  const [{ error: serviceAssignError }, { error: categoryAssignError }, { error: scheduleError }] =
+    await Promise.all([
+      admin.from("employee_services").insert({
+        salon_id: salonId,
+        employee_id: employee.id,
+        service_id: service.id,
+      }),
+      admin.from("employee_categories").insert({
+        salon_id: salonId,
+        employee_id: employee.id,
+        category_id: category.id,
+      }),
+      admin.from("work_schedules").insert(
+        Array.from({ length: 7 }, (_, day) => ({
+          salon_id: salonId,
+          employee_id: employee.id,
+          day_of_week: day,
+          start_time: "09:00",
+          end_time: "17:00",
+          is_active: true,
+        }))
+      ),
+    ]);
+
+  if (serviceAssignError) throw serviceAssignError;
+  if (categoryAssignError) throw categoryAssignError;
+  if (scheduleError) throw scheduleError;
+
+  const { data: customer, error: customerError } = await admin
+    .from("customers")
+    .insert({
+      salon_id: salonId,
+      first_name: "E2E",
+      last_name: "Cliente",
+      email: uniqueEmail("glowbook.customer"),
+      phone: `6${String(stamp).slice(-7).padStart(7, "0")}`,
+      is_active: true,
+      is_temporary: false,
+    })
+    .select("id")
+    .single();
+  if (customerError) throw customerError;
+
+  return {
+    customerId: customer.id,
+    employeeId: employee.id,
+    serviceId: service.id,
+  };
+}
+
+export async function createScheduledAppointmentFixture(
+  admin: TestSupabaseClient,
+  fixture: SalonOwnerFixture,
+  options: { daysAhead: number; hour?: number; notes?: string }
+): Promise<AppointmentFixture> {
+  const start = new Date();
+  start.setUTCDate(start.getUTCDate() + options.daysAhead);
+  start.setUTCHours(options.hour ?? 15, 0, 0, 0);
+  const end = new Date(start.getTime() + 30 * 60_000);
+
+  const { data: appointment, error: appointmentError } = await admin
+    .from("appointments")
+    .insert({
+      salon_id: fixture.salonId,
+      customer_id: fixture.customerId,
+      created_by: fixture.userId,
+      notes: options.notes ?? "E2E appointment",
+      status: "scheduled",
+    })
+    .select("id")
+    .single();
+  if (appointmentError) throw appointmentError;
+
+  const { error: itemError } = await admin.from("appointment_items").insert({
+    salon_id: fixture.salonId,
+    appointment_id: appointment.id,
+    service_id: fixture.serviceId,
+    employee_id: fixture.employeeId,
+    start_time: start.toISOString(),
+    end_time: end.toISOString(),
+    duration_minutes: 30,
+    price: 15,
+    ordering: 1,
+    blocks_calendar: true,
+  });
+  if (itemError) throw itemError;
+
+  return {
+    appointmentId: appointment.id,
+    startDate: start.toISOString().slice(0, 10),
+  };
+}
+
+export async function createPlatformAdminFixture(
+  admin: TestSupabaseClient
+): Promise<PlatformAdminFixture> {
+  const email = uniqueEmail("glowbook.platform");
+  const password = "GlowBookTest123!";
+
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (authError || !authData.user) throw authError ?? new Error("Auth user not created");
+
+  const userId = authData.user.id;
+
+  try {
+    const { error } = await admin.from("platform_admins").insert({ user_id: userId });
+    if (error) throw error;
+    return { email, password, userId };
+  } catch (error) {
+    await admin.auth.admin.deleteUser(userId);
+    throw error;
+  }
+}
+
+export async function cleanupSalonOwnerFixture(
+  admin: TestSupabaseClient,
+  fixture: SalonOwnerFixture | null
+) {
+  if (!fixture) return;
+
+  await admin.from("profiles").delete().eq("id", fixture.userId);
+  await admin.auth.admin.deleteUser(fixture.userId);
+  await admin.from("salons").delete().eq("id", fixture.salonId);
+}
+
+export async function cleanupPlatformAdminFixture(
+  admin: TestSupabaseClient,
+  fixture: PlatformAdminFixture | null
+) {
+  if (!fixture) return;
+
+  await admin.from("platform_admins").delete().eq("user_id", fixture.userId);
+  await admin.auth.admin.deleteUser(fixture.userId);
+}

@@ -1,0 +1,54 @@
+# Documentacion De Arquitectura
+
+Este indice marca los documentos vigentes para no confundir auditorias
+historicas con el plan actual.
+
+## Vigente
+
+- Auditoria vigente: `docs/architecture-audit-2026-05-30.md`
+- Fases vigentes: `docs/architecture-audit-phases-2026-05-30.md`
+- Contratos de base de datos: `docs/database-contracts.md`
+- Tests y checks Supabase: `docs/testing.md`
+- Inventario UI route-local: `docs/ui-route-local-inventory-2026-05-30.md`
+- Revision Auth Session: `docs/auth-session-review-2026-05-30.md`
+- Plan E2E critico: `docs/e2e-critical-flows.md`
+- Verificacion fases 17-25: `docs/architecture-phases-17-25-verification-2026-05-30.md`
+
+## Roadmaps Historicos
+
+- `docs/modular-monolith-roadmap.md`
+- `docs/architecture-audit-phases-2026-05-29.md`
+- `docs/architecture-audit-2026-05-29.md`
+- `docs/architecture-audit.md`
+
+Estos documentos sirven como contexto historico. Para trabajo nuevo, usar la
+auditoria y fases del 2026-05-30.
+
+## ADRs De Mayor Peso
+
+- `docs/adr/0001-multi-tenant-rls.md`: RLS es la autoridad final de aislamiento.
+- `docs/adr/0002-appointment-items-source-of-truth.md`: `appointment_items` es la fuente de verdad de la agenda.
+- `docs/adr/0008-tests-as-safety-net.md`: tests y guardrails protegen el dominio.
+- `docs/adr/0009-modular-monolith-feature-architecture.md`: estructura del monolito modular.
+- `docs/adr/0010-server-only-admin-adapter-exceptions.md`: excepciones `service_role` y Auth Admin.
+
+## Comandos Antes De Merge O Deploy
+
+```text
+npm run lint
+npm run test
+npm run test:e2e
+npm run type-check
+npm run build
+```
+
+Reporte opcional de salud arquitectonica:
+
+```text
+npm run architecture:health
+```
+
+## Regla Practica
+
+Si un cambio toca RLS, RPCs, `service_role`, citas, colaboradores, plataforma o
+reportes, revisar primero los ADRs y el README del Module correspondiente.

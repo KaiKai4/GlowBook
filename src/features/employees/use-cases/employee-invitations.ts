@@ -6,7 +6,10 @@ import {
   markEmployeeInvitationAccepted,
   type EmployeeInvitationForJoin,
 } from "@/features/employees/data/employee-access.repo";
-import { createAuthUser, deleteAuthUser } from "@/lib/supabase/auth-admin";
+import {
+  createEmployeeAuthUser,
+  deleteEmployeeAuthUser,
+} from "@/features/employees/data/employee-auth.repo";
 import type { Result } from "@/lib/result";
 
 export type EmployeeInvitationJoinView =
@@ -55,7 +58,7 @@ export async function getEmployeeInvitationJoinView(
 }
 
 async function rollbackAuthUser(userId: string, context: string): Promise<void> {
-  const { error } = await deleteAuthUser(userId);
+  const { error } = await deleteEmployeeAuthUser(userId);
   if (error && error.status !== 404) {
     console.error(`[employee-join:${context}:rollback]`, error);
   }
@@ -104,7 +107,7 @@ export async function acceptEmployeeInvitation({
     roleId = role.id;
   }
 
-  const { data: user, error: authError } = await createAuthUser({
+  const { data: user, error: authError } = await createEmployeeAuthUser({
     email: invitation.email,
     password,
     emailConfirm: true,

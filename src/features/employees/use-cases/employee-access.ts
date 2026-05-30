@@ -9,7 +9,7 @@ import {
   unlinkEmployeeProfile,
   updateEmployeeProfileRole,
 } from "@/features/employees/data/employee-access.repo";
-import { deleteAuthUser } from "@/lib/supabase/auth-admin";
+import { deleteEmployeeAuthUser } from "@/features/employees/data/employee-auth.repo";
 import type { Result } from "@/lib/result";
 
 export interface EmployeeInviteResult {
@@ -118,7 +118,7 @@ export async function revokeEmployeeAuthAccess(
     return { ok: false, error: "No se puede reiniciar el acceso de un owner desde colaboradores." };
   }
 
-  const { error: deleteUserError } = await deleteAuthUser(profileId);
+  const { error: deleteUserError } = await deleteEmployeeAuthUser(profileId);
   if (deleteUserError) {
     console.error("[employees:access]", deleteUserError);
     return { ok: false, error: "No se pudo revocar la cuenta anterior del colaborador." };
@@ -158,7 +158,7 @@ export async function revokeEmployeeAccessForArchive({
       return { ok: false, error: "No se puede eliminar un owner desde colaboradores." };
     }
 
-    const { error: authDeleteError } = await deleteAuthUser(profileId);
+    const { error: authDeleteError } = await deleteEmployeeAuthUser(profileId);
     if (authDeleteError) {
       console.error("[employees:access]", authDeleteError);
       return { ok: false, error: "No se pudo revocar el acceso del colaborador." };

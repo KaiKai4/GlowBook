@@ -418,6 +418,14 @@ Criterio de terminado:
 - No se puede reintroducir `app -> data` accidentalmente.
 - Las excepciones quedan documentadas y auditables.
 
+Resultado implementado:
+
+- `scripts/check-architecture.mjs` ahora bloquea imports `src/app -> features/*/data`.
+- El reporte no bloqueante de migracion `app -> data` fue reemplazado por una violacion real del guardrail.
+- `scripts/check-architecture.mjs` agrega advertencias para imports `features/*/use-cases -> @/lib/supabase/server`.
+- Se documento la excepcion controlada `components/layout -> features` en `docs/adr/0009-modular-monolith-feature-architecture.md`.
+- La excepcion permite solo Interfaces estables para navegacion/chrome y prohibe `data`, Server Actions, use-cases con lecturas/escrituras y query shape.
+
 Riesgo: bajo.
 
 ## Orden Recomendado

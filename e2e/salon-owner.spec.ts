@@ -1,0 +1,226 @@
+import { expect, test, type Page } from "@playwright/test";
+import {
+  cleanupSalonOwnerFixture,
+  createIntegrationAdminClient,
+  createSalonOwnerFixture,
+  createScheduledAppointmentFixture,
+  getSupabaseIntegrationEnv,
+  type AuthCredentials,
+  type SalonOwnerFixture,
+  type TestSupabaseClient,
+} from "../src/test/supabase-integration-fixtures";
+
+let credentials: AuthCredentials | null =
+  process.env.E2E_SALON_OWNER_EMAIL && process.env.E2E_SALON_OWNER_PASSWORD
+    ? {
+        email: process.env.E2E_SALON_OWNER_EMAIL,
+        password: process.env.E2E_SALON_OWNER_PASSWORD,
+      }
+    : process.env.SUPABASE_TEST_EMAIL && process.env.SUPABASE_TEST_PASSWORD
+      ? {
+          email: process.env.SUPABASE_TEST_EMAIL,
+          password: process.env.SUPABASE_TEST_PASSWORD,
+        }
+      : null;
+
+let admin: TestSupabaseClient | null = null;
+let fixture: SalonOwnerFixture | null = null;
+
+async function login(page: Page) {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(credentials!.email);
+  await page.getByLabel(/Contrase/i).fill(credentials!.password);
+  await page.getByRole("button", { name: /Iniciar/i }).click();
+  await expect(page).not.toHaveURL(/\/login/);
+}
+
+function futureDate(daysAhead = 14): string {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  return date.toISOString().slice(0, 10);
+}
+
+async function selectFirstRealOption(page: Page, label: string | RegExp) {
+  const select = page.getByLabel(label);
+  await expect(select).toBeEnabled();
+  const value = await select.locator("option").nth(1).getAttribute("value");
+  expect(value).toBeTruthy();
+  await select.selectOption(value!);
+}
+
+test.describe("salon owner critical smoke", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test.beforeAll(async () => {
+    if (credentials) return;
+
+    const env = getSupabaseIntegrationEnv();
+    if (!env) return;
+
+    admin = createIntegrationAdminClient(env);
+    fixture = await createSalonOwnerFixture(admin, "E2E");
+    credentials = { email: fixture.email, password: fixture.password };
+  });
+
+  test.afterAll(async () => {
+    if (admin) await cleanupSalonOwnerFixture(admin, fixture);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    test.skip(
+      !credentials,
+      "Requires E2E_SALON_OWNER_* credentials or Supabase service role fixture env."
+    );
+    await login(page);
+  });
+
+  test("loads the dashboard shell and visible salon Modules", async ({ page }) => {
+    await expect(page.getByText("GlowBook").first()).toBeVisible();
+
+    const modules = [
+      { label: "Citas", path: "/appointments" },
+      { label: "Clientes", path: "/customers" },
+      { label: "Colaboradores", path: "/employees" },
+      { label: "Servicios", path: "/services" },
+      { label: "Reportes", path: "/reports" },
+      { label: "Roles", path: "/roles" },
+      { label: "Plantillas", path: "/plantillas" },
+      { label: "Salon", path: "/salon" },
+    ];
+
+    for (const feature of modules) {
+      const link = page.getByRole("link", { name: new RegExp(feature.label, "i") });
+      if ((await link.count()) === 0) continue;
+
+      await link.first().click();
+      await expect(page).toHaveURL(new RegExp(feature.path));
+      await expect(page.locator("h1, h2").first()).toBeVisible();
+    }
+  });
+
+  test("reaches the appointment creation entry point when appointments are enabled", async ({ page }) => {
+    const appointmentsLink = page.getByRole("link", { name: /Citas/i });
+    test.skip((await appointmentsLink.count()) === 0, "Appointments Module is not visible for this user.");
+
+    await appointmentsLink.first().click();
+    await page.goto("/appointments/new");
+    await expect(page).toHaveURL(/\/appointments\/new/);
+    await expect(page.locator("h1, h2").first()).toBeVisible();
+  });
+
+  test("creates a valid appointment from the browser flow", async ({ page }) => {
+    const appointmentsLink = page.getByRole("link", { name: /Citas/i });
+    test.skip((await appointmentsLink.count()) === 0, "Appointments Module is not visible for this user.");
+
+    await page.goto("/appointments/new");
+    await expect(page.getByRole("heading", { name: /Seleccionar cliente/i })).toBeVisible();
+
+    await selectFirstRealOption(page, "Cliente");
+    await page.getByRole("button", { name: /Continuar/i }).click();
+
+    await page.getByLabel("Fecha").fill(futureDate());
+    await selectFirstRealOption(page, "Categoria");
+    await selectFirstRealOption(page, "Servicio");
+    await selectFirstRealOption(page, "Profesional");
+    await page.getByRole("button", { name: /Continuar/i }).click();
+
+    await expect(page.getByRole("heading", { name: /Confirmar cita/i })).toBeVisible();
+    await page.getByLabel(/Notas/i).fill("E2E cita valida");
+    await page.getByRole("button", { name: /Confirmar cita/i }).click();
+
+    await expect(page).toHaveURL(/\/appointments\?date=/);
+    await expect(page.getByRole("heading", { name: /Agenda/i })).toBeVisible();
+  });
+
+  test("confirms, completes and cancels appointments from the detail screen", async ({ page }) => {
+    test.skip(!admin || !fixture, "Requires Supabase service role fixture env.");
+    const activeAdmin = admin!;
+    const activeFixture = fixture!;
+
+    const appointmentToComplete = await createScheduledAppointmentFixture(activeAdmin, activeFixture, {
+      daysAhead: 21,
+      hour: 15,
+      notes: "E2E lifecycle complete",
+    });
+
+    await page.goto(`/appointments/${appointmentToComplete.appointmentId}`);
+    await expect(page.getByText(/Agendada/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /Confirmar/i }).click();
+    await expect(page.getByText(/Confirmada/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /^Completar$/i }).click();
+    await page.getByRole("button", { name: /Cobrar y completar/i }).click();
+    await expect(page.getByText("Completada")).toBeVisible();
+    await expect(page.getByText(/Esta cita ya/i)).toBeVisible();
+
+    const appointmentToCancel = await createScheduledAppointmentFixture(activeAdmin, activeFixture, {
+      daysAhead: 22,
+      hour: 15,
+      notes: "E2E lifecycle cancel",
+    });
+
+    await page.goto(`/appointments/${appointmentToCancel.appointmentId}`);
+    await expect(page.getByText(/Agendada/i)).toBeVisible();
+    await page.getByRole("button", { name: /Cancelar cita/i }).click();
+    await expect(page.getByText("Cancelada")).toBeVisible();
+    await expect(page.getByText(/Esta cita ya/i)).toBeVisible();
+  });
+
+  test("archives and reactivates a customer from the customer screens", async ({ page }) => {
+    test.skip(!fixture, "Requires Supabase service role fixture env.");
+
+    await page.goto("/customers");
+    await expect(page.getByRole("heading", { name: /Clientes/i })).toBeVisible();
+    await expect(page.getByText("E2E Cliente")).toBeVisible();
+
+    await page.getByRole("button", { name: /^Editar$/i }).first().click();
+    await expect(page.getByRole("heading", { name: /Editar cliente/i })).toBeVisible();
+
+    const dialogs: string[] = [];
+    page.on("dialog", async (dialog) => {
+      dialogs.push(dialog.type());
+      await dialog.accept();
+    });
+
+    await page.getByRole("button", { name: /^Eliminar$/i }).click();
+    await expect(page.getByRole("heading", { name: /Editar cliente/i })).toBeHidden();
+
+    await page.goto("/customers?status=archived");
+    await expect(page.getByText("E2E Cliente")).toBeVisible();
+    await page.getByRole("button", { name: /^Reactivar$/i }).first().click();
+    await expect(page.getByText("E2E Cliente")).toBeHidden();
+
+    await page.goto("/customers");
+    await expect(page.getByText("E2E Cliente")).toBeVisible();
+    expect(dialogs).toContain("confirm");
+    expect(dialogs).toContain("alert");
+  });
+
+  test("generates an employee invitation link from the employee detail screen", async ({ page }) => {
+    test.skip(!fixture, "Requires Supabase service role fixture env.");
+    const activeFixture = fixture!;
+
+    await page.goto(`/employees/${activeFixture.employeeId}`);
+    await expect(page.getByRole("heading", { name: /E2E Colaborador/i })).toBeVisible();
+    await expect(page.getByText(/Acceso al sistema/i)).toBeVisible();
+
+    const generateButton = page.getByRole("button", { name: /Generar enlace de acceso/i });
+    if ((await generateButton.count()) > 0) {
+      await generateButton.click();
+    } else {
+      await page.getByRole("button", { name: /Regenerar enlace/i }).click();
+    }
+
+    await expect(page.getByText(/Enlace generado/i)).toBeVisible();
+    const inviteUrl = await page.locator("input[readonly]").last().inputValue();
+    expect(inviteUrl).toContain("/join/");
+  });
+
+  test("signs out and returns to login", async ({ page }) => {
+    await page.getByRole("button", { name: /Cerrar sesi/i }).first().click();
+
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole("heading", { name: /Iniciar/i })).toBeVisible();
+  });
+});

@@ -5,11 +5,11 @@ import {
 } from "@/features/platform/data/invitations.repo";
 import { err, ok, type Result } from "@/lib/result";
 import {
-  createAuthUser,
-  deleteAuthUser,
-  findAuthUserByEmail,
-  updateAuthUser,
-} from "@/lib/supabase/auth-admin";
+  createPlatformOwnerAuthUser,
+  deletePlatformOwnerAuthUser,
+  findPlatformOwnerAuthUserByEmail,
+  updatePlatformOwnerAuthUser,
+} from "@/features/platform/data/platform-auth.repo";
 import { personNameField } from "@/lib/validation/name";
 import { z } from "zod";
 
@@ -38,7 +38,7 @@ function translateAcceptError(message: string): string {
 }
 
 async function rollbackCreatedOwner(userId: string): Promise<void> {
-  const { error } = await deleteAuthUser(userId);
+  const { error } = await deletePlatformOwnerAuthUser(userId);
   if (error && error.status !== 404) {
     console.error("[platform:accept-invitation:rollback]", error);
   }
@@ -70,7 +70,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
 
   let userId: string;
   let createdNewUser = false;
-  const { data: created, error: createError } = await createAuthUser({
+  const { data: created, error: createError } = await createPlatformOwnerAuthUser({
     email,
     password,
     emailConfirm: true,
@@ -81,7 +81,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
       return err("No se pudo crear la cuenta. Intentalo de nuevo en unos momentos.");
     }
 
-    const existing = await findAuthUserByEmail(email);
+    const existing = await findPlatformOwnerAuthUserByEmail(email);
     if (existing.error || !existing.data) {
       return err("No se pudo crear la cuenta. Intentalo de nuevo en unos momentos.");
     }
@@ -102,7 +102,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     }
 
     userId = existing.data.id;
-    const updated = await updateAuthUser(userId, { password, emailConfirm: true });
+    const updated = await updatePlatformOwnerAuthUser(userId, { password, emailConfirm: true });
     if (updated.error) {
       return err("No se pudo actualizar la cuenta. Intentalo de nuevo en unos momentos.");
     }
