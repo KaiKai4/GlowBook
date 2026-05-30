@@ -59,10 +59,43 @@ Supabase de integracion conectado.
 2. Revisar ADR relacionado.
 3. Definir si SQL o TypeScript es autoridad final.
 4. Crear o actualizar migracion.
-5. Regenerar `src/types/database.types.ts` con `npm run db:types`.
-6. Agregar unit tests para reglas TypeScript.
-7. Agregar o ejecutar checks RPC/RLS si seguridad o integridad cambia.
-8. Correr `npm run architecture:health` para revisar deuda visible.
+5. Confirmar que la migracion esta aplicada en el Supabase linkeado:
+   `npx supabase migration list`.
+6. Regenerar `src/types/database.types.ts` con `npm run db:types`.
+7. Revisar el diff del archivo generado. Si solo cambia metadata o encoding,
+   dejarlo registrado en el PR.
+8. Correr `npm run type-check`.
+9. Agregar unit tests para reglas TypeScript.
+10. Agregar o ejecutar checks RPC/RLS si seguridad o integridad cambia.
+11. Correr `npm run architecture:health` para revisar deuda visible.
+
+## Tipos Generados Supabase
+
+`src/types/database.types.ts` es un artefacto generado desde Supabase. No debe
+editarse manualmente.
+
+Regenerarlo cuando:
+
+- se agregue o modifique una migracion;
+- cambie una tabla, enum, vista, trigger-facing column o RPC;
+- `npm run architecture:health` reporte que los tipos parecen mas antiguos que
+  la ultima migracion;
+- un Adapter `features/*/data` necesite un campo o funcion que aun no aparece
+  en los tipos.
+
+Comando:
+
+```text
+npm run db:types
+```
+
+Despues de regenerar:
+
+```text
+npm run type-check
+npm run test
+npm run architecture:health
+```
 
 ## Fixtures De Integracion
 

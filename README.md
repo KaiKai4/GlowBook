@@ -113,6 +113,7 @@ npm run build        # Build production bundle
 npm run start        # Start production server after build
 npm run lint         # Run ESLint and architecture guardrails
 npm run architecture:check # Run architecture guardrails only
+npm run ci:verify   # Reproduce mandatory CI gates locally
 npm run test         # Run Vitest
 npm run type-check   # Run TypeScript without emitting
 npm run db:types     # Regenerate Supabase generated types
@@ -123,11 +124,32 @@ npm run bootstrap:admin -- <email> <password>
 Before shipping a change, prefer:
 
 ```bash
-npm run test
-npm run type-check
+npm run ci:verify
+```
+
+That script runs the mandatory CI gates:
+
+```bash
 npm run lint
+npm run type-check
+npm run test
 npm run build
 ```
+
+The `main` branch and manual CI runs also execute E2E/architecture health when
+Supabase staging secrets are configured.
+
+## Generated Supabase Types
+
+`src/types/database.types.ts` is generated from the linked Supabase project.
+Regenerate it after every migration that changes schema, RPCs or enums:
+
+```bash
+npm run db:types
+```
+
+Then review the diff, run `npm run type-check`, and run the RPC/RLS tests when
+security or data integrity changed.
 
 ## Environment
 

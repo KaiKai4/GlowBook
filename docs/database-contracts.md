@@ -125,6 +125,27 @@ Before changing migrations, RPCs, triggers or RLS:
 5. Add or update tests for the TypeScript Interface.
 6. Add integration/manual checks for RLS or RPC behavior when security is affected.
 
+## Generated Types Contract
+
+`src/types/database.types.ts` is generated from the linked Supabase project with:
+
+```text
+npm run db:types
+```
+
+It is part of the SQL-to-TypeScript contract and should not be edited manually.
+After any schema, enum, view or RPC change:
+
+1. Confirm local and remote migration versions with `npx supabase migration list`.
+2. Regenerate `src/types/database.types.ts`.
+3. Review the diff.
+4. Run `npm run type-check`.
+5. Run affected unit/RPC/RLS tests.
+
+Phase 26 regenerated the file against the linked project after confirming local
+and remote migrations match through `20240101000026`. The generated shape did
+not change; the diff normalized the file encoding at the start of the file.
+
 ## Supabase Test Contract
 
 RPC/RLS tests that need a real Supabase project are documented in `docs/testing.md`.

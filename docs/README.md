@@ -13,6 +13,8 @@ historicas con el plan actual.
 - Revision Auth Session: `docs/auth-session-review-2026-05-30.md`
 - Plan E2E critico: `docs/e2e-critical-flows.md`
 - Verificacion fases 17-25: `docs/architecture-phases-17-25-verification-2026-05-30.md`
+- Auditoria de arquitectura y produccion: `docs/architecture-production-readiness-audit-2026-05-30.md`
+- Fases de produccion 5+ salones: `docs/architecture-production-readiness-phases-2026-05-30.md`
 
 ## Roadmaps Historicos
 
@@ -35,12 +37,21 @@ auditoria y fases del 2026-05-30.
 ## Comandos Antes De Merge O Deploy
 
 ```text
+npm run ci:verify
+```
+
+Ese comando reproduce los gates obligatorios de CI:
+
+```text
 npm run lint
-npm run test
-npm run test:e2e
 npm run type-check
+npm run test
 npm run build
 ```
+
+La rama `main` y ejecuciones manuales de CI corren tambien E2E y
+`architecture:health` cuando los secretos Supabase de staging estan
+configurados.
 
 Reporte opcional de salud arquitectonica:
 
