@@ -13,6 +13,8 @@ export interface GetReminderQueueInput {
   now?: Date;
 }
 
+const REMINDABLE_STATUSES = new Set(["scheduled", "confirmed"]);
+
 function toReminderAppointment(
   appointment: Awaited<ReturnType<typeof findAppointmentsBySalon>>[number]
 ): ReminderAppointment {
@@ -58,7 +60,7 @@ export async function getReminderQueue({
     findActiveEmployeeNames(salonId),
   ]);
   const pendingAppointments = appointments
-    .filter((appointment) => !["cancelled", "completed"].includes(appointment.status))
+    .filter((appointment) => REMINDABLE_STATUSES.has(appointment.status))
     .map(toReminderAppointment);
 
   return {

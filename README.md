@@ -111,7 +111,8 @@ See `docs/database-contracts.md` before changing RPCs, triggers, constraints or 
 npm run dev          # Start local Next dev server
 npm run build        # Build production bundle
 npm run start        # Start production server after build
-npm run lint         # Run ESLint
+npm run lint         # Run ESLint and architecture guardrails
+npm run architecture:check # Run architecture guardrails only
 npm run test         # Run Vitest
 npm run type-check   # Run TypeScript without emitting
 npm run db:types     # Regenerate Supabase generated types

@@ -487,6 +487,8 @@ Implementacion aplicada:
 
 Objetivo: que el monolito modular sea mantenible cuando crezca.
 
+Estado: implementada el 2026-05-29.
+
 Problemas que resuelve:
 
 - Faltan tests para reports, salon, services, roles, reminders y timezone.
@@ -516,6 +518,23 @@ Criterio de terminado:
 - Cada Module profundo nuevo tiene test.
 - Las reglas de dependencia no dependen solo de memoria.
 - Cambios en reportes, agenda, permisos o plantillas fallan rapido si rompen reglas.
+
+Implementacion aplicada:
+
+- La cobertura existente ya incluia:
+  - `features/reports/domain/metrics.test.ts`
+  - `features/services/use-cases/service-catalog.test.ts`
+  - `features/access/use-cases/roles.test.ts`
+- Se agregaron tests faltantes:
+  - `src/features/reminders/use-cases/get-reminder-queue.test.ts`
+  - `src/features/salon/use-cases/update-business-hours.test.ts`
+  - `src/lib/utils/dates.test.ts`
+- `getReminderQueue()` ahora limita la cola operativa a citas `scheduled` y `confirmed`, evitando recordatorios para estados terminales o no operativos.
+- Se creo `scripts/check-architecture.mjs` como guardrail automatico para bloquear:
+  - imports desde `components` hacia `app`
+  - imports desde `features/*/domain` hacia Supabase, Next, React o `server-only`
+  - imports de `createSupabaseAdminClient` fuera de los Adapters autorizados por ADR 0010
+- `npm run lint` ahora ejecuta ESLint y el guardrail arquitectonico.
 
 ## Orden Recomendado
 

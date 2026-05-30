@@ -873,6 +873,9 @@ Pruebas detectadas:
 - `src/features/employees/domain/collaborator-assignment.test.ts`
 - `src/features/notifications/domain/templates.test.ts`
 - `src/features/appointments/domain/wizard-availability.test.ts`
+- `src/features/reminders/use-cases/get-reminder-queue.test.ts`
+- `src/features/salon/use-cases/update-business-hours.test.ts`
+- `src/lib/utils/dates.test.ts`
 - `src/lib/auth/session.test.ts`
 - `src/lib/utils/phone.test.ts`
 
