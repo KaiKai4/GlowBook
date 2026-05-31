@@ -25,7 +25,7 @@ When TypeScript duplicates a SQL rule, the duplication is for UX or early feedba
 
 ## RLS Contracts
 
-RLS is enabled for tenant and platform tables in `supabase/migrations/20240101000001_rls_and_functions.sql`, with later migrations refining appointment, employee invitation and feedback policies.
+RLS is enabled for tenant and platform tables in `supabase/migrations/20240101000001_rls_and_functions.sql`, with later migrations refining appointment, employee invitation, feedback and policy-performance behavior.
 
 | Area | SQL source | TypeScript owner | Contract |
 |---|---|---|---|
@@ -35,6 +35,7 @@ RLS is enabled for tenant and platform tables in `supabase/migrations/2024010100
 | Employee invitations | `20240101000007_employee_invitations.sql` | `src/features/employees/data/employee-access.repo.ts`, `src/features/employees/use-cases/employee-access.ts`, `src/features/employees/use-cases/employee-invitations.ts` | Only authorized server flows should manage employee invitations. Use-cases orchestrate; the privileged data Adapter owns direct admin reads/writes. |
 | Feedback reports | `20240101000012_feedback_reports.sql` | `src/features/feedback`, `src/features/platform` | Salon users can submit feedback; Platform can review it with admin access. |
 | Platform invitations | `20240101000001_rls_and_functions.sql`, `20240101000002_rbac_seed_and_platform.sql` | `src/features/platform` | Salon creation is controlled by Platform invitation. |
+| RLS policy performance | `20240101000028_optimize_rls_policy_performance.sql` | all SQL-backed feature repos | RLS must avoid per-row `auth.uid()`/permission helper evaluation where a statement-level initplan is enough. Write policies should not use `FOR ALL` when explicit `SELECT` policies exist. |
 
 ## Appointment Contracts
 
@@ -144,10 +145,11 @@ After any schema, enum, view or RPC change:
 5. Run affected unit/RPC/RLS tests.
 
 Phase 26 regenerated the file against the linked project after confirming local
-and remote migrations match through `20240101000026`. Phase 31 adds
-`20240101000027_platform_audit_log.sql`; the migration was pushed and
-`npm run db:types` regenerated `Database["public"]["Tables"]["platform_audit_log"]`
-as part of the generated contract.
+and remote migrations match through `20240101000026`. Phase 31 added
+`20240101000027_platform_audit_log.sql`. Phase 40 added
+`20240101000028_optimize_rls_policy_performance.sql`; it changes policies only,
+so generated table types should not materially change, but `npm run db:types`
+must still be executed after applying it to keep the workflow consistent.
 
 ## Supabase Test Contract
 

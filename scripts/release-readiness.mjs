@@ -70,6 +70,7 @@ const expectedDocs = [
   "docs/runbooks/deploy.md",
   "docs/runbooks/database-restore.md",
   "docs/runbooks/load-smoke-5-salons.md",
+  "docs/launch-support.md",
 ];
 
 for (const doc of expectedDocs) {

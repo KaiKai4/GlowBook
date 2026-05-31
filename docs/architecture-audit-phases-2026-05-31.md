@@ -33,15 +33,15 @@ Readiness para 5+ salones:
 
 | Fase | Estado | Evidencia |
 |---|---|---|
-| Fase 37 | parcialmente verificada, bloqueada por deploy/env staging | `npx supabase migration list` confirmo migraciones remoto/local `20240101000000`-`20240101000027`; `npm run test:e2e:staging` fallo con `Set GLOWBOOK_ENV=staging before running staging E2E.` |
-| Fase 38 | bloqueada por entorno externo | Requiere backup real y destino staging/temporal para restore. |
-| Fase 39 | bloqueada por entorno externo | `npm run smoke:seed-5-salons` fallo con `Set GLOWBOOK_ENV=staging...`. No se creo data. |
-| Fase 40 | bloqueada por Fase 39 | No hay logs/performance de smoke real para evaluar. |
-| Fase 41 | repo preparado, pendiente verificacion externa | Se documenta estrategia de logs estructurados del hosting/log drain; falta validar en deploy real. |
+| Fase 37 | completada para app local conectada a staging | Supabase staging `glowbook-staging` (`vifuurgquxkkpqqobigr`) creado y enlazado; `npm run db:migrate`, `npm run db:types` y `npx supabase migration list` confirmaron migraciones remoto/local `20240101000000`-`20240101000028`; `npm run test:e2e:staging` paso con 13 tests. |
+| Fase 38 | bloqueada por destino externo/Docker | Requiere backup real y destino staging/temporal para restore. En esta maquina `docker` no esta disponible y `npx supabase db dump` falla porque Supabase CLI requiere Docker para dump/restore. |
+| Fase 39 | completada | `npm run smoke:seed-5-salons` creo batch `smoke-20260531-e2e` con 5 salones, 30 colaboradores, 100 servicios, 500 clientes y 400 citas; `npm run smoke:cleanup-5-salons` lo dejo en cero registros. |
+| Fase 40 | completada via Supabase advisors | Advisors detectaron warnings RLS; se agrego `20240101000028_optimize_rls_policy_performance.sql`; despues de aplicarla, `npx supabase db advisors --linked --type performance --output json` reporto `No issues found`. |
+| Fase 41 | repo preparado, pendiente destino externo | Adapter de `src/lib/observability` emite consola estructurada y webhook/log drain opcional con redaccion; falta validar un destino real de hosting/log drain. |
 | Fase 42 | completada | Copy de recordatorios corregido, busqueda de mojibake limpia, `npm run lint` y `npm run type-check` pasaron. |
 | Fase 43 | completada | Hotspots UI clasificados; no hay imports a Supabase/data Adapters ni Seam real que justifique extraccion. |
 | Fase 44 | completada para MVP manual | Decision confirmada: `features/reminders` sigue como read Module; UI abre WhatsApp, no promete envio automatico. |
-| Fase 45 | completada como gate | Decision registrada: no lanzar aun; `npm run release:readiness` bloquea hasta completar evidencia externa. |
+| Fase 45 | parcial, gate activo | Owner inicial de soporte documentado; `npm run release:readiness` queda bloqueado solo por restore probado y observability real. |
 
 ## Principios
 
@@ -58,7 +58,9 @@ Readiness para 5+ salones:
 
 Prioridad: bloqueante antes de produccion.
 
-Estado: pendiente externo.
+Estado: completada para app local conectada a staging. Si se exige evidencia de
+hosting remoto, repetir el mismo comando contra `E2E_BASE_URL` del deploy
+staging.
 
 Objetivo: demostrar que GlowBook corre correctamente en un deploy staging real,
 con Supabase staging y secrets separados.
@@ -98,6 +100,18 @@ Criterio de terminado:
 - E2E staging pasa contra deploy real.
 - `architecture:health` pasa con docs, tests y E2E.
 - El checklist indica fecha, entorno, comando y responsable.
+
+Evidencia parcial 2026-05-31:
+
+- Supabase staging separado confirmado: `glowbook-staging`
+  (`vifuurgquxkkpqqobigr`).
+- Migraciones aplicadas en staging con `npm run db:migrate`.
+- `npm run db:types` ejecutado contra staging.
+- `npx supabase migration list` confirma local/remoto alineado hasta
+  `20240101000028`.
+- `npm run ci:verify` pasa localmente.
+- `npm run test:e2e:staging` pasa con 13 tests contra app local conectada a
+  Supabase staging.
 
 Riesgo: alto si se omite.
 
@@ -207,7 +221,7 @@ Fuerza: Strong.
 
 Prioridad: alta.
 
-Estado: pendiente, depende de Fase 39.
+Estado: completada via smoke y Supabase performance advisors.
 
 Objetivo: decidir con evidencia si hacen falta indices, read models o ajustes de
 query shape.
@@ -245,6 +259,18 @@ Criterio de terminado:
 - Cada query lenta queda resuelta o documentada como aceptada.
 - No se agregan indices preventivos sin evidencia.
 
+Evidencia 2026-05-31:
+
+- Smoke de 5 salones ejecutado y limpiado en staging.
+- Supabase performance advisors detecto warnings de RLS:
+  `auth_rls_initplan` y `multiple_permissive_policies`.
+- Se aplico `20240101000028_optimize_rls_policy_performance.sql` para:
+  - envolver checks `auth.uid()`/helpers estables como initplans;
+  - separar policies `FOR ALL` en `INSERT`, `UPDATE` y `DELETE`, dejando
+    `SELECT` bajo policies explicitas.
+- Despues de la migracion, `npx supabase db advisors --linked --type
+  performance --output json` reporto `No issues found`.
+
 Riesgo: medio.
 
 Fuerza: Strong despues del smoke.
@@ -253,7 +279,7 @@ Fuerza: Strong despues del smoke.
 
 Prioridad: alta para produccion seria.
 
-Estado: pendiente.
+Estado: repo preparado, pendiente destino externo.
 
 Objetivo: conectar la Seam `src/lib/observability` a un destino operativo real
 sin acoplar Modules de negocio a un proveedor.
@@ -293,6 +319,20 @@ Criterio de terminado:
 Riesgo: medio.
 
 Fuerza: Worth exploring antes de produccion; Strong si habra soporte activo.
+
+Evidencia 2026-05-31:
+
+- `src/lib/observability` mantiene la Interface `captureError`/`logEvent`.
+- El Adapter emite JSON estructurado a consola y puede enviar el mismo payload
+  redacted a un webhook/log drain con:
+  - `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL`
+  - `GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN`
+- `src/lib/observability/index.test.ts` valida que `serviceRoleKey` se redacta
+  antes de enviar payloads.
+- `docs/security.md`, `docs/runbooks/deploy.md` y `.env.local.example`
+  documentan las variables.
+- Falta validacion externa: confirmar retencion/acceso/alertas en hosting o
+  proveedor real.
 
 ## Fase 42 - Higiene Menor De UI Copy Y Encoding
 
@@ -446,7 +486,8 @@ Fuerza: Condicional.
 
 Prioridad: bloqueante antes del primer lanzamiento real.
 
-Estado: pendiente.
+Estado: parcial; soporte asignado y gate activo. Decision sigue siendo no
+lanzar hasta restore probado y observability real.
 
 Objetivo: cerrar una decision de lanzamiento basada en evidencia, no en
 sensacion.

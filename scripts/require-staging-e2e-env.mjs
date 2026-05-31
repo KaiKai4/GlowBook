@@ -74,6 +74,15 @@ const result = spawnSync(npxCommand, ["playwright", "test"], {
   cwd: process.cwd(),
   env: process.env,
   stdio: "inherit",
+  shell: process.platform === "win32",
 });
+
+if (result.error) {
+  console.error(`[staging-e2e] Failed to start Playwright: ${result.error.message}`);
+}
+
+if (result.status !== 0) {
+  console.error(`[staging-e2e] Playwright exited with status ${result.status ?? "unknown"}.`);
+}
 
 process.exit(result.status ?? 1);

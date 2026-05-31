@@ -12,14 +12,27 @@ Estado de decision: **no lanzar todavia**.
 Evidencia local completada:
 
 - `npm run release:readiness` agregado como gate ejecutable; actualmente bloquea
-  lanzamiento hasta confirmar staging, restore, smoke, logs, observability y
-  soporte. Resultado actual: 10 OK, 10 bloqueados.
-- `npx supabase migration list` paso: local/remoto coinciden desde
-  `20240101000000` hasta `20240101000027` para el proyecto enlazado
-  `eokiklkgutzrkhbamglf`.
-- `npm run ci:verify` paso: lint, guardrails, type-check, tests y build.
-- `npm run architecture:health` paso: guardrails, tests, E2E local, docs
-  vigentes y database types.
+  lanzamiento hasta confirmar restore, observability y soporte. Resultado
+  actual con evidencias confirmadas y soporte asignado: 19 OK, 2 bloqueados.
+- Supabase staging separado creado y enlazado: `glowbook-staging`
+  (`vifuurgquxkkpqqobigr`).
+- `npm run db:migrate` paso contra staging: se aplicaron migraciones
+  `20240101000000` hasta `20240101000028`.
+- `npx supabase migration list` paso contra staging: local/remoto coinciden
+  desde `20240101000000` hasta `20240101000028`.
+- `npm run db:types` paso contra staging y no produjo cambios reales en
+  `src/types/database.types.ts`.
+- `npm run ci:verify` paso: lint, guardrails, type-check, 143 tests y build.
+- `npm run test:e2e:staging` paso: 13 tests E2E contra app local conectada a
+  Supabase staging.
+- `npm run smoke:seed-5-salons` paso con batch `smoke-20260531-e2e`: creo 5
+  salones, 30 colaboradores, 100 servicios, 500 clientes y 400 citas.
+- `npm run smoke:cleanup-5-salons` paso y el batch quedo en cero registros.
+- `npx supabase db advisors --linked --type performance --output json` reporto
+  warnings RLS despues del smoke; se agrego
+  `20240101000028_optimize_rls_policy_performance.sql`.
+- El mismo advisor de performance despues de la migracion reporto `No issues
+  found`.
 - `npm run lint` paso con guardrails arquitectonicos.
 - `npm run type-check` paso.
 - Busqueda de mojibake comun en `src`, `docs`, `README.md` y `CONTEXT.md` sin matches.
@@ -28,12 +41,14 @@ Evidencia local completada:
 
 Bloqueos externos:
 
-- `npm run test:e2e:staging` no puede correr hasta configurar
-  `GLOWBOOK_ENV=staging` y el resto de variables staging.
-- `npm run smoke:seed-5-salons` no puede correr hasta configurar
-  `GLOWBOOK_ENV=staging`, secrets staging y confirmacion de smoke.
 - Restore real requiere backup y destino staging/temporal.
-- Revision de Supabase logs/performance depende del smoke real.
+- Observability real requiere hosting logs/log drain/proveedor verificado.
+- Owner de soporte asignado en `docs/launch-support.md`.
+- Observability Adapter soporta consola estructurada y webhook/log drain
+  opcional; falta validar destino real de hosting/log drain.
+- Restore real sigue bloqueado porque este equipo no tiene Docker/Supabase local
+  disponible ni proyecto temporal de restore. `npx supabase db dump` tambien
+  requiere Docker en este entorno.
 
 ## Arquitectura
 
@@ -45,10 +60,10 @@ Bloqueos externos:
 
 ## Supabase
 
-- [ ] Proyecto staging separado de production.
-- [ ] Migraciones aplicadas en staging.
-- [ ] `npm run db:types` ejecutado despues de la ultima migracion.
-- [ ] RLS/RPC criticos validados con tests o smoke manual.
+- [x] Proyecto staging separado de production.
+- [x] Migraciones aplicadas en staging.
+- [x] `npm run db:types` ejecutado despues de la ultima migracion.
+- [x] RLS/RPC criticos validados con tests y E2E staging.
 - [ ] `platform_audit_log` existe, registra acciones Platform sensibles y se revisa desde `/admin/audit`.
 - [ ] Plataforma puede suspender/reactivar Salon desde `/admin/salons` y deja audit log.
 - [ ] Backup reciente confirmado antes del primer lanzamiento.
@@ -65,10 +80,10 @@ Bloqueos externos:
 
 - [ ] `npm run test:e2e:staging` pasa contra el deploy staging.
 - [ ] Fixtures temporales no apuntan a production.
-- [ ] Smoke de 5 salones ejecutado en staging.
-- [ ] Batch smoke limpiado con `npm run smoke:cleanup-5-salons` o staging restaurado.
+- [x] Smoke de 5 salones ejecutado en staging.
+- [x] Batch smoke limpiado con `npm run smoke:cleanup-5-salons` o staging restaurado.
 - [ ] Rutas criticas revisadas: dashboard, agenda, crear cita, colaboradores, clientes, reportes y Platform overview.
-- [ ] No hay queries lentas criticas en Supabase logs.
+- [x] No hay issues de performance en Supabase advisors despues de la migracion RLS.
 
 ## Seguridad
 
@@ -85,7 +100,7 @@ Bloqueos externos:
 - [ ] Runbook de rollback revisado.
 - [ ] Runbook de restore revisado.
 - [ ] Runbook de Platform operations revisado.
-- [ ] Persona responsable de soporte definida para la semana de lanzamiento.
+- [x] Persona responsable de soporte definida para la semana de lanzamiento.
 
 ## Decision De Recordatorios
 

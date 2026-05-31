@@ -40,7 +40,9 @@ npm run architecture:health
 
 4. Revisar logs de Supabase y hosting.
 5. Confirmar que los eventos de `src/lib/observability` aparecen en logs del
-   hosting o log drain.
+   hosting o log drain. Si se usa webhook, configurar
+   `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL` y
+   `GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN`.
 
 ## Production
 
@@ -51,6 +53,7 @@ npm run architecture:health
 5. Revisar logs durante 30 minutos.
 6. Confirmar que errores y eventos estructurados aparecen en el destino de logs
    definido para observability.
+7. Confirmar owner de soporte segun `docs/launch-support.md`.
 
 ## Criterio De Exito
 

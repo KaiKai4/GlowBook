@@ -51,11 +51,21 @@ errores como JSON estructurado a consola, sanitizando claves sensibles. Para el
 primer deploy, la estrategia operativa es usar logs del hosting o un log drain
 configurado sobre stdout/stderr.
 
+El mismo Adapter puede enviar los mismos payloads sanitizados a un webhook/log
+drain configurando:
+
+```text
+GLOWBOOK_OBSERVABILITY_WEBHOOK_URL
+GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN
+```
+
 Reglas:
 
 - Modules de negocio no deben importar SDKs de proveedores de observability.
 - Si se adopta Sentry u otro proveedor, el cambio debe quedar dentro de
   `src/lib/observability`.
+- Si se usa webhook/log drain, el token queda server-only y nunca debe llevar
+  prefijo `NEXT_PUBLIC_`.
 - Antes de produccion, confirmar retencion, acceso y alertas basicas en el
   hosting/log drain.
 - No loguear tokens, cookies, passwords, authorization headers ni

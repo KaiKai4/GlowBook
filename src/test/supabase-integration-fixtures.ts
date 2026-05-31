@@ -53,6 +53,13 @@ function normalizeUrl(value: string): string {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+function hasRealEnvValue(value: string | undefined): value is string {
+  if (!value) return false;
+  if (/^(PASTE|YOUR|TU)[A-Z0-9_-]*_/i.test(value)) return false;
+  if (value.includes("your-") || value.includes("here")) return false;
+  return true;
+}
+
 function assertSafeIntegrationTarget(env: SupabaseIntegrationEnv): void {
   const appEnv = (
     process.env.GLOWBOOK_ENV ??
@@ -81,7 +88,10 @@ export function getSupabaseIntegrationEnv(): SupabaseIntegrationEnv | null {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !anonKey || !serviceRoleKey) return null;
+  if (!hasRealEnvValue(url) || !hasRealEnvValue(anonKey) || !hasRealEnvValue(serviceRoleKey)) {
+    return null;
+  }
+
   const env = { url, anonKey, serviceRoleKey };
   assertSafeIntegrationTarget(env);
   return env;
