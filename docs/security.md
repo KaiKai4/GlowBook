@@ -42,6 +42,25 @@ Reglas:
 | Feedback moderation | Platform-only, audit log. | Ninguno para MVP. |
 | E2E/fixtures | Guards contra production URL. | Secrets de staging configurados en CI. |
 
+## Observability
+
+Decision 2026-05-31:
+
+El Adapter inicial de observability es `src/lib/observability`. Emite eventos y
+errores como JSON estructurado a consola, sanitizando claves sensibles. Para el
+primer deploy, la estrategia operativa es usar logs del hosting o un log drain
+configurado sobre stdout/stderr.
+
+Reglas:
+
+- Modules de negocio no deben importar SDKs de proveedores de observability.
+- Si se adopta Sentry u otro proveedor, el cambio debe quedar dentro de
+  `src/lib/observability`.
+- Antes de produccion, confirmar retencion, acceso y alertas basicas en el
+  hosting/log drain.
+- No loguear tokens, cookies, passwords, authorization headers ni
+  `SUPABASE_SERVICE_ROLE_KEY`.
+
 ## Rate Limiting
 
 Decision actual para MVP:

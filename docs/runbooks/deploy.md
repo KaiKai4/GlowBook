@@ -39,6 +39,8 @@ npm run architecture:health
 ```
 
 4. Revisar logs de Supabase y hosting.
+5. Confirmar que los eventos de `src/lib/observability` aparecen en logs del
+   hosting o log drain.
 
 ## Production
 
@@ -47,6 +49,8 @@ npm run architecture:health
 3. Deploy a production.
 4. Revisar login, dashboard de Salon y Platform admin.
 5. Revisar logs durante 30 minutos.
+6. Confirmar que errores y eventos estructurados aparecen en el destino de logs
+   definido para observability.
 
 ## Criterio De Exito
 

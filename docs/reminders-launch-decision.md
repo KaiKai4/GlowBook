@@ -5,6 +5,12 @@ Fecha: 2026-05-30
 Decision actual: `features/reminders` queda como read Module operativo para el
 MVP de 5+ salones. No se activa envio real sin elegir proveedor y canal.
 
+Confirmacion 2026-05-31:
+
+La Fase 44 mantiene esta decision. La UI debe comunicar accion manual: abrir
+WhatsApp con el mensaje preparado, no prometer envio automatico desde GlowBook.
+El boton de recordatorios usa copy de "Abrir recordatorio en WhatsApp".
+
 ## Motivo
 
 El Module actual construye una cola/lista operativa de recordatorios. Eso es

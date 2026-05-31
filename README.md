@@ -86,12 +86,15 @@ Do not create empty `domain`, `data` or `use-cases` folders for appearance. A fo
 Additional architecture docs:
 
 - `docs/README.md`
+- `docs/architecture-audit-2026-05-31.md`
+- `docs/architecture-audit-phases-2026-05-31.md`
 - `docs/architecture-audit-2026-05-30.md`
 - `docs/architecture-audit-phases-2026-05-30.md`
 - `docs/architecture-production-readiness-audit-2026-05-30.md`
 - `docs/architecture-production-readiness-phases-2026-05-30.md`
 - `docs/database-contracts.md`
 - `docs/production-readiness-checklist.md`
+- `docs/release-readiness-2026-05-31.md`
 - `docs/environments.md`
 - `docs/security.md`
 
@@ -119,6 +122,7 @@ npm run build        # Build production bundle
 npm run start        # Start production server after build
 npm run lint         # Run ESLint and architecture guardrails
 npm run architecture:check # Run architecture guardrails only
+npm run release:readiness # Check release blockers for 5+ salon launch
 npm run ci:verify   # Reproduce mandatory CI gates locally
 npm run test         # Run Vitest
 npm run test:e2e     # Run local Playwright critical flows

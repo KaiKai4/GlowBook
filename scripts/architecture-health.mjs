@@ -153,12 +153,15 @@ if (privilegedImports.length === 0) {
 printSection("Current Docs");
 const expectedDocs = [
   "docs/README.md",
+  "docs/architecture-audit-2026-05-31.md",
+  "docs/architecture-audit-phases-2026-05-31.md",
   "docs/architecture-audit-2026-05-30.md",
   "docs/architecture-audit-phases-2026-05-30.md",
   "docs/database-contracts.md",
   "docs/testing.md",
   "docs/environments.md",
   "docs/production-readiness-checklist.md",
+  "docs/release-readiness-2026-05-31.md",
   "docs/security.md",
   "docs/e2e-critical-flows.md",
   "docs/reminders-launch-decision.md",
@@ -168,6 +171,7 @@ const expectedDocs = [
   "docs/runbooks/database-migrations.md",
   "docs/runbooks/platform-operations.md",
   "docs/runbooks/load-smoke-5-salons.md",
+  "scripts/release-readiness.mjs",
   "docs/adr/0009-modular-monolith-feature-architecture.md",
   "docs/adr/0010-server-only-admin-adapter-exceptions.md",
 ];

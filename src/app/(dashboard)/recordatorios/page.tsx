@@ -25,7 +25,7 @@ export default async function RecordatoriosPage() {
           Recordatorios
         </h1>
         <p className="text-sm text-stone-400 mt-0.5">
-          EnvÃ­a recordatorios de citas de los prÃ³ximos 7 dÃ­as.
+          Envia recordatorios de citas de los proximos 7 dias.
         </p>
       </div>
 

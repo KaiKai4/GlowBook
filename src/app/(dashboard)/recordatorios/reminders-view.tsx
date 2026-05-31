@@ -276,7 +276,7 @@ export function RemindersView({
                         <button
                           onClick={() => sendReminder(appt)}
                           disabled={!hasPhone}
-                          title={hasPhone ? "Enviar recordatorio por WhatsApp" : "Cliente sin teléfono"}
+                          title={hasPhone ? "Abrir recordatorio en WhatsApp" : "Cliente sin teléfono"}
                           className={cn(
                             "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all",
                             hasPhone

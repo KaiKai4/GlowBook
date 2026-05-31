@@ -5,6 +5,36 @@ Fecha: 2026-05-30
 Estado: checklist operativo. Un item marcado en produccion debe tener evidencia
 reciente: comando, captura de CI, Supabase dashboard, PR o runbook ejecutado.
 
+## Evidencia 2026-05-31
+
+Estado de decision: **no lanzar todavia**.
+
+Evidencia local completada:
+
+- `npm run release:readiness` agregado como gate ejecutable; actualmente bloquea
+  lanzamiento hasta confirmar staging, restore, smoke, logs, observability y
+  soporte. Resultado actual: 10 OK, 10 bloqueados.
+- `npx supabase migration list` paso: local/remoto coinciden desde
+  `20240101000000` hasta `20240101000027` para el proyecto enlazado
+  `eokiklkgutzrkhbamglf`.
+- `npm run ci:verify` paso: lint, guardrails, type-check, tests y build.
+- `npm run architecture:health` paso: guardrails, tests, E2E local, docs
+  vigentes y database types.
+- `npm run lint` paso con guardrails arquitectonicos.
+- `npm run type-check` paso.
+- Busqueda de mojibake comun en `src`, `docs`, `README.md` y `CONTEXT.md` sin matches.
+- Hotspots UI route-local revisados sin fugas a Supabase ni data Adapters.
+- Decision de recordatorios confirmada como MVP manual/read Module.
+
+Bloqueos externos:
+
+- `npm run test:e2e:staging` no puede correr hasta configurar
+  `GLOWBOOK_ENV=staging` y el resto de variables staging.
+- `npm run smoke:seed-5-salons` no puede correr hasta configurar
+  `GLOWBOOK_ENV=staging`, secrets staging y confirmacion de smoke.
+- Restore real requiere backup y destino staging/temporal.
+- Revision de Supabase logs/performance depende del smoke real.
+
 ## Arquitectura
 
 - [ ] `npm run architecture:check` pasa.

@@ -6,13 +6,16 @@ el historial git conserva ese contexto si hace falta consultarlo.
 
 ## Vigente
 
-- Auditoria vigente: `docs/architecture-audit-2026-05-30.md`
-- Fases vigentes: `docs/architecture-audit-phases-2026-05-30.md`
+- Auditoria vigente: `docs/architecture-audit-2026-05-31.md`
+- Auditoria base anterior: `docs/architecture-audit-2026-05-30.md`
+- Fases vigentes: `docs/architecture-audit-phases-2026-05-31.md`
+- Fases base anteriores: `docs/architecture-audit-phases-2026-05-30.md`
 - Contratos de base de datos: `docs/database-contracts.md`
 - Tests y checks Supabase: `docs/testing.md`
 - Politica de entornos: `docs/environments.md`
 - Seguridad operativa: `docs/security.md`
 - Checklist de lanzamiento 5+ salones: `docs/production-readiness-checklist.md`
+- Decision readiness 5+ salones: `docs/release-readiness-2026-05-31.md`
 - Inventario UI route-local: `docs/ui-route-local-inventory-2026-05-30.md`
 - Revision Auth Session: `docs/auth-session-review-2026-05-30.md`
 - Plan E2E critico: `docs/e2e-critical-flows.md`
@@ -67,6 +70,12 @@ Reporte opcional de salud arquitectonica:
 
 ```text
 npm run architecture:health
+```
+
+Gate de lanzamiento 5+ salones:
+
+```text
+npm run release:readiness
 ```
 
 ## Regla Practica

@@ -79,3 +79,32 @@ Destino recomendado:
 No se mueve UI en esta fase. El arbol actual no muestra una fuga clara de
 negocio hacia `src/app`. Mover por tamano reduciria Locality y crearia Seams
 cosmeticos.
+
+## Revision 2026-05-31
+
+Fuente: Fase 43 de `docs/architecture-audit-phases-2026-05-31.md`.
+
+Hotspots revisados:
+
+| Archivo | Lineas | Resultado |
+|---|---:|---|
+| `src/app/(dashboard)/salon/salon-settings.tsx` | 370 | UI route-local; consume Server Actions locales; sin Supabase ni data Adapters. |
+| `src/app/(dashboard)/appointments/appointments-calendar.tsx` | 317 | UI de calendario; consume `features/appointments/view-models`; sin persistencia directa. |
+| `src/app/(dashboard)/services/services-manager.tsx` | 306 | UI de gestion de catalogo; consume acciones locales; sin query shape. |
+| `src/app/(dashboard)/recordatorios/reminders-view.tsx` | 279 | UI de cola manual; consume view model y render de plantilla; sin envio real. |
+| `src/app/(dashboard)/reports/reports-view.tsx` | 265 | UI de reportes; las metricas viven en `features/reports`. |
+
+Busqueda ejecutada:
+
+```text
+rg '@/features/.*/data|@/lib/supabase|createSupabase' <hotspots>
+```
+
+Resultado: sin matches.
+
+Decision:
+
+No se extrae UI por tamano. Ningun hotspot muestra una Seam real que mejore
+Depth o Locality ahora. Mantenerlos como UI route-local y revisar de nuevo solo
+si aparece reuse, regla de dominio, query shape o necesidad de testear una
+Interface de feature.

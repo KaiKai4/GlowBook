@@ -9,6 +9,7 @@
     "lint": "eslint && node scripts/check-architecture.mjs",
     "architecture:check": "node scripts/check-architecture.mjs",
     "architecture:health": "node scripts/architecture-health.mjs",
+    "release:readiness": "node scripts/release-readiness.mjs",
     "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",
     "test": "vitest run",
     "test:e2e": "playwright test",
