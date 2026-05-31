@@ -5,9 +5,9 @@ Fecha: 2026-05-30
 Fuente: `docs/architecture-audit-2026-05-30.md`
 
 Este documento convierte la auditoria actual en fases de trabajo ejecutables.
-Continua despues de la Fase 16 del roadmap anterior, porque las fases 10-16 ya
-atacaron los problemas grandes de `app -> data`, read Modules, commands de
-citas, tests secundarios y guardrails basicos.
+Continua despues de la Fase 16 de la iteracion arquitectonica anterior, porque
+las fases 10-16 ya atacaron los problemas grandes de `app -> data`, read
+Modules, commands de citas, tests secundarios y guardrails basicos.
 
 La direccion arquitectonica se mantiene: GlowBook debe seguir como monolito
 modular feature-first. Estas fases no proponen microservicios ni una reescritura
@@ -191,7 +191,7 @@ Estado: implementada el 2026-05-30.
 
 Problemas que resuelve:
 
-- Existen auditorias, fases, roadmap y ADRs de fechas distintas.
+- Existen auditorias, fases y ADRs de fechas distintas.
 - Es facil abrir un documento viejo y creer que es el plan vigente.
 - Algunos features de alto riesgo no tienen una Interface documentada en texto.
 
@@ -200,7 +200,7 @@ Trabajo:
 1. Crear `docs/README.md` con:
    - auditoria vigente;
    - fases vigentes;
-   - roadmap historico;
+   - politica para retirar documentos reemplazados;
    - ADRs importantes;
    - contrato de base de datos.
 2. Marcar `docs/architecture-audit-2026-05-30.md` como auditoria vigente.
@@ -597,7 +597,7 @@ Fase 25  Dashboard tecnico de salud arquitectonica
 |---|---|
 | Use-cases llaman `@/lib/supabase/auth-admin` directamente | Fase 17 |
 | Excepciones privilegiadas no estan completamente enforceadas | Fase 18 |
-| Docs vigentes pueden confundirse con docs historicos | Fase 19 |
+| Docs vigentes pueden confundirse con docs reemplazados | Fase 19 |
 | Features de alto riesgo necesitan contrato textual corto | Fase 19 |
 | Tests skipped de Supabase/RPC | Fase 20 |
 | RLS/RPC necesita validacion ejecutable mas clara | Fase 20 |

@@ -221,7 +221,7 @@ Evaluacion:
 Muy buena. El proyecto tiene:
 
 - auditorias vigentes;
-- roadmaps historicos;
+- fases vigentes;
 - contratos de base de datos;
 - docs de testing;
 - docs E2E;
@@ -237,13 +237,14 @@ Fortalezas:
 
 Riesgo:
 
-- Hay bastante historial. Esto es sano si `docs/README.md` se mantiene como
-  mapa; se vuelve deuda si alguien abre un documento viejo como si fuera actual.
+- Hay bastante documentacion operativa. Esto es sano si `docs/README.md` se
+  mantiene como mapa; se vuelve deuda si documentos reemplazados permanecen
+  junto a los vigentes sin contexto claro.
 
 Mejora recomendada:
 
-- Mantener documentos historicos, pero moverlos a `docs/archive/` si vuelven a
-  causar confusion.
+- Retirar o archivar documentos reemplazados despues de leerlos, y mantener
+  `docs/README.md` como fuente de orientacion para trabajo nuevo.
 
 ## `docs/adr`
 
@@ -1048,7 +1049,8 @@ Pendientes principales:
 1. CI ejecutando todos los gates.
 2. Regenerar/verificar `database.types.ts`.
 3. Agregar audit log de plataforma.
-4. Mantener docs vigentes y archivar historicos si molestan.
+4. Mantener docs vigentes y retirar documentos reemplazados si generan
+   confusion.
 
 Para lanzar con 5 salones o mas:
 

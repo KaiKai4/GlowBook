@@ -85,8 +85,11 @@ Do not create empty `domain`, `data` or `use-cases` folders for appearance. A fo
 
 Additional architecture docs:
 
-- `docs/architecture-audit.md`
-- `docs/modular-monolith-roadmap.md`
+- `docs/README.md`
+- `docs/architecture-audit-2026-05-30.md`
+- `docs/architecture-audit-phases-2026-05-30.md`
+- `docs/architecture-production-readiness-audit-2026-05-30.md`
+- `docs/architecture-production-readiness-phases-2026-05-30.md`
 - `docs/database-contracts.md`
 - `docs/production-readiness-checklist.md`
 - `docs/environments.md`

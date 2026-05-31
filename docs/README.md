@@ -1,7 +1,8 @@
 # Documentacion De Arquitectura
 
-Este indice marca los documentos vigentes para no confundir auditorias
-historicas con el plan actual.
+Este indice marca los documentos vigentes. Las auditorias y roadmaps
+reemplazados se retiran cuando dejan de reflejar el estado real del proyecto;
+el historial git conserva ese contexto si hace falta consultarlo.
 
 ## Vigente
 
@@ -28,16 +29,6 @@ historicas con el plan actual.
 - Migraciones de base de datos: `docs/runbooks/database-migrations.md`
 - Operaciones Platform: `docs/runbooks/platform-operations.md`
 - Load smoke 5 salones: `docs/runbooks/load-smoke-5-salons.md`
-
-## Roadmaps Historicos
-
-- `docs/modular-monolith-roadmap.md`
-- `docs/architecture-audit-phases-2026-05-29.md`
-- `docs/architecture-audit-2026-05-29.md`
-- `docs/architecture-audit.md`
-
-Estos documentos sirven como contexto historico. Para trabajo nuevo, usar la
-auditoria y fases del 2026-05-30.
 
 ## ADRs De Mayor Peso
 

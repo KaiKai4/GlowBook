@@ -223,17 +223,24 @@ Mejoras recomendadas:
 
 Responsabilidad:
 
-Explicar decisiones, contratos, auditorias y roadmap arquitectonico.
+Explicar decisiones, contratos, auditorias y fases arquitectonicas vigentes.
 
 Estado:
 
 Muy valioso para evitar que el monolito modular dependa solo de memoria
 individual. Existen:
 
-- auditorias previas;
-- roadmap de monolito modular;
+- auditoria vigente;
+- fases vigentes;
 - contratos de base de datos;
-- ADRs.
+- ADRs;
+- runbooks y checklist operativos.
+
+Nota 2026-05-31:
+
+Las auditorias y roadmaps reemplazados por el corte del 2026-05-30 fueron
+retirados de `docs/` para evitar deriva documental. El historial git conserva
+ese contexto si se necesita consultar.
 
 Evaluacion:
 
@@ -247,11 +254,10 @@ riesgo no es tener muchos `.md`, sino no saber cual es el vigente.
 
 Mejoras recomendadas:
 
-- declarar en `docs/README.md` o en el roadmap cual documento es la auditoria
-  vigente;
+- declarar en `docs/README.md` cual documento es la auditoria vigente;
 - no borrar auditorias importantes sin leerlas primero;
-- si se archivan documentos, moverlos a una carpeta `docs/archive/` en vez de
-  eliminarlos.
+- retirar o archivar documentos reemplazados cuando ya no describan el estado
+  actual del proyecto.
 
 ## `docs/adr`
 
@@ -1181,7 +1187,8 @@ Prioridad media:
 
 Prioridad baja:
 
-6. Crear un indice de docs que diga cual auditoria/roadmap esta vigente.
+6. Mantener un indice de docs que diga cual auditoria y cuales fases estan
+   vigentes.
 
 7. Agregar pequenos README por feature solo si el equipo necesita navegar mas
    rapido los limites de cada modulo.
