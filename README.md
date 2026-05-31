@@ -88,6 +88,9 @@ Additional architecture docs:
 - `docs/architecture-audit.md`
 - `docs/modular-monolith-roadmap.md`
 - `docs/database-contracts.md`
+- `docs/production-readiness-checklist.md`
+- `docs/environments.md`
+- `docs/security.md`
 
 ## Supabase Contracts
 
@@ -115,9 +118,13 @@ npm run lint         # Run ESLint and architecture guardrails
 npm run architecture:check # Run architecture guardrails only
 npm run ci:verify   # Reproduce mandatory CI gates locally
 npm run test         # Run Vitest
+npm run test:e2e     # Run local Playwright critical flows
+npm run test:e2e:staging # Run Playwright against deployed staging
 npm run type-check   # Run TypeScript without emitting
 npm run db:types     # Regenerate Supabase generated types
 npm run db:migrate   # Push Supabase migrations
+npm run smoke:seed-5-salons # Seed realistic staging smoke data
+npm run smoke:cleanup-5-salons # Cleanup a staging smoke batch
 npm run bootstrap:admin -- <email> <password>
 ```
 
@@ -155,11 +162,17 @@ security or data integrity changed.
 
 Use `.env.local` for local development. The expected public and server variables include:
 
+- `GLOWBOOK_ENV`
+- `APP_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `PRODUCTION_SUPABASE_URL`
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` through `NEXT_PUBLIC_*` or browser code.
+
+See `docs/environments.md` before running E2E fixtures or smoke seeds against
+shared Supabase projects.
 
 ## Bootstrap
 

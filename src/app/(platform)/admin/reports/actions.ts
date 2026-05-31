@@ -7,10 +7,10 @@ import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedb
 // Form action: toggle a report between 'new' and 'resolved'. Returns void
 // (React form actions must), authorization enforced by requirePlatformAdmin.
 export async function setFeedbackStatusAction(formData: FormData): Promise<void> {
-  await requirePlatformAdmin();
+  const actorUserId = await requirePlatformAdmin();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") === "resolved" ? "resolved" : "new";
   if (!id) return;
-  await setFeedbackReportStatus({ id, status });
+  await setFeedbackReportStatus({ id, status, actorUserId });
   revalidatePath("/admin/reports");
 }

@@ -1,5 +1,13 @@
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { Building2, MailOpen, LayoutDashboard, Sparkles, MessageSquareWarning, LogOut } from "lucide-react";
+import {
+  Building2,
+  History,
+  MailOpen,
+  LayoutDashboard,
+  Sparkles,
+  MessageSquareWarning,
+  LogOut,
+} from "lucide-react";
 import Link from "next/link";
 
 export default async function PlatformAdminLayout({
@@ -29,6 +37,7 @@ export default async function PlatformAdminLayout({
               { href: "/admin/salons", label: "Salones", icon: Building2 },
               { href: "/admin/invitations", label: "Invitaciones", icon: MailOpen },
               { href: "/admin/reports", label: "Reportes", icon: MessageSquareWarning },
+              { href: "/admin/audit", label: "Auditoria", icon: History },
             ].map((item) => (
               <li key={item.href}>
                 <Link

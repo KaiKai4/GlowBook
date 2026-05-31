@@ -10,6 +10,7 @@ import {
   findPlatformOwnerAuthUserByEmail,
   updatePlatformOwnerAuthUser,
 } from "@/features/platform/data/platform-auth.repo";
+import { captureError } from "@/lib/observability";
 import { personNameField } from "@/lib/validation/name";
 import { z } from "zod";
 
@@ -40,7 +41,11 @@ function translateAcceptError(message: string): string {
 async function rollbackCreatedOwner(userId: string): Promise<void> {
   const { error } = await deletePlatformOwnerAuthUser(userId);
   if (error && error.status !== 404) {
-    console.error("[platform:accept-invitation:rollback]", error);
+    captureError(error, {
+      module: "platform",
+      action: "accept_invitation_rollback",
+      metadata: { userId },
+    });
   }
 }
 
@@ -51,12 +56,17 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
   if (!parsed.success) return err(parsed.error.issues[0].message);
 
   const { token, email, password, salon_name, full_name } = parsed.data;
+  const emailDomain = email.split("@").at(-1) ?? "unknown";
 
   let invitation;
   try {
     invitation = await findSalonInvitationForAcceptance(token);
   } catch (error) {
-    console.error("[platform:accept-invitation]", error);
+    captureError(error, {
+      module: "platform",
+      action: "accept_invitation_lookup",
+      metadata: { emailDomain },
+    });
     return err("No se pudo verificar la invitacion.");
   }
 
@@ -90,7 +100,11 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     try {
       hasProfile = await profileExists(existing.data.id);
     } catch (error) {
-      console.error("[platform:accept-invitation]", error);
+      captureError(error, {
+        module: "platform",
+        action: "accept_invitation_existing_profile",
+        metadata: { emailDomain },
+      });
       return err("No se pudo verificar la cuenta existente.");
     }
 
@@ -121,6 +135,11 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     });
   } catch (error) {
     if (createdNewUser) await rollbackCreatedOwner(userId);
+    captureError(error, {
+      module: "platform",
+      action: "accept_invitation",
+      metadata: { emailDomain, createdNewUser },
+    });
     const message = error instanceof Error ? error.message : "Error desconocido";
     return err(translateAcceptError(message));
   }

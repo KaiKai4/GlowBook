@@ -57,6 +57,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+      GLOWBOOK_ENV: staging
       E2E_SALON_OWNER_EMAIL: ${{ secrets.E2E_SALON_OWNER_EMAIL }}
       E2E_SALON_OWNER_PASSWORD: ${{ secrets.E2E_SALON_OWNER_PASSWORD }}
       E2E_PLATFORM_ADMIN_EMAIL: ${{ secrets.E2E_PLATFORM_ADMIN_EMAIL }}
@@ -75,11 +78,11 @@ jobs:
         id: e2e-env
         shell: bash
         run: |
-          if [[ -n "$NEXT_PUBLIC_SUPABASE_URL" && -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" && -n "$SUPABASE_SERVICE_ROLE_KEY" ]]; then
+          if [[ -n "$E2E_BASE_URL" && -n "$NEXT_PUBLIC_SUPABASE_URL" && -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" && -n "$SUPABASE_SERVICE_ROLE_KEY" ]]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping E2E and architecture:health because Supabase staging secrets are not configured."
+            echo "::notice::Skipping staging E2E and architecture:health because E2E_BASE_URL or Supabase staging secrets are not configured."
           fi
 
       - name: Install dependencies
@@ -92,7 +95,7 @@ jobs:
 
       - name: E2E critical flows
         if: steps.e2e-env.outputs.ready == 'true'
-        run: npm run test:e2e
+        run: npm run test:e2e:staging
 
       - name: Architecture health report
         if: steps.e2e-env.outputs.ready == 'true'

@@ -73,6 +73,7 @@ These constraints are final data-integrity guards. TypeScript should still valid
 | `accept_invitation_admin(...)` | `20240101000006_invite_admin_accept.sql`, updated by `20240101000021` | `src/features/platform/use-cases/accept-invitation.ts` | Server-side creation of Salon + Owner after Auth account handling. |
 | `create_salon_with_owner(...)` | `20240101000002_rbac_seed_and_platform.sql`, `20240101000006`, `20240101000009` | `src/features/platform` | Atomic Salon + Owner setup. |
 | `platform_salon_overviews()` | `20240101000025_platform_salon_overviews.sql`, `20240101000026_platform_salon_overviews_grants.sql` | `src/features/platform/data/salon-overviews.repo.ts` | Platform read model for `/admin/salons`. Keeps Salon overview reads at one RPC instead of N queries per Salon; executable only through `service_role`. |
+| `platform_audit_log` | `20240101000027_platform_audit_log.sql` | `src/features/platform/data/platform-audit.repo.ts`, `src/features/platform/use-cases/platform-audit.ts`, `src/features/platform/use-cases/get-platform-audit-log.ts` | Audit trail for high-impact Platform actions. Writable only through server-only Platform audit Adapter; readable by Platform admins through RLS and `/admin/audit`. |
 | `delete_salon_completely(p_salon_id uuid)` | `20240101000016_delete_salon_completely_rpc.sql` | `src/features/platform/data/delete-salon.repo.ts` | Transactional public data deletion for a Salon. Auth cleanup happens after RPC. |
 
 Complete Salon deletion is irreversible and must remain Platform-only.
@@ -143,8 +144,10 @@ After any schema, enum, view or RPC change:
 5. Run affected unit/RPC/RLS tests.
 
 Phase 26 regenerated the file against the linked project after confirming local
-and remote migrations match through `20240101000026`. The generated shape did
-not change; the diff normalized the file encoding at the start of the file.
+and remote migrations match through `20240101000026`. Phase 31 adds
+`20240101000027_platform_audit_log.sql`; the migration was pushed and
+`npm run db:types` regenerated `Database["public"]["Tables"]["platform_audit_log"]`
+as part of the generated contract.
 
 ## Supabase Test Contract
 

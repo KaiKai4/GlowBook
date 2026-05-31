@@ -36,3 +36,22 @@ export async function setSalonDisabledFeatures(
   const { error } = await admin.from("salons").update(update).eq("id", salonId);
   if (error) throw error;
 }
+
+export async function setSalonActiveStatus(
+  salonId: string,
+  isActive: boolean
+): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const update: Database["public"]["Tables"]["salons"]["Update"] = {
+    is_active: isActive,
+  };
+  const { data, error } = await admin
+    .from("salons")
+    .update(update)
+    .eq("id", salonId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error("Salon no encontrado.");
+}

@@ -43,6 +43,7 @@ The currently authorized service-role data Adapters are:
 - `src/features/platform/data/salons.repo.ts` for Platform Salon administration reads/writes.
 - `src/features/platform/data/salon-overviews.repo.ts` for the Platform Salon overview read model.
 - `src/features/platform/data/invitations.repo.ts` for Platform invitation reads and protected invitation acceptance RPCs.
+- `src/features/platform/data/platform-audit.repo.ts` for audit logging of high-impact Platform actions.
 - `src/features/platform/data/delete-salon.repo.ts` for protected Salon deletion RPC workflows.
 - `src/features/platform/data/feedback-moderation.repo.ts` for Platform feedback moderation.
 - `src/features/employees/data/employee-access.repo.ts` for collaborator invitations, profile linkage and collaborator-access cleanup.
@@ -56,6 +57,7 @@ Allowed use cases:
    - cross-tenant reads for `/admin`
    - Salon activation/suspension
    - Platform feedback moderation
+   - Platform audit logging
    - protected Salon deletion workflow
 2. Closed onboarding:
    - create or reuse the invited Owner Auth account

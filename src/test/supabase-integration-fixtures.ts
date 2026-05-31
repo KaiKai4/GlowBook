@@ -49,6 +49,31 @@ export function loadEnvFileIfPresent() {
   }
 }
 
+function normalizeUrl(value: string): string {
+  return value.replace(/\/+$/, "").toLowerCase();
+}
+
+function assertSafeIntegrationTarget(env: SupabaseIntegrationEnv): void {
+  const appEnv = (
+    process.env.GLOWBOOK_ENV ??
+    process.env.APP_ENV ??
+    process.env.VERCEL_ENV ??
+    ""
+  ).toLowerCase();
+  const productionUrl = process.env.PRODUCTION_SUPABASE_URL;
+
+  if (appEnv === "production") {
+    throw new Error("Supabase integration fixtures cannot run when the app environment is production.");
+  }
+
+  if (
+    productionUrl &&
+    normalizeUrl(env.url) === normalizeUrl(productionUrl)
+  ) {
+    throw new Error("Supabase integration fixtures refused to run against PRODUCTION_SUPABASE_URL.");
+  }
+}
+
 export function getSupabaseIntegrationEnv(): SupabaseIntegrationEnv | null {
   loadEnvFileIfPresent();
 
@@ -57,7 +82,9 @@ export function getSupabaseIntegrationEnv(): SupabaseIntegrationEnv | null {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !anonKey || !serviceRoleKey) return null;
-  return { url, anonKey, serviceRoleKey };
+  const env = { url, anonKey, serviceRoleKey };
+  assertSafeIntegrationTarget(env);
+  return env;
 }
 
 export function createIntegrationAdminClient(

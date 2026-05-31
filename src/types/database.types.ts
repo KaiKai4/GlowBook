@@ -633,6 +633,45 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json
+          status: string
+          target_resource_id: string | null
+          target_resource_type: string | null
+          target_salon_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          status: string
+          target_resource_id?: string | null
+          target_resource_type?: string | null
+          target_salon_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          status?: string
+          target_resource_id?: string | null
+          target_resource_type?: string | null
+          target_salon_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

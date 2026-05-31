@@ -1,14 +1,27 @@
 import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
+import { captureError } from "@/lib/observability";
 import type { Result } from "@/lib/result";
+import { recordPlatformAction } from "./platform-audit";
+
+export interface DeleteSalonInput {
+  salonId: string;
+  confirmation: string;
+  actorUserId?: string | null;
+}
 
 export async function deleteSalon({
   salonId,
   confirmation,
-}: {
-  salonId: string;
-  confirmation: string;
-}): Promise<Result<void>> {
+  actorUserId,
+}: DeleteSalonInput): Promise<Result<void>> {
   if (confirmation !== salonId) {
+    await recordPlatformAction({
+      actorUserId: actorUserId ?? null,
+      action: "delete_salon",
+      status: "failed",
+      targetSalonId: salonId,
+      errorMessage: "Confirmation mismatch.",
+    });
     return {
       ok: false,
       error: "Para eliminar el salon debes escribir exactamente su ID.",
@@ -17,10 +30,27 @@ export async function deleteSalon({
 
   try {
     await deleteSalonCompletely(salonId);
+    await recordPlatformAction({
+      actorUserId: actorUserId ?? null,
+      action: "delete_salon",
+      status: "succeeded",
+      targetSalonId: salonId,
+    });
     return { ok: true, value: undefined };
   } catch (error) {
-    console.error("[platform:delete-salon]", error);
+    captureError(error, {
+      module: "platform",
+      action: "delete_salon",
+      metadata: { salonId },
+    });
     const message = error instanceof Error ? error.message : "Error desconocido";
+    await recordPlatformAction({
+      actorUserId: actorUserId ?? null,
+      action: "delete_salon",
+      status: "failed",
+      targetSalonId: salonId,
+      errorMessage: message,
+    });
     return {
       ok: false,
       error: `No se pudo eliminar el salon y sus datos. Detalle: ${message}`,

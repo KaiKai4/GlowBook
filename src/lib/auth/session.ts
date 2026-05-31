@@ -57,7 +57,18 @@ export async function isPlatformAdmin(): Promise<boolean> {
   return data !== null;
 }
 
-export async function requirePlatformAdmin(): Promise<void> {
-  const isAdmin = await isPlatformAdmin();
-  if (!isAdmin) redirect("/login");
+export async function requirePlatformAdmin(): Promise<string> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("platform_admins")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!data) redirect("/login");
+  return user.id;
 }

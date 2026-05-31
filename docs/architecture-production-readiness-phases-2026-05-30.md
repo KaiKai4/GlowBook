@@ -161,8 +161,9 @@ Resultado implementado:
   - `npm run test`
   - `npm run build`
 - Se agrego job `E2E And Architecture Health` para `main` y ejecuciones
-  manuales. Corre `npm run test:e2e` y `npm run architecture:health` cuando
-  existen secretos Supabase de staging.
+  manuales. Corre `npm run test:e2e:staging` y
+  `npm run architecture:health` cuando existen `E2E_BASE_URL` y secretos
+  Supabase de staging.
 - Se agrego `npm run ci:verify` para reproducir localmente los gates
   obligatorios de PR.
 - `README.md` y `docs/README.md` documentan el flujo.
@@ -170,6 +171,9 @@ Resultado implementado:
 ## Fase 28 - Staging Separado Y Politica De Entornos
 
 Prioridad: bloqueante antes de produccion.
+
+Estado: implementada en repo el 2026-05-30. Pendiente externo: crear/verificar
+el proyecto Supabase staging real y cargar sus secrets en hosting/CI.
 
 Objetivo: tener un entorno realista donde validar Supabase, E2E y migraciones
 sin tocar produccion.
@@ -210,9 +214,24 @@ Criterio de terminado:
 
 Riesgo: medio-alto.
 
+Resultado implementado:
+
+- Se agrego `docs/environments.md`.
+- `.env.local.example` define `GLOWBOOK_ENV`, `APP_URL`,
+  `PRODUCTION_SUPABASE_URL`, `E2E_BASE_URL` y credenciales E2E.
+- `src/test/supabase-integration-fixtures.ts` bloquea fixtures cuando el
+  entorno es production o cuando Supabase coincide con
+  `PRODUCTION_SUPABASE_URL`.
+- `npm run test:e2e:staging` valida entorno staging antes de ejecutar
+  Playwright.
+- CI espera `E2E_BASE_URL` y secrets Supabase staging para correr E2E/health.
+
 ## Fase 29 - Backups, Restore Y Migraciones De Produccion
 
 Prioridad: bloqueante antes de produccion.
+
+Estado: implementada como runbooks y checklist el 2026-05-30. Pendiente
+externo: ejecutar un restore real cuando exista backup/staging temporal.
 
 Objetivo: asegurar que los datos de salones pueden recuperarse y que las
 migraciones tienen ruta de aplicacion y rollback.
@@ -250,9 +269,20 @@ Criterio de terminado:
 
 Riesgo: alto.
 
+Resultado implementado:
+
+- Se agrego `docs/runbooks/database-restore.md`.
+- Se agrego `docs/runbooks/database-migrations.md`.
+- `docs/production-readiness-checklist.md` exige backup reciente, restore
+  probado y evidencias antes de production.
+- `docs/database-contracts.md` documenta el flujo de migracion/tipos y el nuevo
+  contrato `platform_audit_log`.
+
 ## Fase 30 - Adapter De Observabilidad De Produccion
 
 Prioridad: alta antes de produccion.
+
+Estado: implementada el 2026-05-30.
 
 Objetivo: concentrar logging/error reporting/metricas basicas en un Adapter
 transversal sin acoplar Modules de negocio a un proveedor especifico.
@@ -299,9 +329,24 @@ Criterio de terminado:
 
 Riesgo: medio.
 
+Resultado implementado:
+
+- Se creo `src/lib/observability`.
+- Interface inicial: `captureError` y `logEvent`.
+- El Adapter sanitiza metadata sensible por nombre de clave.
+- Se integro en operaciones Platform criticas:
+  - invitar Salon;
+  - aceptar invitacion de Salon;
+  - borrar Salon;
+  - actualizar features de Salon;
+  - moderar feedback.
+- Tests de observabilidad validan que no ensucia consola durante tests.
+
 ## Fase 31 - Platform Audit Log Module
 
 Prioridad: alta antes de operar 5+ salones.
+
+Estado: implementada el 2026-05-30.
 
 Objetivo: registrar acciones administrativas de Plataforma con trazabilidad
 auditable.
@@ -351,9 +396,35 @@ Criterio de terminado:
 
 Riesgo: medio-alto.
 
+Resultado implementado:
+
+- Se creo `supabase/migrations/20240101000027_platform_audit_log.sql`.
+- Se aplico la migracion remota con `npm run db:migrate`.
+- Se regenero `src/types/database.types.ts` con `npm run db:types`.
+- Se creo `src/features/platform/data/platform-audit.repo.ts`.
+- Se creo `src/features/platform/use-cases/platform-audit.ts`.
+- Se creo `src/features/platform/use-cases/get-platform-audit-log.ts`.
+- Se creo la Interface `/admin/audit` para revisar eventos y filtrar por accion
+  o estado.
+- `requirePlatformAdmin()` ahora devuelve el `actorUserId` autenticado.
+- Server Actions de Plataforma pasan `actorUserId` al Module.
+- Se registra audit log en:
+  - `invite_salon`;
+  - `set_salon_status`;
+  - `update_salon_features`;
+  - `delete_salon`;
+  - `set_feedback_status`.
+- Se implemento suspension/reactivacion de Salon desde `/admin/salons`.
+- Se actualizaron tests de invitaciones, borrado y feedback.
+- Se agregaron tests de `update-salon-features` y `update-salon-status`.
+- ADR 0010 y `docs/database-contracts.md` documentan el Adapter privilegiado.
+
 ## Fase 32 - Hardening De Seguridad De Produccion
 
 Prioridad: alta.
+
+Estado: implementada en repo el 2026-05-30. Pendiente externo: probar headers
+en el hosting real y activar rate limiting si aparece abuso.
 
 Objetivo: cerrar seguridad operativa alrededor de headers, secrets, rate
 limiting y operaciones sensibles.
@@ -400,9 +471,25 @@ Criterio de terminado:
 
 Riesgo: medio.
 
+Resultado implementado:
+
+- `next.config.ts` define headers base:
+  - `X-Frame-Options`;
+  - `X-Content-Type-Options`;
+  - `Referrer-Policy`;
+  - `Permissions-Policy`;
+  - `Cross-Origin-Opener-Policy`.
+- Se desactivo `poweredByHeader`.
+- Se agrego `docs/security.md` con politica de secrets, service role y rate
+  limiting.
+- `.env.local.example` documenta guards de entorno y secrets server-only.
+
 ## Fase 33 - E2E Contra Staging Desplegado
 
 Prioridad: alta.
+
+Estado: implementada en repo el 2026-05-30. Pendiente externo: configurar
+`E2E_BASE_URL` de staging desplegado y ejecutar la suite contra ese deploy.
 
 Objetivo: validar flujos criticos contra un entorno desplegado, no solo contra
 dev server local.
@@ -431,15 +518,27 @@ Archivos esperados:
 
 Criterio de terminado:
 
-- `npm run test:e2e` puede correr contra staging con `E2E_BASE_URL`.
+- `npm run test:e2e:staging` puede correr contra staging con `E2E_BASE_URL`.
 - No deja datos temporales.
 - Falla rapido si cookies/auth/redirects del deploy estan mal.
 
 Riesgo: medio.
 
+Resultado implementado:
+
+- Se agrego `npm run test:e2e:staging`.
+- Se agrego `scripts/require-staging-e2e-env.mjs` con guard de staging y
+  ejecucion de Playwright.
+- `docs/e2e-critical-flows.md` documenta variables y comando de staging.
+- CI corre E2E contra staging desplegado cuando existen `E2E_BASE_URL` y
+  secrets Supabase staging.
+
 ## Fase 34 - Load Smoke Con Datos Realistas De 5 Salones
 
 Prioridad: alta para lanzamiento 5+ salones.
+
+Estado: implementada como seed y runbook el 2026-05-30. Pendiente externo:
+ejecutar el smoke en staging desplegado y registrar metricas.
 
 Objetivo: comprobar que la arquitectura y los queries principales soportan un
 volumen inicial realista.
@@ -484,9 +583,27 @@ Criterio de terminado:
 
 Riesgo: medio.
 
+Resultado implementado:
+
+- Se agrego `scripts/seed-staging-smoke.mjs`.
+- Se agrego `npm run smoke:seed-5-salons`.
+- Se agrego `scripts/cleanup-staging-smoke.mjs`.
+- Se agrego `npm run smoke:cleanup-5-salons`.
+- El seed crea 5 salones con owners, colaboradores, categorias, servicios,
+  clientes, citas y horarios.
+- El script exige `GLOWBOOK_ENV=staging`,
+  `SMOKE_SEED_CONFIRM=seed-5-salons` y bloquea production URL.
+- El cleanup exige `SMOKE_SEED_BATCH_ID`,
+  `SMOKE_CLEANUP_CONFIRM=cleanup-5-salons` y borra el batch con el RPC
+  transaccional de eliminacion completa de Salon.
+- Se agrego `docs/runbooks/load-smoke-5-salons.md` con rutas y umbrales.
+
 ## Fase 35 - Decision Y Module De Recordatorios Reales
 
 Prioridad: condicional.
+
+Estado: decision documentada el 2026-05-30. No se implementa envio real hasta
+que el producto confirme canal/proveedor.
 
 Objetivo: decidir si recordatorios reales forman parte del lanzamiento y, si si,
 crear el Module de envio sin contaminar el read Module actual.
@@ -538,9 +655,19 @@ Criterio de terminado:
 
 Riesgo: medio-alto.
 
+Resultado implementado:
+
+- Se agrego `docs/reminders-launch-decision.md`.
+- Decision actual: `features/reminders` permanece como read Module operativo
+  para MVP.
+- El documento lista los use-cases y Adapters requeridos si el lanzamiento
+  promete envio real.
+
 ## Fase 36 - Checklist Final De Lanzamiento Y Runbooks
 
 Prioridad: bloqueante antes de produccion.
+
+Estado: implementada el 2026-05-30.
 
 Objetivo: tener un documento operativo unico para decidir si GlowBook puede
 salir a produccion con 5+ salones.
@@ -589,6 +716,18 @@ Criterio de terminado:
 - No se depende de memoria individual.
 
 Riesgo: bajo-medio.
+
+Resultado implementado:
+
+- Se creo `docs/production-readiness-checklist.md`.
+- Se crearon runbooks:
+  - `docs/runbooks/deploy.md`;
+  - `docs/runbooks/rollback.md`;
+  - `docs/runbooks/database-restore.md`;
+  - `docs/runbooks/database-migrations.md`;
+  - `docs/runbooks/platform-operations.md`;
+  - `docs/runbooks/load-smoke-5-salons.md`.
+- `docs/README.md` enlaza los documentos vigentes.
 
 ## Orden Recomendado
 

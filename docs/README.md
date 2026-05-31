@@ -9,12 +9,25 @@ historicas con el plan actual.
 - Fases vigentes: `docs/architecture-audit-phases-2026-05-30.md`
 - Contratos de base de datos: `docs/database-contracts.md`
 - Tests y checks Supabase: `docs/testing.md`
+- Politica de entornos: `docs/environments.md`
+- Seguridad operativa: `docs/security.md`
+- Checklist de lanzamiento 5+ salones: `docs/production-readiness-checklist.md`
 - Inventario UI route-local: `docs/ui-route-local-inventory-2026-05-30.md`
 - Revision Auth Session: `docs/auth-session-review-2026-05-30.md`
 - Plan E2E critico: `docs/e2e-critical-flows.md`
+- Decision recordatorios lanzamiento: `docs/reminders-launch-decision.md`
 - Verificacion fases 17-25: `docs/architecture-phases-17-25-verification-2026-05-30.md`
 - Auditoria de arquitectura y produccion: `docs/architecture-production-readiness-audit-2026-05-30.md`
 - Fases de produccion 5+ salones: `docs/architecture-production-readiness-phases-2026-05-30.md`
+
+## Runbooks Operativos
+
+- Deploy: `docs/runbooks/deploy.md`
+- Rollback: `docs/runbooks/rollback.md`
+- Restore de base de datos: `docs/runbooks/database-restore.md`
+- Migraciones de base de datos: `docs/runbooks/database-migrations.md`
+- Operaciones Platform: `docs/runbooks/platform-operations.md`
+- Load smoke 5 salones: `docs/runbooks/load-smoke-5-salons.md`
 
 ## Roadmaps Historicos
 
@@ -52,6 +65,12 @@ npm run build
 La rama `main` y ejecuciones manuales de CI corren tambien E2E y
 `architecture:health` cuando los secretos Supabase de staging estan
 configurados.
+
+E2E contra staging desplegado:
+
+```text
+npm run test:e2e:staging
+```
 
 Reporte opcional de salud arquitectonica:
 

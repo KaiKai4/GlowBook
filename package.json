@@ -12,11 +12,14 @@
     "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:staging": "node scripts/require-staging-e2e-env.mjs",
     "test:e2e:ui": "playwright test --ui",
     "type-check": "tsc --noEmit",
     "db:types": "npx supabase gen types typescript --linked > src/types/database.types.ts",
     "db:migrate": "npx supabase db push",
-    "bootstrap:admin": "node --env-file=.env.local scripts/bootstrap-platform-admin.mjs"
+    "bootstrap:admin": "node --env-file=.env.local scripts/bootstrap-platform-admin.mjs",
+    "smoke:seed-5-salons": "node scripts/seed-staging-smoke.mjs",
+    "smoke:cleanup-5-salons": "node scripts/cleanup-staging-smoke.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

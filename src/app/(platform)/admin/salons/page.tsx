@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteSalonButton } from "./delete-salon-button";
 import { SalonFeaturesControl } from "./salon-features-control";
+import { SalonStatusControl } from "./salon-status-control";
 
 export default async function PlatformSalonsPage() {
   await requirePlatformAdmin();
@@ -105,7 +106,14 @@ export default async function PlatformSalonsPage() {
                         />
                       </td>
                       <td className="px-3 py-4 text-right">
-                        <DeleteSalonButton salonId={salon.id} salonName={salon.name} />
+                        <div className="flex flex-col items-end gap-2">
+                          <SalonStatusControl
+                            salonId={salon.id}
+                            salonName={salon.name}
+                            isActive={salon.is_active}
+                          />
+                          <DeleteSalonButton salonId={salon.id} salonName={salon.name} />
+                        </div>
                       </td>
                     </tr>
                   ))}

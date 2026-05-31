@@ -23,6 +23,8 @@ Motivo:
 6. Invitar colaborador.
 7. Platform admin ve salones.
 8. Feature deshabilitada no aparece en navegacion y no es accesible por ruta.
+9. Platform admin abre auditoria.
+10. Platform admin abre invitaciones.
 
 ## Requisitos Antes De Crear Tests
 
@@ -45,6 +47,7 @@ Scripts:
 
 ```text
 npm run test:e2e
+npm run test:e2e:staging
 npm run test:e2e:ui
 ```
 
@@ -93,6 +96,8 @@ Cobertura actual:
 - archivar y reactivar cliente;
 - generar enlace de invitacion para colaborador;
 - Platform admin ve salones;
+- Platform admin abre `/admin/audit`;
+- Platform admin abre `/admin/invitations`;
 - feature deshabilitada no aparece en navegacion y `/appointments` no es accesible;
 - logout vuelve a login.
 
@@ -100,7 +105,32 @@ Estado verificado:
 
 ```text
 npm run test:e2e
-11 passed
+13 passed
 ```
 
 Los flujos autenticados corren con fixtures temporales cuando hay service role.
+
+## E2E Contra Staging
+
+Para validar el deploy real, usar:
+
+```text
+npm run test:e2e:staging
+```
+
+Ese comando exige:
+
+```text
+GLOWBOOK_ENV=staging
+E2E_BASE_URL=https://staging...
+NEXT_PUBLIC_SUPABASE_URL=https://staging...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+PRODUCTION_SUPABASE_URL=https://production...
+```
+
+El guard se niega a correr si el entorno es `production` o si la URL de
+Supabase coincide con `PRODUCTION_SUPABASE_URL`.
+
+En CI, el job E2E/health de `main` corre contra staging desplegado solo cuando
+existen `E2E_BASE_URL` y los secretos Supabase de staging.
