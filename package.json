@@ -10,6 +10,7 @@
     "architecture:check": "node scripts/check-architecture.mjs",
     "architecture:health": "node scripts/architecture-health.mjs",
     "release:readiness": "node scripts/release-readiness.mjs",
+    "release:scale-readiness": "node scripts/release-scale-readiness.mjs",
     "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",
     "test": "vitest run",
     "test:e2e": "playwright test",
@@ -20,7 +21,9 @@
     "db:migrate": "npx supabase db push",
     "bootstrap:admin": "node --env-file=.env.local scripts/bootstrap-platform-admin.mjs",
     "smoke:seed-5-salons": "node scripts/seed-staging-smoke.mjs",
-    "smoke:cleanup-5-salons": "node scripts/cleanup-staging-smoke.mjs"
+    "smoke:cleanup-5-salons": "node scripts/cleanup-staging-smoke.mjs",
+    "scale:seed-salons": "node scripts/seed-staging-scale.mjs",
+    "scale:cleanup-salons": "node scripts/cleanup-staging-scale.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

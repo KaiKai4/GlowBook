@@ -92,3 +92,25 @@ Decision actual para MVP:
 Si aparece abuso antes del lanzamiento, crear un Adapter dedicado en
 `src/lib/rate-limit` y aplicarlo primero a login, invitaciones y operaciones
 Platform destructivas.
+
+Decision para lanzamiento amplio:
+
+- revisar rate limiting del hosting para `login`, `invite`, `join`, feedback y
+  operaciones Platform;
+- revisar limites de Supabase Auth antes de campanas publicas;
+- mantener un Adapter propio en `src/lib/rate-limit` como Seam futura solo si
+  los controles del proveedor no alcanzan;
+- registrar la decision en `docs/production-scale-readiness-checklist.md`.
+
+## CSP Y Secrets
+
+Antes de lanzamiento amplio:
+
+1. Probar CSP en staging en modo report-only si el hosting/proveedor lo permite.
+2. Confirmar que Supabase Auth, estilos, fonts y assets reales no se rompen.
+3. Confirmar que `SUPABASE_SERVICE_ROLE_KEY` no aparece en bundle cliente,
+   Vercel Logs, log drain ni errores capturados.
+4. Rotar secrets si fueron compartidos en screenshots, chats, logs o entornos
+   no confiables.
+5. Mantener `PRODUCTION_SUPABASE_URL` configurado para bloquear scripts contra
+   production.

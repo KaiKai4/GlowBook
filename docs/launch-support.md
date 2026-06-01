@@ -39,3 +39,14 @@ Primeros 7 dias despues del lanzamiento.
 - La persona conoce runbooks de deploy, rollback, restore y Platform operations.
 - El owner revisa logs despues de E2E/smoke y durante la primera semana de
   produccion.
+
+## Lanzamiento Amplio
+
+Antes de abrir a muchos salones:
+
+- confirmar owner principal y owner suplente;
+- confirmar canal de soporte externo para salones;
+- confirmar acceso a Vercel, Supabase, Platform Audit y Feedback;
+- revisar `docs/runbooks/incidents.md`;
+- definir horario de respuesta durante los primeros 7 dias;
+- registrar postmortem para incidentes SEV1/SEV2.

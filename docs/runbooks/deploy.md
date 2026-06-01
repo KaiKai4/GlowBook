@@ -64,6 +64,26 @@ Evidencia 2026-05-31:
    definido para observability.
 7. Confirmar owner de soporte segun `docs/launch-support.md`.
 
+## Lanzamiento Amplio
+
+Antes de abrir a 25+ salones nuevos o campanas publicas:
+
+```text
+npm run ci:verify
+npm run test:e2e:staging
+npm run release:readiness
+npm run release:scale-readiness
+```
+
+Ademas:
+
+1. Ejecutar dataset de escala con `npm run scale:seed-salons`.
+2. Revisar rutas criticas y completar `docs/performance-review-2026-06-01.md`.
+3. Ejecutar cleanup con `npm run scale:cleanup-salons`.
+4. Revisar `docs/capacity-plan.md`.
+5. Confirmar runbook de incidentes.
+6. Confirmar observability/log drain si el volumen de soporte lo exige.
+
 ## Criterio De Exito
 
 - No hay errores criticos en hosting.

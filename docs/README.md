@@ -6,10 +6,15 @@ el historial git conserva ese contexto si hace falta consultarlo.
 
 ## Vigente
 
-- Auditoria vigente: `docs/architecture-audit-2026-05-31.md`
-- Auditoria base anterior: `docs/architecture-audit-2026-05-30.md`
-- Fases vigentes: `docs/architecture-audit-phases-2026-05-31.md`
+- Auditoria vigente: `docs/architecture-audit-2026-06-01.md`
+- Auditoria base anterior: `docs/architecture-audit-2026-05-31.md`
+- Auditoria historica: `docs/architecture-audit-2026-05-30.md`
+- Fases de escalamiento vigentes: `docs/architecture-scale-phases-2026-06-01.md`
+- Fases readiness 5+ salones cerradas: `docs/architecture-audit-phases-2026-05-31.md`
 - Fases base anteriores: `docs/architecture-audit-phases-2026-05-30.md`
+- Checklist lanzamiento amplio: `docs/production-scale-readiness-checklist.md`
+- Capacity plan: `docs/capacity-plan.md`
+- Performance review de escala: `docs/performance-review-2026-06-01.md`
 - Contratos de base de datos: `docs/database-contracts.md`
 - Tests y checks Supabase: `docs/testing.md`
 - Politica de entornos: `docs/environments.md`
@@ -32,6 +37,8 @@ el historial git conserva ese contexto si hace falta consultarlo.
 - Migraciones de base de datos: `docs/runbooks/database-migrations.md`
 - Operaciones Platform: `docs/runbooks/platform-operations.md`
 - Load smoke 5 salones: `docs/runbooks/load-smoke-5-salons.md`
+- Load scale salones: `docs/runbooks/load-scale-salons.md`
+- Incidentes: `docs/runbooks/incidents.md`
 
 ## ADRs De Mayor Peso
 
@@ -76,6 +83,12 @@ Gate de lanzamiento 5+ salones:
 
 ```text
 npm run release:readiness
+```
+
+Gate de lanzamiento amplio:
+
+```text
+npm run release:scale-readiness
 ```
 
 ## Regla Practica
