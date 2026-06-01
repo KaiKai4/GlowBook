@@ -29,6 +29,8 @@ const STATUS_VARIANT: Record<string, AppointmentStatusVariant> = {
 
 export interface AppointmentDetailItemViewModel {
   id: string;
+  serviceId: string;
+  employeeId: string;
   serviceName: string;
   employeeName: string;
   start_time: string;
@@ -79,6 +81,8 @@ export async function getAppointmentDetail({
     timezone: salon?.timezone ?? "America/Panama",
     items: appointment.items.map((item) => ({
       id: item.id,
+      serviceId: item.service_id,
+      employeeId: item.employee_id,
       serviceName: item.service?.name ?? "Servicio eliminado",
       employeeName: item.employee
         ? `${item.employee.first_name} ${item.employee.last_name}`.trim()

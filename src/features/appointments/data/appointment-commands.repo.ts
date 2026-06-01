@@ -62,6 +62,17 @@ export interface CreateAppointmentRpcResult {
   errorMessage?: string;
 }
 
+export interface UpdateAppointmentRpcPayload {
+  appointment_id: string;
+  notes: string;
+  items: CreateAppointmentRpcPayload["items"];
+}
+
+export interface UpdateAppointmentRpcResult {
+  ok: boolean;
+  errorMessage?: string;
+}
+
 export type OccupiedByEmployee = Record<string, OccupiedSlot[]>;
 
 export async function findAppointmentForCommand(
@@ -347,9 +358,25 @@ export async function createAppointmentWithRpc(
   return { ok: true, appointmentId: data as string };
 }
 
+export async function updateAppointmentWithRpc(
+  payload: UpdateAppointmentRpcPayload
+): Promise<UpdateAppointmentRpcResult> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("update_appointment", {
+    payload: payload as unknown as Json,
+  });
+
+  if (error) {
+    return { ok: false, errorMessage: error.message };
+  }
+
+  return { ok: true };
+}
+
 export async function findOccupiedSlotsForSalonDate(
   salonId: string,
-  date: string
+  date: string,
+  excludeAppointmentId?: string
 ): Promise<OccupiedByEmployee> {
   const supabase = await createSupabaseServerClient();
   const { data: salonData } = await supabase
@@ -368,13 +395,19 @@ export async function findOccupiedSlotsForSalonDate(
   }
 
   const { start, end } = getUtcDayBoundaries(probe, timezone);
-  const { data } = await supabase
+  let query = supabase
     .from("appointment_items")
     .select("employee_id, start_time, end_time")
     .eq("salon_id", salonId)
     .eq("blocks_calendar", true)
     .gte("start_time", start.toISOString())
     .lte("start_time", end.toISOString());
+
+  if (excludeAppointmentId) {
+    query = query.neq("appointment_id", excludeAppointmentId);
+  }
+
+  const { data } = await query;
 
   const occupied: OccupiedByEmployee = {};
   for (const item of data ?? []) {

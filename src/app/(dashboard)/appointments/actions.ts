@@ -11,8 +11,10 @@ import { cancelAppointment } from "@/features/appointments/use-cases/cancel-appo
 import { completeAppointment } from "@/features/appointments/use-cases/complete-appointment";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
+import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
 import {
   CreateAppointmentSchema,
+  UpdateAppointmentScheduleSchema,
   UpdateAppointmentStatusSchema,
 } from "@/features/appointments/schemas";
 import type { Result } from "@/lib/result";
@@ -41,6 +43,17 @@ export async function getOccupiedSlotsForDate(date: string): Promise<OccupiedByE
   if (!permission.ok) return {};
 
   return getOccupiedSlotsForSalonDate(profile.salon_id, date);
+}
+
+export async function getOccupiedSlotsForEditDate(
+  date: string,
+  appointmentId: string
+): Promise<OccupiedByEmployee> {
+  const profile = await requireActiveProfile();
+  const permission = canManageAppointments(profile);
+  if (!permission.ok) return {};
+
+  return getOccupiedSlotsForSalonDate(profile.salon_id, date, appointmentId);
 }
 
 export async function createAppointmentAction(
@@ -74,6 +87,39 @@ export async function createAppointmentAction(
   });
 
   if (result.ok) revalidateAppointmentFlows();
+  return result;
+}
+
+export async function updateAppointmentScheduleAction(
+  _prev: Result<void> | null,
+  formData: FormData
+): Promise<Result<void>> {
+  const profile = await requireActiveProfile();
+  const permission = canManageAppointments(profile);
+  if (!permission.ok) return { ok: false, error: "No tienes permiso para editar citas." };
+
+  const raw = Object.fromEntries(formData);
+  let assignments: unknown;
+  try {
+    assignments = JSON.parse(raw.assignments as string);
+  } catch {
+    return { ok: false, error: "Datos de servicios invalidos." };
+  }
+
+  const parsed = UpdateAppointmentScheduleSchema.safeParse({
+    ...raw,
+    assignments,
+  });
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0].message };
+  }
+
+  const result = await updateAppointmentSchedule(parsed.data, {
+    salonId: profile.salon_id,
+  });
+
+  if (result.ok) revalidateAppointmentFlows(parsed.data.appointment_id);
   return result;
 }
 

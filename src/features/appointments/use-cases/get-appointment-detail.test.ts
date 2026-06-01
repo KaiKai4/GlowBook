@@ -77,6 +77,8 @@ describe("get appointment detail", () => {
       items: [
         {
           id: "item-1",
+          serviceId: "service-1",
+          employeeId: "employee-1",
           serviceName: "Corte",
           employeeName: "Ana Vega",
           start_time: "2026-05-29T15:00:00.000Z",

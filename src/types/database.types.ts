@@ -1112,6 +1112,7 @@ export type Database = {
         Returns: string
       }
       create_appointment: { Args: { payload: Json }; Returns: string }
+      update_appointment: { Args: { payload: Json }; Returns: undefined }
       create_salon_with_owner:
         | {
             Args: {

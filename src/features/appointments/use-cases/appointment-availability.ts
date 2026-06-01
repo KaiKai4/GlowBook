@@ -9,7 +9,8 @@ export type { OccupiedByEmployee };
 // `date` is a YYYY-MM-DD string representing a calendar day in the salon timezone.
 export async function getOccupiedSlotsForSalonDate(
   salonId: string,
-  date: string
+  date: string,
+  excludeAppointmentId?: string
 ): Promise<OccupiedByEmployee> {
-  return findOccupiedSlotsForSalonDate(salonId, date);
+  return findOccupiedSlotsForSalonDate(salonId, date, excludeAppointmentId);
 }

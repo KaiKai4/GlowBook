@@ -36,7 +36,8 @@ describe("appointment availability command read", () => {
     });
     expect(mockedFindOccupiedSlotsForSalonDate).toHaveBeenCalledWith(
       "salon-1",
-      "2030-01-01"
+      "2030-01-01",
+      undefined
     );
   });
 });

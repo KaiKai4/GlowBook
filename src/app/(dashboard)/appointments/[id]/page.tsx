@@ -6,6 +6,7 @@ import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { formatCurrency, formatDate, formatTimeTz } from "@/lib/utils/dates";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppointmentActions } from "./appointment-actions";
 
@@ -87,7 +88,15 @@ export default async function AppointmentDetailPage({
       {canManage && (
         <Card>
           <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            {!["completed", "cancelled", "no_show"].includes(appointment.status) && (
+              <Link
+                href={`/appointments/${appointment.id}/edit`}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                Editar / reprogramar
+              </Link>
+            )}
             <AppointmentActions appointmentId={appointment.id} status={appointment.status} />
           </CardContent>
         </Card>
