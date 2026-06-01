@@ -54,6 +54,8 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] Gate principal ejecuta subgates de staging, observability, capacity, security y support.
 - [x] Gate bloquea `APP_URL`/`E2E_BASE_URL` locales para no aceptar evidencia falsa de staging.
 - [x] Etapas 5-10, 25-50 y 100+ salones documentadas.
+- [x] Decision go/no-go documentada en `docs/release-scale-readiness-2026-06-01.md`.
+- [x] Existe `npm run baseline:readiness` para validar el baseline.
 - [ ] Go/no-go de lanzamiento amplio firmado con evidencia reciente.
 
 ## Fase 47 - Multi-Tenant Isolation
@@ -124,6 +126,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 ## Fase 53 - Seguridad Operativa
 
 - [x] Decision de rate limiting documentada como control operativo.
+- [x] Existe `npm run rate-limit:readiness` para validar rutas publicas y decision.
 - [ ] Rate limiting de hosting/Supabase revisado para login/invitaciones.
 - [x] CSP report-only implementada y activable con `GLOWBOOK_CSP_REPORT_ONLY=true`.
 - [x] Existe `npm run security:readiness` para validar headers y fuga de `service_role` en artefactos publicos.
@@ -160,16 +163,18 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 25 ok, 11 blocked
+Summary: 28 ok, 11 blocked
 ```
 
 Subgates OK:
 
+- `baseline:readiness`
 - `observability:readiness`
 - `dataset:readiness`
 - `performance:readiness`
 - `capacity:readiness`
 - `restore:readiness`
+- `rate-limit:readiness`
 - `security:readiness`
 - `support:readiness`
 - `reminders:readiness`

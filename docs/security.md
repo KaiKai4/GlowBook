@@ -149,6 +149,25 @@ Decision para lanzamiento amplio:
   los controles del proveedor no alcanzan;
 - registrar la decision en `docs/production-scale-readiness-checklist.md`.
 
+Gate:
+
+```text
+npm run rate-limit:readiness
+```
+
+El gate valida que las rutas publicas y operaciones sensibles esten
+documentadas. Para exigir confirmacion real de proveedor antes de lanzamiento
+amplio, activar:
+
+```text
+GLOWBOOK_RATE_LIMIT_REQUIRE_PROVIDER_CONFIRMATION=true
+GLOWBOOK_RATE_LIMIT_PROVIDER=<vercel|supabase|waf|custom>
+GLOWBOOK_RATE_LIMIT_LOGIN=<decision>
+GLOWBOOK_RATE_LIMIT_INVITATIONS=<decision>
+GLOWBOOK_RATE_LIMIT_FEEDBACK=<decision>
+GLOWBOOK_RATE_LIMIT_PLATFORM=<decision>
+```
+
 ## CSP Y Secrets
 
 Antes de lanzamiento amplio:

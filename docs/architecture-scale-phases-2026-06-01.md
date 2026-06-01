@@ -108,6 +108,7 @@ Criterio de terminado:
 Evidencia implementada:
 
 - `docs/production-scale-readiness-checklist.md`
+- `docs/release-scale-readiness-2026-06-01.md`
 - `scripts/release-scale-readiness.mjs`
 - `npm run release:scale-readiness`
 - `release:scale-readiness` ejecuta subgates no destructivos:
@@ -116,6 +117,8 @@ Evidencia implementada:
   - `capacity:readiness`;
   - `security:readiness`;
   - `support:readiness`.
+- `npm run baseline:readiness` valida el documento go/no-go de lanzamiento
+  amplio y puede exigir firma operativa con variables de entorno.
 
 Fuerza: Strong.
 
@@ -546,6 +549,9 @@ Evidencia implementada:
 - `docs/security.md` documenta rate limiting para lanzamiento amplio, CSP y
   rotacion de secrets.
 - `next.config.ts` soporta CSP report-only con `GLOWBOOK_CSP_REPORT_ONLY=true`.
+- `npm run rate-limit:readiness` valida que la decision y rutas publicas
+  sensibles esten documentadas, y puede exigir confirmacion real de proveedor
+  con `GLOWBOOK_RATE_LIMIT_REQUIRE_PROVIDER_CONFIRMATION=true`.
 - `npm run security:readiness` valida headers desplegados y que
   `SUPABASE_SERVICE_ROLE_KEY` no aparezca en artefactos publicos/estaticos.
 

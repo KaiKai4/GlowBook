@@ -104,6 +104,7 @@ const expectedDocs = [
   "docs/architecture-audit-2026-06-01.md",
   "docs/architecture-scale-phases-2026-06-01.md",
   "docs/production-scale-readiness-checklist.md",
+  "docs/release-scale-readiness-2026-06-01.md",
   "docs/capacity-plan.md",
   "docs/performance-review-2026-06-01.md",
   "docs/runbooks/load-scale-salons.md",
@@ -146,6 +147,11 @@ if (
 }
 
 runNodeGate(
+  "phase 46 baseline",
+  "scripts/baseline-readiness.mjs",
+  "baseline readiness gate passed"
+);
+runNodeGate(
   "phase 47 isolation",
   "scripts/verify-deployed-staging-env.mjs",
   "deployed staging environment matches configured Supabase"
@@ -174,6 +180,11 @@ runNodeGate(
   "phase 52 restore",
   "scripts/restore-readiness.mjs",
   "restore readiness gate passed"
+);
+runNodeGate(
+  "phase 53 security",
+  "scripts/rate-limit-readiness.mjs",
+  "rate limit readiness gate passed"
 );
 runNodeGate(
   "phase 53 security",

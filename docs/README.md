@@ -13,6 +13,7 @@ el historial git conserva ese contexto si hace falta consultarlo.
 - Fases readiness 5+ salones cerradas: `docs/architecture-audit-phases-2026-05-31.md`
 - Fases base anteriores: `docs/architecture-audit-phases-2026-05-30.md`
 - Checklist lanzamiento amplio: `docs/production-scale-readiness-checklist.md`
+- Decision lanzamiento amplio: `docs/release-scale-readiness-2026-06-01.md`
 - Capacity plan: `docs/capacity-plan.md`
 - Performance review de escala: `docs/performance-review-2026-06-01.md`
 - Contratos de base de datos: `docs/database-contracts.md`
@@ -89,12 +90,14 @@ npm run release:readiness
 Gate de lanzamiento amplio:
 
 ```text
+npm run baseline:readiness
 npm run release:scale-readiness
 ```
 
 Seguridad de deployment:
 
 ```text
+npm run rate-limit:readiness
 npm run security:readiness
 ```
 
