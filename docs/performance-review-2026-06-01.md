@@ -44,7 +44,9 @@ npm run scale:measure-routes
 ```
 
 El comando requiere un batch de escala vivo en staging y bloquea URLs localhost
-para evitar confundir pruebas locales con evidencia de Vercel.
+para evitar confundir pruebas locales con evidencia de Vercel. Tambien compara
+el `NEXT_PUBLIC_SUPABASE_URL` embebido en el deployment contra el Supabase
+staging local antes de medir.
 
 | Ruta | Resultado | Latencia aproximada | Hallazgos |
 |---|---|---:|---|
@@ -73,6 +75,23 @@ Nota 2026-06-01:
 `E2E_BASE_URL`/`APP_URL` apuntaban a localhost. El guard queda endurecido para
 rechazar localhost cuando `GLOWBOOK_ENV=staging`. La medicion Vercel debe
 repetirse cuando `E2E_BASE_URL` apunte al deployment real.
+
+Nota 2026-06-01, segundo intento:
+
+`E2E_BASE_URL`/`APP_URL` se apuntaron a `glow-book-chi.vercel.app`, pero el
+deployment publico estaba embebiendo el Supabase de production mientras
+`.env.local` apuntaba a Supabase staging. El guard ahora bloquea ese mismatch
+antes de ejecutar Playwright:
+
+```text
+Expected staging host: vifuurgquxkkpqqobigr.supabase.co
+Detected deployed host(s): eokiklkgutzrkhbamglf.supabase.co
+```
+
+Accion requerida para cerrar esta fase: actualizar variables de entorno en
+Vercel para el deployment staging, redeployar y repetir `npm run
+staging:verify-env`, `npm run test:e2e:staging` y `npm run
+scale:measure-routes`.
 
 ## Supabase
 

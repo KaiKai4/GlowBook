@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { assertDeployedSupabaseMatches } from "./deployed-supabase-check.mjs";
 
 const OWNER_ROUTES = [
   "/",
@@ -147,6 +148,18 @@ if (!/^scale-[a-zA-Z0-9-]+$/.test(batchId)) {
 
 if (confirm !== "measure-scale-routes") {
   fail("Set SCALE_MEASURE_CONFIRM=measure-scale-routes to acknowledge this uses staging scale data.");
+}
+
+try {
+  const deployedUrls = await assertDeployedSupabaseMatches({
+    baseUrl,
+    expectedUrl: supabaseUrl,
+  });
+  console.log(
+    `[measure-scale-routes] Deployed Supabase host verified: ${new URL(deployedUrls[0]).hostname}`
+  );
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error));
 }
 
 const admin = createClient(supabaseUrl, serviceRoleKey, {

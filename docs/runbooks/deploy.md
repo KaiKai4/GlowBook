@@ -31,15 +31,20 @@ npm run db:types
    - `NEXT_PUBLIC_SUPABASE_URL` de staging
    - `SUPABASE_SERVICE_ROLE_KEY` de staging
    - `PRODUCTION_SUPABASE_URL` de production
+   - `APP_URL` y `E2E_BASE_URL` apuntan al deployment staging, no a localhost
 3. Ejecutar:
 
 ```text
+npm run staging:verify-env
 npm run test:e2e:staging
 npm run architecture:health
 ```
 
-4. Revisar logs de Supabase y hosting.
-5. Confirmar que los eventos de `src/lib/observability` aparecen en logs del
+4. Si `npm run test:e2e:staging` reporta mismatch de Supabase desplegado,
+   corregir variables en Vercel y redeployar antes de usar ese deployment como
+   evidencia.
+5. Revisar logs de Supabase y hosting.
+6. Confirmar que los eventos de `src/lib/observability` aparecen en logs del
    hosting o log drain. Si se usa webhook, configurar
    `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL` y
    `GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN`.

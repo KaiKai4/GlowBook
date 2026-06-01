@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { assertDeployedSupabaseMatches } from "./deployed-supabase-check.mjs";
 
 function loadEnvFileIfPresent() {
   const envPath = join(process.cwd(), ".env.local");
@@ -81,6 +82,19 @@ if (
 }
 
 console.log("[staging-e2e] Environment guard passed.");
+
+try {
+  const deployedUrls = await assertDeployedSupabaseMatches({
+    baseUrl,
+    expectedUrl: supabaseUrl,
+  });
+  console.log(
+    `[staging-e2e] Deployed Supabase host verified: ${new URL(deployedUrls[0]).hostname}`
+  );
+} catch (error) {
+  console.error(`[staging-e2e] ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}
 
 const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
 const result = spawnSync(npxCommand, ["playwright", "test"], {

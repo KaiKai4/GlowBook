@@ -60,6 +60,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] Existe E2E negativo `e2e/multi-tenant-isolation.spec.ts`.
 - [x] E2E negativo paso en `npm run test:e2e` con 16/16 tests.
 - [x] `npm run test:e2e:staging` rechaza localhost cuando `GLOWBOOK_ENV=staging`.
+- [x] `npm run test:e2e:staging` rechaza deployment Vercel si el Supabase publico embebido no coincide con staging.
 - [ ] Repetir E2E negativo contra staging desplegado antes de lanzamiento amplio si cambia `E2E_BASE_URL`.
 - [x] RLS/RPC criticos revisados con fixtures de dos salones.
 - [x] Hallazgos documentados en `docs/database-contracts.md`.
@@ -77,6 +78,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Existe plantilla `docs/performance-review-2026-06-01.md`.
 - [x] Existe medicion repetible `npm run scale:measure-routes`.
+- [x] La medicion bloquea si Vercel apunta a otro Supabase distinto de staging.
 - [ ] Rutas criticas medidas con dataset de escala.
 - [ ] Vercel Logs revisados.
 - [x] Supabase performance advisors revisado con dataset de 100 salones: `No issues found`.

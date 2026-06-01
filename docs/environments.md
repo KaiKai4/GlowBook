@@ -55,6 +55,11 @@ el rango por defecto de Supabase CLI. Mantener los puertos `554xx` evita que
 - `src/test/supabase-integration-fixtures.ts` bloquea fixtures si `GLOWBOOK_ENV`, `APP_ENV` o `VERCEL_ENV` es `production`.
 - El mismo fixture bloquea si `NEXT_PUBLIC_SUPABASE_URL` coincide con `PRODUCTION_SUPABASE_URL`.
 - `npm run test:e2e:staging` exige `GLOWBOOK_ENV=staging`, `E2E_BASE_URL` desplegado y Supabase staging.
+- `npm run staging:verify-env` ejecuta solo el check de deployment/Supabase
+  para confirmar rapido que Vercel ya no apunta al proyecto equivocado.
+- `npm run test:e2e:staging` tambien inspecciona los chunks publicos del
+  deployment y bloquea si el `NEXT_PUBLIC_SUPABASE_URL` desplegado no coincide
+  con el Supabase staging configurado localmente.
 - `npm run release:readiness` y `npm run release:scale-readiness` bloquean si
   `APP_URL` o `E2E_BASE_URL` apuntan a localhost.
 - `npm run smoke:seed-5-salons` exige `GLOWBOOK_ENV=staging`, `SMOKE_SEED_CONFIRM=seed-5-salons` y un batch con prefijo `smoke-`.
