@@ -67,7 +67,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] `npm run test:e2e:staging` rechaza localhost cuando `GLOWBOOK_ENV=staging`.
 - [x] `npm run test:e2e:staging` rechaza deployment Vercel si el Supabase publico embebido no coincide con staging.
 - [x] Existe runbook `docs/runbooks/vercel-staging-env.md` para corregir Supabase mismatch en Vercel.
-- [ ] Repetir E2E negativo contra staging desplegado antes de lanzamiento amplio si cambia `E2E_BASE_URL`.
+- [x] E2E staging desplegado paso con 16/16 tests contra `glow-book-git-main-kai-book.vercel.app`.
 - [x] RLS/RPC criticos revisados con fixtures de dos salones.
 - [x] Hallazgos documentados en `docs/database-contracts.md`.
 
@@ -169,7 +169,7 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 30 ok, 11 blocked
+Summary: 31 ok, 10 blocked
 ```
 
 Subgates OK:
@@ -189,10 +189,10 @@ Subgates OK:
 Bloqueo tecnico actual:
 
 ```text
-Vercel glow-book-chi.vercel.app embebe Supabase production
-eokiklkgutzrkhbamglf.supabase.co, pero staging esperado es
-vifuurgquxkkpqqobigr.supabase.co.
+Resuelto: Preview glow-book-git-main-kai-book.vercel.app embebe Supabase
+staging vifuurgquxkkpqqobigr.supabase.co.
 ```
 
-Accion requerida: corregir variables de entorno en Vercel para el deployment de
-staging, redeployar y repetir `npm run release:scale-readiness`.
+Bloqueos restantes: confirmaciones operativas de lanzamiento amplio
+(`SCALE_*_CONFIRMED`) para baseline, isolation, dataset, performance,
+observability, capacity, restore, security, support y reminders.

@@ -123,3 +123,27 @@ Supabase: <host staging>
 
 Despues de eso, el bloqueo tecnico de Supabase mismatch queda resuelto y los
 gates pueden evaluar las fases restantes con evidencia real.
+
+## Evidencia 2026-06-01
+
+```text
+npm run staging:verify-env
+```
+
+Resultado:
+
+```text
+[verify-deployed-staging-env] OK
+Deployment: glow-book-git-main-kai-book.vercel.app
+Supabase: vifuurgquxkkpqqobigr.supabase.co
+```
+
+```text
+npm run test:e2e:staging
+```
+
+Resultado:
+
+```text
+16 passed
+```

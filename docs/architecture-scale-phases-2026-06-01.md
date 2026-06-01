@@ -172,6 +172,9 @@ Evidencia implementada:
   de colaborador y cita de Salon B, y comprueba que Platform no queda
   disponible para owner de Salon.
 - `npm run test:e2e` paso con 16/16 tests incluyendo el nuevo spec.
+- `npm run test:e2e:staging` paso con 16/16 tests contra
+  `glow-book-git-main-kai-book.vercel.app`, con Supabase staging verificado:
+  `vifuurgquxkkpqqobigr.supabase.co`.
 - `npm run test -- src/features/appointments/use-cases/create-appointment.rpc.test.ts src/features/platform/data/salon-overviews.rpc.test.ts`
   paso con 2 archivos y 5 tests RPC/RLS criticos.
 - `docs/database-contracts.md` registra la evidencia de aislamiento y acceso
