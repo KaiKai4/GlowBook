@@ -175,6 +175,11 @@ runNodeGate(
   "scripts/support-readiness.mjs",
   "support readiness gate passed"
 );
+runNodeGate(
+  "phase 55 reminders",
+  "scripts/reminders-readiness.mjs",
+  "reminders readiness gate passed"
+);
 
 requireConfirmation("phase 46 baseline", "SCALE_BASELINE_CONFIRMED", "national release baseline was reviewed");
 requireConfirmation("phase 47 isolation", "SCALE_ISOLATION_CONFIRMED", "multi-tenant negative tests passed against staging");

@@ -122,6 +122,12 @@ Restore y RTO/RPO:
 npm run restore:readiness
 ```
 
+Recordatorios:
+
+```text
+npm run reminders:readiness
+```
+
 Medicion de rutas con dataset de escala en staging:
 
 ```text

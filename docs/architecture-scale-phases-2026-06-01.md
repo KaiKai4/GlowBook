@@ -654,6 +654,8 @@ Evidencia implementada:
 
 - Decision actual: no prometer envio automatico.
 - `release:scale-readiness` exige confirmar que esta decision fue revisada.
+- `npm run reminders:readiness` valida que la decision manual siga vigente y
+  que no exista codigo de envio automatico accidental en `features/reminders`.
 
 Fuerza: Condicional.
 

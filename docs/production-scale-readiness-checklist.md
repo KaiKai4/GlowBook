@@ -140,6 +140,8 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 ## Fase 55 - Recordatorios
 
 - [x] Decision actual: MVP manual, no envio automatico.
+- [x] Existe `npm run reminders:readiness`.
+- [x] Gate valida ausencia de codigo de envio automatico mientras la decision sea manual.
 - [x] Si se decide envio automatico, crear Module de envio antes de prometerlo.
 
 ## Decision Actual
@@ -154,7 +156,7 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 22 ok, 11 blocked
+Summary: 23 ok, 11 blocked
 ```
 
 Subgates OK:
@@ -164,6 +166,7 @@ Subgates OK:
 - `restore:readiness`
 - `security:readiness`
 - `support:readiness`
+- `reminders:readiness`
 
 Bloqueo tecnico actual:
 
