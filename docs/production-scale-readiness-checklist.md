@@ -51,6 +51,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Checklist de lanzamiento amplio existe.
 - [x] Gate separado `release:scale-readiness` existe.
+- [x] Gate principal ejecuta subgates de staging, observability, capacity, security y support.
 - [x] Gate bloquea `APP_URL`/`E2E_BASE_URL` locales para no aceptar evidencia falsa de staging.
 - [x] Etapas 5-10, 25-50 y 100+ salones documentadas.
 - [ ] Go/no-go de lanzamiento amplio firmado con evidencia reciente.
@@ -146,3 +147,28 @@ Piloto 5-10 salones: permitido con gate actual.
 Crecimiento 25-50 salones: dataset 25/50 y E2E isolation ya pasaron; falta revisar Vercel Logs/rutas con usuarios reales.
 Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande ya pasaron; pendiente Vercel performance, limites finos de dashboard, soporte/observability avanzada y decision de plan/backups.
 ```
+
+## Ultima Ejecucion Del Gate
+
+```text
+npm run release:scale-readiness
+Summary: 21 ok, 11 blocked
+```
+
+Subgates OK:
+
+- `observability:readiness`
+- `capacity:readiness`
+- `security:readiness`
+- `support:readiness`
+
+Bloqueo tecnico actual:
+
+```text
+Vercel glow-book-chi.vercel.app embebe Supabase production
+eokiklkgutzrkhbamglf.supabase.co, pero staging esperado es
+vifuurgquxkkpqqobigr.supabase.co.
+```
+
+Accion requerida: corregir variables de entorno en Vercel para el deployment de
+staging, redeployar y repetir `npm run release:scale-readiness`.

@@ -110,6 +110,12 @@ Evidencia implementada:
 - `docs/production-scale-readiness-checklist.md`
 - `scripts/release-scale-readiness.mjs`
 - `npm run release:scale-readiness`
+- `release:scale-readiness` ejecuta subgates no destructivos:
+  - `staging:verify-env`;
+  - `observability:readiness`;
+  - `capacity:readiness`;
+  - `security:readiness`;
+  - `support:readiness`.
 
 Fuerza: Strong.
 

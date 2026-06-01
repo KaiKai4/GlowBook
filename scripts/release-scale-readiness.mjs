@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 
 function loadEnvFileIfPresent() {
   const envPath = join(process.cwd(), ".env.local");
@@ -69,6 +70,34 @@ function requireConfirmation(phase, name, reason) {
   return false;
 }
 
+function runNodeGate(phase, scriptPath, successMessage) {
+  if (!docExists(scriptPath)) {
+    addCheck(phase, "block", `${scriptPath} is missing`);
+    return false;
+  }
+
+  const result = spawnSync(process.execPath, [scriptPath], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  });
+
+  if (result.status === 0) {
+    addCheck(phase, "ok", successMessage);
+    return true;
+  }
+
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-3)
+    .join(" | ");
+
+  addCheck(phase, "block", `${scriptPath} failed${output ? `: ${output}` : ""}`);
+  return false;
+}
+
 loadEnvFileIfPresent();
 
 const expectedDocs = [
@@ -115,6 +144,32 @@ if (
 ) {
   addCheck(environment, "block", "staging Supabase URL matches PRODUCTION_SUPABASE_URL");
 }
+
+runNodeGate(
+  "phase 47 isolation",
+  "scripts/verify-deployed-staging-env.mjs",
+  "deployed staging environment matches configured Supabase"
+);
+runNodeGate(
+  "phase 50 observability",
+  "scripts/observability-readiness.mjs",
+  "observability readiness gate passed"
+);
+runNodeGate(
+  "phase 51 capacity",
+  "scripts/capacity-readiness.mjs",
+  "capacity readiness gate passed"
+);
+runNodeGate(
+  "phase 53 security",
+  "scripts/security-readiness.mjs",
+  "security readiness gate passed"
+);
+runNodeGate(
+  "phase 54 support",
+  "scripts/support-readiness.mjs",
+  "support readiness gate passed"
+);
 
 requireConfirmation("phase 46 baseline", "SCALE_BASELINE_CONFIRMED", "national release baseline was reviewed");
 requireConfirmation("phase 47 isolation", "SCALE_ISOLATION_CONFIRMED", "multi-tenant negative tests passed against staging");
