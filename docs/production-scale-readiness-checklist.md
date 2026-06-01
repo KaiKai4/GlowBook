@@ -111,7 +111,9 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 ## Fase 52 - Restore Grande
 
 - [x] Runbook de restore tiene seccion para dataset grande.
-- [ ] Restore probado con 25-50 salones.
+- [x] Existe `npm run restore:readiness`.
+- [x] Restore probado con 5 salones para piloto.
+- [x] Restore probado con 100 salones; esta evidencia cubre y supera el umbral 25-50.
 - [x] Restore probado con 100 salones usando batch `scale-restore-20260601-100`.
 - [x] RTO/RPO registrados como pendiente de negocio; tiempo tecnico de restore validado.
 
@@ -152,13 +154,14 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 21 ok, 11 blocked
+Summary: 22 ok, 11 blocked
 ```
 
 Subgates OK:
 
 - `observability:readiness`
 - `capacity:readiness`
+- `restore:readiness`
 - `security:readiness`
 - `support:readiness`
 

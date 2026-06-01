@@ -474,6 +474,9 @@ Evidencia implementada:
 
 - `docs/runbooks/database-restore.md` incluye procedimiento para batch de
   escala y RTO/RPO.
+- `npm run restore:readiness` valida evidencia de restore smoke, restore
+  grande, cleanup y plantilla RTO/RPO. Puede exigir RTO/RPO de negocio con
+  `GLOWBOOK_RESTORE_REQUIRE_BUSINESS_RTO_RPO=true`.
 - Batch `scale-restore-20260601-100` creado en staging con:
   - 100 salones;
   - 100 owners;

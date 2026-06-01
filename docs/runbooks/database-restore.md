@@ -179,3 +179,28 @@ definir RTO/RPO de negocio y repetir si el dataset crece de forma importante.
 
 Guardar fecha, hora, backup usado, responsable y resultado en el registro de
 operacion del equipo.
+
+## Gate Operativo
+
+Ejecutar:
+
+```text
+npm run restore:readiness
+```
+
+El gate valida que el runbook conserve evidencia de:
+
+- restore smoke de 5 salones;
+- restore grande de 100 salones;
+- conteos post-restore;
+- cleanup de staging;
+- plantilla RTO/RPO.
+
+Para lanzamiento amplio, exigir RTO/RPO de negocio:
+
+```text
+GLOWBOOK_RESTORE_REQUIRE_BUSINESS_RTO_RPO=true
+GLOWBOOK_RESTORE_RTO=
+GLOWBOOK_RESTORE_RPO=
+GLOWBOOK_RESTORE_OWNER=
+```

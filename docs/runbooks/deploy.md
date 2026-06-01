@@ -41,6 +41,7 @@ npm run security:readiness
 npm run observability:readiness
 npm run support:readiness
 npm run capacity:readiness
+npm run restore:readiness
 npm run architecture:health
 ```
 

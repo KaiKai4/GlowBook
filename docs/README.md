@@ -116,6 +116,12 @@ Capacidad Supabase/Vercel:
 npm run capacity:readiness
 ```
 
+Restore y RTO/RPO:
+
+```text
+npm run restore:readiness
+```
+
 Medicion de rutas con dataset de escala en staging:
 
 ```text

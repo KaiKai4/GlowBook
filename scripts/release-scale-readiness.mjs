@@ -161,6 +161,11 @@ runNodeGate(
   "capacity readiness gate passed"
 );
 runNodeGate(
+  "phase 52 restore",
+  "scripts/restore-readiness.mjs",
+  "restore readiness gate passed"
+);
+runNodeGate(
   "phase 53 security",
   "scripts/security-readiness.mjs",
   "security readiness gate passed"
