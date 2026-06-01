@@ -101,7 +101,7 @@ Criterio de terminado:
 - `architecture:health` pasa con docs, tests y E2E.
 - El checklist indica fecha, entorno, comando y responsable.
 
-Evidencia parcial 2026-05-31:
+Evidencia 2026-05-31:
 
 - Supabase staging separado confirmado: `glowbook-staging`
   (`vifuurgquxkkpqqobigr`).
@@ -198,7 +198,7 @@ Fuerza: Strong.
 
 Prioridad: alta antes de produccion.
 
-Estado: pendiente externo.
+Estado: completada.
 
 Objetivo: probar que los read Modules, Adapters y rutas principales toleran un
 dataset inicial realista.
@@ -239,6 +239,16 @@ Criterio de terminado:
 - Smoke seed se crea y se limpia sin tocar production.
 - Rutas criticas responden dentro del umbral definido.
 - No quedan queries lentas criticas sin decision.
+
+Evidencia 2026-05-31:
+
+- `npm run smoke:seed-5-salons` creo batch `smoke-20260531-e2e` con 5
+  salones, 30 colaboradores, 100 servicios, 500 clientes y 400 citas.
+- Se revisaron rutas criticas durante E2E/smoke y navegacion desplegada:
+  dashboard, agenda/citas, clientes, colaboradores, servicios, reportes,
+  salon, recordatorios y Platform admin.
+- `npm run smoke:cleanup-5-salons` limpio el batch.
+- Supabase performance advisors quedo sin issues despues de la migracion RLS.
 
 Riesgo: medio-alto.
 
@@ -379,7 +389,7 @@ Evidencia 2026-05-31:
 
 Prioridad: baja-media.
 
-Estado: pendiente local.
+Estado: completada.
 
 Objetivo: corregir texto visible con mojibake y evitar que el pulido de
 produccion tenga errores faciles de ver.
@@ -408,6 +418,13 @@ Criterio de terminado:
 - No queda mojibake visible.
 - Lint y type-check pasan.
 
+Evidencia 2026-05-31:
+
+- Copy visible de recordatorios corregido.
+- Busqueda de mojibake comun sin matches relevantes en `src`, `docs`,
+  `README.md` y `CONTEXT.md`.
+- `npm run lint`, `npm run type-check` y `npm run ci:verify` pasaron.
+
 Riesgo: bajo.
 
 Fuerza: Worth exploring, rapido.
@@ -416,7 +433,7 @@ Fuerza: Worth exploring, rapido.
 
 Prioridad: media.
 
-Estado: pendiente, no bloqueante.
+Estado: completada.
 
 Objetivo: evitar que archivos grandes en `src/app` acumulen reglas de negocio
 sin extraer UI por estetica.
@@ -462,6 +479,14 @@ Criterio de terminado:
 - No se extrae UI solo por tamano.
 - Si se extrae algo, mejora Locality o Leverage.
 
+Evidencia 2026-05-31:
+
+- Hotspots UI route-local revisados y clasificados.
+- No se detectaron imports directos a Supabase/data Adapters desde esas rutas.
+- No aparecio Seam real que justificara extraccion solo por tamano.
+- Decision: mantener UI route-local mientras no acumule reglas de negocio o
+  transformaciones reutilizables.
+
 Riesgo: bajo-medio.
 
 Fuerza: Worth exploring.
@@ -470,7 +495,7 @@ Fuerza: Worth exploring.
 
 Prioridad: condicional.
 
-Estado: pendiente de producto.
+Estado: completada para MVP manual.
 
 Objetivo: decidir si el lanzamiento promete envio real de recordatorios o solo
 cola operativa/manual.
@@ -518,6 +543,14 @@ Criterio de terminado:
 - El producto sabe que promete.
 - Si hay envio real, queda detras de Adapter y con logs de intentos.
 - Si no hay envio real, la UI no sugiere automatizacion inexistente.
+
+Evidencia 2026-05-31:
+
+- Decision de lanzamiento: no prometer envio automatico de recordatorios.
+- `features/reminders` queda como read Module operativo.
+- La UI abre WhatsApp/flujo manual y no promete automatizacion inexistente.
+- Si en el futuro se promete envio real, se debe abrir una fase nueva con
+  proveedor, retries y `appointment_reminder_log`.
 
 Riesgo: medio-alto si se promete envio real sin Module dedicado.
 
@@ -599,15 +632,15 @@ Fase 45  Release readiness gate 5+ salones
 
 | Hallazgo de la auditoria 2026-05-31 | Fase |
 |---|---|
-| Falta evidencia de staging real | Fase 37 |
+| Faltaba evidencia de staging real; ya completada para app local conectada a staging | Fase 37 |
 | Restore probado pendiente en la auditoria original; ya completado staging -> local | Fase 38 |
-| Falta smoke ejecutado con 5 salones | Fase 39 |
-| Falta revisar logs/performance con volumen | Fase 40 |
+| Faltaba smoke ejecutado con 5 salones; ya completado y limpiado | Fase 39 |
+| Faltaba revisar logs/performance con volumen; ya completado con advisors | Fase 40 |
 | Observability existia sin validacion externa; ya confirmada en Vercel Logs | Fase 41 |
-| Hay mojibake visible en recordatorios | Fase 42 |
-| Archivos UI route-local grandes requieren clasificacion, no extraccion ciega | Fase 43 |
-| Recordatorios reales dependen de decision de producto | Fase 44 |
-| Falta gate final de lanzamiento con evidencia firmable | Fase 45 |
+| Habia mojibake visible en recordatorios; ya corregido | Fase 42 |
+| Archivos UI route-local grandes requerian clasificacion; ya revisados | Fase 43 |
+| Recordatorios reales dependian de decision de producto; MVP manual confirmado | Fase 44 |
+| Faltaba gate final de lanzamiento con evidencia firmable; ya pasa 21 OK / 0 bloqueados | Fase 45 |
 
 ## Que No Hacer
 
@@ -621,18 +654,19 @@ Fase 45  Release readiness gate 5+ salones
 - No correr smoke, fixtures o E2E con service role contra production.
 - No borrar ADRs vigentes.
 
-## Primer Sprint Sugerido
+## Siguiente Mantenimiento Sugerido
 
-El primer sprint puede ser:
+Las fases de la auditoria vigente quedaron cerradas. Para siguientes ciclos,
+mantener este orden de verificacion:
 
-1. Fase 42: corregir mojibake y correr lint/type-check.
-2. Fase 37: dejar staging E2E ejecutado o, si falta acceso externo, documentar
-   exactamente que secret/URL bloquea.
-3. Fase 41: cerrar observability real en hosting/log drain.
+1. Antes de cada release, correr `npm run ci:verify`.
+2. Repetir `npm run test:e2e:staging` contra el entorno que se vaya a promover.
+3. Ejecutar smoke de 5 salones si hay cambios en Supabase, RLS, reports,
+   appointments o Platform.
+4. Revisar Vercel Logs y Supabase advisors despues del smoke.
 
 Razon:
 
-- Fase 42 es rapida y mejora pulido.
-- Fase 37 y Fase 38 ya cerraron las evidencias mas fuertes de staging y
-  restore.
-- Ninguna de estas fases cambia la arquitectura base, solo la fortalece.
+- Las fases ya no requieren reestructuracion.
+- El valor ahora esta en mantener evidencia fresca por release.
+- El monolito modular queda protegido por guardrails, tests, runbooks y gates.
