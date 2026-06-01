@@ -125,6 +125,9 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Existe `docs/runbooks/incidents.md`.
 - [x] Owner inicial existe en `docs/launch-support.md`.
+- [x] Existe `npm run support:readiness`.
+- [x] `npm run support:readiness` paso en modo actual.
+- [x] Runbook incluye owner suplente, canales, guardia y postmortem.
 - [ ] Canales de soporte reales confirmados.
 - [ ] Primera semana de guardia confirmada.
 

@@ -7,6 +7,7 @@ Responder rapido a incidentes durante piloto, crecimiento y lanzamiento amplio.
 ## Roles
 
 - Owner de soporte: definido en `docs/launch-support.md`.
+- Owner suplente: definido antes de lanzamiento amplio.
 - Responsable tecnico: quien puede revisar Vercel, Supabase y deploys.
 - Responsable de comunicacion: quien avisa a salones afectados.
 
@@ -77,3 +78,20 @@ Acciones preventivas:
 Owner:
 ```
 
+## Readiness
+
+Antes de activar `SCALE_SUPPORT_CONFIRMED=true`, ejecutar:
+
+```text
+npm run support:readiness
+```
+
+Para lanzamiento amplio con canales reales:
+
+```text
+GLOWBOOK_SUPPORT_REQUIRE_CONFIRMED_CHANNELS=true
+GLOWBOOK_SUPPORT_OWNER=
+GLOWBOOK_SUPPORT_BACKUP_OWNER=
+GLOWBOOK_SUPPORT_CHANNEL=
+GLOWBOOK_SUPPORT_FIRST_WEEK_SCHEDULE=
+```

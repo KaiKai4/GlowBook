@@ -104,6 +104,12 @@ Observability/log drain:
 npm run observability:readiness
 ```
 
+Soporte e incidentes:
+
+```text
+npm run support:readiness
+```
+
 Medicion de rutas con dataset de escala en staging:
 
 ```text

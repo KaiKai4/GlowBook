@@ -582,6 +582,9 @@ Evidencia implementada:
 
 - `docs/runbooks/incidents.md`
 - `docs/launch-support.md` ampliado para lanzamiento amplio.
+- `npm run support:readiness` valida owner, runbooks, matriz de incidentes,
+  postmortem y puede exigir canales/guardia reales con
+  `GLOWBOOK_SUPPORT_REQUIRE_CONFIRMED_CHANNELS=true`.
 
 Fuerza: Strong.
 

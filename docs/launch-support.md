@@ -12,6 +12,18 @@ KaiKaira / project owner
 
 Este owner puede cambiar antes de produccion, pero no debe quedar vacio.
 
+## Owner Suplente
+
+Para piloto y crecimiento controlado, el owner inicial puede cubrir el soporte.
+Para lanzamiento amplio, confirmar un owner suplente antes de activar
+`SCALE_SUPPORT_CONFIRMED=true`.
+
+Variable operativa:
+
+```text
+GLOWBOOK_SUPPORT_BACKUP_OWNER=
+```
+
 ## Responsabilidades
 
 - Revisar logs de hosting y Supabase durante la primera semana.
@@ -33,6 +45,36 @@ Primeros 7 dias despues del lanzamiento.
 - Hosting dashboard para deploys, errores y logs.
 - UI Platform de GlowBook para Salons, Audit y Feedback.
 
+## Canales De Soporte
+
+Canal minimo interno:
+
+```text
+Vercel + Supabase + Platform Audit + Feedback
+```
+
+Para lanzamiento amplio, confirmar un canal externo para salones:
+
+```text
+GLOWBOOK_SUPPORT_CHANNEL=
+```
+
+Ejemplos validos: email de soporte, WhatsApp Business, formulario dedicado o
+mesa de ayuda. El canal debe existir antes de publicar campanas amplias.
+
+## Guardia Primera Semana
+
+La guardia minima debe cubrir los primeros 7 dias despues del lanzamiento.
+
+Variable operativa:
+
+```text
+GLOWBOOK_SUPPORT_FIRST_WEEK_SCHEDULE=
+```
+
+No activar `GLOWBOOK_SUPPORT_REQUIRE_CONFIRMED_CHANNELS=true` hasta que owner,
+suplente, canal y horario esten definidos.
+
 ## Criterio De Cierre
 
 - Hay una persona responsable.
@@ -50,3 +92,9 @@ Antes de abrir a muchos salones:
 - revisar `docs/runbooks/incidents.md`;
 - definir horario de respuesta durante los primeros 7 dias;
 - registrar postmortem para incidentes SEV1/SEV2.
+
+Gate operativo:
+
+```text
+npm run support:readiness
+```
