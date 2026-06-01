@@ -101,6 +101,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] Existe `npm run observability:readiness`.
 - [x] `npm run observability:readiness` paso en modo actual.
 - [x] Test de redaccion `src/lib/observability/index.test.ts` paso con 3/3.
+- [x] El gate puede exigir alertas minimas y retencion antes de lanzamiento amplio.
 - [ ] Proveedor/log drain elegido para lanzamiento amplio.
 - [ ] Alertas minimas configuradas.
 - [ ] Redaccion de secretos validada en proveedor.

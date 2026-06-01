@@ -47,6 +47,14 @@ function redactedPayload() {
   };
 }
 
+const REQUIRED_ALERT_ENVS = [
+  "GLOWBOOK_OBSERVABILITY_ALERT_5XX",
+  "GLOWBOOK_OBSERVABILITY_ALERT_SUPABASE_ERRORS",
+  "GLOWBOOK_OBSERVABILITY_ALERT_PLATFORM_ERRORS",
+  "GLOWBOOK_OBSERVABILITY_ALERT_LATENCY",
+  "GLOWBOOK_OBSERVABILITY_RETENTION_DAYS",
+];
+
 async function postWebhook(url, token) {
   const headers = { "content-type": "application/json" };
   if (token) headers.authorization = `Bearer ${token}`;
@@ -69,6 +77,7 @@ const testPath = join(process.cwd(), "src/lib/observability/index.test.ts");
 const webhookUrl = process.env.GLOWBOOK_OBSERVABILITY_WEBHOOK_URL;
 const webhookToken = process.env.GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN;
 const requireWebhook = process.env.GLOWBOOK_OBSERVABILITY_REQUIRE_WEBHOOK === "true";
+const requireAlerts = process.env.GLOWBOOK_OBSERVABILITY_REQUIRE_ALERTS === "true";
 
 if (existsSync(adapterPath)) {
   pass("src/lib/observability adapter exists");
@@ -97,6 +106,18 @@ if (!webhookUrl) {
   } catch (error) {
     fail(`webhook readiness event failed: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+if (requireAlerts) {
+  for (const name of REQUIRED_ALERT_ENVS) {
+    if (process.env[name]?.trim()) {
+      pass(`${name} is set`);
+    } else {
+      fail(`${name} is required when GLOWBOOK_OBSERVABILITY_REQUIRE_ALERTS=true`);
+    }
+  }
+} else {
+  pass("alert configuration confirmation is optional until broad launch confirmation");
 }
 
 if (process.exitCode) {

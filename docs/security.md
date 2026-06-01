@@ -128,6 +128,20 @@ GLOWBOOK_OBSERVABILITY_REQUIRE_WEBHOOK=true
 Con esa variable, el gate falla si no puede enviar un evento sintetico al
 destino configurado.
 
+Para exigir alertas minimas y retencion antes de lanzamiento amplio:
+
+```text
+GLOWBOOK_OBSERVABILITY_REQUIRE_ALERTS=true
+GLOWBOOK_OBSERVABILITY_ALERT_5XX=<decision>
+GLOWBOOK_OBSERVABILITY_ALERT_SUPABASE_ERRORS=<decision>
+GLOWBOOK_OBSERVABILITY_ALERT_PLATFORM_ERRORS=<decision>
+GLOWBOOK_OBSERVABILITY_ALERT_LATENCY=<decision>
+GLOWBOOK_OBSERVABILITY_RETENTION_DAYS=<dias>
+```
+
+Estas variables son evidencia operativa; no cambian la Interface del Adapter ni
+obligan a importar SDKs externos desde los Modules de negocio.
+
 ## Rate Limiting
 
 Decision actual para MVP:

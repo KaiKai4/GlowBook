@@ -386,6 +386,8 @@ Evidencia implementada:
 - `src/lib/observability` redacciona metadata, error message y stack.
 - `npm run observability:readiness` valida Adapter/test y puede exigir webhook
   real con `GLOWBOOK_OBSERVABILITY_REQUIRE_WEBHOOK=true`.
+- `observability:readiness` puede exigir alertas minimas y retencion con
+  `GLOWBOOK_OBSERVABILITY_REQUIRE_ALERTS=true`.
 
 Fuerza: Strong para lanzamiento amplio.
 
