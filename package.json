@@ -11,6 +11,7 @@
     "architecture:health": "node scripts/architecture-health.mjs",
     "staging:verify-env": "node scripts/verify-deployed-staging-env.mjs",
     "baseline:readiness": "node scripts/baseline-readiness.mjs",
+    "isolation:readiness": "node scripts/isolation-readiness.mjs",
     "security:readiness": "node scripts/security-readiness.mjs",
     "observability:readiness": "node scripts/observability-readiness.mjs",
     "support:readiness": "node scripts/support-readiness.mjs",

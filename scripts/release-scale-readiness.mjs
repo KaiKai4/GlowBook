@@ -153,6 +153,11 @@ runNodeGate(
 );
 runNodeGate(
   "phase 47 isolation",
+  "scripts/isolation-readiness.mjs",
+  "isolation readiness gate passed"
+);
+runNodeGate(
+  "phase 47 isolation",
   "scripts/verify-deployed-staging-env.mjs",
   "deployed staging environment matches configured Supabase"
 );

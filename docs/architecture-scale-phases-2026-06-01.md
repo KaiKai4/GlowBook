@@ -176,6 +176,8 @@ Evidencia implementada:
   paso con 2 archivos y 5 tests RPC/RLS criticos.
 - `docs/database-contracts.md` registra la evidencia de aislamiento y acceso
   Platform-only.
+- `npm run isolation:readiness` valida que el E2E negativo, tests RPC/RLS,
+  contratos de base de datos y guard de staging sigan presentes.
 
 Fuerza: Strong.
 

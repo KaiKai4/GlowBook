@@ -60,6 +60,8 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 ## Fase 47 - Multi-Tenant Isolation
 
+- [x] Existe `npm run isolation:readiness`.
+- [x] `npm run isolation:readiness` valida E2E negativo, tests RPC/RLS, contratos y guard staging.
 - [x] Existe E2E negativo `e2e/multi-tenant-isolation.spec.ts`.
 - [x] E2E negativo paso en `npm run test:e2e` con 16/16 tests.
 - [x] `npm run test:e2e:staging` rechaza localhost cuando `GLOWBOOK_ENV=staging`.
@@ -163,12 +165,13 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 28 ok, 11 blocked
+Summary: 29 ok, 11 blocked
 ```
 
 Subgates OK:
 
 - `baseline:readiness`
+- `isolation:readiness`
 - `observability:readiness`
 - `dataset:readiness`
 - `performance:readiness`

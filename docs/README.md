@@ -71,6 +71,7 @@ configurados.
 E2E contra staging desplegado:
 
 ```text
+npm run isolation:readiness
 npm run staging:verify-env
 npm run test:e2e:staging
 ```
