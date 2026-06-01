@@ -91,6 +91,12 @@ Gate de lanzamiento amplio:
 npm run release:scale-readiness
 ```
 
+Medicion de rutas con dataset de escala en staging:
+
+```text
+npm run scale:measure-routes
+```
+
 ## Regla Practica
 
 Si un cambio toca RLS, RPCs, `service_role`, citas, colaboradores, plataforma o

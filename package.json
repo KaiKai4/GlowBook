@@ -23,7 +23,8 @@
     "smoke:seed-5-salons": "node scripts/seed-staging-smoke.mjs",
     "smoke:cleanup-5-salons": "node scripts/cleanup-staging-smoke.mjs",
     "scale:seed-salons": "node scripts/seed-staging-scale.mjs",
-    "scale:cleanup-salons": "node scripts/cleanup-staging-scale.mjs"
+    "scale:cleanup-salons": "node scripts/cleanup-staging-scale.mjs",
+    "scale:measure-routes": "node scripts/measure-scale-routes.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

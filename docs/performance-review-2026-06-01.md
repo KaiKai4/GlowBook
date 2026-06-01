@@ -35,6 +35,17 @@ Cleanup:
 
 ## Rutas Criticas
 
+Medicion repetible:
+
+```text
+$env:SCALE_MEASURE_CONFIRM='measure-scale-routes'
+$env:SCALE_MEASURE_BATCH_ID='scale-YYYYMMDD-100'
+npm run scale:measure-routes
+```
+
+El comando requiere un batch de escala vivo en staging y bloquea URLs localhost
+para evitar confundir pruebas locales con evidencia de Vercel.
+
 | Ruta | Resultado | Latencia aproximada | Hallazgos |
 |---|---|---:|---|
 | `/` | pendiente | pendiente | pendiente |
@@ -55,6 +66,13 @@ Cleanup:
 - [ ] Timeouts revisados.
 - [ ] Middleware redirects esperados revisados.
 - [ ] No hay secretos visibles.
+
+Nota 2026-06-01:
+
+`npm run test:e2e:staging` fue bloqueado como evidencia de staging porque
+`E2E_BASE_URL`/`APP_URL` apuntaban a localhost. El guard queda endurecido para
+rechazar localhost cuando `GLOWBOOK_ENV=staging`. La medicion Vercel debe
+repetirse cuando `E2E_BASE_URL` apunte al deployment real.
 
 ## Supabase
 

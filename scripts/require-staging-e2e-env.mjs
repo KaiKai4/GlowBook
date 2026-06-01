@@ -19,6 +19,15 @@ function normalizeUrl(value) {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+function isLocalUrl(value) {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
 function fail(message) {
   console.error(`[staging-e2e] ${message}`);
   process.exit(1);
@@ -50,6 +59,10 @@ if (appEnv !== "staging") {
 
 if (!baseUrl) {
   fail("Set E2E_BASE_URL to the deployed staging URL.");
+}
+
+if (isLocalUrl(baseUrl)) {
+  fail("E2E_BASE_URL must point to the deployed staging URL, not localhost.");
 }
 
 if (!supabaseUrl || !anonKey) {

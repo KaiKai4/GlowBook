@@ -48,9 +48,43 @@ Valores recomendados:
 
 ```text
 $env:SCALE_CLEANUP_CONFIRM='cleanup-scale-salons'
-$env:SCALE_SEED_BATCH_ID='scale-YYYYMMDD-50'
+$env:SCALE_CLEANUP_BATCH_ID='scale-YYYYMMDD-50'
 npm run scale:cleanup-salons
 ```
+
+## Medicion De Rutas
+
+Usar un batch existente y sin limpiar. Por defecto se intenta iniciar sesion
+con el owner del primer Salon creado por el seed:
+
+```text
+$env:SCALE_MEASURE_CONFIRM='measure-scale-routes'
+$env:SCALE_MEASURE_BATCH_ID='scale-YYYYMMDD-50'
+npm run scale:measure-routes
+```
+
+Si se necesita otro owner:
+
+```text
+SCALE_MEASURE_OWNER_EMAIL=
+SCALE_MEASURE_OWNER_PASSWORD=
+```
+
+El script mide rutas owner y Platform:
+
+- `/`
+- `/appointments`
+- `/appointments/new`
+- `/customers`
+- `/employees`
+- `/services`
+- `/reports`
+- `/admin`
+- `/admin/salons`
+- `/admin/audit`
+
+Si no hay credenciales `E2E_PLATFORM_ADMIN_*`, crea un Platform admin temporal
+para la medicion y lo elimina al terminar.
 
 ## Validacion Despues Del Seed
 
@@ -85,4 +119,3 @@ Revisar logs:
 - Latencias aproximadas.
 - Warnings Supabase/Vercel.
 - Decisiones de indices o no-accion.
-

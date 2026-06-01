@@ -163,6 +163,10 @@ Evidencia implementada:
   de colaborador y cita de Salon B, y comprueba que Platform no queda
   disponible para owner de Salon.
 - `npm run test:e2e` paso con 16/16 tests incluyendo el nuevo spec.
+- `npm run test -- src/features/appointments/use-cases/create-appointment.rpc.test.ts src/features/platform/data/salon-overviews.rpc.test.ts`
+  paso con 2 archivos y 5 tests RPC/RLS criticos.
+- `docs/database-contracts.md` registra la evidencia de aislamiento y acceso
+  Platform-only.
 
 Fuerza: Strong.
 
@@ -304,6 +308,8 @@ Evidencia implementada:
 
 - `docs/performance-review-2026-06-01.md`
 - checklist de rutas y decisiones de indices.
+- `scripts/measure-scale-routes.mjs`
+- `npm run scale:measure-routes`
 - Supabase performance advisors con batch `scale-20260601-100` reporto
   `No issues found`.
 

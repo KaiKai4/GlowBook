@@ -162,3 +162,31 @@ At minimum, security-sensitive database changes should verify:
 - `appointment_items` overlap protection.
 - Platform-only access for cross-tenant reads and destructive operations.
 - `database.types.ts` regenerated after schema changes.
+
+## Scale Readiness Evidence 2026-06-01
+
+For Fase 47 of `docs/architecture-scale-phases-2026-06-01.md`, the critical
+RPC/RLS checks were re-run with Supabase fixtures:
+
+```text
+npm run test -- src/features/appointments/use-cases/create-appointment.rpc.test.ts src/features/platform/data/salon-overviews.rpc.test.ts
+```
+
+Result:
+
+```text
+2 test files passed
+5 tests passed
+```
+
+Coverage:
+
+- `create_appointment(payload jsonb)` rejects manipulated cross-tenant
+  customer/service payloads.
+- Appointment overlap protection remains enforced by the SQL contract.
+- `platform_salon_overviews()` stays Platform-only and is denied to normal
+  tenant users.
+
+The deployed staging E2E pass is still a separate launch-wide gate because it
+validates routing, cookies, Vercel middleware and the deployed runtime, not only
+the database contract.

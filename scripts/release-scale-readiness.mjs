@@ -18,6 +18,15 @@ function normalizeUrl(value = "") {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+function isLocalUrl(value = "") {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
 function envPresent(name) {
   const value = process.env[name];
   if (!value) return false;
@@ -92,6 +101,12 @@ requireEnv(environment, "NEXT_PUBLIC_SUPABASE_URL");
 requireEnv(environment, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
 requireEnv(environment, "SUPABASE_SERVICE_ROLE_KEY");
 requireEnv(environment, "PRODUCTION_SUPABASE_URL");
+
+for (const name of ["APP_URL", "E2E_BASE_URL"]) {
+  if (envPresent(name) && isLocalUrl(process.env[name])) {
+    addCheck(environment, "block", `${name} must point to deployed staging, not localhost`);
+  }
+}
 
 if (
   envPresent("NEXT_PUBLIC_SUPABASE_URL") &&

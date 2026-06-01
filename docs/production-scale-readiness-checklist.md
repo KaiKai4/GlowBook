@@ -51,6 +51,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Checklist de lanzamiento amplio existe.
 - [x] Gate separado `release:scale-readiness` existe.
+- [x] Gate bloquea `APP_URL`/`E2E_BASE_URL` locales para no aceptar evidencia falsa de staging.
 - [x] Etapas 5-10, 25-50 y 100+ salones documentadas.
 - [ ] Go/no-go de lanzamiento amplio firmado con evidencia reciente.
 
@@ -58,9 +59,10 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Existe E2E negativo `e2e/multi-tenant-isolation.spec.ts`.
 - [x] E2E negativo paso en `npm run test:e2e` con 16/16 tests.
+- [x] `npm run test:e2e:staging` rechaza localhost cuando `GLOWBOOK_ENV=staging`.
 - [ ] Repetir E2E negativo contra staging desplegado antes de lanzamiento amplio si cambia `E2E_BASE_URL`.
-- [ ] RLS/RPC criticos revisados con fixtures de dos salones.
-- [ ] Hallazgos documentados en `docs/database-contracts.md` si aplica.
+- [x] RLS/RPC criticos revisados con fixtures de dos salones.
+- [x] Hallazgos documentados en `docs/database-contracts.md`.
 
 ## Fase 48 - Dataset De Escala
 
@@ -74,6 +76,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 ## Fase 49 - Performance
 
 - [x] Existe plantilla `docs/performance-review-2026-06-01.md`.
+- [x] Existe medicion repetible `npm run scale:measure-routes`.
 - [ ] Rutas criticas medidas con dataset de escala.
 - [ ] Vercel Logs revisados.
 - [x] Supabase performance advisors revisado con dataset de 100 salones: `No issues found`.

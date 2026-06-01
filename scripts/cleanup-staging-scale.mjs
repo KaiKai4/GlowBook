@@ -28,7 +28,7 @@ function fail(message) {
 
 function assertSafeBatchId(batchId) {
   if (!/^scale-[a-zA-Z0-9-]+$/.test(batchId)) {
-    fail("SCALE_SEED_BATCH_ID must start with 'scale-' and contain only letters, numbers and hyphens.");
+    fail("SCALE_CLEANUP_BATCH_ID must start with 'scale-' and contain only letters, numbers and hyphens.");
   }
 }
 
@@ -68,7 +68,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const productionSupabaseUrl = process.env.PRODUCTION_SUPABASE_URL;
 const confirm = process.env.SCALE_CLEANUP_CONFIRM;
-const batchId = process.env.SCALE_SEED_BATCH_ID;
+const batchId = process.env.SCALE_CLEANUP_BATCH_ID ?? process.env.SCALE_SEED_BATCH_ID;
 
 if (appEnv !== "staging" && process.env.SCALE_SEED_ALLOW_LOCAL !== "true") {
   fail("Set GLOWBOOK_ENV=staging, or SCALE_SEED_ALLOW_LOCAL=true for local-only experiments.");
@@ -90,7 +90,7 @@ if (
 }
 
 if (!batchId) {
-  fail("Set SCALE_SEED_BATCH_ID to the batch you want to cleanup.");
+  fail("Set SCALE_CLEANUP_BATCH_ID to the batch you want to cleanup.");
 }
 
 assertSafeBatchId(batchId);

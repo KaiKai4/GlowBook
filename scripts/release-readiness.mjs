@@ -18,6 +18,15 @@ function normalizeUrl(value = "") {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+function isLocalUrl(value = "") {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
 function envPresent(name) {
   const value = process.env[name];
   if (!value) return false;
@@ -89,6 +98,12 @@ requireEnv(phase37, "E2E_BASE_URL");
 requireEnv(phase37, "NEXT_PUBLIC_SUPABASE_URL");
 requireEnv(phase37, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
 requireEnv(phase37, "PRODUCTION_SUPABASE_URL");
+
+for (const name of ["APP_URL", "E2E_BASE_URL"]) {
+  if (envPresent(name) && isLocalUrl(process.env[name])) {
+    addCheck(phase37, "block", `${name} must point to deployed staging, not localhost`);
+  }
+}
 
 const hasServiceRole = envPresent("SUPABASE_SERVICE_ROLE_KEY");
 const hasManualOwner = envPresent("E2E_SALON_OWNER_EMAIL") && envPresent("E2E_SALON_OWNER_PASSWORD");

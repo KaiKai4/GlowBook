@@ -29,6 +29,8 @@ Reglas:
 - `PRODUCTION_SUPABASE_URL` existe para que tests y scripts se nieguen a correr contra produccion.
 - Los secretos de GitHub Actions deben usar valores de staging para E2E, no de produccion.
 - Las credenciales E2E manuales deben pertenecer a staging.
+- En `staging`, `APP_URL` y `E2E_BASE_URL` deben apuntar al deployment real;
+  los gates rechazan `localhost` y `127.0.0.1`.
 
 ## Supabase Local
 
@@ -52,7 +54,9 @@ el rango por defecto de Supabase CLI. Mantener los puertos `554xx` evita que
 
 - `src/test/supabase-integration-fixtures.ts` bloquea fixtures si `GLOWBOOK_ENV`, `APP_ENV` o `VERCEL_ENV` es `production`.
 - El mismo fixture bloquea si `NEXT_PUBLIC_SUPABASE_URL` coincide con `PRODUCTION_SUPABASE_URL`.
-- `npm run test:e2e:staging` exige `GLOWBOOK_ENV=staging`, `E2E_BASE_URL` y Supabase staging.
+- `npm run test:e2e:staging` exige `GLOWBOOK_ENV=staging`, `E2E_BASE_URL` desplegado y Supabase staging.
+- `npm run release:readiness` y `npm run release:scale-readiness` bloquean si
+  `APP_URL` o `E2E_BASE_URL` apuntan a localhost.
 - `npm run smoke:seed-5-salons` exige `GLOWBOOK_ENV=staging`, `SMOKE_SEED_CONFIRM=seed-5-salons` y un batch con prefijo `smoke-`.
 - `npm run smoke:cleanup-5-salons` exige `GLOWBOOK_ENV=staging`, `SMOKE_CLEANUP_CONFIRM=cleanup-5-salons` y el mismo `SMOKE_SEED_BATCH_ID`.
 
