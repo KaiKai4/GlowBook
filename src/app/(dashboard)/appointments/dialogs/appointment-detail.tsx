@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { Dialog } from "@/components/ui/dialog";
+import { buttonVariants } from "@/components/ui/button";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
-import { User, Phone, Clock, CreditCard, Timer } from "lucide-react";
+import { User, Phone, Clock, CreditCard, Timer, Pencil } from "lucide-react";
 
 interface ApptItem {
   id: string;
@@ -40,22 +42,34 @@ const ITEM_ACCENT: Record<string, string> = {
 };
 
 export function AppointmentDetailDialog({
-  appt, tz, open, onClose,
+  appt, tz, open, onClose, canManage,
 }: {
   appt: ApptForDetail;
   tz: string;
   open: boolean;
   onClose: () => void;
+  canManage: boolean;
 }) {
   const customerName = appt.customer
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
     : "Cliente desconocido";
 
   const accentClass = ITEM_ACCENT[appt.status] ?? "border-l-stone-300";
+  const canEdit = canManage && !["completed", "cancelled", "no_show"].includes(appt.status);
 
   return (
     <Dialog open={open} onClose={onClose} title="Detalle de cita" className="max-w-md">
       <div className="space-y-4">
+        {canEdit && (
+          <Link
+            href={`/appointments/${appt.id}/edit`}
+            className={buttonVariants({ variant: "primary", size: "sm" })}
+          >
+            <Pencil className="h-4 w-4" />
+            Editar / reprogramar
+          </Link>
+        )}
+
         {/* Status */}
         <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appt.status] ?? ""}`}>
           {STATUS_LABEL[appt.status]}

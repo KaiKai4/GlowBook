@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
 import { AppointmentsCalendar } from "./appointments-calendar";
@@ -10,7 +11,7 @@ import { CancelAppointmentDialog } from "./dialogs/cancel-appointment";
 import { confirmAppointmentAction } from "./actions";
 import { cn } from "@/lib/utils/cn";
 import {
-  CheckCircle2, XCircle, ThumbsUp, Eye, ListFilter, Search, X,
+  CheckCircle2, XCircle, ThumbsUp, Eye, ListFilter, Search, X, Pencil,
 } from "lucide-react";
 import type { CalView } from "./date-nav";
 import type { CalendarAppointment, CalendarEmployee } from "@/features/appointments/view-models";
@@ -268,6 +269,12 @@ export function AppointmentsDayView({
                     >
                       <Eye className="h-3.5 w-3.5" />
                     </button>
+                    <Link
+                      href={`/appointments/${appt.id}/edit`}
+                      className="flex h-8 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Editar
+                    </Link>
                     {appt.status === "scheduled" && (
                       <button
                         onClick={() => handleConfirm(appt.id)}
@@ -299,7 +306,11 @@ export function AppointmentsDayView({
 
       {detailAppt && (
         <AppointmentDetailDialog
-          appt={detailAppt} tz={tz} open={!!detailAppt} onClose={() => setDetailAppt(null)}
+          appt={detailAppt}
+          tz={tz}
+          open={!!detailAppt}
+          onClose={() => setDetailAppt(null)}
+          canManage={canManage}
         />
       )}
       {completeAppt && (
