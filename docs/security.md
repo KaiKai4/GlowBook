@@ -194,3 +194,22 @@ Antes de lanzamiento amplio:
    no confiables.
 5. Mantener `PRODUCTION_SUPABASE_URL` configurado para bloquear scripts contra
    production.
+
+Gate operativo:
+
+```text
+npm run security:readiness
+```
+
+Para exigir confirmacion de CSP/rotacion/log scan antes de lanzamiento amplio:
+
+```text
+GLOWBOOK_SECURITY_REQUIRE_OPERATION_CONFIRMATION=true
+GLOWBOOK_SECURITY_OWNER=<responsable>
+GLOWBOOK_SECURITY_CSP_REPORT_REVIEWED=<decision>
+GLOWBOOK_SECURITY_SECRET_ROTATION_STATUS=<rotated|scheduled|not-needed>
+GLOWBOOK_SECURITY_LOG_SECRET_SCAN=no-secrets-found
+```
+
+`GLOWBOOK_SECURITY_LOG_SECRET_SCAN` debe quedar en `no-secrets-found` solo
+despues de revisar Vercel Logs o el log drain elegido.

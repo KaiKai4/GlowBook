@@ -560,6 +560,8 @@ Evidencia implementada:
   con `GLOWBOOK_RATE_LIMIT_REQUIRE_PROVIDER_CONFIRMATION=true`.
 - `npm run security:readiness` valida headers desplegados y que
   `SUPABASE_SERVICE_ROLE_KEY` no aparezca en artefactos publicos/estaticos.
+- `security:readiness` puede exigir confirmacion operativa de CSP, rotacion de
+  secrets y log scan con `GLOWBOOK_SECURITY_REQUIRE_OPERATION_CONFIRMATION=true`.
 
 Fuerza: Worth exploring / Strong antes de publicidad amplia.
 

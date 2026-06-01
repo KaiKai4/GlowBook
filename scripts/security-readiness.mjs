@@ -10,6 +10,13 @@ const REQUIRED_HEADERS = {
 
 const BUNDLE_DIRS = [".next/static", "public"];
 
+const REQUIRED_OPERATION_ENVS = [
+  "GLOWBOOK_SECURITY_OWNER",
+  "GLOWBOOK_SECURITY_CSP_REPORT_REVIEWED",
+  "GLOWBOOK_SECURITY_SECRET_ROTATION_STATUS",
+  "GLOWBOOK_SECURITY_LOG_SECRET_SCAN",
+];
+
 function loadEnvFileIfPresent() {
   const envPath = join(process.cwd(), ".env.local");
   if (!existsSync(envPath)) return;
@@ -43,6 +50,10 @@ function pass(message) {
 
 function envValueLooksReal(value) {
   return Boolean(value && value.length >= 20 && !value.includes("your-") && !value.includes("here"));
+}
+
+function hasEnv(name) {
+  return Boolean(process.env[name]?.trim());
 }
 
 async function checkHeaders() {
@@ -149,6 +160,24 @@ try {
 }
 
 checkBundleForServerSecrets();
+
+if (process.env.GLOWBOOK_SECURITY_REQUIRE_OPERATION_CONFIRMATION === "true") {
+  for (const name of REQUIRED_OPERATION_ENVS) {
+    if (hasEnv(name)) {
+      pass(`${name} is set`);
+    } else {
+      fail(`${name} is required when GLOWBOOK_SECURITY_REQUIRE_OPERATION_CONFIRMATION=true`);
+    }
+  }
+
+  if (process.env.GLOWBOOK_SECURITY_LOG_SECRET_SCAN === "no-secrets-found") {
+    pass("security log scan confirms no secrets found");
+  } else {
+    fail("Set GLOWBOOK_SECURITY_LOG_SECRET_SCAN=no-secrets-found after reviewing Vercel/log drain output");
+  }
+} else {
+  pass("CSP/secret rotation operation confirmation is optional until broad launch confirmation");
+}
 
 if (process.exitCode) {
   console.log("[security-readiness] Security readiness failed.");

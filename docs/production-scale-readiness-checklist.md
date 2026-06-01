@@ -135,6 +135,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] CSP report-only implementada y activable con `GLOWBOOK_CSP_REPORT_ONLY=true`.
 - [x] Existe `npm run security:readiness` para validar headers y fuga de `service_role` en artefactos publicos.
 - [x] `npm run security:readiness` paso: headers base desplegados y `service_role` ausente de artefactos publicos.
+- [x] El gate puede exigir CSP/rotacion/log scan antes de lanzamiento amplio.
 - [ ] CSP report-only evaluada en deployment staging.
 - [ ] Rotacion de secrets practicada o agendada si aplica.
 
