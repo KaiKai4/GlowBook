@@ -13,6 +13,7 @@
     "security:readiness": "node scripts/security-readiness.mjs",
     "observability:readiness": "node scripts/observability-readiness.mjs",
     "support:readiness": "node scripts/support-readiness.mjs",
+    "capacity:readiness": "node scripts/capacity-readiness.mjs",
     "release:readiness": "node scripts/release-readiness.mjs",
     "release:scale-readiness": "node scripts/release-scale-readiness.mjs",
     "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",

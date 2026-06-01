@@ -98,9 +98,12 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 ## Fase 51 - Capacity Plan
 
 - [x] Existe `docs/capacity-plan.md`.
+- [x] Existe `npm run capacity:readiness`.
+- [x] `npm run capacity:readiness` paso en modo actual.
 - [x] Plan actual Vercel observado: Hobby.
 - [x] Plan actual Supabase observado: Free.
 - [x] Limites de logs/backups revisados en docs oficiales.
+- [x] Gate valida que Supabase staging y production sean proyectos distintos.
 - [ ] Limites de conexiones/Auth/region confirmados en dashboard.
 - [x] Umbral de upgrade definido para 100+ salones reales.
 

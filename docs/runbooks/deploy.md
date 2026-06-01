@@ -40,6 +40,7 @@ npm run test:e2e:staging
 npm run security:readiness
 npm run observability:readiness
 npm run support:readiness
+npm run capacity:readiness
 npm run architecture:health
 ```
 

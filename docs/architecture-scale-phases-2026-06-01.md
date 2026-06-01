@@ -420,6 +420,9 @@ Criterio de terminado:
 Evidencia implementada:
 
 - `docs/capacity-plan.md`
+- `npm run capacity:readiness` valida plan, umbrales, evidencia de escala y
+  separacion Supabase staging/production. Puede exigir limites reales del
+  dashboard con `GLOWBOOK_CAPACITY_REQUIRE_CONFIRMED_LIMITS=true`.
 
 Fuerza: Strong.
 

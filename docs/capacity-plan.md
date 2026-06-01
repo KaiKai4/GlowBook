@@ -105,3 +105,35 @@ Evidencia todavia pendiente:
   bandwidth y alertas.
 - Decision de observability/log drain y backups automaticos para operacion
   amplia.
+
+## Gate Operativo
+
+Ejecutar:
+
+```text
+npm run capacity:readiness
+```
+
+El gate valida que el plan tenga:
+
+- fuentes oficiales;
+- planes observados;
+- umbrales de upgrade;
+- decision para 100+ salones;
+- evidencia de dataset, advisors y restore;
+- separacion entre Supabase staging y production.
+
+Para lanzamiento amplio, exigir valores reales de dashboard con:
+
+```text
+GLOWBOOK_CAPACITY_REQUIRE_CONFIRMED_LIMITS=true
+GLOWBOOK_CAPACITY_SUPABASE_PLAN=
+GLOWBOOK_CAPACITY_SUPABASE_REGION=
+GLOWBOOK_CAPACITY_SUPABASE_BACKUPS=
+GLOWBOOK_CAPACITY_SUPABASE_CONNECTIONS=
+GLOWBOOK_CAPACITY_SUPABASE_AUTH_LIMITS=
+GLOWBOOK_CAPACITY_VERCEL_PLAN=
+GLOWBOOK_CAPACITY_VERCEL_REGION=
+GLOWBOOK_CAPACITY_VERCEL_BANDWIDTH=
+GLOWBOOK_CAPACITY_VERCEL_ALERTS=
+```

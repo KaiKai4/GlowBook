@@ -110,6 +110,12 @@ Soporte e incidentes:
 npm run support:readiness
 ```
 
+Capacidad Supabase/Vercel:
+
+```text
+npm run capacity:readiness
+```
+
 Medicion de rutas con dataset de escala en staging:
 
 ```text
