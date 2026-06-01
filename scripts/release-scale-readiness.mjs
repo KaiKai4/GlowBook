@@ -108,6 +108,7 @@ const expectedDocs = [
   "docs/capacity-plan.md",
   "docs/performance-review-2026-06-01.md",
   "docs/runbooks/load-scale-salons.md",
+  "docs/runbooks/vercel-staging-env.md",
   "docs/runbooks/database-restore.md",
   "docs/runbooks/incidents.md",
   "docs/security.md",

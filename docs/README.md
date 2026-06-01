@@ -39,6 +39,7 @@ el historial git conserva ese contexto si hace falta consultarlo.
 - Operaciones Platform: `docs/runbooks/platform-operations.md`
 - Load smoke 5 salones: `docs/runbooks/load-smoke-5-salons.md`
 - Load scale salones: `docs/runbooks/load-scale-salons.md`
+- Vercel staging y Supabase: `docs/runbooks/vercel-staging-env.md`
 - Incidentes: `docs/runbooks/incidents.md`
 
 ## ADRs De Mayor Peso

@@ -178,6 +178,8 @@ Evidencia implementada:
   Platform-only.
 - `npm run isolation:readiness` valida que el E2E negativo, tests RPC/RLS,
   contratos de base de datos y guard de staging sigan presentes.
+- `docs/runbooks/vercel-staging-env.md` documenta como corregir el bloqueo de
+  Supabase mismatch en Vercel antes de repetir E2E staging.
 
 Fuerza: Strong.
 

@@ -66,6 +66,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] E2E negativo paso en `npm run test:e2e` con 16/16 tests.
 - [x] `npm run test:e2e:staging` rechaza localhost cuando `GLOWBOOK_ENV=staging`.
 - [x] `npm run test:e2e:staging` rechaza deployment Vercel si el Supabase publico embebido no coincide con staging.
+- [x] Existe runbook `docs/runbooks/vercel-staging-env.md` para corregir Supabase mismatch en Vercel.
 - [ ] Repetir E2E negativo contra staging desplegado antes de lanzamiento amplio si cambia `E2E_BASE_URL`.
 - [x] RLS/RPC criticos revisados con fixtures de dos salones.
 - [x] Hallazgos documentados en `docs/database-contracts.md`.
@@ -168,7 +169,7 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 29 ok, 11 blocked
+Summary: 30 ok, 11 blocked
 ```
 
 Subgates OK:

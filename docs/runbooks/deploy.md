@@ -50,7 +50,7 @@ npm run architecture:health
 
 4. Si `npm run test:e2e:staging` reporta mismatch de Supabase desplegado,
    corregir variables en Vercel y redeployar antes de usar ese deployment como
-   evidencia.
+   evidencia. Seguir `docs/runbooks/vercel-staging-env.md`.
 5. Revisar logs de Supabase y hosting.
 6. Confirmar que los eventos de `src/lib/observability` aparecen en logs del
    hosting o log drain. Si se usa webhook, configurar
