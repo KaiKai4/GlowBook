@@ -98,3 +98,16 @@ Gate operativo:
 ```text
 npm run support:readiness
 ```
+
+## Decision Conservadora 2026-06-01
+
+Para piloto y crecimiento controlado, el soporte inicial queda cubierto por:
+
+- KaiKaira / project owner;
+- Vercel dashboard;
+- Supabase dashboard;
+- Platform Audit;
+- Feedback interno de la app.
+
+Antes de campanas publicas masivas se debe confirmar un canal externo para
+salones, owner suplente y horario de guardia de primera semana.

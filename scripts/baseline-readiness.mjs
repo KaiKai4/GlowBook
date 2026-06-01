@@ -8,10 +8,10 @@ const REQUIRED_DOCS = [
 ];
 
 const REQUIRED_DECISION_TEXT = [
-  "Decision actual: No-Go para lanzamiento amplio",
+  "Decision actual: Go para crecimiento controlado; No-Go para campana nacional",
   "Piloto 5-10 salones: permitido",
-  "Crecimiento 25-50 salones: condicionado",
-  "Lanzamiento amplio 100+ salones: no permitido",
+  "Crecimiento controlado 25-50 salones: permitido",
+  "Lanzamiento amplio 100+ salones/campana nacional: no permitido",
   "Vercel Preview staging ya embebe Supabase staging",
   "Variables De Confirmacion",
   "GLOWBOOK_BASELINE_REQUIRE_SIGNED_DECISION=true",

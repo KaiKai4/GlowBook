@@ -77,8 +77,10 @@ Senales para subir de plan:
 ## Decision 2026-06-01
 
 Para piloto y crecimiento controlado, el stack actual puede seguir usandose con
-monitoreo cercano. Para lanzamiento amplio, no conviene depender solo de
-Supabase Free y Vercel Hobby si habra datos reales de muchos salones:
+monitoreo cercano. La decision operativa aprobada es no subir de plan antes de
+tener suficientes salones o senales reales de limite. Para lanzamiento amplio,
+no conviene depender solo de Supabase Free y Vercel Hobby si habra datos reales
+de muchos salones:
 
 - Supabase Free no incluye automatic backups y tiene limite de 500 MB de base
   antes de riesgo de modo read-only.
@@ -91,6 +93,15 @@ Decision recomendada antes de 100+ salones reales:
 2. Usar Vercel Pro si se necesita log drain/retencion superior.
 3. Mantener `release:scale-readiness` bloqueado hasta confirmar plan y
    observability.
+
+Decision conservadora de crecimiento controlado:
+
+- Mantener Supabase Free + Vercel Hobby durante piloto y crecimiento inicial.
+- Revisar dashboard semanalmente mientras haya salones reales.
+- Subir de plan antes de campanas publicas masivas o cuando aparezcan senales
+  de limite: errores 5xx, Auth throttling, queries lentas, falta de logs o
+  necesidad de backups automaticos.
+- No interpretar esta decision como aprobacion de lanzamiento nacional masivo.
 
 Evidencia ya completada:
 

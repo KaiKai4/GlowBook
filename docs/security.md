@@ -213,3 +213,12 @@ GLOWBOOK_SECURITY_LOG_SECRET_SCAN=no-secrets-found
 
 `GLOWBOOK_SECURITY_LOG_SECRET_SCAN` debe quedar en `no-secrets-found` solo
 despues de revisar Vercel Logs o el log drain elegido.
+
+Decision conservadora 2026-06-01:
+
+- Para piloto y crecimiento controlado, se acepta la seguridad base validada por
+  `npm run security:readiness`: headers desplegados y ausencia de
+  `SUPABASE_SERVICE_ROLE_KEY` en artefactos publicos.
+- Antes de campanas publicas masivas, se debe activar o confirmar rate limits,
+  probar CSP report-only y revisar/rotar secrets si fueron compartidos o
+  expuestos.

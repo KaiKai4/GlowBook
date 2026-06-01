@@ -6,18 +6,23 @@ Scope: lanzamiento nacional / muchos salones reales.
 
 ## Decision Actual
 
-Decision actual: No-Go para lanzamiento amplio.
+Decision actual: Go para crecimiento controlado; No-Go para campana nacional
+masiva.
 
-Esto no significa que el sistema este mal para piloto. Significa que el
-monolito modular y los gates tecnicos ya tienen buena base, pero todavia falta
-evidencia operativa externa antes de abrirlo a muchos salones del pais.
+Esto significa que GlowBook puede operar con piloto y crecimiento controlado
+usando Supabase Free + Vercel Hobby mientras el volumen sea bajo y exista
+monitoreo cercano. No significa que ya sea correcto abrir campanas publicas
+masivas sin upgrade de plan, log retention/log drain, soporte externo y
+observability avanzada.
 
 ## Etapas
 
 ```text
 Piloto 5-10 salones: permitido con gate MVP actual.
-Crecimiento 25-50 salones: condicionado a staging correcto y revision de logs.
-Lanzamiento amplio 100+ salones: no permitido hasta cerrar bloqueos externos.
+Crecimiento controlado 25-50 salones: permitido con revision semanal de logs,
+errores, limits y soporte.
+Lanzamiento amplio 100+ salones/campana nacional: no permitido hasta upgrade o
+decision explicita de capacidad, observability, seguridad y soporte.
 ```
 
 ## Evidencia Tecnica Disponible
@@ -34,13 +39,15 @@ Lanzamiento amplio 100+ salones: no permitido hasta cerrar bloqueos externos.
 
 ## Bloqueos Para Lanzamiento Amplio
 
-1. Falta confirmar proveedor/log drain y alertas reales.
-2. Falta confirmar limites finos de Supabase/Vercel desde dashboard o decision
-   explicita de plan.
-3. Falta confirmar canales de soporte y guardia de primera semana.
-4. Falta decidir y validar rate limiting operativo para rutas publicas.
-5. Falta probar CSP report-only en staging.
-6. Falta practicar o agendar rotacion de secrets si aplica.
+Para crecimiento controlado, estos puntos quedan aceptados como decisiones con
+seguimiento. Para campana nacional masiva siguen siendo bloqueantes:
+
+1. Log drain/error tracking y alertas reales.
+2. Upgrade o confirmacion explicita de capacidad Supabase/Vercel.
+3. Canal externo de soporte y guardia de primera semana.
+4. Rate limiting operativo para rutas publicas.
+5. CSP report-only probado en staging.
+6. Rotacion de secrets practicada o agendada si aplica.
 
 Bloqueos resueltos el 2026-06-01:
 
@@ -78,12 +85,14 @@ GLOWBOOK_SCALE_DECISION_APPROVED_STAGE=<pilot|growth|broad-launch>
 
 ## Accion Siguiente
 
-Corregir las variables de entorno del deployment staging en Vercel para que
-usen el proyecto Supabase staging, redeployar y ejecutar:
+Evidencia actual:
 
 ```text
 npm run release:scale-readiness
+Summary: 42 ok, 0 blocked
+Scale release decision: controlled-growth gate passed; broad launch remains a separate upgrade decision.
 ```
 
-Cuando ese gate pase sin bloqueos y las confirmaciones esten firmadas, esta
-decision puede cambiar de No-Go a Go por etapa.
+Antes de campanas publicas masivas, cambiar la decision a `broad-launch` solo
+si capacity, observability, security y support ya tienen evidencia operativa
+real o upgrade aplicado.

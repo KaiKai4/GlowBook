@@ -12,8 +12,8 @@ extiende para lanzamiento amplio con 25, 50, 100 o mas salones.
 | Etapa | Salones | Decision |
 |---|---:|---|
 | Piloto controlado | 5-10 | Gate MVP actual suficiente. |
-| Crecimiento inicial | 25-50 | Requiere isolation E2E y dataset de escala. |
-| Lanzamiento amplio | 100+ | Requiere performance, restore grande, capacity plan, observability avanzada y soporte. |
+| Crecimiento inicial | 25-50 | Permitido como crecimiento controlado con revision semanal de logs/limits. |
+| Lanzamiento amplio | 100+ | Requiere upgrade o decision explicita de capacity, observability avanzada, seguridad y soporte. |
 
 ## Umbrales Minimos
 
@@ -169,7 +169,8 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 37 ok, 4 blocked
+Summary: 42 ok, 0 blocked
+Scale release decision: controlled-growth gate passed; broad launch remains a separate upgrade decision.
 ```
 
 Subgates OK:
@@ -202,13 +203,18 @@ Confirmaciones locales ya validadas con evidencia:
 - `SCALE_RESTORE_CONFIRMED=true`
 - `SCALE_REMINDERS_DECISION_CONFIRMED=true`
 
-Bloqueos restantes para lanzamiento amplio:
+Decision actual:
 
-- `SCALE_OBSERVABILITY_CONFIRMED=true`: falta elegir/verificar log
-  drain/error tracking y alertas reales.
-- `SCALE_CAPACITY_CONFIRMED=true`: falta confirmar limites finos de
-  Supabase/Vercel en dashboard o decision explicita de plan.
-- `SCALE_SECURITY_CONFIRMED=true`: falta confirmar rate limits/CSP/secrets
-  como decision operativa final.
-- `SCALE_SUPPORT_CONFIRMED=true`: falta confirmar canales reales y guardia de
-  primera semana.
+```text
+GLOWBOOK_SCALE_DECISION_APPROVED_STAGE=controlled-growth
+```
+
+El gate pasa para crecimiento controlado. Para campana nacional masiva, siguen
+pendientes como criterios de upgrade/operacion:
+
+- Observability avanzada: log drain/error tracking y alertas reales.
+- Capacity upgrade: limites finos de Supabase/Vercel o upgrade de plan.
+- Seguridad operativa: rate limits, CSP report-only y rotacion/estado de
+  secrets.
+- Soporte externo: canal para salones, owner suplente y guardia de primera
+  semana.

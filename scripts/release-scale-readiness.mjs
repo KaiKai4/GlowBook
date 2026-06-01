@@ -70,6 +70,23 @@ function requireConfirmation(phase, name, reason) {
   return false;
 }
 
+function requireApprovedStage() {
+  const value = String(process.env.GLOWBOOK_SCALE_DECISION_APPROVED_STAGE ?? "").toLowerCase();
+  const allowedStages = ["pilot", "growth", "controlled-growth", "broad-launch"];
+
+  if (allowedStages.includes(value)) {
+    addCheck("release decision", "ok", `approved stage: ${value}`);
+    return value;
+  }
+
+  addCheck(
+    "release decision",
+    "block",
+    "GLOWBOOK_SCALE_DECISION_APPROVED_STAGE must be one of: pilot, growth, controlled-growth, broad-launch"
+  );
+  return "unconfirmed";
+}
+
 function runNodeGate(phase, scriptPath, successMessage) {
   if (!docExists(scriptPath)) {
     addCheck(phase, "block", `${scriptPath} is missing`);
@@ -218,6 +235,7 @@ requireConfirmation("phase 52 restore", "SCALE_RESTORE_CONFIRMED", "large datase
 requireConfirmation("phase 53 security", "SCALE_SECURITY_CONFIRMED", "rate limits/CSP/secrets decision was reviewed");
 requireConfirmation("phase 54 support", "SCALE_SUPPORT_CONFIRMED", "incident support runbook and owner were reviewed");
 requireConfirmation("phase 55 reminders", "SCALE_REMINDERS_DECISION_CONFIRMED", "automatic reminders decision was reviewed");
+const approvedStage = requireApprovedStage();
 
 console.log("GlowBook Scale Release Readiness");
 console.log(new Date().toISOString());
@@ -237,4 +255,8 @@ if (blocked.length > 0) {
   process.exit(1);
 }
 
-console.log("Scale release decision: broad launch gate passed.");
+if (approvedStage === "broad-launch") {
+  console.log("Scale release decision: broad launch gate passed.");
+} else {
+  console.log(`Scale release decision: ${approvedStage} gate passed; broad launch remains a separate upgrade decision.`);
+}
