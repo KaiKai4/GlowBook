@@ -68,11 +68,22 @@ function ownerEmailFor(batchId, salonIndex) {
 }
 
 async function login(page, credentials) {
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  await page.goto("/login", { waitUntil: "networkidle" });
   await page.getByLabel("Email").fill(credentials.email);
+  await page.waitForTimeout(250);
   await page.getByLabel(/Contrase/i).fill(credentials.password);
+  await page.waitForTimeout(250);
   await page.getByRole("button", { name: /Iniciar/i }).click();
-  await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 15_000 });
+
+  const loginError = page.getByText(/Email o contrase/i);
+  await Promise.race([
+    page.waitForFunction(() => !window.location.pathname.endsWith("/login"), undefined, {
+      timeout: 30_000,
+    }),
+    loginError.waitFor({ state: "visible", timeout: 30_000 }).then(() => {
+      throw new Error(`Could not sign in as ${credentials.email}.`);
+    }).catch(() => new Promise(() => {})),
+  ]);
 }
 
 async function measureRoute(page, route) {

@@ -330,6 +330,9 @@ Evidencia implementada:
 - `npm run scale:measure-routes`
 - `performance:readiness` puede exigir confirmacion granular de Vercel Logs
   con `GLOWBOOK_PERFORMANCE_REQUIRE_VERCEL_LOG_REVIEW=true`.
+- Batch `scale-20260601-route-100` midio rutas criticas contra Preview staging:
+  10/10 rutas respondieron 200; maximo observado 874 ms en `/admin/salons`;
+  cleanup elimino 100 salones y 100 auth users.
 - Supabase performance advisors con batch `scale-20260601-100` reporto
   `No issues found`.
 

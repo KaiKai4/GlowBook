@@ -2,8 +2,8 @@
 
 Fecha: 2026-06-01
 
-Estado: revision parcial con dataset de escala. Falta medicion manual de rutas
-en Vercel Logs para cerrar lanzamiento amplio.
+Estado: rutas criticas medidas con dataset de 100 salones en staging. Falta
+revision manual de Vercel Logs para cerrar lanzamiento amplio.
 
 ## Dataset
 
@@ -14,6 +14,35 @@ Colaboradores por Salon: 8
 Clientes por Salon: 150
 Citas por Salon: 120
 Fecha de seed: 2026-06-01 UTC
+Fecha de cleanup: 2026-06-01 UTC
+```
+
+Conteos:
+
+- 100 salones
+- 100 owners
+- 800 colaboradores
+- 500 categorias
+- 3000 servicios
+- 15000 clientes
+- 12000 citas
+
+Cleanup:
+
+- 100 salones eliminados
+- 100 auth users eliminados desde perfiles
+- 0 auth users extra
+
+Batch adicional de medicion de rutas:
+
+```text
+Batch: scale-20260601-route-100
+Salones: 100
+Colaboradores por Salon: 8
+Clientes por Salon: 150
+Citas por Salon: 120
+Fecha de seed: 2026-06-01 UTC
+Fecha de medicion: 2026-06-01 UTC
 Fecha de cleanup: 2026-06-01 UTC
 ```
 
@@ -50,16 +79,26 @@ staging local antes de medir.
 
 | Ruta | Resultado | Latencia aproximada | Hallazgos |
 |---|---|---:|---|
-| `/` | pendiente | pendiente | pendiente |
-| `/appointments` | pendiente | pendiente | pendiente |
-| `/appointments/new` | pendiente | pendiente | pendiente |
-| `/customers` | pendiente | pendiente | pendiente |
-| `/employees` | pendiente | pendiente | pendiente |
-| `/services` | pendiente | pendiente | pendiente |
-| `/reports` | pendiente | pendiente | pendiente |
-| `/admin` | pendiente | pendiente | pendiente |
-| `/admin/salons` | pendiente | pendiente | pendiente |
-| `/admin/audit` | pendiente | pendiente | pendiente |
+| `/` | 200 | 351 ms | OK |
+| `/appointments` | 200 | 530 ms | OK |
+| `/appointments/new` | 200 | 601 ms | OK |
+| `/customers` | 200 | 290 ms | OK |
+| `/employees` | 200 | 612 ms | OK |
+| `/services` | 200 | 814 ms | OK |
+| `/reports` | 200 | 386 ms | OK |
+| `/admin` | 200 | 363 ms | OK |
+| `/admin/salons` | 200 | 874 ms | OK; ruta mas lenta por overview Platform |
+| `/admin/audit` | 200 | 339 ms | OK |
+
+Resultado 2026-06-01:
+
+```text
+npm run scale:measure-routes
+Batch: scale-20260601-route-100
+10 rutas medidas
+10 respuestas 200
+max duration: 874 ms en /admin/salons
+```
 
 ## Vercel Logs
 
@@ -96,20 +135,20 @@ repetirse cuando `E2E_BASE_URL` apunte al deployment real.
 
 Nota 2026-06-01, segundo intento:
 
-`E2E_BASE_URL`/`APP_URL` se apuntaron a `glow-book-chi.vercel.app`, pero el
-deployment publico estaba embebiendo el Supabase de production mientras
-`.env.local` apuntaba a Supabase staging. El guard ahora bloquea ese mismatch
-antes de ejecutar Playwright:
+`E2E_BASE_URL`/`APP_URL` se apuntaron inicialmente a `glow-book-chi.vercel.app`,
+pero ese deployment publico embebia Supabase de production mientras `.env.local`
+apuntaba a Supabase staging. El guard bloqueaba ese mismatch antes de ejecutar
+Playwright:
 
 ```text
 Expected staging host: vifuurgquxkkpqqobigr.supabase.co
 Detected deployed host(s): eokiklkgutzrkhbamglf.supabase.co
 ```
 
-Accion requerida para cerrar esta fase: actualizar variables de entorno en
-Vercel para el deployment staging, redeployar y repetir `npm run
-staging:verify-env`, `npm run test:e2e:staging` y `npm run
-scale:measure-routes`.
+Resolucion: el Preview `glow-book-git-main-kai-book.vercel.app` fue redeployado
+con Supabase staging `vifuurgquxkkpqqobigr.supabase.co`. Luego pasaron
+`npm run staging:verify-env`, `npm run test:e2e:staging` y
+`npm run scale:measure-routes`.
 
 ## Supabase
 
@@ -129,8 +168,9 @@ No issues found
 
 ```text
 No crear indices nuevos por ahora. Supabase performance advisors no reporto
-issues con dataset de 100 salones. Falta revisar Vercel Logs y tiempos de
-rutas antes de afirmar readiness de lanzamiento amplio.
+issues con dataset de 100 salones y las rutas criticas respondieron 200 con
+latencias bajo 1s en la medicion de staging. Falta revisar Vercel Logs antes de
+afirmar readiness de lanzamiento amplio.
 ```
 
 Posibles decisiones:
