@@ -26,6 +26,14 @@ const CRITICAL_ROUTES = [
   "/admin/audit",
 ];
 
+const REQUIRED_LOG_REVIEW_ENVS = [
+  "GLOWBOOK_PERFORMANCE_LOG_REVIEW_OWNER",
+  "GLOWBOOK_PERFORMANCE_LOG_REVIEW_DATE",
+  "GLOWBOOK_PERFORMANCE_LOG_REVIEW_WINDOW",
+  "GLOWBOOK_PERFORMANCE_LOG_REVIEW_MAX_5XX",
+  "GLOWBOOK_PERFORMANCE_LOG_REVIEW_MAX_FUNCTION_DURATION_MS",
+];
+
 function fail(message) {
   console.error(`[performance-readiness] ${message}`);
   process.exitCode = 1;
@@ -37,6 +45,10 @@ function pass(message) {
 
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
+}
+
+function hasEnv(name) {
+  return Boolean(process.env[name]?.trim());
 }
 
 if (!existsSync(join(process.cwd(), PERFORMANCE_DOC))) {
@@ -77,6 +89,24 @@ if (process.env.GLOWBOOK_PERFORMANCE_REQUIRE_ROUTE_MEASUREMENTS === "true") {
   }
 } else {
   pass("route measurements are optional until deployed staging is corrected");
+}
+
+if (process.env.GLOWBOOK_PERFORMANCE_REQUIRE_VERCEL_LOG_REVIEW === "true") {
+  for (const name of REQUIRED_LOG_REVIEW_ENVS) {
+    if (hasEnv(name)) {
+      pass(`${name} is set`);
+    } else {
+      fail(`${name} is required when GLOWBOOK_PERFORMANCE_REQUIRE_VERCEL_LOG_REVIEW=true`);
+    }
+  }
+
+  if (process.env.GLOWBOOK_PERFORMANCE_LOG_REVIEW_SECRETS_VISIBLE === "false") {
+    pass("Vercel log review confirms no visible secrets");
+  } else {
+    fail("Set GLOWBOOK_PERFORMANCE_LOG_REVIEW_SECRETS_VISIBLE=false after reviewing Vercel Logs");
+  }
+} else {
+  pass("Vercel Logs review confirmation is optional until broad launch confirmation");
 }
 
 if (process.exitCode) {

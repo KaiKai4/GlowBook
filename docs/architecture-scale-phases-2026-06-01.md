@@ -323,6 +323,8 @@ Evidencia implementada:
 - `scripts/measure-scale-routes.mjs`
 - `npm run performance:readiness`
 - `npm run scale:measure-routes`
+- `performance:readiness` puede exigir confirmacion granular de Vercel Logs
+  con `GLOWBOOK_PERFORMANCE_REQUIRE_VERCEL_LOG_REVIEW=true`.
 - Supabase performance advisors con batch `scale-20260601-100` reporto
   `No issues found`.
 

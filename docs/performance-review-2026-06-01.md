@@ -69,6 +69,24 @@ staging local antes de medir.
 - [ ] Middleware redirects esperados revisados.
 - [ ] No hay secretos visibles.
 
+Gate operativo:
+
+```text
+npm run performance:readiness
+```
+
+Para exigir evidencia de logs antes de lanzamiento amplio:
+
+```text
+GLOWBOOK_PERFORMANCE_REQUIRE_VERCEL_LOG_REVIEW=true
+GLOWBOOK_PERFORMANCE_LOG_REVIEW_OWNER=<responsable>
+GLOWBOOK_PERFORMANCE_LOG_REVIEW_DATE=2026-06-01
+GLOWBOOK_PERFORMANCE_LOG_REVIEW_WINDOW=<ventana revisada>
+GLOWBOOK_PERFORMANCE_LOG_REVIEW_MAX_5XX=<conteo>
+GLOWBOOK_PERFORMANCE_LOG_REVIEW_MAX_FUNCTION_DURATION_MS=<ms>
+GLOWBOOK_PERFORMANCE_LOG_REVIEW_SECRETS_VISIBLE=false
+```
+
 Nota 2026-06-01:
 
 `npm run test:e2e:staging` fue bloqueado como evidencia de staging porque

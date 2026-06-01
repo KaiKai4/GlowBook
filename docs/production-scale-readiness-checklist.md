@@ -88,6 +88,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] Existe `npm run performance:readiness`.
 - [x] `npm run performance:readiness` paso en modo actual.
 - [x] La medicion bloquea si Vercel apunta a otro Supabase distinto de staging.
+- [x] El gate puede exigir confirmacion granular de Vercel Logs antes de lanzamiento amplio.
 - [ ] Rutas criticas medidas con dataset de escala.
 - [ ] Vercel Logs revisados.
 - [x] Supabase performance advisors revisado con dataset de 100 salones: `No issues found`.
