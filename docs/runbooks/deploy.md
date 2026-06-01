@@ -40,6 +40,8 @@ npm run test:e2e:staging
 npm run security:readiness
 npm run observability:readiness
 npm run support:readiness
+npm run dataset:readiness
+npm run performance:readiness
 npm run capacity:readiness
 npm run restore:readiness
 npm run reminders:readiness

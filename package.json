@@ -16,6 +16,8 @@
     "capacity:readiness": "node scripts/capacity-readiness.mjs",
     "restore:readiness": "node scripts/restore-readiness.mjs",
     "reminders:readiness": "node scripts/reminders-readiness.mjs",
+    "dataset:readiness": "node scripts/dataset-readiness.mjs",
+    "performance:readiness": "node scripts/performance-readiness.mjs",
     "release:readiness": "node scripts/release-readiness.mjs",
     "release:scale-readiness": "node scripts/release-scale-readiness.mjs",
     "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",

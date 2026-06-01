@@ -226,6 +226,7 @@ Evidencia implementada:
 
 - `scripts/seed-staging-scale.mjs`
 - `scripts/cleanup-staging-scale.mjs`
+- `npm run dataset:readiness`
 - `npm run scale:seed-salons`
 - `npm run scale:cleanup-salons`
 - `docs/runbooks/load-scale-salons.md`
@@ -315,6 +316,7 @@ Evidencia implementada:
 - `docs/performance-review-2026-06-01.md`
 - checklist de rutas y decisiones de indices.
 - `scripts/measure-scale-routes.mjs`
+- `npm run performance:readiness`
 - `npm run scale:measure-routes`
 - Supabase performance advisors con batch `scale-20260601-100` reporto
   `No issues found`.

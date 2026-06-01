@@ -119,3 +119,21 @@ Revisar logs:
 - Latencias aproximadas.
 - Warnings Supabase/Vercel.
 - Decisiones de indices o no-accion.
+
+## Gate Operativo
+
+Ejecutar:
+
+```text
+npm run dataset:readiness
+npm run performance:readiness
+```
+
+`dataset:readiness` valida que existan scripts de seed/cleanup/medicion y que
+los batches 25/50/100 tengan evidencia documentada. `performance:readiness`
+valida la revision parcial de performance y puede exigir mediciones reales de
+rutas cuando el deployment staging este corregido:
+
+```text
+GLOWBOOK_PERFORMANCE_REQUIRE_ROUTE_MEASUREMENTS=true
+```

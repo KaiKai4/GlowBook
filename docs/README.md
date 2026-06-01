@@ -116,6 +116,13 @@ Capacidad Supabase/Vercel:
 npm run capacity:readiness
 ```
 
+Dataset y performance:
+
+```text
+npm run dataset:readiness
+npm run performance:readiness
+```
+
 Restore y RTO/RPO:
 
 ```text

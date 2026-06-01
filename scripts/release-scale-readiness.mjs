@@ -151,6 +151,16 @@ runNodeGate(
   "deployed staging environment matches configured Supabase"
 );
 runNodeGate(
+  "phase 48 dataset",
+  "scripts/dataset-readiness.mjs",
+  "dataset readiness gate passed"
+);
+runNodeGate(
+  "phase 49 performance",
+  "scripts/performance-readiness.mjs",
+  "performance readiness gate passed"
+);
+runNodeGate(
   "phase 50 observability",
   "scripts/observability-readiness.mjs",
   "observability readiness gate passed"

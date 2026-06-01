@@ -70,6 +70,8 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Existe `npm run scale:seed-salons`.
 - [x] Existe `npm run scale:cleanup-salons`.
+- [x] Existe `npm run dataset:readiness`.
+- [x] `npm run dataset:readiness` paso en modo actual.
 - [x] Los scripts bloquean production y requieren confirmacion humana.
 - [x] Dataset de 25 salones creado y limpiado con batch `scale-20260601-25`.
 - [x] Dataset de 50 salones creado y limpiado con batch `scale-20260601-50`.
@@ -79,6 +81,8 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Existe plantilla `docs/performance-review-2026-06-01.md`.
 - [x] Existe medicion repetible `npm run scale:measure-routes`.
+- [x] Existe `npm run performance:readiness`.
+- [x] `npm run performance:readiness` paso en modo actual.
 - [x] La medicion bloquea si Vercel apunta a otro Supabase distinto de staging.
 - [ ] Rutas criticas medidas con dataset de escala.
 - [ ] Vercel Logs revisados.
@@ -156,12 +160,14 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 23 ok, 11 blocked
+Summary: 25 ok, 11 blocked
 ```
 
 Subgates OK:
 
 - `observability:readiness`
+- `dataset:readiness`
+- `performance:readiness`
 - `capacity:readiness`
 - `restore:readiness`
 - `security:readiness`
