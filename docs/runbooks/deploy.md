@@ -38,6 +38,7 @@ npm run db:types
 npm run staging:verify-env
 npm run test:e2e:staging
 npm run security:readiness
+npm run observability:readiness
 npm run architecture:health
 ```
 

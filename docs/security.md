@@ -109,6 +109,25 @@ Reglas:
 - No loguear tokens, cookies, passwords, authorization headers ni
   `SUPABASE_SERVICE_ROLE_KEY`.
 
+Validacion 2026-06-01:
+
+```text
+npm run observability:readiness
+```
+
+El Adapter redacciona metadata sensible y tambien secretos conocidos dentro de
+`error.message`, `error.stack` y valores de metadata con claves no sensibles.
+El comando paso en modo actual sin webhook obligatorio y
+`src/lib/observability/index.test.ts` paso con 3/3 tests.
+Para lanzamiento amplio, configurar un proveedor/webhook y activar:
+
+```text
+GLOWBOOK_OBSERVABILITY_REQUIRE_WEBHOOK=true
+```
+
+Con esa variable, el gate falla si no puede enviar un evento sintetico al
+destino configurado.
+
 ## Rate Limiting
 
 Decision actual para MVP:

@@ -368,6 +368,9 @@ Evidencia implementada:
 
 - `release:scale-readiness` exige `SCALE_OBSERVABILITY_CONFIRMED=true`.
 - `docs/security.md` documenta log drain y secretos.
+- `src/lib/observability` redacciona metadata, error message y stack.
+- `npm run observability:readiness` valida Adapter/test y puede exigir webhook
+  real con `GLOWBOOK_OBSERVABILITY_REQUIRE_WEBHOOK=true`.
 
 Fuerza: Strong para lanzamiento amplio.
 

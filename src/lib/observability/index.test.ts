@@ -70,4 +70,33 @@ describe("observability adapter", () => {
       },
     });
   });
+
+  it("redacts known secrets from error messages, stacks and non-sensitive metadata keys", () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("GLOWBOOK_OBSERVABILITY_WEBHOOK_URL", "https://logs.example.test/glowbook");
+    vi.stubEnv("GLOWBOOK_OBSERVABILITY_ENABLE_IN_TESTS", "true");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-secret-value");
+
+    const error = new Error("request failed authorization=service-role-secret-value");
+    error.stack = "Error: token=service-role-secret-value";
+
+    captureError(error, {
+      module: "platform",
+      action: "delete_salon",
+      metadata: {
+        message: "service-role-secret-value",
+        tags: ["safe", "password=service-role-secret-value"],
+      },
+    });
+
+    const [, request] = fetchMock.mock.calls[0];
+    const body = JSON.parse(request.body);
+
+    expect(JSON.stringify(body)).not.toContain("service-role-secret-value");
+    expect(body.error.message).toBe("request failed authorization=[redacted]");
+    expect(body.error.stack).toBe("Error: token=[redacted]");
+    expect(body.metadata.message).toBe("[redacted]");
+    expect(body.metadata.tags).toEqual(["safe", "password=[redacted]"]);
+  });
 });

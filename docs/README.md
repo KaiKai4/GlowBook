@@ -98,6 +98,12 @@ Seguridad de deployment:
 npm run security:readiness
 ```
 
+Observability/log drain:
+
+```text
+npm run observability:readiness
+```
+
 Medicion de rutas con dataset de escala en staging:
 
 ```text

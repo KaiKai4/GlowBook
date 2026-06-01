@@ -22,12 +22,39 @@ interface ObservabilityPayload {
 }
 
 const SENSITIVE_KEY_PATTERN = /token|secret|password|service_role|authorization|cookie|key/i;
+const SENSITIVE_TEXT_PATTERN =
+  /(token|secret|password|service_role|authorization|cookie|key)(\s*[=:]\s*)[^\s,"'}]+/gi;
+
+function knownSensitiveValues(): string[] {
+  return Object.entries(process.env)
+    .filter(([key, value]) => SENSITIVE_KEY_PATTERN.test(key) && typeof value === "string")
+    .map(([, value]) => value)
+    .filter((value): value is string => Boolean(value && value.length >= 8));
+}
+
+function redactText(value: string): string {
+  let redacted = value.replace(SENSITIVE_TEXT_PATTERN, "$1$2[redacted]");
+
+  for (const sensitiveValue of knownSensitiveValues()) {
+    redacted = redacted.split(sensitiveValue).join("[redacted]");
+  }
+
+  return redacted;
+}
+
+function sanitizeMetadataValue(value: Primitive | Primitive[]): Primitive | Primitive[] {
+  if (typeof value === "string") return redactText(value);
+  if (Array.isArray(value)) {
+    return value.map((item) => (typeof item === "string" ? redactText(item) : item));
+  }
+  return value;
+}
 
 function sanitizeMetadata(metadata: ObservabilityMetadata = {}): ObservabilityMetadata {
   return Object.fromEntries(
     Object.entries(metadata).map(([key, value]) => [
       key,
-      SENSITIVE_KEY_PATTERN.test(key) ? "[redacted]" : value,
+      SENSITIVE_KEY_PATTERN.test(key) ? "[redacted]" : sanitizeMetadataValue(value),
     ])
   );
 }
@@ -36,14 +63,14 @@ function serializeError(error: unknown) {
   if (error instanceof Error) {
     return {
       name: error.name,
-      message: error.message,
-      stack: error.stack,
+      message: redactText(error.message),
+      stack: error.stack ? redactText(error.stack) : undefined,
     };
   }
 
   return {
     name: "UnknownError",
-    message: String(error),
+    message: redactText(String(error)),
   };
 }
 
