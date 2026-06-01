@@ -66,8 +66,9 @@ datos grandes, limites de proveedores y soporte.
 
 Prioridad: bloqueante antes de escalar fuera del piloto.
 
-Estado: implementada como checklist y gate; pendiente go/no-go firmado para
-lanzamiento amplio.
+Estado: implementada como checklist y gate. La decision aprobada actual es
+`controlled-growth`; lanzamiento amplio queda como decision separada de
+upgrade operativo.
 
 Objetivo: definir el punto de control para pasar de MVP 5+ salones a
 lanzamiento amplio.
@@ -126,8 +127,8 @@ Fuerza: Strong.
 
 Prioridad: bloqueante antes de muchos salones.
 
-Estado: implementada como E2E negativo inicial; pendiente ejecucion contra
-staging para firmar lanzamiento amplio.
+Estado: completada para `controlled-growth`; E2E negativo ejecutado contra
+staging y guard de Supabase desplegado verificado.
 
 Objetivo: demostrar que un Salon no puede leer, modificar ni inferir datos de
 otro Salon por UI, Server Actions, RPCs, reportes ni rutas directas.
@@ -274,8 +275,10 @@ Fuerza: Strong.
 
 Prioridad: alta.
 
-Estado: parcialmente implementada; Supabase advisors paso con 100 salones, pero
-falta medicion de rutas y Vercel Logs antes de lanzar ampliamente.
+Estado: completada para `controlled-growth`; Supabase advisors paso con 100
+salones y rutas criticas fueron medidas contra Preview staging. Revision
+manual de Vercel Logs/log drain avanzado queda como criterio de lanzamiento
+amplio.
 
 Objetivo: comprobar que rutas criticas responden con volumen y que Supabase no
 reporta issues importantes.
@@ -342,8 +345,9 @@ Fuerza: Strong.
 
 Prioridad: alta antes de muchos salones.
 
-Estado: gate/documentacion implementados; pendiente proveedor/log drain y alerta
-real si se decide lanzamiento amplio.
+Estado: gate/documentacion implementados y confirmados para
+`controlled-growth`; proveedor/log drain y alerta real quedan como criterio si
+se decide lanzamiento amplio.
 
 Objetivo: pasar de logs visibles en Vercel a observability operable con
 retencion, busqueda y alertas.
@@ -403,9 +407,9 @@ Fuerza: Strong para lanzamiento amplio.
 
 Prioridad: alta.
 
-Estado: documento implementado con planes observados y fuentes oficiales;
-pendiente decision operativa de upgrade/backup/log drain para lanzamiento
-amplio.
+Estado: documento implementado con planes observados, fuentes oficiales y
+decision operativa para `controlled-growth`; upgrade/backup/log drain quedan
+como criterio de lanzamiento amplio.
 
 Objetivo: saber que limites de plan, conexiones, funciones, ancho de banda y
 base de datos aplican antes de crecer.
@@ -521,8 +525,9 @@ Fuerza: Strong.
 
 Prioridad: alta.
 
-Estado: decision/documentacion implementada; pendiente confirmacion operativa de
-rate limits/CSP/secrets en hosting.
+Estado: decision/documentacion implementada y gate de seguridad pasado para
+`controlled-growth`; confirmacion operativa estricta de rate limits/CSP/secrets
+queda como criterio de lanzamiento amplio.
 
 Objetivo: endurecer seguridad para exposicion publica amplia.
 
@@ -577,7 +582,8 @@ Fuerza: Worth exploring / Strong antes de publicidad amplia.
 
 Prioridad: alta.
 
-Estado: runbook implementado; pendiente confirmar canales y owner suplente para
+Estado: runbook implementado y gate de soporte pasado para
+`controlled-growth`; canales formales y owner suplente quedan como criterio de
 lanzamiento amplio.
 
 Objetivo: preparar operacion humana para muchos salones reales.
@@ -737,3 +743,11 @@ Este roadmap se considera cerrado cuando:
 8. Hay plan de seguridad operativa.
 9. Hay runbook de incidentes y soporte.
 10. Recordatorios automaticos estan decididos: manual o Module real de envio.
+
+Estado de cierre al 2026-06-01:
+
+- Cerrado para `controlled-growth`: `npm run release:scale-readiness` paso con
+  42 OK / 0 bloqueos y decision aprobada `controlled-growth`.
+- No cerrado para lanzamiento amplio nacional: requiere decision nueva de
+  upgrade operativo, observability/log drain formal, soporte formal y revision
+  de capacidad del plan antes de campanas publicas.

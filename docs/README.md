@@ -7,6 +7,7 @@ el historial git conserva ese contexto si hace falta consultarlo.
 ## Vigente
 
 - Auditoria vigente: `docs/architecture-audit-2026-06-01.md`
+- Verificacion vigente de fases/auditoria: `docs/architecture-scale-verification-2026-06-01.md`
 - Auditoria base anterior: `docs/architecture-audit-2026-05-31.md`
 - Auditoria historica: `docs/architecture-audit-2026-05-30.md`
 - Fases de escalamiento vigentes: `docs/architecture-scale-phases-2026-06-01.md`
