@@ -58,6 +58,12 @@ function hasEnv(name) {
 
 async function checkHeaders() {
   const appUrl = process.env.E2E_BASE_URL ?? process.env.APP_URL;
+  const headers = {};
+
+  if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+    headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    headers["x-vercel-set-bypass-cookie"] = "true";
+  }
 
   if (!appUrl) {
     fail("Set E2E_BASE_URL or APP_URL to verify deployed security headers.");
@@ -69,7 +75,7 @@ async function checkHeaders() {
     return;
   }
 
-  const response = await fetch(new URL("/login", appUrl));
+  const response = await fetch(new URL("/login", appUrl), { headers });
 
   if (!response.ok) {
     fail(`Could not fetch /login from deployed app: ${response.status} ${response.statusText}.`);

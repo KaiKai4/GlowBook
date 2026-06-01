@@ -54,6 +54,15 @@ function requireEnv(name) {
   return value;
 }
 
+function vercelBypassHeaders() {
+  if (!process.env.VERCEL_AUTOMATION_BYPASS_SECRET) return undefined;
+
+  return {
+    "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+    "x-vercel-set-bypass-cookie": "true",
+  };
+}
+
 function ownerEmailFor(batchId, salonIndex) {
   return `glowbook.${batchId}.owner.${salonIndex}.0@example.com`;
 }
@@ -188,7 +197,10 @@ try {
     platformCredentials = await createTemporaryPlatformAdmin(admin);
   }
 
-  const ownerContext = await browser.newContext({ baseURL: baseUrl });
+  const ownerContext = await browser.newContext({
+    baseURL: baseUrl,
+    extraHTTPHeaders: vercelBypassHeaders(),
+  });
   const ownerPage = await ownerContext.newPage();
   await login(ownerPage, ownerCredentials);
 
@@ -198,7 +210,10 @@ try {
 
   await ownerContext.close();
 
-  const platformContext = await browser.newContext({ baseURL: baseUrl });
+  const platformContext = await browser.newContext({
+    baseURL: baseUrl,
+    extraHTTPHeaders: vercelBypassHeaders(),
+  });
   const platformPage = await platformContext.newPage();
   await login(platformPage, platformCredentials);
 

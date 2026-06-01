@@ -71,6 +71,32 @@ npm run security:readiness
 npm run release:scale-readiness
 ```
 
+## Si Preview Responde 401
+
+Un `401 Unauthorized` en `npm run staging:verify-env` normalmente significa que
+el Preview esta protegido por Vercel Deployment Protection.
+
+Opciones:
+
+1. Desactivar la proteccion del Preview mientras se ejecutan pruebas.
+2. Mantener la proteccion y crear un Protection Bypass for Automation en Vercel.
+
+Si usas bypass, guardar el secret solo en `.env.local` o en el entorno seguro de
+CI:
+
+```text
+VERCEL_AUTOMATION_BYPASS_SECRET=<secret generado en Vercel>
+```
+
+Los scripts de staging usan ese valor como header:
+
+```text
+x-vercel-protection-bypass: <secret>
+x-vercel-set-bypass-cookie: true
+```
+
+No subir ese secret a git ni mostrarlo en screenshots.
+
 ## Cierre De Performance
 
 Para cerrar Fase 49 despues de corregir staging:

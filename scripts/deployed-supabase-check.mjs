@@ -13,9 +13,15 @@ function hostFor(value) {
 async function fetchText(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
+  const headers = {};
+
+  if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+    headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    headers["x-vercel-set-bypass-cookie"] = "true";
+  }
 
   try {
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await fetch(url, { headers, signal: controller.signal });
     if (!response.ok) {
       throw new Error(`${response.status} ${response.statusText}`);
     }
