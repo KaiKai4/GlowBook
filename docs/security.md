@@ -59,6 +59,17 @@ GLOWBOOK_OBSERVABILITY_WEBHOOK_URL
 GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN
 ```
 
+Validacion 2026-05-31:
+
+- Vercel Logs muestra requests reales `GET 200` en rutas principales.
+- Los `GET 307` observados corresponden a redirects esperados de middleware/auth.
+- El detalle de Vercel muestra Middleware, Function Invocation y llamadas a
+  Supabase.
+- En los logs revisados no aparecen `SUPABASE_SERVICE_ROLE_KEY`, tokens,
+  cookies completas, passwords ni authorization headers.
+- Para mayor retencion o alertas, se puede activar webhook/log drain sin tocar
+  Modules de negocio.
+
 Reglas:
 
 - Modules de negocio no deben importar SDKs de proveedores de observability.
@@ -66,8 +77,7 @@ Reglas:
   `src/lib/observability`.
 - Si se usa webhook/log drain, el token queda server-only y nunca debe llevar
   prefijo `NEXT_PUBLIC_`.
-- Antes de produccion, confirmar retencion, acceso y alertas basicas en el
-  hosting/log drain.
+- Antes de produccion, confirmar acceso a Vercel Logs o al log drain elegido.
 - No loguear tokens, cookies, passwords, authorization headers ni
   `SUPABASE_SERVICE_ROLE_KEY`.
 

@@ -7,13 +7,13 @@ reciente: comando, captura de CI, Supabase dashboard, PR o runbook ejecutado.
 
 ## Evidencia 2026-05-31
 
-Estado de decision: **no lanzar todavia**.
+Estado de decision: **readiness de auditoria cerrado para MVP 5+ salones**.
 
 Evidencia local completada:
 
-- `npm run release:readiness` agregado como gate ejecutable; actualmente bloquea
-  lanzamiento hasta confirmar restore, observability y soporte. Resultado
-  actual con evidencias confirmadas y soporte asignado: 19 OK, 2 bloqueados.
+- `npm run release:readiness` agregado como gate ejecutable. Resultado actual
+  con staging, restore, smoke, performance, soporte y observability confirmados:
+  21 OK, 0 bloqueados.
 - Supabase staging separado creado y enlazado: `glowbook-staging`
   (`vifuurgquxkkpqqobigr`).
 - `npm run db:migrate` paso contra staging: se aplicaron migraciones
@@ -28,6 +28,15 @@ Evidencia local completada:
 - `npm run smoke:seed-5-salons` paso con batch `smoke-20260531-e2e`: creo 5
   salones, 30 colaboradores, 100 servicios, 500 clientes y 400 citas.
 - `npm run smoke:cleanup-5-salons` paso y el batch quedo en cero registros.
+- Restore de prueba ejecutado desde staging hacia Supabase local con batch
+  `smoke-restore-20260531`: dump data-only de `auth,public`, restore local con
+  `ON_ERROR_STOP=1`, validacion de 5 salones, 500 clientes, 30 colaboradores,
+  400 citas y 5 usuarios auth. El batch staging quedo en cero registros.
+- Observability basica confirmada en Vercel Logs: requests reales `GET 200` en
+  rutas principales, redirects `GET 307` esperados, Middleware/Function
+  Invocation visibles y sin secretos visibles en los logs revisados.
+- Supabase local usa puertos `554xx` en `supabase/config.toml` porque Windows
+  tenia reservado el rango `54321-54620`.
 - `npx supabase db advisors --linked --type performance --output json` reporto
   warnings RLS despues del smoke; se agrego
   `20240101000028_optimize_rls_policy_performance.sql`.
@@ -39,16 +48,12 @@ Evidencia local completada:
 - Hotspots UI route-local revisados sin fugas a Supabase ni data Adapters.
 - Decision de recordatorios confirmada como MVP manual/read Module.
 
-Bloqueos externos:
+Pendientes no bloqueantes:
 
-- Restore real requiere backup y destino staging/temporal.
-- Observability real requiere hosting logs/log drain/proveedor verificado.
 - Owner de soporte asignado en `docs/launch-support.md`.
 - Observability Adapter soporta consola estructurada y webhook/log drain
-  opcional; falta validar destino real de hosting/log drain.
-- Restore real sigue bloqueado porque este equipo no tiene Docker/Supabase local
-  disponible ni proyecto temporal de restore. `npx supabase db dump` tambien
-  requiere Docker en este entorno.
+  opcional; se puede conectar un proveedor/log drain mas adelante si se necesita
+  mayor retencion o alertas.
 
 ## Arquitectura
 
@@ -66,8 +71,8 @@ Bloqueos externos:
 - [x] RLS/RPC criticos validados con tests y E2E staging.
 - [ ] `platform_audit_log` existe, registra acciones Platform sensibles y se revisa desde `/admin/audit`.
 - [ ] Plataforma puede suspender/reactivar Salon desde `/admin/salons` y deja audit log.
-- [ ] Backup reciente confirmado antes del primer lanzamiento.
-- [ ] Restore probado en staging o entorno temporal.
+- [x] Backup/dump reciente de staging confirmado antes del primer lanzamiento.
+- [x] Restore probado en Supabase local temporal.
 
 ## CI/CD
 
@@ -101,6 +106,7 @@ Bloqueos externos:
 - [ ] Runbook de restore revisado.
 - [ ] Runbook de Platform operations revisado.
 - [x] Persona responsable de soporte definida para la semana de lanzamiento.
+- [x] Observability basica revisada en Vercel Logs.
 
 ## Decision De Recordatorios
 

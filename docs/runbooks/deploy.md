@@ -44,6 +44,15 @@ npm run architecture:health
    `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL` y
    `GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN`.
 
+Evidencia 2026-05-31:
+
+- Vercel Logs mostro requests reales `GET 200` para rutas principales.
+- Los redirects `GET 307` observados fueron redirects esperados de
+  middleware/auth.
+- El panel de detalle mostro Middleware, Function Invocation y llamadas a
+  Supabase.
+- No se observaron secretos en los logs revisados.
+
 ## Production
 
 1. Confirmar backup reciente.

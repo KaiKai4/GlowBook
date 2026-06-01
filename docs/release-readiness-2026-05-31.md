@@ -10,12 +10,12 @@ Fuente:
 
 ## Decision
 
-No lanzar a produccion todavia.
+Readiness de auditoria cerrado para MVP 5+ salones.
 
 El repo esta en buen estado arquitectonico y staging ya existe. E2E staging,
-smoke de 5 salones y performance advisors ya pasaron. Tambien quedo asignado
-owner inicial de soporte. Faltan dos evidencias operativas antes de lanzar:
-restore probado y observability real en hosting/log drain.
+smoke de 5 salones, restore de prueba, performance advisors y observability
+basica en Vercel Logs ya pasaron. Tambien quedo asignado owner inicial de
+soporte.
 
 ## Evidencia Local Ejecutada
 
@@ -30,6 +30,8 @@ npm run type-check
 npm run test:e2e:staging
 npm run smoke:seed-5-salons
 npx supabase migration list
+npx supabase start
+npx supabase db dump --linked --data-only --schema auth,public --exclude public.permissions
 ```
 
 Resultados:
@@ -40,12 +42,9 @@ Resultados:
   pasaron.
 - `npm run architecture:health`: OK, guardrails, tests, E2E local, docs
   vigentes y database types pasaron.
-- `npm run release:readiness`: bloqueado hasta completar staging, restore,
-  smoke, revision de logs, observability y owner de soporte.
-  Resultado actual con confirmaciones de staging/smoke/performance: 17 checks
-  OK, 3 bloqueados; queda en 19 OK, 2 bloqueados si se confirma
-  `RELEASE_SUPPORT_OWNER_CONFIRMED=true`. Bloqueos restantes: restore probado
-  y observability real.
+- `npm run release:readiness`: OK con confirmaciones de staging, restore,
+  smoke, performance, soporte y observability. Resultado: 21 checks OK, 0
+  bloqueados.
 - `npm run test:e2e:staging`: OK, 13 tests pasaron contra app local conectada
   a Supabase staging.
 - `npm run smoke:seed-5-salons`: OK con batch `smoke-20260531-e2e`; creo 5
@@ -62,9 +61,17 @@ Resultados:
   integracion para ignorar placeholders.
 - `npx supabase db advisors --linked --type performance --output json`: OK
   despues de la migracion RLS; resultado `No issues found`.
-- `npx supabase db dump --linked --schema public --file ...`: bloqueado en esta
-  maquina porque Supabase CLI requiere Docker para dump/restore y Docker no
-  esta disponible.
+- `npx supabase start`: OK despues de mover puertos locales a `554xx` por rango
+  reservado de Windows.
+- `npx supabase db dump --linked --data-only --schema auth,public --exclude
+  public.permissions --file ...`: OK contra staging.
+- Restore local con `psql -v ON_ERROR_STOP=1`: OK. Validacion post-restore:
+  5 salones, 500 clientes, 30 colaboradores, 400 citas y 5 usuarios auth.
+- `npm run smoke:cleanup-5-salons`: OK para batch `smoke-restore-20260531`;
+  staging quedo con 0 salones y 0 auth users de ese batch.
+- Vercel Logs: OK. Se observaron requests reales `GET 200` en rutas
+  principales, redirects `GET 307` esperados, Middleware/Function Invocation y
+  llamadas a Supabase sin secretos visibles en los logs revisados.
 
 Cambios locales completados:
 
@@ -79,35 +86,37 @@ Cambios locales completados:
 - Fase 44: decision de recordatorios confirmada como flujo manual/read Module.
 - Fase 41: estrategia inicial de observability documentada como logs
   estructurados del hosting/log drain. Adapter extendido con webhook/log drain
-  opcional por `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL`.
-- Fase 45: owner inicial de soporte documentado en `docs/launch-support.md`.
+  opcional por `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL`. Validacion basica en
+  Vercel Logs completada.
+- Fase 45: owner inicial de soporte documentado en `docs/launch-support.md`;
+  gate actual 21 OK / 0 bloqueados.
 - Guard de tests de integracion Supabase endurecido para no ejecutar pruebas
   reales con placeholders.
 
-## Bloqueantes Externos
+## Pendientes No Bloqueantes
 
-1. Ejecutar restore probado en staging o entorno temporal.
-2. Confirmar logs/observability en hosting o log drain.
-3. Si se requiere deploy remoto de staging, repetir `npm run test:e2e:staging`
+1. Si se requiere deploy remoto de staging, repetir `npm run test:e2e:staging`
    contra esa URL.
+2. Si se necesita mayor retencion o alertas, conectar
+   `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL` a un log drain/proveedor.
 
 ## Estado Por Fase
 
 | Fase | Estado |
 |---|---|
 | 37 - Evidencia operativa de staging | Completada para app local conectada a staging; pendiente opcional si se exige deploy remoto. |
-| 38 - Restore probado | Bloqueada por destino externo/Docker no disponible en esta maquina. |
+| 38 - Restore probado | Completada con dump data-only staging y restore en Supabase local. |
 | 39 - Load smoke real 5 salones | Completada y limpiada. |
 | 40 - Performance/logs Supabase | Completada via Supabase advisors; RLS optimizada en migracion 28. |
-| 41 - Observability provider/log drain | Adapter preparado con consola y webhook opcional; falta validar destino real en deploy. |
+| 41 - Observability provider/log drain | Completada con Vercel Logs para MVP; webhook/log drain queda opcional para mayor retencion/alertas. |
 | 42 - UI copy/encoding | Completada. |
 | 43 - Hotspots UI route-local | Completada. |
 | 44 - Decision recordatorios | Completada para MVP manual. |
-| 45 - Release readiness gate | Parcial: soporte asignado; decision sigue no lanzar hasta restore y observability real. |
+| 45 - Release readiness gate | Completada: soporte asignado, restore probado y observability basica validada. |
 
 ## Siguiente Accion
 
-Cerrar restore y observability; despues volver a ejecutar:
+Antes de cada lanzamiento, volver a ejecutar:
 
 ```text
 npm run release:readiness
@@ -115,5 +124,5 @@ npm run test:e2e:staging
 npm run smoke:seed-5-salons
 ```
 
-Despues de esas ejecuciones, actualizar este documento con evidencia final y
-reabrir la decision de lanzamiento.
+Despues de esas ejecuciones, actualizar este documento si cambia la evidencia
+operativa.

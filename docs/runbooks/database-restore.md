@@ -30,6 +30,45 @@ npm run test:e2e:staging
    - Platform overview carga;
    - audit log existe.
 
+## Restore De Prueba Ejecutado 2026-05-31 / 2026-06-01 UTC
+
+Fuente: Supabase staging `glowbook-staging`.
+
+Destino: Supabase local levantado con `npx supabase start`.
+
+Nota local: en Windows se usaron puertos `554xx` en `supabase/config.toml`
+porque el rango `54321-54620` estaba reservado por el sistema.
+
+Comandos base ejecutados:
+
+```text
+npm run smoke:seed-5-salons
+npx supabase db dump --linked --data-only --schema auth,public --exclude public.permissions --file C:\tmp\glowbook-staging-data-restore-20260531.sql
+docker cp C:\tmp\glowbook-staging-data-restore-20260531.sql supabase_db_glowbook:/tmp/glowbook-staging-data-restore-20260531.sql
+docker exec supabase_db_glowbook psql -v ON_ERROR_STOP=1 -U postgres -d postgres -f /tmp/glowbook-staging-data-restore-20260531.sql
+npm run smoke:cleanup-5-salons
+npx supabase db reset
+```
+
+Batch usado: `smoke-restore-20260531`.
+
+Resultado post-restore local:
+
+- `smoke_salons=5`
+- `smoke_customers=500`
+- `smoke_employees=30`
+- `smoke_appointments=400`
+- `smoke_auth_users=5`
+
+Resultado post-cleanup staging:
+
+- `smoke_salons=0`
+- `smoke_auth_users=0`
+
+Decision: restore de prueba completado. Para un incidente real, repetir el
+procedimiento con backup/hora objetivo aprobada y registrar tiempo total de
+recuperacion.
+
 ## Restore De Production
 
 1. Declarar incidente.

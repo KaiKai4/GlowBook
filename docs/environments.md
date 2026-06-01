@@ -30,6 +30,24 @@ Reglas:
 - Los secretos de GitHub Actions deben usar valores de staging para E2E, no de produccion.
 - Las credenciales E2E manuales deben pertenecer a staging.
 
+## Supabase Local
+
+`supabase/config.toml` usa puertos `554xx` para desarrollo local:
+
+```text
+API: 55421
+DB: 55422
+Studio: 55423
+Mailpit/Inbucket: 55424
+Analytics: 55427
+Pooler: 55429
+Shadow DB: 55420
+```
+
+Razon: en esta maquina Windows tenia reservado el rango `54321-54620`, que es
+el rango por defecto de Supabase CLI. Mantener los puertos `554xx` evita que
+`npx supabase start` falle al exponer la base local.
+
 ## Guards Implementados
 
 - `src/test/supabase-integration-fixtures.ts` bloquea fixtures si `GLOWBOOK_ENV`, `APP_ENV` o `VERCEL_ENV` es `production`.

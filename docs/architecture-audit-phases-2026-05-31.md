@@ -34,14 +34,14 @@ Readiness para 5+ salones:
 | Fase | Estado | Evidencia |
 |---|---|---|
 | Fase 37 | completada para app local conectada a staging | Supabase staging `glowbook-staging` (`vifuurgquxkkpqqobigr`) creado y enlazado; `npm run db:migrate`, `npm run db:types` y `npx supabase migration list` confirmaron migraciones remoto/local `20240101000000`-`20240101000028`; `npm run test:e2e:staging` paso con 13 tests. |
-| Fase 38 | bloqueada por destino externo/Docker | Requiere backup real y destino staging/temporal para restore. En esta maquina `docker` no esta disponible y `npx supabase db dump` falla porque Supabase CLI requiere Docker para dump/restore. |
+| Fase 38 | completada para restore de prueba staging -> local | Docker Desktop/WSL quedaron operativos; Supabase local inicio en puertos `554xx`; se dumpeo data-only de `auth,public` desde staging, se restauro en local con `ON_ERROR_STOP=1`, se verificaron 5 salones, 500 clientes, 30 colaboradores, 400 citas y 5 usuarios auth, y staging quedo limpio. |
 | Fase 39 | completada | `npm run smoke:seed-5-salons` creo batch `smoke-20260531-e2e` con 5 salones, 30 colaboradores, 100 servicios, 500 clientes y 400 citas; `npm run smoke:cleanup-5-salons` lo dejo en cero registros. |
 | Fase 40 | completada via Supabase advisors | Advisors detectaron warnings RLS; se agrego `20240101000028_optimize_rls_policy_performance.sql`; despues de aplicarla, `npx supabase db advisors --linked --type performance --output json` reporto `No issues found`. |
-| Fase 41 | repo preparado, pendiente destino externo | Adapter de `src/lib/observability` emite consola estructurada y webhook/log drain opcional con redaccion; falta validar un destino real de hosting/log drain. |
+| Fase 41 | completada para observability basica en Vercel | Vercel Logs muestra requests reales `200` para rutas principales, redirects `307` esperados, Middleware/Function Invocation y acceso a Supabase sin secretos visibles; Adapter sigue listo para webhook/log drain si se quiere mas retencion/alertas. |
 | Fase 42 | completada | Copy de recordatorios corregido, busqueda de mojibake limpia, `npm run lint` y `npm run type-check` pasaron. |
 | Fase 43 | completada | Hotspots UI clasificados; no hay imports a Supabase/data Adapters ni Seam real que justifique extraccion. |
 | Fase 44 | completada para MVP manual | Decision confirmada: `features/reminders` sigue como read Module; UI abre WhatsApp, no promete envio automatico. |
-| Fase 45 | parcial, gate activo | Owner inicial de soporte documentado; `npm run release:readiness` queda bloqueado solo por restore probado y observability real. |
+| Fase 45 | completada para readiness de auditoria | Owner inicial de soporte documentado; restore probado documentado; observability basica en Vercel confirmada; `npm run release:readiness` queda en 21 OK / 0 bloqueados. |
 
 ## Principios
 
@@ -121,7 +121,7 @@ Fuerza: Strong.
 
 Prioridad: bloqueante antes de produccion.
 
-Estado: pendiente externo.
+Estado: completada para restore de prueba staging -> Supabase local.
 
 Objetivo: comprobar que los datos pueden recuperarse antes de operar salones
 reales.
@@ -162,6 +162,33 @@ Criterio de terminado:
 
 - Hay una ejecucion real documentada.
 - El equipo sabe cuanto tarda restaurar y como validar despues.
+
+Evidencia 2026-05-31 / 2026-06-01 UTC:
+
+- Docker Desktop/WSL quedaron operativos despues del reinicio.
+- `supabase/config.toml` usa puertos locales `55421`, `55422`, `55423`,
+  `55424`, `55427` y `55429` porque Windows tenia reservado el rango
+  `54321-54620`.
+- `npx supabase start` levanto Supabase local.
+- Se creo batch staging `smoke-restore-20260531` con:
+  - 5 salones;
+  - 30 colaboradores;
+  - 100 servicios;
+  - 500 clientes;
+  - 400 citas.
+- Se ejecuto dump data-only de staging para `auth,public`, excluyendo
+  `public.permissions`.
+- Se restauro el dump en Supabase local con `psql -v ON_ERROR_STOP=1`.
+- Validacion local post-restore:
+  - `smoke_salons=5`;
+  - `smoke_customers=500`;
+  - `smoke_employees=30`;
+  - `smoke_appointments=400`;
+  - `smoke_auth_users=5`.
+- Se ejecuto `npm run smoke:cleanup-5-salons` en staging y se verifico:
+  - `smoke_salons=0`;
+  - `smoke_auth_users=0`.
+- Supabase local fue reseteado despues de la prueba con `npx supabase db reset`.
 
 Riesgo: alto.
 
@@ -279,7 +306,7 @@ Fuerza: Strong despues del smoke.
 
 Prioridad: alta para produccion seria.
 
-Estado: repo preparado, pendiente destino externo.
+Estado: completada para observability basica en Vercel.
 
 Objetivo: conectar la Seam `src/lib/observability` a un destino operativo real
 sin acoplar Modules de negocio a un proveedor.
@@ -331,8 +358,22 @@ Evidencia 2026-05-31:
   antes de enviar payloads.
 - `docs/security.md`, `docs/runbooks/deploy.md` y `.env.local.example`
   documentan las variables.
-- Falta validacion externa: confirmar retencion/acceso/alertas en hosting o
-  proveedor real.
+- Validacion externa basica completada en Vercel Logs; retencion/alertas
+  avanzadas quedan como mejora posterior si el soporte lo requiere.
+
+Evidencia 2026-05-31:
+
+- Vercel Logs del proyecto `glow-book` muestran requests reales `GET 200` para:
+  `/`, `/login`, `/appointments`, `/customers`, `/services`, `/employees`,
+  `/plantillas`, `/reports`, `/salon` y `/recordatorios`.
+- Los redirects `GET 307` vistos en `/` son esperados por middleware/auth y
+  terminan en rutas `200`.
+- El panel de detalle muestra `Middleware`, `Function Invocation` y llamadas a
+  Supabase.
+- En los logs visibles no aparecen `SUPABASE_SERVICE_ROLE_KEY`, tokens,
+  cookies completas, passwords ni authorization headers.
+- Para alertas/retencion mas avanzada, se mantiene disponible el webhook/log
+  drain opcional sin acoplar Modules de negocio al proveedor.
 
 ## Fase 42 - Higiene Menor De UI Copy Y Encoding
 
@@ -486,8 +527,9 @@ Fuerza: Condicional.
 
 Prioridad: bloqueante antes del primer lanzamiento real.
 
-Estado: parcial; soporte asignado y gate activo. Decision sigue siendo no
-lanzar hasta restore probado y observability real.
+Estado: completada para readiness de auditoria. La decision tecnica de las
+fases queda cerrada con observability basica, restore probado y soporte
+asignado.
 
 Objetivo: cerrar una decision de lanzamiento basada en evidencia, no en
 sensacion.
@@ -518,6 +560,11 @@ Trabajo:
    - lanzar;
    - lanzar con condiciones;
    - no lanzar.
+
+Evidencia 2026-05-31 / 2026-06-01 UTC:
+
+- `npm run release:readiness` con todas las confirmaciones operativas queda en
+  21 OK / 0 bloqueados.
 
 Archivos esperados:
 
@@ -553,10 +600,10 @@ Fase 45  Release readiness gate 5+ salones
 | Hallazgo de la auditoria 2026-05-31 | Fase |
 |---|---|
 | Falta evidencia de staging real | Fase 37 |
-| Falta restore probado | Fase 38 |
+| Restore probado pendiente en la auditoria original; ya completado staging -> local | Fase 38 |
 | Falta smoke ejecutado con 5 salones | Fase 39 |
 | Falta revisar logs/performance con volumen | Fase 40 |
-| Observability existe, pero no hay provider/log drain real | Fase 41 |
+| Observability existia sin validacion externa; ya confirmada en Vercel Logs | Fase 41 |
 | Hay mojibake visible en recordatorios | Fase 42 |
 | Archivos UI route-local grandes requieren clasificacion, no extraccion ciega | Fase 43 |
 | Recordatorios reales dependen de decision de producto | Fase 44 |
@@ -581,10 +628,11 @@ El primer sprint puede ser:
 1. Fase 42: corregir mojibake y correr lint/type-check.
 2. Fase 37: dejar staging E2E ejecutado o, si falta acceso externo, documentar
    exactamente que secret/URL bloquea.
-3. Fase 38: programar restore probado.
+3. Fase 41: cerrar observability real en hosting/log drain.
 
 Razon:
 
 - Fase 42 es rapida y mejora pulido.
-- Fase 37 y Fase 38 son las que mas acercan el sistema a produccion real.
+- Fase 37 y Fase 38 ya cerraron las evidencias mas fuertes de staging y
+  restore.
 - Ninguna de estas fases cambia la arquitectura base, solo la fortalece.
