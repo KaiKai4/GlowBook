@@ -12,7 +12,7 @@ const REQUIRED_DECISION_TEXT = [
   "Piloto 5-10 salones: permitido",
   "Crecimiento 25-50 salones: condicionado",
   "Lanzamiento amplio 100+ salones: no permitido",
-  "Vercel staging embebe Supabase production",
+  "Vercel Preview staging ya embebe Supabase staging",
   "Variables De Confirmacion",
   "GLOWBOOK_BASELINE_REQUIRE_SIGNED_DECISION=true",
 ];

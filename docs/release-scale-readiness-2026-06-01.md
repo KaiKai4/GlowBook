@@ -34,16 +34,20 @@ Lanzamiento amplio 100+ salones: no permitido hasta cerrar bloqueos externos.
 
 ## Bloqueos Para Lanzamiento Amplio
 
-1. Vercel staging embebe Supabase production.
-2. Falta repetir E2E negativo contra staging desplegado corregido.
-3. Falta medir rutas criticas con dataset de escala en Vercel corregido.
-4. Falta revisar Vercel Logs despues de esas mediciones.
-5. Falta confirmar limites finos de Supabase/Vercel desde dashboard.
-6. Falta confirmar proveedor/log drain y alertas reales.
-7. Falta confirmar canales de soporte y guardia de primera semana.
-8. Falta decidir y validar rate limiting operativo para rutas publicas.
-9. Falta probar CSP report-only en staging.
-10. Falta practicar o agendar rotacion de secrets si aplica.
+1. Falta confirmar proveedor/log drain y alertas reales.
+2. Falta confirmar limites finos de Supabase/Vercel desde dashboard o decision
+   explicita de plan.
+3. Falta confirmar canales de soporte y guardia de primera semana.
+4. Falta decidir y validar rate limiting operativo para rutas publicas.
+5. Falta probar CSP report-only en staging.
+6. Falta practicar o agendar rotacion de secrets si aplica.
+
+Bloqueos resueltos el 2026-06-01:
+
+- Vercel Preview staging ya embebe Supabase staging.
+- `npm run test:e2e:staging` paso con 16/16 tests.
+- Las rutas criticas fueron medidas con dataset de 100 salones y respondieron
+  10/10 con status 200.
 
 ## Variables De Confirmacion
 

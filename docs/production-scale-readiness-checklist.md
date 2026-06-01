@@ -169,7 +169,7 @@ Lanzamiento amplio 100+ salones: dataset 100, Supabase advisors y restore grande
 
 ```text
 npm run release:scale-readiness
-Summary: 31 ok, 10 blocked
+Summary: 37 ok, 4 blocked
 ```
 
 Subgates OK:
@@ -193,6 +193,22 @@ Resuelto: Preview glow-book-git-main-kai-book.vercel.app embebe Supabase
 staging vifuurgquxkkpqqobigr.supabase.co.
 ```
 
-Bloqueos restantes: confirmaciones operativas de lanzamiento amplio
-(`SCALE_*_CONFIRMED`) para baseline, isolation, dataset, performance,
-observability, capacity, restore, security, support y reminders.
+Confirmaciones locales ya validadas con evidencia:
+
+- `SCALE_BASELINE_CONFIRMED=true`
+- `SCALE_ISOLATION_CONFIRMED=true`
+- `SCALE_DATASET_CONFIRMED=true`
+- `SCALE_PERFORMANCE_CONFIRMED=true`
+- `SCALE_RESTORE_CONFIRMED=true`
+- `SCALE_REMINDERS_DECISION_CONFIRMED=true`
+
+Bloqueos restantes para lanzamiento amplio:
+
+- `SCALE_OBSERVABILITY_CONFIRMED=true`: falta elegir/verificar log
+  drain/error tracking y alertas reales.
+- `SCALE_CAPACITY_CONFIRMED=true`: falta confirmar limites finos de
+  Supabase/Vercel en dashboard o decision explicita de plan.
+- `SCALE_SECURITY_CONFIRMED=true`: falta confirmar rate limits/CSP/secrets
+  como decision operativa final.
+- `SCALE_SUPPORT_CONFIRMED=true`: falta confirmar canales reales y guardia de
+  primera semana.
