@@ -111,8 +111,11 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 - [x] Decision de rate limiting documentada como control operativo.
 - [ ] Rate limiting de hosting/Supabase revisado para login/invitaciones.
-- [ ] CSP report-only evaluada.
-- [ ] Rotacion de secrets practicada o agendada.
+- [x] CSP report-only implementada y activable con `GLOWBOOK_CSP_REPORT_ONLY=true`.
+- [x] Existe `npm run security:readiness` para validar headers y fuga de `service_role` en artefactos publicos.
+- [x] `npm run security:readiness` paso: headers base desplegados y `service_role` ausente de artefactos publicos.
+- [ ] CSP report-only evaluada en deployment staging.
+- [ ] Rotacion de secrets practicada o agendada si aplica.
 
 ## Fase 54 - Soporte E Incidentes
 

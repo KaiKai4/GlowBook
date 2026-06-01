@@ -528,6 +528,9 @@ Evidencia implementada:
 
 - `docs/security.md` documenta rate limiting para lanzamiento amplio, CSP y
   rotacion de secrets.
+- `next.config.ts` soporta CSP report-only con `GLOWBOOK_CSP_REPORT_ONLY=true`.
+- `npm run security:readiness` valida headers desplegados y que
+  `SUPABASE_SERVICE_ROLE_KEY` no aparezca en artefactos publicos/estaticos.
 
 Fuerza: Worth exploring / Strong antes de publicidad amplia.
 

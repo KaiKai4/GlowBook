@@ -17,6 +17,34 @@ CSP queda como decision posterior porque GlowBook todavia necesita validar
 scripts, estilos, fonts, Supabase Auth y assets del hosting real. Antes de
 activar CSP en produccion, probarla en staging con modo report-only.
 
+Decision 2026-06-01:
+
+`next.config.ts` soporta CSP en modo report-only con
+`GLOWBOOK_CSP_REPORT_ONLY=true`. El header no se activa por defecto para evitar
+romper el deployment actual sin observacion previa. Antes de marcar la fase
+como cerrada, activar la variable en staging, redeployar y ejecutar:
+
+```text
+npm run security:readiness
+```
+
+Ese comando valida headers desplegados y revisa que `SUPABASE_SERVICE_ROLE_KEY`
+no aparezca en artefactos publicos/estaticos del build local.
+
+Validacion 2026-06-01:
+
+```text
+npm run security:readiness
+```
+
+Resultado:
+
+- headers base desplegados presentes;
+- `Permissions-Policy` restringe camara, microfono y geolocalizacion;
+- `SUPABASE_SERVICE_ROLE_KEY` no aparece en artefactos publicos/estaticos;
+- CSP report-only queda pendiente de evaluar en staging despues de activar
+  `GLOWBOOK_CSP_REPORT_ONLY=true` y redeployar.
+
 ## Service Role
 
 `SUPABASE_SERVICE_ROLE_KEY` solo puede usarse en Adapters server-only aprobados
@@ -106,7 +134,7 @@ Decision para lanzamiento amplio:
 
 Antes de lanzamiento amplio:
 
-1. Probar CSP en staging en modo report-only si el hosting/proveedor lo permite.
+1. Probar CSP en staging con `GLOWBOOK_CSP_REPORT_ONLY=true`.
 2. Confirmar que Supabase Auth, estilos, fonts y assets reales no se rompen.
 3. Confirmar que `SUPABASE_SERVICE_ROLE_KEY` no aparece en bundle cliente,
    Vercel Logs, log drain ni errores capturados.

@@ -37,6 +37,7 @@ npm run db:types
 ```text
 npm run staging:verify-env
 npm run test:e2e:staging
+npm run security:readiness
 npm run architecture:health
 ```
 

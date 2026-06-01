@@ -10,6 +10,7 @@
     "architecture:check": "node scripts/check-architecture.mjs",
     "architecture:health": "node scripts/architecture-health.mjs",
     "staging:verify-env": "node scripts/verify-deployed-staging-env.mjs",
+    "security:readiness": "node scripts/security-readiness.mjs",
     "release:readiness": "node scripts/release-readiness.mjs",
     "release:scale-readiness": "node scripts/release-scale-readiness.mjs",
     "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",

@@ -92,6 +92,12 @@ Gate de lanzamiento amplio:
 npm run release:scale-readiness
 ```
 
+Seguridad de deployment:
+
+```text
+npm run security:readiness
+```
+
 Medicion de rutas con dataset de escala en staging:
 
 ```text
