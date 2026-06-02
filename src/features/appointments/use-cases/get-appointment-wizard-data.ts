@@ -72,7 +72,7 @@ export async function getAppointmentWizardData(salonId: string): Promise<Appoint
     services,
     employees: employeeOptions,
     salonConfig: {
-      min_booking_notice_minutes: salonConfig?.min_booking_notice_minutes ?? 60,
+      min_booking_notice_minutes: salonConfig?.min_booking_notice_minutes ?? 0,
       min_appointment_duration_minutes: salonConfig?.min_appointment_duration_minutes ?? 30,
       allow_off_hours_bookings: salonConfig?.allow_off_hours_bookings ?? false,
       timezone: salonConfig?.timezone ?? "America/Panama",

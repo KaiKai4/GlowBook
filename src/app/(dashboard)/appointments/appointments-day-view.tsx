@@ -30,9 +30,34 @@ const STATUS_BADGE: Record<string, string> = {
   cancelled: "bg-stone-100 text-stone-500 border-stone-200",
   no_show: "bg-amber-50 text-amber-700 border-amber-200",
 };
+const SUMMARY_STATUS_ORDER: Record<string, number> = {
+  scheduled: 0,
+  confirmed: 1,
+  completed: 2,
+  no_show: 3,
+  cancelled: 4,
+};
 
 export type ApptFull = CalendarAppointment;
 type Employee = CalendarEmployee;
+
+function appointmentTimeValue(appt: ApptFull): number {
+  return appt.start_time ? new Date(appt.start_time).getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+function sortSummaryAppointments(appointments: ApptFull[], groupByStatus: boolean): ApptFull[] {
+  return [...appointments].sort((a, b) => {
+    if (groupByStatus) {
+      const statusDiff =
+        (SUMMARY_STATUS_ORDER[a.status] ?? 99) - (SUMMARY_STATUS_ORDER[b.status] ?? 99);
+      if (statusDiff !== 0) return statusDiff;
+    }
+
+    const timeDiff = appointmentTimeValue(a) - appointmentTimeValue(b);
+    if (timeDiff !== 0) return timeDiff;
+    return a.id.localeCompare(b.id);
+  });
+}
 
 export function AppointmentsDayView({
   appointments, tz, canManage,
@@ -98,9 +123,13 @@ export function AppointmentsDayView({
     { value: "cancelled", label: "Canceladas" },
   ];
 
-  const listAppts = filterStatus
-    ? appointments.filter((a) => a.status === filterStatus)
-    : appointments;
+  const listAppts = useMemo(() => {
+    const filtered = filterStatus
+      ? appointments.filter((a) => a.status === filterStatus)
+      : appointments;
+
+    return sortSummaryAppointments(filtered, !filterStatus);
+  }, [appointments, filterStatus]);
 
   const calendarTitle =
     view === "trabajador" && selectedEmp

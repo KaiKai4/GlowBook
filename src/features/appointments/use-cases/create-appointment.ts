@@ -91,7 +91,6 @@ export async function createAppointment(
     salonConfig: resources.salonConfig,
     businessHours: resources.businessHours as BusinessHour[],
     enforceSalonSchedule: true,
-    enforceNotice: true,
     enforceMinDuration: true,
   });
 

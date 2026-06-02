@@ -72,7 +72,6 @@ export function buildItemPayloads(
       workSchedules,
       occupiedSlots,
       enforceSalonSchedule: false,
-      enforceNotice: false,
       enforceMinDuration: false,
     });
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { evaluateTimeRange, getEffectiveWindows } from "./availability";
 import type { BusinessHour, SalonConfig, WorkSchedule } from "./types";
 
@@ -43,9 +43,6 @@ describe("appointment availability", () => {
   });
 
   it("reports salon, collaborator and occupied-slot violations together", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-05-24T12:00:00.000Z"));
-
     const start = new Date("2026-05-25T22:30:00.000Z"); // 17:30 Panama, after salon close.
     const end = new Date("2026-05-25T23:00:00.000Z");
     const violations = evaluateTimeRange({
@@ -55,7 +52,6 @@ describe("appointment availability", () => {
       businessHours: mondayBusinessHours,
       workSchedules: mondayWorkSchedule,
       occupiedSlots: [{ start_time: start.toISOString(), end_time: end.toISOString() }],
-      enforceNotice: false,
     });
 
     expect(violations.map((violation) => violation.code)).toEqual([
@@ -63,14 +59,9 @@ describe("appointment availability", () => {
       "employee_outside_hours",
       "occupied",
     ]);
-
-    vi.useRealTimers();
   });
 
-  it("enforces minimum booking notice and minimum duration", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-05-25T14:00:00.000Z")); // 09:00 Panama.
-
+  it("enforces minimum duration without requiring booking notice", () => {
     const violations = evaluateTimeRange({
       start: new Date("2026-05-25T14:30:00.000Z"),
       end: new Date("2026-05-25T14:45:00.000Z"),
@@ -80,11 +71,6 @@ describe("appointment availability", () => {
       occupiedSlots: [],
     });
 
-    expect(violations.map((violation) => violation.code)).toEqual([
-      "min_duration",
-      "booking_notice",
-    ]);
-
-    vi.useRealTimers();
+    expect(violations.map((violation) => violation.code)).toEqual(["min_duration"]);
   });
 });

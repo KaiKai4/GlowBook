@@ -1,4 +1,4 @@
-import { addMinutes, getZonedTimeParts, timeToMinutes } from "@/lib/utils/dates";
+import { getZonedTimeParts, timeToMinutes } from "@/lib/utils/dates";
 import type {
   BusinessHour,
   OccupiedSlot,
@@ -9,13 +9,13 @@ import type {
 } from "./types";
 
 const DEFAULT_HOURS: Omit<BusinessHour, "day_of_week">[] = [
-  { is_open: true, open_time: "08:00", close_time: "18:00" }, // Mon
-  { is_open: true, open_time: "08:00", close_time: "18:00" }, // Tue
-  { is_open: true, open_time: "08:00", close_time: "18:00" }, // Wed
-  { is_open: true, open_time: "08:00", close_time: "18:00" }, // Thu
-  { is_open: true, open_time: "08:00", close_time: "18:00" }, // Fri
-  { is_open: true, open_time: "08:00", close_time: "18:00" }, // Sat
-  { is_open: false, open_time: null, close_time: null },       // Sun
+  { is_open: true, open_time: "08:00", close_time: "18:00" },
+  { is_open: true, open_time: "08:00", close_time: "18:00" },
+  { is_open: true, open_time: "08:00", close_time: "18:00" },
+  { is_open: true, open_time: "08:00", close_time: "18:00" },
+  { is_open: true, open_time: "08:00", close_time: "18:00" },
+  { is_open: true, open_time: "08:00", close_time: "18:00" },
+  { is_open: false, open_time: null, close_time: null },
 ];
 
 function mergeWindows(windows: TimeWindow[]): TimeWindow[] {
@@ -67,14 +67,15 @@ export function getEffectiveWindows(
   if (employeeWindows.length === 0) return salonWindows;
   if (allowOffHours) return employeeWindows;
 
-  // Intersection of salon and employee windows
   const intersection: TimeWindow[] = [];
-  for (const sw of salonWindows) {
-    for (const ew of employeeWindows) {
-      const start = timeToMinutes(sw.start) > timeToMinutes(ew.start)
-        ? sw.start : ew.start;
-      const end = timeToMinutes(sw.end) < timeToMinutes(ew.end)
-        ? sw.end : ew.end;
+  for (const salonWindow of salonWindows) {
+    for (const employeeWindow of employeeWindows) {
+      const start = timeToMinutes(salonWindow.start) > timeToMinutes(employeeWindow.start)
+        ? salonWindow.start
+        : employeeWindow.start;
+      const end = timeToMinutes(salonWindow.end) < timeToMinutes(employeeWindow.end)
+        ? salonWindow.end
+        : employeeWindow.end;
       if (timeToMinutes(start) < timeToMinutes(end)) {
         intersection.push({ start, end });
       }
@@ -89,9 +90,9 @@ function isWithinWindows(
   windows: TimeWindow[]
 ): boolean {
   return windows.some(
-    (w) =>
-      startMinutes >= timeToMinutes(w.start) &&
-      endMinutes <= timeToMinutes(w.end)
+    (window) =>
+      startMinutes >= timeToMinutes(window.start) &&
+      endMinutes <= timeToMinutes(window.end)
   );
 }
 
@@ -101,8 +102,8 @@ function overlapsSlot(start: Date, end: Date, slot: OccupiedSlot): boolean {
   return start < slotEnd && end > slotStart;
 }
 
-// Pure domain function: returns all violations (not just first) for rich UI feedback.
-// All wall-clock comparisons use the salon's timezone (never the server's).
+// Pure domain function: returns all violations for rich UI feedback.
+// All wall-clock comparisons use the salon's timezone, never the server local time.
 export function evaluateTimeRange({
   start,
   end,
@@ -111,7 +112,6 @@ export function evaluateTimeRange({
   workSchedules = [],
   occupiedSlots = [],
   enforceSalonSchedule = true,
-  enforceNotice = true,
   enforceMinDuration = true,
 }: RangeEvaluationInput): ValidationViolation[] {
   const violations: ValidationViolation[] = [];
@@ -120,40 +120,34 @@ export function evaluateTimeRange({
   if (enforceMinDuration && durationMinutes < salonConfig.min_appointment_duration_minutes) {
     violations.push({
       code: "min_duration",
-      message: `La duración mínima es ${salonConfig.min_appointment_duration_minutes} minutos.`,
+      message: `La duracion minima es ${salonConfig.min_appointment_duration_minutes} minutos.`,
     });
   }
 
-  if (enforceNotice) {
-    const minStart = addMinutes(new Date(), salonConfig.min_booking_notice_minutes);
-    if (start < minStart) {
-      violations.push({
-        code: "booking_notice",
-        message: `La cita debe agendarse con al menos ${salonConfig.min_booking_notice_minutes} minutos de anticipación.`,
-      });
-    }
-  }
-
-  // Wall-clock parts in the salon's timezone. End-of-range is start + duration to
-  // avoid midnight-wrap issues (windows are same-day in the salon's local time).
   const { dayOfWeek, minutesOfDay: startMins } = getZonedTimeParts(start, salonConfig.timezone);
   const endMins = startMins + durationMinutes;
 
   if (enforceSalonSchedule) {
     const salonWindows = getSalonWindows(dayOfWeek, businessHours);
     if (salonWindows.length === 0) {
-      violations.push({ code: "salon_closed_day", message: "El salón está cerrado ese día." });
+      violations.push({ code: "salon_closed_day", message: "El salon esta cerrado ese dia." });
     } else if (!isWithinWindows(startMins, endMins, salonWindows)) {
-      violations.push({ code: "salon_off_hours", message: "El horario está fuera del horario de atención del salón." });
+      violations.push({
+        code: "salon_off_hours",
+        message: "El horario esta fuera del horario de atencion del salon.",
+      });
     }
   }
 
   if (workSchedules.length > 0) {
-    const empWindows = getEmployeeWindows(dayOfWeek, workSchedules);
-    if (empWindows.length === 0) {
-      violations.push({ code: "employee_day_off", message: "El profesional no trabaja ese día." });
-    } else if (!isWithinWindows(startMins, endMins, empWindows)) {
-      violations.push({ code: "employee_outside_hours", message: "El horario está fuera del turno del profesional." });
+    const employeeWindows = getEmployeeWindows(dayOfWeek, workSchedules);
+    if (employeeWindows.length === 0) {
+      violations.push({ code: "employee_day_off", message: "El profesional no trabaja ese dia." });
+    } else if (!isWithinWindows(startMins, endMins, employeeWindows)) {
+      violations.push({
+        code: "employee_outside_hours",
+        message: "El horario esta fuera del turno del profesional.",
+      });
     }
   }
 

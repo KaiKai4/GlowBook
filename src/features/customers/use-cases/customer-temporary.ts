@@ -4,8 +4,32 @@ import {
   findCustomerByPhone,
   updateCustomer,
 } from "@/features/customers/data/customers.repo";
-import { isValidOptionalPhone, phoneValidationMessage } from "@/lib/utils/phone";
+import { isValidOptionalPhone, phoneDigits, phoneValidationMessage } from "@/lib/utils/phone";
 import type { Result } from "@/lib/result";
+
+function databaseErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error ?? "");
+}
+
+function databaseErrorCode(error: unknown): string | undefined {
+  return typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code?: unknown }).code ?? "")
+    : undefined;
+}
+
+function isPhoneUniquenessError(error: unknown): boolean {
+  const message = databaseErrorMessage(error);
+  return (
+    databaseErrorCode(error) === "23505" ||
+    message.includes("uq_customer_phone_per_salon")
+  );
+}
+
+function normalizeOptionalPhone(phone: string | undefined): string | null {
+  const trimmed = phone?.trim();
+  if (!trimmed) return null;
+  return phoneDigits(trimmed);
+}
 
 export async function findOrCreateTemporaryCustomer({
   salonId,
@@ -22,33 +46,42 @@ export async function findOrCreateTemporaryCustomer({
     return { ok: false, error: phoneValidationMessage() };
   }
 
+  const normalizedPhone = normalizeOptionalPhone(phone);
+  const cleanFirstName = firstName.trim();
+  const cleanLastName = lastName.trim();
+
   try {
     const customer = await createCustomer(salonId, {
-      first_name: firstName,
-      last_name: lastName,
-      phone: phone || null,
+      first_name: cleanFirstName,
+      last_name: cleanLastName,
+      phone: normalizedPhone,
       is_temporary: true,
       is_active: false,
     });
 
     return { ok: true, value: customer.id };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error ?? "");
-    if (!message.includes("uq_customer_phone_per_salon") || !phone) {
+    if (!isPhoneUniquenessError(error) || !normalizedPhone) {
+      console.error("[customers:temporary:create]", error);
       return { ok: false, error: "Error al crear el cliente." };
     }
 
-    const existing = await findCustomerByPhone(salonId, phone);
+    const existing = await findCustomerByPhone(salonId, normalizedPhone);
     if (!existing) {
       return { ok: false, error: "Ya existe un cliente con ese telefono." };
     }
 
     if (existing.is_temporary) {
-      const updated = await updateCustomer(existing.id, salonId, {
-        first_name: firstName,
-        last_name: lastName,
-      });
-      return { ok: true, value: updated.id };
+      try {
+        const updated = await updateCustomer(existing.id, salonId, {
+          first_name: cleanFirstName,
+          last_name: cleanLastName,
+        });
+        return { ok: true, value: updated.id };
+      } catch (updateError) {
+        console.error("[customers:temporary:update-existing]", updateError);
+        return { ok: false, error: "Error al actualizar el cliente temporal." };
+      }
     }
 
     if (!existing.is_active) {

@@ -48,9 +48,9 @@ describe("customer temporary workflow", () => {
   it("creates a temporary inactive customer for appointment intake", async () => {
     const result = await findOrCreateTemporaryCustomer({
       salonId: "salon-1",
-      firstName: "Ana",
-      lastName: "Vega",
-      phone: "60000000",
+      firstName: " Ana ",
+      lastName: " Vega ",
+      phone: "6000-0000",
     });
 
     expect(result).toEqual({ ok: true, value: "customer-1" });

@@ -31,7 +31,6 @@ export interface OccupiedSlot {
 
 export type ValidationCode =
   | "min_duration"
-  | "booking_notice"
   | "employee_day_off"
   | "employee_outside_hours"
   | "occupied"
@@ -52,7 +51,6 @@ export interface RangeEvaluationInput {
   occupiedSlots?: OccupiedSlot[];
   excludeAppointmentId?: string;
   enforceSalonSchedule?: boolean;
-  enforceNotice?: boolean;
   enforceMinDuration?: boolean;
 }
 
