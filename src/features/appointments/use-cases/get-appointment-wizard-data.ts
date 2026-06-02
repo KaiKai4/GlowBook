@@ -41,7 +41,7 @@ export async function getAppointmentWizardData(salonId: string): Promise<Appoint
     name: category.name,
   }));
   const services: ServiceOption[] = categories.flatMap((category) =>
-    (category.services ?? []).map((service) => ({
+    (category.services ?? []).filter((service) => service.is_active).map((service) => ({
       id: service.id,
       name: service.name,
       category_id: category.id,
@@ -49,12 +49,13 @@ export async function getAppointmentWizardData(salonId: string): Promise<Appoint
       price: Number(service.price),
     }))
   );
+  const activeServiceIds = new Set(services.map((service) => service.id));
   const employeeOptions: EmployeeOption[] = employees.map((employee) => ({
     id: employee.id,
     name: `${employee.first_name} ${employee.last_name}`,
     service_ids: ((employee.services ?? []) as AssignedRef[])
       .map((service) => service.service?.id)
-      .filter((id): id is string => Boolean(id)),
+      .filter((id): id is string => typeof id === "string" && activeServiceIds.has(id)),
     category_ids: ((employee.categories ?? []) as AssignedRef[])
       .map((category) => category.category?.id)
       .filter((id): id is string => Boolean(id)),

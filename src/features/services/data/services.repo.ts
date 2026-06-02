@@ -21,7 +21,7 @@ export async function findServicesCatalog(salonId: string) {
     .select(`
       id, name, ordering, pricing_mode,
       services(
-        id, name, duration_minutes, price, is_active,
+        id, category_id, name, description, duration_minutes, price, is_active,
         employee_services(employee:employees(id, first_name, last_name, is_active))
       )
     `)

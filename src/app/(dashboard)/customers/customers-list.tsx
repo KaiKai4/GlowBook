@@ -23,12 +23,18 @@ export function CustomersList({ customers, mode }: { customers: Customer[]; mode
   const router = useRouter();
   const [editing, setEditing] = useState<Customer | null>(null);
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+  const [reactivationError, setReactivationError] = useState<string | null>(null);
   const isArchived = mode === "archived";
 
   if (customers.length === 0) return null;
 
   return (
     <>
+      {reactivationError && (
+        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-600">
+          {reactivationError}
+        </div>
+      )}
       {customers.map((customer) => (
         <Card key={customer.id} className="hover:shadow-sm transition-shadow">
           <CardContent className="py-3">
@@ -61,11 +67,12 @@ export function CustomersList({ customers, mode }: { customers: Customer[]; mode
                   className="text-xs shrink-0 h-auto px-3 py-1.5"
                   loading={reactivatingId === customer.id}
                   onClick={async () => {
+                    setReactivationError(null);
                     setReactivatingId(customer.id);
                     const res = await reactivateCustomerAction(customer.id);
                     setReactivatingId(null);
                     if (res.ok) router.refresh();
-                    else window.alert(res.error ?? "No se pudo reactivar el cliente.");
+                    else setReactivationError(res.error ?? "No se pudo reactivar el cliente.");
                   }}
                 >
                   Reactivar

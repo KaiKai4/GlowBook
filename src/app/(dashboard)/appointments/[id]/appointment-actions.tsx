@@ -7,22 +7,10 @@ import {
   cancelAppointmentAction,
   confirmAppointmentAction,
 } from "../actions";
-import { CompleteAppointmentDialog } from "../dialogs/complete-appointment";
-
-interface AppointmentForComplete {
-  id: string;
-  total_price: number | string | null;
-  customer: { first_name: string; last_name: string } | null;
-  items: Array<{
-    id: string;
-    price: number;
-    discount_amount?: number;
-    service: {
-      name: string;
-      category: { name: string; pricing_mode: "fixed" | "variable" } | null;
-    } | null;
-  }>;
-}
+import {
+  CompleteAppointmentDialog,
+  type AppointmentForCompletion,
+} from "../dialogs/complete-appointment";
 
 export function AppointmentActions({
   appointmentId,
@@ -30,7 +18,7 @@ export function AppointmentActions({
   status,
 }: {
   appointmentId: string;
-  appointment: AppointmentForComplete;
+  appointment: AppointmentForCompletion;
   status: string;
 }) {
   const router = useRouter();

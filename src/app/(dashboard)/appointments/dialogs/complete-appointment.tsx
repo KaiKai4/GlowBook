@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
 import { completeAppointmentAction } from "../actions";
 import { CheckCircle2, LockKeyhole, PencilLine, Tag } from "lucide-react";
 
-interface ApptForComplete {
+export interface AppointmentForCompletion {
   id: string;
   total_price: number | string | null;
   customer: { first_name: string; last_name: string } | null;
@@ -42,26 +42,59 @@ const PAYMENT_OPTIONS = [
 export function CompleteAppointmentDialog({
   appt, open, onClose,
 }: {
-  appt: ApptForComplete;
+  appt: AppointmentForCompletion;
   open: boolean;
+  onClose: () => void;
+}) {
+  const customerName = appt.customer
+    ? `${appt.customer.first_name} ${appt.customer.last_name}`
+    : "Cliente";
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Completar cita"
+      description={`Registra el metodo de pago de ${customerName}`}
+      className="max-w-lg"
+    >
+      <CompleteAppointmentForm
+        key={appt.id}
+        appt={appt}
+        onClose={onClose}
+      />
+    </Dialog>
+  );
+}
+
+function buildInitialItemPrices(appt: AppointmentForCompletion) {
+  return Object.fromEntries(
+    appt.items.map((item) => [item.id, String(Number(item.price ?? 0))])
+  );
+}
+
+function buildInitialItemDiscounts(appt: AppointmentForCompletion) {
+  return Object.fromEntries(appt.items.map((item) => [item.id, ""]));
+}
+
+function CompleteAppointmentForm({
+  appt,
+  onClose,
+}: {
+  appt: AppointmentForCompletion;
   onClose: () => void;
 }) {
   const router = useRouter();
   const [payment, setPayment] = useState("cash");
-  const [itemPrices, setItemPrices] = useState<Record<string, string>>({});
-  const [itemDiscounts, setItemDiscounts] = useState<Record<string, string>>({});
+  const [itemPrices, setItemPrices] = useState<Record<string, string>>(() =>
+    buildInitialItemPrices(appt)
+  );
+  const [itemDiscounts, setItemDiscounts] = useState<Record<string, string>>(() =>
+    buildInitialItemDiscounts(appt)
+  );
   const [completionPriceNote, setCompletionPriceNote] = useState("");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setItemPrices(
-      Object.fromEntries(appt.items.map((item) => [item.id, String(Number(item.price ?? 0))]))
-    );
-    setItemDiscounts(Object.fromEntries(appt.items.map((item) => [item.id, ""])));
-    setCompletionPriceNote("");
-    setError(null);
-  }, [appt.id, appt.items]);
 
   const chargedItems = useMemo(
     () =>
@@ -112,19 +145,8 @@ export function CompleteAppointmentDialog({
     });
   }
 
-  const customerName = appt.customer
-    ? `${appt.customer.first_name} ${appt.customer.last_name}`
-    : "Cliente";
-
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title="Completar cita"
-      description={`Registra el metodo de pago de ${customerName}`}
-      className="max-w-lg"
-    >
-      <div className="space-y-5">
+    <div className="space-y-5">
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
           <p className="mb-1 text-xs font-medium text-emerald-600">Total cobrado final</p>
           {discountAmount > 0 ? (
@@ -302,7 +324,6 @@ export function CompleteAppointmentDialog({
             Cobrar y completar
           </Button>
         </div>
-      </div>
-    </Dialog>
+    </div>
   );
 }

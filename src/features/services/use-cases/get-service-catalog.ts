@@ -19,7 +19,9 @@ export interface ServiceCatalogEmployeeBadge {
 
 export interface ServiceCatalogItem {
   id: string;
+  category_id: string;
   name: string;
+  description: string | null;
   duration_minutes: number;
   price: number;
   is_active: boolean;
@@ -46,7 +48,9 @@ export async function getServiceCatalog(salonId: string): Promise<ServiceCatalog
     pricing_mode: category.pricing_mode === "variable" ? "variable" : "fixed",
     services: (category.services ?? []).map((service) => ({
       id: service.id,
+      category_id: service.category_id,
       name: service.name,
+      description: service.description,
       duration_minutes: service.duration_minutes,
       price: Number(service.price),
       is_active: service.is_active,

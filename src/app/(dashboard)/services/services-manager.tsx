@@ -8,17 +8,20 @@ import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
-import { Plus, Clock, Search, Scissors, Tags } from "lucide-react";
+import { Plus, Clock, Search, Scissors, Tags, Pencil } from "lucide-react";
 import {
   createCategoryAction,
   createServiceAction,
+  updateServiceAction,
   updateCategoryPricingModeAction,
 } from "./actions";
 
 interface EmployeeBadge { id: string; initials: string; name: string }
 interface ServiceItem {
   id: string;
+  category_id: string;
   name: string;
+  description: string | null;
   duration_minutes: number;
   price: number;
   is_active: boolean;
@@ -38,14 +41,17 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
 
   const [catOpen, setCatOpen] = useState(false);
   const [svcOpen, setSvcOpen] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
   const [defaultCategory, setDefaultCategory] = useState("");
 
   const [catPending, startCat] = useTransition();
   const [svcPending, startSvc] = useTransition();
+  const [editPending, startEdit] = useTransition();
   const [pricingPending, startPricing] = useTransition();
   const [pricingCategoryId, setPricingCategoryId] = useState<string | null>(null);
   const [catError, setCatError] = useState<string | null>(null);
   const [svcError, setSvcError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const totals = useMemo(() => {
     const allServices = categories.flatMap((c) => c.services);
@@ -90,9 +96,22 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
       else setSvcError(res.error);
     });
   }
+  function handleUpdateService(formData: FormData) {
+    if (!editingService) return;
+    setEditError(null);
+    startEdit(async () => {
+      const res = await updateServiceAction(editingService.id, null, formData);
+      if (res.ok) setEditingService(null);
+      else setEditError(res.error);
+    });
+  }
   function openNewService(categoryId?: string) {
     setDefaultCategory(categoryId ?? (activeCat !== "all" ? activeCat : categories[0]?.id ?? ""));
     setSvcOpen(true);
+  }
+  function openEditService(service: ServiceItem) {
+    setEditError(null);
+    setEditingService(service);
   }
   function handleToggleCategoryPricingMode(category: Category) {
     setPricingCategoryId(category.id);
@@ -219,6 +238,7 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
                         key={svc.id}
                         service={svc}
                         pricingMode={cat.pricing_mode}
+                        onEdit={() => openEditService(svc)}
                       />
                     ))}
                   </div>
@@ -278,6 +298,73 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
           </div>
         </form>
       </Dialog>
+
+      {editingService && (
+        <Dialog
+          open={true}
+          onClose={() => {
+            if (!editPending) setEditingService(null);
+          }}
+          title="Editar servicio"
+          description="Actualiza precio, duracion, categoria y estado."
+        >
+          <form action={handleUpdateService} className="space-y-4">
+            <Select name="category_id" label="Categoría" defaultValue={editingService.category_id} required>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </Select>
+            <Input name="name" label="Nombre del servicio" defaultValue={editingService.name} required />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                name="duration_minutes"
+                label="Duración (min)"
+                type="number"
+                min={1}
+                defaultValue={editingService.duration_minutes}
+                required
+              />
+              <Input
+                name="price"
+                label="Precio (USD)"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={editingService.price}
+                required
+              />
+            </div>
+            <Select
+              name="is_active"
+              label="Estado"
+              defaultValue={editingService.is_active ? "true" : "false"}
+              required
+            >
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </Select>
+            <Textarea
+              name="description"
+              label="Descripción (opcional)"
+              defaultValue={editingService.description ?? ""}
+            />
+            {editError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{editError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setEditingService(null)}
+                disabled={editPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" loading={editPending}>
+                Guardar cambios
+              </Button>
+            </div>
+          </form>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -317,13 +404,33 @@ function CategoryRow({
 function ServiceCard({
   service,
   pricingMode,
+  onEdit,
 }: {
   service: ServiceItem;
   pricingMode: "fixed" | "variable";
+  onEdit: () => void;
 }) {
   return (
     <div className="group rounded-xl border border-neutral-100 bg-white p-4 transition-all hover:border-neutral-200 hover:shadow-sm">
-      <p className="font-medium text-neutral-900">{service.name}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-medium text-neutral-900">{service.name}</p>
+          {service.description && (
+            <p className="mt-1 line-clamp-2 text-xs text-neutral-500">{service.description}</p>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+          onClick={onEdit}
+          title="Editar servicio"
+          aria-label={`Editar ${service.name}`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">
           <Clock className="h-3 w-3" />
