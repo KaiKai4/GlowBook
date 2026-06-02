@@ -5,6 +5,7 @@ import { findActiveEmployeeNames } from "@/features/employees/data/employees.rep
 import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
 import { findSalonIdentity } from "@/features/salon/data/salon.repo";
 import { addDaysToDateISO, formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
+import { findLatestReminderLogsByAppointmentIds } from "../data/reminder-log.repo";
 import type { ReminderAppointment, ReminderQueueViewModel } from "../view-models";
 
 export interface GetReminderQueueInput {
@@ -16,13 +17,16 @@ export interface GetReminderQueueInput {
 const REMINDABLE_STATUSES = new Set(["scheduled", "confirmed"]);
 
 function toReminderAppointment(
-  appointment: Awaited<ReturnType<typeof findAppointmentsBySalon>>[number]
+  appointment: Awaited<ReturnType<typeof findAppointmentsBySalon>>[number],
+  latestReminder?: { sent_at: string; channel: string }
 ): ReminderAppointment {
   return {
     id: appointment.id,
     status: appointment.status,
     start_time: appointment.start_time,
     total_price: appointment.total_price,
+    last_reminder_sent_at: latestReminder?.sent_at ?? null,
+    last_reminder_channel: latestReminder?.channel ?? null,
     customer: appointment.customer
       ? {
           first_name: appointment.customer.first_name,
@@ -59,9 +63,17 @@ export async function getReminderQueue({
     findActiveMessageTemplate(salonId, "appointment_reminder"),
     findActiveEmployeeNames(salonId),
   ]);
-  const pendingAppointments = appointments
-    .filter((appointment) => REMINDABLE_STATUSES.has(appointment.status))
-    .map(toReminderAppointment);
+  const remindableAppointments = appointments
+    .filter((appointment) => REMINDABLE_STATUSES.has(appointment.status));
+  const latestReminders = await findLatestReminderLogsByAppointmentIds(
+    salonId,
+    remindableAppointments.map((appointment) => appointment.id)
+  );
+  const pendingAppointments = remindableAppointments
+    .map((appointment) => toReminderAppointment(
+      appointment,
+      latestReminders.get(appointment.id)
+    ));
 
   return {
     appointments: pendingAppointments,
@@ -72,5 +84,6 @@ export async function getReminderQueue({
     timezone,
     salonName: salon?.name ?? "tu salon",
     template: reminderTemplate.body_text,
+    templateId: reminderTemplate.id,
   };
 }

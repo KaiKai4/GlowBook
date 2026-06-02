@@ -3,6 +3,8 @@ export interface ReminderAppointment {
   status: string;
   start_time: string | null;
   total_price: number | string | null;
+  last_reminder_sent_at: string | null;
+  last_reminder_channel: string | null;
   customer: {
     first_name: string;
     last_name: string;
@@ -26,4 +28,5 @@ export interface ReminderQueueViewModel {
   timezone: string;
   salonName: string;
   template: string;
+  templateId?: string;
 }

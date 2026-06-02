@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency, formatLocalDateISO, formatTimeTz } from "@/lib/utils/dates";
+import { cn } from "@/lib/utils/cn";
+import { GripVertical, Trash2 } from "lucide-react";
 import {
   buildSequentialSchedule,
   findEligibleEmployees,
@@ -71,6 +73,7 @@ export function AppointmentEditForm({
     })
   );
   const [occupied, setOccupied] = useState<OccupiedByEmployee>({});
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [loadingAvailability, startAvailability] = useTransition();
   const [submitting, startSubmit] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -132,13 +135,14 @@ export function AppointmentEditForm({
     setRows((current) => (current.length === 1 ? current : current.filter((row) => row.key !== key)));
   }
 
-  function moveRow(index: number, direction: -1 | 1) {
+  function reorderRows(from: number, to: number) {
     setRows((current) => {
-      const target = index + direction;
-      if (target < 0 || target >= current.length) return current;
+      if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) {
+        return current;
+      }
       const next = [...current];
-      const [row] = next.splice(index, 1);
-      next.splice(target, 0, row);
+      const [row] = next.splice(from, 1);
+      next.splice(to, 0, row);
       return next;
     });
   }
@@ -212,14 +216,61 @@ export function AppointmentEditForm({
           <CardTitle>Servicios</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p className="text-xs text-neutral-400 flex items-center gap-1">
+            <GripVertical className="h-3 w-3" />
+            Arrastra para cambiar el orden de los servicios
+          </p>
+
           {rows.map((row, index) => {
             const item = schedule[index];
             const categoryServices = services.filter((service) => service.category_id === row.categoryId);
             const candidates = eligibleEmployees(row.serviceId, item?.start ?? null, item?.end ?? null);
 
             return (
-              <div key={row.key} className="rounded-lg border border-neutral-200 p-3">
-                <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+              <div
+                key={row.key}
+                draggable
+                onDragStart={() => setDragIndex(index)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={() => {
+                  if (dragIndex !== null) reorderRows(dragIndex, index);
+                  setDragIndex(null);
+                }}
+                onDragEnd={() => setDragIndex(null)}
+                className={cn(
+                  "rounded-xl border bg-white p-4 transition-all",
+                  dragIndex === index
+                    ? "border-brand-400 shadow-[0_0_0_2px_rgba(124,58,237,0.15)]"
+                    : "border-brand-100 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
+                )}
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="cursor-grab text-neutral-300 transition-colors hover:text-neutral-400">
+                      <GripVertical className="h-4 w-4" />
+                    </div>
+                    <span className="text-sm font-semibold text-neutral-700">
+                      Servicio {index + 1}
+                    </span>
+                    {item?.start && item.end && (
+                      <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600">
+                        {formatTimeTz(item.start, salonConfig.timezone)} - {formatTimeTz(item.end, salonConfig.timezone)}
+                      </span>
+                    )}
+                  </div>
+                  {rows.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeRow(row.key)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-300 transition-colors hover:bg-red-50 hover:text-red-500"
+                      aria-label="Quitar servicio"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
                   <label className="space-y-1 text-sm font-medium text-neutral-700">
                     CategorÃ­a
                     <Select
@@ -268,17 +319,6 @@ export function AppointmentEditForm({
                     </Select>
                   </label>
 
-                  <div className="flex items-end gap-1">
-                    <Button type="button" variant="outline" size="sm" onClick={() => moveRow(index, -1)}>
-                      Subir
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={() => moveRow(index, 1)}>
-                      Bajar
-                    </Button>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(row.key)}>
-                      Quitar
-                    </Button>
-                  </div>
                 </div>
 
                 {item?.start && item.end && (

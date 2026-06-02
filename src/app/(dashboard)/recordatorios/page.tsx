@@ -35,6 +35,7 @@ export default async function RecordatoriosPage() {
         tz={reminderQueue.timezone}
         salonName={reminderQueue.salonName}
         template={reminderQueue.template}
+        templateId={reminderQueue.templateId}
       />
     </div>
   );

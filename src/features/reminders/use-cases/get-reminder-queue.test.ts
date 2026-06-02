@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
 import { findActiveEmployeeNames } from "@/features/employees/data/employees.repo";
 import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
+import { findLatestReminderLogsByAppointmentIds } from "@/features/reminders/data/reminder-log.repo";
 import { findSalonIdentity } from "@/features/salon/data/salon.repo";
 import { getReminderQueue } from "./get-reminder-queue";
 
@@ -17,6 +18,10 @@ vi.mock("@/features/notifications/data/notification-templates.repo", () => ({
   findActiveMessageTemplate: vi.fn(),
 }));
 
+vi.mock("@/features/reminders/data/reminder-log.repo", () => ({
+  findLatestReminderLogsByAppointmentIds: vi.fn(),
+}));
+
 vi.mock("@/features/salon/data/salon.repo", () => ({
   findSalonIdentity: vi.fn(),
 }));
@@ -24,6 +29,7 @@ vi.mock("@/features/salon/data/salon.repo", () => ({
 const mockedFindAppointmentsBySalon = vi.mocked(findAppointmentsBySalon);
 const mockedFindActiveEmployeeNames = vi.mocked(findActiveEmployeeNames);
 const mockedFindActiveMessageTemplate = vi.mocked(findActiveMessageTemplate);
+const mockedFindLatestReminderLogsByAppointmentIds = vi.mocked(findLatestReminderLogsByAppointmentIds);
 const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
 
 function appointment(status: string) {
@@ -65,8 +71,10 @@ describe("get reminder queue", () => {
       timezone: "America/Panama",
     });
     mockedFindActiveMessageTemplate.mockResolvedValue({
+      id: "template-1",
       body_text: "Hola {cliente}, recuerda tu cita en {salon}.",
     } as never);
+    mockedFindLatestReminderLogsByAppointmentIds.mockResolvedValue(new Map());
     mockedFindActiveEmployeeNames.mockResolvedValue([
       { id: "employee-1", first_name: "Ana", last_name: "Vega" },
     ] as never);
@@ -98,18 +106,47 @@ describe("get reminder queue", () => {
       timezone: "America/Panama",
       salonName: "Glow Studio",
       template: "Hola {cliente}, recuerda tu cita en {salon}.",
+      templateId: "template-1",
       employees: [{ id: "employee-1", name: "Ana Vega" }],
     });
     expect(result.appointments.map((item) => item.status)).toEqual(["scheduled", "confirmed"]);
     expect(result.appointments[0]).toMatchObject({
       id: "appt-scheduled",
       customer: { first_name: "Lia", last_name: "Mora" },
+      last_reminder_sent_at: null,
       items: [
         {
           service: { name: "Corte" },
           employee: { id: "employee-1", first_name: "Ana", last_name: "Vega" },
         },
       ],
+    });
+  });
+
+  it("adds the latest manual reminder metadata to each appointment", async () => {
+    mockedFindAppointmentsBySalon.mockResolvedValue([
+      appointment("scheduled"),
+    ] as never);
+    mockedFindLatestReminderLogsByAppointmentIds.mockResolvedValue(new Map([
+      ["appt-scheduled", {
+        appointment_id: "appt-scheduled",
+        sent_at: "2026-05-29T14:00:00.000Z",
+        channel: "whatsapp",
+      }],
+    ]));
+
+    const result = await getReminderQueue({
+      salonId: "salon-1",
+      now: new Date("2026-05-29T15:00:00.000Z"),
+    });
+
+    expect(mockedFindLatestReminderLogsByAppointmentIds).toHaveBeenCalledWith(
+      "salon-1",
+      ["appt-scheduled"]
+    );
+    expect(result.appointments[0]).toMatchObject({
+      last_reminder_sent_at: "2026-05-29T14:00:00.000Z",
+      last_reminder_channel: "whatsapp",
     });
   });
 
