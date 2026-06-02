@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { promoteCustomer } from "@/features/customers/use-cases/customer-temporary";
 import {
-  applyAppointmentItemDiscount,
   findAppointmentForCommand,
+  findAppointmentItemsForPricing,
   setAppointmentItemsCalendarBlocking,
+  updateAppointmentItemCharges,
   updateAppointmentStatus,
 } from "../data/appointment-commands.repo";
 import { cancelAppointment } from "./cancel-appointment";
@@ -11,9 +12,10 @@ import { completeAppointment } from "./complete-appointment";
 import { confirmAppointment } from "./confirm-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
-  applyAppointmentItemDiscount: vi.fn(),
   findAppointmentForCommand: vi.fn(),
+  findAppointmentItemsForPricing: vi.fn(),
   setAppointmentItemsCalendarBlocking: vi.fn(),
+  updateAppointmentItemCharges: vi.fn(),
   updateAppointmentStatus: vi.fn(),
 }));
 
@@ -21,9 +23,10 @@ vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
   promoteCustomer: vi.fn(),
 }));
 
-const mockedApplyAppointmentItemDiscount = vi.mocked(applyAppointmentItemDiscount);
 const mockedFindAppointmentForCommand = vi.mocked(findAppointmentForCommand);
+const mockedFindAppointmentItemsForPricing = vi.mocked(findAppointmentItemsForPricing);
 const mockedSetAppointmentItemsCalendarBlocking = vi.mocked(setAppointmentItemsCalendarBlocking);
+const mockedUpdateAppointmentItemCharges = vi.mocked(updateAppointmentItemCharges);
 const mockedUpdateAppointmentStatus = vi.mocked(updateAppointmentStatus);
 const mockedPromoteCustomer = vi.mocked(promoteCustomer);
 
@@ -39,7 +42,11 @@ describe("appointment lifecycle commands", () => {
       status: "scheduled",
       customer_id: "customer-1",
     });
-    mockedApplyAppointmentItemDiscount.mockResolvedValue(undefined);
+    mockedFindAppointmentItemsForPricing.mockResolvedValue([
+      { id: "item-fixed", price: 20, discount_amount: 0, pricing_mode: "fixed" },
+      { id: "item-variable", price: 30, discount_amount: 0, pricing_mode: "variable" },
+    ]);
+    mockedUpdateAppointmentItemCharges.mockResolvedValue(undefined);
     mockedSetAppointmentItemsCalendarBlocking.mockResolvedValue(undefined);
     mockedUpdateAppointmentStatus.mockResolvedValue(undefined);
     mockedPromoteCustomer.mockResolvedValue({ ok: true, value: undefined });
@@ -75,20 +82,35 @@ describe("appointment lifecycle commands", () => {
     ).toBeLessThan(mockedUpdateAppointmentStatus.mock.invocationCallOrder[0]);
   });
 
-  it("completes, discounts, releases calendar blocks and promotes the customer", async () => {
-    const result = await completeAppointment(appointmentId, salonId, "cash", 10);
-
-    expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedApplyAppointmentItemDiscount).toHaveBeenCalledWith({
+  it("completes with editable variable prices, item-level discounts, calendar release and customer promotion", async () => {
+    const result = await completeAppointment(
       appointmentId,
       salonId,
-      discountPercentage: 10,
+      "cash",
+      [
+        { id: "item-fixed", price: 20, discountPercentage: 20 },
+        { id: "item-variable", price: 40, discountPercentage: 0 },
+      ],
+      "Diseno adicional"
+    );
+
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(mockedUpdateAppointmentItemCharges).toHaveBeenCalledWith({
+      appointmentId,
+      salonId,
+      charges: [
+        { id: "item-fixed", price: 20, discountAmount: 4 },
+        { id: "item-variable", price: 40, discountAmount: 0 },
+      ],
     });
     expect(mockedUpdateAppointmentStatus).toHaveBeenCalledWith({
       appointmentId,
       salonId,
       status: "completed",
       paymentMethod: "cash",
+      discountAmount: 4,
+      totalPrice: 56,
+      completionPriceNote: "Diseno adicional",
     });
     expect(mockedSetAppointmentItemsCalendarBlocking).toHaveBeenCalledWith({
       appointmentId,
@@ -96,6 +118,20 @@ describe("appointment lifecycle commands", () => {
       blocksCalendar: false,
     });
     expect(mockedPromoteCustomer).toHaveBeenCalledWith("customer-1", salonId);
+  });
+
+  it("blocks manual price changes for fixed-price services", async () => {
+    const result = await completeAppointment(appointmentId, salonId, "cash", [
+      { id: "item-fixed", price: 25 },
+      { id: "item-variable", price: 30 },
+    ]);
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Solo puedes cambiar el precio de servicios con precio variable.",
+    });
+    expect(mockedUpdateAppointmentItemCharges).not.toHaveBeenCalled();
+    expect(mockedUpdateAppointmentStatus).not.toHaveBeenCalled();
   });
 
   it("does not write when the lifecycle transition is invalid", async () => {

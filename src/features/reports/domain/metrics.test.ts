@@ -9,10 +9,10 @@ import {
 } from "./metrics";
 
 const appointments: ReportAppointment[] = [
-  { id: "appt-1", status: "completed", totalPrice: 50 },
-  { id: "appt-2", status: "completed", totalPrice: 30 },
-  { id: "appt-3", status: "no_show", totalPrice: 0 },
-  { id: "appt-4", status: "scheduled", totalPrice: 25 },
+  { id: "appt-1", status: "completed", totalPrice: 45, discountAmount: 5 },
+  { id: "appt-2", status: "completed", totalPrice: 30, discountAmount: 0 },
+  { id: "appt-3", status: "no_show", totalPrice: 0, discountAmount: 0 },
+  { id: "appt-4", status: "scheduled", totalPrice: 25, discountAmount: 0 },
 ];
 
 const items: ReportAppointmentItem[] = [
@@ -46,10 +46,11 @@ describe("report metrics", () => {
   it("calculates revenue, average ticket and no-show rate from appointments", () => {
     const metrics = calculateOperationalReportMetrics(appointments, items);
 
-    expect(metrics.revenue).toBe(80);
+    expect(metrics.revenue).toBe(75);
+    expect(metrics.discounts).toBe(5);
     expect(metrics.completedCount).toBe(2);
     expect(metrics.totalCount).toBe(4);
-    expect(metrics.avgTicket).toBe(40);
+    expect(metrics.avgTicket).toBe(37.5);
     expect(metrics.noShowRate).toBe(25);
   });
 
@@ -78,6 +79,7 @@ describe("report metrics", () => {
   it("returns zeroed metrics for empty periods", () => {
     expect(calculateOperationalReportMetrics([], [])).toEqual({
       revenue: 0,
+      discounts: 0,
       completedCount: 0,
       totalCount: 0,
       avgTicket: 0,

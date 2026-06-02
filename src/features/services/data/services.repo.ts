@@ -19,7 +19,7 @@ export async function findServicesCatalog(salonId: string) {
   const { data, error } = await supabase
     .from("service_categories")
     .select(`
-      id, name, ordering,
+      id, name, ordering, pricing_mode,
       services(
         id, name, duration_minutes, price, is_active,
         employee_services(employee:employees(id, first_name, last_name, is_active))
@@ -42,6 +42,24 @@ export async function createCategory(
   const { data, error } = await supabase
     .from("service_categories")
     .insert({ ...input, salon_id: salonId })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCategory(
+  id: string,
+  salonId: string,
+  input: Database["public"]["Tables"]["service_categories"]["Update"]
+) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("service_categories")
+    .update(input)
+    .eq("id", id)
+    .eq("salon_id", salonId)
     .select()
     .single();
 

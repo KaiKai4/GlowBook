@@ -20,8 +20,14 @@ export interface AppointmentWithDetails extends AppointmentRow {
     end_time: string;
     duration_minutes: number;
     price: number;
+    discount_amount: number;
     ordering: number;
-    service: { id: string; name: string; duration_minutes: number } | null;
+    service: {
+      id: string;
+      name: string;
+      duration_minutes: number;
+      category: { id: string; name: string; pricing_mode: string } | null;
+    } | null;
     employee: { id: string; first_name: string; last_name: string } | null;
   }>;
 }
@@ -35,8 +41,11 @@ export async function findAppointmentById(id: string): Promise<AppointmentWithDe
       customer:customers(id, first_name, last_name, phone, email, is_temporary),
       items:appointment_items(
         id, service_id, employee_id, start_time, end_time,
-        duration_minutes, price, ordering,
-        service:services(id, name, duration_minutes),
+        duration_minutes, price, discount_amount, ordering,
+        service:services(
+          id, name, duration_minutes,
+          category:service_categories(id, name, pricing_mode)
+        ),
         employee:employees(id, first_name, last_name)
       )
     `)
@@ -59,8 +68,11 @@ export async function findAppointmentsBySalon(
       customer:customers(id, first_name, last_name, phone, email, is_temporary),
       items:appointment_items(
         id, service_id, employee_id, start_time, end_time,
-        duration_minutes, price, ordering,
-        service:services(id, name, duration_minutes),
+        duration_minutes, price, discount_amount, ordering,
+        service:services(
+          id, name, duration_minutes,
+          category:service_categories(id, name, pricing_mode)
+        ),
         employee:employees(id, first_name, last_name)
       )
     `)

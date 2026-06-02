@@ -33,6 +33,7 @@ describe("service catalog use-cases", () => {
       name: "Cabello",
       description: "",
       ordering: 0,
+      pricing_mode: "fixed",
     });
   });
 

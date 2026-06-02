@@ -19,6 +19,7 @@ describe("get service catalog", () => {
         id: "category-1",
         name: "Cabello",
         ordering: 1,
+        pricing_mode: "fixed",
         services: [
           {
             id: "service-1",
@@ -54,6 +55,7 @@ describe("get service catalog", () => {
       {
         id: "category-1",
         name: "Cabello",
+        pricing_mode: "fixed",
         services: [
           {
             id: "service-1",

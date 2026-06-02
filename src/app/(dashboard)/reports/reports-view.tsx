@@ -44,6 +44,7 @@ interface Props {
   to: string;
   preset: string;
   revenue: number;
+  discounts: number;
   completedCount: number;
   totalCount: number;
   avgTicket: number;
@@ -83,7 +84,7 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 
 export function ReportsView({
   from, to, preset,
-  revenue, completedCount, totalCount, avgTicket, noShowRate,
+  revenue, discounts, completedCount, totalCount, avgTicket, noShowRate,
   statusBreakdown, byEmployee, byService, newCustomers,
 }: Props) {
   const router = useRouter();
@@ -156,11 +157,15 @@ export function ReportsView({
       </div>
 
       {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {[
           {
-            label: "Ingresos totales", value: formatCurrency(revenue),
+            label: "Ingresos netos", value: formatCurrency(revenue),
             icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50",
+          },
+          {
+            label: "Descuentos", value: formatCurrency(discounts),
+            icon: <Tag className="h-5 w-5" />, color: "text-rose-600 bg-rose-50",
           },
           {
             label: "Citas completadas", value: `${completedCount} de ${totalCount}`,

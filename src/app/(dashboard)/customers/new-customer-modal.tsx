@@ -6,6 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
 import { Plus, UserPlus } from "lucide-react";
 import {
   createCustomerAction,
@@ -105,12 +106,18 @@ export function NewCustomerModal() {
           </div>
 
           <Input
-            label="Telefono"
+            label="Celular"
             type="tel"
+            inputMode="numeric"
+            maxLength={14}
             value={phone}
-            onChange={(e) => { setPhone(e.target.value); setArchivedMatch(null); setError(null); }}
+            onChange={(e) => {
+              setPhone(normalizeOptionalPhoneInput(e.target.value));
+              setArchivedMatch(null);
+              setError(null);
+            }}
             onBlur={() => checkArchivedMatch()}
-            placeholder="+507 6000-0000"
+            placeholder="60000000"
           />
 
           <Input

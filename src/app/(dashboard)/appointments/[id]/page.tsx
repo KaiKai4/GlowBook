@@ -67,14 +67,41 @@ export default async function AppointmentDetailPage({
                     {item.employeeName}
                   </p>
                 </div>
-                <span className="text-sm text-neutral-700">{formatCurrency(item.price)}</span>
+                <div className="text-right">
+                  {item.discountAmount > 0 && (
+                    <p className="text-xs text-emerald-700">
+                      -{formatCurrency(item.discountAmount)}
+                    </p>
+                  )}
+                  <span className="text-sm text-neutral-700">
+                    {formatCurrency(Math.max(0, item.price - item.discountAmount))}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-neutral-100 pt-3 font-semibold text-neutral-900">
-            <span>Total</span>
-            <span>{formatCurrency(appointment.total_price)}</span>
+          <div className="mt-3 space-y-2 border-t border-neutral-100 pt-3">
+            <div className="flex items-center justify-between text-sm text-neutral-600">
+              <span>Subtotal servicios</span>
+              <span>{formatCurrency(appointment.subtotal_price)}</span>
+            </div>
+            {appointment.discount_amount > 0 && (
+              <div className="flex items-center justify-between text-sm text-emerald-700">
+                <span>Descuento</span>
+                <span>-{formatCurrency(appointment.discount_amount)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between font-semibold text-neutral-900">
+              <span>Total cobrado</span>
+              <span>{formatCurrency(appointment.total_price)}</span>
+            </div>
           </div>
+          {appointment.completion_price_note && (
+            <div className="mt-3 rounded-lg bg-neutral-50 px-3 py-2">
+              <p className="text-xs font-semibold text-neutral-500">Nota de cobro</p>
+              <p className="mt-1 text-sm text-neutral-700">{appointment.completion_price_note}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -12,6 +12,7 @@ export interface ReportAppointment {
   id: string;
   status: string;
   totalPrice: number;
+  discountAmount: number;
 }
 
 export interface ReportAppointmentItem {
@@ -38,6 +39,7 @@ export interface ReportEntityBreakdown {
 
 export interface OperationalReportMetrics {
   revenue: number;
+  discounts: number;
   completedCount: number;
   totalCount: number;
   avgTicket: number;
@@ -69,11 +71,16 @@ export function calculateOperationalReportMetrics(
     (sum, appointment) => sum + Number(appointment.totalPrice ?? 0),
     0
   );
+  const discounts = completed.reduce(
+    (sum, appointment) => sum + Number(appointment.discountAmount ?? 0),
+    0
+  );
   const totalCount = appointments.length;
   const noShowCount = appointments.filter((appointment) => appointment.status === "no_show").length;
 
   return {
     revenue,
+    discounts,
     completedCount: completed.length,
     totalCount,
     avgTicket: completed.length > 0 ? revenue / completed.length : 0,

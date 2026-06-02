@@ -7,6 +7,7 @@ import type {
   UpdateCustomerInput,
 } from "@/features/customers/schemas";
 import type { Result } from "@/lib/result";
+import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
 import { rejectArchivedDuplicate } from "./customer-duplicates";
 
 function mapCustomerConstraintError(error: unknown, fallback: string): string {
@@ -27,11 +28,12 @@ export async function createCustomerProfile(
   salonId: string,
   input: CreateCustomerInput
 ): Promise<Result<string>> {
-  const duplicate = await rejectArchivedDuplicate(salonId, input);
+  const normalizedInput = normalizeCustomerPhone(input);
+  const duplicate = await rejectArchivedDuplicate(salonId, normalizedInput);
   if (!duplicate.ok) return duplicate;
 
   try {
-    const customer = await createCustomer(salonId, input);
+    const customer = await createCustomer(salonId, normalizedInput);
     return { ok: true, value: customer.id };
   } catch (error) {
     return {
@@ -47,7 +49,7 @@ export async function updateCustomerProfile(
   input: UpdateCustomerInput
 ): Promise<Result<void>> {
   try {
-    await updateCustomer(customerId, salonId, input);
+    await updateCustomer(customerId, salonId, normalizeCustomerPhone(input));
     return { ok: true, value: undefined };
   } catch (error) {
     console.error("[customers:profile]", error);
@@ -56,4 +58,12 @@ export async function updateCustomerProfile(
       error: mapCustomerConstraintError(error, "Error al actualizar el cliente."),
     };
   }
+}
+
+function normalizeCustomerPhone<T extends { phone?: string | null }>(input: T): T {
+  if (!input.phone) return input;
+  return {
+    ...input,
+    phone: normalizeOptionalPhoneInput(input.phone),
+  };
 }

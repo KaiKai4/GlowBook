@@ -8,8 +8,12 @@ import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
-import { Plus, Clock, Search, Scissors } from "lucide-react";
-import { createCategoryAction, createServiceAction } from "./actions";
+import { Plus, Clock, Search, Scissors, Tags } from "lucide-react";
+import {
+  createCategoryAction,
+  createServiceAction,
+  updateCategoryPricingModeAction,
+} from "./actions";
 
 interface EmployeeBadge { id: string; initials: string; name: string }
 interface ServiceItem {
@@ -23,6 +27,7 @@ interface ServiceItem {
 interface Category {
   id: string;
   name: string;
+  pricing_mode: "fixed" | "variable";
   services: ServiceItem[];
 }
 
@@ -37,6 +42,8 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
 
   const [catPending, startCat] = useTransition();
   const [svcPending, startSvc] = useTransition();
+  const [pricingPending, startPricing] = useTransition();
+  const [pricingCategoryId, setPricingCategoryId] = useState<string | null>(null);
   const [catError, setCatError] = useState<string | null>(null);
   const [svcError, setSvcError] = useState<string | null>(null);
 
@@ -86,6 +93,14 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
   function openNewService(categoryId?: string) {
     setDefaultCategory(categoryId ?? (activeCat !== "all" ? activeCat : categories[0]?.id ?? ""));
     setSvcOpen(true);
+  }
+  function handleToggleCategoryPricingMode(category: Category) {
+    setPricingCategoryId(category.id);
+    const nextMode = category.pricing_mode === "variable" ? "fixed" : "variable";
+    startPricing(async () => {
+      await updateCategoryPricingModeAction(category.id, nextMode);
+      setPricingCategoryId(null);
+    });
   }
 
   return (
@@ -170,6 +185,21 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
               <section key={cat.id}>
                 <div className="mb-3 flex items-center gap-2">
                   <h2 className="text-lg font-semibold text-neutral-800">{cat.name}</h2>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleCategoryPricingMode(cat)}
+                    disabled={pricingPending && pricingCategoryId === cat.id}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors disabled:opacity-60",
+                      cat.pricing_mode === "variable"
+                        ? "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
+                        : "border-neutral-200 bg-neutral-50 text-neutral-500 hover:bg-neutral-100"
+                    )}
+                    title="Cambiar modo de precio de la categoria"
+                  >
+                    <Tags className="h-3 w-3" />
+                    {cat.pricing_mode === "variable" ? "Precio variable" : "Precio fijo"}
+                  </button>
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-neutral-100 px-1.5 text-xs font-medium text-neutral-500">
                     {cat.services.length}
                   </span>
@@ -185,7 +215,11 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {cat.services.map((svc) => (
-                      <ServiceCard key={svc.id} service={svc} />
+                      <ServiceCard
+                        key={svc.id}
+                        service={svc}
+                        pricingMode={cat.pricing_mode}
+                      />
                     ))}
                   </div>
                 )}
@@ -200,6 +234,22 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
         <form action={handleCreateCategory} className="space-y-4">
           <Input name="name" label="Nombre" placeholder="Cabello, Uñas, Barbería..." required />
           <Textarea name="description" label="Descripción (opcional)" />
+          <label className="flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50 px-3 py-3">
+            <input
+              type="checkbox"
+              name="pricing_mode"
+              value="variable"
+              className="mt-1 h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-brand-800">
+                Precio variable al completar
+              </span>
+              <span className="mt-0.5 block text-xs text-brand-600">
+                Permite revisar el precio de estos servicios cuando se cobra la cita.
+              </span>
+            </span>
+          </label>
           {catError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{catError}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setCatOpen(false)}>Cancelar</Button>
@@ -264,7 +314,13 @@ function CategoryRow({
   );
 }
 
-function ServiceCard({ service }: { service: ServiceItem }) {
+function ServiceCard({
+  service,
+  pricingMode,
+}: {
+  service: ServiceItem;
+  pricingMode: "fixed" | "variable";
+}) {
   return (
     <div className="group rounded-xl border border-neutral-100 bg-white p-4 transition-all hover:border-neutral-200 hover:shadow-sm">
       <p className="font-medium text-neutral-900">{service.name}</p>
@@ -285,6 +341,11 @@ function ServiceCard({ service }: { service: ServiceItem }) {
           <span className={cn("h-1.5 w-1.5 rounded-full", service.is_active ? "bg-emerald-500" : "bg-neutral-400")} />
           {service.is_active ? "Activo" : "Inactivo"}
         </span>
+        {pricingMode === "variable" && (
+          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+            Variable al cobrar
+          </span>
+        )}
       </div>
       {service.employees.length > 0 && (
         <div className="mt-3 flex -space-x-1.5">

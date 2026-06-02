@@ -23,6 +23,13 @@ export interface AppointmentCommandState {
   customer_id: string | null;
 }
 
+export interface AppointmentItemPricingState {
+  id: string;
+  price: number;
+  discount_amount: number;
+  pricing_mode: "fixed" | "variable";
+}
+
 export interface AppointmentCreationAssignmentRequest {
   service_id: string;
   employee_id: string;
@@ -96,11 +103,17 @@ export async function updateAppointmentStatus({
   salonId,
   status,
   paymentMethod,
+  discountAmount,
+  totalPrice,
+  completionPriceNote,
 }: {
   appointmentId: string;
   salonId: string;
   status: AppointmentStatus;
   paymentMethod?: AppointmentPaymentMethod;
+  discountAmount?: number;
+  totalPrice?: number;
+  completionPriceNote?: string;
 }): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const update: Database["public"]["Tables"]["appointments"]["Update"] = {
@@ -110,6 +123,15 @@ export async function updateAppointmentStatus({
   if (paymentMethod !== undefined) {
     update.payment_method = paymentMethod;
   }
+  if (discountAmount !== undefined) {
+    update.discount_amount = discountAmount;
+  }
+  if (totalPrice !== undefined) {
+    update.total_price = totalPrice;
+  }
+  if (completionPriceNote !== undefined) {
+    update.completion_price_note = completionPriceNote;
+  }
 
   const { error } = await supabase
     .from("appointments")
@@ -118,6 +140,64 @@ export async function updateAppointmentStatus({
     .eq("salon_id", salonId);
 
   if (error) throw error;
+}
+
+export async function findAppointmentItemsForPricing(
+  appointmentId: string,
+  salonId: string
+): Promise<AppointmentItemPricingState[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("appointment_items")
+    .select(`
+      id,
+      price,
+      discount_amount,
+      service:services(
+        category:service_categories(pricing_mode)
+      )
+    `)
+    .eq("appointment_id", appointmentId)
+    .eq("salon_id", salonId);
+
+  if (error) throw error;
+
+  return (data ?? []).map((item) => {
+    const service = Array.isArray(item.service) ? item.service[0] : item.service;
+    const category = Array.isArray(service?.category)
+      ? service?.category[0]
+      : service?.category;
+
+    return {
+      id: item.id,
+      price: Number(item.price ?? 0),
+      discount_amount: Number(item.discount_amount ?? 0),
+      pricing_mode: category?.pricing_mode === "variable" ? "variable" : "fixed",
+    };
+  });
+}
+
+export async function updateAppointmentItemCharges({
+  appointmentId,
+  salonId,
+  charges,
+}: {
+  appointmentId: string;
+  salonId: string;
+  charges: Array<{ id: string; price: number; discountAmount: number }>;
+}): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+
+  for (const item of charges) {
+    const { error } = await supabase
+      .from("appointment_items")
+      .update({ price: item.price, discount_amount: item.discountAmount })
+      .eq("id", item.id)
+      .eq("appointment_id", appointmentId)
+      .eq("salon_id", salonId);
+
+    if (error) throw error;
+  }
 }
 
 export async function setAppointmentItemsCalendarBlocking({
@@ -137,37 +217,6 @@ export async function setAppointmentItemsCalendarBlocking({
     .eq("salon_id", salonId);
 
   if (error) throw error;
-}
-
-export async function applyAppointmentItemDiscount({
-  appointmentId,
-  salonId,
-  discountPercentage,
-}: {
-  appointmentId: string;
-  salonId: string;
-  discountPercentage: number;
-}): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { data: items, error: itemsReadError } = await supabase
-    .from("appointment_items")
-    .select("id, price")
-    .eq("appointment_id", appointmentId)
-    .eq("salon_id", salonId);
-
-  if (itemsReadError) throw itemsReadError;
-
-  const factor = 1 - discountPercentage / 100;
-  for (const item of items ?? []) {
-    const price = Math.round(Number(item.price) * factor * 100) / 100;
-    const { error } = await supabase
-      .from("appointment_items")
-      .update({ price })
-      .eq("id", item.id)
-      .eq("salon_id", salonId);
-
-    if (error) throw error;
-  }
 }
 
 export async function findAppointmentCreationResources({

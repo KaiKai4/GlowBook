@@ -44,6 +44,7 @@ export type Database = {
           appointment_id: string
           blocks_calendar: boolean
           created_at: string
+          discount_amount: number
           duration_minutes: number
           employee_id: string
           end_time: string
@@ -59,6 +60,7 @@ export type Database = {
           appointment_id: string
           blocks_calendar?: boolean
           created_at?: string
+          discount_amount?: number
           duration_minutes: number
           employee_id: string
           end_time: string
@@ -74,6 +76,7 @@ export type Database = {
           appointment_id?: string
           blocks_calendar?: boolean
           created_at?: string
+          discount_amount?: number
           duration_minutes?: number
           employee_id?: string
           end_time?: string
@@ -183,9 +186,11 @@ export type Database = {
       }
       appointments: {
         Row: {
+          completion_price_note: string
           created_at: string
           created_by: string | null
           customer_id: string
+          discount_amount: number
           end_time: string | null
           id: string
           notes: string
@@ -197,9 +202,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          completion_price_note?: string
           created_at?: string
           created_by?: string | null
           customer_id: string
+          discount_amount?: number
           end_time?: string | null
           id?: string
           notes?: string
@@ -211,9 +218,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          completion_price_note?: string
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          discount_amount?: number
           end_time?: string | null
           id?: string
           notes?: string
@@ -954,6 +963,7 @@ export type Database = {
           is_active: boolean
           name: string
           ordering: number
+          pricing_mode: string
           salon_id: string
           updated_at: string
         }
@@ -964,6 +974,7 @@ export type Database = {
           is_active?: boolean
           name: string
           ordering?: number
+          pricing_mode?: string
           salon_id: string
           updated_at?: string
         }
@@ -974,6 +985,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           ordering?: number
+          pricing_mode?: string
           salon_id?: string
           updated_at?: string
         }

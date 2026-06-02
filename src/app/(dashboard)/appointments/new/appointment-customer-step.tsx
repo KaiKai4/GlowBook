@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils/cn";
+import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
 import { UserPlus, Users } from "lucide-react";
 import type { CustomerOption } from "./appointment-wizard-types";
 
@@ -125,12 +126,15 @@ export function AppointmentCustomerStep({
               />
             </div>
             <Input
-              label="Telefono (opcional)"
+              label="Celular (opcional)"
               type="tel"
+              inputMode="numeric"
+              maxLength={14}
+              placeholder="60000000"
               value={newPhone}
               onChange={(event) => {
                 clearError();
-                setNewPhone(event.target.value);
+                setNewPhone(normalizeOptionalPhoneInput(event.target.value));
               }}
             />
           </div>

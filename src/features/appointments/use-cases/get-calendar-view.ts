@@ -14,6 +14,7 @@ import {
   parseCalendarView,
 } from "../domain/calendar";
 import type { CalendarAppointment, CalendarView, CalendarViewModel } from "../view-models";
+import { isPricingMode } from "../domain/pricing";
 
 export interface GetCalendarViewInput {
   salonId: string;
@@ -35,6 +36,8 @@ function toCalendarAppointment(appointment: Awaited<ReturnType<typeof findAppoin
     start_time: appointment.start_time,
     end_time: appointment.end_time,
     total_price: appointment.total_price,
+    discount_amount: appointment.discount_amount,
+    completion_price_note: appointment.completion_price_note,
     notes: appointment.notes,
     customer: appointment.customer,
     items: appointment.items.map((item) => ({
@@ -42,7 +45,20 @@ function toCalendarAppointment(appointment: Awaited<ReturnType<typeof findAppoin
       start_time: item.start_time,
       end_time: item.end_time,
       price: item.price,
-      service: item.service,
+      discount_amount: Number(item.discount_amount ?? 0),
+      service: item.service
+        ? {
+            ...item.service,
+            category: item.service.category
+              ? {
+                  ...item.service.category,
+                  pricing_mode: isPricingMode(item.service.category.pricing_mode)
+                    ? item.service.category.pricing_mode
+                    : "fixed",
+                }
+              : null,
+          }
+        : null,
       employee: item.employee,
     })),
   };

@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createServiceCategory } from "@/features/services/use-cases/create-category";
 import { createCatalogService } from "@/features/services/use-cases/create-service";
+import { updateServiceCategory } from "@/features/services/use-cases/update-category";
 import { updateCatalogService } from "@/features/services/use-cases/update-service";
 import {
   CreateCategorySchema,
   CreateServiceSchema,
+  UpdateCategorySchema,
   UpdateServiceSchema,
 } from "@/features/services/schemas";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
@@ -33,10 +35,26 @@ export async function createCategoryAction(
     name: formData.get("name"),
     description: formData.get("description") ?? "",
     ordering: Number(formData.get("ordering") ?? 0),
+    pricing_mode: formData.get("pricing_mode") === "variable" ? "variable" : "fixed",
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   const result = await createServiceCategory(guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/services");
+  return result;
+}
+
+export async function updateCategoryPricingModeAction(
+  categoryId: string,
+  pricingMode: "fixed" | "variable"
+): Promise<Result<void>> {
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
+
+  const parsed = UpdateCategorySchema.safeParse({ pricing_mode: pricingMode });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const result = await updateServiceCategory(categoryId, guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/services");
   return result;
 }

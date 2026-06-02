@@ -10,7 +10,10 @@ export async function createServiceCategory(
   input: CreateCategoryInput
 ): Promise<Result<string>> {
   try {
-    const category = await createCategory(salonId, input);
+    const category = await createCategory(salonId, {
+      ...input,
+      pricing_mode: input.pricing_mode ?? "fixed",
+    });
     return { ok: true, value: category.id };
   } catch (error) {
     if (isUniqueConstraintError(error)) {

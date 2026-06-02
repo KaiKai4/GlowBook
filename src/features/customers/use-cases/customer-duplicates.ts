@@ -4,6 +4,7 @@ import {
 } from "@/features/customers/data/customers.repo";
 import type { CreateCustomerInput } from "@/features/customers/schemas";
 import type { Result } from "@/lib/result";
+import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
 
 export interface ArchivedCustomerMatch {
   id: string;
@@ -16,7 +17,7 @@ export async function checkPermanentCustomerByPhone(
   salonId: string,
   phone: string
 ): Promise<{ exists: boolean; archived?: boolean }> {
-  const trimmedPhone = phone.trim();
+  const trimmedPhone = normalizeOptionalPhoneInput(phone);
   if (!trimmedPhone) return { exists: false };
 
   const existing = await findCustomerByPhone(salonId, trimmedPhone);
@@ -30,7 +31,7 @@ export async function findArchivedCustomerByContact(
   phone?: string,
   email?: string
 ): Promise<ArchivedCustomerMatch | null> {
-  const trimmedPhone = phone?.trim();
+  const trimmedPhone = phone ? normalizeOptionalPhoneInput(phone) : undefined;
   const trimmedEmail = email?.trim();
   if (!trimmedPhone && !trimmedEmail) return null;
 

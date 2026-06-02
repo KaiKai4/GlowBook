@@ -13,9 +13,9 @@ import { confirmAppointment } from "@/features/appointments/use-cases/confirm-ap
 import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
 import {
+  CompleteAppointmentSchema,
   CreateAppointmentSchema,
   UpdateAppointmentScheduleSchema,
-  UpdateAppointmentStatusSchema,
 } from "@/features/appointments/schemas";
 import type { Result } from "@/lib/result";
 
@@ -155,26 +155,30 @@ export async function completeAppointmentAction(
   const permission = canManageAppointments(profile);
   if (!permission.ok) return { ok: false, error: "No tienes permiso para completar citas." };
 
-  const parsed = UpdateAppointmentStatusSchema.safeParse({
+  let itemCharges: unknown;
+  try {
+    itemCharges = JSON.parse(String(formData.get("item_charges") ?? "[]"));
+  } catch {
+    return { ok: false, error: "Cobros de servicios invalidos." };
+  }
+
+  const parsed = CompleteAppointmentSchema.safeParse({
     appointment_id: formData.get("appointment_id"),
-    status: "completed",
     payment_method: formData.get("payment_method"),
+    completion_price_note: formData.get("completion_price_note") ?? "",
+    item_charges: itemCharges,
   });
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  const discountPct = parseFloat(formData.get("discount_percentage") as string ?? "0");
-  const validDiscountPct = !isNaN(discountPct) && discountPct > 0 && discountPct <= 100
-    ? discountPct
-    : 0;
-
   const result = await completeAppointment(
     parsed.data.appointment_id,
     profile.salon_id,
-    parsed.data.payment_method ?? "",
-    validDiscountPct
+    parsed.data.payment_method,
+    parsed.data.item_charges,
+    parsed.data.completion_price_note
   );
 
   if (result.ok) {

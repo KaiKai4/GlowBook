@@ -31,6 +31,27 @@ export const UpdateAppointmentStatusSchema = z.object({
     .optional(),
 });
 
+export const CompleteAppointmentSchema = z.object({
+  appointment_id: z.string().uuid("ID de cita invalido"),
+  payment_method: z.enum(["cash", "card", "transfer", "yappy", "other"]),
+  completion_price_note: z.string().max(500).optional().default(""),
+  item_charges: z
+    .array(
+      z.object({
+        id: z.string().uuid("ID de servicio invalido"),
+        price: z.number().min(0, "El precio no puede ser negativo"),
+        discountPercentage: z
+          .number()
+          .min(0, "El descuento no puede ser negativo")
+          .max(100, "El descuento no puede ser mayor a 100%")
+          .optional()
+          .default(0),
+      })
+    )
+    .min(1, "La cita debe tener al menos un servicio"),
+});
+
 export type CreateAppointmentInput = z.infer<typeof CreateAppointmentSchema>;
 export type UpdateAppointmentScheduleInput = z.infer<typeof UpdateAppointmentScheduleSchema>;
 export type UpdateAppointmentStatusInput = z.infer<typeof UpdateAppointmentStatusSchema>;
+export type CompleteAppointmentInput = z.infer<typeof CompleteAppointmentSchema>;

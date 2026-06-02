@@ -4,7 +4,11 @@ import {
   findCustomerByPhone,
   updateCustomer,
 } from "@/features/customers/data/customers.repo";
-import { isValidOptionalPhone, phoneDigits, phoneValidationMessage } from "@/lib/utils/phone";
+import {
+  isValidOptionalPhone,
+  normalizeOptionalPhoneInput,
+  phoneValidationMessage,
+} from "@/lib/utils/phone";
 import type { Result } from "@/lib/result";
 
 function databaseErrorMessage(error: unknown): string {
@@ -28,7 +32,7 @@ function isPhoneUniquenessError(error: unknown): boolean {
 function normalizeOptionalPhone(phone: string | undefined): string | null {
   const trimmed = phone?.trim();
   if (!trimmed) return null;
-  return phoneDigits(trimmed);
+  return normalizeOptionalPhoneInput(trimmed);
 }
 
 export async function findOrCreateTemporaryCustomer({

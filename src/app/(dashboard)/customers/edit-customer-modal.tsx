@@ -6,6 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
 import { UserPen } from "lucide-react";
 import { deleteCustomerAction, updateCustomerAction } from "./actions";
 
@@ -100,7 +101,18 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
           <Input label="Apellido" value={lastName} onChange={(e) => { setLastName(e.target.value); setError(null); }} placeholder="Garcia" />
         </div>
 
-        <Input label="Telefono" type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} placeholder="+507 6000-0000" />
+        <Input
+          label="Celular"
+          type="tel"
+          inputMode="numeric"
+          maxLength={14}
+          value={phone}
+          onChange={(e) => {
+            setPhone(normalizeOptionalPhoneInput(e.target.value));
+            setError(null);
+          }}
+          placeholder="60000000"
+        />
         <Input label="Email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} placeholder="cliente@email.com" />
 
         <Textarea label="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Alergias, preferencias, observaciones..." rows={3} />

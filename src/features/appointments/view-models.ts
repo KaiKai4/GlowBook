@@ -1,5 +1,6 @@
 import type { BusinessHour, SalonConfig, WorkSchedule } from "./domain/types";
 import type { CalendarView } from "./domain/calendar";
+import type { PricingMode } from "./domain/pricing";
 
 export type { CalendarView };
 
@@ -9,6 +10,8 @@ export interface CalendarAppointment {
   start_time: string | null;
   end_time: string | null;
   total_price: number | string | null;
+  discount_amount: number | string | null;
+  completion_price_note: string | null;
   notes: string | null;
   customer: {
     id: string;
@@ -23,7 +26,13 @@ export interface CalendarAppointment {
     start_time: string;
     end_time: string;
     price: number;
-    service: { id: string; name: string; duration_minutes: number } | null;
+    discount_amount: number;
+    service: {
+      id: string;
+      name: string;
+      duration_minutes: number;
+      category: { id: string; name: string; pricing_mode: PricingMode } | null;
+    } | null;
     employee: { id: string; first_name: string; last_name: string } | null;
   }>;
 }
@@ -58,6 +67,7 @@ export interface CustomerOption {
 export interface CategoryOption {
   id: string;
   name: string;
+  pricing_mode?: PricingMode;
 }
 
 export interface ServiceOption {

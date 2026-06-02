@@ -10,7 +10,7 @@ import {
 
 type AppointmentRow = Pick<
   Database["public"]["Tables"]["appointments"]["Row"],
-  "id" | "status" | "total_price"
+  "id" | "status" | "total_price" | "discount_amount"
 >;
 
 type RelatedOne<T> = T | T[] | null;
@@ -18,6 +18,7 @@ type RelatedOne<T> = T | T[] | null;
 type AppointmentItemRow = {
   appointment_id: string;
   price: number | null;
+  discount_amount: number | null;
   service: RelatedOne<{ id: string; name: string }>;
   employee: RelatedOne<{ id: string; first_name: string; last_name: string }>;
 };
@@ -44,6 +45,7 @@ function normalizeAppointment(row: AppointmentRow): ReportAppointment {
     id: row.id,
     status: row.status,
     totalPrice: Number(row.total_price ?? 0),
+    discountAmount: Number(row.discount_amount ?? 0),
   };
 }
 
@@ -56,7 +58,7 @@ function normalizeItem(row: AppointmentItemRow): ReportAppointmentItem {
 
   return {
     appointmentId: row.appointment_id,
-    price: Number(row.price ?? 0),
+    price: Math.max(0, Number(row.price ?? 0) - Number(row.discount_amount ?? 0)),
     serviceId: service?.id ?? null,
     serviceName: service?.name ?? null,
     employeeId: employee?.id ?? null,
@@ -86,7 +88,7 @@ export async function findOperationalReportRows({
   const [appointmentsResponse, newCustomersResponse] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, status, total_price")
+      .select("id, status, total_price, discount_amount")
       .eq("salon_id", salonId)
       .gte("start_time", start)
       .lte("start_time", end),
@@ -112,7 +114,7 @@ export async function findOperationalReportRows({
     const { data, error } = await supabase
       .from("appointment_items")
       .select(
-        "appointment_id, price, service:services(id, name), employee:employees(id, first_name, last_name)"
+        "appointment_id, price, discount_amount, service:services(id, name), employee:employees(id, first_name, last_name)"
       )
       .eq("salon_id", salonId)
       .in("appointment_id", completedAppointmentIds);

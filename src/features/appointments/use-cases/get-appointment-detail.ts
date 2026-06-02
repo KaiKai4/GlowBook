@@ -36,6 +36,7 @@ export interface AppointmentDetailItemViewModel {
   start_time: string;
   end_time: string;
   price: number;
+  discountAmount: number;
 }
 
 export interface AppointmentDetailViewModel {
@@ -46,7 +47,10 @@ export interface AppointmentDetailViewModel {
   customerName: string;
   start_time: string | null;
   end_time: string | null;
+  subtotal_price: number;
+  discount_amount: number;
   total_price: number;
+  completion_price_note: string | null;
   notes: string | null;
   timezone: string;
   items: AppointmentDetailItemViewModel[];
@@ -76,7 +80,10 @@ export async function getAppointmentDetail({
       : "Cliente sin nombre",
     start_time: appointment.start_time,
     end_time: appointment.end_time,
+    subtotal_price: appointment.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0),
+    discount_amount: Number(appointment.discount_amount ?? 0),
     total_price: Number(appointment.total_price ?? 0),
+    completion_price_note: appointment.completion_price_note || null,
     notes: appointment.notes,
     timezone: salon?.timezone ?? "America/Panama",
     items: appointment.items.map((item) => ({
@@ -90,6 +97,7 @@ export async function getAppointmentDetail({
       start_time: item.start_time,
       end_time: item.end_time,
       price: Number(item.price ?? 0),
+      discountAmount: Number(item.discount_amount ?? 0),
     })),
   };
 }

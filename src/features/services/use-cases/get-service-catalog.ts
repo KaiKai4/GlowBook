@@ -29,6 +29,7 @@ export interface ServiceCatalogItem {
 export interface ServiceCatalogCategory {
   id: string;
   name: string;
+  pricing_mode: "fixed" | "variable";
   services: ServiceCatalogItem[];
 }
 
@@ -42,6 +43,7 @@ export async function getServiceCatalog(salonId: string): Promise<ServiceCatalog
   return catalog.map((category) => ({
     id: category.id,
     name: category.name,
+    pricing_mode: category.pricing_mode === "variable" ? "variable" : "fixed",
     services: (category.services ?? []).map((service) => ({
       id: service.id,
       name: service.name,
