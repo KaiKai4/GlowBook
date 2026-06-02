@@ -32,6 +32,8 @@ export interface AppointmentDetailItemViewModel {
   serviceId: string;
   employeeId: string;
   serviceName: string;
+  serviceCategoryName: string;
+  pricingMode: "fixed" | "variable";
   employeeName: string;
   start_time: string;
   end_time: string;
@@ -45,6 +47,10 @@ export interface AppointmentDetailViewModel {
   statusLabel: string;
   statusVariant: AppointmentStatusVariant;
   customerName: string;
+  customer: {
+    first_name: string;
+    last_name: string;
+  } | null;
   start_time: string | null;
   end_time: string | null;
   subtotal_price: number;
@@ -78,6 +84,12 @@ export async function getAppointmentDetail({
     customerName: appointment.customer
       ? `${appointment.customer.first_name} ${appointment.customer.last_name}`.trim()
       : "Cliente sin nombre",
+    customer: appointment.customer
+      ? {
+          first_name: appointment.customer.first_name,
+          last_name: appointment.customer.last_name,
+        }
+      : null,
     start_time: appointment.start_time,
     end_time: appointment.end_time,
     subtotal_price: appointment.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0),
@@ -91,6 +103,8 @@ export async function getAppointmentDetail({
       serviceId: item.service_id,
       employeeId: item.employee_id,
       serviceName: item.service?.name ?? "Servicio eliminado",
+      serviceCategoryName: item.service?.category?.name ?? "Sin categoria",
+      pricingMode: item.service?.category?.pricing_mode === "variable" ? "variable" : "fixed",
       employeeName: item.employee
         ? `${item.employee.first_name} ${item.employee.last_name}`.trim()
         : "Colaborador no asignado",

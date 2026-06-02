@@ -124,7 +124,27 @@ export default async function AppointmentDetailPage({
                 Editar / reprogramar
               </Link>
             )}
-            <AppointmentActions appointmentId={appointment.id} status={appointment.status} />
+            <AppointmentActions
+              appointmentId={appointment.id}
+              appointment={{
+                id: appointment.id,
+                total_price: appointment.total_price,
+                customer: appointment.customer,
+                items: appointment.items.map((item) => ({
+                  id: item.id,
+                  price: item.price,
+                  discount_amount: item.discountAmount,
+                  service: {
+                    name: item.serviceName,
+                    category: {
+                      name: item.serviceCategoryName,
+                      pricing_mode: item.pricingMode,
+                    },
+                  },
+                })),
+              }}
+              status={appointment.status}
+            />
           </CardContent>
         </Card>
       )}
