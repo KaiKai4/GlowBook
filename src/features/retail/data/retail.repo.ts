@@ -5,6 +5,7 @@ import type { InventoryLocation } from "@/features/inventory/domain/stock";
 
 type AnySupabase = {
   from: (table: string) => QueryBuilder;
+  rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<QueryResult>;
 };
 
 type QueryResult = {
@@ -37,55 +38,32 @@ export interface RetailSaleRow {
   customer?: { first_name: string; last_name: string } | { first_name: string; last_name: string }[] | null;
 }
 
-export async function insertRetailSale(
+export async function recordRetailSaleAtomically(
   salonId: string,
   input: {
     customer_id?: string | null;
-    payment_method: string;
-    total_amount: number;
-    note?: string;
-  }
-): Promise<{ id: string }> {
-  const supabase = db(await createSupabaseServerClient());
-  const { data, error } = await supabase
-    .from("retail_sales")
-    .insert({
-      salon_id: salonId,
-      customer_id: input.customer_id || null,
-      payment_method: input.payment_method,
-      total_amount: input.total_amount,
-      note: input.note || null,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return data as { id: string };
-}
-
-export async function insertRetailSaleItem(
-  salonId: string,
-  input: {
-    sale_id: string;
     product_id: string;
     location: InventoryLocation;
     quantity: number;
     unit_price: number;
-    total_price: number;
+    payment_method: string;
+    note?: string;
   }
-): Promise<void> {
+): Promise<{ id: string }> {
   const supabase = db(await createSupabaseServerClient());
-  const { error } = await supabase.from("retail_sale_items").insert({
-    salon_id: salonId,
-    sale_id: input.sale_id,
-    product_id: input.product_id,
-    location: input.location,
-    quantity: input.quantity,
-    unit_price: input.unit_price,
-    total_price: input.total_price,
+  const { data, error } = await supabase.rpc("record_retail_sale", {
+    p_salon_id: salonId,
+    p_customer_id: input.customer_id || null,
+    p_product_id: input.product_id,
+    p_location: input.location,
+    p_quantity: input.quantity,
+    p_unit_price: input.unit_price,
+    p_payment_method: input.payment_method,
+    p_note: input.note || null,
   });
 
   if (error) throw error;
+  return { id: String(data) };
 }
 
 export async function findRecentRetailSales(salonId: string, limit = 8): Promise<RetailSaleRow[]> {

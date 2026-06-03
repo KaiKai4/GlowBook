@@ -14,14 +14,22 @@ production.
 npm run ci:verify
 ```
 
-3. Si hay migraciones:
+3. Si hay migraciones, validar el entorno destino antes de deployar codigo que depende de ellas:
 
 ```text
-npm run db:migrate
+npm run staging:migrations
+npm run release:migrations
+```
+
+Si alguno bloquea, aplicar migraciones al Supabase correcto antes de continuar.
+
+4. Si hay migraciones aplicadas local/staging, regenerar tipos:
+
+```text
 npm run db:types
 ```
 
-4. Verificar que `docs/database-contracts.md` y ADRs relevantes estan al dia.
+5. Verificar que `docs/database-contracts.md` y ADRs relevantes estan al dia.
 
 ## Staging
 
@@ -69,13 +77,15 @@ Evidencia 2026-05-31:
 ## Production
 
 1. Confirmar backup reciente.
-2. Aplicar migraciones aprobadas.
-3. Deploy a production.
-4. Revisar login, dashboard de Salon y Platform admin.
-5. Revisar logs durante 30 minutos.
-6. Confirmar que errores y eventos estructurados aparecen en el destino de logs
+2. Ejecutar `npm run release:migrations`.
+3. Si el gate bloquea, aplicar migraciones aprobadas al proyecto Supabase de production.
+4. Ejecutar nuevamente `npm run release:migrations` hasta que pase.
+5. Deploy a production.
+6. Revisar login, dashboard de Salon y Platform admin.
+7. Revisar logs durante 30 minutos.
+8. Confirmar que errores y eventos estructurados aparecen en el destino de logs
    definido para observability.
-7. Confirmar owner de soporte segun `docs/launch-support.md`.
+9. Confirmar owner de soporte segun `docs/launch-support.md`.
 
 ## Lanzamiento Amplio
 

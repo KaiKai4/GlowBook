@@ -1,7 +1,6 @@
 import { utcBounds } from "@/lib/utils/dates";
-import { sumExpensesTotal } from "@/features/expenses/data/expenses.repo";
-import { sumInventoryPurchasesTotal } from "@/features/inventory/data/inventory.repo";
-import { sumRetailSalesTotal } from "@/features/retail/data/retail.repo";
+import { calculateOperationalMoneyTotals } from "@/features/finance/domain/operational-money";
+import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
 import { findOperationalReportRows, findSalonTimezone } from "../data/reports.repo";
 import {
   calculateOperationalReportMetrics,
@@ -36,27 +35,34 @@ export async function getOperationalReport({
     ? { from: filters.from as string, to: filters.to as string }
     : getReportPresetRange(filters.preset, timezone, now);
   const { start, end } = utcBounds(range.from, range.to, timezone);
-  const [rows, retailRevenue, manualExpenses, inventoryPurchases] = await Promise.all([
+  const [rows, externalMoney] = await Promise.all([
     findOperationalReportRows({ salonId, start, end }),
-    sumRetailSalesTotal(salonId, start, end),
-    sumExpensesTotal(salonId, range.from, range.to),
-    sumInventoryPurchasesTotal(salonId, range.from, range.to),
+    getExternalOperationalMoney({
+      salonId,
+      fromIso: start,
+      toIso: end,
+      fromDate: range.from,
+      toDate: range.to,
+    }),
   ]);
   const metrics = calculateOperationalReportMetrics(rows.appointments, rows.items);
-  const grossRevenue = metrics.revenue + retailRevenue;
-  const totalExpenses = manualExpenses + inventoryPurchases;
-  const estimatedProfit = grossRevenue - totalExpenses;
+  const money = calculateOperationalMoneyTotals({
+    appointmentRevenue: metrics.revenue,
+    retailRevenue: externalMoney.retailRevenue,
+    manualExpenses: externalMoney.manualExpenses,
+    inventoryPurchases: externalMoney.inventoryPurchases,
+  });
 
   return {
     ...range,
     preset: hasCustomRange ? "custom" : filters.preset,
     ...metrics,
-    retailRevenue,
-    grossRevenue,
-    manualExpenses,
-    inventoryPurchases,
-    totalExpenses,
-    estimatedProfit,
+    retailRevenue: money.retailRevenue,
+    grossRevenue: money.grossRevenue,
+    manualExpenses: money.manualExpenses,
+    inventoryPurchases: money.inventoryPurchases,
+    totalExpenses: money.totalExpenses,
+    estimatedProfit: money.estimatedProfit,
     newCustomers: rows.newCustomers,
   };
 }

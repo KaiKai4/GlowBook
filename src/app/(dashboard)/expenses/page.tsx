@@ -1,5 +1,5 @@
 import { getExpensesPage } from "@/features/expenses/use-cases/expenses";
-import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
+import { getInventoryProductOptions } from "@/features/inventory/use-cases/inventory-product-options";
 import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { ReceiptText } from "lucide-react";
@@ -19,7 +19,7 @@ export default async function ExpensesPage() {
   const expenses = await getExpensesPage(profile.salon_id);
   const canManageInventory =
     hasSalonFeature(profile, "inventory") && hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE);
-  const inventory = canManageInventory ? await getInventoryPage(profile.salon_id) : null;
+  const inventoryProducts = canManageInventory ? await getInventoryProductOptions(profile.salon_id) : [];
 
   return (
     <div className="space-y-6">
@@ -34,7 +34,7 @@ export default async function ExpensesPage() {
       </div>
       <ExpensesManager
         expenses={expenses}
-        inventoryProducts={inventory?.products ?? []}
+        inventoryProducts={inventoryProducts}
         canManageInventory={canManageInventory}
       />
     </div>

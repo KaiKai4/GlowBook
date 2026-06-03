@@ -23,6 +23,8 @@
     "performance:readiness": "node scripts/performance-readiness.mjs",
     "release:readiness": "node scripts/release-readiness.mjs",
     "release:scale-readiness": "node scripts/release-scale-readiness.mjs",
+    "release:migrations": "node scripts/production-migration-gate.mjs --target=production",
+    "staging:migrations": "node scripts/production-migration-gate.mjs --target=staging",
     "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",
     "test": "vitest run",
     "test:e2e": "playwright test",

@@ -5,6 +5,7 @@ import type { InventoryLocation } from "../domain/stock";
 
 type AnySupabase = {
   from: (table: string) => QueryBuilder;
+  rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<QueryResult>;
 };
 
 type QueryResult = {
@@ -219,39 +220,6 @@ export async function updateStockMinimums(
   }
 }
 
-export async function findStockLocation(
-  salonId: string,
-  productId: string,
-  location: InventoryLocation
-): Promise<InventoryStockRow | null> {
-  const supabase = db(await createSupabaseServerClient());
-  const { data, error } = await supabase
-    .from("inventory_stock_locations")
-    .select("*")
-    .eq("salon_id", salonId)
-    .eq("product_id", productId)
-    .eq("location", location)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as InventoryStockRow | null;
-}
-
-export async function setStockQuantity(
-  stockId: string,
-  salonId: string,
-  quantity: number
-): Promise<void> {
-  const supabase = db(await createSupabaseServerClient());
-  const { error } = await supabase
-    .from("inventory_stock_locations")
-    .update({ quantity })
-    .eq("id", stockId)
-    .eq("salon_id", salonId);
-
-  if (error) throw error;
-}
-
 export async function insertInventoryMovement(
   salonId: string,
   input: {
@@ -281,55 +249,81 @@ export async function insertInventoryMovement(
   if (error) throw error;
 }
 
-export async function insertInventoryPurchase(
+export async function applyInventoryStockDelta(
+  salonId: string,
+  input: {
+    product_id: string;
+    location: InventoryLocation;
+    delta: number;
+    movement_type: string;
+    reference_type?: string;
+    reference_id?: string;
+    note?: string;
+  }
+): Promise<{ quantityAfter: number }> {
+  const supabase = db(await createSupabaseServerClient());
+  const { data, error } = await supabase.rpc("apply_inventory_stock_delta", {
+    p_salon_id: salonId,
+    p_product_id: input.product_id,
+    p_location: input.location,
+    p_delta: input.delta,
+    p_movement_type: input.movement_type,
+    p_reference_type: input.reference_type ?? null,
+    p_reference_id: input.reference_id ?? null,
+    p_note: input.note || null,
+  });
+
+  if (error) throw error;
+  return { quantityAfter: Number(data ?? 0) };
+}
+
+export async function transferInventoryStockAtomically(
+  salonId: string,
+  input: {
+    product_id: string;
+    from_location: InventoryLocation;
+    to_location: InventoryLocation;
+    quantity: number;
+    note?: string;
+  }
+): Promise<void> {
+  const supabase = db(await createSupabaseServerClient());
+  const { error } = await supabase.rpc("record_inventory_transfer", {
+    p_salon_id: salonId,
+    p_product_id: input.product_id,
+    p_from_location: input.from_location,
+    p_to_location: input.to_location,
+    p_quantity: input.quantity,
+    p_note: input.note || null,
+  });
+
+  if (error) throw error;
+}
+
+export async function recordInventoryPurchaseAtomically(
   salonId: string,
   input: {
     supplier_name?: string;
     purchase_date: string;
-    total_cost: number;
+    product_id: string;
+    quantity: number;
+    unit_cost: number;
     note?: string;
   }
 ): Promise<{ id: string }> {
   const supabase = db(await createSupabaseServerClient());
-  const { data, error } = await supabase
-    .from("inventory_purchases")
-    .insert({
-      salon_id: salonId,
-      supplier_name: input.supplier_name || null,
-      purchase_date: input.purchase_date,
-      total_cost: input.total_cost,
-      note: input.note || null,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return data as { id: string };
-}
-
-export async function insertInventoryPurchaseItem(
-  salonId: string,
-  input: {
-    purchase_id: string;
-    product_id: string;
-    location: InventoryLocation;
-    quantity: number;
-    unit_cost: number;
-    total_cost: number;
-  }
-): Promise<void> {
-  const supabase = db(await createSupabaseServerClient());
-  const { error } = await supabase.from("inventory_purchase_items").insert({
-    salon_id: salonId,
-    purchase_id: input.purchase_id,
-    product_id: input.product_id,
-    location: input.location,
-    quantity: input.quantity,
-    unit_cost: input.unit_cost,
-    total_cost: input.total_cost,
+  const { data, error } = await supabase.rpc("record_inventory_purchase", {
+    p_salon_id: salonId,
+    p_supplier_name: input.supplier_name || null,
+    p_purchase_date: input.purchase_date,
+    p_product_id: input.product_id,
+    p_quantity: input.quantity,
+    p_unit_cost: input.unit_cost,
+    p_note: input.note || null,
   });
 
   if (error) throw error;
+  return { id: String(data) };
 }
 
 export async function sumInventoryPurchasesTotal(

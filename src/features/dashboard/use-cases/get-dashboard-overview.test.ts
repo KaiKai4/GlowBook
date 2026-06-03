@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { findSalonIdentity } from "@/features/salon/data/salon.repo";
-import { sumExpensesTotal } from "@/features/expenses/data/expenses.repo";
-import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
-import { sumInventoryPurchasesTotal } from "@/features/inventory/data/inventory.repo";
-import { sumRetailSalesTotal } from "@/features/retail/data/retail.repo";
+import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
+import { getLowStockSummary } from "@/features/inventory/use-cases/low-stock-summary";
 import {
   findDashboardReportRows,
   findPendingConfirmationRows,
@@ -13,17 +11,11 @@ import { getDashboardOverview } from "./get-dashboard-overview";
 vi.mock("@/features/salon/data/salon.repo", () => ({
   findSalonIdentity: vi.fn(),
 }));
-vi.mock("@/features/expenses/data/expenses.repo", () => ({
-  sumExpensesTotal: vi.fn(),
+vi.mock("@/features/finance/use-cases/operational-money", () => ({
+  getExternalOperationalMoney: vi.fn(),
 }));
-vi.mock("@/features/inventory/data/inventory.repo", () => ({
-  sumInventoryPurchasesTotal: vi.fn(),
-}));
-vi.mock("@/features/inventory/use-cases/inventory-products", () => ({
-  getInventoryPage: vi.fn(),
-}));
-vi.mock("@/features/retail/data/retail.repo", () => ({
-  sumRetailSalesTotal: vi.fn(),
+vi.mock("@/features/inventory/use-cases/low-stock-summary", () => ({
+  getLowStockSummary: vi.fn(),
 }));
 
 vi.mock("../data/dashboard.repo", () => ({
@@ -32,10 +24,8 @@ vi.mock("../data/dashboard.repo", () => ({
 }));
 
 const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
-const mockedSumExpensesTotal = vi.mocked(sumExpensesTotal);
-const mockedGetInventoryPage = vi.mocked(getInventoryPage);
-const mockedSumInventoryPurchasesTotal = vi.mocked(sumInventoryPurchasesTotal);
-const mockedSumRetailSalesTotal = vi.mocked(sumRetailSalesTotal);
+const mockedExternalMoney = vi.mocked(getExternalOperationalMoney);
+const mockedGetLowStockSummary = vi.mocked(getLowStockSummary);
 const mockedFindDashboardReportRows = vi.mocked(findDashboardReportRows);
 const mockedFindPendingConfirmationRows = vi.mocked(findPendingConfirmationRows);
 
@@ -53,14 +43,12 @@ describe("get dashboard overview", () => {
       bookedServices: [],
     });
     mockedFindPendingConfirmationRows.mockResolvedValue([]);
-    mockedSumExpensesTotal.mockResolvedValue(0);
-    mockedSumInventoryPurchasesTotal.mockResolvedValue(0);
-    mockedSumRetailSalesTotal.mockResolvedValue(0);
-    mockedGetInventoryPage.mockResolvedValue({
-      products: [],
-      lowStock: [],
-      recentMovements: [],
+    mockedExternalMoney.mockResolvedValue({
+      retailRevenue: 0,
+      manualExpenses: 0,
+      inventoryPurchases: 0,
     });
+    mockedGetLowStockSummary.mockResolvedValue({ productCount: 0 });
   });
 
   it("returns an empty overview without touching data adapters when all sections are disabled", async () => {
@@ -77,6 +65,11 @@ describe("get dashboard overview", () => {
   });
 
   it("maps report metrics, ignores cancelled booked services and keeps top-service percentages relative", async () => {
+    mockedExternalMoney.mockResolvedValue({
+      retailRevenue: 12,
+      manualExpenses: 5,
+      inventoryPurchases: 7,
+    });
     mockedFindDashboardReportRows.mockResolvedValue({
       todayAppointments: 3,
       monthAppointments: [
@@ -103,9 +96,9 @@ describe("get dashboard overview", () => {
     expect(view.metrics).toEqual({
       todayAppointments: 3,
       appointmentRevenue: 35.5,
-      retailRevenue: 0,
-      monthRevenue: 35.5,
-      monthExpenses: 0,
+      retailRevenue: 12,
+      monthRevenue: 47.5,
+      monthExpenses: 12,
       estimatedProfit: 35.5,
       lowStockProducts: 0,
       totalCustomers: 12,

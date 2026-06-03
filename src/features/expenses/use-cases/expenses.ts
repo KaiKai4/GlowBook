@@ -1,7 +1,7 @@
 import { err, ok, type Result } from "@/lib/result";
 import type { CreateExpenseInput } from "../schemas";
 import { findExpenses, insertExpense } from "../data/expenses.repo";
-import { findInventoryPurchaseHistory } from "@/features/inventory/data/inventory.repo";
+import { getInventoryPurchaseExpenseHistory } from "@/features/inventory/use-cases/inventory-purchase-expenses";
 import { recordInventoryPurchase } from "@/features/inventory/use-cases/inventory-movements";
 import type { InventoryPurchaseInput } from "@/features/inventory/schemas";
 
@@ -25,9 +25,9 @@ export interface ExpenseHistoryItem {
 }
 
 export async function getExpensesPage(salonId: string): Promise<ExpensesPageView> {
-  const [expenses, purchases] = await Promise.all([
+  const [expenses, inventoryPurchaseExpenses] = await Promise.all([
     findExpenses(salonId),
-    findInventoryPurchaseHistory(salonId),
+    getInventoryPurchaseExpenseHistory(salonId),
   ]);
 
   const manualHistory: ExpenseHistoryItem[] = expenses.map((expense) => ({
@@ -42,27 +42,17 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
     detail: expense.note || "Gasto general",
   }));
 
-  const purchaseHistory: ExpenseHistoryItem[] = purchases.map((purchase) => {
-    const itemNames = (purchase.inventory_purchase_items ?? [])
-      .map((item) => {
-        const product = Array.isArray(item.product) ? item.product[0] : item.product;
-        return product?.name;
-      })
-      .filter(Boolean)
-      .join(", ");
-
-    return {
-      id: purchase.id,
-      type: "inventory_purchase",
-      date: purchase.purchase_date,
-      amount: Number(purchase.total_cost ?? 0),
-      concept: "Compra de inventario",
-      commerceName: purchase.supplier_name,
-      note: purchase.note,
-      createdAt: purchase.created_at,
-      detail: itemNames || purchase.note || "Compra de productos",
-    };
-  });
+  const purchaseHistory: ExpenseHistoryItem[] = inventoryPurchaseExpenses.map((purchase) => ({
+    id: purchase.id,
+    type: "inventory_purchase",
+    date: purchase.date,
+    amount: purchase.amount,
+    concept: "Compra de inventario",
+    commerceName: purchase.commerceName,
+    note: purchase.note,
+    createdAt: purchase.createdAt,
+    detail: purchase.detail,
+  }));
 
   const history = [...manualHistory, ...purchaseHistory].sort((a, b) => {
     const dateDiff = b.date.localeCompare(a.date);

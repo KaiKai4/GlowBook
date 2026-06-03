@@ -86,6 +86,16 @@ El sistema tiene tres niveles:
 
 **Recordatorio operativo** es un mensaje enviado desde el apartado de recordatorios. El owner del flujo operativo es `features/reminders`; `features/notifications` solo owns plantillas, placeholders y renderizado de mensajes. Debe usar plantillas activas y respetar permisos de `reminders.send`.
 
+## Dinero Operativo
+
+**Ingreso operativo** es dinero que entra por la operacion diaria del salon. Incluye ingresos por citas completadas y ventas de vitrina.
+
+**Egreso operativo** es dinero que sale por la operacion diaria del salon. Incluye gastos generales y compras de inventario. Una compra de inventario no debe duplicarse como gasto manual.
+
+**Utilidad estimada** es una lectura operativa, no contabilidad formal. Se calcula como ingresos por citas + ingresos de vitrina - gastos generales - compras de inventario.
+
+**Resumen financiero operativo** es el read model que dashboard y reportes consumen para no depender directamente de cada fuente tecnica de dinero.
+
 ## Invitaciones
 
 **Invitacion de salon** vive en `salon_invitations`. Es la unica forma autorizada de crear un salon nuevo. El email de la invitacion debe coincidir con el email autenticado.

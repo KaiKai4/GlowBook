@@ -1,9 +1,10 @@
 import "server-only";
 
+import { getErrorMessage } from "@/lib/errors";
 import type { Result } from "@/lib/result";
 import {
-  insertInventoryPurchase,
-  insertInventoryPurchaseItem,
+  recordInventoryPurchaseAtomically,
+  transferInventoryStockAtomically,
 } from "../data/inventory.repo";
 import type {
   InventoryMovementInput,
@@ -41,62 +42,30 @@ export async function transferInventoryStock(
   salonId: string,
   input: InventoryTransferInput
 ): Promise<Result<void>> {
-  const out = await adjustInventoryStock({
-    salonId,
-    productId: input.product_id,
-    location: input.from_location,
-    delta: -input.quantity,
-    movementType: "transfer_out",
-    note: input.note,
-  });
-  if (!out.ok) return out;
-
-  const into = await adjustInventoryStock({
-    salonId,
-    productId: input.product_id,
-    location: input.to_location,
-    delta: input.quantity,
-    movementType: "transfer_in",
-    note: input.note,
-  });
-  return into.ok ? { ok: true, value: undefined } : into;
+  try {
+    await transferInventoryStockAtomically(salonId, input);
+    return { ok: true, value: undefined };
+  } catch (error) {
+    return { ok: false, error: getErrorMessage(error, "Error al transferir stock.") };
+  }
 }
 
 export async function recordInventoryPurchase(
   salonId: string,
   input: InventoryPurchaseInput
 ): Promise<Result<void>> {
-  const totalCost = Math.round(input.quantity * input.unit_cost * 100) / 100;
-
   try {
-    const purchase = await insertInventoryPurchase(salonId, {
+    await recordInventoryPurchaseAtomically(salonId, {
       supplier_name: input.supplier_name,
       purchase_date: input.purchase_date,
-      total_cost: totalCost,
-      note: input.note,
-    });
-    await insertInventoryPurchaseItem(salonId, {
-      purchase_id: purchase.id,
       product_id: input.product_id,
-      location: input.location,
       quantity: input.quantity,
       unit_cost: input.unit_cost,
-      total_cost: totalCost,
+      note: input.note,
     });
 
-    const stock = await adjustInventoryStock({
-      salonId,
-      productId: input.product_id,
-      location: input.location,
-      delta: input.quantity,
-      movementType: "purchase",
-      note: input.note || input.supplier_name,
-      referenceType: "inventory_purchase",
-      referenceId: purchase.id,
-    });
-
-    return stock.ok ? { ok: true, value: undefined } : stock;
-  } catch {
-    return { ok: false, error: "Error al registrar la reposición." };
+    return { ok: true, value: undefined };
+  } catch (error) {
+    return { ok: false, error: getErrorMessage(error, "Error al registrar la reposicion.") };
   }
 }

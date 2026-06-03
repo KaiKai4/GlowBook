@@ -1,36 +1,24 @@
 # Documentacion De Arquitectura
 
-Este indice marca los documentos vigentes. Las auditorias y roadmaps
-reemplazados se retiran cuando dejan de reflejar el estado real del proyecto;
-el historial git conserva ese contexto si hace falta consultarlo.
+Este indice marca los documentos vigentes. Las auditorias y roadmaps reemplazados se conservan en `docs/archive/architecture-history/` para trazabilidad, pero no deben guiar implementaciones nuevas sin contrastarse contra la auditoria actual.
 
 ## Vigente
 
-- Auditoria vigente: `docs/architecture-audit-2026-06-01.md`
-- Auditoria estado actual: `docs/architecture-audit-current-state-2026-06-01.md`
-- Verificacion vigente de fases/auditoria: `docs/architecture-scale-verification-2026-06-01.md`
-- Auditoria base anterior: `docs/architecture-audit-2026-05-31.md`
-- Auditoria historica: `docs/architecture-audit-2026-05-30.md`
-- Fases de escalamiento vigentes: `docs/architecture-scale-phases-2026-06-01.md`
-- Fases readiness 5+ salones cerradas: `docs/architecture-audit-phases-2026-05-31.md`
-- Fases base anteriores: `docs/architecture-audit-phases-2026-05-30.md`
-- Checklist lanzamiento amplio: `docs/production-scale-readiness-checklist.md`
-- Decision lanzamiento amplio: `docs/release-scale-readiness-2026-06-01.md`
-- Capacity plan: `docs/capacity-plan.md`
-- Performance review de escala: `docs/performance-review-2026-06-01.md`
+- Auditoria actual: `docs/architecture-audit-current-state-2026-06-03.md`
+- Fases actuales de mejora: `docs/architecture-improvement-phases-2026-06-03.md`
+- Evaluacion modular actual: `docs/architecture-modular-monolith-assessment-2026-06-03.md`
 - Contratos de base de datos: `docs/database-contracts.md`
 - Tests y checks Supabase: `docs/testing.md`
 - Politica de entornos: `docs/environments.md`
 - Seguridad operativa: `docs/security.md`
-- Checklist de lanzamiento 5+ salones: `docs/production-readiness-checklist.md`
-- Decision readiness 5+ salones: `docs/release-readiness-2026-05-31.md`
-- Inventario UI route-local: `docs/ui-route-local-inventory-2026-05-30.md`
-- Revision Auth Session: `docs/auth-session-review-2026-05-30.md`
+- Capacity plan: `docs/capacity-plan.md`
+- Checklist de produccion: `docs/production-readiness-checklist.md`
+- Checklist de escala: `docs/production-scale-readiness-checklist.md`
 - Plan E2E critico: `docs/e2e-critical-flows.md`
-- Decision recordatorios lanzamiento: `docs/reminders-launch-decision.md`
-- Verificacion fases 17-25: `docs/architecture-phases-17-25-verification-2026-05-30.md`
-- Auditoria de arquitectura y produccion: `docs/architecture-production-readiness-audit-2026-05-30.md`
-- Fases de produccion 5+ salones: `docs/architecture-production-readiness-phases-2026-05-30.md`
+- Decision de recordatorios: `docs/reminders-launch-decision.md`
+- Revision Auth Session: `docs/auth-session-review-2026-05-30.md`
+- Inventario UI route-local: `docs/ui-route-local-inventory-2026-05-30.md`
+- Archivo historico de arquitectura: `docs/archive/architecture-history/README.md`
 
 ## Runbooks Operativos
 
@@ -67,10 +55,6 @@ npm run test
 npm run build
 ```
 
-La rama `main` y ejecuciones manuales de CI corren tambien E2E y
-`architecture:health` cuando los secretos Supabase de staging estan
-configurados.
-
 E2E contra staging desplegado:
 
 ```text
@@ -79,76 +63,13 @@ npm run staging:verify-env
 npm run test:e2e:staging
 ```
 
-Reporte opcional de salud arquitectonica:
+Gate de migraciones:
 
 ```text
-npm run architecture:health
-```
-
-Gate de lanzamiento 5+ salones:
-
-```text
-npm run release:readiness
-```
-
-Gate de lanzamiento amplio:
-
-```text
-npm run baseline:readiness
-npm run release:scale-readiness
-```
-
-Seguridad de deployment:
-
-```text
-npm run rate-limit:readiness
-npm run security:readiness
-```
-
-Observability/log drain:
-
-```text
-npm run observability:readiness
-```
-
-Soporte e incidentes:
-
-```text
-npm run support:readiness
-```
-
-Capacidad Supabase/Vercel:
-
-```text
-npm run capacity:readiness
-```
-
-Dataset y performance:
-
-```text
-npm run dataset:readiness
-npm run performance:readiness
-```
-
-Restore y RTO/RPO:
-
-```text
-npm run restore:readiness
-```
-
-Recordatorios:
-
-```text
-npm run reminders:readiness
-```
-
-Medicion de rutas con dataset de escala en staging:
-
-```text
-npm run scale:measure-routes
+npm run staging:migrations
+npm run release:migrations
 ```
 
 ## Regla Practica
 
-Si un cambio toca RLS, RPCs, `service_role`, citas, colaboradores, plataforma o
-reportes, revisar primero los ADRs y el README del Module correspondiente.
+Si un cambio toca RLS, RPCs, `service_role`, citas, colaboradores, plataforma, inventario, vitrina, gastos o reportes, revisar primero los ADRs, `CONTEXT.md`, los runbooks y la auditoria vigente.
