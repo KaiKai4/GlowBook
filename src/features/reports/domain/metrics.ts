@@ -39,7 +39,13 @@ export interface ReportEntityBreakdown {
 
 export interface OperationalReportMetrics {
   revenue: number;
+  retailRevenue: number;
+  grossRevenue: number;
   discounts: number;
+  manualExpenses: number;
+  inventoryPurchases: number;
+  totalExpenses: number;
+  estimatedProfit: number;
   completedCount: number;
   totalCount: number;
   avgTicket: number;
@@ -80,7 +86,13 @@ export function calculateOperationalReportMetrics(
 
   return {
     revenue,
+    retailRevenue: 0,
+    grossRevenue: revenue,
     discounts,
+    manualExpenses: 0,
+    inventoryPurchases: 0,
+    totalExpenses: 0,
+    estimatedProfit: revenue,
     completedCount: completed.length,
     totalCount,
     avgTicket: completed.length > 0 ? revenue / completed.length : 0,

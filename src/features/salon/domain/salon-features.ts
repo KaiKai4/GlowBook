@@ -25,6 +25,21 @@ export const SALON_FEATURES = [
     description: "Catalogo de servicios.",
   },
   {
+    key: "inventory",
+    label: "Inventario",
+    description: "Productos, stock y reposiciones.",
+  },
+  {
+    key: "retail",
+    label: "Vitrina",
+    description: "Ventas de productos del salon.",
+  },
+  {
+    key: "expenses",
+    label: "Gastos",
+    description: "Registro de egresos operativos.",
+  },
+  {
     key: "reports",
     label: "Reportes",
     description: "Metricas e informes operativos.",

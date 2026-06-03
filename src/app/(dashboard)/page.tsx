@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatDate } from "@/lib/utils/dates";
 import {
   CalendarDays, Users, DollarSign, TrendingUp, ChevronRight, AlertCircle,
-  BellRing, Phone, Scissors, Clock,
+  BellRing, Phone, Scissors, Clock, ShoppingBag, ReceiptText, Package,
 } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -82,6 +82,30 @@ export default async function DashboardPage() {
             color="emerald"
           />
           <MetricCard
+            title="Vitrina del mes"
+            value={formatCurrency(metrics.retailRevenue)}
+            icon={ShoppingBag}
+            color="blue"
+          />
+          <MetricCard
+            title="Gastos del mes"
+            value={formatCurrency(metrics.monthExpenses)}
+            icon={ReceiptText}
+            color="red"
+          />
+          <MetricCard
+            title="Utilidad estimada"
+            value={formatCurrency(metrics.estimatedProfit)}
+            icon={TrendingUp}
+            color={metrics.estimatedProfit >= 0 ? "emerald" : "red"}
+          />
+          <MetricCard
+            title="Productos bajos"
+            value={String(metrics.lowStockProducts)}
+            icon={Package}
+            color={metrics.lowStockProducts > 0 ? "amber" : "violet"}
+          />
+          <MetricCard
             title="Clientes activos"
             value={String(metrics.totalCustomers)}
             icon={Users}
@@ -141,13 +165,15 @@ function MetricCard({
   title: string;
   value: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: "blue" | "emerald" | "violet" | "rose";
+  color: "blue" | "emerald" | "violet" | "rose" | "red" | "amber";
 }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600",
     emerald: "bg-emerald-50 text-emerald-600",
     violet: "bg-brand-50 text-brand-600",
     rose: "bg-rose-50 text-rose-600",
+    red: "bg-red-50 text-red-600",
+    amber: "bg-amber-50 text-amber-600",
   };
 
   return (

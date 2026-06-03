@@ -79,7 +79,13 @@ describe("report metrics", () => {
   it("returns zeroed metrics for empty periods", () => {
     expect(calculateOperationalReportMetrics([], [])).toEqual({
       revenue: 0,
+      retailRevenue: 0,
+      grossRevenue: 0,
       discounts: 0,
+      manualExpenses: 0,
+      inventoryPurchases: 0,
+      totalExpenses: 0,
+      estimatedProfit: 0,
       completedCount: 0,
       totalCount: 0,
       avgTicket: 0,

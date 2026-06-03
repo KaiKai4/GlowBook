@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Shield, Lock, Trash2, Plus,
   CalendarCheck, Users, Bell, BarChart3, Settings,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
@@ -54,6 +55,15 @@ const PERMISSION_GROUPS = [
     icon: BarChart3,
     items: [
       { key: "reports.view", label: "Ver reportes e indicadores", description: "Acceder al dashboard y métricas del salón" },
+    ],
+  },
+  {
+    group: "Operación comercial",
+    icon: ShoppingBag,
+    items: [
+      { key: "retail.manage", label: "Gestionar vitrina", description: "Registrar ventas de productos y cobrar vitrina" },
+      { key: "inventory.manage", label: "Gestionar inventario", description: "Crear productos, reponer stock y registrar movimientos" },
+      { key: "expenses.manage", label: "Gestionar gastos", description: "Registrar egresos operativos del salón" },
     ],
   },
   {

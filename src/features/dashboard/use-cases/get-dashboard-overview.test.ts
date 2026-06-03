@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { sumExpensesTotal } from "@/features/expenses/data/expenses.repo";
+import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
+import { sumInventoryPurchasesTotal } from "@/features/inventory/data/inventory.repo";
+import { sumRetailSalesTotal } from "@/features/retail/data/retail.repo";
 import {
   findDashboardReportRows,
   findPendingConfirmationRows,
@@ -9,6 +13,18 @@ import { getDashboardOverview } from "./get-dashboard-overview";
 vi.mock("@/features/salon/data/salon.repo", () => ({
   findSalonIdentity: vi.fn(),
 }));
+vi.mock("@/features/expenses/data/expenses.repo", () => ({
+  sumExpensesTotal: vi.fn(),
+}));
+vi.mock("@/features/inventory/data/inventory.repo", () => ({
+  sumInventoryPurchasesTotal: vi.fn(),
+}));
+vi.mock("@/features/inventory/use-cases/inventory-products", () => ({
+  getInventoryPage: vi.fn(),
+}));
+vi.mock("@/features/retail/data/retail.repo", () => ({
+  sumRetailSalesTotal: vi.fn(),
+}));
 
 vi.mock("../data/dashboard.repo", () => ({
   findDashboardReportRows: vi.fn(),
@@ -16,6 +32,10 @@ vi.mock("../data/dashboard.repo", () => ({
 }));
 
 const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
+const mockedSumExpensesTotal = vi.mocked(sumExpensesTotal);
+const mockedGetInventoryPage = vi.mocked(getInventoryPage);
+const mockedSumInventoryPurchasesTotal = vi.mocked(sumInventoryPurchasesTotal);
+const mockedSumRetailSalesTotal = vi.mocked(sumRetailSalesTotal);
 const mockedFindDashboardReportRows = vi.mocked(findDashboardReportRows);
 const mockedFindPendingConfirmationRows = vi.mocked(findPendingConfirmationRows);
 
@@ -33,6 +53,14 @@ describe("get dashboard overview", () => {
       bookedServices: [],
     });
     mockedFindPendingConfirmationRows.mockResolvedValue([]);
+    mockedSumExpensesTotal.mockResolvedValue(0);
+    mockedSumInventoryPurchasesTotal.mockResolvedValue(0);
+    mockedSumRetailSalesTotal.mockResolvedValue(0);
+    mockedGetInventoryPage.mockResolvedValue({
+      products: [],
+      lowStock: [],
+      recentMovements: [],
+    });
   });
 
   it("returns an empty overview without touching data adapters when all sections are disabled", async () => {
@@ -74,7 +102,12 @@ describe("get dashboard overview", () => {
 
     expect(view.metrics).toEqual({
       todayAppointments: 3,
+      appointmentRevenue: 35.5,
+      retailRevenue: 0,
       monthRevenue: 35.5,
+      monthExpenses: 0,
+      estimatedProfit: 35.5,
+      lowStockProducts: 0,
       totalCustomers: 12,
       completedThisMonth: 2,
     });

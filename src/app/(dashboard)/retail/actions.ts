@@ -1,0 +1,35 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { RetailSaleSchema } from "@/features/retail/schemas";
+import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
+import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireActiveProfile } from "@/lib/auth/session";
+import type { Result } from "@/lib/result";
+
+async function guard(): Promise<Result<{ salonId: string }>> {
+  const profile = await requireActiveProfile();
+  if (!hasSalonFeature(profile, "retail") || !hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
+    return { ok: false, error: "No tienes permiso para gestionar vitrina." };
+  }
+  return { ok: true, value: { salonId: profile.salon_id } };
+}
+
+export async function createRetailSaleAction(
+  _prev: Result<string> | null,
+  formData: FormData
+): Promise<Result<string>> {
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
+
+  const parsed = RetailSaleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const result = await createRetailSale(guarded.value.salonId, parsed.data);
+  if (result.ok) {
+    revalidatePath("/retail");
+    revalidatePath("/inventory");
+    revalidatePath("/reports");
+  }
+  return result;
+}

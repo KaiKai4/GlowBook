@@ -10,6 +10,9 @@ import {
   Shield,
   Bell,
   MessageSquareText,
+  Package,
+  ShoppingBag,
+  ReceiptText,
 } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
@@ -47,12 +50,15 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Clientes", href: "/customers", icon: Users, permissions: ["customers.manage"], feature: "customers" },
       { label: "Colaboradores", href: "/employees", icon: UserCog, permissions: ["employees.manage"], feature: "employees" },
       { label: "Servicios", href: "/services", icon: Scissors, permissions: ["services.manage"], feature: "services" },
+      { label: "Vitrina", href: "/retail", icon: ShoppingBag, permissions: ["retail.manage"], feature: "retail" },
+      { label: "Inventario", href: "/inventory", icon: Package, permissions: ["inventory.manage"], feature: "inventory" },
     ],
   },
   {
     label: "Administracion",
     items: [
       { label: "Reportes", href: "/reports", icon: BarChart3, permissions: ["reports.view"], feature: "reports" },
+      { label: "Gastos", href: "/expenses", icon: ReceiptText, permissions: ["expenses.manage"], feature: "expenses" },
       { label: "Roles", href: "/roles", icon: Shield, permissions: ["roles.manage"], feature: "roles" },
       { label: "Plantillas", href: "/plantillas", icon: MessageSquareText, permissions: ["reminders.send"], feature: "plantillas" },
       { label: "Salon", href: "/salon", icon: Settings, permissions: ["salon.manage"], feature: "salon" },

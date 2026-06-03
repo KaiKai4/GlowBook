@@ -1,6 +1,10 @@
 import "server-only";
 
 import { getUtcDayBoundaries, formatLocalDateISO } from "@/lib/utils/dates";
+import { sumExpensesTotal } from "@/features/expenses/data/expenses.repo";
+import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
+import { sumInventoryPurchasesTotal } from "@/features/inventory/data/inventory.repo";
+import { sumRetailSalesTotal } from "@/features/retail/data/retail.repo";
 import { findSalonIdentity } from "@/features/salon/data/salon.repo";
 import {
   findDashboardReportRows,
@@ -24,7 +28,12 @@ export interface PendingAppointmentConfirmation {
 
 export interface DashboardMetrics {
   todayAppointments: number;
+  appointmentRevenue: number;
+  retailRevenue: number;
   monthRevenue: number;
+  monthExpenses: number;
+  estimatedProfit: number;
+  lowStockProducts: number;
   totalCustomers: number;
   completedThisMonth: number;
 }
@@ -125,8 +134,10 @@ export async function getDashboardOverview({
   const timezone = salon?.timezone ?? "UTC";
   const { start: todayStart, end: todayEnd } = getUtcDayBoundaries(now, timezone);
   const monthStart = getMonthStart(now, timezone);
+  const todayLocal = formatLocalDateISO(now, timezone);
+  const monthStartLocal = formatLocalDateISO(monthStart, timezone);
 
-  const [reportRows, pendingRows] = await Promise.all([
+  const [reportRows, pendingRows, retailRevenue, manualExpenses, inventoryPurchases, inventory] = await Promise.all([
     wantsReports
       ? findDashboardReportRows({
           salonId,
@@ -136,18 +147,33 @@ export async function getDashboardOverview({
         })
       : null,
     wantsConfirmations ? findPendingConfirmationRows(salonId, now.toISOString()) : [],
+    wantsReports ? sumRetailSalesTotal(salonId, monthStart.toISOString(), now.toISOString()) : 0,
+    wantsReports ? sumExpensesTotal(salonId, monthStartLocal, todayLocal) : 0,
+    wantsReports ? sumInventoryPurchasesTotal(salonId, monthStartLocal, todayLocal) : 0,
+    wantsReports ? getInventoryPage(salonId) : null,
   ]);
 
   const metrics = reportRows
-    ? {
-        todayAppointments: reportRows.todayAppointments,
-        monthRevenue: reportRows.monthAppointments.reduce(
+    ? (() => {
+        const appointmentRevenue = reportRows.monthAppointments.reduce(
           (sum, appointment) => sum + Number(appointment.total_price ?? 0),
           0
-        ),
+        );
+        const monthRevenue = appointmentRevenue + retailRevenue;
+        const monthExpenses = manualExpenses + inventoryPurchases;
+
+        return {
+        todayAppointments: reportRows.todayAppointments,
+        appointmentRevenue,
+        retailRevenue,
+        monthRevenue,
+        monthExpenses,
+        estimatedProfit: monthRevenue - monthExpenses,
+        lowStockProducts: inventory?.lowStock.length ?? 0,
         totalCustomers: reportRows.totalCustomers,
         completedThisMonth: reportRows.monthAppointments.length,
-      }
+      };
+    })()
     : null;
 
   return {

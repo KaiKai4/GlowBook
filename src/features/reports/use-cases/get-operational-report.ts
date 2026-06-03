@@ -1,4 +1,7 @@
 import { utcBounds } from "@/lib/utils/dates";
+import { sumExpensesTotal } from "@/features/expenses/data/expenses.repo";
+import { sumInventoryPurchasesTotal } from "@/features/inventory/data/inventory.repo";
+import { sumRetailSalesTotal } from "@/features/retail/data/retail.repo";
 import { findOperationalReportRows, findSalonTimezone } from "../data/reports.repo";
 import {
   calculateOperationalReportMetrics,
@@ -33,13 +36,27 @@ export async function getOperationalReport({
     ? { from: filters.from as string, to: filters.to as string }
     : getReportPresetRange(filters.preset, timezone, now);
   const { start, end } = utcBounds(range.from, range.to, timezone);
-  const rows = await findOperationalReportRows({ salonId, start, end });
+  const [rows, retailRevenue, manualExpenses, inventoryPurchases] = await Promise.all([
+    findOperationalReportRows({ salonId, start, end }),
+    sumRetailSalesTotal(salonId, start, end),
+    sumExpensesTotal(salonId, range.from, range.to),
+    sumInventoryPurchasesTotal(salonId, range.from, range.to),
+  ]);
   const metrics = calculateOperationalReportMetrics(rows.appointments, rows.items);
+  const grossRevenue = metrics.revenue + retailRevenue;
+  const totalExpenses = manualExpenses + inventoryPurchases;
+  const estimatedProfit = grossRevenue - totalExpenses;
 
   return {
     ...range,
     preset: hasCustomRange ? "custom" : filters.preset,
     ...metrics,
+    retailRevenue,
+    grossRevenue,
+    manualExpenses,
+    inventoryPurchases,
+    totalExpenses,
+    estimatedProfit,
     newCustomers: rows.newCustomers,
   };
 }

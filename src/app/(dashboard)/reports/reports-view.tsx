@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils/dates";
-import { BarChart3, DollarSign, CalendarCheck, Tag, UserMinus, Users } from "lucide-react";
+import { BarChart3, DollarSign, CalendarCheck, Tag, UserMinus, Users, ShoppingBag, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 type Preset = "hoy" | "semana" | "mes" | "mes_anterior" | "30dias" | "90dias" | "custom";
@@ -44,7 +44,13 @@ interface Props {
   to: string;
   preset: string;
   revenue: number;
+  retailRevenue: number;
+  grossRevenue: number;
   discounts: number;
+  manualExpenses: number;
+  inventoryPurchases: number;
+  totalExpenses: number;
+  estimatedProfit: number;
   completedCount: number;
   totalCount: number;
   avgTicket: number;
@@ -84,7 +90,7 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 
 export function ReportsView({
   from, to, preset,
-  revenue, discounts, completedCount, totalCount, avgTicket, noShowRate,
+  revenue, retailRevenue, grossRevenue, discounts, manualExpenses, inventoryPurchases, totalExpenses, estimatedProfit, completedCount, totalCount, avgTicket, noShowRate,
   statusBreakdown, byEmployee, byService, newCustomers,
 }: Props) {
   const router = useRouter();
@@ -157,11 +163,35 @@ export function ReportsView({
       </div>
 
       {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            label: "Ingresos netos", value: formatCurrency(revenue),
+            label: "Ingresos por citas", value: formatCurrency(revenue),
             icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50",
+          },
+          {
+            label: "Ingresos vitrina", value: formatCurrency(retailRevenue),
+            icon: <ShoppingBag className="h-5 w-5" />, color: "text-blue-600 bg-blue-50",
+          },
+          {
+            label: "Gastos manuales", value: formatCurrency(manualExpenses),
+            icon: <ReceiptText className="h-5 w-5" />, color: "text-red-600 bg-red-50",
+          },
+          {
+            label: "Reposiciones", value: formatCurrency(inventoryPurchases),
+            icon: <Tag className="h-5 w-5" />, color: "text-amber-600 bg-amber-50",
+          },
+          {
+            label: "Ingresos totales", value: formatCurrency(grossRevenue),
+            icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50",
+          },
+          {
+            label: "Egresos totales", value: formatCurrency(totalExpenses),
+            icon: <ReceiptText className="h-5 w-5" />, color: "text-red-600 bg-red-50",
+          },
+          {
+            label: "Utilidad estimada", value: formatCurrency(estimatedProfit),
+            icon: <DollarSign className="h-5 w-5" />, color: estimatedProfit >= 0 ? "text-emerald-700 bg-emerald-50" : "text-red-700 bg-red-50",
           },
           {
             label: "Descuentos", value: formatCurrency(discounts),
