@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
-import { LogOut, Sparkles } from "lucide-react";
+import { GlowBookBrand } from "@/components/brand/glowbook-logo";
+import { LogOut } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
 import { getVisibleNavGroups } from "./nav-items";
@@ -32,18 +33,15 @@ export function Sidebar({ salonName, userPermissions, isOwner, disabledFeatures 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-brand-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-brand-50">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-sm">
-          <Sparkles className="h-4 w-4 text-white" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-stone-900 truncate">{salonName}</p>
-          <p className="text-xs text-brand-400 font-medium">GlowBook</p>
+      <div className="flex flex-col items-center gap-1.5 px-6 pb-3 pt-5 text-center border-b border-brand-50">
+        <GlowBookBrand markSize="sm" align="center" />
+        <div className="min-w-0 max-w-full">
+          <p className="text-sm font-semibold leading-tight text-stone-900 break-words">{salonName}</p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-3">
         {groups.length === 0 ? (
           <p className="px-3 py-4 text-xs text-stone-400 leading-relaxed">
             No tienes módulos asignados. Pide al administrador que configure tu rol.

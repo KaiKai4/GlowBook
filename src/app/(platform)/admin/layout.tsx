@@ -1,10 +1,10 @@
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import {
   Building2,
   History,
   MailOpen,
   LayoutDashboard,
-  Sparkles,
   MessageSquareWarning,
   LogOut,
 } from "lucide-react";
@@ -21,13 +21,10 @@ export default async function PlatformAdminLayout({
     <div className="flex h-screen overflow-hidden bg-neutral-950">
       {/* Platform admin sidebar — distinct from tenant sidebar */}
       <aside className="flex h-full w-56 flex-col border-r border-neutral-800 bg-neutral-900">
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-neutral-800">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600">
-            <Sparkles className="h-3.5 w-3.5 text-white" />
-          </div>
+        <div className="flex flex-col items-center gap-1.5 px-5 py-5 text-center border-b border-neutral-800">
+          <GlowBookBrand markSize="sm" align="center" dark />
           <div>
-            <p className="text-xs font-semibold text-white">GlowBook</p>
-            <p className="text-xs text-neutral-500">Plataforma</p>
+            <p className="text-xs font-semibold leading-tight text-white">Plataforma</p>
           </div>
         </div>
         <nav className="flex-1 px-3 py-4">

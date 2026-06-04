@@ -5,8 +5,9 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
 import { UnsavedChangesProvider } from "@/components/layout/unsaved-changes";
+import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { submitFeedbackAction } from "./feedback/actions";
-import { LogOut, Sparkles } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export default async function DashboardLayout({
   children,
@@ -56,14 +57,11 @@ export default async function DashboardLayout({
   if (minimalChrome) {
     return (
       <div data-theme={theme} className="flex h-screen flex-col overflow-hidden bg-neutral-50">
-        <header className="flex items-center justify-between border-b border-brand-100 bg-white px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-sm">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-stone-900 truncate">{shell.salonName}</p>
-              <p className="text-xs text-brand-400 font-medium">GlowBook</p>
+        <header className="flex items-center justify-between gap-4 border-b border-brand-100 bg-white px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
+            <GlowBookBrand markSize="sm" align="center" />
+            <div className="min-w-0 max-w-full">
+              <p className="text-sm font-semibold leading-tight text-stone-900 break-words">{shell.salonName}</p>
             </div>
           </div>
           <form action="/api/auth/signout" method="post">
