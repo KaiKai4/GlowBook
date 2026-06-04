@@ -1,4 +1,7 @@
-import { findCustomers } from "@/features/customers/data/customers.repo";
+import {
+  getActiveCustomerOptions,
+  type CustomerOptionView,
+} from "@/features/customers/use-cases/customer-options";
 import {
   getRetailInventoryProducts,
   type RetailInventoryProductView,
@@ -8,30 +11,22 @@ import { ok, type Result } from "@/lib/result";
 import type { RetailSaleInput } from "../schemas";
 import { findRecentRetailSales, recordRetailSaleAtomically } from "../data/retail.repo";
 
-export interface RetailCustomerOption {
-  id: string;
-  name: string;
-}
-
 export interface RetailPageView {
   products: RetailInventoryProductView[];
-  customers: RetailCustomerOption[];
+  customers: CustomerOptionView[];
   recentSales: Awaited<ReturnType<typeof findRecentRetailSales>>;
 }
 
 export async function getRetailPage(salonId: string): Promise<RetailPageView> {
-  const [products, customersPage, recentSales] = await Promise.all([
+  const [products, customers, recentSales] = await Promise.all([
     getRetailInventoryProducts(salonId),
-    findCustomers(salonId, { perPage: 100, isActive: true }),
+    getActiveCustomerOptions(salonId, 100),
     findRecentRetailSales(salonId),
   ]);
 
   return {
     products,
-    customers: customersPage.data.map((customer) => ({
-      id: customer.id,
-      name: `${customer.first_name} ${customer.last_name}`.trim(),
-    })),
+    customers,
     recentSales,
   };
 }

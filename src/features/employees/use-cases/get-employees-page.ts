@@ -1,7 +1,7 @@
 import "server-only";
 
-import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
-import { findCategoriesWithServices } from "@/features/services/data/services.repo";
+import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
+import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployees } from "../data/employees.repo";
 
 type EmployeeCategoryRef = {
@@ -55,8 +55,8 @@ export async function getEmployeesPage({
 
   const [employees, categories, allRoles] = await Promise.all([
     findEmployees(salonId, !isArchived),
-    findCategoriesWithServices(salonId),
-    rolesEnabled ? findRolesWithPermissions(salonId) : Promise.resolve([]),
+    getCategoryServiceOptions(salonId),
+    rolesEnabled ? getAssignableRoleOptions(salonId) : Promise.resolve([]),
   ]);
 
   return {
@@ -79,16 +79,7 @@ export async function getEmployeesPage({
           .filter((id): id is string => Boolean(id)),
       };
     }),
-    categories: categories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      services: (category.services ?? []).map((service) => ({
-        id: service.id,
-        name: service.name,
-      })),
-    })),
-    roles: allRoles
-      .filter((role) => !role.is_system)
-      .map((role) => ({ id: role.id, name: role.name })),
+    categories,
+    roles: allRoles,
   };
 }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
-import { findCategoriesWithServices } from "@/features/services/data/services.repo";
+import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
+import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
 import { findEmployeeById, findLatestEmployeeInvitation } from "../data/employees.repo";
 import { getEmployeeDetail } from "./get-employee-detail";
@@ -14,19 +14,19 @@ vi.mock("../data/employee-access.repo", () => ({
   findEmployeeAccessProfile: vi.fn(),
 }));
 
-vi.mock("@/features/services/data/services.repo", () => ({
-  findCategoriesWithServices: vi.fn(),
+vi.mock("@/features/services/use-cases/category-service-options", () => ({
+  getCategoryServiceOptions: vi.fn(),
 }));
 
-vi.mock("@/features/access/data/roles.repo", () => ({
-  findRolesWithPermissions: vi.fn(),
+vi.mock("@/features/access/use-cases/role-options", () => ({
+  getAssignableRoleOptions: vi.fn(),
 }));
 
 const mockedFindEmployeeById = vi.mocked(findEmployeeById);
 const mockedFindLatestEmployeeInvitation = vi.mocked(findLatestEmployeeInvitation);
 const mockedFindEmployeeAccessProfile = vi.mocked(findEmployeeAccessProfile);
-const mockedFindCategoriesWithServices = vi.mocked(findCategoriesWithServices);
-const mockedFindRolesWithPermissions = vi.mocked(findRolesWithPermissions);
+const mockedGetCategoryServiceOptions = vi.mocked(getCategoryServiceOptions);
+const mockedGetAssignableRoleOptions = vi.mocked(getAssignableRoleOptions);
 
 const baseEmployee = {
   id: "employee-1",
@@ -57,8 +57,8 @@ describe("get employee detail", () => {
     mockedFindEmployeeById.mockResolvedValue(baseEmployee as never);
     mockedFindLatestEmployeeInvitation.mockResolvedValue(null);
     mockedFindEmployeeAccessProfile.mockResolvedValue({ data: null, error: null });
-    mockedFindCategoriesWithServices.mockResolvedValue([]);
-    mockedFindRolesWithPermissions.mockResolvedValue([]);
+    mockedGetCategoryServiceOptions.mockResolvedValue([]);
+    mockedGetAssignableRoleOptions.mockResolvedValue([]);
   });
 
   it("maps employee detail rows and pending invitation state", async () => {
@@ -70,22 +70,14 @@ describe("get employee detail", () => {
       expires_at: "2026-06-05T00:00:00.000Z",
       accepted_at: null,
     });
-    mockedFindCategoriesWithServices.mockResolvedValue([
+    mockedGetCategoryServiceOptions.mockResolvedValue([
       {
         id: "category-1",
         name: "Cabello",
         services: [{ id: "service-1", name: "Corte" }],
       },
-    ] as never);
-    mockedFindRolesWithPermissions.mockResolvedValue([
-      {
-        id: "role-1",
-        salon_id: "salon-1",
-        name: "Recepcion",
-        is_system: false,
-        role_permissions: [],
-      },
     ]);
+    mockedGetAssignableRoleOptions.mockResolvedValue([{ id: "role-1", name: "Recepcion" }]);
 
     const view = await getEmployeeDetail({
       employeeId: "employee-1",

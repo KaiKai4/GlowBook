@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
-import { findCategoriesWithServices } from "@/features/services/data/services.repo";
+import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
+import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployees } from "../data/employees.repo";
 import { getEmployeesPage } from "./get-employees-page";
 
@@ -8,24 +8,24 @@ vi.mock("../data/employees.repo", () => ({
   findEmployees: vi.fn(),
 }));
 
-vi.mock("@/features/services/data/services.repo", () => ({
-  findCategoriesWithServices: vi.fn(),
+vi.mock("@/features/services/use-cases/category-service-options", () => ({
+  getCategoryServiceOptions: vi.fn(),
 }));
 
-vi.mock("@/features/access/data/roles.repo", () => ({
-  findRolesWithPermissions: vi.fn(),
+vi.mock("@/features/access/use-cases/role-options", () => ({
+  getAssignableRoleOptions: vi.fn(),
 }));
 
 const mockedFindEmployees = vi.mocked(findEmployees);
-const mockedFindCategoriesWithServices = vi.mocked(findCategoriesWithServices);
-const mockedFindRolesWithPermissions = vi.mocked(findRolesWithPermissions);
+const mockedGetCategoryServiceOptions = vi.mocked(getCategoryServiceOptions);
+const mockedGetAssignableRoleOptions = vi.mocked(getAssignableRoleOptions);
 
 describe("get employees page", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedFindEmployees.mockResolvedValue([]);
-    mockedFindCategoriesWithServices.mockResolvedValue([]);
-    mockedFindRolesWithPermissions.mockResolvedValue([]);
+    mockedGetCategoryServiceOptions.mockResolvedValue([]);
+    mockedGetAssignableRoleOptions.mockResolvedValue([]);
   });
 
   it("maps archived employee rows into a page view model", async () => {
@@ -43,29 +43,14 @@ describe("get employees page", () => {
         ],
       },
     ] as never);
-    mockedFindCategoriesWithServices.mockResolvedValue([
+    mockedGetCategoryServiceOptions.mockResolvedValue([
       {
         id: "category-1",
         name: "Cabello",
         services: [{ id: "service-1", name: "Corte" }],
       },
     ] as never);
-    mockedFindRolesWithPermissions.mockResolvedValue([
-      {
-        id: "role-1",
-        salon_id: "salon-1",
-        name: "Recepcion",
-        is_system: false,
-        role_permissions: [],
-      },
-      {
-        id: "role-system",
-        salon_id: "salon-1",
-        name: "Owner",
-        is_system: true,
-        role_permissions: [],
-      },
-    ]);
+    mockedGetAssignableRoleOptions.mockResolvedValue([{ id: "role-1", name: "Recepcion" }]);
 
     const view = await getEmployeesPage({
       salonId: "salon-1",
@@ -102,6 +87,6 @@ describe("get employees page", () => {
   it("does not load roles when the salon feature is disabled", async () => {
     await getEmployeesPage({ salonId: "salon-1", rolesEnabled: false });
 
-    expect(mockedFindRolesWithPermissions).not.toHaveBeenCalled();
+    expect(mockedGetAssignableRoleOptions).not.toHaveBeenCalled();
   });
 });

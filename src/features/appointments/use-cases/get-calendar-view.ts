@@ -1,9 +1,10 @@
 import "server-only";
 
 import { findAppointmentsBySalon } from "../data/appointments.repo";
-import { findActiveEmployeeNames } from "@/features/employees/data/employees.repo";
-import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
-import { findBusinessHours, findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { getEmployeeCalendarOptions } from "@/features/employees/use-cases/employee-calendar-options";
+import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
+import { getSalonBusinessHours } from "@/features/salon/use-cases/salon-business-hours";
+import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
 import {
   countActiveCalendarAppointments,
@@ -71,15 +72,15 @@ export async function getCalendarView({
   view: requestedView,
   now = new Date(),
 }: GetCalendarViewInput): Promise<CalendarViewModel> {
-  const salon = await findSalonIdentity(salonId);
+  const salon = await getSalonIdentity(salonId);
   const timezone = salon?.timezone ?? "America/Panama";
   const selectedDate = date ?? formatLocalDateISO(now, timezone);
   const view = normalizeView(requestedView, canViewAll);
 
   const [employees, businessHours, cancellationTemplate] = await Promise.all([
-    canViewAll ? findActiveEmployeeNames(salonId) : Promise.resolve([]),
-    findBusinessHours(salonId),
-    findActiveMessageTemplate(salonId, "appointment_cancelled"),
+    canViewAll ? getEmployeeCalendarOptions(salonId) : Promise.resolve([]),
+    getSalonBusinessHours(salonId),
+    getActiveMessageTemplate(salonId, "appointment_cancelled"),
   ]);
 
   const weekDates = getWeekDates(selectedDate);
@@ -111,6 +112,6 @@ export async function getCalendarView({
     businessStart,
     businessEnd,
     salonName: salon?.name ?? "tu salon",
-    cancellationTemplate: cancellationTemplate.body_text,
+    cancellationTemplate: cancellationTemplate.bodyText,
   };
 }

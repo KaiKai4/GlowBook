@@ -1,6 +1,6 @@
 import "server-only";
 
-import { findAppointmentById } from "@/features/appointments/data/appointments.repo";
+import { getAppointmentReminderTarget } from "@/features/appointments/use-cases/appointment-reminder-target";
 import { createManualReminderLog } from "../data/reminder-log.repo";
 import type { Result } from "@/lib/result";
 
@@ -10,9 +10,9 @@ export async function recordManualReminder(input: {
   templateId?: string;
   userId: string;
 }): Promise<Result<string>> {
-  const appointment = await findAppointmentById(input.appointmentId);
+  const appointment = await getAppointmentReminderTarget(input.appointmentId);
 
-  if (!appointment || appointment.salon_id !== input.salonId) {
+  if (!appointment || appointment.salonId !== input.salonId) {
     return { ok: false, error: "Cita no encontrada." };
   }
 
@@ -21,7 +21,7 @@ export async function recordManualReminder(input: {
       salonId: input.salonId,
       appointmentId: input.appointmentId,
       templateId: input.templateId,
-      recipientPhone: appointment.customer?.phone ?? undefined,
+      recipientPhone: appointment.customerPhone,
       userId: input.userId,
     });
 

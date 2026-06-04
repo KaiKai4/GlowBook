@@ -1,9 +1,12 @@
 import "server-only";
 
-import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
-import { findActiveEmployeeNames } from "@/features/employees/data/employees.repo";
-import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
-import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import {
+  getRemindableAppointments,
+  type RemindableAppointment,
+} from "@/features/appointments/use-cases/remindable-appointments";
+import { getActiveEmployeeNameOptions } from "@/features/employees/use-cases/employee-name-options";
+import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
+import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { addDaysToDateISO, formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
 import { findLatestReminderLogsByAppointmentIds } from "../data/reminder-log.repo";
 import type { ReminderAppointment, ReminderQueueViewModel } from "../view-models";
@@ -14,10 +17,8 @@ export interface GetReminderQueueInput {
   now?: Date;
 }
 
-const REMINDABLE_STATUSES = new Set(["scheduled", "confirmed"]);
-
 function toReminderAppointment(
-  appointment: Awaited<ReturnType<typeof findAppointmentsBySalon>>[number],
+  appointment: RemindableAppointment,
   latestReminder?: { sent_at: string; channel: string }
 ): ReminderAppointment {
   return {
@@ -53,23 +54,21 @@ export async function getReminderQueue({
   daysAhead = 7,
   now = new Date(),
 }: GetReminderQueueInput): Promise<ReminderQueueViewModel> {
-  const salon = await findSalonIdentity(salonId);
+  const salon = await getSalonIdentity(salonId);
   const timezone = salon?.timezone ?? "America/Panama";
   const localToday = formatLocalDateISO(now, timezone);
   const { start, end } = utcBounds(localToday, addDaysToDateISO(localToday, daysAhead), timezone);
 
   const [appointments, reminderTemplate, employees] = await Promise.all([
-    findAppointmentsBySalon(salonId, { startDate: start, endDate: end }),
-    findActiveMessageTemplate(salonId, "appointment_reminder"),
-    findActiveEmployeeNames(salonId),
+    getRemindableAppointments(salonId, { startDate: start, endDate: end }),
+    getActiveMessageTemplate(salonId, "appointment_reminder"),
+    getActiveEmployeeNameOptions(salonId),
   ]);
-  const remindableAppointments = appointments
-    .filter((appointment) => REMINDABLE_STATUSES.has(appointment.status));
   const latestReminders = await findLatestReminderLogsByAppointmentIds(
     salonId,
-    remindableAppointments.map((appointment) => appointment.id)
+    appointments.map((appointment) => appointment.id)
   );
-  const pendingAppointments = remindableAppointments
+  const pendingAppointments = appointments
     .map((appointment) => toReminderAppointment(
       appointment,
       latestReminders.get(appointment.id)
@@ -77,13 +76,10 @@ export async function getReminderQueue({
 
   return {
     appointments: pendingAppointments,
-    employees: employees.map((employee) => ({
-      id: employee.id,
-      name: `${employee.first_name} ${employee.last_name}`,
-    })),
+    employees,
     timezone,
     salonName: salon?.name ?? "tu salon",
-    template: reminderTemplate.body_text,
+    template: reminderTemplate.bodyText,
     templateId: reminderTemplate.id,
   };
 }

@@ -1,24 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { sumExpensesTotal } from "@/features/expenses/data/expenses.repo";
-import { sumInventoryPurchasesTotal } from "@/features/inventory/data/inventory.repo";
-import { sumRetailSalesTotal } from "@/features/retail/data/retail.repo";
+import { getManualExpenseTotal } from "@/features/expenses/use-cases/manual-expense-total";
+import { getInventoryPurchaseTotal } from "@/features/inventory/use-cases/inventory-purchase-total";
+import { getRetailRevenueTotal } from "@/features/retail/use-cases/retail-revenue";
 import { getExternalOperationalMoney } from "./operational-money";
 
-vi.mock("@/features/expenses/data/expenses.repo", () => ({
-  sumExpensesTotal: vi.fn(),
+vi.mock("@/features/expenses/use-cases/manual-expense-total", () => ({
+  getManualExpenseTotal: vi.fn(),
 }));
 
-vi.mock("@/features/inventory/data/inventory.repo", () => ({
-  sumInventoryPurchasesTotal: vi.fn(),
+vi.mock("@/features/inventory/use-cases/inventory-purchase-total", () => ({
+  getInventoryPurchaseTotal: vi.fn(),
 }));
 
-vi.mock("@/features/retail/data/retail.repo", () => ({
-  sumRetailSalesTotal: vi.fn(),
+vi.mock("@/features/retail/use-cases/retail-revenue", () => ({
+  getRetailRevenueTotal: vi.fn(),
 }));
 
-const mockedExpenses = vi.mocked(sumExpensesTotal);
-const mockedPurchases = vi.mocked(sumInventoryPurchasesTotal);
-const mockedRetail = vi.mocked(sumRetailSalesTotal);
+const mockedExpenses = vi.mocked(getManualExpenseTotal);
+const mockedPurchases = vi.mocked(getInventoryPurchaseTotal);
+const mockedRetail = vi.mocked(getRetailRevenueTotal);
 
 describe("external operational money", () => {
   beforeEach(() => {

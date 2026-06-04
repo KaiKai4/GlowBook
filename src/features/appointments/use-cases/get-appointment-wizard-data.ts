@@ -1,89 +1,28 @@
 import "server-only";
 
-import { findCustomers } from "@/features/customers/data/customers.repo";
-import { findEmployees } from "@/features/employees/data/employees.repo";
-import { findBusinessHours, findAppointmentSalonConfig } from "@/features/salon/data/salon.repo";
-import { findCategoriesWithServices } from "@/features/services/data/services.repo";
-import type {
-  AppointmentWizardData,
-  EmployeeOption,
-  ServiceOption,
-} from "../view-models";
-
-type AssignedRef = {
-  service?: { id: string } | null;
-  category?: { id: string } | null;
-};
-
-type WorkScheduleRef = {
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
-  is_active: boolean;
-};
+import { getActiveCustomerOptions } from "@/features/customers/use-cases/customer-options";
+import { getEmployeeSchedulingOptions } from "@/features/employees/use-cases/employee-scheduling-options";
+import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
+import { getServiceSchedulingOptions } from "@/features/services/use-cases/service-scheduling-options";
+import type { AppointmentWizardData } from "../view-models";
 
 export async function getAppointmentWizardData(salonId: string): Promise<AppointmentWizardData> {
-  const [customersResult, categories, employees, salonConfig, businessHours] =
-    await Promise.all([
-      findCustomers(salonId, { perPage: 200, isActive: true }),
-      findCategoriesWithServices(salonId),
-      findEmployees(salonId, true),
-      findAppointmentSalonConfig(salonId),
-      findBusinessHours(salonId),
-    ]);
+  const [customers, serviceSchedulingOptions, salonSchedulingConfig] = await Promise.all([
+    getActiveCustomerOptions(salonId, 200),
+    getServiceSchedulingOptions(salonId),
+    getSalonSchedulingConfig(salonId),
+  ]);
 
-  const customers = customersResult.data.map((customer) => ({
-    id: customer.id,
-    name: `${customer.first_name} ${customer.last_name}`,
-  }));
-  const categoryOptions = categories.map((category) => ({
-    id: category.id,
-    name: category.name,
-  }));
-  const services: ServiceOption[] = categories.flatMap((category) =>
-    (category.services ?? []).filter((service) => service.is_active).map((service) => ({
-      id: service.id,
-      name: service.name,
-      category_id: category.id,
-      duration_minutes: service.duration_minutes,
-      price: Number(service.price),
-    }))
-  );
-  const activeServiceIds = new Set(services.map((service) => service.id));
-  const employeeOptions: EmployeeOption[] = employees.map((employee) => ({
-    id: employee.id,
-    name: `${employee.first_name} ${employee.last_name}`,
-    service_ids: ((employee.services ?? []) as AssignedRef[])
-      .map((service) => service.service?.id)
-      .filter((id): id is string => typeof id === "string" && activeServiceIds.has(id)),
-    category_ids: ((employee.categories ?? []) as AssignedRef[])
-      .map((category) => category.category?.id)
-      .filter((id): id is string => Boolean(id)),
-    work_schedules: ((employee.work_schedules ?? []) as WorkScheduleRef[]).map((schedule) => ({
-      day_of_week: schedule.day_of_week,
-      start_time: schedule.start_time,
-      end_time: schedule.end_time,
-      is_active: schedule.is_active,
-    })),
-  }));
+  const activeServiceIds = new Set(serviceSchedulingOptions.services.map((service) => service.id));
+  const employeeOptions = await getEmployeeSchedulingOptions(salonId, activeServiceIds);
 
   return {
     customers,
-    categories: categoryOptions,
-    services,
+    categories: serviceSchedulingOptions.categories,
+    services: serviceSchedulingOptions.services,
     employees: employeeOptions,
-    salonConfig: {
-      min_booking_notice_minutes: salonConfig?.min_booking_notice_minutes ?? 0,
-      min_appointment_duration_minutes: salonConfig?.min_appointment_duration_minutes ?? 30,
-      allow_off_hours_bookings: salonConfig?.allow_off_hours_bookings ?? false,
-      timezone: salonConfig?.timezone ?? "America/Panama",
-    },
-    businessHours: businessHours.map((hours) => ({
-      day_of_week: hours.day_of_week,
-      is_open: hours.is_open,
-      open_time: hours.open_time,
-      close_time: hours.close_time,
-    })),
-    ready: services.length > 0 && employeeOptions.length > 0,
+    salonConfig: salonSchedulingConfig.salonConfig,
+    businessHours: salonSchedulingConfig.businessHours,
+    ready: serviceSchedulingOptions.services.length > 0 && employeeOptions.length > 0,
   };
 }

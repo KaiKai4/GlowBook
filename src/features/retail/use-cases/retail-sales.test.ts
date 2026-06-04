@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRetailSale, getRetailPage } from "./retail-sales";
-import { findCustomers } from "@/features/customers/data/customers.repo";
+import { getActiveCustomerOptions } from "@/features/customers/use-cases/customer-options";
 import { getRetailInventoryProducts } from "@/features/inventory/use-cases/retail-inventory-products";
 import { findRecentRetailSales, recordRetailSaleAtomically } from "../data/retail.repo";
 
-vi.mock("@/features/customers/data/customers.repo", () => ({
-  findCustomers: vi.fn(),
+vi.mock("@/features/customers/use-cases/customer-options", () => ({
+  getActiveCustomerOptions: vi.fn(),
 }));
 
 vi.mock("@/features/inventory/use-cases/retail-inventory-products", () => ({
@@ -17,7 +17,7 @@ vi.mock("../data/retail.repo", () => ({
   recordRetailSaleAtomically: vi.fn(),
 }));
 
-const mockedFindCustomers = vi.mocked(findCustomers);
+const mockedGetActiveCustomerOptions = vi.mocked(getActiveCustomerOptions);
 const mockedGetRetailInventoryProducts = vi.mocked(getRetailInventoryProducts);
 const mockedRecentSales = vi.mocked(findRecentRetailSales);
 const mockedRecordSale = vi.mocked(recordRetailSaleAtomically);
@@ -81,14 +81,13 @@ describe("retail sales use-cases", () => {
         stock: [],
       },
     ]);
-    mockedFindCustomers.mockResolvedValue({
-      data: [{ id: "customer-1", first_name: "Ana", last_name: "Mora" }],
-    } as Awaited<ReturnType<typeof findCustomers>>);
+    mockedGetActiveCustomerOptions.mockResolvedValue([{ id: "customer-1", name: "Ana Mora" }]);
     mockedRecentSales.mockResolvedValue([]);
 
     const page = await getRetailPage("salon-1");
 
     expect(page.products.map((product) => product.id)).toEqual(["active-retail"]);
     expect(page.customers).toEqual([{ id: "customer-1", name: "Ana Mora" }]);
+    expect(mockedGetActiveCustomerOptions).toHaveBeenCalledWith("salon-1", 100);
   });
 });

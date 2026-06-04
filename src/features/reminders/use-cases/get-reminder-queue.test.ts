@@ -1,36 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findAppointmentsBySalon } from "@/features/appointments/data/appointments.repo";
-import { findActiveEmployeeNames } from "@/features/employees/data/employees.repo";
-import { findActiveMessageTemplate } from "@/features/notifications/data/notification-templates.repo";
+import { getRemindableAppointments } from "@/features/appointments/use-cases/remindable-appointments";
+import { getActiveEmployeeNameOptions } from "@/features/employees/use-cases/employee-name-options";
+import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
 import { findLatestReminderLogsByAppointmentIds } from "@/features/reminders/data/reminder-log.repo";
-import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { getReminderQueue } from "./get-reminder-queue";
 
-vi.mock("@/features/appointments/data/appointments.repo", () => ({
-  findAppointmentsBySalon: vi.fn(),
+vi.mock("@/features/appointments/use-cases/remindable-appointments", () => ({
+  getRemindableAppointments: vi.fn(),
 }));
 
-vi.mock("@/features/employees/data/employees.repo", () => ({
-  findActiveEmployeeNames: vi.fn(),
+vi.mock("@/features/employees/use-cases/employee-name-options", () => ({
+  getActiveEmployeeNameOptions: vi.fn(),
 }));
 
-vi.mock("@/features/notifications/data/notification-templates.repo", () => ({
-  findActiveMessageTemplate: vi.fn(),
+vi.mock("@/features/notifications/use-cases/active-message-template", () => ({
+  getActiveMessageTemplate: vi.fn(),
 }));
 
 vi.mock("@/features/reminders/data/reminder-log.repo", () => ({
   findLatestReminderLogsByAppointmentIds: vi.fn(),
 }));
 
-vi.mock("@/features/salon/data/salon.repo", () => ({
-  findSalonIdentity: vi.fn(),
+vi.mock("@/features/salon/use-cases/salon-identity", () => ({
+  getSalonIdentity: vi.fn(),
 }));
 
-const mockedFindAppointmentsBySalon = vi.mocked(findAppointmentsBySalon);
-const mockedFindActiveEmployeeNames = vi.mocked(findActiveEmployeeNames);
-const mockedFindActiveMessageTemplate = vi.mocked(findActiveMessageTemplate);
+const mockedGetRemindableAppointments = vi.mocked(getRemindableAppointments);
+const mockedGetActiveEmployeeNameOptions = vi.mocked(getActiveEmployeeNameOptions);
+const mockedGetActiveMessageTemplate = vi.mocked(getActiveMessageTemplate);
 const mockedFindLatestReminderLogsByAppointmentIds = vi.mocked(findLatestReminderLogsByAppointmentIds);
-const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
+const mockedGetSalonIdentity = vi.mocked(getSalonIdentity);
 
 function appointment(status: string) {
   return {
@@ -55,8 +55,14 @@ function appointment(status: string) {
         end_time: "2026-05-29T15:30:00.000Z",
         duration_minutes: 30,
         price: 35,
+        discount_amount: 0,
         ordering: 0,
-        service: { id: "service-1", name: "Corte", duration_minutes: 30 },
+        service: {
+          id: "service-1",
+          name: "Corte",
+          duration_minutes: 30,
+          category: null,
+        },
         employee: { id: "employee-1", first_name: "Ana", last_name: "Vega" },
       },
     ],
@@ -66,39 +72,36 @@ function appointment(status: string) {
 describe("get reminder queue", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedFindSalonIdentity.mockResolvedValue({
+    mockedGetSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "America/Panama",
     });
-    mockedFindActiveMessageTemplate.mockResolvedValue({
+    mockedGetActiveMessageTemplate.mockResolvedValue({
       id: "template-1",
-      body_text: "Hola {cliente}, recuerda tu cita en {salon}.",
-    } as never);
+      bodyText: "Hola {cliente}, recuerda tu cita en {salon}.",
+    });
     mockedFindLatestReminderLogsByAppointmentIds.mockResolvedValue(new Map());
-    mockedFindActiveEmployeeNames.mockResolvedValue([
-      { id: "employee-1", first_name: "Ana", last_name: "Vega" },
-    ] as never);
+    mockedGetActiveEmployeeNameOptions.mockResolvedValue([
+      { id: "employee-1", name: "Ana Vega" },
+    ]);
   });
 
   it("builds the reminder worklist from appointments, collaborators and template", async () => {
-    mockedFindAppointmentsBySalon.mockResolvedValue([
+    mockedGetRemindableAppointments.mockResolvedValue([
       appointment("scheduled"),
       appointment("confirmed"),
-      appointment("completed"),
-      appointment("cancelled"),
-      appointment("no_show"),
-    ] as never);
+    ]);
 
     const result = await getReminderQueue({
       salonId: "salon-1",
       now: new Date("2026-05-29T15:00:00.000Z"),
     });
 
-    expect(mockedFindAppointmentsBySalon).toHaveBeenCalledWith("salon-1", {
+    expect(mockedGetRemindableAppointments).toHaveBeenCalledWith("salon-1", {
       startDate: "2026-05-29T05:00:00.000Z",
       endDate: "2026-06-06T04:59:59.999Z",
     });
-    expect(mockedFindActiveMessageTemplate).toHaveBeenCalledWith(
+    expect(mockedGetActiveMessageTemplate).toHaveBeenCalledWith(
       "salon-1",
       "appointment_reminder"
     );
@@ -124,9 +127,9 @@ describe("get reminder queue", () => {
   });
 
   it("adds the latest manual reminder metadata to each appointment", async () => {
-    mockedFindAppointmentsBySalon.mockResolvedValue([
+    mockedGetRemindableAppointments.mockResolvedValue([
       appointment("scheduled"),
-    ] as never);
+    ]);
     mockedFindLatestReminderLogsByAppointmentIds.mockResolvedValue(new Map([
       ["appt-scheduled", {
         appointment_id: "appt-scheduled",
@@ -151,8 +154,8 @@ describe("get reminder queue", () => {
   });
 
   it("falls back to Panama timezone and generic salon name when identity is missing", async () => {
-    mockedFindSalonIdentity.mockResolvedValue(null);
-    mockedFindAppointmentsBySalon.mockResolvedValue([] as never);
+    mockedGetSalonIdentity.mockResolvedValue(null);
+    mockedGetRemindableAppointments.mockResolvedValue([]);
 
     const result = await getReminderQueue({
       salonId: "salon-1",
@@ -160,7 +163,7 @@ describe("get reminder queue", () => {
       now: new Date("2026-05-29T04:30:00.000Z"),
     });
 
-    expect(mockedFindAppointmentsBySalon).toHaveBeenCalledWith("salon-1", {
+    expect(mockedGetRemindableAppointments).toHaveBeenCalledWith("salon-1", {
       startDate: "2026-05-28T05:00:00.000Z",
       endDate: "2026-05-30T04:59:59.999Z",
     });

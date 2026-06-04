@@ -4,7 +4,7 @@ import { getUtcDayBoundaries, formatLocalDateISO } from "@/lib/utils/dates";
 import { calculateOperationalMoneyTotals } from "@/features/finance/domain/operational-money";
 import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
 import { getLowStockSummary } from "@/features/inventory/use-cases/low-stock-summary";
-import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import {
   findDashboardReportRows,
   findPendingConfirmationRows,
@@ -129,7 +129,7 @@ export async function getDashboardOverview({
     return { metrics: null, topServices: [], pending: [] };
   }
 
-  const salon = await findSalonIdentity(salonId);
+  const salon = await getSalonIdentity(salonId);
   const timezone = salon?.timezone ?? "UTC";
   const { start: todayStart, end: todayEnd } = getUtcDayBoundaries(now, timezone);
   const monthStart = getMonthStart(now, timezone);

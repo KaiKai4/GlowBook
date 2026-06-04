@@ -1,7 +1,7 @@
 import "server-only";
 
-import { findRolesWithPermissions } from "@/features/access/data/roles.repo";
-import { findCategoriesWithServices } from "@/features/services/data/services.repo";
+import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
+import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
 import { findEmployeeById, findLatestEmployeeInvitation } from "../data/employees.repo";
 
@@ -109,8 +109,8 @@ export async function getEmployeeDetail({
 }: GetEmployeeDetailInput): Promise<EmployeeDetailViewModel | null> {
   const [employee, allRoles, allCategories] = await Promise.all([
     findEmployeeById(employeeId, salonId),
-    rolesEnabled ? findRolesWithPermissions(salonId) : Promise.resolve([]),
-    findCategoriesWithServices(salonId),
+    rolesEnabled ? getAssignableRoleOptions(salonId) : Promise.resolve([]),
+    getCategoryServiceOptions(salonId),
   ]);
 
   if (!employee) return null;
@@ -149,17 +149,8 @@ export async function getEmployeeDetail({
       start_time: schedule.start_time,
       end_time: schedule.end_time,
     })),
-    categoryOptions: allCategories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      services: (category.services ?? []).map((service) => ({
-        id: service.id,
-        name: service.name,
-      })),
-    })),
-    roleOptions: allRoles
-      .filter((role) => !role.is_system)
-      .map((role) => ({ id: role.id, name: role.name })),
+    categoryOptions: allCategories,
+    roleOptions: allRoles,
     currentRoleId,
     pendingInvitation: toPendingInvitation(invitation, now),
   };

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { findAppointmentById } from "../data/appointments.repo";
 import { getAppointmentDetail } from "./get-appointment-detail";
 
@@ -7,18 +7,18 @@ vi.mock("../data/appointments.repo", () => ({
   findAppointmentById: vi.fn(),
 }));
 
-vi.mock("@/features/salon/data/salon.repo", () => ({
-  findSalonIdentity: vi.fn(),
+vi.mock("@/features/salon/use-cases/salon-identity", () => ({
+  getSalonIdentity: vi.fn(),
 }));
 
 const mockedFindAppointmentById = vi.mocked(findAppointmentById);
-const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
+const mockedGetSalonIdentity = vi.mocked(getSalonIdentity);
 
 describe("get appointment detail", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedFindAppointmentById.mockResolvedValue(null);
-    mockedFindSalonIdentity.mockResolvedValue(null);
+    mockedGetSalonIdentity.mockResolvedValue(null);
   });
 
   it("maps appointment rows into a detail view model", async () => {
@@ -61,7 +61,7 @@ describe("get appointment detail", () => {
         },
       ],
     } as never);
-    mockedFindSalonIdentity.mockResolvedValue({
+    mockedGetSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "America/Bogota",
     });
@@ -125,6 +125,6 @@ describe("get appointment detail", () => {
     await expect(
       getAppointmentDetail({ appointmentId: "appointment-1", salonId: "salon-1" })
     ).resolves.toBeNull();
-    expect(mockedFindSalonIdentity).not.toHaveBeenCalled();
+    expect(mockedGetSalonIdentity).not.toHaveBeenCalled();
   });
 });

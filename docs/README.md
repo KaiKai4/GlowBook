@@ -7,6 +7,7 @@ Este indice marca los documentos vigentes. Las auditorias y roadmaps reemplazado
 - Auditoria actual: `docs/architecture-audit-current-state-2026-06-03.md`
 - Fases actuales de mejora: `docs/architecture-improvement-phases-2026-06-03.md`
 - Evaluacion modular actual: `docs/architecture-modular-monolith-assessment-2026-06-03.md`
+- Fases para profundizar el monolito modular: `docs/architecture-modular-monolith-improvement-phases-2026-06-03.md`
 - Contratos de base de datos: `docs/database-contracts.md`
 - Tests y checks Supabase: `docs/testing.md`
 - Politica de entornos: `docs/environments.md`

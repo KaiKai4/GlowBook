@@ -1,6 +1,6 @@
 import "server-only";
 
-import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { findAppointmentById } from "../data/appointments.repo";
 
 export type AppointmentStatusVariant =
@@ -74,7 +74,7 @@ export async function getAppointmentDetail({
   const appointment = await findAppointmentById(appointmentId);
   if (!appointment || appointment.salon_id !== salonId) return null;
 
-  const salon = await findSalonIdentity(salonId);
+  const salon = await getSalonIdentity(salonId);
 
   return {
     id: appointment.id,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findSalonIdentity } from "@/features/salon/data/salon.repo";
+import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
 import { getLowStockSummary } from "@/features/inventory/use-cases/low-stock-summary";
 import {
@@ -8,8 +8,8 @@ import {
 } from "../data/dashboard.repo";
 import { getDashboardOverview } from "./get-dashboard-overview";
 
-vi.mock("@/features/salon/data/salon.repo", () => ({
-  findSalonIdentity: vi.fn(),
+vi.mock("@/features/salon/use-cases/salon-identity", () => ({
+  getSalonIdentity: vi.fn(),
 }));
 vi.mock("@/features/finance/use-cases/operational-money", () => ({
   getExternalOperationalMoney: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock("../data/dashboard.repo", () => ({
   findPendingConfirmationRows: vi.fn(),
 }));
 
-const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
+const mockedGetSalonIdentity = vi.mocked(getSalonIdentity);
 const mockedExternalMoney = vi.mocked(getExternalOperationalMoney);
 const mockedGetLowStockSummary = vi.mocked(getLowStockSummary);
 const mockedFindDashboardReportRows = vi.mocked(findDashboardReportRows);
@@ -32,7 +32,7 @@ const mockedFindPendingConfirmationRows = vi.mocked(findPendingConfirmationRows)
 describe("get dashboard overview", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedFindSalonIdentity.mockResolvedValue({
+    mockedGetSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "UTC",
     });
@@ -59,7 +59,7 @@ describe("get dashboard overview", () => {
     });
 
     expect(view).toEqual({ metrics: null, topServices: [], pending: [] });
-    expect(mockedFindSalonIdentity).not.toHaveBeenCalled();
+    expect(mockedGetSalonIdentity).not.toHaveBeenCalled();
     expect(mockedFindDashboardReportRows).not.toHaveBeenCalled();
     expect(mockedFindPendingConfirmationRows).not.toHaveBeenCalled();
   });

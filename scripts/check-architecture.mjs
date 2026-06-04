@@ -109,6 +109,19 @@ function isFeatureUseCase(projectPath) {
   return /^src\/features\/[^/]+\/use-cases(\/|$)/.test(projectPath);
 }
 
+function isTestSource(projectPath) {
+  return /\.(test|spec)\.[jt]sx?$/.test(projectPath);
+}
+
+function featureName(projectPath) {
+  const match = projectPath.match(/^src\/features\/([^/]+)\//);
+  return match?.[1] ?? null;
+}
+
+function isFeatureData(projectPath) {
+  return /^src\/features\/[^/]+\/data(\/|$)/.test(projectPath);
+}
+
 function isForbiddenDomainImport(specifier, resolvedPath) {
   if (specifier === "react" || specifier.startsWith("react/")) return true;
   if (specifier === "next" || specifier.startsWith("next/")) return true;
@@ -232,6 +245,20 @@ for (const file of collectSourceFiles(srcRoot)) {
         file: projectPath,
         import: specifier,
         rule: "features/*/use-cases should keep Supabase access behind data Adapters",
+      });
+    }
+
+    if (
+      !isTestSource(projectPath) &&
+      isFeatureUseCase(projectPath) &&
+      resolvedPath &&
+      isFeatureData(resolvedPath) &&
+      featureName(projectPath) !== featureName(resolvedPath)
+    ) {
+      warnings.push({
+        file: projectPath,
+        import: specifier,
+        rule: "cross-feature data imports reduce Locality; prefer a narrow read Module in the owning feature",
       });
     }
   }

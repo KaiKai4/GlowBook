@@ -1,80 +1,68 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findCustomers } from "@/features/customers/data/customers.repo";
-import { findEmployees } from "@/features/employees/data/employees.repo";
-import {
-  findAppointmentSalonConfig,
-  findBusinessHours,
-} from "@/features/salon/data/salon.repo";
-import { findCategoriesWithServices } from "@/features/services/data/services.repo";
+import { getActiveCustomerOptions } from "@/features/customers/use-cases/customer-options";
+import { getEmployeeSchedulingOptions } from "@/features/employees/use-cases/employee-scheduling-options";
+import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
+import { getServiceSchedulingOptions } from "@/features/services/use-cases/service-scheduling-options";
 import { getAppointmentWizardData } from "./get-appointment-wizard-data";
 
-vi.mock("@/features/customers/data/customers.repo", () => ({
-  findCustomers: vi.fn(),
+vi.mock("@/features/customers/use-cases/customer-options", () => ({
+  getActiveCustomerOptions: vi.fn(),
 }));
 
-vi.mock("@/features/employees/data/employees.repo", () => ({
-  findEmployees: vi.fn(),
+vi.mock("@/features/employees/use-cases/employee-scheduling-options", () => ({
+  getEmployeeSchedulingOptions: vi.fn(),
 }));
 
-vi.mock("@/features/salon/data/salon.repo", () => ({
-  findAppointmentSalonConfig: vi.fn(),
-  findBusinessHours: vi.fn(),
+vi.mock("@/features/salon/use-cases/salon-scheduling-config", () => ({
+  getSalonSchedulingConfig: vi.fn(),
 }));
 
-vi.mock("@/features/services/data/services.repo", () => ({
-  findCategoriesWithServices: vi.fn(),
+vi.mock("@/features/services/use-cases/service-scheduling-options", () => ({
+  getServiceSchedulingOptions: vi.fn(),
 }));
 
-const mockedFindCustomers = vi.mocked(findCustomers);
-const mockedFindEmployees = vi.mocked(findEmployees);
-const mockedFindAppointmentSalonConfig = vi.mocked(findAppointmentSalonConfig);
-const mockedFindBusinessHours = vi.mocked(findBusinessHours);
-const mockedFindCategoriesWithServices = vi.mocked(findCategoriesWithServices);
+const mockedGetActiveCustomerOptions = vi.mocked(getActiveCustomerOptions);
+const mockedGetEmployeeSchedulingOptions = vi.mocked(getEmployeeSchedulingOptions);
+const mockedGetSalonSchedulingConfig = vi.mocked(getSalonSchedulingConfig);
+const mockedGetServiceSchedulingOptions = vi.mocked(getServiceSchedulingOptions);
 
 describe("get appointment wizard data", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedFindCustomers.mockResolvedValue({ data: [], total: 0 });
-    mockedFindAppointmentSalonConfig.mockResolvedValue(null);
-    mockedFindBusinessHours.mockResolvedValue([]);
+    mockedGetActiveCustomerOptions.mockResolvedValue([]);
+    mockedGetSalonSchedulingConfig.mockResolvedValue({
+      salonConfig: {
+        min_booking_notice_minutes: 0,
+        min_appointment_duration_minutes: 30,
+        allow_off_hours_bookings: false,
+        timezone: "America/Panama",
+      },
+      businessHours: [],
+    });
   });
 
-  it("hides inactive services and removes them from employee eligibility", async () => {
-    mockedFindCategoriesWithServices.mockResolvedValue([
-      {
-        id: "category-nails",
-        name: "Uñas",
-        services: [
-          {
-            id: "service-active",
-            name: "Softgel",
-            duration_minutes: 45,
-            price: 31,
-            is_active: true,
-          },
-          {
-            id: "service-inactive",
-            name: "Manicura tradicional",
-            duration_minutes: 30,
-            price: 15,
-            is_active: false,
-          },
-        ],
-      },
-    ] as never);
-    mockedFindEmployees.mockResolvedValue([
+  it("builds the wizard view from narrow scheduling Interfaces", async () => {
+    mockedGetServiceSchedulingOptions.mockResolvedValue({
+      categories: [{ id: "category-nails", name: "Unas" }],
+      services: [
+        {
+          id: "service-active",
+          name: "Softgel",
+          category_id: "category-nails",
+          duration_minutes: 45,
+          price: 31,
+        },
+      ],
+    });
+    mockedGetEmployeeSchedulingOptions.mockResolvedValue([
       {
         id: "employee-1",
-        first_name: "Valeria",
-        last_name: "Castillo",
-        services: [
-          { service: { id: "service-active" } },
-          { service: { id: "service-inactive" } },
-        ],
-        categories: [{ category: { id: "category-nails" } }],
+        name: "Valeria Castillo",
+        service_ids: ["service-active"],
+        category_ids: ["category-nails"],
         work_schedules: [],
       },
-    ] as never);
+    ]);
 
     const view = await getAppointmentWizardData("salon-1");
 
@@ -88,6 +76,31 @@ describe("get appointment wizard data", () => {
       },
     ]);
     expect(view.employees[0].service_ids).toEqual(["service-active"]);
+    expect(mockedGetEmployeeSchedulingOptions).toHaveBeenCalledWith(
+      "salon-1",
+      new Set(["service-active"])
+    );
     expect(view.ready).toBe(true);
+  });
+
+  it("returns not ready when there are no active services", async () => {
+    mockedGetServiceSchedulingOptions.mockResolvedValue({
+      categories: [{ id: "category-nails", name: "Unas" }],
+      services: [],
+    });
+    mockedGetEmployeeSchedulingOptions.mockResolvedValue([
+      {
+        id: "employee-1",
+        name: "Valeria Castillo",
+        service_ids: [],
+        category_ids: ["category-nails"],
+        work_schedules: [],
+      },
+    ]);
+
+    const view = await getAppointmentWizardData("salon-1");
+
+    expect(view.services).toEqual([]);
+    expect(view.ready).toBe(false);
   });
 });
