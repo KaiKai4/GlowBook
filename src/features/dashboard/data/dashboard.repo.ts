@@ -9,6 +9,10 @@ export interface DashboardMonthAppointmentRow {
   status: string;
 }
 
+export interface DashboardMonthlyCompletedAppointmentRow {
+  start_time: string | null;
+}
+
 export interface DashboardBookedServiceRow {
   service: RelatedOne<{ name: string }>;
   appointment: RelatedOne<{ status: string }>;
@@ -27,6 +31,7 @@ export interface DashboardPendingConfirmationRow {
 export interface DashboardReportRows {
   todayAppointments: number;
   monthAppointments: DashboardMonthAppointmentRow[];
+  monthlyCompletedAppointments: DashboardMonthlyCompletedAppointmentRow[];
   totalCustomers: number;
   bookedServices: DashboardBookedServiceRow[];
 }
@@ -36,6 +41,7 @@ export interface DashboardReportRowsQuery {
   todayStart: string;
   todayEnd: string;
   monthStart: string;
+  chartStart: string;
 }
 
 export async function findDashboardReportRows({
@@ -43,10 +49,11 @@ export async function findDashboardReportRows({
   todayStart,
   todayEnd,
   monthStart,
+  chartStart,
 }: DashboardReportRowsQuery): Promise<DashboardReportRows> {
   const supabase = await createSupabaseServerClient();
 
-  const [todayAppointments, monthAppointments, totalCustomers, bookedServices] =
+  const [todayAppointments, monthAppointments, monthlyCompletedAppointments, totalCustomers, bookedServices] =
     await Promise.all([
       supabase
         .from("appointments")
@@ -61,6 +68,12 @@ export async function findDashboardReportRows({
         .eq("status", "completed")
         .gte("start_time", monthStart),
       supabase
+        .from("appointments")
+        .select("start_time")
+        .eq("salon_id", salonId)
+        .eq("status", "completed")
+        .gte("start_time", chartStart),
+      supabase
         .from("customers")
         .select("id", { count: "exact" })
         .eq("salon_id", salonId)
@@ -74,12 +87,14 @@ export async function findDashboardReportRows({
 
   if (todayAppointments.error) throw todayAppointments.error;
   if (monthAppointments.error) throw monthAppointments.error;
+  if (monthlyCompletedAppointments.error) throw monthlyCompletedAppointments.error;
   if (totalCustomers.error) throw totalCustomers.error;
   if (bookedServices.error) throw bookedServices.error;
 
   return {
     todayAppointments: todayAppointments.count ?? 0,
     monthAppointments: (monthAppointments.data ?? []) as DashboardMonthAppointmentRow[],
+    monthlyCompletedAppointments: (monthlyCompletedAppointments.data ?? []) as DashboardMonthlyCompletedAppointmentRow[],
     totalCustomers: totalCustomers.count ?? 0,
     bookedServices: (bookedServices.data ?? []) as unknown as DashboardBookedServiceRow[],
   };

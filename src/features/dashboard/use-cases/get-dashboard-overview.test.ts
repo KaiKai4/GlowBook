@@ -39,6 +39,7 @@ describe("get dashboard overview", () => {
     mockedFindDashboardReportRows.mockResolvedValue({
       todayAppointments: 0,
       monthAppointments: [],
+      monthlyCompletedAppointments: [],
       totalCustomers: 0,
       bookedServices: [],
     });
@@ -58,7 +59,7 @@ describe("get dashboard overview", () => {
       wantsConfirmations: false,
     });
 
-    expect(view).toEqual({ metrics: null, topServices: [], pending: [] });
+    expect(view).toEqual({ metrics: null, topServices: [], monthlyCompletedAppointments: [], pending: [] });
     expect(mockedGetSalonIdentity).not.toHaveBeenCalled();
     expect(mockedFindDashboardReportRows).not.toHaveBeenCalled();
     expect(mockedFindPendingConfirmationRows).not.toHaveBeenCalled();
@@ -75,6 +76,11 @@ describe("get dashboard overview", () => {
       monthAppointments: [
         { total_price: 10, status: "completed" },
         { total_price: 25.5, status: "completed" },
+      ],
+      monthlyCompletedAppointments: [
+        { start_time: "2029-12-20T14:00:00.000Z" },
+        { start_time: "2030-01-10T14:00:00.000Z" },
+        { start_time: "2030-01-12T14:00:00.000Z" },
       ],
       totalCustomers: 12,
       bookedServices: [
@@ -108,6 +114,18 @@ describe("get dashboard overview", () => {
       { name: "Corte", count: 2, pct: 100 },
       { name: "Color", count: 1, pct: 50 },
     ]);
+    expect(view.monthlyCompletedAppointments).toHaveLength(12);
+    expect(view.monthlyCompletedAppointments.at(-2)).toMatchObject({
+      monthKey: "2029-12",
+      total: 1,
+      trend: "up",
+    });
+    expect(view.monthlyCompletedAppointments.at(-1)).toMatchObject({
+      monthKey: "2030-01",
+      total: 2,
+      delta: 1,
+      trend: "up",
+    });
     expect(mockedFindPendingConfirmationRows).not.toHaveBeenCalled();
   });
 
@@ -138,6 +156,7 @@ describe("get dashboard overview", () => {
 
     expect(view.metrics).toBeNull();
     expect(view.topServices).toEqual([]);
+    expect(view.monthlyCompletedAppointments).toEqual([]);
     expect(view.pending).toEqual([
       {
         id: "appointment-1",

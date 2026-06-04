@@ -9,6 +9,7 @@ import {
   findDashboardReportRows,
   findPendingConfirmationRows,
   type DashboardBookedServiceRow,
+  type DashboardMonthlyCompletedAppointmentRow,
   type DashboardPendingConfirmationRow,
 } from "../data/dashboard.repo";
 
@@ -23,6 +24,14 @@ export interface PendingAppointmentConfirmation {
   customerName: string;
   phone: string | null;
   when: string;
+}
+
+export interface MonthlyAppointmentPoint {
+  monthKey: string;
+  label: string;
+  total: number;
+  delta: number;
+  trend: "up" | "down" | "flat";
 }
 
 export interface DashboardMetrics {
@@ -40,6 +49,7 @@ export interface DashboardMetrics {
 export interface DashboardOverview {
   metrics: DashboardMetrics | null;
   topServices: TopService[];
+  monthlyCompletedAppointments: MonthlyAppointmentPoint[];
   pending: PendingAppointmentConfirmation[];
 }
 
@@ -69,6 +79,57 @@ function getMonthStart(now: Date, timezone: string): Date {
   }
 
   return getUtcDayBoundaries(probe, timezone).start;
+}
+
+function getMonthSequence(monthStart: Date, timezone: string, count = 12) {
+  const currentMonthKey = formatLocalDateISO(monthStart, timezone).slice(0, 7);
+  const [currentYear, currentMonth] = currentMonthKey.split("-").map(Number);
+  const formatter = new Intl.DateTimeFormat("es-PA", {
+    timeZone: timezone,
+    month: "short",
+  });
+
+  return Array.from({ length: count }, (_, index) => {
+    const offset = count - 1 - index;
+    const absoluteMonth = currentYear * 12 + (currentMonth - 1) - offset;
+    const year = Math.floor(absoluteMonth / 12);
+    const month = (absoluteMonth % 12) + 1;
+    const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+    const labelDate = new Date(Date.UTC(year, month - 1, 15, 12));
+
+    return {
+      monthKey,
+      label: formatter.format(labelDate).replace(".", ""),
+    };
+  });
+}
+
+function calculateMonthlyCompletedAppointments(
+  rows: DashboardMonthlyCompletedAppointmentRow[],
+  months: { monthKey: string; label: string }[],
+  timezone: string
+): MonthlyAppointmentPoint[] {
+  const counts = new Map(months.map((month) => [month.monthKey, 0]));
+
+  for (const row of rows) {
+    if (!row.start_time) continue;
+    const monthKey = formatLocalDateISO(new Date(row.start_time), timezone).slice(0, 7);
+    if (!counts.has(monthKey)) continue;
+    counts.set(monthKey, (counts.get(monthKey) ?? 0) + 1);
+  }
+
+  return months.map((month, index) => {
+    const total = counts.get(month.monthKey) ?? 0;
+    const previous = index > 0 ? counts.get(months[index - 1].monthKey) ?? 0 : total;
+    const delta = total - previous;
+
+    return {
+      ...month,
+      total,
+      delta,
+      trend: delta > 0 ? "up" : delta < 0 ? "down" : "flat",
+    };
+  });
 }
 
 function calculateTopServices(rows: DashboardBookedServiceRow[]): TopService[] {
@@ -126,13 +187,15 @@ export async function getDashboardOverview({
   now = new Date(),
 }: GetDashboardOverviewInput): Promise<DashboardOverview> {
   if (!wantsReports && !wantsConfirmations) {
-    return { metrics: null, topServices: [], pending: [] };
+    return { metrics: null, topServices: [], monthlyCompletedAppointments: [], pending: [] };
   }
 
   const salon = await getSalonIdentity(salonId);
   const timezone = salon?.timezone ?? "UTC";
   const { start: todayStart, end: todayEnd } = getUtcDayBoundaries(now, timezone);
   const monthStart = getMonthStart(now, timezone);
+  const monthSequence = getMonthSequence(monthStart, timezone);
+  const chartStart = getMonthStart(new Date(`${monthSequence[0].monthKey}-15T12:00:00.000Z`), timezone);
   const todayLocal = formatLocalDateISO(now, timezone);
   const monthStartLocal = formatLocalDateISO(monthStart, timezone);
 
@@ -143,6 +206,7 @@ export async function getDashboardOverview({
           todayStart: todayStart.toISOString(),
           todayEnd: todayEnd.toISOString(),
           monthStart: monthStart.toISOString(),
+          chartStart: chartStart.toISOString(),
         })
       : null,
     wantsConfirmations ? findPendingConfirmationRows(salonId, now.toISOString()) : [],
@@ -188,6 +252,9 @@ export async function getDashboardOverview({
   return {
     metrics,
     topServices: reportRows ? calculateTopServices(reportRows.bookedServices) : [],
+    monthlyCompletedAppointments: reportRows
+      ? calculateMonthlyCompletedAppointments(reportRows.monthlyCompletedAppointments, monthSequence, timezone)
+      : [],
     pending: mapPendingConfirmations(pendingRows, timezone),
   };
 }

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/session";
-import { getDisabledSalonFeatures, hasPermission, getPermissions, PERMISSIONS } from "@/lib/auth/permissions";
+import { getDisabledSalonFeatures, getPermissions, hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
+import { isSalonFeatureDisabled } from "@/features/salon/domain/salon-features";
 import {
   getDashboardOverview,
+  type MonthlyAppointmentPoint,
   type PendingAppointmentConfirmation,
   type TopService,
 } from "@/features/dashboard/use-cases/get-dashboard-overview";
@@ -12,20 +14,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatDate } from "@/lib/utils/dates";
 import {
-  CalendarDays, Users, DollarSign, TrendingUp, ChevronRight, AlertCircle,
-  BellRing, Phone, Scissors, Clock, ShoppingBag, ReceiptText, Package,
+  AlertCircle,
+  BellRing,
+  CalendarDays,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  ReceiptText,
+  Scissors,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
+  const disabledFeatures = getDisabledSalonFeatures(profile);
   const visibleNav = getVisibleNavItems(
     getPermissions(profile),
     profile.is_owner,
-    getDisabledSalonFeatures(profile)
+    disabledFeatures
   );
 
-  // Collaborators with access to a single module skip the home page and land
-  // directly on it (e.g. a view-only stylist goes straight to their calendar).
   if (!profile.is_owner && visibleNav.length === 1) {
     redirect(visibleNav[0].href);
   }
@@ -34,15 +43,17 @@ export default async function DashboardPage() {
   const canManageAppointments = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
   const canViewAppointments = canManageAppointments || hasPermission(profile, PERMISSIONS.APPOINTMENTS_VIEW);
   const canManageCustomers = hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE);
+  const hasExpensesFeature = !isSalonFeatureDisabled(disabledFeatures, "expenses");
+  const hasRetailFeature = !isSalonFeatureDisabled(disabledFeatures, "retail");
 
-  const { metrics, topServices, pending } =
+  const { metrics, topServices, monthlyCompletedAppointments, pending } =
     canViewReports || canManageAppointments
       ? await getDashboardOverview({
           salonId: profile.salon_id,
           wantsReports: canViewReports,
           wantsConfirmations: canManageAppointments,
         })
-      : { metrics: null, topServices: [], pending: [] };
+      : { metrics: null, topServices: [], monthlyCompletedAppointments: [], pending: [] };
 
   const quickLinks = [
     canViewAppointments && {
@@ -51,104 +62,90 @@ export default async function DashboardPage() {
       label: "Citas",
       description: canManageAppointments ? "Ver y gestionar el calendario de citas" : "Ver tu calendario de citas",
     },
-    canManageCustomers && { href: "/customers", icon: Users, label: "Clientes", description: "Consultar y registrar clientes" },
-  ].filter(Boolean) as { href: string; icon: React.ComponentType<{ className?: string }>; label: string; description: string }[];
+    canManageCustomers && {
+      href: "/customers",
+      icon: Users,
+      label: "Clientes",
+      description: "Consultar y registrar clientes",
+    },
+  ].filter(Boolean) as {
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    description: string;
+  }[];
 
   const hasAnyAccess = visibleNav.length > 0;
+  const profitMetric = metrics
+    ? metrics.appointmentRevenue + (hasRetailFeature ? metrics.retailRevenue : 0) - (hasExpensesFeature ? metrics.monthExpenses : 0)
+    : 0;
+  const monthRevenueMetric = metrics ? metrics.appointmentRevenue + (hasRetailFeature ? metrics.retailRevenue : 0) : 0;
+  const showProfitMetric = Boolean(metrics && (hasRetailFeature || hasExpensesFeature));
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">
-          Bienvenido, {profile.full_name.split(" ")[0]}
-        </h1>
-        <p className="text-sm text-neutral-500 mt-1">
-          {formatDate(new Date())}
-        </p>
+        <h1 className="text-2xl font-bold text-neutral-900">Bienvenido</h1>
+        <p className="mt-1 text-sm text-neutral-500">{formatDate(new Date())}</p>
       </div>
 
       {metrics && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            title="Citas hoy"
-            value={String(metrics.todayAppointments)}
-            icon={CalendarDays}
-            color="blue"
-          />
-          <MetricCard
-            title="Ingresos del mes"
-            value={formatCurrency(metrics.monthRevenue)}
-            icon={DollarSign}
-            color="emerald"
-          />
-          <MetricCard
-            title="Vitrina del mes"
-            value={formatCurrency(metrics.retailRevenue)}
-            icon={ShoppingBag}
-            color="blue"
-          />
-          <MetricCard
-            title="Gastos del mes"
-            value={formatCurrency(metrics.monthExpenses)}
-            icon={ReceiptText}
-            color="red"
-          />
-          <MetricCard
-            title="Utilidad estimada"
-            value={formatCurrency(metrics.estimatedProfit)}
-            icon={TrendingUp}
-            color={metrics.estimatedProfit >= 0 ? "emerald" : "red"}
-          />
-          <MetricCard
-            title="Productos bajos"
-            value={String(metrics.lowStockProducts)}
-            icon={Package}
-            color={metrics.lowStockProducts > 0 ? "amber" : "violet"}
-          />
-          <MetricCard
-            title="Clientes activos"
-            value={String(metrics.totalCustomers)}
-            icon={Users}
-            color="violet"
-          />
-          <MetricCard
-            title="Completadas este mes"
-            value={String(metrics.completedThisMonth)}
-            icon={TrendingUp}
-            color="rose"
-          />
+          {hasExpensesFeature && (
+            <MetricCard title="Gastos del mes" value={formatCurrency(metrics.monthExpenses)} icon={ReceiptText} color="red" />
+          )}
+          <MetricCard title="Ingresos del mes" value={formatCurrency(monthRevenueMetric)} icon={DollarSign} color="emerald" />
+          {showProfitMetric && (
+            <MetricCard
+              title="Ganancias del mes"
+              value={formatCurrency(profitMetric)}
+              icon={TrendingUp}
+              color={profitMetric >= 0 ? "emerald" : "red"}
+            />
+          )}
+          <MetricCard title="Citas hoy" value={String(metrics.todayAppointments)} icon={CalendarDays} color="blue" />
         </div>
       )}
 
       {(canManageAppointments || canViewReports) && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
           {canManageAppointments && <PendingConfirmations pending={pending} />}
-          {canViewReports && <TopServices services={topServices} />}
+          {canViewReports && (
+            <div className="grid gap-4 xl:grid-cols-2">
+              <MonthlyAppointmentsChart points={monthlyCompletedAppointments} />
+              <TopServices services={topServices} />
+            </div>
+          )}
         </div>
       )}
 
       {!metrics && quickLinks.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 max-w-lg">
+        <div className="grid max-w-lg gap-3 sm:grid-cols-2">
           {quickLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="group flex items-center gap-4 rounded-xl border border-brand-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="group flex items-center gap-4 rounded-xl border border-brand-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50">
                 <link.icon className="h-5 w-5 text-brand-600" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-stone-900">{link.label}</p>
-                <p className="text-xs text-stone-400 truncate">{link.description}</p>
+                <p className="truncate text-xs text-stone-400">{link.description}</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-stone-300 shrink-0 transition-transform group-hover:translate-x-0.5" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5" />
             </Link>
           ))}
         </div>
       )}
 
       {!hasAnyAccess && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 max-w-md">
-          <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="flex max-w-md items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p className="text-sm text-amber-800">
-            No tienes módulos asignados. Pide al administrador del salón que configure tu rol en la sección <strong>Colaboradores</strong>.
+            No tienes módulos asignados. Pide al administrador del salón que configure tu rol en la sección{" "}
+            <strong>Colaboradores</strong>.
           </p>
         </div>
       )}
@@ -165,15 +162,12 @@ function MetricCard({
   title: string;
   value: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: "blue" | "emerald" | "violet" | "rose" | "red" | "amber";
+  color: "blue" | "emerald" | "red";
 }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600",
     emerald: "bg-emerald-50 text-emerald-600",
-    violet: "bg-brand-50 text-brand-600",
-    rose: "bg-rose-50 text-rose-600",
     red: "bg-red-50 text-red-600",
-    amber: "bg-amber-50 text-amber-600",
   };
 
   return (
@@ -184,7 +178,7 @@ function MetricCard({
             <p className="text-sm font-medium text-neutral-500">{title}</p>
             <p className="mt-1 text-2xl font-bold text-neutral-900">{value}</p>
           </div>
-          <div className={`rounded-lg p-2 ${colors[color]}`}>
+          <div className={cn("rounded-lg p-2", colors[color])}>
             <Icon className="h-5 w-5" />
           </div>
         </div>
@@ -204,28 +198,22 @@ function PendingConfirmations({ pending }: { pending: PendingAppointmentConfirma
       </CardHeader>
       <CardContent>
         {pending.length === 0 ? (
-          <p className="py-6 text-center text-sm text-stone-400">
-            No hay citas pendientes de confirmar. 🎉
-          </p>
+          <p className="py-6 text-center text-sm text-stone-400">No hay citas pendientes de confirmar.</p>
         ) : (
           <>
-            <p className="mb-3 text-xs text-stone-400">
-              Recuérdale a estos clientes que confirmen su cita:
-            </p>
+            <p className="mb-3 text-xs text-stone-400">Recuérdale a estos clientes que confirmen su cita:</p>
             <ul className="space-y-2.5">
-              {pending.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-100 px-3 py-2">
+              {pending.map((appointment) => (
+                <li
+                  key={appointment.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-stone-100 px-3 py-2"
+                >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-stone-800">{p.customerName}</p>
+                    <p className="truncate text-sm font-semibold text-stone-800">{appointment.customerName}</p>
                     <p className="flex items-center gap-1 text-xs text-stone-400">
-                      <Clock className="h-3 w-3" /> {p.when}
+                      <Clock className="h-3 w-3" /> {appointment.when}
                     </p>
                   </div>
-                  {p.phone && (
-                    <span className="flex items-center gap-1 text-xs font-medium text-brand-600 shrink-0">
-                      <Phone className="h-3 w-3" /> {p.phone}
-                    </span>
-                  )}
                 </li>
               ))}
             </ul>
@@ -242,40 +230,161 @@ function PendingConfirmations({ pending }: { pending: PendingAppointmentConfirma
   );
 }
 
+function MonthlyAppointmentsChart({ points }: { points: MonthlyAppointmentPoint[] }) {
+  const chart = buildWaveChart(points);
+  const latest = points.at(-1);
+  const previous = points.at(-2);
+  const delta = latest && previous ? latest.total - previous.total : 0;
+  const deltaText = delta === 0 ? "sin cambios" : `${delta > 0 ? "+" : ""}${delta} vs. mes anterior`;
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-cyan-500" />
+          Citas completadas por mes
+          <span
+            className={cn(
+              "ml-auto rounded-full px-2 py-0.5 text-xs font-semibold",
+              delta > 0 && "bg-emerald-50 text-emerald-600",
+              delta < 0 && "bg-red-50 text-red-600",
+              delta === 0 && "bg-stone-100 text-stone-500"
+            )}
+          >
+            {deltaText}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {points.length === 0 ? (
+          <p className="py-10 text-center text-sm text-stone-400">Aún no hay citas completadas para graficar.</p>
+        ) : (
+          <div className="rounded-xl border border-brand-100 bg-gradient-to-b from-white to-brand-50/40 px-4 py-3">
+            <svg viewBox="0 0 520 180" className="h-48 w-full overflow-visible" role="img" aria-label="Citas completadas por mes">
+              <defs>
+                <linearGradient id="completedWaveStroke" x1="0" y1="0" x2="520" y2="0">
+                  <stop stopColor="#8B5CF6" />
+                  <stop offset="0.5" stopColor="#22D3EE" />
+                  <stop offset="1" stopColor="#2563EB" />
+                </linearGradient>
+                <linearGradient id="completedWaveFill" x1="0" y1="0" x2="0" y2="180">
+                  <stop stopColor="#22D3EE" stopOpacity="0.2" />
+                  <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.02" />
+                </linearGradient>
+              </defs>
+              <path d={chart.areaPath} fill="url(#completedWaveFill)" />
+              <path d={chart.path} fill="none" stroke="url(#completedWaveStroke)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" />
+              {chart.points.map((point) => (
+                <g key={point.monthKey} className="group">
+                  <circle cx={point.x} cy={point.y} r="16" fill="transparent" />
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r="4.5"
+                    fill="#FFFFFF"
+                    stroke="#7C3AED"
+                    strokeWidth="3"
+                    className="opacity-0 transition-opacity group-hover:opacity-100"
+                  />
+                  <g className="pointer-events-none opacity-0 transition-opacity group-hover:opacity-100">
+                    <rect x={point.x - 31} y={Math.max(8, point.y - 44)} width="62" height="28" rx="7" fill="#1F1147" />
+                    <text x={point.x} y={Math.max(26, point.y - 26)} textAnchor="middle" className="fill-white text-[11px] font-semibold">
+                      {point.total} citas
+                    </text>
+                  </g>
+                </g>
+              ))}
+            </svg>
+            <div className="grid grid-cols-6 gap-1 text-center text-[10px] font-semibold uppercase text-stone-400 sm:grid-cols-12">
+              {points.map((point) => (
+                <span key={point.monthKey}>{point.label}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function TopServices({ services }: { services: TopService[] }) {
+  const maxCount = Math.max(...services.map((service) => service.count), 1);
+  const barColors = [
+    "from-brand-400 to-brand-600",
+    "from-cyan-300 to-cyan-500",
+    "from-blue-400 to-blue-600",
+    "from-violet-300 to-brand-500",
+    "from-sky-300 to-blue-500",
+  ];
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Scissors className="h-4 w-4 text-brand-500" />
-          Servicios más usados
+          Servicios más solicitados
           <span className="ml-auto text-xs font-normal text-stone-400">Este mes</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         {services.length === 0 ? (
-          <p className="py-6 text-center text-sm text-stone-400">
-            Aún no hay datos suficientes este mes.
-          </p>
+          <p className="py-6 text-center text-sm text-stone-400">Aún no hay datos suficientes este mes.</p>
         ) : (
-          <ul className="space-y-3">
-            {services.map((s) => (
-              <li key={s.name}>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="truncate text-sm text-stone-700">{s.name}</span>
-                  <span className="shrink-0 text-xs font-semibold text-stone-500">{s.count}</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100">
+          <div className="flex h-56 items-end gap-3 rounded-xl border border-brand-100 bg-gradient-to-b from-white to-brand-50/40 px-4 pb-4 pt-8">
+            {services.map((service, index) => (
+              <div key={service.name} className="group flex min-w-0 flex-1 flex-col items-center gap-2">
+                <div className="relative flex h-36 w-full items-end justify-center">
+                  <div className="pointer-events-none absolute -top-7 rounded-md bg-stone-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                    {service.count}
+                  </div>
                   <div
-                    className={cn("h-full rounded-full bg-brand-500")}
-                    style={{ width: `${Math.max(s.pct, 4)}%` }}
+                    className={cn(
+                      "w-full max-w-12 rounded-t-xl bg-gradient-to-t shadow-sm transition-all group-hover:brightness-105",
+                      barColors[index % barColors.length]
+                    )}
+                    style={{ height: `${Math.max((service.count / maxCount) * 100, 14)}%` }}
                   />
                 </div>
-              </li>
+                <span className="line-clamp-2 min-h-8 max-w-24 text-center text-[11px] font-medium leading-tight text-stone-600">
+                  {service.name}
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </CardContent>
     </Card>
   );
+}
+
+function buildWaveChart(points: MonthlyAppointmentPoint[]) {
+  const width = 520;
+  const height = 180;
+  const paddingX = 18;
+  const paddingY = 22;
+  const innerWidth = width - paddingX * 2;
+  const innerHeight = height - paddingY * 2;
+  const max = Math.max(...points.map((point) => point.total), 1);
+
+  const chartPoints = points.map((point, index) => {
+    const x = paddingX + (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth);
+    const y = paddingY + innerHeight - (point.total / max) * innerHeight;
+    return { ...point, x, y };
+  });
+
+  if (chartPoints.length === 0) return { points: chartPoints, path: "", areaPath: "" };
+
+  const path = chartPoints.reduce((acc, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+    const previous = chartPoints[index - 1];
+    const controlDistance = (point.x - previous.x) / 2;
+    return `${acc} C ${previous.x + controlDistance} ${previous.y}, ${point.x - controlDistance} ${point.y}, ${point.x} ${point.y}`;
+  }, "");
+
+  const first = chartPoints[0];
+  const last = chartPoints[chartPoints.length - 1];
+  const baseline = height - paddingY + 8;
+  const areaPath = `${path} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
+
+  return { points: chartPoints, path, areaPath };
 }
