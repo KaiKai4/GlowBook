@@ -241,7 +241,7 @@ function MonthlyAppointmentsChart({ points }: { points: MonthlyAppointmentPoint[
     <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-cyan-500" />
+          <TrendingUp className="h-4 w-4 text-brand-500" />
           Citas completadas por mes
           <span
             className={cn(
@@ -259,35 +259,55 @@ function MonthlyAppointmentsChart({ points }: { points: MonthlyAppointmentPoint[
         {points.length === 0 ? (
           <p className="py-10 text-center text-sm text-stone-400">Aún no hay citas completadas para graficar.</p>
         ) : (
-          <div className="rounded-xl border border-brand-100 bg-gradient-to-b from-white to-brand-50/40 px-4 py-3">
+          <div className="rounded-xl border border-brand-100 bg-gradient-to-b from-brand-50/70 via-white to-white px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             <svg viewBox="0 0 520 180" className="h-48 w-full overflow-visible" role="img" aria-label="Citas completadas por mes">
               <defs>
                 <linearGradient id="completedWaveStroke" x1="0" y1="0" x2="520" y2="0">
-                  <stop stopColor="#8B5CF6" />
-                  <stop offset="0.5" stopColor="#22D3EE" />
-                  <stop offset="1" stopColor="#2563EB" />
+                  <stop stopColor="var(--color-brand-400)" />
+                  <stop offset="0.48" stopColor="var(--color-brand-600)" />
+                  <stop offset="1" stopColor="var(--color-brand-800)" />
                 </linearGradient>
                 <linearGradient id="completedWaveFill" x1="0" y1="0" x2="0" y2="180">
-                  <stop stopColor="#22D3EE" stopOpacity="0.2" />
-                  <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.02" />
+                  <stop stopColor="var(--color-brand-400)" stopOpacity="0.22" />
+                  <stop offset="1" stopColor="var(--color-brand-50)" stopOpacity="0.04" />
                 </linearGradient>
+                <filter id="completedWaveGlow" x="-8%" y="-20%" width="116%" height="145%">
+                  <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="var(--color-brand-500)" floodOpacity="0.2" />
+                </filter>
               </defs>
+              {[0, 1, 2, 3].map((line) => (
+                <path
+                  key={line}
+                  d={`M 18 ${32 + line * 34} H 502`}
+                  stroke="var(--color-brand-100)"
+                  strokeDasharray="4 8"
+                  strokeLinecap="round"
+                />
+              ))}
               <path d={chart.areaPath} fill="url(#completedWaveFill)" />
-              <path d={chart.path} fill="none" stroke="url(#completedWaveStroke)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" />
+              <path
+                d={chart.path}
+                fill="none"
+                filter="url(#completedWaveGlow)"
+                stroke="url(#completedWaveStroke)"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="5"
+              />
               {chart.points.map((point) => (
                 <g key={point.monthKey} className="group">
                   <circle cx={point.x} cy={point.y} r="16" fill="transparent" />
                   <circle
                     cx={point.x}
                     cy={point.y}
-                    r="4.5"
+                    r="5"
                     fill="#FFFFFF"
-                    stroke="#7C3AED"
+                    stroke="var(--color-brand-600)"
                     strokeWidth="3"
-                    className="opacity-0 transition-opacity group-hover:opacity-100"
+                    className="opacity-0 transition-[opacity,transform] group-hover:opacity-100"
                   />
                   <g className="pointer-events-none opacity-0 transition-opacity group-hover:opacity-100">
-                    <rect x={point.x - 31} y={Math.max(8, point.y - 44)} width="62" height="28" rx="7" fill="#1F1147" />
+                    <rect x={point.x - 34} y={Math.max(8, point.y - 46)} width="68" height="30" rx="8" fill="var(--color-brand-900)" />
                     <text x={point.x} y={Math.max(26, point.y - 26)} textAnchor="middle" className="fill-white text-[11px] font-semibold">
                       {point.total} citas
                     </text>
@@ -309,12 +329,12 @@ function MonthlyAppointmentsChart({ points }: { points: MonthlyAppointmentPoint[
 
 function TopServices({ services }: { services: TopService[] }) {
   const maxCount = Math.max(...services.map((service) => service.count), 1);
-  const barColors = [
-    "from-brand-400 to-brand-600",
-    "from-cyan-300 to-cyan-500",
-    "from-blue-400 to-blue-600",
-    "from-violet-300 to-brand-500",
-    "from-sky-300 to-blue-500",
+  const barPalettes = [
+    ["var(--color-brand-300)", "var(--color-brand-600)"],
+    ["var(--color-brand-200)", "var(--color-brand-500)"],
+    ["var(--color-brand-400)", "var(--color-brand-700)"],
+    ["var(--color-brand-100)", "var(--color-brand-500)"],
+    ["var(--color-brand-300)", "var(--color-brand-800)"],
   ];
 
   return (
@@ -330,19 +350,20 @@ function TopServices({ services }: { services: TopService[] }) {
         {services.length === 0 ? (
           <p className="py-6 text-center text-sm text-stone-400">Aún no hay datos suficientes este mes.</p>
         ) : (
-          <div className="flex h-56 items-end gap-3 rounded-xl border border-brand-100 bg-gradient-to-b from-white to-brand-50/40 px-4 pb-4 pt-8">
+          <div className="flex h-60 items-end gap-3 rounded-xl border border-brand-100 bg-gradient-to-b from-brand-50/70 via-white to-white px-4 pb-4 pt-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             {services.map((service, index) => (
               <div key={service.name} className="group flex min-w-0 flex-1 flex-col items-center gap-2">
                 <div className="relative flex h-36 w-full items-end justify-center">
-                  <div className="pointer-events-none absolute -top-7 rounded-md bg-stone-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                  <div className="pointer-events-none absolute -top-8 rounded-md bg-brand-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                     {service.count}
                   </div>
                   <div
-                    className={cn(
-                      "w-full max-w-12 rounded-t-xl bg-gradient-to-t shadow-sm transition-all group-hover:brightness-105",
-                      barColors[index % barColors.length]
-                    )}
-                    style={{ height: `${Math.max((service.count / maxCount) * 100, 14)}%` }}
+                    className="w-full max-w-12 rounded-t-xl transition-[height,filter,transform] group-hover:-translate-y-1 group-hover:brightness-105"
+                    style={{
+                      height: `${Math.max((service.count / maxCount) * 100, 14)}%`,
+                      background: `linear-gradient(180deg, ${barPalettes[index % barPalettes.length][0]} 0%, ${barPalettes[index % barPalettes.length][1]} 100%)`,
+                      boxShadow: "0 10px 24px color-mix(in oklab, var(--color-brand-500) 22%, transparent)",
+                    }}
                   />
                 </div>
                 <span className="line-clamp-2 min-h-8 max-w-24 text-center text-[11px] font-medium leading-tight text-stone-600">
