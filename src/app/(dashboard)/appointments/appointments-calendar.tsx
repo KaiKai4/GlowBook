@@ -4,10 +4,12 @@ import { formatTimeTz, formatCurrency } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 
-const HOUR_HEIGHT = 72;
 const DEFAULT_START = 8;
 const DEFAULT_END = 21;
+const HOUR_HEIGHT = 72;
 const PX_PER_MIN = HOUR_HEIGHT / 60;
+const TIME_LABEL_TOP_SPACE = 14;
+const TIME_LABEL_EDGE_SPACE = 18;
 
 // 24h hour → { num, period } in 12h format (13 → 1 pm, 20 → 8 pm, 0 → 12 am).
 function hourLabel(h24: number): { num: number; period: string } {
@@ -111,17 +113,22 @@ function DayColumn({
   const { items, totalCols } = assignColumns(visible, tz, calStart);
 
   return (
-    <div className="relative" style={{ height: `${totalHours * HOUR_HEIGHT}px` }}>
+    <div
+      className="relative"
+      style={{
+        height: `${TIME_LABEL_TOP_SPACE + totalHours * HOUR_HEIGHT + TIME_LABEL_EDGE_SPACE}px`,
+      }}
+    >
       {Array.from({ length: totalHours + 1 }, (_, i) => (
-        <div key={i} style={{ top: `${i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0 border-t border-stone-200" />
+        <div key={i} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0 border-t border-stone-200" />
       ))}
       {Array.from({ length: totalHours }, (_, i) => (
-        <div key={`h${i}`} style={{ top: `${i * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }} className="absolute left-0 right-0 border-t border-dashed border-stone-100" />
+        <div key={`h${i}`} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }} className="absolute left-0 right-0 border-t border-dashed border-stone-100" />
       ))}
 
       {items.map(({ appt, col, startMin, endMin }) => {
         if (startMin >= totalHours * 60 || endMin <= 0) return null;
-        const topPx = Math.max(startMin * PX_PER_MIN, 0);
+        const topPx = TIME_LABEL_TOP_SPACE + Math.max(startMin * PX_PER_MIN, 0);
         const heightPx = Math.max((endMin - startMin) * PX_PER_MIN, compact ? 22 : 32);
         const widthPct = 100 / totalCols;
         const leftPct = col * widthPct;
@@ -180,16 +187,31 @@ function DayColumn({
   );
 }
 
-const TIME_GUTTER_CLASSES = "w-14 shrink-0 border-r border-stone-200 bg-stone-50/80";
+const TIME_GUTTER_CLASSES = "sticky left-0 z-20 w-14 shrink-0 border-r border-stone-200 bg-stone-50/95 shadow-[6px_0_12px_rgba(15,23,42,0.04)]";
 
-function TimeGutter({ calStart, totalHours }: { calStart: number; totalHours: number }) {
+function TimeGutter({
+  calStart,
+  totalHours,
+  labelEndHour,
+}: {
+  calStart: number;
+  totalHours: number;
+  labelEndHour: number;
+}) {
+  const labelCount = Math.max(0, Math.min(totalHours, labelEndHour - calStart) + 1);
+
   return (
     <div className={TIME_GUTTER_CLASSES}>
-      <div style={{ height: `${totalHours * HOUR_HEIGHT}px` }} className="relative">
-        {Array.from({ length: totalHours + 1 }, (_, i) => {
+      <div
+        style={{
+          height: `${TIME_LABEL_TOP_SPACE + totalHours * HOUR_HEIGHT + TIME_LABEL_EDGE_SPACE}px`,
+        }}
+        className="relative"
+      >
+        {Array.from({ length: labelCount }, (_, i) => {
           const { num, period } = hourLabel(calStart + i);
           return (
-            <div key={i} style={{ top: `${i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0">
+            <div key={i} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0">
               <span className="absolute -top-2 right-1.5 text-right select-none leading-none">
                 <span className="text-xs font-bold text-stone-700 tabular-nums">{num}</span>
                 <span className="ml-0.5 text-[9px] font-medium text-stone-400">{period}</span>
@@ -258,10 +280,10 @@ export function AppointmentsCalendar({
           <span className="text-xs text-stone-500 font-medium">{visibleCount} citas esta semana</span>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto lg:overflow-x-visible">
           {/* Day headers */}
-          <div className="flex min-w-[640px] border-b border-stone-200 bg-stone-50/50">
-            <div className="w-14 shrink-0" />
+          <div className="flex min-w-[640px] border-b border-stone-200 bg-stone-50/50 lg:min-w-0">
+            <div className="sticky left-0 z-30 w-14 shrink-0 border-r border-stone-200 bg-stone-50/95 shadow-[6px_0_12px_rgba(15,23,42,0.04)]" />
             {weekDates.map((d) => {
               const dt = new Date(`${d}T12:00:00`);
               const dayName = dt.toLocaleDateString("es-PA", { weekday: "short" });
@@ -286,8 +308,12 @@ export function AppointmentsCalendar({
           </div>
 
           {/* Calendar body */}
-          <div className="flex min-w-[640px]">
-            <TimeGutter calStart={calStart} totalHours={totalHours} />
+          <div className="flex min-w-[640px] lg:min-w-0">
+            <TimeGutter
+              calStart={calStart}
+              totalHours={totalHours}
+              labelEndHour={businessEnd}
+            />
             {weekDates.map((d) => {
               const isToday = d === today;
               return (
@@ -326,7 +352,11 @@ export function AppointmentsCalendar({
       </div>
 
       <div className="flex">
-        <TimeGutter calStart={calStart} totalHours={totalHours} />
+        <TimeGutter
+          calStart={calStart}
+          totalHours={totalHours}
+          labelEndHour={businessEnd}
+        />
         <div className="flex-1">
           <DayColumn
             appointments={appointments}

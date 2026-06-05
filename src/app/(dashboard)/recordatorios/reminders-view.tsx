@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Bell, CheckCircle2, Clipboard, Clock, MessageCircle } from "lucide-react";
+import {
+  Bell,
+  CheckCircle2,
+  Clipboard,
+  Clock,
+  MessageCircle,
+  MoreHorizontal,
+} from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { formatTimeTz } from "@/lib/utils/dates";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
@@ -9,15 +16,14 @@ import type {
   ReminderAppointment,
   ReminderEmployee,
 } from "@/features/reminders/view-models";
-import { markReminderSentAction } from "./actions";
+import { confirmReminderAppointmentAction, markReminderSentAction } from "./actions";
 
-type Period = "pendientes_hoy" | "hoy" | "manana" | "48h" | "7dias";
+type Period = "pendientes_hoy" | "manana" | "48h" | "7dias";
 
 const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "pendientes_hoy", label: "Pendientes hoy" },
-  { value: "hoy", label: "Todas hoy" },
   { value: "manana", label: "Mañana" },
-  { value: "48h", label: "Proximas 48 horas" },
+  { value: "48h", label: "Proximos 2 dias" },
   { value: "7dias", label: "Proximos 7 dias" },
 ];
 
@@ -26,16 +32,6 @@ const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
   { value: "confirmed", label: "Confirmada" },
 ];
-
-const STATUS_BADGE: Record<string, string> = {
-  scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-  confirmed: "bg-brand-50 text-brand-700 border-brand-200",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  scheduled: "Agendada",
-  confirmed: "Confirmada",
-};
 
 function localDateStr(isoStr: string, tz: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(isoStr));
@@ -129,6 +125,10 @@ export function RemindersView({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [openActionsId, setOpenActionsId] = useState<string | null>(null);
+  const [readyToConfirm, setReadyToConfirm] = useState<Record<string, boolean>>({});
+  const [manualStatus, setManualStatus] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [manualSentAt, setManualSentAt] = useState<Record<string, string>>({});
 
@@ -159,7 +159,6 @@ export function RemindersView({
         if (apptDate !== today) return false;
         if (isSameLocalDay(lastSentAt, today, tz)) return false;
       }
-      if (period === "hoy" && apptDate !== today) return false;
       if (period === "manana" && apptDate !== tomorrow) return false;
       if (period === "48h" && apptTime > cutoff48) return false;
 
@@ -179,6 +178,7 @@ export function RemindersView({
     try {
       await navigator.clipboard.writeText(messageFor(appt));
       setCopiedId(appt.id);
+      setReadyToConfirm((current) => ({ ...current, [appt.id]: true }));
       setTimeout(() => setCopiedId((current) => (current === appt.id ? null : current)), 1800);
     } catch {
       setActionError("No se pudo copiar el mensaje. Revisa permisos del navegador.");
@@ -188,6 +188,7 @@ export function RemindersView({
   function openWhatsApp(appt: ReminderAppointment) {
     if (!appt.customer?.phone) return;
     window.open(buildWhatsAppUrl(appt.customer.phone, messageFor(appt)), "_blank");
+    setReadyToConfirm((current) => ({ ...current, [appt.id]: true }));
   }
 
   function markAsSent(appt: ReminderAppointment) {
@@ -204,6 +205,24 @@ export function RemindersView({
       }
 
       setManualSentAt((current) => ({ ...current, [appt.id]: result.value }));
+      setReadyToConfirm((current) => ({ ...current, [appt.id]: true }));
+    });
+  }
+
+  function confirmAppointment(appt: ReminderAppointment) {
+    setActionError(null);
+    setConfirmingId(appt.id);
+
+    startTransition(async () => {
+      const result = await confirmReminderAppointmentAction(appt.id);
+      setConfirmingId(null);
+
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+
+      setManualStatus((current) => ({ ...current, [appt.id]: "confirmed" }));
     });
   }
 
@@ -269,18 +288,18 @@ export function RemindersView({
         </div>
       )}
 
-      <div className="rounded-2xl border border-stone-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] overflow-hidden">
+      <div className="rounded-2xl border border-stone-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] overflow-visible">
         {filtered.length === 0 ? (
           <div className="py-16 text-center">
             <Bell className="mx-auto mb-3 h-8 w-8 text-stone-200" />
             <p className="text-sm text-stone-400">Sin citas para estos filtros.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-sm">
+          <div className="overflow-x-auto lg:overflow-visible">
+            <table className="w-full min-w-[920px] lg:min-w-0 text-sm">
               <thead>
                 <tr className="border-b border-stone-200 bg-stone-50">
-                  {["Cliente", "Profesional", "Servicios", "Fecha", "Estado", "Recordatorio", "Acciones"].map((header) => (
+                  {["Cliente", "Profesional", "Servicios", "Fecha", "Recordatorio", "Acciones"].map((header) => (
                     <th key={header} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-stone-500">
                       {header}
                     </th>
@@ -302,6 +321,10 @@ export function RemindersView({
                   const sentAt = manualSentAt[appt.id] ?? appt.last_reminder_sent_at;
                   const sentToday = isSameLocalDay(sentAt, today, tz);
                   const hasPhone = !!appt.customer?.phone;
+                  const currentStatus = manualStatus[appt.id] ?? appt.status;
+                  const hasReminderContact = Boolean(sentAt) || readyToConfirm[appt.id];
+                  const canConfirm =
+                    currentStatus === "scheduled" && hasReminderContact && !(isPending && confirmingId === appt.id);
 
                   return (
                     <tr key={appt.id} className="transition-colors hover:bg-stone-50/60">
@@ -339,14 +362,6 @@ export function RemindersView({
                         ) : "-"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn(
-                          "rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                          STATUS_BADGE[appt.status] ?? "bg-stone-50 text-stone-500 border-stone-200"
-                        )}>
-                          {STATUS_LABEL[appt.status] ?? appt.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
                         {sentAt ? (
                           <div className="space-y-1">
                             <span className={cn(
@@ -365,49 +380,93 @@ export function RemindersView({
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => copyMessage(appt)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 transition-colors hover:bg-stone-50"
-                          >
-                            {copiedId === appt.id ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
-                            {copiedId === appt.id ? "Copiado" : "Copiar"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openWhatsApp(appt)}
-                            disabled={!hasPhone || sentToday}
-                            title={sentToday ? "Recordatorio ya enviado hoy" : undefined}
+                            onClick={() => confirmAppointment(appt)}
+                            disabled={currentStatus === "confirmed" || !canConfirm}
+                            title={
+                              currentStatus === "confirmed"
+                                ? "La cita ya esta confirmada"
+                                : hasReminderContact
+                                  ? undefined
+                                  : "Copia el mensaje o envialo por WhatsApp antes de confirmar la cita."
+                            }
                             className={cn(
-                              "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors",
-                              hasPhone && !sentToday
-                                ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-                                : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"
-                            )}
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            WhatsApp
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => markAsSent(appt)}
-                            disabled={sentToday || (isPending && sendingId === appt.id)}
-                            title={sentToday ? "Recordatorio ya enviado hoy" : undefined}
-                            className={cn(
-                              "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-                              sentToday
-                                ? "border-stone-200 bg-stone-50 text-stone-300"
-                                : "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
+                              "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed",
+                              currentStatus === "confirmed"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : canConfirm
+                                  ? "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
+                                  : "border-stone-200 bg-stone-50 text-stone-300"
                             )}
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            {sentToday
-                              ? "Enviado"
-                              : isPending && sendingId === appt.id
-                                ? "Guardando"
-                                : "Marcar enviado"}
+                            {currentStatus === "confirmed"
+                              ? "Confirmada"
+                              : isPending && confirmingId === appt.id
+                                ? "Confirmando"
+                                : "Confirmar cita"}
                           </button>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setOpenActionsId(openActionsId === appt.id ? null : appt.id)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-500 transition-colors hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              aria-label="Abrir acciones del recordatorio"
+                              aria-expanded={openActionsId === appt.id}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                            {openActionsId === appt.id && (
+                              <div className="absolute right-0 top-10 z-30 w-56 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-[0_12px_28px_rgba(15,23,42,0.16)]">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenActionsId(null);
+                                    copyMessage(appt);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+                                >
+                                  {copiedId === appt.id ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Clipboard className="h-4 w-4" />}
+                                  {copiedId === appt.id ? "Mensaje copiado" : "Copiar mensaje"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenActionsId(null);
+                                    openWhatsApp(appt);
+                                  }}
+                                  disabled={!hasPhone || sentToday}
+                                  className={cn(
+                                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:text-stone-300",
+                                    hasPhone && !sentToday
+                                      ? "text-green-700 hover:bg-green-50"
+                                      : "text-stone-300"
+                                  )}
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                  Enviar por WhatsApp
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenActionsId(null);
+                                    markAsSent(appt);
+                                  }}
+                                  disabled={sentToday || (isPending && sendingId === appt.id)}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:text-stone-300"
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  {sentToday
+                                    ? "Recordatorio enviado"
+                                    : isPending && sendingId === appt.id
+                                      ? "Guardando"
+                                      : "Marcar recordatorio enviado"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>

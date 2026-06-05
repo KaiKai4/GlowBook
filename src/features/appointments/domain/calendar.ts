@@ -1,7 +1,9 @@
+import { shouldBlockCalendar, type AppointmentStatus } from "./lifecycle";
+
 export type CalendarView = "diaria" | "semanal" | "trabajador";
 
 interface CalendarCountAppointment {
-  status: string;
+  status: AppointmentStatus;
   start_time: string | null;
 }
 
@@ -117,7 +119,7 @@ export function countActiveCalendarAppointments(
   timezone: string
 ): number {
   return appointments.filter((appointment) => {
-    if (appointment.status === "cancelled" || appointment.status === "no_show") return false;
+    if (!shouldBlockCalendar(appointment.status)) return false;
     if (view !== "semanal" || !appointment.start_time) return true;
     return visibleWeekDates.includes(localCalendarDate(appointment.start_time, timezone));
   }).length;

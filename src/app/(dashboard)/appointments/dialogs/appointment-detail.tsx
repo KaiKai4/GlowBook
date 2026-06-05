@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Dialog } from "@/components/ui/dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
-import { User, Phone, Clock, CreditCard, Timer, Pencil } from "lucide-react";
+import { User, Phone, CreditCard, Timer, Pencil } from "lucide-react";
 
 interface ApptItem {
   id: string;
@@ -64,22 +64,26 @@ export function AppointmentDetailDialog({
   const discountAmount = Number(appt.discount_amount ?? 0);
 
   return (
-    <Dialog open={open} onClose={onClose} title="Detalle de cita" className="max-w-md">
+    <Dialog open={open} onClose={onClose} title="Detalles de la cita" className="max-w-md">
       <div className="space-y-4">
-        {canEdit && (
-          <Link
-            href={`/appointments/${appt.id}/edit`}
-            className={buttonVariants({ variant: "primary", size: "sm" })}
-          >
-            <Pencil className="h-4 w-4" />
-            Editar / reprogramar
-          </Link>
-        )}
-
-        {/* Status */}
-        <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appt.status] ?? ""}`}>
-          {STATUS_LABEL[appt.status]}
-        </span>
+        <div className="flex items-center justify-between gap-3">
+          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appt.status] ?? ""}`}>
+            {STATUS_LABEL[appt.status]}
+          </span>
+          {canEdit && (
+            <Link
+              href={`/appointments/${appt.id}/edit`}
+              className={buttonVariants({
+                variant: "primary",
+                size: "sm",
+                className: "h-9 px-3.5 shadow-sm",
+              })}
+            >
+              <Pencil className="h-4 w-4" />
+              Editar / reprogramar
+            </Link>
+          )}
+        </div>
 
         {/* Cliente */}
         <div className="flex items-start gap-3 rounded-xl bg-brand-50 border border-brand-200 p-3 shadow-[0_1px_4px_rgba(109,40,217,0.08)]">
@@ -97,17 +101,6 @@ export function AppointmentDetailDialog({
             )}
           </div>
         </div>
-
-        {/* Horario */}
-        {appt.start_time && (
-          <div className="flex items-center gap-2 text-sm">
-            <Clock className="h-4 w-4 text-brand-400 shrink-0" />
-            <span className="font-bold text-brand-700">
-              {formatTimeTz(new Date(appt.start_time), tz)}
-              {appt.end_time && ` – ${formatTimeTz(new Date(appt.end_time), tz)}`}
-            </span>
-          </div>
-        )}
 
         {/* Servicios — cada uno como card elevada */}
         <div className="space-y-2.5">
@@ -147,9 +140,9 @@ export function AppointmentDetailDialog({
         </div>
 
         {/* Total */}
-        <div className="rounded-xl bg-choco-50 border border-choco-200 px-4 py-3 shadow-[0_2px_6px_rgba(120,53,15,0.08)]">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-[0_2px_6px_rgba(16,185,129,0.08)]">
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-sm text-choco-700/80">
+            <div className="flex items-center justify-between text-sm text-emerald-900/70">
               <span>Subtotal servicios</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
@@ -159,20 +152,20 @@ export function AppointmentDetailDialog({
                 <span>-{formatCurrency(discountAmount)}</span>
               </div>
             )}
-            <div className="flex items-center justify-between border-t border-choco-200 pt-2">
+            <div className="flex items-center justify-between border-t border-emerald-200 pt-2">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-choco-600" />
-                <span className="text-sm font-bold text-choco-700">Total cobrado</span>
+                <CreditCard className="h-4 w-4 text-emerald-700" />
+                <span className="text-sm font-bold text-emerald-900">Total cobrado</span>
               </div>
-              <span className="text-lg font-bold text-choco-700">
+              <span className="text-lg font-bold text-emerald-900">
                 {formatCurrency(Number(appt.total_price ?? 0))}
               </span>
             </div>
           </div>
           {appt.completion_price_note && (
             <div className="mt-3 rounded-lg bg-white/70 px-3 py-2">
-              <p className="text-xs font-semibold text-choco-500">Nota de cobro</p>
-              <p className="mt-1 text-sm text-choco-700">{appt.completion_price_note}</p>
+              <p className="text-xs font-semibold text-emerald-700">Nota de cobro</p>
+              <p className="mt-1 text-sm text-emerald-900">{appt.completion_price_note}</p>
             </div>
           )}
         </div>

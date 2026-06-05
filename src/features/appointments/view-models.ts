@@ -1,12 +1,13 @@
 import type { BusinessHour, SalonConfig, WorkSchedule } from "./domain/types";
 import type { CalendarView } from "./domain/calendar";
+import type { AppointmentStatus } from "./domain/lifecycle";
 import type { PricingMode } from "./domain/pricing";
 
 export type { CalendarView };
 
 export interface CalendarAppointment {
   id: string;
-  status: string;
+  status: AppointmentStatus;
   start_time: string | null;
   end_time: string | null;
   total_price: number | string | null;

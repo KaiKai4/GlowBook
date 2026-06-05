@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
 import { AppointmentsCalendar } from "./appointments-calendar";
 import { AppointmentDetailDialog } from "./dialogs/appointment-detail";
 import { CompleteAppointmentDialog } from "./dialogs/complete-appointment";
 import { CancelAppointmentDialog } from "./dialogs/cancel-appointment";
-import { confirmAppointmentAction } from "./actions";
 import { cn } from "@/lib/utils/cn";
 import {
-  CheckCircle2, XCircle, ThumbsUp, Eye, ListFilter, Search, X, Pencil,
+  CheckCircle2, ListFilter, MoreHorizontal, Pencil, Search, Trash2, X,
 } from "lucide-react";
 import type { CalView } from "./date-nav";
 import type { CalendarAppointment, CalendarEmployee } from "@/features/appointments/view-models";
@@ -45,6 +43,15 @@ function appointmentTimeValue(appt: ApptFull): number {
   return appt.start_time ? new Date(appt.start_time).getTime() : Number.MAX_SAFE_INTEGER;
 }
 
+function formatAppointmentDayTz(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("es-PA", {
+    timeZone,
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  }).format(date);
+}
+
 function sortSummaryAppointments(appointments: ApptFull[], groupByStatus: boolean): ApptFull[] {
   return [...appointments].sort((a, b) => {
     if (groupByStatus) {
@@ -75,10 +82,8 @@ export function AppointmentsDayView({
   salonName: string;
   cancellationTemplate: string;
 }) {
-  const router = useRouter();
-  const [pending, startConfirm] = useTransition();
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [summaryFilter, setSummaryFilter] = useState<"upcoming" | "completed" | "cancelled">("upcoming");
+  const [openActionsId, setOpenActionsId] = useState<string | null>(null);
   const [detailAppt, setDetailAppt] = useState<ApptFull | null>(null);
   const [completeAppt, setCompleteAppt] = useState<ApptFull | null>(null);
   const [cancelAppt, setCancelAppt] = useState<ApptFull | null>(null);
@@ -106,30 +111,22 @@ export function AppointmentsDayView({
     );
   }, [appointments, view, selectedEmpId]);
 
-  function handleConfirm(apptId: string) {
-    setConfirmingId(apptId);
-    startConfirm(async () => {
-      await confirmAppointmentAction(apptId);
-      setConfirmingId(null);
-      router.refresh();
-    });
-  }
-
   const statusFilters = [
-    { value: null, label: "Todas" },
-    { value: "scheduled", label: "Agendadas" },
-    { value: "confirmed", label: "Confirmadas" },
-    { value: "completed", label: "Completadas" },
-    { value: "cancelled", label: "Canceladas" },
+    { value: "upcoming" as const, label: "Citas próximas" },
+    { value: "completed" as const, label: "Completadas" },
+    { value: "cancelled" as const, label: "Canceladas" },
   ];
 
   const listAppts = useMemo(() => {
-    const filtered = filterStatus
-      ? appointments.filter((a) => a.status === filterStatus)
-      : appointments;
+    const filtered = appointments.filter((appointment) => {
+      if (summaryFilter === "upcoming") {
+        return appointment.status === "scheduled" || appointment.status === "confirmed";
+      }
+      return appointment.status === summaryFilter;
+    });
 
-    return sortSummaryAppointments(filtered, !filterStatus);
-  }, [appointments, filterStatus]);
+    return sortSummaryAppointments(filtered, false);
+  }, [appointments, summaryFilter]);
 
   const calendarTitle =
     view === "trabajador" && selectedEmp
@@ -207,27 +204,29 @@ export function AppointmentsDayView({
       />
 
       {/* Appointment list */}
-      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-choco-50 to-white">
-          <h2 className="text-sm font-bold text-choco-700 uppercase tracking-wide">
-            <ListFilter className="inline h-3.5 w-3.5 mr-1" />
-            Resumen de citas
-          </h2>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {statusFilters.map((f) => (
-              <button
-                key={String(f.value)}
-                onClick={() => setFilterStatus(f.value)}
-                className={cn(
-                  "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                  filterStatus === f.value
-                    ? "border-brand-400 bg-brand-50 text-brand-700"
-                    : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
+      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-visible">
+        <div className="rounded-t-2xl border-b border-brand-100 bg-white px-5 pt-4">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <nav className="flex items-end gap-8" aria-label="Filtros del resumen de citas">
+              {statusFilters.map((f) => (
+                <button
+                  key={String(f.value)}
+                  onClick={() => setSummaryFilter(f.value)}
+                  className={cn(
+                    "relative shrink-0 px-0.5 pb-3 text-sm font-medium transition-colors",
+                    summaryFilter === f.value
+                      ? "text-brand-700 after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand-600"
+                      : "text-stone-500 hover:text-stone-800"
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </nav>
+            <h2 className="flex items-center gap-1.5 pb-3 text-sm font-bold text-brand-700 uppercase tracking-wide">
+              <ListFilter className="h-3.5 w-3.5" />
+              Resumen de citas
+            </h2>
           </div>
         </div>
 
@@ -245,11 +244,16 @@ export function AppointmentsDayView({
                   STATUS_ROW_BG[appt.status] ?? ""
                 )}
               >
-                <div className="w-24 shrink-0">
+                <div className="w-32 shrink-0">
                   {appt.start_time && (
-                    <p className="text-sm font-bold text-brand-700 tabular-nums">
-                      {formatTimeTz(new Date(appt.start_time), tz)}
-                    </p>
+                    <>
+                      <p className="text-xs font-semibold capitalize text-stone-500">
+                        {formatAppointmentDayTz(new Date(appt.start_time), tz)}
+                      </p>
+                      <p className="text-xs text-stone-500 tabular-nums">
+                        {formatTimeTz(new Date(appt.start_time), tz)}
+                      </p>
+                    </>
                   )}
                   {appt.end_time && (
                     <p className="text-xs text-stone-500 tabular-nums">
@@ -267,19 +271,6 @@ export function AppointmentsDayView({
                   )}
                 </div>
 
-                <div className="flex-1 min-w-[160px]">
-                  <div className="flex flex-wrap gap-1">
-                    {appt.items.map((item) => (
-                      <span
-                        key={item.id}
-                        className="rounded-full bg-choco-50 border border-choco-100 px-2 py-0.5 text-[11px] text-choco-700 font-medium"
-                      >
-                        {item.service?.name} · {item.employee?.first_name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[appt.status] ?? ""}`}>
                     {STATUS_LABEL[appt.status]}
@@ -290,41 +281,42 @@ export function AppointmentsDayView({
                 </div>
 
                 {canManage && !["completed", "cancelled", "no_show"].includes(appt.status) && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => setDetailAppt(appt)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
-                      title="Ver detalle"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </button>
-                    <Link
-                      href={`/appointments/${appt.id}/edit`}
-                      className="flex h-8 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors"
-                    >
-                      <Pencil className="h-3.5 w-3.5" /> Editar
-                    </Link>
-                    {appt.status === "scheduled" && (
-                      <button
-                        onClick={() => handleConfirm(appt.id)}
-                        disabled={pending && confirmingId === appt.id}
-                        className="flex h-8 items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                      >
-                        <ThumbsUp className="h-3.5 w-3.5" /> Confirmar
-                      </button>
-                    )}
+                  <div className="relative ml-2 flex shrink-0 items-center gap-2.5">
                     <button
                       onClick={() => setCompleteAppt(appt)}
-                      className="flex h-8 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                      className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Completar
                     </button>
                     <button
-                      onClick={() => setCancelAppt(appt)}
-                      className="flex h-8 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
+                      type="button"
+                      onClick={() => setOpenActionsId(openActionsId === appt.id ? null : appt.id)}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition-colors hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      aria-label="Abrir acciones de cita"
+                      aria-expanded={openActionsId === appt.id}
                     >
-                      <XCircle className="h-3.5 w-3.5" /> Cancelar
+                      <MoreHorizontal className="h-4 w-4" />
                     </button>
+                    {openActionsId === appt.id && (
+                      <div className="absolute right-0 top-10 z-40 w-44 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-[0_12px_28px_rgba(15,23,42,0.16)]">
+                        <Link
+                          href={`/appointments/${appt.id}/edit`}
+                          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
+                        >
+                          <Pencil className="h-4 w-4" /> Editar
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenActionsId(null);
+                            setCancelAppt(appt);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" /> Cancelar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

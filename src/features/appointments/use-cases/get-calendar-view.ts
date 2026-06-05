@@ -16,6 +16,7 @@ import {
 } from "../domain/calendar";
 import type { CalendarAppointment, CalendarView, CalendarViewModel } from "../view-models";
 import { isPricingMode } from "../domain/pricing";
+import type { AppointmentStatus } from "../domain/lifecycle";
 
 export interface GetCalendarViewInput {
   salonId: string;
@@ -30,10 +31,24 @@ function normalizeView(requestedView: string | undefined, canViewAll: boolean): 
   return !canViewAll && view === "trabajador" ? "semanal" : view;
 }
 
+function toAppointmentStatus(status: string): AppointmentStatus {
+  if (
+    status === "scheduled" ||
+    status === "confirmed" ||
+    status === "completed" ||
+    status === "cancelled" ||
+    status === "no_show"
+  ) {
+    return status;
+  }
+
+  return "scheduled";
+}
+
 function toCalendarAppointment(appointment: Awaited<ReturnType<typeof findAppointmentsBySalon>>[number]): CalendarAppointment {
   return {
     id: appointment.id,
-    status: appointment.status,
+    status: toAppointmentStatus(appointment.status),
     start_time: appointment.start_time,
     end_time: appointment.end_time,
     total_price: appointment.total_price,

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
 import type { Result } from "@/lib/result";
 
@@ -24,5 +25,24 @@ export async function markReminderSentAction(
   });
 
   if (result.ok) revalidatePath("/recordatorios");
+  return result;
+}
+
+export async function confirmReminderAppointmentAction(
+  appointmentId: string
+): Promise<Result<void>> {
+  const profile = await requireActiveProfile();
+
+  if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
+    return { ok: false, error: "No tienes permiso para confirmar citas." };
+  }
+
+  const result = await confirmAppointment(appointmentId, profile.salon_id);
+
+  if (result.ok) {
+    revalidatePath("/recordatorios");
+    revalidatePath("/appointments");
+  }
+
   return result;
 }

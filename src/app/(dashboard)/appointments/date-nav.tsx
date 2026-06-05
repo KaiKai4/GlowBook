@@ -64,12 +64,6 @@ export function DateNav({
         >
           <ChevronRight className="h-4 w-4" />
         </button>
-        <button
-          onClick={() => go(toISODate(new Date()))}
-          className="h-9 rounded-lg border border-stone-200 px-3 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
-        >
-          Hoy
-        </button>
       </div>
 
       {/* View toggle */}
