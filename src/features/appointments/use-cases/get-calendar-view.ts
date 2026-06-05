@@ -5,6 +5,7 @@ import { getEmployeeCalendarOptions } from "@/features/employees/use-cases/emplo
 import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
 import { getSalonBusinessHours } from "@/features/salon/use-cases/salon-business-hours";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
+import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
 import { formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
 import {
   countActiveCalendarAppointments,
@@ -92,10 +93,11 @@ export async function getCalendarView({
   const selectedDate = date ?? formatLocalDateISO(now, timezone);
   const view = normalizeView(requestedView, canViewAll);
 
-  const [employees, businessHours, cancellationTemplate] = await Promise.all([
+  const [employees, businessHours, cancellationTemplate, paymentMethods] = await Promise.all([
     canViewAll ? getEmployeeCalendarOptions(salonId) : Promise.resolve([]),
     getSalonBusinessHours(salonId),
     getActiveMessageTemplate(salonId, "appointment_cancelled"),
+    getSalonPaymentMethods(salonId),
   ]);
 
   const weekDates = getWeekDates(selectedDate);
@@ -128,5 +130,6 @@ export async function getCalendarView({
     businessEnd,
     salonName: salon?.name ?? "tu salon",
     cancellationTemplate: cancellationTemplate.bodyText,
+    paymentMethodOptions: paymentMethods.options,
   };
 }

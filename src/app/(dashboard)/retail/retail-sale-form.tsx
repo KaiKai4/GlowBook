@@ -26,6 +26,7 @@ export function RetailSaleForm({
   const [location, setLocation] = useState<InventoryLocation>("retail");
   const [unitPrice, setUnitPrice] = useState(retail.products[0]?.salePrice ?? 0);
   const [quantity, setQuantity] = useState(1);
+  const defaultPaymentMethod = retail.paymentMethodOptions[0]?.value ?? "cash";
   const [pending, startTransition] = useTransition();
 
   const selectedProduct = useMemo(
@@ -124,12 +125,12 @@ export function RetailSaleForm({
             onChange={(event) => setUnitPrice(Number(event.target.value || 0))}
             required
           />
-          <Select name="payment_method" label="Metodo de pago" defaultValue="cash">
-            <option value="cash">Efectivo</option>
-            <option value="card">Tarjeta</option>
-            <option value="transfer">Transferencia</option>
-            <option value="yappy">Yappy</option>
-            <option value="other">Otro</option>
+          <Select name="payment_method" label="Metodo de pago" defaultValue={defaultPaymentMethod}>
+            {retail.paymentMethodOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
           <Textarea name="note" label="Nota" />
 

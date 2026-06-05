@@ -12,6 +12,7 @@ import { completeAppointment } from "@/features/appointments/use-cases/complete-
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
+import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import {
   CompleteAppointmentSchema,
   CreateAppointmentSchema,
@@ -171,6 +172,14 @@ export async function completeAppointmentAction(
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0].message };
+  }
+
+  const paymentEnabled = await assertSalonPaymentMethodEnabled(
+    profile.salon_id,
+    parsed.data.payment_method
+  );
+  if (!paymentEnabled) {
+    return { ok: false, error: "Ese metodo de pago no esta habilitado para este salon." };
   }
 
   const result = await completeAppointment(

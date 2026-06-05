@@ -13,8 +13,12 @@ import {
   clampDiscountPercentage,
   roundCurrency,
 } from "@/features/appointments/domain/pricing";
+import type {
+  PaymentMethod,
+  PaymentMethodOption,
+} from "@/features/payments/domain/payment-methods";
 import { completeAppointmentAction } from "../actions";
-import { CheckCircle2, LockKeyhole, PencilLine, Tag } from "lucide-react";
+import { CheckCircle2, Tag } from "lucide-react";
 
 export interface AppointmentForCompletion {
   id: string;
@@ -31,37 +35,26 @@ export interface AppointmentForCompletion {
   }>;
 }
 
-const PAYMENT_OPTIONS = [
-  { value: "cash", label: "Efectivo" },
-  { value: "card", label: "Tarjeta" },
-  { value: "transfer", label: "Transferencia" },
-  { value: "yappy", label: "Yappy" },
-  { value: "other", label: "Otro" },
-];
-
 export function CompleteAppointmentDialog({
-  appt, open, onClose,
+  appt, open, onClose, paymentMethodOptions,
 }: {
   appt: AppointmentForCompletion;
   open: boolean;
   onClose: () => void;
+  paymentMethodOptions: PaymentMethodOption[];
 }) {
-  const customerName = appt.customer
-    ? `${appt.customer.first_name} ${appt.customer.last_name}`
-    : "Cliente";
-
   return (
     <Dialog
       open={open}
       onClose={onClose}
       title="Completar cita"
-      description={`Registra el metodo de pago de ${customerName}`}
       className="max-w-lg"
     >
       <CompleteAppointmentForm
         key={appt.id}
         appt={appt}
         onClose={onClose}
+        paymentMethodOptions={paymentMethodOptions}
       />
     </Dialog>
   );
@@ -80,12 +73,14 @@ function buildInitialItemDiscounts(appt: AppointmentForCompletion) {
 function CompleteAppointmentForm({
   appt,
   onClose,
+  paymentMethodOptions,
 }: {
   appt: AppointmentForCompletion;
   onClose: () => void;
+  paymentMethodOptions: PaymentMethodOption[];
 }) {
   const router = useRouter();
-  const [payment, setPayment] = useState("cash");
+  const [payment, setPayment] = useState(paymentMethodOptions[0]?.value ?? "cash");
   const [itemPrices, setItemPrices] = useState<Record<string, string>>(() =>
     buildInitialItemPrices(appt)
   );
@@ -115,7 +110,6 @@ function CompleteAppointmentForm({
     chargedItems.reduce((sum, item) => sum + item.discountAmount, 0)
   );
   const finalTotal = calculateFinalChargedTotal(subtotal, discountAmount);
-  const hasVariableItems = chargedItems.some((item) => item.isVariable);
 
   function handleComplete() {
     setError(null);
@@ -147,63 +141,45 @@ function CompleteAppointmentForm({
 
   return (
     <div className="space-y-5">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
-          <p className="mb-1 text-xs font-medium text-emerald-600">Total cobrado final</p>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-5 text-center">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Total cobrado
+          </p>
           {discountAmount > 0 ? (
             <>
-              <p className="text-lg font-semibold text-emerald-400 line-through">
+              <p className="text-sm font-semibold text-emerald-500 line-through">
                 {formatCurrency(subtotal)}
               </p>
-              <p className="text-3xl font-bold text-emerald-700">
+              <p className="text-3xl font-bold tracking-tight text-emerald-800">
                 {formatCurrency(finalTotal)}
               </p>
-              <p className="mt-1 text-xs text-emerald-600">
-                Descuento en servicios - ahorro {formatCurrency(discountAmount)}
+              <p className="mt-1 text-xs font-medium text-emerald-700">
+                Descuento aplicado: {formatCurrency(discountAmount)}
               </p>
             </>
           ) : (
-            <p className="text-3xl font-bold text-emerald-700">
+            <p className="text-3xl font-bold tracking-tight text-emerald-800">
               {formatCurrency(finalTotal)}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
-              Servicios cobrados
-            </p>
-            {hasVariableItems && (
-              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
-                precio revisable
-              </span>
-            )}
-          </div>
+          <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
+            Servicios cobrados
+          </p>
 
           <div className="space-y-2">
             {chargedItems.map((item) => (
-              <div key={item.id} className="rounded-xl border border-stone-200 bg-white px-3 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+              <div key={item.id} className="rounded-2xl border border-stone-200 bg-white px-4 py-4">
+                <div className="grid gap-3 sm:grid-cols-[1fr_216px] sm:items-end">
+                  <div className="min-w-0 self-start">
                     <p className="truncate text-sm font-semibold text-stone-800">
                       {item.service?.name ?? "Servicio"}
                     </p>
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-stone-500">
-                      {item.isVariable ? (
-                        <>
-                          <PencilLine className="h-3 w-3 text-brand-500" />
-                          Precio editable al cobrar
-                        </>
-                      ) : (
-                        <>
-                          <LockKeyhole className="h-3 w-3 text-stone-400" />
-                          Precio fijo
-                        </>
-                      )}
-                    </p>
                   </div>
 
-                  <div className="grid grid-cols-[112px_96px] gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <label className="space-y-1">
                       <span className="block text-[10px] font-semibold uppercase text-stone-400">
                         Precio
@@ -221,7 +197,7 @@ function CompleteAppointmentForm({
                           }))
                         }
                         className={cn(
-                          "h-9 w-full rounded-lg border px-3 text-right text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500",
+                          "h-10 w-full rounded-xl border px-3 text-right text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500",
                           item.isVariable
                             ? "border-brand-200 bg-white text-stone-900"
                             : "border-stone-200 bg-stone-50 text-stone-500"
@@ -246,7 +222,7 @@ function CompleteAppointmentForm({
                             [item.id]: event.target.value,
                           }))
                         }
-                        className="h-9 w-full rounded-lg border border-brand-200 bg-white px-3 text-right text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="h-10 w-full rounded-xl border border-brand-200 bg-white px-3 text-right text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     </label>
                   </div>
@@ -267,46 +243,48 @@ function CompleteAppointmentForm({
             ))}
           </div>
 
-          <div className="space-y-1 border-t border-stone-100 pt-3 text-sm">
-            <div className="flex items-center justify-between font-semibold text-stone-700">
+          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm">
+            <div className="flex items-center justify-between text-stone-600">
               <span>Subtotal servicios</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             {discountAmount > 0 && (
-              <div className="flex items-center justify-between text-emerald-700">
+              <div className="mt-1 flex items-center justify-between text-emerald-700">
                 <span>Descuentos por servicio</span>
                 <span>-{formatCurrency(discountAmount)}</span>
               </div>
             )}
-            <div className="flex items-center justify-between font-bold text-stone-900">
+            <div className="mt-2 flex items-center justify-between border-t border-stone-200 pt-2 font-bold text-stone-900">
               <span>Total cobrado</span>
               <span>{formatCurrency(finalTotal)}</span>
             </div>
           </div>
         </div>
 
-        <Select
-          label="Metodo de pago"
-          value={payment}
-          onChange={(event) => setPayment(event.target.value)}
-        >
-          {PAYMENT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </Select>
+        <div className="grid gap-4">
+          <Select
+            label="Metodo de pago"
+            value={payment}
+            onChange={(event) => setPayment(event.target.value as PaymentMethod)}
+          >
+            {paymentMethodOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Select>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-stone-600">
-            Motivo del ajuste o descuento (opcional)
-          </label>
-          <textarea
-            value={completionPriceNote}
-            onChange={(event) => setCompletionPriceNote(event.target.value)}
-            rows={2}
-            maxLength={500}
-            placeholder="Ej. promocion de lunes, diseno adicional, cabello largo..."
-            className="w-full resize-none rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-stone-700">
+              Nota del cobro (opcional)
+            </label>
+            <textarea
+              value={completionPriceNote}
+              onChange={(event) => setCompletionPriceNote(event.target.value)}
+              rows={2}
+              maxLength={500}
+              placeholder="Ej. promocion, ajuste manual o servicio adicional..."
+              className="w-full resize-none rounded-xl border border-stone-200 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
         </div>
 
         {error && (
@@ -315,7 +293,7 @@ function CompleteAppointmentForm({
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex gap-3 pt-1">
           <Button variant="ghost" className="flex-1" onClick={onClose}>
             Cancelar
           </Button>

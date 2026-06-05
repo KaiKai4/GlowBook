@@ -903,6 +903,7 @@ export type Database = {
           min_appointment_duration_minutes: number
           min_booking_notice_minutes: number
           name: string
+          payment_methods: string[]
           phone: string
           primary_color: string
           secondary_color: string
@@ -924,6 +925,7 @@ export type Database = {
           min_appointment_duration_minutes?: number
           min_booking_notice_minutes?: number
           name: string
+          payment_methods?: string[]
           phone?: string
           primary_color?: string
           secondary_color?: string
@@ -945,6 +947,7 @@ export type Database = {
           min_appointment_duration_minutes?: number
           min_booking_notice_minutes?: number
           name?: string
+          payment_methods?: string[]
           phone?: string
           primary_color?: string
           secondary_color?: string

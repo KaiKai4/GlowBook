@@ -1,6 +1,12 @@
 import "server-only";
 
 import { findBusinessHours, findSalonSettings } from "../data/salon.repo";
+import {
+  normalizePaymentMethods,
+  paymentMethodOptionsFor,
+  type PaymentMethod,
+  type PaymentMethodOption,
+} from "@/features/payments/domain/payment-methods";
 
 export interface SalonBusinessDay {
   day_of_week: number;
@@ -14,6 +20,8 @@ export interface SalonSettingsViewModel {
   timezone: string;
   theme: string;
   bgStyle: string;
+  paymentMethods: PaymentMethod[];
+  paymentMethodOptions: PaymentMethodOption[];
   businessHours: SalonBusinessDay[];
 }
 
@@ -44,6 +52,8 @@ export async function getSalonSettings(salonId: string): Promise<SalonSettingsVi
     timezone: salon?.timezone ?? "America/Panama",
     theme: salon?.theme ?? "violet",
     bgStyle: salon?.bg_style ?? "neutral",
+    paymentMethods: normalizePaymentMethods(salon?.payment_methods),
+    paymentMethodOptions: paymentMethodOptionsFor(salon?.payment_methods),
     businessHours,
   };
 }

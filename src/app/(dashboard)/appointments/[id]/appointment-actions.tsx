@@ -11,15 +11,18 @@ import {
   CompleteAppointmentDialog,
   type AppointmentForCompletion,
 } from "../dialogs/complete-appointment";
+import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
 
 export function AppointmentActions({
   appointmentId,
   appointment,
   status,
+  paymentMethodOptions,
 }: {
   appointmentId: string;
   appointment: AppointmentForCompletion;
   status: string;
+  paymentMethodOptions: PaymentMethodOption[];
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -77,6 +80,7 @@ export function AppointmentActions({
         appt={appointment}
         open={completeOpen}
         onClose={() => setCompleteOpen(false)}
+        paymentMethodOptions={paymentMethodOptions}
       />
     </div>
   );

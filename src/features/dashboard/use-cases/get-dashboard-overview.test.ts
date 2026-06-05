@@ -35,6 +35,7 @@ describe("get dashboard overview", () => {
     mockedGetSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "UTC",
+      payment_methods: ["cash", "card"],
     });
     mockedFindDashboardReportRows.mockResolvedValue({
       todayAppointments: 0,

@@ -27,6 +27,7 @@ export default async function SalonSettingsPage() {
       timezone={settings.timezone}
       theme={settings.theme}
       bgStyle={settings.bgStyle}
+      paymentMethods={settings.paymentMethods}
       businessHours={settings.businessHours}
     />
   );

@@ -64,6 +64,7 @@ describe("get appointment detail", () => {
     mockedGetSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "America/Bogota",
+      payment_methods: ["cash", "card"],
     });
 
     const view = await getAppointmentDetail({

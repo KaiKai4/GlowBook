@@ -13,11 +13,13 @@ describe("salon identity", () => {
     mockedFindSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "America/Panama",
+      payment_methods: ["cash", "card"],
     });
 
     await expect(getSalonIdentity("salon-1")).resolves.toEqual({
       name: "Glow Studio",
       timezone: "America/Panama",
+      payment_methods: ["cash", "card"],
     });
   });
 });

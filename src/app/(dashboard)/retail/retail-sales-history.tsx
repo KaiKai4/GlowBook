@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
+import { paymentMethodLabel } from "@/features/payments/domain/payment-methods";
 import { formatCurrency } from "@/lib/utils/dates";
 
 export function RetailSalesHistory({ sales }: { sales: RetailPageView["recentSales"] }) {
@@ -36,12 +37,5 @@ function customerName(customer: RetailPageView["recentSales"][number]["customer"
 }
 
 function paymentLabel(value: string) {
-  const labels: Record<string, string> = {
-    cash: "Efectivo",
-    card: "Tarjeta",
-    transfer: "Transferencia",
-    yappy: "Yappy",
-    other: "Otro",
-  };
-  return labels[value] ?? value;
+  return paymentMethodLabel(value);
 }

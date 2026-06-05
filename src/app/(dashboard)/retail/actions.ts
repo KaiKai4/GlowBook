@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { RetailSaleSchema } from "@/features/retail/schemas";
 import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
+import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
 import type { Result } from "@/lib/result";
@@ -24,6 +25,14 @@ export async function createRetailSaleAction(
 
   const parsed = RetailSaleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const paymentEnabled = await assertSalonPaymentMethodEnabled(
+    guarded.value.salonId,
+    parsed.data.payment_method
+  );
+  if (!paymentEnabled) {
+    return { ok: false, error: "Ese metodo de pago no esta habilitado para este salon." };
+  }
 
   const result = await createRetailSale(guarded.value.salonId, parsed.data);
   if (result.ok) {

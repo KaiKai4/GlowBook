@@ -75,6 +75,7 @@ describe("get reminder queue", () => {
     mockedGetSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "America/Panama",
+      payment_methods: ["cash", "card"],
     });
     mockedGetActiveMessageTemplate.mockResolvedValue({
       id: "template-1",

@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  normalizePaymentMethod,
+  normalizePaymentMethods,
+} from "@/features/payments/domain/payment-methods";
 
 export const SALON_THEMES = ["violet", "mocco", "tiffany", "viridian", "yellow", "rosewater"] as const;
 export type SalonTheme = (typeof SALON_THEMES)[number];
@@ -11,6 +15,20 @@ export const SalonInfoSchema = z.object({
 });
 
 export type SalonInfoInput = z.infer<typeof SalonInfoSchema>;
+
+export const SalonPaymentMethodsSchema = z
+  .array(
+    z
+      .string()
+      .trim()
+      .min(1, "El metodo de pago es obligatorio.")
+      .max(64, "El metodo de pago no puede superar 64 caracteres.")
+      .transform(normalizePaymentMethod)
+  )
+  .min(1, "Agrega al menos un metodo de pago.")
+  .transform((values) => normalizePaymentMethods(values));
+
+export type SalonPaymentMethodsInput = z.infer<typeof SalonPaymentMethodsSchema>;
 
 const TimeString = z
   .string()

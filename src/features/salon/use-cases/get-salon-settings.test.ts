@@ -22,6 +22,7 @@ describe("get salon settings", () => {
       timezone: "America/Panama",
       theme: "rosewater",
       bg_style: "colored",
+      payment_methods: ["cash", "yappy"],
     });
     mockedFindBusinessHours.mockResolvedValue([
       { day_of_week: 0, is_open: true, open_time: "08:30:00", close_time: "17:15:00" },
@@ -35,6 +36,7 @@ describe("get salon settings", () => {
       timezone: "America/Panama",
       theme: "rosewater",
       bgStyle: "colored",
+      paymentMethods: ["cash", "yappy"],
     });
     expect(result.businessHours).toHaveLength(7);
     expect(result.businessHours[0]).toEqual({

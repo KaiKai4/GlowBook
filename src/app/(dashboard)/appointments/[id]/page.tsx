@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appointment-detail";
+import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { formatCurrency, formatDate, formatTimeTz } from "@/lib/utils/dates";
@@ -28,10 +29,13 @@ export default async function AppointmentDetailPage({
     );
   }
 
-  const appointment = await getAppointmentDetail({
-    appointmentId: id,
-    salonId: profile.salon_id,
-  });
+  const [appointment, paymentMethods] = await Promise.all([
+    getAppointmentDetail({
+      appointmentId: id,
+      salonId: profile.salon_id,
+    }),
+    getSalonPaymentMethods(profile.salon_id),
+  ]);
 
   if (!appointment) notFound();
 
@@ -144,6 +148,7 @@ export default async function AppointmentDetailPage({
                 })),
               }}
               status={appointment.status}
+              paymentMethodOptions={paymentMethods.options}
             />
           </CardContent>
         </Card>

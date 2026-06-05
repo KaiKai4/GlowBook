@@ -7,11 +7,13 @@ export interface SalonSettings {
   timezone: string;
   theme: string;
   bg_style: string | null;
+  payment_methods: string[];
 }
 
 export interface SalonIdentity {
   name: string;
   timezone: string;
+  payment_methods: string[];
 }
 
 export interface DashboardShellSalon {
@@ -43,7 +45,7 @@ export async function findSalonSettings(salonId: string): Promise<SalonSettings 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("salons")
-    .select("id, name, timezone, theme, bg_style")
+    .select("id, name, timezone, theme, bg_style, payment_methods")
     .eq("id", salonId)
     .single();
   return data ?? null;
@@ -53,7 +55,7 @@ export async function findSalonIdentity(salonId: string): Promise<SalonIdentity 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("salons")
-    .select("name, timezone")
+    .select("name, timezone, payment_methods")
     .eq("id", salonId)
     .single();
 
@@ -123,6 +125,19 @@ export async function updateSalonBackground(salonId: string, bgStyle: string): P
   const { error } = await supabase
     .from("salons")
     .update({ bg_style: bgStyle })
+    .eq("id", salonId);
+
+  if (error) throw error;
+}
+
+export async function updateSalonPaymentMethods(
+  salonId: string,
+  paymentMethods: string[]
+): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("salons")
+    .update({ payment_methods: paymentMethods })
     .eq("id", salonId);
 
   if (error) throw error;

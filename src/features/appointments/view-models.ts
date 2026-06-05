@@ -1,6 +1,7 @@
 import type { BusinessHour, SalonConfig, WorkSchedule } from "./domain/types";
 import type { CalendarView } from "./domain/calendar";
 import type { AppointmentStatus } from "./domain/lifecycle";
+import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
 import type { PricingMode } from "./domain/pricing";
 
 export type { CalendarView };
@@ -58,6 +59,7 @@ export interface CalendarViewModel {
   businessEnd: number;
   salonName: string;
   cancellationTemplate: string;
+  paymentMethodOptions: PaymentMethodOption[];
 }
 
 export interface CustomerOption {

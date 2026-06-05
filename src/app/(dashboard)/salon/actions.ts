@@ -4,8 +4,13 @@ import { revalidatePath } from "next/cache";
 import { updateBusinessHours } from "@/features/salon/use-cases/update-business-hours";
 import { updateSalonBackground } from "@/features/salon/use-cases/update-salon-background";
 import { updateSalonInfo } from "@/features/salon/use-cases/update-salon-info";
+import { updateSalonPaymentMethods } from "@/features/salon/use-cases/update-salon-payment-methods";
 import { updateSalonTheme } from "@/features/salon/use-cases/update-salon-theme";
-import { BusinessHoursSchema, SalonInfoSchema } from "@/features/salon/schemas";
+import {
+  BusinessHoursSchema,
+  SalonInfoSchema,
+  SalonPaymentMethodsSchema,
+} from "@/features/salon/schemas";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
 import type { Result } from "@/lib/result";
@@ -71,6 +76,25 @@ export async function updateBusinessHoursAction(hoursJson: string): Promise<Resu
     revalidatePath("/salon");
     revalidatePath("/appointments");
     revalidatePath("/appointments/new");
+  }
+
+  return result;
+}
+
+export async function updateSalonPaymentMethodsAction(
+  paymentMethods: string[]
+): Promise<Result<void>> {
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
+
+  const parsed = SalonPaymentMethodsSchema.safeParse(paymentMethods);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const result = await updateSalonPaymentMethods(guarded.value.salonId, parsed.data);
+  if (result.ok) {
+    revalidatePath("/salon");
+    revalidatePath("/appointments");
+    revalidatePath("/retail");
   }
 
   return result;

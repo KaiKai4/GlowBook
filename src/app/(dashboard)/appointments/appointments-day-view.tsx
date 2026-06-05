@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { CalView } from "./date-nav";
 import type { CalendarAppointment, CalendarEmployee } from "@/features/appointments/view-models";
+import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
 
 const STATUS_LABEL: Record<string, string> = {
   scheduled: "Agendada", confirmed: "Confirmada", completed: "Completada",
@@ -69,7 +70,7 @@ function sortSummaryAppointments(appointments: ApptFull[], groupByStatus: boolea
 export function AppointmentsDayView({
   appointments, tz, canManage,
   view = "diaria", weekDates, employees = [],
-  businessStart, businessEnd, salonName, cancellationTemplate,
+  businessStart, businessEnd, salonName, cancellationTemplate, paymentMethodOptions,
 }: {
   appointments: ApptFull[];
   tz: string;
@@ -81,6 +82,7 @@ export function AppointmentsDayView({
   businessEnd?: number;
   salonName: string;
   cancellationTemplate: string;
+  paymentMethodOptions: PaymentMethodOption[];
 }) {
   const [summaryFilter, setSummaryFilter] = useState<"upcoming" | "completed" | "cancelled">("upcoming");
   const [openActionsId, setOpenActionsId] = useState<string | null>(null);
@@ -337,6 +339,7 @@ export function AppointmentsDayView({
       {completeAppt && (
         <CompleteAppointmentDialog
           appt={completeAppt} open={!!completeAppt} onClose={() => setCompleteAppt(null)}
+          paymentMethodOptions={paymentMethodOptions}
         />
       )}
       {cancelAppt && (

@@ -77,6 +77,7 @@ export default async function AppointmentsPage({
         businessEnd={calendar.businessEnd}
         salonName={calendar.salonName}
         cancellationTemplate={calendar.cancellationTemplate}
+        paymentMethodOptions={calendar.paymentMethodOptions}
       />
     </div>
   );

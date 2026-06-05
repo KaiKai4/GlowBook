@@ -5,9 +5,22 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
-import { Settings, Clock, Check, Store, Palette } from "lucide-react";
-import { updateSalonInfoAction, updateBusinessHoursAction, updateSalonThemeAction, updateSalonBgAction } from "./actions";
+import { Settings, Clock, Check, Store, Palette, CreditCard, Plus, X } from "lucide-react";
+import {
+  updateSalonInfoAction,
+  updateBusinessHoursAction,
+  updateSalonThemeAction,
+  updateSalonBgAction,
+  updateSalonPaymentMethodsAction,
+} from "./actions";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
+import {
+  DEFAULT_PAYMENT_METHOD_OPTIONS,
+  normalizePaymentMethod,
+  normalizePaymentMethods,
+  paymentMethodLabel,
+  type PaymentMethod,
+} from "@/features/payments/domain/payment-methods";
 import type { BusinessDay } from "./page";
 
 const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -27,12 +40,14 @@ export function SalonSettings({
   timezone,
   theme,
   bgStyle,
+  paymentMethods,
   businessHours,
 }: {
   salonName: string;
   timezone: string;
   theme: string;
   bgStyle: string;
+  paymentMethods: PaymentMethod[];
   businessHours: BusinessDay[];
 }) {
   // ── Salon name ──────────────────────────────────────────────────
@@ -82,6 +97,64 @@ export function SalonSettings({
         setHoursSaved(true);
         setSavedHours(hours);
       } else setHoursError(res.error);
+    });
+  }
+
+  // Payment methods
+  const [enabledPayments, setEnabledPayments] = useState<PaymentMethod[]>(paymentMethods);
+  const [savedPayments, setSavedPayments] = useState<PaymentMethod[]>(paymentMethods);
+  const [savingPayments, startPayments] = useTransition();
+  const [paymentsSaved, setPaymentsSaved] = useState(false);
+  const [paymentsError, setPaymentsError] = useState<string | null>(null);
+  const [newPaymentMethod, setNewPaymentMethod] = useState("");
+
+  function addPaymentMethod(value: string) {
+    const method = normalizePaymentMethod(value);
+    setPaymentsSaved(false);
+    setPaymentsError(null);
+
+    if (!method) {
+      setPaymentsError("Escribe un metodo de pago.");
+      return;
+    }
+
+    if (method.length > 64) {
+      setPaymentsError("El metodo de pago no puede superar 64 caracteres.");
+      return;
+    }
+
+    if (enabledPayments.some((item) => item.toLocaleLowerCase() === method.toLocaleLowerCase())) {
+      setPaymentsError("Ese metodo de pago ya esta en la lista.");
+      return;
+    }
+
+    setEnabledPayments((current) => [...current, method]);
+    setNewPaymentMethod("");
+  }
+
+  function removePaymentMethod(method: PaymentMethod) {
+    setPaymentsSaved(false);
+    setPaymentsError(null);
+    setEnabledPayments((current) => current.filter((item) => item !== method));
+  }
+
+  function savePaymentMethods() {
+    setPaymentsError(null);
+    setPaymentsSaved(false);
+    const methodsToSave = normalizePaymentMethods(enabledPayments);
+
+    if (methodsToSave.length === 0) {
+      setPaymentsError("Agrega al menos un metodo de pago.");
+      return;
+    }
+
+    startPayments(async () => {
+      const res = await updateSalonPaymentMethodsAction(methodsToSave);
+      if (res.ok) {
+        setPaymentsSaved(true);
+        setEnabledPayments(methodsToSave);
+        setSavedPayments(methodsToSave);
+      } else setPaymentsError(res.error);
     });
   }
 
@@ -142,7 +215,8 @@ export function SalonSettings({
   // ── Unsaved-changes guard (theme saves instantly, so it isn't tracked) ──
   const nameDirty = nameValue.trim() !== savedName.trim();
   const hoursDirty = JSON.stringify(hours) !== JSON.stringify(savedHours);
-  useUnsavedChanges(nameDirty || hoursDirty);
+  const paymentsDirty = JSON.stringify(enabledPayments) !== JSON.stringify(savedPayments);
+  useUnsavedChanges(nameDirty || hoursDirty || paymentsDirty);
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -194,6 +268,100 @@ export function SalonSettings({
       </Card>
 
       {/* ── Business hours ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-brand-500" />
+            Metodos de pago
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-stone-400">
+            Escribe cada metodo que acepta tu salon. Por ejemplo: Zinli, efectivo, tarjeta o transferencia.
+          </p>
+
+          <form
+            className="flex flex-col gap-2 sm:flex-row"
+            onSubmit={(event) => {
+              event.preventDefault();
+              addPaymentMethod(newPaymentMethod);
+            }}
+          >
+            <input
+              value={newPaymentMethod}
+              onChange={(event) => {
+                setNewPaymentMethod(event.target.value);
+                setPaymentsError(null);
+                setPaymentsSaved(false);
+              }}
+              placeholder="Escribe un metodo, ej. Zinli"
+              maxLength={64}
+              className="h-10 flex-1 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-brand-500"
+            />
+            <Button type="submit" variant="primary">
+              <Plus className="h-4 w-4" />
+              Agregar
+            </Button>
+          </form>
+
+          <div className="flex flex-wrap gap-2">
+            {enabledPayments.map((method) => (
+              <span
+                key={method}
+                className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-800"
+              >
+                {paymentMethodLabel(method)}
+                <button
+                  type="button"
+                  onClick={() => removePaymentMethod(method)}
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-brand-500 transition-colors hover:bg-brand-100 hover:text-brand-800"
+                  aria-label={`Quitar ${paymentMethodLabel(method)}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
+            <span className="text-xs font-medium text-stone-400">Agregar rapido:</span>
+            {DEFAULT_PAYMENT_METHOD_OPTIONS
+              .filter(
+                (method) =>
+                  !enabledPayments.some(
+                    (enabled) => enabled.toLocaleLowerCase() === method.value.toLocaleLowerCase()
+                  )
+              )
+              .map((method) => (
+                <button
+                  key={method.value}
+                  type="button"
+                  onClick={() => addPaymentMethod(method.value)}
+                  className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-600 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                >
+                  {method.label}
+                </button>
+              ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button variant="primary" onClick={savePaymentMethods} loading={savingPayments}>
+              Guardar metodos
+            </Button>
+            {paymentsSaved && (
+              <span className="flex items-center gap-1 text-sm text-emerald-600">
+                <Check className="h-4 w-4" /> Metodos actualizados
+              </span>
+            )}
+          </div>
+          {paymentsError && (
+            <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+              {paymentsError}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

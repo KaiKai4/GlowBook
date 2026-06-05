@@ -1,4 +1,12 @@
 import { z } from "zod";
+import { normalizePaymentMethod } from "@/features/payments/domain/payment-methods";
+
+const PaymentMethodSchema = z
+  .string()
+  .trim()
+  .min(1, "El metodo de pago es obligatorio.")
+  .max(64, "El metodo de pago no puede superar 64 caracteres.")
+  .transform(normalizePaymentMethod);
 
 export const AssignmentSchema = z.object({
   service_id: z.string().uuid("ID de servicio inválido"),
@@ -27,13 +35,13 @@ export const UpdateAppointmentStatusSchema = z.object({
   appointment_id: z.string().uuid(),
   status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]),
   payment_method: z
-    .enum(["", "cash", "card", "transfer", "yappy", "other"])
+    .union([z.literal(""), PaymentMethodSchema])
     .optional(),
 });
 
 export const CompleteAppointmentSchema = z.object({
   appointment_id: z.string().uuid("ID de cita invalido"),
-  payment_method: z.enum(["cash", "card", "transfer", "yappy", "other"]),
+  payment_method: PaymentMethodSchema,
   completion_price_note: z.string().max(500).optional().default(""),
   item_charges: z
     .array(

@@ -5,6 +5,7 @@ import { findSalonIdentity } from "../data/salon.repo";
 export interface SalonIdentityView {
   name: string;
   timezone: string;
+  payment_methods: string[];
 }
 
 export async function getSalonIdentity(salonId: string): Promise<SalonIdentityView | null> {
