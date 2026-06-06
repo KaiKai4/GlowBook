@@ -128,9 +128,9 @@ export function EmployeeCreateForm({
 
       {archivedMatch && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-          <p className="font-semibold">Ya existe un colaborador archivado: {archivedMatch.name}</p>
+          <p className="font-semibold">Ya existe un colaborador con ese email: {archivedMatch.name}</p>
           <p className="mt-1 text-xs">
-            Reactivarlo conserva su historial. Luego puedes editar servicios, categorias, horarios y generar un nuevo enlace.
+            Restaurarlo conserva su historial. Luego puedes editar servicios, categorias, horarios y generar un nuevo enlace.
           </p>
           <Button
             type="button"
@@ -139,7 +139,7 @@ export function EmployeeCreateForm({
             loading={reactivatingId === archivedMatch.id}
             onClick={() => handleReactivateEmployee(archivedMatch.id)}
           >
-            Reactivar colaborador
+            Restaurar colaborador
           </Button>
         </div>
       )}

@@ -31,7 +31,7 @@ export function Sidebar({ salonName, userPermissions, isOwner, disabledFeatures 
   }
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-brand-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-brand-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
       {/* Brand */}
       <div className="flex flex-col items-center gap-1.5 px-6 pb-3 pt-5 text-center border-b border-brand-50">
         <GlowBookBrand markSize="sm" align="center" />

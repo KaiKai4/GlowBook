@@ -82,6 +82,6 @@ describe("customer duplicate guards", () => {
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("cliente archivado");
+    if (!result.ok) expect(result.error).toContain("Ya existe un cliente");
   });
 });

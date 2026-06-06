@@ -36,7 +36,7 @@ export default async function DashboardLayout({
 
   if (!shell.isActive) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-50 px-4">
+      <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden bg-neutral-50 px-4">
         <div className="max-w-md text-center">
           <h1 className="text-xl font-semibold text-neutral-900">Salón suspendido</h1>
           <p className="mt-2 text-sm text-neutral-500">
@@ -56,7 +56,7 @@ export default async function DashboardLayout({
 
   if (minimalChrome) {
     return (
-      <div data-theme={theme} className="flex h-screen flex-col overflow-hidden bg-neutral-50">
+      <div data-theme={theme} className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-neutral-50">
         <header className="flex items-center justify-between gap-4 border-b border-brand-100 bg-white px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
           <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
             <GlowBookBrand markSize="sm" align="center" />
@@ -74,7 +74,7 @@ export default async function DashboardLayout({
             </button>
           </form>
         </header>
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="mx-auto w-full max-w-6xl px-6 py-8">{children}</div>
         </main>
         <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />
@@ -84,14 +84,18 @@ export default async function DashboardLayout({
 
   return (
     <UnsavedChangesProvider>
-      <div data-theme={theme} data-bg={bgStyle} className="flex h-screen overflow-hidden bg-neutral-50">
+      <div
+        data-theme={theme}
+        data-bg={bgStyle}
+        className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-neutral-50"
+      >
         <Sidebar
           salonName={shell.salonName}
           userPermissions={permissions}
           isOwner={profile.is_owner}
           disabledFeatures={disabledFeatures}
         />
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="w-full px-6 py-8">{children}</div>
         </main>
         <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />

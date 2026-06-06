@@ -136,7 +136,7 @@ export function AppointmentWizard({
       if (exists) {
         setCustomerError(
           archived
-            ? "Este numero pertenece a un cliente archivado. Reactivalo en Clientes > Archivados antes de agendar."
+            ? "Este numero pertenece a un cliente existente. Restauralo desde Clientes para conservar su historial."
             : "Este numero ya esta registrado. Buscalo en Cliente existente."
         );
         return;
@@ -226,7 +226,7 @@ export function AppointmentWizard({
         return;
       }
 
-      router.push(`/appointments?date=${date}`);
+      router.push(`/appointments/${result.value}`);
       router.refresh();
     });
   }

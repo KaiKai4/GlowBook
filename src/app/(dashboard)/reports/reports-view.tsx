@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { formatCurrency } from "@/lib/utils/dates";
 import { BarChart3, DollarSign, CalendarCheck, Tag, UserMinus, Users, ShoppingBag, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { getReportAction } from "./actions";
 
-type Preset = "hoy" | "semana" | "mes" | "mes_anterior" | "30dias" | "90dias" | "custom";
+type ReportPresetButton = "hoy" | "semana" | "mes" | "mes_anterior" | "30dias" | "90dias";
 
-const PRESETS: { value: Preset; label: string }[] = [
+const PRESETS: { value: ReportPresetButton; label: string }[] = [
   { value: "hoy", label: "Hoy" },
   { value: "semana", label: "Esta semana" },
   { value: "mes", label: "Este mes" },
@@ -93,17 +93,40 @@ export function ReportsView({
   revenue, retailRevenue, grossRevenue, discounts, manualExpenses, inventoryPurchases, totalExpenses, estimatedProfit, completedCount, totalCount, avgTicket, noShowRate,
   statusBreakdown, byEmployee, byService, newCustomers,
 }: Props) {
-  const router = useRouter();
+  const [report, setReport] = useState<Props>({
+    from, to, preset,
+    revenue, retailRevenue, grossRevenue, discounts, manualExpenses, inventoryPurchases, totalExpenses, estimatedProfit, completedCount, totalCount, avgTicket, noShowRate,
+    statusBreakdown, byEmployee, byService, newCustomers,
+  });
   const [customFrom, setCustomFrom] = useState(from);
   const [customTo, setCustomTo] = useState(to);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
-  function goPreset(p: Preset) {
-    router.push(`/reports?preset=${p}`);
+  const current = report;
+
+  function goPreset(p: ReportPresetButton) {
+    setError(null);
+    startTransition(async () => {
+      const result = await getReportAction({ preset: p });
+      if (result.ok) {
+        setReport(result.value);
+        setCustomFrom(result.value.from);
+        setCustomTo(result.value.to);
+      } else {
+        setError(result.error);
+      }
+    });
   }
 
   function applyCustom() {
     if (customFrom && customTo && customFrom <= customTo) {
-      router.push(`/reports?from=${customFrom}&to=${customTo}`);
+      setError(null);
+      startTransition(async () => {
+        const result = await getReportAction({ from: customFrom, to: customTo });
+        if (result.ok) setReport(result.value);
+        else setError(result.error);
+      });
     }
   }
 
@@ -115,7 +138,7 @@ export function ReportsView({
           <BarChart3 className="h-6 w-6 text-brand-500" />
           Reportes
         </h1>
-        <p className="text-sm text-stone-400 mt-0.5">{dateLabel(from, to)}</p>
+        <p className="text-sm text-stone-400 mt-0.5">{dateLabel(current.from, current.to)}</p>
       </div>
 
       {/* Period picker */}
@@ -127,10 +150,11 @@ export function ReportsView({
               onClick={() => goPreset(p.value)}
               className={cn(
                 "rounded-full border px-4 py-1.5 text-sm font-medium transition-all",
-                preset === p.value
+                current.preset === p.value
                   ? "border-brand-400 bg-brand-50 text-brand-700"
                   : "border-stone-200 text-stone-600 hover:bg-stone-50"
               )}
+              disabled={pending}
             >
               {p.label}
             </button>
@@ -143,6 +167,7 @@ export function ReportsView({
             type="date"
             value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
+            disabled={pending}
             className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <span className="text-stone-300">→</span>
@@ -150,63 +175,70 @@ export function ReportsView({
             type="date"
             value={customTo}
             onChange={(e) => setCustomTo(e.target.value)}
+            disabled={pending}
             className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
             onClick={applyCustom}
-            disabled={!customFrom || !customTo || customFrom > customTo}
+            disabled={pending || !customFrom || !customTo || customFrom > customTo}
             className="h-8 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40 transition-colors"
           >
-            Aplicar
+            {pending ? "Cargando..." : "Aplicar"}
           </button>
         </div>
       </div>
+
+      {error && (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          {error}
+        </p>
+      )}
 
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            label: "Ingresos por citas", value: formatCurrency(revenue),
+            label: "Ingresos por citas", value: formatCurrency(current.revenue),
             icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50",
           },
           {
-            label: "Ingresos vitrina", value: formatCurrency(retailRevenue),
+            label: "Ingresos vitrina", value: formatCurrency(current.retailRevenue),
             icon: <ShoppingBag className="h-5 w-5" />, color: "text-blue-600 bg-blue-50",
           },
           {
-            label: "Gastos manuales", value: formatCurrency(manualExpenses),
+            label: "Gastos manuales", value: formatCurrency(current.manualExpenses),
             icon: <ReceiptText className="h-5 w-5" />, color: "text-red-600 bg-red-50",
           },
           {
-            label: "Reposiciones", value: formatCurrency(inventoryPurchases),
+            label: "Reposiciones", value: formatCurrency(current.inventoryPurchases),
             icon: <Tag className="h-5 w-5" />, color: "text-amber-600 bg-amber-50",
           },
           {
-            label: "Ingresos totales", value: formatCurrency(grossRevenue),
+            label: "Ingresos totales", value: formatCurrency(current.grossRevenue),
             icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50",
           },
           {
-            label: "Egresos totales", value: formatCurrency(totalExpenses),
+            label: "Egresos totales", value: formatCurrency(current.totalExpenses),
             icon: <ReceiptText className="h-5 w-5" />, color: "text-red-600 bg-red-50",
           },
           {
-            label: "Utilidad estimada", value: formatCurrency(estimatedProfit),
-            icon: <DollarSign className="h-5 w-5" />, color: estimatedProfit >= 0 ? "text-emerald-700 bg-emerald-50" : "text-red-700 bg-red-50",
+            label: "Utilidad estimada", value: formatCurrency(current.estimatedProfit),
+            icon: <DollarSign className="h-5 w-5" />, color: current.estimatedProfit >= 0 ? "text-emerald-700 bg-emerald-50" : "text-red-700 bg-red-50",
           },
           {
-            label: "Descuentos", value: formatCurrency(discounts),
+            label: "Descuentos", value: formatCurrency(current.discounts),
             icon: <Tag className="h-5 w-5" />, color: "text-rose-600 bg-rose-50",
           },
           {
-            label: "Citas completadas", value: `${completedCount} de ${totalCount}`,
+            label: "Citas completadas", value: `${current.completedCount} de ${current.totalCount}`,
             icon: <CalendarCheck className="h-5 w-5" />, color: "text-brand-600 bg-brand-50",
           },
           {
-            label: "Ticket promedio", value: formatCurrency(avgTicket),
+            label: "Ticket promedio", value: formatCurrency(current.avgTicket),
             icon: <Tag className="h-5 w-5" />, color: "text-blue-600 bg-blue-50",
           },
           {
-            label: "Tasa de no-show", value: `${noShowRate.toFixed(1)}%`,
+            label: "Tasa de no-show", value: `${current.noShowRate.toFixed(1)}%`,
             icon: <UserMinus className="h-5 w-5" />, color: "text-amber-600 bg-amber-50",
           },
         ].map((card) => (
@@ -226,11 +258,11 @@ export function ReportsView({
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Section title="Estado de citas" icon={<CalendarCheck className="h-4 w-4 text-stone-400" />}>
-            {statusBreakdown.length === 0 ? (
+            {current.statusBreakdown.length === 0 ? (
               <p className="px-5 py-8 text-sm text-stone-400 text-center">Sin citas en este período.</p>
             ) : (
               <div className="divide-y divide-stone-50">
-                {statusBreakdown.map((s) => (
+                {current.statusBreakdown.map((s) => (
                   <div key={s.status} className="px-5 py-3.5 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className={cn("text-sm font-semibold", STATUS_TEXT[s.status] ?? "text-stone-700")}>
@@ -251,7 +283,7 @@ export function ReportsView({
 
         <Section title="Clientes nuevos" icon={<Users className="h-4 w-4 text-stone-400" />}>
           <div className="flex flex-col items-center justify-center px-5 py-10 text-center h-full">
-            <p className="text-5xl font-bold text-brand-600">{newCustomers}</p>
+            <p className="text-5xl font-bold text-brand-600">{current.newCustomers}</p>
             <p className="text-sm text-stone-500 mt-2">clientes registrados en el período</p>
             <p className="text-xs text-stone-400 mt-3 max-w-[160px]">
               Incluye clientes captados al completar citas
@@ -263,11 +295,11 @@ export function ReportsView({
       {/* Por colaborador + Por servicio */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Section title="Por profesional" icon={<Users className="h-4 w-4 text-stone-400" />}>
-          {byEmployee.length === 0 ? (
+          {current.byEmployee.length === 0 ? (
             <p className="px-5 py-8 text-sm text-stone-400 text-center">Sin datos en este período.</p>
           ) : (
             <div className="divide-y divide-stone-50">
-              {byEmployee.map((emp, i) => (
+              {current.byEmployee.map((emp, i) => (
                 <div key={emp.name} className="px-5 py-3.5 space-y-1.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -289,11 +321,11 @@ export function ReportsView({
         </Section>
 
         <Section title="Por servicio" icon={<BarChart3 className="h-4 w-4 text-stone-400" />}>
-          {byService.length === 0 ? (
+          {current.byService.length === 0 ? (
             <p className="px-5 py-8 text-sm text-stone-400 text-center">Sin datos en este período.</p>
           ) : (
             <div className="divide-y divide-stone-50">
-              {byService.map((svc, i) => (
+              {current.byService.map((svc, i) => (
                 <div key={svc.name} className="px-5 py-3.5 space-y-1.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">

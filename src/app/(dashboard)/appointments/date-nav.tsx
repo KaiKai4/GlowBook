@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { CalendarView } from "@/features/appointments/view-models";
@@ -21,17 +20,19 @@ export function DateNav({
   date,
   view,
   showWorkerView = true,
+  loading = false,
+  onChange,
 }: {
   date: string;
   view: CalView;
   showWorkerView?: boolean;
+  loading?: boolean;
+  onChange: (next: { date: string; view: CalView }) => void;
 }) {
-  const router = useRouter();
-
   const views = showWorkerView ? VIEWS : VIEWS.filter((v) => v.id !== "trabajador");
 
   function go(newDate: string, newView?: CalView) {
-    router.push(`/appointments?date=${newDate}&view=${newView ?? view}`);
+    onChange({ date: newDate, view: newView ?? view });
   }
 
   function shift(n: number) {
@@ -46,6 +47,7 @@ export function DateNav({
       <div className="flex items-center gap-1">
         <button
           onClick={() => shift(-1)}
+          disabled={loading}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
           aria-label={view === "semanal" ? "Semana anterior" : "Día anterior"}
         >
@@ -55,10 +57,12 @@ export function DateNav({
           type="date"
           value={date}
           onChange={(e) => go(e.target.value)}
+          disabled={loading}
           className="h-9 rounded-lg border border-stone-200 px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
         />
         <button
           onClick={() => shift(1)}
+          disabled={loading}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
           aria-label={view === "semanal" ? "Semana siguiente" : "Día siguiente"}
         >
@@ -72,6 +76,7 @@ export function DateNav({
           <button
             key={v.id}
             onClick={() => go(date, v.id)}
+            disabled={loading}
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-all whitespace-nowrap",
               view === v.id

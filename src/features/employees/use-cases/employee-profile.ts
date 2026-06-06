@@ -58,7 +58,7 @@ export async function createEmployeeProfile(
       if (archived && !archived.is_active) {
         return {
           ok: false,
-          error: "Ya existe un colaborador archivado con ese email. Reactivalo en la vista Archivados para conservar su historial.",
+          error: "Ya existe un colaborador con ese email. Restauralo para conservar su historial.",
         };
       }
     }

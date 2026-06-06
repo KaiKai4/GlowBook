@@ -23,24 +23,6 @@ export interface CustomersPageViewModel {
   mode: CustomerPageMode;
   isArchived: boolean;
   query: string;
-  pageHref: (page: number) => string;
-  statusHref: (status: CustomerPageMode) => string;
-}
-
-function searchParamsFor({
-  q,
-  page,
-  status,
-}: {
-  q?: string;
-  page?: number;
-  status?: CustomerPageMode;
-}): string {
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  if (status === "archived") params.set("status", "archived");
-  if (page !== undefined) params.set("page", String(page));
-  return params.toString();
 }
 
 export async function getCustomersPage({
@@ -71,13 +53,5 @@ export async function getCustomersPage({
     mode,
     isArchived,
     query,
-    pageHref: (nextPage) => {
-      const params = searchParamsFor({ q: query, page: nextPage, status: mode });
-      return `/customers?${params}`;
-    },
-    statusHref: (nextStatus) => {
-      const params = searchParamsFor({ q: query, status: nextStatus });
-      return `/customers${params ? `?${params}` : ""}`;
-    },
   };
 }

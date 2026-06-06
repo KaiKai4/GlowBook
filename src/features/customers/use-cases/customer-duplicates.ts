@@ -67,6 +67,6 @@ export async function rejectArchivedDuplicate(
 
   return {
     ok: false,
-    error: "Ya existe un cliente archivado con esos datos. Reactivalo en la vista Archivados para conservar su historial.",
+    error: "Ya existe un cliente con esos datos. Restauralo para conservar su historial.",
   };
 }

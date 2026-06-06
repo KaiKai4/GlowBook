@@ -133,10 +133,10 @@ export function NewCustomerModal() {
 
           {archivedMatch && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-              <p className="font-semibold">Ya existe un cliente archivado: {archivedMatch.name}</p>
-              <p className="mt-1 text-xs">Reactivarlo conserva su historial y evita duplicados.</p>
+              <p className="font-semibold">Ya existe un cliente con esos datos: {archivedMatch.name}</p>
+              <p className="mt-1 text-xs">Restaurarlo conserva su historial y evita duplicados.</p>
               <Button variant="primary" className="mt-3 w-full" onClick={handleReactivate} loading={pending}>
-                Reactivar cliente
+                Restaurar cliente
               </Button>
             </div>
           )}

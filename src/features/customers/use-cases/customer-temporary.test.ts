@@ -113,7 +113,7 @@ describe("customer temporary workflow", () => {
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("cliente esta archivado");
+    if (!result.ok) expect(result.error).toContain("no esta disponible");
   });
 
   it("promotes and deletes temporary customers through their narrow lifecycle actions", async () => {

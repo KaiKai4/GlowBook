@@ -3,13 +3,8 @@ import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissi
 import { getEmployeesPage } from "@/features/employees/use-cases/get-employees-page";
 import { EmployeesManager } from "./employees-manager";
 
-export default async function EmployeesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string }>;
-}) {
+export default async function EmployeesPage() {
   const profile = await requireProfile();
-  await searchParams;
 
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return (

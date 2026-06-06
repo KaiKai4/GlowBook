@@ -91,7 +91,7 @@ export async function findOrCreateTemporaryCustomer({
     if (!existing.is_active) {
       return {
         ok: false,
-        error: "Este cliente esta archivado. Reactivalo en Clientes > Archivados antes de agendar una nueva cita.",
+        error: "Este cliente no esta disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.",
       };
     }
 
