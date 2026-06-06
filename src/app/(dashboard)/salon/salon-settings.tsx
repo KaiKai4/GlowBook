@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils/cn";
 import { Settings, Clock, Check, Store, Palette, CreditCard, Plus, X } from "lucide-react";
 import {
@@ -378,20 +379,18 @@ export function SalonSettings({
 
                 {day.is_open ? (
                   <div className="flex items-center gap-2">
-                    <input
-                      type="time"
+                    <TimePicker
                       value={day.open_time}
-                      step={1800}
-                      onChange={(e) => updateDay(day.day_of_week, { open_time: e.target.value })}
-                      className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      compact
+                      ariaLabel={`Hora de apertura del ${DAY_LABELS[day.day_of_week]}`}
+                      onChange={(open_time) => updateDay(day.day_of_week, { open_time })}
                     />
                     <span className="text-stone-400 text-sm">a</span>
-                    <input
-                      type="time"
+                    <TimePicker
                       value={day.close_time}
-                      step={1800}
-                      onChange={(e) => updateDay(day.day_of_week, { close_time: e.target.value })}
-                      className="h-9 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      compact
+                      ariaLabel={`Hora de cierre del ${DAY_LABELS[day.day_of_week]}`}
+                      onChange={(close_time) => updateDay(day.day_of_week, { close_time })}
                     />
                   </div>
                 ) : (

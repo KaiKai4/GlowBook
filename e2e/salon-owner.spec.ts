@@ -144,6 +144,22 @@ test.describe("salon owner critical smoke", () => {
     await page.getByRole("button", { name: /Continuar/i }).click();
 
     await selectCalendarDate(page, "Fecha", futureDate());
+    await page.getByLabel("Hora de inicio").click();
+    const timeDialog = page.getByRole("dialog", { name: "Seleccionar hora" });
+    await expect(timeDialog).toBeVisible();
+    await page
+      .getByRole("listbox", { name: "Hora" })
+      .getByRole("option", { name: "10", exact: true })
+      .click();
+    await page
+      .getByRole("listbox", { name: "Minutos" })
+      .getByRole("option", { name: "00", exact: true })
+      .click();
+    await page
+      .getByRole("radiogroup", { name: "Periodo" })
+      .getByRole("radio", { name: "AM", exact: true })
+      .click();
+    await timeDialog.getByRole("button", { name: "Guardar" }).click();
     await selectFirstRealOption(page, "Categoria");
     await selectFirstRealOption(page, "Servicio");
     await selectFirstRealOption(page, "Profesional");

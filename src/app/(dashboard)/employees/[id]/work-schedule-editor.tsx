@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Trash2, Plus } from "lucide-react";
 import { addWorkScheduleAction, deleteWorkScheduleAction } from "../actions";
 
@@ -27,6 +27,8 @@ export function WorkScheduleEditor({
   const [isDeleting, startDelete] = useTransition();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
   const formRef = useRef<HTMLFormElement>(null);
 
   function handleAdd(formData: FormData) {
@@ -35,6 +37,8 @@ export function WorkScheduleEditor({
       const res = await addWorkScheduleAction(null, formData);
       if (res.ok) {
         formRef.current?.reset();
+        setStartTime("09:00");
+        setEndTime("17:00");
         setOpen(false);
       } else {
         setError(res.error);
@@ -67,10 +71,24 @@ export function WorkScheduleEditor({
             </Select>
           </div>
           <div className="w-28">
-            <Input name="start_time" label="Inicio" type="time" defaultValue="09:00" required />
+            <TimePicker
+              name="start_time"
+              label="Inicio"
+              value={startTime}
+              onChange={setStartTime}
+              compact
+              required
+            />
           </div>
           <div className="w-28">
-            <Input name="end_time" label="Fin" type="time" defaultValue="17:00" required />
+            <TimePicker
+              name="end_time"
+              label="Fin"
+              value={endTime}
+              onChange={setEndTime}
+              compact
+              required
+            />
           </div>
           <Button type="submit" variant="primary" size="sm" loading={pending}>
             Guardar

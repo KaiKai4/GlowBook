@@ -124,3 +124,26 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+.time-picker-wheel {
+  scrollbar-width: none;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 28%,
+    black 72%,
+    transparent 100%
+  );
+}
+
+.time-picker-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .time-picker-wheel {
+    scroll-behavior: auto;
+  }
+}

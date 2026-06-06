@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select } from "@/components/ui/select";
+import { TimePicker } from "@/components/ui/time-picker";
 import { formatTimeTz } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
 import { GripVertical, Plus, Scissors, Trash2 } from "lucide-react";
-import { TimePicker } from "./appointment-time-picker";
 import type {
   AppointmentScheduleItem,
   AppointmentServiceRow,
@@ -97,8 +97,9 @@ export function AppointmentServicesStep({
             label="Hora de inicio"
             value={time}
             onChange={setTime}
-            minTime={selectedWindow?.open}
-            maxTime={selectedWindow?.close}
+            min={selectedWindow?.open ?? "06:00"}
+            max={selectedWindow?.close ?? "21:30"}
+            maxExclusive
           />
         </div>
 

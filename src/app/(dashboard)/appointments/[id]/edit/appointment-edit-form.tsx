@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { TimePicker } from "@/components/ui/time-picker";
 import { formatCurrency, formatLocalDateISO, formatTimeTz } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -332,14 +332,15 @@ export function AppointmentEditForm({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <DatePicker label="Fecha" value={date} onChange={setDate} required />
-          <label className="space-y-1 text-sm font-medium text-neutral-700">
-            Hora
-            <Input
-              type="time"
-              value={time}
-              onChange={(event) => setTime(event.target.value)}
-            />
-          </label>
+          <TimePicker
+            label="Hora"
+            value={time}
+            onChange={setTime}
+            min={selectedWindow?.open ?? "06:00"}
+            max={selectedWindow?.close ?? "21:30"}
+            maxExclusive
+            required
+          />
           {isClosedDay && (
             <p className="sm:col-span-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
               El salÃ³n estÃ¡ cerrado ese dÃ­a.
