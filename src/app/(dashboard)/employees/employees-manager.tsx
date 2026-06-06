@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { Filter, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
@@ -49,40 +48,13 @@ export function EmployeesManager({
         <div>
           <h1 className="text-2xl font-bold text-stone-900">Colaboradores</h1>
           <p className="mt-0.5 text-sm text-stone-400">
-            {filteredEmployees.length} de {employees.length} colaboradores {isArchived ? "archivados" : "activos"}
+            {filteredEmployees.length} de {employees.length} colaboradores activos
           </p>
         </div>
-        {!isArchived && (
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Nuevo colaborador
-          </Button>
-        )}
-      </div>
-
-      <div className="flex gap-2">
-        <Link
-          href="/employees"
-          className={cn(
-            "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-            !isArchived
-              ? "border-brand-400 bg-brand-50 text-brand-700"
-              : "border-stone-200 text-stone-500 hover:bg-stone-50"
-          )}
-        >
-          Activos
-        </Link>
-        <Link
-          href="/employees?status=archived"
-          className={cn(
-            "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-            isArchived
-              ? "border-brand-400 bg-brand-50 text-brand-700"
-              : "border-stone-200 text-stone-500 hover:bg-stone-50"
-          )}
-        >
-          Archivados
-        </Link>
+        <Button variant="primary" onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Nuevo colaborador
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

@@ -9,7 +9,7 @@ export default async function EmployeesPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const profile = await requireProfile();
-  const params = await searchParams;
+  await searchParams;
 
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return (
@@ -23,7 +23,7 @@ export default async function EmployeesPage({
   const view = await getEmployeesPage({
     salonId: profile.salon_id,
     rolesEnabled,
-    status: params.status,
+    status: "active",
   });
 
   return (

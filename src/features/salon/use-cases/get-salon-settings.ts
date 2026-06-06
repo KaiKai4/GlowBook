@@ -2,7 +2,7 @@ import "server-only";
 
 import { findBusinessHours, findSalonSettings } from "../data/salon.repo";
 import {
-  normalizePaymentMethods,
+  paymentMethodsOrDefaults,
   paymentMethodOptionsFor,
   type PaymentMethod,
   type PaymentMethodOption,
@@ -52,7 +52,7 @@ export async function getSalonSettings(salonId: string): Promise<SalonSettingsVi
     timezone: salon?.timezone ?? "America/Panama",
     theme: salon?.theme ?? "violet",
     bgStyle: salon?.bg_style ?? "neutral",
-    paymentMethods: normalizePaymentMethods(salon?.payment_methods),
+    paymentMethods: paymentMethodsOrDefaults(salon?.payment_methods),
     paymentMethodOptions: paymentMethodOptionsFor(salon?.payment_methods),
     businessHours,
   };

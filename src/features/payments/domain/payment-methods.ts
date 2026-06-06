@@ -34,6 +34,11 @@ export function normalizePaymentMethods(values: readonly string[] | null | undef
     normalized.push(method);
   }
 
+  return normalized;
+}
+
+export function paymentMethodsOrDefaults(values: readonly string[] | null | undefined): PaymentMethod[] {
+  const normalized = normalizePaymentMethods(values);
   return normalized.length > 0 ? normalized : DEFAULT_PAYMENT_METHODS;
 }
 
@@ -42,7 +47,7 @@ export function paymentMethodLabel(value: string): string {
 }
 
 export function paymentMethodOptionsFor(values: readonly string[] | null | undefined): PaymentMethodOption[] {
-  return normalizePaymentMethods(values).map((value) => ({
+  return paymentMethodsOrDefaults(values).map((value) => ({
     value,
     label: paymentMethodLabel(value),
   }));
@@ -53,7 +58,7 @@ export function isPaymentMethodEnabled(
   enabledMethods: readonly string[] | null | undefined
 ): boolean {
   const normalizedMethod = normalizePaymentMethod(method).toLocaleLowerCase();
-  return normalizePaymentMethods(enabledMethods).some(
+  return paymentMethodsOrDefaults(enabledMethods).some(
     (enabled) => enabled.toLocaleLowerCase() === normalizedMethod
   );
 }

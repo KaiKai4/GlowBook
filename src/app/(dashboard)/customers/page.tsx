@@ -28,7 +28,7 @@ export default async function CustomersPage({
     salonId: profile.salon_id,
     q: params.q,
     page: params.page,
-    status: params.status,
+    status: "active",
   });
 
   return (
@@ -37,43 +37,20 @@ export default async function CustomersPage({
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Clientes</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {view.total} clientes {view.isArchived ? "archivados" : "activos"}
+            {view.total} clientes activos
           </p>
         </div>
-        {!view.isArchived && <NewCustomerModal />}
-      </div>
-
-      <div className="flex gap-2">
-        <Link
-          href={view.statusHref("active")}
-          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-            !view.isArchived
-              ? "border-rose-300 bg-rose-50 text-rose-700"
-              : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-          }`}
-        >
-          Activos
-        </Link>
-        <Link
-          href={view.statusHref("archived")}
-          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-            view.isArchived
-              ? "border-rose-300 bg-rose-50 text-rose-700"
-              : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-          }`}
-        >
-          Archivados
-        </Link>
+        <NewCustomerModal />
       </div>
 
       <form action="/customers" className="flex gap-2">
-        {view.isArchived && <input type="hidden" name="status" value="archived" />}
         <input
           type="search"
           name="q"
           defaultValue={view.query}
           placeholder="Buscar por nombre, telefono o email..."
-          className="h-9 flex-1 rounded-lg border border-neutral-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+          spellCheck={false}
+          className="h-9 flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         <Button type="submit" variant="outline">
           Buscar

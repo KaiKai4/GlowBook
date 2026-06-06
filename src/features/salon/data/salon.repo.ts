@@ -41,23 +41,58 @@ export interface BusinessHourRow {
 export type UpsertBusinessHourRow =
   Database["public"]["Tables"]["salon_business_hours"]["Insert"];
 
+function isMissingPaymentMethodsColumn(error: { code?: string; message?: string } | null): boolean {
+  return (
+    error?.code === "42703" &&
+    typeof error.message === "string" &&
+    error.message.includes("payment_methods")
+  );
+}
+
 export async function findSalonSettings(salonId: string): Promise<SalonSettings | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("salons")
     .select("id, name, timezone, theme, bg_style, payment_methods")
     .eq("id", salonId)
     .single();
+
+  if (isMissingPaymentMethodsColumn(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("salons")
+      .select("id, name, timezone, theme, bg_style")
+      .eq("id", salonId)
+      .single();
+
+    if (fallbackError) throw fallbackError;
+    return fallbackData ? { ...fallbackData, payment_methods: [] } : null;
+  }
+
+  if (error) throw error;
+
   return data ?? null;
 }
 
 export async function findSalonIdentity(salonId: string): Promise<SalonIdentity | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("salons")
     .select("name, timezone, payment_methods")
     .eq("id", salonId)
     .single();
+
+  if (isMissingPaymentMethodsColumn(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("salons")
+      .select("name, timezone")
+      .eq("id", salonId)
+      .single();
+
+    if (fallbackError) throw fallbackError;
+    return fallbackData ? { ...fallbackData, payment_methods: [] } : null;
+  }
+
+  if (error) throw error;
 
   return data ?? null;
 }

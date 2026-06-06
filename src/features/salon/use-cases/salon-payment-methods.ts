@@ -3,7 +3,7 @@ import "server-only";
 import { getSalonIdentity } from "./salon-identity";
 import {
   isPaymentMethodEnabled,
-  normalizePaymentMethods,
+  paymentMethodsOrDefaults,
   paymentMethodOptionsFor,
   type PaymentMethod,
   type PaymentMethodOption,
@@ -16,7 +16,7 @@ export interface SalonPaymentMethodsView {
 
 export async function getSalonPaymentMethods(salonId: string): Promise<SalonPaymentMethodsView> {
   const salon = await getSalonIdentity(salonId);
-  const enabled = normalizePaymentMethods(salon?.payment_methods);
+  const enabled = paymentMethodsOrDefaults(salon?.payment_methods);
   return {
     enabled,
     options: paymentMethodOptionsFor(enabled),

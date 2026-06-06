@@ -15,7 +15,6 @@ import {
 } from "./actions";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
 import {
-  DEFAULT_PAYMENT_METHOD_OPTIONS,
   normalizePaymentMethod,
   normalizePaymentMethods,
   paymentMethodLabel,
@@ -313,7 +312,11 @@ export function SalonSettings({
                 {paymentMethodLabel(method)}
                 <button
                   type="button"
-                  onClick={() => removePaymentMethod(method)}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    removePaymentMethod(method);
+                  }}
                   className="flex h-5 w-5 items-center justify-center rounded-full text-brand-500 transition-colors hover:bg-brand-100 hover:text-brand-800"
                   aria-label={`Quitar ${paymentMethodLabel(method)}`}
                 >
@@ -321,27 +324,6 @@ export function SalonSettings({
                 </button>
               </span>
             ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
-            <span className="text-xs font-medium text-stone-400">Agregar rapido:</span>
-            {DEFAULT_PAYMENT_METHOD_OPTIONS
-              .filter(
-                (method) =>
-                  !enabledPayments.some(
-                    (enabled) => enabled.toLocaleLowerCase() === method.value.toLocaleLowerCase()
-                  )
-              )
-              .map((method) => (
-                <button
-                  key={method.value}
-                  type="button"
-                  onClick={() => addPaymentMethod(method.value)}
-                  className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-600 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
-                >
-                  {method.label}
-                </button>
-              ))}
           </div>
 
           <div className="flex items-center gap-3">
