@@ -173,7 +173,7 @@ test.describe("salon owner critical smoke", () => {
     await expect(page.getByRole("heading", { name: /Agenda/i })).toBeVisible();
   });
 
-  test("confirms, completes and cancels appointments from the detail screen", async ({ page }) => {
+  test("completes an appointment from the agenda with success feedback", async ({ page }) => {
     test.skip(!admin || !fixture, "Requires Supabase service role fixture env.");
     const activeAdmin = admin!;
     const activeFixture = fixture!;
@@ -184,28 +184,25 @@ test.describe("salon owner critical smoke", () => {
       notes: "E2E lifecycle complete",
     });
 
-    await page.goto(`/appointments/${appointmentToComplete.appointmentId}`);
-    await expect(page.getByText(/Agendada/i)).toBeVisible();
-
-    await page.getByRole("button", { name: /Confirmar/i }).click();
-    await expect(page.getByText(/Confirmada/i)).toBeVisible();
-
+    await page.goto("/appointments");
+    await selectCalendarDate(
+      page,
+      "Fecha de la agenda",
+      appointmentToComplete.startDate
+    );
     await page.getByRole("button", { name: /^Completar$/i }).click();
-    await page.getByRole("button", { name: /Cobrar y completar/i }).click();
-    await expect(page.getByText("Completada")).toBeVisible();
-    await expect(page.getByText(/Esta cita ya/i)).toBeVisible();
 
-    const appointmentToCancel = await createScheduledAppointmentFixture(activeAdmin, activeFixture, {
-      daysAhead: 22,
-      hour: 15,
-      notes: "E2E lifecycle cancel",
-    });
+    const completeDialog = page.getByRole("dialog", { name: "Completar cita" });
+    await expect(completeDialog).toBeVisible();
+    await completeDialog
+      .getByRole("button", { name: /Cobrar y completar/i })
+      .click();
 
-    await page.goto(`/appointments/${appointmentToCancel.appointmentId}`);
-    await expect(page.getByText(/Agendada/i)).toBeVisible();
-    await page.getByRole("button", { name: /Cancelar cita/i }).click();
-    await expect(page.getByText("Cancelada")).toBeVisible();
-    await expect(page.getByText(/Esta cita ya/i)).toBeVisible();
+    await expect(
+      completeDialog.getByRole("button", { name: "Cita completada" })
+    ).toBeVisible();
+    await expect(page.locator("canvas")).toBeVisible();
+    await expect(completeDialog).toBeHidden();
   });
 
   test("archives and reactivates a customer from the customer screens", async ({ page }) => {

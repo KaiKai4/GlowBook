@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -89,7 +89,9 @@ function CompleteAppointmentForm({
   );
   const [completionPriceNote, setCompletionPriceNote] = useState("");
   const [pending, start] = useTransition();
+  const [completed, setCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const completeButtonRef = useRef<HTMLButtonElement>(null);
 
   const chargedItems = useMemo(
     () =>
@@ -112,6 +114,7 @@ function CompleteAppointmentForm({
   const finalTotal = calculateFinalChargedTotal(subtotal, discountAmount);
 
   function handleComplete() {
+    if (pending || completed) return;
     setError(null);
     const fd = new FormData();
     fd.set("appointment_id", appt.id);
@@ -131,8 +134,10 @@ function CompleteAppointmentForm({
     start(async () => {
       const res = await completeAppointmentAction(null, fd);
       if (res.ok) {
-        onClose();
+        setCompleted(true);
+        await launchCompletionConfetti(completeButtonRef.current);
         router.refresh();
+        window.setTimeout(onClose, 700);
       } else {
         setError(res.error ?? "Error al completar la cita.");
       }
@@ -294,14 +299,62 @@ function CompleteAppointmentForm({
         )}
 
         <div className="flex gap-3 pt-1">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>
+          <Button
+            variant="ghost"
+            className="flex-1"
+            disabled={pending || completed}
+            onClick={onClose}
+          >
             Cancelar
           </Button>
-          <Button variant="primary" className="flex-1" loading={pending} onClick={handleComplete}>
+          <Button
+            ref={completeButtonRef}
+            variant="primary"
+            className={cn(
+              "flex-1 transition-[background-color,transform] duration-200 disabled:opacity-100",
+              completed && "bg-emerald-600 hover:bg-emerald-600"
+            )}
+            loading={pending && !completed}
+            disabled={completed}
+            onClick={handleComplete}
+          >
             <CheckCircle2 className="h-4 w-4" />
-            Cobrar y completar
+            {completed ? "Cita completada" : "Cobrar y completar"}
           </Button>
         </div>
     </div>
   );
+}
+
+async function launchCompletionConfetti(button: HTMLButtonElement | null) {
+  if (!button || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  try {
+    const { default: confetti } = await import("canvas-confetti");
+    const rect = button.getBoundingClientRect();
+    const computedStyles = window.getComputedStyle(button);
+    const brandColor =
+      computedStyles.getPropertyValue("--color-brand-600").trim() || "#7C3AED";
+    const origin = {
+      x: (rect.left + rect.width / 2) / window.innerWidth,
+      y: (rect.top + rect.height / 2) / window.innerHeight,
+    };
+
+    confetti({
+      particleCount: 90,
+      spread: 72,
+      startVelocity: 38,
+      gravity: 0.92,
+      scalar: 0.82,
+      ticks: 180,
+      origin,
+      colors: [brandColor, "#22C55E", "#38BDF8", "#FACC15", "#F472B6"],
+      disableForReducedMotion: true,
+      zIndex: 100,
+    });
+  } catch {
+    // Completing the appointment must not depend on the decorative effect.
+  }
 }

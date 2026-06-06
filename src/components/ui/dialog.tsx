@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -14,6 +14,9 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onClose, title, description, children, className }: DialogProps) {
+  const titleId = useId();
+  const descriptionId = useId();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -39,6 +42,8 @@ export function Dialog({ open, onClose, title, description, children, className 
       <div
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
         className={cn(
           "relative z-10 w-full max-w-md rounded-2xl bg-white shadow-xl",
           "max-h-[90vh] overflow-y-auto",
@@ -47,8 +52,8 @@ export function Dialog({ open, onClose, title, description, children, className 
       >
         <div className="flex items-start justify-between border-b border-neutral-100 p-5">
           <div>
-            <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
-            {description && <p className="mt-0.5 text-sm text-neutral-500">{description}</p>}
+            <h2 id={titleId} className="text-base font-semibold text-neutral-900">{title}</h2>
+            {description && <p id={descriptionId} className="mt-0.5 text-sm text-neutral-500">{description}</p>}
           </div>
           <button
             onClick={onClose}
