@@ -9,7 +9,14 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency, formatLocalDateISO, formatTimeTz } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
-import { GripVertical, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  Clock3,
+  GripVertical,
+  StickyNote,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import {
   buildSequentialSchedule,
   findEligibleEmployees,
@@ -77,6 +84,7 @@ export function AppointmentEditForm({
   const [loadingAvailability, startAvailability] = useTransition();
   const [submitting, startSubmit] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
     if (!date) return;
@@ -170,9 +178,149 @@ export function AppointmentEditForm({
         return;
       }
 
-      router.push(`/appointments/${appointment.id}`);
+      router.push("/appointments");
       router.refresh();
     });
+  }
+
+  if (reviewing) {
+    const reviewDate = new Date(`${date}T12:00:00`).toLocaleDateString("es-PA", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return (
+      <div className="space-y-5">
+        <div className="rounded-xl border border-brand-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+          <div className="border-b border-brand-100 px-6 py-5">
+            <p className="text-xs font-semibold uppercase text-brand-600">
+              Revisión final
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-stone-900">
+              Revisa los cambios de la cita
+            </h2>
+            <p className="mt-1 text-sm text-stone-500">
+              La cita todavía no se ha actualizado.
+            </p>
+          </div>
+
+          <div className="grid gap-px bg-stone-100 sm:grid-cols-2">
+            <div className="flex gap-3 bg-white px-6 py-4">
+              <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+              <div>
+                <p className="text-xs font-medium text-stone-400">Fecha</p>
+                <p className="mt-0.5 text-sm font-semibold capitalize text-stone-900">
+                  {reviewDate}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 bg-white px-6 py-4">
+              <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+              <div>
+                <p className="text-xs font-medium text-stone-400">Horario</p>
+                <p className="mt-0.5 text-sm font-semibold text-stone-900">
+                  {schedule[0]?.start
+                    ? formatTimeTz(schedule[0].start, salonConfig.timezone)
+                    : time}
+                  {schedule.at(-1)?.end
+                    ? ` - ${formatTimeTz(schedule.at(-1)!.end!, salonConfig.timezone)}`
+                    : ""}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-stone-100 px-6 py-5">
+            <h3 className="text-sm font-semibold text-stone-900">Servicios</h3>
+            <div className="mt-3 divide-y divide-stone-100">
+              {schedule.map((item, index) => {
+                const employee = employees.find(
+                  (candidate) => candidate.id === item.row.employeeId
+                );
+
+                return (
+                  <div
+                    key={item.row.key}
+                    className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto]"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-stone-900">
+                        {item.service?.name ?? `Servicio ${index + 1}`}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500">
+                        <span className="inline-flex items-center gap-1.5">
+                          <UserRound className="h-3.5 w-3.5" />
+                          {employee?.name ?? "Profesional sin seleccionar"}
+                        </span>
+                        {item.start && item.end && (
+                          <span>
+                            {formatTimeTz(item.start, salonConfig.timezone)} -{" "}
+                            {formatTimeTz(item.end, salonConfig.timezone)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {formatCurrency(item.service?.price ?? 0)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between border-t border-stone-200 pt-4">
+              <span className="text-sm font-semibold text-stone-700">Total</span>
+              <span className="text-lg font-bold text-stone-900">
+                {formatCurrency(total)}
+              </span>
+            </div>
+          </div>
+
+          {notes.trim() && (
+            <div className="border-t border-stone-100 px-6 py-5">
+              <div className="flex gap-3">
+                <StickyNote className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+                <div>
+                  <h3 className="text-sm font-semibold text-stone-900">Notas</h3>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-stone-600">
+                    {notes}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {submitError && (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+            {submitError}
+          </p>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={submitting}
+            onClick={() => {
+              setSubmitError(null);
+              setReviewing(false);
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            loading={submitting}
+            onClick={submit}
+          >
+            Guardar
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -360,10 +508,18 @@ export function AppointmentEditForm({
       )}
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={() => router.push(`/appointments/${appointment.id}`)}>
+        <Button type="button" variant="ghost" onClick={() => router.push("/appointments")}>
           Cancelar
         </Button>
-        <Button type="button" variant="primary" loading={submitting} disabled={!canSubmit} onClick={submit}>
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!canSubmit}
+          onClick={() => {
+            setSubmitError(null);
+            setReviewing(true);
+          }}
+        >
           Guardar cambios
         </Button>
       </div>

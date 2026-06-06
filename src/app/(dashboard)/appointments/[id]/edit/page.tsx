@@ -36,11 +36,11 @@ export default async function EditAppointmentPage({
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <Link
-          href={`/appointments/${appointment.id}`}
+          href="/appointments"
           className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver a la cita
+          Volver a Agenda
         </Link>
         <div className="mt-2">
           <h1 className="text-2xl font-bold text-neutral-900">Editar cita</h1>
