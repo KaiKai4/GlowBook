@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { CalendarView } from "@/features/appointments/view-models";
 
 export type CalView = CalendarView;
@@ -53,12 +54,14 @@ export function DateNav({
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <input
-          type="date"
+        <DatePicker
           value={date}
-          onChange={(e) => go(e.target.value)}
+          onChange={(nextDate) => go(nextDate)}
           disabled={loading}
-          className="h-9 rounded-lg border border-stone-200 px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
+          compact
+          ariaLabel="Fecha de la agenda"
+          className="w-auto"
+          triggerClassName="w-40"
         />
         <button
           onClick={() => shift(1)}

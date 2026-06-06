@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useTransition } from "react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createExpenseAction } from "./actions";
@@ -25,7 +27,7 @@ export function ExpenseGeneralForm({
 }: {
   onResult: (result: { ok: boolean; message: string }) => void;
 }) {
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const [pending, startTransition] = useTransition();
 
   function handleCreateExpense(formData: FormData) {
@@ -45,7 +47,7 @@ export function ExpenseGeneralForm({
       </CardHeader>
       <CardContent>
         <form action={handleCreateExpense} className="grid gap-4 lg:grid-cols-2">
-          <Input name="expense_date" type="date" label="Fecha" defaultValue={today} required />
+          <DatePicker name="expense_date" label="Fecha" defaultValue={today} required />
           <Input name="amount" type="number" step="0.01" min="0.01" label="Monto" required />
           <div>
             <Input

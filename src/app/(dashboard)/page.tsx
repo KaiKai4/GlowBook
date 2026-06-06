@@ -6,13 +6,13 @@ import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { isSalonFeatureDisabled } from "@/features/salon/domain/salon-features";
 import {
   getDashboardOverview,
-  type MonthlyAppointmentPoint,
   type PendingAppointmentConfirmation,
   type TopService,
 } from "@/features/dashboard/use-cases/get-dashboard-overview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatDate } from "@/lib/utils/dates";
+import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
 import {
   AlertCircle,
   BellRing,
@@ -230,103 +230,6 @@ function PendingConfirmations({ pending }: { pending: PendingAppointmentConfirma
   );
 }
 
-function MonthlyAppointmentsChart({ points }: { points: MonthlyAppointmentPoint[] }) {
-  const chart = buildWaveChart(points);
-  const latest = points.at(-1);
-  const previous = points.at(-2);
-  const delta = latest && previous ? latest.total - previous.total : 0;
-  const deltaText = delta === 0 ? "sin cambios" : `${delta > 0 ? "+" : ""}${delta} vs. mes anterior`;
-
-  return (
-    <Card className="overflow-hidden">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-brand-500" />
-          Citas completadas por mes
-          <span
-            className={cn(
-              "ml-auto rounded-full px-2 py-0.5 text-xs font-semibold",
-              delta > 0 && "bg-emerald-50 text-emerald-600",
-              delta < 0 && "bg-red-50 text-red-600",
-              delta === 0 && "bg-stone-100 text-stone-500"
-            )}
-          >
-            {deltaText}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {points.length === 0 ? (
-          <p className="py-10 text-center text-sm text-stone-400">Aún no hay citas completadas para graficar.</p>
-        ) : (
-          <div className="rounded-xl border border-brand-100 bg-gradient-to-b from-brand-50/70 via-white to-white px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-            <svg viewBox="0 0 520 180" className="h-48 w-full overflow-visible" role="img" aria-label="Citas completadas por mes">
-              <defs>
-                <linearGradient id="completedWaveStroke" x1="0" y1="0" x2="520" y2="0">
-                  <stop stopColor="var(--color-brand-400)" />
-                  <stop offset="0.48" stopColor="var(--color-brand-600)" />
-                  <stop offset="1" stopColor="var(--color-brand-800)" />
-                </linearGradient>
-                <linearGradient id="completedWaveFill" x1="0" y1="0" x2="0" y2="180">
-                  <stop stopColor="var(--color-brand-400)" stopOpacity="0.22" />
-                  <stop offset="1" stopColor="var(--color-brand-50)" stopOpacity="0.04" />
-                </linearGradient>
-                <filter id="completedWaveGlow" x="-8%" y="-20%" width="116%" height="145%">
-                  <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="var(--color-brand-500)" floodOpacity="0.2" />
-                </filter>
-              </defs>
-              {[0, 1, 2, 3].map((line) => (
-                <path
-                  key={line}
-                  d={`M 18 ${32 + line * 34} H 502`}
-                  stroke="var(--color-brand-100)"
-                  strokeDasharray="4 8"
-                  strokeLinecap="round"
-                />
-              ))}
-              <path d={chart.areaPath} fill="url(#completedWaveFill)" />
-              <path
-                d={chart.path}
-                fill="none"
-                filter="url(#completedWaveGlow)"
-                stroke="url(#completedWaveStroke)"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="5"
-              />
-              {chart.points.map((point) => (
-                <g key={point.monthKey} className="group">
-                  <circle cx={point.x} cy={point.y} r="16" fill="transparent" />
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r="5"
-                    fill="#FFFFFF"
-                    stroke="var(--color-brand-600)"
-                    strokeWidth="3"
-                    className="opacity-0 transition-[opacity,transform] group-hover:opacity-100"
-                  />
-                  <g className="pointer-events-none opacity-0 transition-opacity group-hover:opacity-100">
-                    <rect x={point.x - 34} y={Math.max(8, point.y - 46)} width="68" height="30" rx="8" fill="var(--color-brand-900)" />
-                    <text x={point.x} y={Math.max(26, point.y - 26)} textAnchor="middle" className="fill-white text-[11px] font-semibold">
-                      {point.total} citas
-                    </text>
-                  </g>
-                </g>
-              ))}
-            </svg>
-            <div className="grid grid-cols-6 gap-1 text-center text-[10px] font-semibold uppercase text-stone-400 sm:grid-cols-12">
-              {points.map((point) => (
-                <span key={point.monthKey}>{point.label}</span>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 function TopServices({ services }: { services: TopService[] }) {
   const maxCount = Math.max(...services.map((service) => service.count), 1);
   const barPalettes = [
@@ -376,36 +279,4 @@ function TopServices({ services }: { services: TopService[] }) {
       </CardContent>
     </Card>
   );
-}
-
-function buildWaveChart(points: MonthlyAppointmentPoint[]) {
-  const width = 520;
-  const height = 180;
-  const paddingX = 18;
-  const paddingY = 22;
-  const innerWidth = width - paddingX * 2;
-  const innerHeight = height - paddingY * 2;
-  const max = Math.max(...points.map((point) => point.total), 1);
-
-  const chartPoints = points.map((point, index) => {
-    const x = paddingX + (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth);
-    const y = paddingY + innerHeight - (point.total / max) * innerHeight;
-    return { ...point, x, y };
-  });
-
-  if (chartPoints.length === 0) return { points: chartPoints, path: "", areaPath: "" };
-
-  const path = chartPoints.reduce((acc, point, index) => {
-    if (index === 0) return `M ${point.x} ${point.y}`;
-    const previous = chartPoints[index - 1];
-    const controlDistance = (point.x - previous.x) / 2;
-    return `${acc} C ${previous.x + controlDistance} ${previous.y}, ${point.x - controlDistance} ${point.y}, ${point.x} ${point.y}`;
-  }, "");
-
-  const first = chartPoints[0];
-  const last = chartPoints[chartPoints.length - 1];
-  const baseline = height - paddingY + 8;
-  const areaPath = `${path} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
-
-  return { points: chartPoints, path, areaPath };
 }

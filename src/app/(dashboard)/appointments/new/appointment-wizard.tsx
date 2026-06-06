@@ -226,7 +226,7 @@ export function AppointmentWizard({
         return;
       }
 
-      router.push(`/appointments/${result.value}`);
+      router.push("/appointments");
       router.refresh();
     });
   }

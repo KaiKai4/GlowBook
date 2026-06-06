@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -330,14 +331,7 @@ export function AppointmentEditForm({
           <CardTitle>Horario</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <label className="space-y-1 text-sm font-medium text-neutral-700">
-            Fecha
-            <Input
-              type="date"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
-          </label>
+          <DatePicker label="Fecha" value={date} onChange={setDate} required />
           <label className="space-y-1 text-sm font-medium text-neutral-700">
             Hora
             <Input

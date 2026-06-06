@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +21,7 @@ export function InventoryPurchaseExpenseForm({
   canManageInventory: boolean;
   onResult: (result: { ok: boolean; message: string }) => void;
 }) {
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const [purchaseQuantity, setPurchaseQuantity] = useState("");
   const [purchaseUnitCost, setPurchaseUnitCost] = useState("");
   const [pending, startTransition] = useTransition();
@@ -47,7 +49,7 @@ export function InventoryPurchaseExpenseForm({
           </p>
         ) : (
           <form action={handleCreateInventoryPurchase} className="grid gap-4 lg:grid-cols-2">
-            <Input name="purchase_date" type="date" label="Fecha" defaultValue={today} required />
+            <DatePicker name="purchase_date" label="Fecha" defaultValue={today} required />
             <Input name="supplier_name" label="Comercio / empresa" placeholder="Proveedor, tienda o distribuidor" />
             <div className="lg:col-span-2">
               <ProductSelect products={inventoryProducts} />

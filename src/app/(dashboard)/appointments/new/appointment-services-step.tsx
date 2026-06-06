@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select } from "@/components/ui/select";
 import { formatTimeTz } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
@@ -84,12 +84,10 @@ export function AppointmentServicesStep({
 
       <CardContent className="space-y-6 pt-5">
         <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-stone-50 border border-stone-100">
-          <Input
+          <DatePicker
             label="Fecha"
-            type="date"
             value={date}
-            onChange={(event) => {
-              const nextDate = event.target.value;
+            onChange={(nextDate) => {
               setDate(nextDate);
               onLoadAvailability(nextDate);
             }}

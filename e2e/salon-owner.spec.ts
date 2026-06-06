@@ -28,8 +28,8 @@ let fixture: SalonOwnerFixture | null = null;
 
 async function login(page: Page) {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(credentials!.email);
-  await page.getByLabel(/Contrase/i).fill(credentials!.password);
+  await page.getByLabel(/Correo|Email/i).fill(credentials!.email);
+  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(credentials!.password);
   await page.getByRole("button", { name: /Iniciar/i }).click();
   await expect(page).not.toHaveURL(/\/login/);
 }
@@ -38,6 +38,31 @@ function futureDate(daysAhead = 14): string {
   const date = new Date();
   date.setDate(date.getDate() + daysAhead);
   return date.toISOString().slice(0, 10);
+}
+
+async function selectCalendarDate(page: Page, label: string, value: string) {
+  const target = new Date(`${value}T12:00:00`);
+  const current = new Date();
+  const monthDifference =
+    (target.getFullYear() - current.getFullYear()) * 12 +
+    target.getMonth() -
+    current.getMonth();
+
+  await page.getByLabel(label).click();
+
+  const direction = monthDifference < 0 ? /Mes anterior/i : /Mes siguiente/i;
+  for (let index = 0; index < Math.abs(monthDifference); index += 1) {
+    await page.getByRole("button", { name: direction }).click();
+  }
+
+  const fullDate = new Intl.DateTimeFormat("es-PA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(target);
+
+  await page.getByRole("button", { name: fullDate, exact: true }).click();
 }
 
 async function selectFirstRealOption(page: Page, label: string | RegExp) {
@@ -118,7 +143,7 @@ test.describe("salon owner critical smoke", () => {
     await selectFirstRealOption(page, "Cliente");
     await page.getByRole("button", { name: /Continuar/i }).click();
 
-    await page.getByLabel("Fecha").fill(futureDate());
+    await selectCalendarDate(page, "Fecha", futureDate());
     await selectFirstRealOption(page, "Categoria");
     await selectFirstRealOption(page, "Servicio");
     await selectFirstRealOption(page, "Profesional");
@@ -128,7 +153,7 @@ test.describe("salon owner critical smoke", () => {
     await page.getByLabel(/Notas/i).fill("E2E cita valida");
     await page.getByRole("button", { name: /Confirmar cita/i }).click();
 
-    await expect(page).toHaveURL(/\/appointments\?date=/);
+    await expect(page).toHaveURL(/\/appointments$/);
     await expect(page.getByRole("heading", { name: /Agenda/i })).toBeVisible();
   });
 

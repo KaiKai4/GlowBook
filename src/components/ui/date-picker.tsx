@@ -1,0 +1,478 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+} from "lucide-react";
+import {
+  format,
+  getMonth,
+  getYear,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  setMonth,
+  setYear,
+} from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils/cn";
+import {
+  getCalendarDays,
+  getYearBlock,
+  parseDateValue,
+  shiftCalendarView,
+  toDateValue,
+  type DatePickerMode,
+} from "./date-picker-utils";
+
+interface DatePickerProps {
+  value?: string;
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  name?: string;
+  label?: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  compact?: boolean;
+  className?: string;
+  triggerClassName?: string;
+  ariaLabel?: string;
+}
+
+const WEEKDAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
+const MONTHS = Array.from({ length: 12 }, (_, month) =>
+  format(new Date(2026, month, 1), "MMM", { locale: es }).replace(".", "")
+);
+
+export function DatePicker({
+  value,
+  defaultValue,
+  onChange,
+  name,
+  label,
+  hint,
+  error,
+  required,
+  disabled,
+  min,
+  max,
+  compact = false,
+  className,
+  triggerClassName,
+  ariaLabel,
+}: DatePickerProps) {
+  const generatedId = useId();
+  const triggerId = `date-picker-${generatedId.replaceAll(":", "")}`;
+  const controlled = value !== undefined;
+  const [internalValue, setInternalValue] = useState(defaultValue ?? "");
+  const selectedValue = controlled ? value : internalValue;
+  const selectedDate = parseDateValue(selectedValue);
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<DatePickerMode>("days");
+  const [focusedDate, setFocusedDate] = useState(
+    selectedDate ?? parseDateValue(defaultValue) ?? new Date()
+  );
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const descriptionId = error || hint ? `${triggerId}-description` : undefined;
+
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const panelWidth = 304;
+    const viewportPadding = 12;
+    const left = Math.min(
+      Math.max(rect.left, viewportPadding),
+      window.innerWidth - panelWidth - viewportPadding
+    );
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const panelHeight = 356;
+    const top =
+      spaceBelow >= panelHeight || rect.top < panelHeight
+        ? rect.bottom + 8
+        : rect.top - panelHeight - 8;
+
+    setPosition({ top: Math.max(viewportPadding, top), left });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        !triggerRef.current?.contains(target) &&
+        !panelRef.current?.contains(target)
+      ) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, updatePosition]);
+
+  function openCalendar() {
+    if (disabled) return;
+    setFocusedDate(selectedDate ?? new Date());
+    setMode("days");
+    setOpen((current) => !current);
+  }
+
+  function selectDate(date: Date) {
+    const nextValue = toDateValue(date);
+    if (!controlled) setInternalValue(nextValue);
+    onChange?.(nextValue);
+    setFocusedDate(date);
+    setOpen(false);
+    window.setTimeout(() => triggerRef.current?.focus(), 0);
+  }
+
+  function isUnavailable(date: Date) {
+    const dateValue = toDateValue(date);
+    return Boolean((min && dateValue < min) || (max && dateValue > max));
+  }
+
+  return (
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+      {label && (
+        <label htmlFor={triggerId} className="text-sm font-semibold text-stone-700">
+          {label}
+          {required && (
+            <span className="ml-0.5 text-brand-600" aria-hidden="true">
+              *
+            </span>
+          )}
+        </label>
+      )}
+      {name && <input type="hidden" name={name} value={selectedValue} />}
+      <button
+        ref={triggerRef}
+        id={triggerId}
+        type="button"
+        disabled={disabled}
+        aria-label={ariaLabel ?? label ?? "Seleccionar fecha"}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-describedby={descriptionId}
+        onClick={openCalendar}
+        className={cn(
+          "flex w-full items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 text-left text-sm text-stone-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color]",
+          "hover:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent",
+          "disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-400",
+          compact ? "h-9 min-w-36" : "h-11",
+          error && "border-red-400 bg-red-50/30 focus:ring-red-500",
+          triggerClassName
+        )}
+      >
+        <span className={cn("truncate", !selectedDate && "text-stone-500")}>
+          {selectedDate
+            ? format(selectedDate, compact ? "dd/MM/yyyy" : "d 'de' MMMM 'de' yyyy", {
+                locale: es,
+              })
+            : "Selecciona una fecha"}
+        </span>
+        <CalendarDays className="h-4 w-4 shrink-0 text-brand-500" />
+      </button>
+      {error && (
+        <p id={descriptionId} className="text-xs font-medium text-red-600">
+          {error}
+        </p>
+      )}
+      {hint && !error && (
+        <p id={descriptionId} className="text-xs text-stone-500">
+          {hint}
+        </p>
+      )}
+
+      {open &&
+        createPortal(
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-label="Seleccionar fecha"
+            style={{ top: position.top, left: position.left }}
+            className="fixed z-[70] w-[304px] rounded-xl border border-brand-100 bg-white p-3 shadow-[0_8px_24px_rgba(28,25,23,0.16)]"
+          >
+            <CalendarHeader
+              date={focusedDate}
+              mode={mode}
+              onModeChange={setMode}
+              onShift={(direction) =>
+                setFocusedDate((current) =>
+                  shiftCalendarView(current, mode, direction)
+                )
+              }
+            />
+
+            {mode === "days" && (
+              <DaysView
+                month={focusedDate}
+                selectedDate={selectedDate}
+                isUnavailable={isUnavailable}
+                onSelect={selectDate}
+              />
+            )}
+            {mode === "months" && (
+              <MonthsView
+                date={focusedDate}
+                selectedDate={selectedDate}
+                onSelect={(month) => {
+                  setFocusedDate((current) => setMonth(current, month));
+                  setMode("days");
+                }}
+              />
+            )}
+            {mode === "years" && (
+              <YearsView
+                date={focusedDate}
+                selectedDate={selectedDate}
+                onSelect={(year) => {
+                  setFocusedDate((current) => setYear(current, year));
+                  setMode("months");
+                }}
+              />
+            )}
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}
+
+function CalendarHeader({
+  date,
+  mode,
+  onModeChange,
+  onShift,
+}: {
+  date: Date;
+  mode: DatePickerMode;
+  onModeChange: (mode: DatePickerMode) => void;
+  onShift: (direction: -1 | 1) => void;
+}) {
+  const years = getYearBlock(getYear(date));
+  const label =
+    mode === "days"
+      ? format(date, "MMMM yyyy", { locale: es })
+      : mode === "months"
+        ? String(getYear(date))
+        : `${years[0]} - ${years.at(-1)}`;
+
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <button
+        type="button"
+        onClick={() =>
+          onModeChange(mode === "days" ? "months" : mode === "months" ? "years" : "days")
+        }
+        className="inline-flex h-9 min-w-0 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold capitalize text-stone-900 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+        aria-label="Cambiar vista del calendario"
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+      </button>
+      <div className="flex items-center gap-1">
+        <CalendarArrow
+          label={mode === "days" ? "Mes anterior" : mode === "months" ? "Año anterior" : "Años anteriores"}
+          onClick={() => onShift(-1)}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </CalendarArrow>
+        <CalendarArrow
+          label={mode === "days" ? "Mes siguiente" : mode === "months" ? "Año siguiente" : "Años siguientes"}
+          onClick={() => onShift(1)}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </CalendarArrow>
+      </div>
+    </div>
+  );
+}
+
+function CalendarArrow({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+    >
+      {children}
+    </button>
+  );
+}
+
+function DaysView({
+  month,
+  selectedDate,
+  isUnavailable,
+  onSelect,
+}: {
+  month: Date;
+  selectedDate: Date | null;
+  isUnavailable: (date: Date) => boolean;
+  onSelect: (date: Date) => void;
+}) {
+  const days = getCalendarDays(month);
+
+  return (
+    <>
+      <div className="grid grid-cols-7 pb-1">
+        {WEEKDAYS.map((weekday, index) => (
+          <span
+            key={weekday}
+            className={cn(
+              "flex h-8 items-center justify-center text-[11px] font-semibold text-stone-500",
+              index > 4 && "text-brand-500"
+            )}
+          >
+            {weekday}
+          </span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {days.map((day) => {
+          const selected = selectedDate ? isSameDay(day, selectedDate) : false;
+          const outside = !isSameMonth(day, month);
+          const unavailable = isUnavailable(day);
+
+          return (
+            <button
+              key={toDateValue(day)}
+              type="button"
+              disabled={unavailable}
+              onClick={() => onSelect(day)}
+              className={cn(
+                "relative flex h-9 items-center justify-center rounded-lg text-sm font-medium text-stone-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500",
+                "hover:bg-brand-50 hover:text-brand-700",
+                outside && "text-stone-300",
+                selected && "bg-brand-600 text-white hover:bg-brand-700 hover:text-white",
+                unavailable && "cursor-not-allowed text-stone-200 hover:bg-transparent hover:text-stone-200"
+              )}
+              aria-current={isToday(day) ? "date" : undefined}
+              aria-pressed={selected}
+              aria-label={format(day, "EEEE, d 'de' MMMM 'de' yyyy", {
+                locale: es,
+              })}
+            >
+              {format(day, "d")}
+              {isToday(day) && !selected && (
+                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-brand-600" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function MonthsView({
+  date,
+  selectedDate,
+  onSelect,
+}: {
+  date: Date;
+  selectedDate: Date | null;
+  onSelect: (month: number) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2 py-2">
+      {MONTHS.map((month, index) => {
+        const selected =
+          selectedDate &&
+          getYear(selectedDate) === getYear(date) &&
+          getMonth(selectedDate) === index;
+
+        return (
+          <button
+            key={month}
+            type="button"
+            onClick={() => onSelect(index)}
+            className={cn(
+              "h-12 rounded-lg text-sm font-semibold capitalize text-stone-700 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500",
+              selected && "bg-brand-600 text-white hover:bg-brand-700 hover:text-white"
+            )}
+          >
+            {month}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function YearsView({
+  date,
+  selectedDate,
+  onSelect,
+}: {
+  date: Date;
+  selectedDate: Date | null;
+  onSelect: (year: number) => void;
+}) {
+  const years = getYearBlock(getYear(date));
+
+  return (
+    <div className="grid grid-cols-3 gap-2 py-2">
+      {years.map((year) => {
+        const selected = selectedDate && getYear(selectedDate) === year;
+
+        return (
+          <button
+            key={year}
+            type="button"
+            onClick={() => onSelect(year)}
+            className={cn(
+              "h-12 rounded-lg text-sm font-semibold text-stone-700 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500",
+              selected && "bg-brand-600 text-white hover:bg-brand-700 hover:text-white"
+            )}
+          >
+            {year}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
