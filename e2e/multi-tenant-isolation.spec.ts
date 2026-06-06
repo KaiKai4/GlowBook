@@ -17,8 +17,10 @@ let salonBAppointment: AppointmentFixture | null = null;
 
 async function loginAsSalonA(page: Page) {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(salonA!.email);
-  await page.getByLabel(/Contrase/i).fill(salonA!.password);
+  await page.getByLabel(/Correo|Email/i).fill(salonA!.email);
+  await page
+    .getByRole("textbox", { name: "Contraseña", exact: true })
+    .fill(salonA!.password);
   await page.getByRole("button", { name: /Iniciar/i }).click();
   await expect(page).not.toHaveURL(/\/login/);
 }
@@ -57,8 +59,10 @@ test.describe("multi-tenant isolation", () => {
     await expect(page.getByText(salonB!.email)).toHaveCount(0);
   });
 
-  test("denies direct access to another Salon appointment detail", async ({ page }) => {
-    const response = await page.goto(`/appointments/${salonBAppointment!.appointmentId}`);
+  test("denies direct access to another Salon appointment edit screen", async ({ page }) => {
+    const response = await page.goto(
+      `/appointments/${salonBAppointment!.appointmentId}/edit`
+    );
 
     expect(response?.status()).toBe(404);
     await expect(page.getByText(/tenant B private appointment/i)).toHaveCount(0);

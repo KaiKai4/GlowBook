@@ -32,9 +32,8 @@ function canManageAppointments(
   return { ok: false, error: "No tienes permiso para gestionar citas." };
 }
 
-function revalidateAppointmentFlows(appointmentId?: string): void {
+function revalidateAppointmentFlows(): void {
   revalidatePath("/appointments");
-  if (appointmentId) revalidatePath(`/appointments/${appointmentId}`);
 }
 
 // Returns blocking appointment slots for the salon on a given date, grouped by employee.
@@ -149,7 +148,7 @@ export async function updateAppointmentScheduleAction(
     salonId: profile.salon_id,
   });
 
-  if (result.ok) revalidateAppointmentFlows(parsed.data.appointment_id);
+  if (result.ok) revalidateAppointmentFlows();
   return result;
 }
 
@@ -161,7 +160,7 @@ export async function cancelAppointmentAction(
   if (!permission.ok) return { ok: false, error: "No tienes permiso para cancelar citas." };
 
   const result = await cancelAppointment(appointmentId, profile.salon_id);
-  if (result.ok) revalidateAppointmentFlows(appointmentId);
+  if (result.ok) revalidateAppointmentFlows();
   return result;
 }
 
@@ -173,7 +172,7 @@ export async function confirmAppointmentAction(
   if (!permission.ok) return { ok: false, error: "No tienes permiso para confirmar citas." };
 
   const result = await confirmAppointment(appointmentId, profile.salon_id);
-  if (result.ok) revalidateAppointmentFlows(appointmentId);
+  if (result.ok) revalidateAppointmentFlows();
   return result;
 }
 
@@ -220,7 +219,7 @@ export async function completeAppointmentAction(
   );
 
   if (result.ok) {
-    revalidateAppointmentFlows(parsed.data.appointment_id);
+    revalidateAppointmentFlows();
     revalidatePath("/customers");
   }
 
