@@ -31,6 +31,16 @@ export interface EmployeeNameRow {
   last_name: string;
 }
 
+export interface EmployeeListRow {
+  id: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  profile_id: string | null;
+  services: Array<{ service_id: string | null }>;
+  categories: Array<{ category: { id: string; name: string } | null }>;
+}
+
 export async function findEmployees(salonId: string, isActive?: boolean) {
   const supabase = await createSupabaseServerClient();
   let query = supabase
@@ -49,6 +59,32 @@ export async function findEmployees(salonId: string, isActive?: boolean) {
   const { data, error } = await query;
   if (error) throw error;
   return data ?? [];
+}
+
+export async function findEmployeeListRows(
+  salonId: string,
+  isActive?: boolean
+): Promise<EmployeeListRow[]> {
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from("employees")
+    .select(`
+      id,
+      first_name,
+      last_name,
+      is_active,
+      profile_id,
+      services:employee_services(service_id),
+      categories:employee_categories(category:service_categories(id, name))
+    `)
+    .eq("salon_id", salonId)
+    .order("last_name", { ascending: true });
+
+  if (isActive !== undefined) query = query.eq("is_active", isActive);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as unknown as EmployeeListRow[];
 }
 
 export async function findActiveEmployeeNames(salonId: string): Promise<EmployeeNameRow[]> {

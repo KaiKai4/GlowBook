@@ -28,6 +28,7 @@ type AppointmentItemRow = {
   discount_amount: number | null;
   service: RelatedOne<{ id: string; name: string }>;
   employee: RelatedOne<{ id: string; first_name: string; last_name: string }>;
+  appointment?: RelatedOne<{ status: string }>;
 };
 
 export interface OperationalReportRows {
@@ -101,11 +102,20 @@ export async function findOperationalReportRows({
 }: OperationalReportRowQuery): Promise<OperationalReportRows> {
   const supabase = await createSupabaseServerClient();
 
-  const [appointmentsResponse, newCustomersResponse] = await Promise.all([
+  const [appointmentsResponse, itemsResponse, newCustomersResponse] = await Promise.all([
     supabase
       .from("appointments")
       .select("id, status, total_price, discount_amount")
       .eq("salon_id", salonId)
+      .gte("start_time", start)
+      .lte("start_time", end),
+    supabase
+      .from("appointment_items")
+      .select(
+        "appointment_id, price, discount_amount, service:services(id, name), employee:employees(id, first_name, last_name), appointment:appointments!inner(status)"
+      )
+      .eq("salon_id", salonId)
+      .eq("appointment.status", COMPLETED_APPOINTMENT_STATUS)
       .gte("start_time", start)
       .lte("start_time", end),
     supabase
@@ -118,26 +128,11 @@ export async function findOperationalReportRows({
   ]);
 
   if (appointmentsResponse.error) throw appointmentsResponse.error;
+  if (itemsResponse.error) throw itemsResponse.error;
   if (newCustomersResponse.error) throw newCustomersResponse.error;
 
   const appointments = (appointmentsResponse.data ?? []).map(normalizeAppointment);
-  const completedAppointmentIds = appointments
-    .filter((appointment) => appointment.status === COMPLETED_APPOINTMENT_STATUS)
-    .map((appointment) => appointment.id);
-
-  let items: ReportAppointmentItem[] = [];
-  if (completedAppointmentIds.length > 0) {
-    const { data, error } = await supabase
-      .from("appointment_items")
-      .select(
-        "appointment_id, price, discount_amount, service:services(id, name), employee:employees(id, first_name, last_name)"
-      )
-      .eq("salon_id", salonId)
-      .in("appointment_id", completedAppointmentIds);
-
-    if (error) throw error;
-    items = ((data ?? []) as unknown as AppointmentItemRow[]).map(normalizeItem);
-  }
+  const items = ((itemsResponse.data ?? []) as unknown as AppointmentItemRow[]).map(normalizeItem);
 
   return {
     appointments,

@@ -180,3 +180,24 @@ Posibles decisiones:
 - Cambiar query shape en Adapter.
 - Crear read model/RPC.
 - Subir plan Supabase/Vercel.
+
+## App Router Data Access Decision - 2026-06-07
+
+Decision:
+
+- Mantener Server Actions para mutaciones.
+- Mover lecturas interactivas de pagina a `searchParams` y Server Components.
+- Conservar lecturas pequenas de lookup como Server Actions mientras no sean cuello de botella medido.
+- Diferir RPC/read models hasta medir despues de los cambios de bajo riesgo.
+
+Aplicado:
+
+- `/appointments` usa `date` y `view` en URL.
+- `/reports` usa `preset` o rango `from`/`to` en URL.
+- `/customers` usa `q` y `page` en URL.
+
+Verificacion esperada:
+
+- Cambios de agenda, reportes y clientes ya no deben aparecer como Server Actions `POST` de lectura en `next dev`.
+- Mutaciones de negocio siguen usando Server Actions.
+- Si dashboard/reportes siguen por encima del presupuesto en staging, evaluar RPC/read model.

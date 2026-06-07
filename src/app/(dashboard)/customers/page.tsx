@@ -3,7 +3,11 @@ import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { getCustomersPage } from "@/features/customers/use-cases/get-customers-page";
 import { CustomersClient } from "./customers-client";
 
-export default async function CustomersPage() {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
   const profile = await requireProfile();
 
   if (!hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE)) {
@@ -14,10 +18,13 @@ export default async function CustomersPage() {
     );
   }
 
+  const params = await searchParams;
   const view = await getCustomersPage({
     salonId: profile.salon_id,
+    q: params.q,
+    page: params.page,
     status: "active",
   });
 
-  return <CustomersClient initialView={view} />;
+  return <CustomersClient key={`${view.query}:${view.page}`} initialView={view} />;
 }

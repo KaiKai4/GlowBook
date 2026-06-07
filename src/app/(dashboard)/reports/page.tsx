@@ -28,5 +28,5 @@ export default async function ReportsPage({
   };
   const report = await getOperationalReport({ salonId: profile.salon_id, filters, modules });
 
-  return <ReportsView {...report} />;
+  return <ReportsView key={`${report.preset}:${report.from}:${report.to}`} {...report} />;
 }

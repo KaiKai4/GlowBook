@@ -27,7 +27,7 @@ export function GlowBookMark({ size = "md", className }: GlowBookMarkProps) {
       alt="GlowBook"
       width={600}
       height={400}
-      priority={size === "lg"}
+      loading="eager"
       className={cn(markSizes[size], "shrink-0 object-contain", className)}
     />
   );

@@ -22,10 +22,7 @@ import {
   findOrCreateTemporaryCustomer,
   promoteCustomer,
 } from "@/features/customers/use-cases/customer-temporary";
-import { getCustomersPage } from "@/features/customers/use-cases/get-customers-page";
 import type { Result } from "@/lib/result";
-
-export type CustomersPageActionView = Awaited<ReturnType<typeof getCustomersPage>>;
 
 function canManageCustomers(profile: Awaited<ReturnType<typeof requireActiveProfile>>): Result<void> {
   if (hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE)) {
@@ -54,30 +51,6 @@ export async function createCustomerAction(
   const result = await createCustomerProfile(profile.salon_id, parsed.data);
   if (result.ok) revalidatePath("/customers");
   return result;
-}
-
-export async function getCustomersPageAction({
-  q,
-  page,
-}: {
-  q?: string;
-  page?: number;
-}): Promise<Result<CustomersPageActionView>> {
-  const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
-  if (!permission.ok) return permission;
-
-  try {
-    const view = await getCustomersPage({
-      salonId: profile.salon_id,
-      q,
-      page: String(page ?? 1),
-      status: "active",
-    });
-    return { ok: true, value: view };
-  } catch {
-    return { ok: false, error: "No se pudo cargar la lista de clientes." };
-  }
 }
 
 // Checks if a phone number already belongs to a permanent customer in this salon.

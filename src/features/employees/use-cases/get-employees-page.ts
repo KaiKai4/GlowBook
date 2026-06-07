@@ -2,7 +2,7 @@ import "server-only";
 
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
-import { findEmployees } from "../data/employees.repo";
+import { findEmployeeListRows } from "../data/employees.repo";
 
 type EmployeeCategoryRef = {
   category: { id: string; name: string } | null;
@@ -54,7 +54,7 @@ export async function getEmployeesPage({
   const isArchived = mode === "archived";
 
   const [employees, categories, allRoles] = await Promise.all([
-    findEmployees(salonId, !isArchived),
+    findEmployeeListRows(salonId, !isArchived),
     getCategoryServiceOptions(salonId),
     rolesEnabled ? getAssignableRoleOptions(salonId) : Promise.resolve([]),
   ]);

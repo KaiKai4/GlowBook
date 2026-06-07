@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { CalendarViewModel } from "@/features/appointments/view-models";
 import { CalendarDays, Plus } from "lucide-react";
 import { AppointmentsDayView } from "./appointments-day-view";
-import { getCalendarViewAction } from "./actions";
 import { DateNav } from "./date-nav";
+import { buildAppointmentsHref } from "./calendar-url";
 
 export function AppointmentsClient({
   initialCalendar,
@@ -16,19 +17,13 @@ export function AppointmentsClient({
   initialCalendar: CalendarViewModel;
   canManage: boolean;
 }) {
-  const [calendar, setCalendar] = useState(initialCalendar);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const calendar = initialCalendar;
 
   function changeCalendar(next: { date: string; view: CalendarViewModel["view"] }) {
-    setError(null);
-    startTransition(async () => {
-      const result = await getCalendarViewAction(next);
-      if (result.ok) {
-        setCalendar(result.value);
-      } else {
-        setError(result.error);
-      }
+    startTransition(() => {
+      router.replace(buildAppointmentsHref(next));
     });
   }
 
@@ -65,12 +60,6 @@ export function AppointmentsClient({
           )}
         </div>
       </div>
-
-      {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-          {error}
-        </p>
-      )}
 
       <div className={pending ? "opacity-70 transition-opacity" : "transition-opacity"}>
         <AppointmentsDayView

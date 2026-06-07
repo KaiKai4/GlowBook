@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRetailSale, getRetailPage } from "./retail-sales";
 import { getActiveCustomerOptions } from "@/features/customers/use-cases/customer-options";
 import { getRetailInventoryProducts } from "@/features/inventory/use-cases/retail-inventory-products";
+import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
 import { findRecentRetailSales, recordRetailSaleAtomically } from "../data/retail.repo";
 
 vi.mock("@/features/customers/use-cases/customer-options", () => ({
@@ -12,6 +13,10 @@ vi.mock("@/features/inventory/use-cases/retail-inventory-products", () => ({
   getRetailInventoryProducts: vi.fn(),
 }));
 
+vi.mock("@/features/salon/use-cases/salon-payment-methods", () => ({
+  getSalonPaymentMethods: vi.fn(),
+}));
+
 vi.mock("../data/retail.repo", () => ({
   findRecentRetailSales: vi.fn(),
   recordRetailSaleAtomically: vi.fn(),
@@ -19,6 +24,7 @@ vi.mock("../data/retail.repo", () => ({
 
 const mockedGetActiveCustomerOptions = vi.mocked(getActiveCustomerOptions);
 const mockedGetRetailInventoryProducts = vi.mocked(getRetailInventoryProducts);
+const mockedGetSalonPaymentMethods = vi.mocked(getSalonPaymentMethods);
 const mockedRecentSales = vi.mocked(findRecentRetailSales);
 const mockedRecordSale = vi.mocked(recordRetailSaleAtomically);
 
@@ -83,11 +89,16 @@ describe("retail sales use-cases", () => {
     ]);
     mockedGetActiveCustomerOptions.mockResolvedValue([{ id: "customer-1", name: "Ana Mora" }]);
     mockedRecentSales.mockResolvedValue([]);
+    mockedGetSalonPaymentMethods.mockResolvedValue({
+      enabled: ["cash"],
+      options: [{ value: "cash", label: "Efectivo" }],
+    });
 
     const page = await getRetailPage("salon-1");
 
     expect(page.products.map((product) => product.id)).toEqual(["active-retail"]);
     expect(page.customers).toEqual([{ id: "customer-1", name: "Ana Mora" }]);
+    expect(page.paymentMethodOptions).toEqual([{ value: "cash", label: "Efectivo" }]);
     expect(mockedGetActiveCustomerOptions).toHaveBeenCalledWith("salon-1", 100);
   });
 });

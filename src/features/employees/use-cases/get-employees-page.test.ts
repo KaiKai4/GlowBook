@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
-import { findEmployees } from "../data/employees.repo";
+import { findEmployeeListRows } from "../data/employees.repo";
 import { getEmployeesPage } from "./get-employees-page";
 
 vi.mock("../data/employees.repo", () => ({
-  findEmployees: vi.fn(),
+  findEmployeeListRows: vi.fn(),
 }));
 
 vi.mock("@/features/services/use-cases/category-service-options", () => ({
@@ -16,20 +16,20 @@ vi.mock("@/features/access/use-cases/role-options", () => ({
   getAssignableRoleOptions: vi.fn(),
 }));
 
-const mockedFindEmployees = vi.mocked(findEmployees);
+const mockedFindEmployeeListRows = vi.mocked(findEmployeeListRows);
 const mockedGetCategoryServiceOptions = vi.mocked(getCategoryServiceOptions);
 const mockedGetAssignableRoleOptions = vi.mocked(getAssignableRoleOptions);
 
 describe("get employees page", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedFindEmployees.mockResolvedValue([]);
+    mockedFindEmployeeListRows.mockResolvedValue([]);
     mockedGetCategoryServiceOptions.mockResolvedValue([]);
     mockedGetAssignableRoleOptions.mockResolvedValue([]);
   });
 
   it("maps archived employee rows into a page view model", async () => {
-    mockedFindEmployees.mockResolvedValue([
+    mockedFindEmployeeListRows.mockResolvedValue([
       {
         id: "employee-1",
         first_name: "Ana",
@@ -58,7 +58,7 @@ describe("get employees page", () => {
       status: "archived",
     });
 
-    expect(mockedFindEmployees).toHaveBeenCalledWith("salon-1", false);
+    expect(mockedFindEmployeeListRows).toHaveBeenCalledWith("salon-1", false);
     expect(view).toEqual({
       mode: "archived",
       employees: [

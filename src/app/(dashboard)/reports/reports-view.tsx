@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   BarChart3,
   CalendarCheck,
@@ -18,7 +19,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/dates";
 import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
-import { getReportAction } from "./actions";
+import { buildReportsHref } from "./report-url";
 import {
   BusyHoursChart,
   MonthlyAreaChart,
@@ -56,26 +57,16 @@ function monthLabel(month: string): string {
   );
 }
 
-export function ReportsView(initial: OperationalReportViewModel) {
-  const [report, setReport] = useState(initial);
+export function ReportsView(report: OperationalReportViewModel) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ReportTab>("summary");
-  const [month, setMonth] = useState(selectedMonth(initial.from));
-  const [error, setError] = useState<string | null>(null);
+  const [month, setMonth] = useState(selectedMonth(report.from));
   const [pending, startTransition] = useTransition();
 
   function changeMonth(nextMonth: string) {
     setMonth(nextMonth);
-    setError(null);
-    startTransition(async () => {
-      const result = await getReportAction(monthRange(nextMonth));
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setReport((current) => ({
-        ...result.value,
-        analytics: current.analytics,
-      }));
+    startTransition(() => {
+      router.replace(buildReportsHref(monthRange(nextMonth)));
     });
   }
 
@@ -131,12 +122,6 @@ export function ReportsView(initial: OperationalReportViewModel) {
           ))}
         </nav>
       </div>
-
-      {error && (
-        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </p>
-      )}
 
       <div className={cn("transition-opacity duration-200", pending && "opacity-55")}>
         {activeTab === "summary" && (

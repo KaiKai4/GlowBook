@@ -1,47 +1,20 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getOptimisticAuthDecision } from "./proxy-auth";
 
-// Next.js 16 renamed Middleware to Proxy. Refreshes the Supabase session cookie
-// and does an optimistic auth redirect; full authorization lives in layouts/use-cases.
-export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Refresh session so server components have access to it
-  const { data: { user } } = await supabase.auth.getUser();
-
+// Next.js 16 renamed Middleware to Proxy. Keep this check optimistic and cheap;
+// full session validation and authorization live in layouts/use-cases.
+export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/invite") || pathname.startsWith("/join");
+  const decision = getOptimisticAuthDecision({
+    pathname,
+    cookies: request.cookies.getAll(),
+  });
 
-  if (!user && !isAuthRoute) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (decision.type === "redirect") {
+    return NextResponse.redirect(new URL(decision.location, request.url));
   }
 
-  if (user && isAuthRoute && !pathname.startsWith("/invite")) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  return supabaseResponse;
+  return NextResponse.next({ request });
 }
 
 export const config = {

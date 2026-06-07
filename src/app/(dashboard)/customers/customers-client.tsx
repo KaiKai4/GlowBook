@@ -1,26 +1,25 @@
 "use client";
 
 import { FormEvent, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NewCustomerModal } from "./new-customer-modal";
 import { CustomersList } from "./customers-list";
-import {
-  getCustomersPageAction,
-  type CustomersPageActionView,
-} from "./actions";
+import type { CustomersPageViewModel } from "@/features/customers/use-cases/get-customers-page";
+import { buildCustomersHref } from "./customer-url";
 
 export function CustomersClient({
   initialView,
 }: {
-  initialView: CustomersPageActionView;
+  initialView: CustomersPageViewModel;
 }) {
-  const [view, setView] = useState(initialView);
+  const router = useRouter();
   const [queryInput, setQueryInput] = useState(initialView.query);
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const pageBeforeSearch = useRef(initialView.page);
+  const view = initialView;
   const firstVisibleCustomer =
     view.total === 0 ? 0 : (view.page - 1) * view.pageSize + 1;
   const lastVisibleCustomer = Math.min(
@@ -31,14 +30,8 @@ export function CustomersClient({
   function loadCustomers(next: { q?: string; page?: number }) {
     if (pending) return;
 
-    setError(null);
-    startTransition(async () => {
-      const result = await getCustomersPageAction(next);
-      if (result.ok) {
-        setView(result.value);
-      } else {
-        setError(result.error);
-      }
+    startTransition(() => {
+      router.replace(buildCustomersHref(next));
     });
   }
 
@@ -90,12 +83,6 @@ export function CustomersClient({
           Buscar
         </Button>
       </form>
-
-      {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-          {error}
-        </p>
-      )}
 
       <div
         aria-busy={pending}

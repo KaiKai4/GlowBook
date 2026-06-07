@@ -12,14 +12,12 @@ import { completeAppointment } from "@/features/appointments/use-cases/complete-
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
-import { getCalendarView } from "@/features/appointments/use-cases/get-calendar-view";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import {
   CompleteAppointmentSchema,
   CreateAppointmentSchema,
   UpdateAppointmentScheduleSchema,
 } from "@/features/appointments/schemas";
-import type { CalendarViewModel } from "@/features/appointments/view-models";
 import type { Result } from "@/lib/result";
 
 function canManageAppointments(
@@ -56,33 +54,6 @@ export async function getOccupiedSlotsForEditDate(
   if (!permission.ok) return {};
 
   return getOccupiedSlotsForSalonDate(profile.salon_id, date, appointmentId);
-}
-
-export async function getCalendarViewAction({
-  date,
-  view,
-}: {
-  date: string;
-  view: string;
-}): Promise<Result<CalendarViewModel>> {
-  const profile = await requireActiveProfile();
-  const canManage = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
-  const canView = canManage || hasPermission(profile, PERMISSIONS.APPOINTMENTS_VIEW);
-  if (!canView) return { ok: false, error: "No tienes permiso para ver las citas." };
-
-  const canViewAll = profile.is_owner || hasPermission(profile, PERMISSIONS.APPOINTMENTS_VIEW_ALL);
-
-  try {
-    const calendar = await getCalendarView({
-      salonId: profile.salon_id,
-      canViewAll,
-      date,
-      view,
-    });
-    return { ok: true, value: calendar };
-  } catch {
-    return { ok: false, error: "No se pudo cargar la agenda." };
-  }
 }
 
 export async function createAppointmentAction(

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { findSalonIdentity } from "../data/salon.repo";
 
 export interface SalonIdentityView {
@@ -8,6 +9,6 @@ export interface SalonIdentityView {
   payment_methods: string[];
 }
 
-export async function getSalonIdentity(salonId: string): Promise<SalonIdentityView | null> {
+export const getSalonIdentity = cache(async (salonId: string): Promise<SalonIdentityView | null> => {
   return findSalonIdentity(salonId);
-}
+});
