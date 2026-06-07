@@ -35,4 +35,22 @@ describe("getOptimisticAuthDecision", () => {
       })
     ).toEqual({ type: "next" });
   });
+
+  it("treats a stale auth cookie as unauthenticated after session verification", () => {
+    expect(
+      getOptimisticAuthDecision({
+        pathname: "/appointments",
+        cookies: [{ name: "sb-project-auth-token" }],
+        hasVerifiedSession: false,
+      })
+    ).toEqual({ type: "redirect", location: "/login" });
+
+    expect(
+      getOptimisticAuthDecision({
+        pathname: "/login",
+        cookies: [{ name: "sb-project-auth-token" }],
+        hasVerifiedSession: false,
+      })
+    ).toEqual({ type: "next" });
+  });
 });

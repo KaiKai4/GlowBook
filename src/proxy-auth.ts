@@ -5,9 +5,12 @@ export type ProxyAuthDecision =
 export interface ProxyAuthInput {
   pathname: string;
   cookies: Array<{ name: string }>;
+  hasVerifiedSession?: boolean;
 }
 
-function hasSupabaseSessionCookie(cookies: Array<{ name: string }>): boolean {
+export function hasSupabaseSessionCookie(
+  cookies: Array<{ name: string }>
+): boolean {
   return cookies.some(({ name }) => {
     if (!name.startsWith("sb-")) return false;
     return name.endsWith("-auth-token") || /-auth-token\.\d+$/.test(name);
@@ -17,8 +20,10 @@ function hasSupabaseSessionCookie(cookies: Array<{ name: string }>): boolean {
 export function getOptimisticAuthDecision({
   pathname,
   cookies,
+  hasVerifiedSession,
 }: ProxyAuthInput): ProxyAuthDecision {
-  const hasAuthCookie = hasSupabaseSessionCookie(cookies);
+  const hasAuthCookie =
+    hasVerifiedSession ?? hasSupabaseSessionCookie(cookies);
   const isLoginRoute = pathname.startsWith("/login");
   const isInvitationRoute = pathname.startsWith("/invite");
   const isJoinRoute = pathname.startsWith("/join");

@@ -1,20 +1,48 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getOptimisticAuthDecision } from "./proxy-auth";
+import {
+  getOptimisticAuthDecision,
+  hasSupabaseSessionCookie,
+} from "./proxy-auth";
+import { refreshSupabaseSession } from "@/lib/supabase/proxy";
 
-// Next.js 16 renamed Middleware to Proxy. Keep this check optimistic and cheap;
-// full session validation and authorization live in layouts/use-cases.
-export function proxy(request: NextRequest) {
+function copySessionMetadata(source: NextResponse, target: NextResponse) {
+  source.cookies.getAll().forEach(({ name, value, ...options }) => {
+    target.cookies.set(name, value, options);
+  });
+  source.headers.forEach((value, name) => {
+    if (name !== "set-cookie") {
+      target.headers.set(name, value);
+    }
+  });
+}
+
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const requestCookies = request.cookies.getAll();
+  let response = NextResponse.next({ request });
+  let hasVerifiedSession: boolean | undefined;
+
+  if (hasSupabaseSessionCookie(requestCookies)) {
+    const refreshedSession = await refreshSupabaseSession(request);
+    response = refreshedSession.response;
+    hasVerifiedSession = refreshedSession.hasVerifiedSession;
+  }
+
   const decision = getOptimisticAuthDecision({
     pathname,
-    cookies: request.cookies.getAll(),
+    cookies: requestCookies,
+    hasVerifiedSession,
   });
 
   if (decision.type === "redirect") {
-    return NextResponse.redirect(new URL(decision.location, request.url));
+    const redirectResponse = NextResponse.redirect(
+      new URL(decision.location, request.url)
+    );
+    copySessionMetadata(response, redirectResponse);
+    return redirectResponse;
   }
 
-  return NextResponse.next({ request });
+  return response;
 }
 
 export const config = {
