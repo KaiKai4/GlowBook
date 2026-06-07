@@ -231,15 +231,6 @@ function PendingConfirmations({ pending }: { pending: PendingAppointmentConfirma
 }
 
 function TopServices({ services }: { services: TopService[] }) {
-  const maxCount = Math.max(...services.map((service) => service.count), 1);
-  const barPalettes = [
-    ["var(--color-brand-300)", "var(--color-brand-600)"],
-    ["var(--color-brand-200)", "var(--color-brand-500)"],
-    ["var(--color-brand-400)", "var(--color-brand-700)"],
-    ["var(--color-brand-100)", "var(--color-brand-500)"],
-    ["var(--color-brand-300)", "var(--color-brand-800)"],
-  ];
-
   return (
     <Card>
       <CardHeader>
@@ -253,27 +244,37 @@ function TopServices({ services }: { services: TopService[] }) {
         {services.length === 0 ? (
           <p className="py-6 text-center text-sm text-stone-400">Aún no hay datos suficientes este mes.</p>
         ) : (
-          <div className="flex h-60 items-end gap-3 rounded-xl border border-brand-100 bg-gradient-to-b from-brand-50/70 via-white to-white px-4 pb-4 pt-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-            {services.map((service, index) => (
-              <div key={service.name} className="group flex min-w-0 flex-1 flex-col items-center gap-2">
-                <div className="relative flex h-36 w-full items-end justify-center">
-                  <div className="pointer-events-none absolute -top-8 rounded-md bg-brand-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                    {service.count}
+          <div
+            className="relative h-[264px] min-w-0"
+            role="img"
+            aria-label="Servicios más solicitados este mes"
+          >
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-2 top-4 bottom-14 flex flex-col justify-between"
+            >
+              {Array.from({ length: 4 }, (_, index) => (
+                <span key={index} className="border-t border-dashed border-brand-100" />
+              ))}
+            </div>
+            <div className="relative flex h-full items-end gap-3 px-2 pt-4">
+              {services.map((service) => (
+                <div key={service.name} className="group flex h-full min-w-0 flex-1 flex-col justify-end gap-3">
+                  <div className="relative flex h-[198px] w-full items-end justify-center">
+                    <div className="pointer-events-none absolute -top-2 z-10 rounded-md bg-stone-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                      {service.count}
+                    </div>
+                    <div
+                      className="w-full max-w-10 rounded-t-md bg-brand-600 transition-[height,opacity,transform] duration-150 group-hover:-translate-y-1 group-hover:opacity-90"
+                      style={{ height: `${Math.max(service.pct, 12)}%` }}
+                    />
                   </div>
-                  <div
-                    className="w-full max-w-12 rounded-t-xl transition-[height,filter,transform] group-hover:-translate-y-1 group-hover:brightness-105"
-                    style={{
-                      height: `${Math.max((service.count / maxCount) * 100, 14)}%`,
-                      background: `linear-gradient(180deg, ${barPalettes[index % barPalettes.length][0]} 0%, ${barPalettes[index % barPalettes.length][1]} 100%)`,
-                      boxShadow: "0 10px 24px color-mix(in oklab, var(--color-brand-500) 22%, transparent)",
-                    }}
-                  />
+                  <span className="line-clamp-2 min-h-8 text-center text-[10px] font-medium uppercase leading-tight text-stone-400">
+                    {service.name}
+                  </span>
                 </div>
-                <span className="line-clamp-2 min-h-8 max-w-24 text-center text-[11px] font-medium leading-tight text-stone-600">
-                  {service.name}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
