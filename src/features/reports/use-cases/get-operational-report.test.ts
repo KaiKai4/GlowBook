@@ -1,19 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
-import { findOperationalReportRows, findSalonTimezone } from "../data/reports.repo";
-import { getOperationalReport } from "./get-operational-report";
+import {
+  findHistoricalReportRows,
+  findOperationalReportRows,
+  findSalonTimezone,
+} from "../data/reports.repo";
+import { getOperationalReport, getOperationalReportPeriod } from "./get-operational-report";
 
 vi.mock("@/features/finance/use-cases/operational-money", () => ({
   getExternalOperationalMoney: vi.fn(),
 }));
 
 vi.mock("../data/reports.repo", () => ({
+  findHistoricalReportRows: vi.fn(),
   findOperationalReportRows: vi.fn(),
   findSalonTimezone: vi.fn(),
 }));
 
 const mockedExternalMoney = vi.mocked(getExternalOperationalMoney);
 const mockedRows = vi.mocked(findOperationalReportRows);
+const mockedHistoricalRows = vi.mocked(findHistoricalReportRows);
 const mockedTimezone = vi.mocked(findSalonTimezone);
 
 describe("get operational report", () => {
@@ -24,6 +30,14 @@ describe("get operational report", () => {
       retailRevenue: 25,
       manualExpenses: 10,
       inventoryPurchases: 15,
+    });
+    mockedHistoricalRows.mockResolvedValue({
+      appointments: [],
+      retailSales: [],
+      expenses: [],
+      inventoryPurchases: [],
+      retailItems: [],
+      inventoryProducts: [],
     });
     mockedRows.mockResolvedValue({
       appointments: [
@@ -70,5 +84,28 @@ describe("get operational report", () => {
       fromDate: "2026-06-01",
       toDate: "2026-06-03",
     });
+  });
+
+  it("loads only monthly metrics when the filter changes", async () => {
+    const report = await getOperationalReportPeriod({
+      salonId: "salon-1",
+      filters: {
+        preset: "mes",
+        from: "2026-05-01",
+        to: "2026-05-31",
+      },
+      modules: {
+        inventory: false,
+        retail: true,
+        expenses: false,
+      },
+      now: new Date("2026-06-03T12:00:00.000Z"),
+    });
+
+    expect(report.retailRevenue).toBe(25);
+    expect(report.manualExpenses).toBe(0);
+    expect(report.inventoryPurchases).toBe(0);
+    expect(report.totalExpenses).toBe(0);
+    expect(mockedHistoricalRows).not.toHaveBeenCalled();
   });
 });

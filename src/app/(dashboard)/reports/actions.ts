@@ -1,15 +1,17 @@
 "use server";
 
-import { getOperationalReport } from "@/features/reports/use-cases/get-operational-report";
+import {
+  getOperationalReportPeriod,
+  type OperationalReportPeriodViewModel,
+} from "@/features/reports/use-cases/get-operational-report";
 import { parseReportFilters, type ReportQueryInput } from "@/features/reports/schemas";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
 import type { Result } from "@/lib/result";
-import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 
 export async function getReportAction(
   input: ReportQueryInput
-): Promise<Result<OperationalReportViewModel>> {
+): Promise<Result<OperationalReportPeriodViewModel>> {
   const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.REPORTS_VIEW)) {
     return { ok: false, error: "No tienes permiso para ver reportes." };
@@ -17,7 +19,15 @@ export async function getReportAction(
 
   try {
     const filters = parseReportFilters(input);
-    const report = await getOperationalReport({ salonId: profile.salon_id, filters });
+    const report = await getOperationalReportPeriod({
+      salonId: profile.salon_id,
+      filters,
+      modules: {
+        inventory: hasSalonFeature(profile, "inventory"),
+        retail: hasSalonFeature(profile, "retail"),
+        expenses: hasSalonFeature(profile, "expenses"),
+      },
+    });
     return { ok: true, value: report };
   } catch {
     return { ok: false, error: "No se pudo cargar el reporte." };

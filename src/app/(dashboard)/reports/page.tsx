@@ -1,6 +1,6 @@
 import { parseReportFilters } from "@/features/reports/schemas";
 import { getOperationalReport } from "@/features/reports/use-cases/get-operational-report";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { ReportsView } from "./reports-view";
 
@@ -21,7 +21,12 @@ export default async function ReportsPage({
 
   const params = await searchParams;
   const filters = parseReportFilters(params);
-  const report = await getOperationalReport({ salonId: profile.salon_id, filters });
+  const modules = {
+    inventory: hasSalonFeature(profile, "inventory"),
+    retail: hasSalonFeature(profile, "retail"),
+    expenses: hasSalonFeature(profile, "expenses"),
+  };
+  const report = await getOperationalReport({ salonId: profile.salon_id, filters, modules });
 
   return <ReportsView {...report} />;
 }

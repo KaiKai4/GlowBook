@@ -1,351 +1,572 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { formatCurrency } from "@/lib/utils/dates";
-import { BarChart3, DollarSign, CalendarCheck, Tag, UserMinus, Users, ShoppingBag, ReceiptText } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import {
+  BarChart3,
+  CalendarCheck,
+  CalendarClock,
+  CalendarX,
+  CircleDollarSign,
+  PackageSearch,
+  ReceiptText,
+  ShoppingBag,
+  TrendingDown,
+  TrendingUp,
+  UserPlus,
+  WalletCards,
+} from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { formatCurrency } from "@/lib/utils/dates";
+import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 import { getReportAction } from "./actions";
+import {
+  BusyHoursChart,
+  MonthlyAreaChart,
+  ProductSalesChart,
+  TopExpensesChart,
+} from "./report-charts";
 
-type ReportPresetButton = "hoy" | "semana" | "mes" | "mes_anterior" | "30dias" | "90dias";
+type ReportTab = "summary" | "finance" | "appointments" | "inventory" | "expenses";
 
-const PRESETS: { value: ReportPresetButton; label: string }[] = [
-  { value: "hoy", label: "Hoy" },
-  { value: "semana", label: "Esta semana" },
-  { value: "mes", label: "Este mes" },
-  { value: "mes_anterior", label: "Mes anterior" },
-  { value: "30dias", label: "Últimos 30 días" },
-  { value: "90dias", label: "Últimos 90 días" },
+const TABS: Array<{ id: ReportTab; label: string }> = [
+  { id: "summary", label: "Resumen" },
+  { id: "finance", label: "Finanzas" },
+  { id: "appointments", label: "Citas" },
+  { id: "inventory", label: "Inventario" },
+  { id: "expenses", label: "Gastos" },
 ];
 
-const STATUS_LABEL: Record<string, string> = {
-  completed: "Completadas",
-  confirmed: "Confirmadas",
-  scheduled: "Agendadas",
-  cancelled: "Canceladas",
-  no_show: "No asistieron",
-};
-const STATUS_BAR: Record<string, string> = {
-  completed: "bg-emerald-500",
-  confirmed: "bg-brand-500",
-  scheduled: "bg-blue-400",
-  cancelled: "bg-stone-300",
-  no_show: "bg-amber-400",
-};
-const STATUS_TEXT: Record<string, string> = {
-  completed: "text-emerald-700",
-  confirmed: "text-brand-700",
-  scheduled: "text-blue-700",
-  cancelled: "text-stone-500",
-  no_show: "text-amber-700",
-};
-
-interface Props {
-  from: string;
-  to: string;
-  preset: string;
-  revenue: number;
-  retailRevenue: number;
-  grossRevenue: number;
-  discounts: number;
-  manualExpenses: number;
-  inventoryPurchases: number;
-  totalExpenses: number;
-  estimatedProfit: number;
-  completedCount: number;
-  totalCount: number;
-  avgTicket: number;
-  noShowRate: number;
-  statusBreakdown: Array<{ status: string; count: number; pct: number }>;
-  byEmployee: Array<{ name: string; count: number; revenue: number; pct: number }>;
-  byService: Array<{ name: string; count: number; revenue: number; pct: number }>;
-  newCustomers: number;
+function selectedMonth(from: string): string {
+  return from.slice(0, 7);
 }
 
-function dateLabel(from: string, to: string): string {
-  const fmt = (s: string, opts: Intl.DateTimeFormatOptions) =>
-    new Date(`${s}T12:00:00`).toLocaleDateString("es-PA", opts);
-  if (from === to) return fmt(from, { day: "numeric", month: "long", year: "numeric" });
-  return `${fmt(from, { day: "numeric", month: "short" })} – ${fmt(to, { day: "numeric", month: "short", year: "numeric" })}`;
+function monthRange(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+  return {
+    from: `${month}-01`,
+    to: `${month}-${String(lastDay).padStart(2, "0")}`,
+  };
 }
 
-function Bar({ pct, color }: { pct: number; color: string }) {
-  return (
-    <div className="h-1.5 w-full rounded-full bg-stone-100 overflow-hidden">
-      <div className={cn("h-full rounded-full", color)} style={{ width: `${Math.max(pct, 2)}%` }} />
-    </div>
+function monthLabel(month: string): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-PA", { month: "long", year: "numeric" }).format(
+    new Date(Date.UTC(year, monthNumber - 1, 15))
   );
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-stone-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-stone-100">
-        {icon}
-        <h2 className="text-xs font-bold text-stone-500 uppercase tracking-wide">{title}</h2>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-export function ReportsView({
-  from, to, preset,
-  revenue, retailRevenue, grossRevenue, discounts, manualExpenses, inventoryPurchases, totalExpenses, estimatedProfit, completedCount, totalCount, avgTicket, noShowRate,
-  statusBreakdown, byEmployee, byService, newCustomers,
-}: Props) {
-  const [report, setReport] = useState<Props>({
-    from, to, preset,
-    revenue, retailRevenue, grossRevenue, discounts, manualExpenses, inventoryPurchases, totalExpenses, estimatedProfit, completedCount, totalCount, avgTicket, noShowRate,
-    statusBreakdown, byEmployee, byService, newCustomers,
-  });
-  const [customFrom, setCustomFrom] = useState(from);
-  const [customTo, setCustomTo] = useState(to);
+export function ReportsView(initial: OperationalReportViewModel) {
+  const [report, setReport] = useState(initial);
+  const [activeTab, setActiveTab] = useState<ReportTab>("summary");
+  const [month, setMonth] = useState(selectedMonth(initial.from));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const current = report;
-
-  function goPreset(p: ReportPresetButton) {
+  function changeMonth(nextMonth: string) {
+    setMonth(nextMonth);
     setError(null);
     startTransition(async () => {
-      const result = await getReportAction({ preset: p });
-      if (result.ok) {
-        setReport(result.value);
-        setCustomFrom(result.value.from);
-        setCustomTo(result.value.to);
-      } else {
+      const result = await getReportAction(monthRange(nextMonth));
+      if (!result.ok) {
         setError(result.error);
+        return;
       }
+      setReport((current) => ({
+        ...result.value,
+        analytics: current.analytics,
+      }));
     });
   }
 
-  function applyCustom() {
-    if (customFrom && customTo && customFrom <= customTo) {
-      setError(null);
-      startTransition(async () => {
-        const result = await getReportAction({ from: customFrom, to: customTo });
-        if (result.ok) setReport(result.value);
-        else setError(result.error);
-      });
-    }
-  }
+  const scheduled = useMemo(
+    () =>
+      report.statusBreakdown
+        .filter((status) => status.status === "scheduled" || status.status === "confirmed")
+        .reduce((sum, status) => sum + status.count, 0),
+    [report.statusBreakdown]
+  );
+  const cancelled = report.statusBreakdown.find((status) => status.status === "cancelled")?.count ?? 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-brand-500" />
-          Reportes
-        </h1>
-        <p className="text-sm text-stone-400 mt-0.5">{dateLabel(current.from, current.to)}</p>
-      </div>
+    <div className="space-y-5 pb-10">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-stone-900">
+            <BarChart3 className="h-6 w-6 text-brand-600" />
+            Reportes
+          </h1>
+          <p className="mt-1 text-sm capitalize text-stone-500">{monthLabel(month)}</p>
+        </div>
+        <label className="flex min-w-52 flex-col gap-1.5 text-xs font-semibold text-stone-600">
+          Mes de las métricas
+          <input
+            type="month"
+            value={month}
+            onChange={(event) => changeMonth(event.target.value)}
+            disabled={pending}
+            className="h-11 rounded-lg border border-stone-200 bg-white px-3 text-sm font-medium text-stone-800 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100 disabled:opacity-60"
+          />
+        </label>
+      </header>
 
-      {/* Period picker */}
-      <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] space-y-3">
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((p) => (
+      <div className="rounded-xl border border-brand-100 bg-white">
+        <nav className="flex overflow-x-auto border-b border-brand-100 px-4" aria-label="Secciones de reportes">
+          {TABS.map((tab) => (
             <button
-              key={p.value}
-              onClick={() => goPreset(p.value)}
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition-all",
-                current.preset === p.value
-                  ? "border-brand-400 bg-brand-50 text-brand-700"
-                  : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                "relative min-h-12 shrink-0 px-4 text-sm font-medium transition-colors",
+                activeTab === tab.id ? "text-brand-700" : "text-stone-600 hover:text-stone-900"
               )}
-              disabled={pending}
+              aria-current={activeTab === tab.id ? "page" : undefined}
             >
-              {p.label}
+              {tab.label}
+              {activeTab === tab.id && (
+                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-brand-600" />
+              )}
             </button>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2 pt-1 border-t border-stone-100">
-          <span className="text-xs text-stone-400 shrink-0">Rango personalizado</span>
-          <input
-            type="date"
-            value={customFrom}
-            onChange={(e) => setCustomFrom(e.target.value)}
-            disabled={pending}
-            className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <span className="text-stone-300">→</span>
-          <input
-            type="date"
-            value={customTo}
-            onChange={(e) => setCustomTo(e.target.value)}
-            disabled={pending}
-            className="h-8 rounded-lg border border-stone-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <button
-            onClick={applyCustom}
-            disabled={pending || !customFrom || !customTo || customFrom > customTo}
-            className="h-8 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40 transition-colors"
-          >
-            {pending ? "Cargando..." : "Aplicar"}
-          </button>
-        </div>
+        </nav>
       </div>
 
       {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
       )}
 
-      {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          {
-            label: "Ingresos por citas", value: formatCurrency(current.revenue),
-            icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50",
-          },
-          {
-            label: "Ingresos vitrina", value: formatCurrency(current.retailRevenue),
-            icon: <ShoppingBag className="h-5 w-5" />, color: "text-blue-600 bg-blue-50",
-          },
-          {
-            label: "Gastos manuales", value: formatCurrency(current.manualExpenses),
-            icon: <ReceiptText className="h-5 w-5" />, color: "text-red-600 bg-red-50",
-          },
-          {
-            label: "Reposiciones", value: formatCurrency(current.inventoryPurchases),
-            icon: <Tag className="h-5 w-5" />, color: "text-amber-600 bg-amber-50",
-          },
-          {
-            label: "Ingresos totales", value: formatCurrency(current.grossRevenue),
-            icon: <DollarSign className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50",
-          },
-          {
-            label: "Egresos totales", value: formatCurrency(current.totalExpenses),
-            icon: <ReceiptText className="h-5 w-5" />, color: "text-red-600 bg-red-50",
-          },
-          {
-            label: "Utilidad estimada", value: formatCurrency(current.estimatedProfit),
-            icon: <DollarSign className="h-5 w-5" />, color: current.estimatedProfit >= 0 ? "text-emerald-700 bg-emerald-50" : "text-red-700 bg-red-50",
-          },
-          {
-            label: "Descuentos", value: formatCurrency(current.discounts),
-            icon: <Tag className="h-5 w-5" />, color: "text-rose-600 bg-rose-50",
-          },
-          {
-            label: "Citas completadas", value: `${current.completedCount} de ${current.totalCount}`,
-            icon: <CalendarCheck className="h-5 w-5" />, color: "text-brand-600 bg-brand-50",
-          },
-          {
-            label: "Ticket promedio", value: formatCurrency(current.avgTicket),
-            icon: <Tag className="h-5 w-5" />, color: "text-blue-600 bg-blue-50",
-          },
-          {
-            label: "Tasa de no-show", value: `${current.noShowRate.toFixed(1)}%`,
-            icon: <UserMinus className="h-5 w-5" />, color: "text-amber-600 bg-amber-50",
-          },
-        ].map((card) => (
-          <div key={card.label} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.05)]">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-stone-500">{card.label}</p>
-                <p className="mt-1 text-2xl font-bold text-stone-900">{card.value}</p>
-              </div>
-              <div className={cn("rounded-xl p-2.5", card.color)}>{card.icon}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Estado + Clientes nuevos */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Section title="Estado de citas" icon={<CalendarCheck className="h-4 w-4 text-stone-400" />}>
-            {current.statusBreakdown.length === 0 ? (
-              <p className="px-5 py-8 text-sm text-stone-400 text-center">Sin citas en este período.</p>
-            ) : (
-              <div className="divide-y divide-stone-50">
-                {current.statusBreakdown.map((s) => (
-                  <div key={s.status} className="px-5 py-3.5 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className={cn("text-sm font-semibold", STATUS_TEXT[s.status] ?? "text-stone-700")}>
-                        {STATUS_LABEL[s.status] ?? s.status}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-stone-800">{s.count}</span>
-                        <span className="text-xs text-stone-400 w-10 text-right">{s.pct.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                    <Bar pct={s.pct} color={STATUS_BAR[s.status] ?? "bg-stone-300"} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
-        </div>
-
-        <Section title="Clientes nuevos" icon={<Users className="h-4 w-4 text-stone-400" />}>
-          <div className="flex flex-col items-center justify-center px-5 py-10 text-center h-full">
-            <p className="text-5xl font-bold text-brand-600">{current.newCustomers}</p>
-            <p className="text-sm text-stone-500 mt-2">clientes registrados en el período</p>
-            <p className="text-xs text-stone-400 mt-3 max-w-[160px]">
-              Incluye clientes captados al completar citas
-            </p>
-          </div>
-        </Section>
-      </div>
-
-      {/* Por colaborador + Por servicio */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Por profesional" icon={<Users className="h-4 w-4 text-stone-400" />}>
-          {current.byEmployee.length === 0 ? (
-            <p className="px-5 py-8 text-sm text-stone-400 text-center">Sin datos en este período.</p>
-          ) : (
-            <div className="divide-y divide-stone-50">
-              {current.byEmployee.map((emp, i) => (
-                <div key={emp.name} className="px-5 py-3.5 space-y-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-600">
-                        {i + 1}
-                      </span>
-                      <span className="text-sm font-semibold text-stone-800 truncate">{emp.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className="text-xs text-stone-400">{emp.count} cita{emp.count !== 1 ? "s" : ""}</span>
-                      <span className="text-sm font-bold text-emerald-700">{formatCurrency(emp.revenue)}</span>
-                    </div>
-                  </div>
-                  <Bar pct={emp.pct} color="bg-brand-400" />
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        <Section title="Por servicio" icon={<BarChart3 className="h-4 w-4 text-stone-400" />}>
-          {current.byService.length === 0 ? (
-            <p className="px-5 py-8 text-sm text-stone-400 text-center">Sin datos en este período.</p>
-          ) : (
-            <div className="divide-y divide-stone-50">
-              {current.byService.map((svc, i) => (
-                <div key={svc.name} className="px-5 py-3.5 space-y-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-choco-50 text-xs font-bold text-choco-600">
-                        {i + 1}
-                      </span>
-                      <span className="text-sm font-semibold text-stone-800 truncate">{svc.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className="text-xs text-stone-400">{svc.count}×</span>
-                      <span className="text-sm font-bold text-stone-700">{formatCurrency(svc.revenue)}</span>
-                    </div>
-                  </div>
-                  <Bar pct={svc.pct} color="bg-choco-400" />
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
+      <div className={cn("transition-opacity duration-200", pending && "opacity-55")}>
+        {activeTab === "summary" && (
+          <SummaryTab report={report} />
+        )}
+        {activeTab === "finance" && (
+          <FinanceTab report={report} />
+        )}
+        {activeTab === "appointments" && (
+          <AppointmentsTab report={report} scheduled={scheduled} cancelled={cancelled} />
+        )}
+        {activeTab === "inventory" && (
+          <InventoryTab report={report} />
+        )}
+        {activeTab === "expenses" && (
+          <ExpensesTab report={report} />
+        )}
       </div>
     </div>
   );
+}
+
+function SummaryTab({ report }: { report: OperationalReportViewModel }) {
+  const cards = [
+    {
+      label: "Ingresos totales",
+      value: formatCurrency(report.grossRevenue),
+      detail: report.modules.retail ? "Citas y vitrina" : "Citas completadas",
+      icon: CircleDollarSign,
+      tone: "positive" as const,
+      visible: true,
+    },
+    {
+      label: "Egresos totales",
+      value: formatCurrency(report.totalExpenses),
+      detail: expenseSources(report),
+      icon: TrendingDown,
+      tone: "negative" as const,
+      visible: report.modules.expenses || report.modules.inventory,
+    },
+    {
+      label: "Ganancias totales",
+      value: formatCurrency(report.estimatedProfit),
+      detail: "Ingresos menos egresos",
+      icon: report.estimatedProfit >= 0 ? TrendingUp : TrendingDown,
+      tone: report.estimatedProfit >= 0 ? "positive" as const : "negative" as const,
+      visible: true,
+    },
+    {
+      label: "Citas completadas",
+      value: report.completedCount.toString(),
+      detail: "Durante el mes",
+      icon: CalendarCheck,
+      tone: "brand" as const,
+      visible: true,
+    },
+    {
+      label: "Clientes nuevos",
+      value: report.newCustomers.toString(),
+      detail: "Registrados durante el mes",
+      icon: UserPlus,
+      tone: "blue" as const,
+      visible: true,
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <MetricGrid cards={cards} />
+      <MonthlyAreaChart
+        title="Ingresos vs. egresos"
+        description="Comparación mensual de los últimos 12 meses"
+        points={report.analytics.months}
+        series={[
+          {
+            key: "totalRevenue",
+            label: "Ingresos",
+            color: "#16a34a",
+            fill: "#86efac",
+            value: (point) => point.totalRevenue,
+          },
+          {
+            key: "totalExpenses",
+            label: "Egresos",
+            color: "#ef4444",
+            fill: "#fca5a5",
+            value: (point) => point.totalExpenses,
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+function FinanceTab({ report }: { report: OperationalReportViewModel }) {
+  return (
+    <div className="space-y-5">
+      <MetricGrid
+        cards={[
+          {
+            label: "Ingresos por citas",
+            value: formatCurrency(report.revenue),
+            detail: "Citas completadas y pagadas",
+            icon: CalendarCheck,
+            tone: "positive",
+            visible: true,
+          },
+          {
+            label: "Ingresos por vitrina",
+            value: formatCurrency(report.retailRevenue),
+            detail: "Ventas de productos",
+            icon: ShoppingBag,
+            tone: "blue",
+            visible: report.modules.retail,
+          },
+          {
+            label: "Ingresos totales",
+            value: formatCurrency(report.grossRevenue),
+            detail: report.modules.retail ? "Citas y vitrina" : "Solo citas",
+            icon: WalletCards,
+            tone: "positive",
+            visible: true,
+          },
+          {
+            label: "Gastos operativos",
+            value: formatCurrency(report.manualExpenses),
+            detail: "Egresos registrados",
+            icon: ReceiptText,
+            tone: "negative",
+            visible: report.modules.expenses,
+          },
+          {
+            label: "Reposiciones de inventario",
+            value: formatCurrency(report.inventoryPurchases),
+            detail: "Compras de productos",
+            icon: PackageSearch,
+            tone: "amber",
+            visible: report.modules.inventory,
+          },
+        ]}
+      />
+      <div className="grid gap-5 xl:grid-cols-2">
+        <MonthlyAreaChart
+          title="Margen de ganancia"
+          description="Ganancia sobre ingresos totales por mes"
+          points={report.analytics.months}
+          percent
+          series={[
+            {
+              key: "marginPct",
+              label: "Margen",
+              color: "var(--color-brand-600)",
+              fill: "var(--color-brand-300)",
+              value: (point) => point.marginPct,
+            },
+          ]}
+        />
+        <MonthlyAreaChart
+          title="Ingresos por origen"
+          description="Citas completadas frente a ventas de vitrina"
+          points={report.analytics.months}
+          series={[
+            {
+              key: "appointmentRevenue",
+              label: "Citas",
+              color: "var(--color-brand-600)",
+              fill: "var(--color-brand-300)",
+              value: (point) => point.appointmentRevenue,
+            },
+            ...(report.modules.retail
+              ? [{
+                  key: "retailRevenue" as const,
+                  label: "Vitrina",
+                  color: "#0ea5e9",
+                  fill: "#7dd3fc",
+                  value: (point: OperationalReportViewModel["analytics"]["months"][number]) => point.retailRevenue,
+                }]
+              : []),
+          ]}
+        />
+      </div>
+      <MonthlyAreaChart
+        title="Ganancias por mes"
+        description="Resultado mensual después de gastos operativos y reposiciones activas"
+        points={report.analytics.months}
+        series={[
+          {
+            key: "profit",
+            label: "Ganancia",
+            color: "var(--color-brand-600)",
+            fill: "var(--color-brand-300)",
+            value: (point) => point.profit,
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+function AppointmentsTab({
+  report,
+  scheduled,
+  cancelled,
+}: {
+  report: OperationalReportViewModel;
+  scheduled: number;
+  cancelled: number;
+}) {
+  return (
+    <div className="space-y-5">
+      <MetricGrid
+        cards={[
+          {
+            label: "Citas agendadas",
+            value: scheduled.toString(),
+            detail: "Agendadas y confirmadas",
+            icon: CalendarClock,
+            tone: "blue",
+            visible: true,
+          },
+          {
+            label: "Citas completadas",
+            value: report.completedCount.toString(),
+            detail: "Finalizadas durante el mes",
+            icon: CalendarCheck,
+            tone: "positive",
+            visible: true,
+          },
+          {
+            label: "Citas canceladas",
+            value: cancelled.toString(),
+            detail: "Canceladas durante el mes",
+            icon: CalendarX,
+            tone: "negative",
+            visible: true,
+          },
+        ]}
+      />
+      <div className="grid gap-5 xl:grid-cols-2">
+        <MonthlyAreaChart
+          title="Citas completadas por mes"
+          description="Evolución de los últimos 12 meses"
+          points={report.analytics.months}
+          series={[
+            {
+              key: "completedAppointments",
+              label: "Citas completadas",
+              color: "var(--color-brand-600)",
+              fill: "var(--color-brand-300)",
+              value: (point) => point.completedAppointments,
+              format: (value) => `${value} ${value === 1 ? "cita" : "citas"}`,
+            },
+          ]}
+        />
+        <BusyHoursChart points={report.analytics.busyHours} />
+      </div>
+    </div>
+  );
+}
+
+function InventoryTab({ report }: { report: OperationalReportViewModel }) {
+  if (!report.modules.inventory) {
+    return <UnavailableModule module="Inventario" />;
+  }
+
+  return (
+    <div className="space-y-5">
+      <InventoryAlertsTable alerts={report.analytics.inventoryAlerts} />
+      {report.modules.retail ? (
+        <ProductSalesChart products={report.analytics.productSales} months={report.analytics.months} />
+      ) : (
+        <UnavailableModule module="Vitrina" compact />
+      )}
+    </div>
+  );
+}
+
+function ExpensesTab({ report }: { report: OperationalReportViewModel }) {
+  if (!report.modules.expenses && !report.modules.inventory) {
+    return <UnavailableModule module="Gastos e inventario" />;
+  }
+
+  return (
+    <div className="space-y-5">
+      <MetricGrid
+        cards={[
+          {
+            label: "Gastos totales",
+            value: formatCurrency(report.totalExpenses),
+            detail: expenseSources(report),
+            icon: TrendingDown,
+            tone: "negative",
+            visible: true,
+          },
+          {
+            label: "Gastos de restock",
+            value: formatCurrency(report.inventoryPurchases),
+            detail: "Reposiciones de productos",
+            icon: PackageSearch,
+            tone: "amber",
+            visible: report.modules.inventory,
+          },
+          {
+            label: "Gastos operativos",
+            value: formatCurrency(report.manualExpenses),
+            detail: "Egresos registrados",
+            icon: ReceiptText,
+            tone: "negative",
+            visible: report.modules.expenses,
+          },
+        ]}
+      />
+      <TopExpensesChart expenses={report.analytics.topExpenses} />
+    </div>
+  );
+}
+
+type MetricTone = "positive" | "negative" | "brand" | "blue" | "amber";
+
+interface MetricCardData {
+  label: string;
+  value: string;
+  detail: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: MetricTone;
+  visible: boolean;
+}
+
+const TONES: Record<MetricTone, { icon: string; surface: string }> = {
+  positive: { icon: "text-emerald-700", surface: "bg-emerald-50" },
+  negative: { icon: "text-red-700", surface: "bg-red-50" },
+  brand: { icon: "text-brand-700", surface: "bg-brand-50" },
+  blue: { icon: "text-sky-700", surface: "bg-sky-50" },
+  amber: { icon: "text-amber-700", surface: "bg-amber-50" },
+};
+
+function MetricGrid({ cards }: { cards: MetricCardData[] }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      {cards.filter((card) => card.visible).map((card) => {
+        const Icon = card.icon;
+        const tone = TONES[card.tone];
+        return (
+          <article key={card.label} className="rounded-xl border border-brand-100 bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-stone-600">{card.label}</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-stone-950">{card.value}</p>
+                <p className="mt-1 text-xs text-stone-500">{card.detail}</p>
+              </div>
+              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", tone.surface)}>
+                <Icon className={cn("h-5 w-5", tone.icon)} />
+              </span>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function InventoryAlertsTable({
+  alerts,
+}: {
+  alerts: OperationalReportViewModel["analytics"]["inventoryAlerts"];
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-brand-100 bg-white shadow-sm">
+      <div className="border-b border-stone-100 px-5 py-4">
+        <h2 className="text-base font-semibold text-stone-900">Alertas de inventario</h2>
+        <p className="mt-1 text-sm text-stone-500">Productos agotados o por debajo del mínimo configurado</p>
+      </div>
+      {alerts.length === 0 ? (
+        <p className="px-5 py-12 text-center text-sm text-stone-500">No hay alertas de stock.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="bg-stone-50 text-xs font-semibold text-stone-500">
+              <tr>
+                <th className="px-5 py-3">Producto</th>
+                <th className="px-4 py-3 text-right">Vitrina</th>
+                <th className="px-4 py-3 text-right">Uso interno</th>
+                <th className="px-4 py-3 text-right">Bodega</th>
+                <th className="px-4 py-3 text-right">Stock actual</th>
+                <th className="px-4 py-3 text-right">Stock mínimo</th>
+                <th className="px-5 py-3 text-right">Estado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {alerts.map((alert) => (
+                <tr key={alert.id}>
+                  <td className="px-5 py-4 font-medium text-stone-900">{alert.name}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.retail}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.internal}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.storage}</td>
+                  <td className="px-4 py-4 text-right font-semibold tabular-nums text-stone-900">{alert.total}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.minimum}</td>
+                  <td className="px-5 py-4 text-right">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+                        alert.state === "agotado" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+                      )}
+                    >
+                      {alert.state === "agotado" ? "Agotado" : "Stock bajo"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function UnavailableModule({ module, compact = false }: { module: string; compact?: boolean }) {
+  return (
+    <section className={cn("rounded-xl border border-dashed border-stone-300 bg-white text-center", compact ? "p-8" : "p-16")}>
+      <PackageSearch className="mx-auto h-7 w-7 text-stone-400" />
+      <p className="mt-3 text-sm font-semibold text-stone-700">El módulo de {module} no está activo.</p>
+      <p className="mt-1 text-sm text-stone-500">Los reportes omiten esos datos automáticamente.</p>
+    </section>
+  );
+}
+
+function expenseSources(report: OperationalReportViewModel): string {
+  if (report.modules.expenses && report.modules.inventory) return "Gastos y reposiciones";
+  if (report.modules.expenses) return "Gastos operativos";
+  if (report.modules.inventory) return "Reposiciones";
+  return "Sin módulos de egresos";
 }
