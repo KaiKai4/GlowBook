@@ -163,7 +163,11 @@ export function Sidebar({
             rol.
           </p>
         ) : (
-          <div className={cn(isCollapsed ? "space-y-3" : "space-y-5")}>
+          <div
+            className={cn(
+              isCollapsed ? "space-y-3" : "space-y-5",
+            )}
+          >
             {groups.map((group, groupIndex) => (
               <div
                 key={group.label ?? `group-${groupIndex}`}
