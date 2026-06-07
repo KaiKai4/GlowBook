@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Category } from "./services-types";
+import { ServiceDurationFields } from "./service-duration-fields";
 
 export function NewServiceDialog({
   open,
@@ -33,25 +34,16 @@ export function NewServiceDialog({
           ))}
         </Select>
         <Input name="name" label="Nombre del servicio" placeholder="Corte de cabello" required />
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            name="duration_minutes"
-            label="Duracion (min)"
-            type="number"
-            min={1}
-            defaultValue={30}
-            required
-          />
-          <Input
-            name="price"
-            label="Precio (USD)"
-            type="number"
-            min={0}
-            step="0.01"
-            defaultValue={0}
-            required
-          />
-        </div>
+        <ServiceDurationFields />
+        <Input
+          name="price"
+          label="Precio (USD)"
+          type="number"
+          min={0}
+          step="0.01"
+          defaultValue={0}
+          required
+        />
         <Textarea name="description" label="Descripcion (opcional)" />
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2">

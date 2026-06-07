@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -26,6 +26,7 @@ import {
   ProductSalesChart,
   TopExpensesChart,
 } from "./report-charts";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type ReportTab = "summary" | "finance" | "appointments" | "inventory" | "expenses";
 
@@ -70,13 +71,6 @@ export function ReportsView(report: OperationalReportViewModel) {
     });
   }
 
-  const scheduled = useMemo(
-    () =>
-      report.statusBreakdown
-        .filter((status) => status.status === "scheduled" || status.status === "confirmed")
-        .reduce((sum, status) => sum + status.count, 0),
-    [report.statusBreakdown]
-  );
   const cancelled = report.statusBreakdown.find((status) => status.status === "cancelled")?.count ?? 0;
 
   return (
@@ -89,16 +83,15 @@ export function ReportsView(report: OperationalReportViewModel) {
           </h1>
           <p className="mt-1 text-sm capitalize text-stone-500">{monthLabel(month)}</p>
         </div>
-        <label className="flex min-w-52 flex-col gap-1.5 text-xs font-semibold text-stone-600">
-          Mes de las métricas
-          <input
-            type="month"
-            value={month}
-            onChange={(event) => changeMonth(event.target.value)}
-            disabled={pending}
-            className="h-11 rounded-lg border border-stone-200 bg-white px-3 text-sm font-medium text-stone-800 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100 disabled:opacity-60"
-          />
-        </label>
+        <DatePicker
+          label="Mes de las métricas"
+          value={month}
+          onChange={changeMonth}
+          disabled={pending}
+          granularity="month"
+          className="min-w-52"
+          ariaLabel="Seleccionar mes de las métricas"
+        />
       </header>
 
       <div className="rounded-xl border border-brand-100 bg-white">
@@ -131,7 +124,7 @@ export function ReportsView(report: OperationalReportViewModel) {
           <FinanceTab report={report} />
         )}
         {activeTab === "appointments" && (
-          <AppointmentsTab report={report} scheduled={scheduled} cancelled={cancelled} />
+          <AppointmentsTab report={report} cancelled={cancelled} />
         )}
         {activeTab === "inventory" && (
           <InventoryTab report={report} />
@@ -323,11 +316,9 @@ function FinanceTab({ report }: { report: OperationalReportViewModel }) {
 
 function AppointmentsTab({
   report,
-  scheduled,
   cancelled,
 }: {
   report: OperationalReportViewModel;
-  scheduled: number;
   cancelled: number;
 }) {
   return (
@@ -336,8 +327,8 @@ function AppointmentsTab({
         cards={[
           {
             label: "Citas agendadas",
-            value: scheduled.toString(),
-            detail: "Agendadas y confirmadas",
+            value: report.totalCount.toString(),
+            detail: "Registradas durante el mes",
             icon: CalendarClock,
             tone: "blue",
             visible: true,

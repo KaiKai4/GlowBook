@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Category, ServiceItem } from "./services-types";
+import { ServiceDurationFields } from "./service-duration-fields";
 
 export function EditServiceDialog({
   service,
@@ -38,25 +39,16 @@ export function EditServiceDialog({
           ))}
         </Select>
         <Input name="name" label="Nombre del servicio" defaultValue={service.name} required />
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            name="duration_minutes"
-            label="Duracion (min)"
-            type="number"
-            min={1}
-            defaultValue={service.duration_minutes}
-            required
-          />
-          <Input
-            name="price"
-            label="Precio (USD)"
-            type="number"
-            min={0}
-            step="0.01"
-            defaultValue={service.price}
-            required
-          />
-        </div>
+        <ServiceDurationFields defaultValue={service.duration_minutes} />
+        <Input
+          name="price"
+          label="Precio (USD)"
+          type="number"
+          min={0}
+          step="0.01"
+          defaultValue={service.price}
+          required
+        />
         <Select name="is_active" label="Estado" defaultValue={service.is_active ? "true" : "false"} required>
           <option value="true">Activo</option>
           <option value="false">Inactivo</option>

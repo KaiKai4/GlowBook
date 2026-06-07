@@ -133,20 +133,26 @@ export function RemindersView({
   const [manualSentAt, setManualSentAt] = useState<Record<string, string>>({});
 
   const today = todayStr(tz);
-  const pendingTodayCount = useMemo(
+  const tomorrow = tomorrowStr(tz);
+  const pendingAppointments = useMemo(
     () =>
       appointments.filter(
         (appt) =>
           appt.start_time &&
-          localDateStr(appt.start_time, tz) === today &&
           !isSameLocalDay(manualSentAt[appt.id] ?? appt.last_reminder_sent_at, today, tz)
-      ).length,
+      ),
     [appointments, manualSentAt, today, tz]
+  );
+  const pendingTomorrowCount = useMemo(
+    () =>
+      pendingAppointments.filter(
+        (appt) => appt.start_time && localDateStr(appt.start_time, tz) === tomorrow
+      ).length,
+    [pendingAppointments, tomorrow, tz]
   );
 
   const filtered = useMemo(() => {
     const now = new Date();
-    const tomorrow = tomorrowStr(tz);
     const cutoff48 = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
     return appointments.filter((appt) => {
@@ -167,7 +173,7 @@ export function RemindersView({
 
       return true;
     });
-  }, [appointments, empId, manualSentAt, period, status, today, tz]);
+  }, [appointments, empId, manualSentAt, period, status, today, tomorrow, tz]);
 
   function messageFor(appt: ReminderAppointment): string {
     return buildReminderMessage({ appt, tz, salonName, template });
@@ -234,15 +240,15 @@ export function RemindersView({
       <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-2xl border border-brand-100 bg-brand-50 px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
-            Pendientes de recordar hoy
+            Pendientes para mañana
           </p>
-          <p className="mt-2 text-3xl font-bold text-brand-900">{pendingTodayCount}</p>
+          <p className="mt-2 text-3xl font-bold text-brand-900">{pendingTomorrowCount}</p>
         </div>
         <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-            En la vista actual
+            Pendientes de toda la semana
           </p>
-          <p className="mt-2 text-3xl font-bold text-stone-900">{filtered.length}</p>
+          <p className="mt-2 text-3xl font-bold text-stone-900">{pendingAppointments.length}</p>
         </div>
         <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">

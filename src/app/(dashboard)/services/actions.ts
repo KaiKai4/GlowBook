@@ -6,6 +6,11 @@ import { createCatalogService } from "@/features/services/use-cases/create-servi
 import { updateServiceCategory } from "@/features/services/use-cases/update-category";
 import { updateCatalogService } from "@/features/services/use-cases/update-service";
 import {
+  combineServiceDuration,
+  isValidServiceDurationParts,
+  type ServiceDurationParts,
+} from "@/features/services/domain/duration";
+import {
   CreateCategorySchema,
   CreateServiceSchema,
   UpdateCategorySchema,
@@ -22,6 +27,26 @@ async function guard(): Promise<Result<{ salonId: string }>> {
   }
 
   return { ok: true, value: { salonId: profile.salon_id } };
+}
+
+function readNumber(value: FormDataEntryValue | null): number {
+  return typeof value === "string" && value.trim() !== "" ? Number(value) : 0;
+}
+
+function readServiceDuration(formData: FormData): Result<number> {
+  const parts: ServiceDurationParts = {
+    hours: readNumber(formData.get("duration_hours")),
+    minutes: readNumber(formData.get("duration_minutes_part")),
+  };
+
+  if (!isValidServiceDurationParts(parts)) {
+    return {
+      ok: false,
+      error: "Indica una duracion valida: horas desde 0 y minutos entre 0 y 59.",
+    };
+  }
+
+  return { ok: true, value: combineServiceDuration(parts) };
 }
 
 export async function createCategoryAction(
@@ -65,12 +90,14 @@ export async function createServiceAction(
 ): Promise<Result<string>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  const duration = readServiceDuration(formData);
+  if (!duration.ok) return duration;
 
   const parsed = CreateServiceSchema.safeParse({
     category_id: formData.get("category_id"),
     name: formData.get("name"),
     description: formData.get("description") ?? "",
-    duration_minutes: Number(formData.get("duration_minutes")),
+    duration_minutes: duration.value,
     price: Number(formData.get("price")),
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
@@ -87,13 +114,13 @@ export async function updateServiceAction(
 ): Promise<Result<void>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  const duration = readServiceDuration(formData);
+  if (!duration.ok) return duration;
 
   const parsed = UpdateServiceSchema.safeParse({
     name: formData.get("name") ?? undefined,
     description: formData.get("description") ?? undefined,
-    duration_minutes: formData.get("duration_minutes")
-      ? Number(formData.get("duration_minutes"))
-      : undefined,
+    duration_minutes: duration.value,
     price: formData.get("price") ? Number(formData.get("price")) : undefined,
     is_active:
       formData.get("is_active") === "true"

@@ -51,12 +51,29 @@ interface DatePickerProps {
   className?: string;
   triggerClassName?: string;
   ariaLabel?: string;
+  granularity?: "day" | "month";
 }
 
 const WEEKDAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
 const MONTHS = Array.from({ length: 12 }, (_, month) =>
   format(new Date(2026, month, 1), "MMM", { locale: es }).replace(".", "")
 );
+
+function parsePickerValue(
+  value: string | undefined,
+  granularity: "day" | "month"
+): Date | null {
+  if (granularity === "day") return parseDateValue(value);
+  if (!value || !/^\d{4}-\d{2}$/.test(value)) return null;
+
+  const [year, month] = value.split("-").map(Number);
+  const date = new Date(year, month - 1, 1);
+  return getYear(date) === year && getMonth(date) === month - 1 ? date : null;
+}
+
+function toMonthValue(date: Date): string {
+  return format(date, "yyyy-MM");
+}
 
 export function DatePicker({
   value,
@@ -74,17 +91,19 @@ export function DatePicker({
   className,
   triggerClassName,
   ariaLabel,
+  granularity = "day",
 }: DatePickerProps) {
   const generatedId = useId();
   const triggerId = `date-picker-${generatedId.replaceAll(":", "")}`;
   const controlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
   const selectedValue = controlled ? value : internalValue;
-  const selectedDate = parseDateValue(selectedValue);
+  const selectedDate = parsePickerValue(selectedValue, granularity);
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<DatePickerMode>("days");
+  const initialMode = granularity === "month" ? "months" : "days";
+  const [mode, setMode] = useState<DatePickerMode>(initialMode);
   const [focusedDate, setFocusedDate] = useState(
-    selectedDate ?? parseDateValue(defaultValue) ?? new Date()
+    selectedDate ?? parsePickerValue(defaultValue, granularity) ?? new Date()
   );
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -147,12 +166,12 @@ export function DatePicker({
   function openCalendar() {
     if (disabled) return;
     setFocusedDate(selectedDate ?? new Date());
-    setMode("days");
+    setMode(initialMode);
     setOpen((current) => !current);
   }
 
   function selectDate(date: Date) {
-    const nextValue = toDateValue(date);
+    const nextValue = granularity === "month" ? toMonthValue(date) : toDateValue(date);
     if (!controlled) setInternalValue(nextValue);
     onChange?.(nextValue);
     setFocusedDate(date);
@@ -183,7 +202,9 @@ export function DatePicker({
         id={triggerId}
         type="button"
         disabled={disabled}
-        aria-label={ariaLabel ?? label ?? "Seleccionar fecha"}
+        aria-label={
+          ariaLabel ?? label ?? (granularity === "month" ? "Seleccionar mes" : "Seleccionar fecha")
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-describedby={descriptionId}
@@ -199,10 +220,18 @@ export function DatePicker({
       >
         <span className={cn("truncate", !selectedDate && "text-stone-500")}>
           {selectedDate
-            ? format(selectedDate, compact ? "dd/MM/yyyy" : "d 'de' MMMM 'de' yyyy", {
-                locale: es,
-              })
-            : "Selecciona una fecha"}
+            ? format(
+                selectedDate,
+                granularity === "month"
+                  ? "MMMM yyyy"
+                  : compact
+                    ? "dd/MM/yyyy"
+                    : "d 'de' MMMM 'de' yyyy",
+                { locale: es }
+              )
+            : granularity === "month"
+              ? "Selecciona un mes"
+              : "Selecciona una fecha"}
         </span>
         <CalendarDays className="h-4 w-4 shrink-0 text-brand-500" />
       </button>
@@ -222,7 +251,7 @@ export function DatePicker({
           <div
             ref={panelRef}
             role="dialog"
-            aria-label="Seleccionar fecha"
+            aria-label={granularity === "month" ? "Seleccionar mes" : "Seleccionar fecha"}
             style={{ top: position.top, left: position.left }}
             className="fixed z-[70] w-[304px] rounded-xl border border-brand-100 bg-white p-3 shadow-[0_8px_24px_rgba(28,25,23,0.16)]"
           >
@@ -230,6 +259,7 @@ export function DatePicker({
               date={focusedDate}
               mode={mode}
               onModeChange={setMode}
+              granularity={granularity}
               onShift={(direction) =>
                 setFocusedDate((current) =>
                   shiftCalendarView(current, mode, direction)
@@ -237,7 +267,7 @@ export function DatePicker({
               }
             />
 
-            {mode === "days" && (
+            {granularity === "day" && mode === "days" && (
               <DaysView
                 month={focusedDate}
                 selectedDate={selectedDate}
@@ -250,7 +280,12 @@ export function DatePicker({
                 date={focusedDate}
                 selectedDate={selectedDate}
                 onSelect={(month) => {
-                  setFocusedDate((current) => setMonth(current, month));
+                  const nextDate = setMonth(focusedDate, month);
+                  if (granularity === "month") {
+                    selectDate(nextDate);
+                    return;
+                  }
+                  setFocusedDate(nextDate);
                   setMode("days");
                 }}
               />
@@ -276,11 +311,13 @@ function CalendarHeader({
   date,
   mode,
   onModeChange,
+  granularity,
   onShift,
 }: {
   date: Date;
   mode: DatePickerMode;
   onModeChange: (mode: DatePickerMode) => void;
+  granularity: "day" | "month";
   onShift: (direction: -1 | 1) => void;
 }) {
   const years = getYearBlock(getYear(date));
@@ -296,7 +333,17 @@ function CalendarHeader({
       <button
         type="button"
         onClick={() =>
-          onModeChange(mode === "days" ? "months" : mode === "months" ? "years" : "days")
+          onModeChange(
+            granularity === "month"
+              ? mode === "years"
+                ? "months"
+                : "years"
+              : mode === "days"
+                ? "months"
+                : mode === "months"
+                  ? "years"
+                  : "days"
+          )
         }
         className="inline-flex h-9 min-w-0 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold capitalize text-stone-900 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
         aria-label="Cambiar vista del calendario"
