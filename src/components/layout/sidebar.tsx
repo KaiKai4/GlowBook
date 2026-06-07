@@ -109,7 +109,7 @@ export function Sidebar({
           "absolute z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-white text-stone-500 shadow-sm transition-[border-color,color,box-shadow] duration-150 hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
           isCollapsed
             ? "left-1/2 top-[88px] -translate-x-1/2"
-            : "right-12 top-4",
+            : "right-12 top-[88px]",
         )}
       >
         {isCollapsed ? (
