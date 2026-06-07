@@ -13,6 +13,7 @@ export function FeedbackPanel({
   onMessageChange,
   onClose,
   onSend,
+  position,
 }: {
   category: FeedbackCategory;
   message: string;
@@ -23,9 +24,13 @@ export function FeedbackPanel({
   onMessageChange: (message: string) => void;
   onClose: () => void;
   onSend: () => void;
+  position?: { top: number; left: number };
 }) {
   return (
-    <div className="fixed bottom-24 right-6 z-50 w-[min(92vw,22rem)] rounded-2xl border border-stone-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
+    <div
+      style={position ?? { bottom: 96, right: 24 }}
+      className="fixed z-50 w-[min(92vw,22rem)] rounded-2xl border border-stone-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
+    >
       <div className="flex items-center justify-between rounded-t-2xl bg-brand-600 px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-white">Reportar a soporte</p>

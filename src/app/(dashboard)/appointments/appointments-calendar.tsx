@@ -250,7 +250,7 @@ export function AppointmentsCalendar({
 
   if (mode === "semanal" && weekDates?.length === 0) {
     return (
-      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="rounded-2xl border border-brand-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
           <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
           <span className="text-xs text-stone-500 font-medium">Sin días abiertos</span>
@@ -274,7 +274,7 @@ export function AppointmentsCalendar({
     const visibleCount = weekDates.reduce((sum, d) => sum + (byDate[d]?.length ?? 0), 0);
 
     return (
-      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="rounded-2xl border border-brand-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
           <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
           <span className="text-xs text-stone-500 font-medium">{visibleCount} citas esta semana</span>
@@ -343,7 +343,7 @@ export function AppointmentsCalendar({
 
   // Day / trabajador view
   return (
-    <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+    <div className="rounded-2xl border border-brand-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
         <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">
           {title ?? "Vista del día"}

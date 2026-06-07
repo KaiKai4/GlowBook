@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { Select } from "@/components/ui/select";
 import { formatTimeTz } from "@/lib/utils/dates";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
 import type {
@@ -232,9 +233,6 @@ export function RemindersView({
     });
   }
 
-  const selectClass =
-    "h-10 rounded-xl border border-stone-200 bg-white px-3 pr-8 text-sm text-stone-700 appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer";
-
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-3">
@@ -260,31 +258,42 @@ export function RemindersView({
 
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)]">
         <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
-          <label className="text-xs font-medium text-stone-500">Vista</label>
-          <select value={period} onChange={(event) => setPeriod(event.target.value as Period)} className={selectClass}>
+          <Select
+            label="Vista"
+            value={period}
+            onChange={(event) => setPeriod(event.target.value as Period)}
+          >
             {PERIOD_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div className="flex min-w-[200px] flex-1 flex-col gap-1.5">
-          <label className="text-xs font-medium text-stone-500">Profesional</label>
-          <select value={empId} onChange={(event) => setEmpId(event.target.value)} className={selectClass}>
+          <Select
+            label="Profesional"
+            placeholder="Todos los colaboradores"
+            value={empId}
+            onChange={(event) => setEmpId(event.target.value)}
+          >
             <option value="">Todos los colaboradores</option>
             {employees.map((employee) => (
               <option key={employee.id} value={employee.id}>{employee.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
-          <label className="text-xs font-medium text-stone-500">Estado</label>
-          <select value={status} onChange={(event) => setStatus(event.target.value)} className={selectClass}>
+          <Select
+            label="Estado"
+            placeholder="Todos los estados"
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+          >
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
