@@ -25,6 +25,7 @@ describe("get customers page", () => {
           phone: null,
           email: null,
           notes: null,
+          search_name: "lia mora",
           is_active: false,
           is_temporary: false,
           created_at: "2026-05-29T00:00:00.000Z",
@@ -44,12 +45,12 @@ describe("get customers page", () => {
     expect(mockedFindCustomers).toHaveBeenCalledWith("salon-1", {
       q: "lia",
       page: 2,
-      perPage: 20,
+      perPage: 10,
       isActive: false,
     });
     expect(view.mode).toBe("archived");
     expect(view.isArchived).toBe(true);
-    expect(view.totalPages).toBe(3);
+    expect(view.totalPages).toBe(5);
   });
 
   it("defaults invalid pages and unknown status to active mode", async () => {
@@ -62,7 +63,7 @@ describe("get customers page", () => {
     expect(mockedFindCustomers).toHaveBeenCalledWith("salon-1", {
       q: "",
       page: 1,
-      perPage: 20,
+      perPage: 10,
       isActive: true,
     });
     expect(view.page).toBe(1);

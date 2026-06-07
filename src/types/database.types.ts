@@ -270,6 +270,7 @@ export type Database = {
           notes: string
           phone: string | null
           salon_id: string
+          search_name: string
           updated_at: string
         }
         Insert: {
@@ -284,6 +285,7 @@ export type Database = {
           notes?: string
           phone?: string | null
           salon_id: string
+          search_name?: never
           updated_at?: string
         }
         Update: {
@@ -298,6 +300,7 @@ export type Database = {
           notes?: string
           phone?: string | null
           salon_id?: string
+          search_name?: never
           updated_at?: string
         }
         Relationships: [

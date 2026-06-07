@@ -8,21 +8,23 @@ export async function findCustomers(
   options: { q?: string; page?: number; perPage?: number; isActive?: boolean } = {}
 ) {
   const supabase = await createSupabaseServerClient();
-  const { q = "", page = 1, perPage = 20, isActive } = options;
+  const { q = "", page = 1, perPage = 10, isActive } = options;
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
+  const searchTerm = q.trim().replace(/[%_(),]/g, "");
 
   let query = supabase
     .from("customers")
     .select("*", { count: "exact" })
     .eq("salon_id", salonId)
     .eq("is_temporary", false)
-    .order("last_name", { ascending: true })
+    .order("search_name", { ascending: true })
+    .order("id", { ascending: true })
     .range(from, to);
 
-  if (q) {
+  if (searchTerm) {
     query = query.or(
-      `first_name.ilike.%${q}%,last_name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`
+      `search_name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
     );
   }
   if (isActive !== undefined) query = query.eq("is_active", isActive);

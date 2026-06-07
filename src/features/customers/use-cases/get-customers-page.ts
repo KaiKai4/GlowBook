@@ -2,7 +2,7 @@ import "server-only";
 
 import { findCustomers } from "../data/customers.repo";
 
-const PER_PAGE = 20;
+const PER_PAGE = 10;
 
 export interface GetCustomersPageInput {
   salonId: string;
@@ -19,6 +19,7 @@ export interface CustomersPageViewModel {
   customers: CustomerPageItem[];
   total: number;
   page: number;
+  pageSize: number;
   totalPages: number;
   mode: CustomerPageMode;
   isArchived: boolean;
@@ -31,10 +32,11 @@ export async function getCustomersPage({
   page: rawPage,
   status,
 }: GetCustomersPageInput): Promise<CustomersPageViewModel> {
-  const page = Math.max(1, Number(rawPage ?? 1) || 1);
+  const parsedPage = Number(rawPage ?? 1);
+  const page = Number.isSafeInteger(parsedPage) ? Math.max(1, parsedPage) : 1;
   const mode: CustomerPageMode = status === "archived" ? "archived" : "active";
   const isArchived = mode === "archived";
-  const query = q ?? "";
+  const query = (q ?? "").trim().slice(0, 100);
 
   const { data: customers, total } = await findCustomers(salonId, {
     q: query,
@@ -49,6 +51,7 @@ export async function getCustomersPage({
     customers,
     total,
     page,
+    pageSize: PER_PAGE,
     totalPages,
     mode,
     isArchived,

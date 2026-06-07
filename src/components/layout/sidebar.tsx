@@ -105,7 +105,12 @@ export function Sidebar({
           isCollapsed ? "Expandir menú lateral" : "Contraer menú lateral"
         }
         title={isCollapsed ? "Expandir menú lateral" : "Contraer menú lateral"}
-        className="absolute -right-3 top-5 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-white text-stone-500 shadow-sm transition-colors hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        className={cn(
+          "absolute z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-white text-stone-500 shadow-sm transition-[border-color,color,box-shadow] duration-150 hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+          isCollapsed
+            ? "left-1/2 top-[88px] -translate-x-1/2"
+            : "right-12 top-4",
+        )}
       >
         {isCollapsed ? (
           <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
@@ -132,7 +137,7 @@ export function Sidebar({
 
         <div
           className={cn(
-            "absolute inset-0 flex items-center justify-center transition-opacity duration-150 motion-reduce:transition-none",
+            "absolute inset-0 flex justify-center pt-4 transition-opacity duration-150 motion-reduce:transition-none",
             isCollapsed ? "opacity-100" : "pointer-events-none opacity-0",
           )}
           aria-hidden={!isCollapsed}
