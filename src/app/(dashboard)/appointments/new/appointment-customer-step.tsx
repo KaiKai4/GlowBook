@@ -92,13 +92,16 @@ export function AppointmentCustomerStep({
         {mode === "existing" ? (
           <Select
             label="Cliente"
+            placeholder="Selecciona un cliente..."
             value={customerId}
             onChange={(event) => {
               clearError();
               setCustomerId(event.target.value);
             }}
           >
-            <option value="">Selecciona un cliente...</option>
+            <option value="" disabled hidden>
+              Selecciona un cliente...
+            </option>
             {customers.map((customer) => (
               <option key={customer.id} value={customer.id}>
                 {customer.name}

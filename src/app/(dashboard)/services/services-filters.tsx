@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { Select } from "@/components/ui/select";
 import type { ServiceStatusFilter } from "./services-types";
 
 export function ServicesFilters({
@@ -23,15 +24,16 @@ export function ServicesFilters({
           className="h-9 w-full rounded-lg border border-neutral-200 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
         />
       </div>
-      <select
-        value={statusFilter}
-        onChange={(event) => onStatusFilterChange(event.target.value as ServiceStatusFilter)}
-        className="h-9 rounded-lg border border-neutral-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-      >
-        <option value="all">Todos los estados</option>
-        <option value="active">Activos</option>
-        <option value="inactive">Inactivos</option>
-      </select>
+      <div className="min-w-[180px]">
+        <Select
+          value={statusFilter}
+          onChange={(event) => onStatusFilterChange(event.target.value as ServiceStatusFilter)}
+        >
+          <option value="all">Todos los estados</option>
+          <option value="active">Activos</option>
+          <option value="inactive">Inactivos</option>
+        </Select>
+      </div>
     </div>
   );
 }
