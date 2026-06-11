@@ -1,0 +1,38 @@
+// Content-Security-Policy en modo enforce, con nonce por request.
+// Los scripts solo corren si llevan el nonce ('strict-dynamic' permite los
+// chunks que Next encadena desde un script ya confiable). Los estilos
+// mantienen 'unsafe-inline' porque React renderiza atributos style inline
+// (graficas, alturas calculadas); el riesgo real esta en script-src.
+
+export function supabaseOrigin(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return "https://*.supabase.co";
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "https://*.supabase.co";
+  }
+}
+
+export function buildContentSecurityPolicy(nonce: string, isDev: boolean): string {
+  const origin = supabaseOrigin();
+
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "form-action 'self'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "style-src 'self' 'unsafe-inline'",
+    // En dev React necesita eval para reconstruir stacks de error del server.
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    `connect-src 'self' ${origin} https://*.supabase.co wss://*.supabase.co`,
+    ...(isDev ? [] : ["upgrade-insecure-requests"]),
+  ].join("; ");
+}
+
+export function generateCspNonce(): string {
+  return Buffer.from(crypto.randomUUID()).toString("base64");
+}

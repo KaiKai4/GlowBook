@@ -4,6 +4,7 @@ import {
   hasSupabaseSessionCookie,
 } from "./proxy-auth";
 import { refreshSupabaseSession } from "@/lib/supabase/proxy";
+import { buildContentSecurityPolicy, generateCspNonce } from "@/lib/security/csp";
 
 function copySessionMetadata(source: NextResponse, target: NextResponse) {
   source.cookies.getAll().forEach(({ name, value, ...options }) => {
@@ -19,6 +20,15 @@ function copySessionMetadata(source: NextResponse, target: NextResponse) {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const requestCookies = request.cookies.getAll();
+
+  // CSP con nonce por request: se inyecta en los headers de la REQUEST antes
+  // de construir cualquier respuesta, porque Next extrae el nonce del header
+  // Content-Security-Policy entrante para firmar sus propios scripts.
+  const nonce = generateCspNonce();
+  const csp = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  request.headers.set("x-nonce", nonce);
+  request.headers.set("content-security-policy", csp);
+
   let response = NextResponse.next({ request });
   let hasVerifiedSession: boolean | undefined;
 
@@ -42,6 +52,7 @@ export async function proxy(request: NextRequest) {
     return redirectResponse;
   }
 
+  response.headers.set("Content-Security-Policy", csp);
   return response;
 }
 
