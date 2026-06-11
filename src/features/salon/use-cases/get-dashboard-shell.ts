@@ -7,6 +7,10 @@ import type { SalonFeatureKey } from "../domain/salon-features";
 import { findDashboardShellSalon } from "../data/salon.repo";
 import { getEffectiveSalonPlan } from "@/features/billing/use-cases/commercial-plans";
 import { isActionableLimitWarning } from "@/features/billing/domain/commercial-plan";
+import {
+  evaluatePaymentStanding,
+  type PaymentStanding,
+} from "@/features/billing/domain/payment-standing";
 
 export interface PlanLimitWarning {
   level: "warning" | "danger";
@@ -20,6 +24,18 @@ export interface DashboardShellViewModel {
   bgStyle: string;
   permissions: Permission[];
   disabledFeatures: SalonFeatureKey[];
+  paymentStanding: PaymentStanding;
+}
+
+/** Estado de pago del salon, evaluado al acceder (sin cron). */
+export async function getSalonPaymentStanding(salonId: string): Promise<PaymentStanding> {
+  const effectivePlan = await getEffectiveSalonPlan(salonId).catch(() => null);
+  return evaluatePaymentStanding({
+    status: effectivePlan?.assignmentStatus ?? null,
+    currentPeriodEnd: effectivePlan?.currentPeriodEnd ?? null,
+    trialEndsAt: effectivePlan?.trialEndsAt ?? null,
+    todayIso: new Date().toISOString().slice(0, 10),
+  });
 }
 
 /**
@@ -64,5 +80,6 @@ export async function getDashboardShell(
     bgStyle: salon.bg_style || "neutral",
     permissions: getPermissions(profileForAccess),
     disabledFeatures,
+    paymentStanding: await getSalonPaymentStanding(profile.salon_id),
   };
 }

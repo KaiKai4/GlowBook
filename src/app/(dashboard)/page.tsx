@@ -10,8 +10,12 @@ import {
   type PendingAppointmentConfirmation,
   type TopService,
 } from "@/features/dashboard/use-cases/get-dashboard-overview";
-import { getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
+import {
+  getOwnerPlanLimitWarnings,
+  getSalonPaymentStanding,
+} from "@/features/salon/use-cases/get-dashboard-shell";
 import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
+import { PaymentStandingBanner } from "@/components/layout/payment-standing-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatDate } from "@/lib/utils/dates";
@@ -42,11 +46,14 @@ export default async function DashboardPage() {
     redirect(visibleNav[0].href);
   }
 
-  // El aviso de limites del plan solo vive aqui: el owner lo ve al entrar al
-  // dashboard, sin perseguirlo por el resto de los modulos.
-  const planWarnings = profile.is_owner
-    ? await getOwnerPlanLimitWarnings(profile.salon_id)
-    : [];
+  // Los avisos del plan (limites y pago vencido) solo viven aqui: el owner
+  // los ve al entrar al dashboard, sin perseguirlo por el resto de modulos.
+  const [planWarnings, paymentStanding] = profile.is_owner
+    ? await Promise.all([
+        getOwnerPlanLimitWarnings(profile.salon_id),
+        getSalonPaymentStanding(profile.salon_id),
+      ])
+    : [[], null];
 
   const canViewReports = hasPermission(profile, PERMISSIONS.REPORTS_VIEW);
   const canManageAppointments = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
@@ -93,6 +100,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {paymentStanding ? <PaymentStandingBanner standing={paymentStanding} /> : null}
       <PlanLimitBanner warnings={planWarnings} />
 
       <div>

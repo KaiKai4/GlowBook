@@ -116,6 +116,8 @@ export const getEffectiveSalonPlan = cache(async (salonId: string): Promise<Effe
     salonId,
     plan,
     assignmentStatus: rows.assignment?.status ?? null,
+    currentPeriodEnd: rows.assignment?.current_period_end ?? null,
+    trialEndsAt: rows.assignment?.trial_ends_at ?? null,
     enabledModules: Array.from(enabled),
     disabledModules,
     limits: buildEffectiveLimits(plan, rows.metrics, rows.overrides, rows.usage, enabled),

@@ -123,6 +123,10 @@ export interface EffectiveSalonPlan {
   salonId: string;
   plan: CommercialPlan | null;
   assignmentStatus: SalonPlanAssignmentStatus | null;
+  /** Fin del periodo pagado (YYYY-MM-DD); alimenta el estado de pago. */
+  currentPeriodEnd: string | null;
+  /** Fin del trial; alimenta el estado de pago durante el trial. */
+  trialEndsAt: string | null;
   enabledModules: SalonFeatureKey[];
   disabledModules: SalonFeatureKey[];
   limits: EffectivePlanLimit[];

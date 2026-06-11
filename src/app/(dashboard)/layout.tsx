@@ -51,6 +51,26 @@ export default async function DashboardLayout({
     );
   }
 
+  // Suspension automatica por impago: vencido el periodo pagado (o el trial)
+  // y agotada la ventana de gracia, el salon queda bloqueado hasta registrar
+  // el pago. Se evalua al acceder; no requiere ningun job programado.
+  if (shell.paymentStanding.state === "suspended") {
+    return (
+      <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden bg-neutral-50 px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold text-neutral-900">Salón suspendido por falta de pago</h1>
+          <p className="mt-2 text-sm text-neutral-500">
+            El plan venció el {shell.paymentStanding.overdueSince} y pasó el período de gracia.
+            Contacta a GlowBook para registrar tu pago y reactivar el salón.
+          </p>
+          <form action="/api/auth/signout" method="post" className="mt-6">
+            <button className="text-sm text-rose-600 hover:underline">Cerrar sesión</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   // Single-module collaborators (e.g. view-only stylists) don't need a sidebar —
   // show a slim top bar with branding + logout and let the content fill the screen.
   const minimalChrome = !profile.is_owner && visibleNav.length <= 1;
