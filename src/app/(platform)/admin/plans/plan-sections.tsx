@@ -161,11 +161,7 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
     <form action={action} className="space-y-4">
       <input type="hidden" name="planId" value={plan.id} />
 
-      <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex flex-wrap items-start justify-between gap-3 border-b border-brand-100 bg-white/95 px-5 py-3 backdrop-blur">
-        <p className="max-w-2xl text-sm leading-6 text-stone-500">
-          Define el maximo permitido y como se cuenta cada limite. Usa ciclo de facturacion para consumos renovables como citas,
-          y actual para capacidades como clientes, colaboradores o servicios activos.
-        </p>
+      <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex justify-end border-b border-brand-100 bg-white/95 px-5 py-3 backdrop-blur">
         <SaveAllButton label="Guardar limites" />
       </div>
 

@@ -67,7 +67,7 @@ export function EmployeeCreateForm({
         onCreated();
         router.refresh();
       } else {
-        window.alert(res.error ?? "No se pudo reactivar el colaborador.");
+        setError(res.error ?? "No se pudo reactivar el colaborador.");
       }
     });
   }

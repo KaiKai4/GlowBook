@@ -12,7 +12,7 @@ export function PlanLimitBanner({ warnings }: { warnings: PlanLimitWarning[] }) 
     <div
       role="status"
       className={cn(
-        "mb-6 rounded-xl border px-4 py-3",
+        "rounded-xl border px-4 py-3",
         hasDanger ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"
       )}
     >

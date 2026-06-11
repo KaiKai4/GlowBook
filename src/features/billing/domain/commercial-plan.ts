@@ -178,6 +178,16 @@ export function calculateLimitState(input: {
   };
 }
 
+// Capacidades (scope "current") solo alertan al owner cuando se supera el
+// maximo: estar al tope (1 de 1) es un estado normal y la creacion de mas
+// recursos ya se bloquea en el punto de accion. Consumos renovables (citas
+// por ciclo) si alertan al acercarse, porque se agotan dentro del periodo.
+export function isActionableLimitWarning(limit: EffectivePlanLimit): boolean {
+  if (limit.warningLevel === "none" || !limit.message) return false;
+  if (limit.countScope !== "current") return true;
+  return limit.maxValue !== null && limit.used > limit.maxValue;
+}
+
 export function checkLimitAction(input: {
   metricKey: string;
   metricName: string;

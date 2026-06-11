@@ -4,7 +4,6 @@ import { getDashboardShell } from "@/features/salon/use-cases/get-dashboard-shel
 import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
-import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
 import { UnsavedChangesProvider } from "@/components/layout/unsaved-changes";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { submitFeedbackAction } from "./feedback/actions";
@@ -97,10 +96,7 @@ export default async function DashboardLayout({
           disabledFeatures={disabledFeatures}
         />
         <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
-          <div className="w-full px-6 py-8">
-            {profile.is_owner ? <PlanLimitBanner warnings={shell.planWarnings} /> : null}
-            {children}
-          </div>
+          <div className="w-full px-6 py-8">{children}</div>
         </main>
         <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />
       </div>

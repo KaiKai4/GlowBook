@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { deleteEmployeeAction } from "../actions";
@@ -16,6 +16,7 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [archivedMessage, setArchivedMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function handleDelete() {
@@ -28,12 +29,19 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
       }
 
       if (res.value.outcome === "archived") {
-        window.alert(res.value.message);
+        setConfirmOpen(false);
+        setArchivedMessage(res.value.message);
+        return;
       }
 
       router.push("/employees");
       router.refresh();
     });
+  }
+
+  function handleArchivedAccept() {
+    router.push("/employees");
+    router.refresh();
   }
 
   return (
@@ -74,6 +82,25 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
               Eliminar
             </Button>
           </div>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={archivedMessage !== null}
+        onClose={handleArchivedAccept}
+        title="Colaborador archivado"
+        className="max-w-sm"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+            <div className="flex gap-2">
+              <Archive className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{archivedMessage}</p>
+            </div>
+          </div>
+          <Button variant="primary" className="w-full" onClick={handleArchivedAccept}>
+            Entendido
+          </Button>
         </div>
       </Dialog>
     </>

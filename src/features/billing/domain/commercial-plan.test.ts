@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { calculateLimitState, checkLimitAction, type CommercialLimitMetric } from "./commercial-plan";
+import {
+  calculateLimitState,
+  checkLimitAction,
+  isActionableLimitWarning,
+  type CommercialLimitMetric,
+} from "./commercial-plan";
 
 const metric: CommercialLimitMetric = {
   key: "customers.active",
@@ -95,5 +100,74 @@ describe("commercial plan limits", () => {
     });
 
     expect(result.allowed).toBe(true);
+  });
+});
+
+describe("isActionableLimitWarning", () => {
+  it("does not surface capacities sitting exactly at the limit", () => {
+    const limit = calculateLimitState({
+      metric,
+      maxValue: 1,
+      enforcementMode: "warn",
+      warningThreshold: 80,
+      countScope: "current",
+      used: 1,
+    });
+
+    expect(limit.warningLevel).toBe("over_limit");
+    expect(isActionableLimitWarning(limit)).toBe(false);
+  });
+
+  it("does not surface capacities near the limit", () => {
+    const limit = calculateLimitState({
+      metric,
+      maxValue: 100,
+      enforcementMode: "warn",
+      warningThreshold: 80,
+      countScope: "current",
+      used: 85,
+    });
+
+    expect(limit.warningLevel).toBe("near_limit");
+    expect(isActionableLimitWarning(limit)).toBe(false);
+  });
+
+  it("surfaces capacities that exceeded the limit", () => {
+    const limit = calculateLimitState({
+      metric,
+      maxValue: 1,
+      enforcementMode: "warn",
+      warningThreshold: 80,
+      countScope: "current",
+      used: 5,
+    });
+
+    expect(isActionableLimitWarning(limit)).toBe(true);
+  });
+
+  it("surfaces renewable consumption near the limit", () => {
+    const limit = calculateLimitState({
+      metric: { ...metric, key: "appointments.cycle", name: "Citas", defaultCountScope: "billing_cycle" },
+      maxValue: 100,
+      enforcementMode: "warn",
+      warningThreshold: 80,
+      countScope: "billing_cycle",
+      used: 85,
+    });
+
+    expect(isActionableLimitWarning(limit)).toBe(true);
+  });
+
+  it("surfaces renewable consumption at the limit", () => {
+    const limit = calculateLimitState({
+      metric: { ...metric, key: "appointments.cycle", name: "Citas", defaultCountScope: "billing_cycle" },
+      maxValue: 100,
+      enforcementMode: "warn",
+      warningThreshold: 80,
+      countScope: "billing_cycle",
+      used: 100,
+    });
+
+    expect(isActionableLimitWarning(limit)).toBe(true);
   });
 });

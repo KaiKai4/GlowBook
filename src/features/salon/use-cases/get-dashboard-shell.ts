@@ -6,6 +6,7 @@ import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "../domain/salon-features";
 import { findDashboardShellSalon } from "../data/salon.repo";
 import { getEffectiveSalonPlan } from "@/features/billing/use-cases/commercial-plans";
+import { isActionableLimitWarning } from "@/features/billing/domain/commercial-plan";
 
 export interface PlanLimitWarning {
   level: "warning" | "danger";
@@ -19,7 +20,20 @@ export interface DashboardShellViewModel {
   bgStyle: string;
   permissions: Permission[];
   disabledFeatures: SalonFeatureKey[];
-  planWarnings: PlanLimitWarning[];
+}
+
+/**
+ * Advertencias de limites que ve el owner en el dashboard (solo ahi, no en
+ * cada modulo). Capacidades al tope no alertan; ver isActionableLimitWarning.
+ */
+export async function getOwnerPlanLimitWarnings(salonId: string): Promise<PlanLimitWarning[]> {
+  const effectivePlan = await getEffectiveSalonPlan(salonId).catch(() => null);
+  return (effectivePlan?.limits ?? [])
+    .filter(isActionableLimitWarning)
+    .map((limit) => ({
+      level: limit.warningLevel === "near_limit" ? ("warning" as const) : ("danger" as const),
+      message: limit.message,
+    }));
 }
 
 export async function getDashboardShell(
@@ -33,19 +47,10 @@ export async function getDashboardShell(
     salon: { disabled_features: salon.disabled_features },
   };
 
-  // Una sola consulta del plan efectivo alimenta tanto los modulos visibles
-  // como las advertencias de limites que ve el owner.
   const effectivePlan = await getEffectiveSalonPlan(profile.salon_id).catch(() => null);
   const disabledFeatures = effectivePlan?.plan
     ? effectivePlan.disabledModules
     : getDisabledSalonFeatures(profileWithSalonFeatures);
-
-  const planWarnings: PlanLimitWarning[] = (effectivePlan?.limits ?? [])
-    .filter((limit) => limit.warningLevel !== "none" && limit.message)
-    .map((limit) => ({
-      level: limit.warningLevel === "near_limit" ? "warning" : "danger",
-      message: limit.message,
-    }));
 
   const profileForAccess: ProfileWithRole = {
     ...profile,
@@ -59,6 +64,5 @@ export async function getDashboardShell(
     bgStyle: salon.bg_style || "neutral",
     permissions: getPermissions(profileForAccess),
     disabledFeatures,
-    planWarnings,
   };
 }

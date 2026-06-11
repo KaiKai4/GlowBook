@@ -10,6 +10,8 @@ import {
   type PendingAppointmentConfirmation,
   type TopService,
 } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import { getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
+import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatDate } from "@/lib/utils/dates";
@@ -39,6 +41,12 @@ export default async function DashboardPage() {
   if (!profile.is_owner && visibleNav.length === 1) {
     redirect(visibleNav[0].href);
   }
+
+  // El aviso de limites del plan solo vive aqui: el owner lo ve al entrar al
+  // dashboard, sin perseguirlo por el resto de los modulos.
+  const planWarnings = profile.is_owner
+    ? await getOwnerPlanLimitWarnings(profile.salon_id)
+    : [];
 
   const canViewReports = hasPermission(profile, PERMISSIONS.REPORTS_VIEW);
   const canManageAppointments = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
@@ -85,6 +93,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <PlanLimitBanner warnings={planWarnings} />
+
       <div>
         <h1 className="text-2xl font-bold text-neutral-900">Bienvenido</h1>
         <p className="mt-1 text-sm text-neutral-500">{formatDate(new Date())}</p>

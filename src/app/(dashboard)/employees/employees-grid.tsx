@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Link2, ShieldCheck, Users } from "lucide-react";
+import { AlertTriangle, ChevronRight, Link2, ShieldCheck, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { reactivateEmployeeAction } from "./actions";
 import type { EmployeeListItem } from "./types";
 
@@ -26,6 +27,7 @@ export function EmployeesGrid({
 }: EmployeesGridProps) {
   const router = useRouter();
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
   const [reactivationPending, startReactivation] = useTransition();
 
   function handleReactivateEmployee(employeeId: string) {
@@ -36,7 +38,7 @@ export function EmployeesGrid({
       if (res.ok) {
         router.refresh();
       } else {
-        window.alert(res.error ?? "No se pudo reactivar el colaborador.");
+        setReactivateError(res.error ?? "No se pudo reactivar el colaborador.");
       }
     });
   }
@@ -60,6 +62,7 @@ export function EmployeesGrid({
   }
 
   return (
+    <>
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {employees.map((employee) => {
         const card = (
@@ -115,5 +118,25 @@ export function EmployeesGrid({
         );
       })}
     </div>
+
+    <Dialog
+      open={reactivateError !== null}
+      onClose={() => setReactivateError(null)}
+      title="No se pudo reactivar"
+      className="max-w-sm"
+    >
+      <div className="space-y-4">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-600">
+          <div className="flex gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{reactivateError}</p>
+          </div>
+        </div>
+        <Button variant="primary" className="w-full" onClick={() => setReactivateError(null)}>
+          Entendido
+        </Button>
+      </div>
+    </Dialog>
+    </>
   );
 }
