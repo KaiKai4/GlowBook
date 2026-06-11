@@ -1,26 +1,34 @@
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
+  BadgeDollarSign,
   Building2,
+  CreditCard,
+  History,
+  Hourglass,
   MailOpen,
-  Send,
+  MessageSquareWarning,
   ShieldCheck,
-  Users,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSubscriptionsPage, type SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
+import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-
-import { inviteSalonAction } from "./actions";
 import { CopyInviteLink } from "./copy-invite-link";
 
 export default async function PlatformAdminPage() {
   await requirePlatformAdmin();
 
-  const view = await getPlatformAdminHome();
+  const [home, salonView] = await Promise.all([
+    getPlatformAdminHome(),
+    getPlatformSalonOverviews(),
+  ]);
+  const billing = await getSubscriptionsPage(salonView.salons);
+  const attention = buildAttentionList(billing.rows);
 
   return (
     <div className="space-y-6">
@@ -34,59 +42,72 @@ export default async function PlatformAdminPage() {
             Panel de Plataforma
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-500">
-            Vista operativa del SaaS GlowBook para salones, invitaciones, reportes y roles.
+            Estado del negocio: ingresos, salones, suscripciones y lo que requiere tu atencion hoy.
           </p>
         </div>
         <Link
-          href="/admin/roles"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-4 text-sm font-medium text-stone-800 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
+          href="/admin/invitations"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
         >
-          Roles de plataforma
-          <ArrowRight className="h-4 w-4" />
+          <MailOpen className="h-4 w-4" />
+          Invitar salon
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <HomeMetric
+          icon={<BadgeDollarSign className="h-5 w-5 text-emerald-600" />}
+          label="MRR estimado"
+          value={`$${billing.totals.mrr.toFixed(2)}`}
+        />
         <HomeMetric
           icon={<Building2 className="h-5 w-5 text-blue-600" />}
-          label="Total salones"
-          value={view.metrics.totalSalons}
-        />
-        <HomeMetric
-          icon={<Users className="h-5 w-5 text-emerald-600" />}
           label="Salones activos"
-          value={view.metrics.activeSalons}
-          valueClassName="text-emerald-600"
+          value={`${home.metrics.activeSalons} de ${home.metrics.totalSalons}`}
         />
         <HomeMetric
-          icon={<MailOpen className="h-5 w-5 text-amber-600" />}
-          label="Invitaciones pendientes"
-          value={view.metrics.pendingInvitations}
-          valueClassName="text-amber-600"
+          icon={<Hourglass className="h-5 w-5 text-sky-600" />}
+          label="En trial"
+          value={String(billing.totals.trialing)}
+        />
+        <HomeMetric
+          icon={<AlertTriangle className="h-5 w-5 text-amber-500" />}
+          label="Alertas abiertas"
+          value={String(billing.totals.openAlerts)}
+          highlight={billing.totals.openAlerts > 0}
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <Card className="overflow-hidden">
           <CardHeader className="border-b border-neutral-100 bg-white pb-5">
-            <div className="flex items-center justify-between gap-4">
-              <CardTitle>Invitar nuevo salon</CardTitle>
-              <Send className="h-4 w-4 text-brand-600" />
-            </div>
+            <CardTitle>Requieren atencion</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={inviteSalonAction} className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type="email"
-                name="email"
-                placeholder="owner@salon.com"
-                required
-                className="h-11 flex-1 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-              <Button type="submit" variant="primary" className="h-11">
-                Invitar
-              </Button>
-            </form>
+            {attention.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 text-center">
+                <p className="text-sm text-neutral-400">
+                  Todo en orden: sin alertas, morosos ni trials por vencer.
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-neutral-100">
+                {attention.map((item) => (
+                  <li key={`${item.salonId}-${item.reason}`}>
+                    <Link
+                      href={`/admin/subscriptions?salon=${item.salonId}`}
+                      className="flex items-center justify-between gap-3 py-3 transition hover:bg-neutral-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-neutral-900">{item.salonName}</p>
+                        <p className="mt-0.5 text-xs text-neutral-500">{item.detail}</p>
+                      </div>
+                      <Badge variant={item.severity === "danger" ? "danger" : "warning"}>{item.reason}</Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
 
@@ -95,18 +116,18 @@ export default async function PlatformAdminPage() {
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Invitaciones pendientes</CardTitle>
               <Link href="/admin/invitations" className="text-sm font-medium text-brand-600 hover:text-brand-700">
-                Ver todas
+                Gestionar
               </Link>
             </div>
           </CardHeader>
           <CardContent>
-            {view.pendingInvitations.length === 0 ? (
+            {home.pendingInvitations.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 text-center">
                 <p className="text-sm text-neutral-400">No hay invitaciones pendientes.</p>
               </div>
             ) : (
               <ul className="divide-y divide-neutral-100">
-                {view.pendingInvitations.slice(0, 5).map((invitation) => (
+                {home.pendingInvitations.slice(0, 5).map((invitation) => (
                   <li key={invitation.id} className="flex items-center justify-between gap-3 py-3">
                     <span className="min-w-0 truncate text-sm font-medium text-neutral-800">
                       {invitation.email}
@@ -127,26 +148,30 @@ export default async function PlatformAdminPage() {
         <Card className="overflow-hidden">
           <CardHeader className="border-b border-neutral-100 bg-white pb-5">
             <div className="flex items-center justify-between gap-4">
-              <CardTitle>Salones registrados</CardTitle>
-              <Link href="/admin/salons" className="text-sm font-medium text-brand-600 hover:text-brand-700">
-                Ver todos
+              <CardTitle>Suscripciones</CardTitle>
+              <Link href="/admin/subscriptions" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+                Ver todas
               </Link>
             </div>
           </CardHeader>
           <CardContent>
             <div className="divide-y divide-neutral-100">
-              {view.salons.slice(0, 10).map((salon) => (
-                <div key={salon.id} className="flex items-center justify-between gap-4 py-3">
+              {billing.rows.slice(0, 8).map((row) => (
+                <Link
+                  key={row.salonId}
+                  href={`/admin/subscriptions?salon=${row.salonId}`}
+                  className="flex items-center justify-between gap-4 py-3 transition hover:bg-neutral-50"
+                >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-neutral-950">{salon.name}</p>
+                    <p className="text-sm font-semibold text-neutral-950">{row.salonName}</p>
                     <p className="truncate text-xs text-neutral-500">
-                      {salon.contact_email || "Sin correo registrado"}
+                      {row.planName
+                        ? `${row.planName} · ${row.currency} ${row.monthlyTotal.toFixed(2)}/mes`
+                        : "Sin plan asignado"}
                     </p>
                   </div>
-                  <Badge variant={salon.is_active ? "success" : "danger"}>
-                    {salon.is_active ? "Activo" : "Suspendido"}
-                  </Badge>
-                </div>
+                  <Badge variant={statusBadge(row.status)}>{statusLabel(row.status)}</Badge>
+                </Link>
               ))}
             </div>
           </CardContent>
@@ -158,22 +183,22 @@ export default async function PlatformAdminPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <AdminShortcut
-              href="/admin/roles"
-              icon={<ShieldCheck className="h-4 w-4 text-brand-600" />}
-              title="Roles"
-              detail="Permisos de plataforma"
+              href="/admin/plans"
+              icon={<CreditCard className="h-4 w-4 text-brand-600" />}
+              title="Planes y extras"
+              detail="Catalogo comercial, modulos y limites"
             />
             <AdminShortcut
               href="/admin/audit"
-              icon={<ShieldCheck className="h-4 w-4 text-emerald-600" />}
+              icon={<History className="h-4 w-4 text-emerald-600" />}
               title="Auditoria"
               detail="Eventos cross-tenant"
             />
             <AdminShortcut
               href="/admin/reports"
-              icon={<MailOpen className="h-4 w-4 text-amber-600" />}
+              icon={<MessageSquareWarning className="h-4 w-4 text-amber-600" />}
               title="Reportes"
-              detail="Fallas y sugerencias"
+              detail="Fallas y sugerencias de salones"
             />
           </CardContent>
         </Card>
@@ -182,16 +207,94 @@ export default async function PlatformAdminPage() {
   );
 }
 
+interface AttentionItem {
+  salonId: string;
+  salonName: string;
+  reason: string;
+  detail: string;
+  severity: "warning" | "danger";
+}
+
+function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[] {
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 3);
+  const soonIso = soon.toISOString().slice(0, 10);
+  const items: AttentionItem[] = [];
+
+  for (const row of rows) {
+    if (row.openAlertCount > 0) {
+      items.push({
+        salonId: row.salonId,
+        salonName: row.salonName,
+        reason: "Limites",
+        detail: `${row.openAlertCount} alerta${row.openAlertCount === 1 ? "" : "s"} de limite abierta${row.openAlertCount === 1 ? "" : "s"}.`,
+        severity: "danger",
+      });
+    }
+    if (row.status === "past_due") {
+      items.push({
+        salonId: row.salonId,
+        salonName: row.salonName,
+        reason: "Moroso",
+        detail: "Pago vencido: registra el pago o pausa la suscripcion.",
+        severity: "danger",
+      });
+    }
+    if (row.status === "trialing" && row.trialEndsAt && row.trialEndsAt <= soonIso) {
+      items.push({
+        salonId: row.salonId,
+        salonName: row.salonName,
+        reason: "Trial por vencer",
+        detail: `El trial termina el ${formatDate(row.trialEndsAt)}. Contacta al salon para cerrar la venta.`,
+        severity: "warning",
+      });
+    }
+    if (row.planId === null && row.salonIsActive) {
+      items.push({
+        salonId: row.salonId,
+        salonName: row.salonName,
+        reason: "Sin plan",
+        detail: "Salon activo sin plan: ve todo sin limites.",
+        severity: "warning",
+      });
+    }
+  }
+
+  return items.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "danger" ? -1 : 1));
+}
+
+function statusLabel(status: SalonSubscriptionRow["status"]): string {
+  if (status === "trialing") return "Trial";
+  if (status === "active") return "Activo";
+  if (status === "past_due") return "Moroso";
+  if (status === "paused") return "Pausado";
+  if (status === "canceled") return "Cancelado";
+  return "Sin plan";
+}
+
+function statusBadge(status: SalonSubscriptionRow["status"]): "success" | "warning" | "danger" | "default" {
+  if (status === "active") return "success";
+  if (status === "trialing") return "warning";
+  if (status === "past_due" || status === "canceled") return "danger";
+  return "default";
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("es-PA", { day: "numeric", month: "short" }).format(
+    new Date(`${value}T00:00:00`)
+  );
+}
+
 function HomeMetric({
   icon,
   label,
   value,
-  valueClassName,
+  highlight = false,
 }: {
   icon: React.ReactNode;
   label: string;
-  value: number;
-  valueClassName?: string;
+  value: string;
+  highlight?: boolean;
 }) {
   return (
     <Card>
@@ -199,7 +302,7 @@ function HomeMetric({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-neutral-500">{label}</p>
-            <p className={`mt-1 text-3xl font-bold text-neutral-950 ${valueClassName ?? ""}`}>
+            <p className={`mt-1 text-3xl font-bold ${highlight ? "text-amber-600" : "text-neutral-950"}`}>
               {value}
             </p>
           </div>

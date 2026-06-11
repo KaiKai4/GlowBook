@@ -5,11 +5,14 @@ import { captureError } from "@/lib/observability";
 import { z } from "zod";
 import { recordPlatformAction } from "./platform-audit";
 
+// El plan es obligatorio: el salon debe nacer con su plan asignado para que
+// el owner nunca vea funcionalidades fuera de lo contratado.
 const InviteSchema = z.object({
   email: z.string().email("Email invalido"),
+  planId: z.string().uuid("Selecciona el plan que tendra el salon."),
 });
 
-export interface InviteSalonInput extends z.infer<typeof InviteSchema> {
+export interface InviteSalonInput extends z.input<typeof InviteSchema> {
   actorUserId?: string | null;
 }
 
@@ -23,13 +26,13 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
   const emailDomain = parsed.data.email.split("@").at(-1) ?? "unknown";
 
   try {
-    const token = await createSalonInvitation(parsed.data.email);
+    const token = await createSalonInvitation(parsed.data.email, parsed.data.planId);
     await recordPlatformAction({
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "succeeded",
       targetResourceType: "salon_invitation",
-      metadata: { emailDomain },
+      metadata: { emailDomain, planId: parsed.data.planId },
     });
     return ok(token);
   } catch (error) {
@@ -43,7 +46,7 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
       action: "invite_salon",
       status: "failed",
       targetResourceType: "salon_invitation",
-      metadata: { emailDomain },
+      metadata: { emailDomain, planId: parsed.data.planId },
       errorMessage: error instanceof Error ? error.message : "Error desconocido",
     });
     return err("Error al crear la invitacion.");

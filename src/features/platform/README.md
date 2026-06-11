@@ -15,7 +15,7 @@ Interface principal:
 - `use-cases/get-platform-feedback-reports.ts`
 - `use-cases/platform-audit.ts`
 - `use-cases/update-salon-status.ts`
-- `use-cases/update-salon-features.ts`
+- Los modulos comerciales se gestionan desde `src/features/billing/use-cases/commercial-plans.ts`.
 - `use-cases/delete-salon.ts`
 
 Autoridad final:
@@ -48,7 +48,7 @@ Tests que protegen el Module:
 - `use-cases/invite-salon.test.ts`
 - `use-cases/set-feedback-report-status.test.ts`
 - `use-cases/update-salon-status.test.ts`
-- `use-cases/update-salon-features.test.ts`
+- Las pruebas de planes viven en `src/features/billing/domain/commercial-plan.test.ts`.
 
 No debe vivir aqui:
 

@@ -1,13 +1,14 @@
 "use client";
 
 import {
+  BadgeDollarSign,
   Building2,
+  CreditCard,
   History,
   LayoutDashboard,
   LogOut,
   MailOpen,
   MessageSquareWarning,
-  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,7 +19,8 @@ import { cn } from "@/lib/utils/cn";
 const PLATFORM_NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/salons", label: "Salones", icon: Building2 },
-  { href: "/admin/roles", label: "Roles", icon: ShieldCheck },
+  { href: "/admin/plans", label: "Planes", icon: CreditCard },
+  { href: "/admin/subscriptions", label: "Suscripciones", icon: BadgeDollarSign },
   { href: "/admin/invitations", label: "Invitaciones", icon: MailOpen },
   { href: "/admin/reports", label: "Reportes", icon: MessageSquareWarning },
   { href: "/admin/audit", label: "Auditoria", icon: History },

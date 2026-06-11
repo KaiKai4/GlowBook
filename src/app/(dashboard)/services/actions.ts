@@ -18,6 +18,7 @@ import {
 } from "@/features/services/schemas";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
@@ -90,6 +91,10 @@ export async function createServiceAction(
 ): Promise<Result<string>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "services" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "services.active" });
+  if (!limit.ok) return { ok: false, error: limit.error };
   const duration = readServiceDuration(formData);
   if (!duration.ok) return duration;
 

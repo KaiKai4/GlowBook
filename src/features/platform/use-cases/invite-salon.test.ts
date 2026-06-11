@@ -21,6 +21,7 @@ const mockedIsPlatformAdmin = vi.mocked(isPlatformAdmin);
 const mockedRecordPlatformAction = vi.mocked(recordPlatformAction);
 
 const actorUserId = "00000000-0000-4000-8000-000000000001";
+const planId = "00000000-0000-4000-8000-00000000000a";
 
 describe("invite salon", () => {
   beforeEach(() => {
@@ -32,28 +33,35 @@ describe("invite salon", () => {
   it("rejects non-platform admins before creating the invitation", async () => {
     mockedIsPlatformAdmin.mockResolvedValue(false);
 
-    const result = await inviteSalon({ email: "owner@example.com" });
+    const result = await inviteSalon({ email: "owner@example.com", planId });
 
     expect(result).toEqual({ ok: false, error: "No autorizado." });
     expect(mockedCreateSalonInvitation).not.toHaveBeenCalled();
   });
 
-  it("uses typed input and creates the platform invitation", async () => {
-    const result = await inviteSalon({ email: "owner@example.com", actorUserId });
+  it("creates the invitation carrying the chosen plan", async () => {
+    const result = await inviteSalon({ email: "owner@example.com", planId, actorUserId });
 
     expect(result).toEqual({ ok: true, value: "invite-token" });
-    expect(mockedCreateSalonInvitation).toHaveBeenCalledWith("owner@example.com");
+    expect(mockedCreateSalonInvitation).toHaveBeenCalledWith("owner@example.com", planId);
     expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
       actorUserId,
       action: "invite_salon",
       status: "succeeded",
       targetResourceType: "salon_invitation",
-      metadata: { emailDomain: "example.com" },
+      metadata: { emailDomain: "example.com", planId },
     });
   });
 
+  it("rejects invitations without a plan", async () => {
+    const result = await inviteSalon({ email: "owner@example.com", planId: "" });
+
+    expect(result.ok).toBe(false);
+    expect(mockedCreateSalonInvitation).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid emails without calling the data adapter", async () => {
-    const result = await inviteSalon({ email: "not-an-email" });
+    const result = await inviteSalon({ email: "not-an-email", planId });
 
     expect(result.ok).toBe(false);
     expect(mockedCreateSalonInvitation).not.toHaveBeenCalled();
@@ -63,7 +71,7 @@ describe("invite salon", () => {
   it("records failed invitation attempts after adapter errors", async () => {
     mockedCreateSalonInvitation.mockRejectedValue(new Error("rpc down"));
 
-    const result = await inviteSalon({ email: "owner@example.com", actorUserId });
+    const result = await inviteSalon({ email: "owner@example.com", planId, actorUserId });
 
     expect(result).toEqual({ ok: false, error: "Error al crear la invitacion." });
     expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
@@ -71,7 +79,7 @@ describe("invite salon", () => {
       action: "invite_salon",
       status: "failed",
       targetResourceType: "salon_invitation",
-      metadata: { emailDomain: "example.com" },
+      metadata: { emailDomain: "example.com", planId },
       errorMessage: "rpc down",
     });
   });

@@ -17,6 +17,7 @@ import {
   archiveCustomer,
   reactivateCustomer,
 } from "@/features/customers/use-cases/customer-lifecycle";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import {
   deleteTemporaryCustomer,
   findOrCreateTemporaryCustomer,
@@ -44,6 +45,10 @@ export async function createCustomerAction(
   const profile = await requireActiveProfile();
   const permission = canManageCustomers(profile);
   if (!permission.ok) return permission;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: profile.salon_id, moduleKey: "customers" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: profile.salon_id, metricKey: "customers.active" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = CreateCustomerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };

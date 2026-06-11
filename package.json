@@ -38,6 +38,13 @@
     "smoke:cleanup-5-salons": "node scripts/cleanup-staging-smoke.mjs",
     "scale:seed-salons": "node scripts/seed-staging-scale.mjs",
     "scale:cleanup-salons": "node scripts/cleanup-staging-scale.mjs",
+    "pricing:seed-study": "node scripts/seed-staging-pricing-study.mjs",
+    "pricing:cleanup-study": "node scripts/cleanup-staging-pricing-study.mjs",
+    "pricing:seed-benchmark": "node scripts/seed-staging-pricing-benchmark-v2.mjs",
+    "pricing:cleanup-benchmark": "node scripts/cleanup-staging-pricing-benchmark-v2.mjs",
+    "pricing:measure-db": "node scripts/measure-pricing-benchmark.mjs",
+    "pricing:measure-routes": "node scripts/measure-pricing-routes.mjs",
+    "pricing:report": "node scripts/pricing-benchmark-report.mjs",
     "scale:measure-routes": "node scripts/measure-scale-routes.mjs"
   },
   "dependencies": {
@@ -64,6 +71,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "pg": "^8.21.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.7"

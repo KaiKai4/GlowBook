@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { CreateEmployeeSchema, WorkScheduleSchema } from "@/features/employees/schemas";
 import {
   changeEmployeeRole,
@@ -24,6 +24,11 @@ import {
   type ArchivedEmployeeMatch,
   type CreateEmployeeResult,
 } from "@/features/employees/use-cases/employee-profile";
+import {
+  checkPlanLimit,
+  checkPlanModuleAccess,
+  isEffectiveSalonModuleEnabled,
+} from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean }>> {
@@ -31,11 +36,12 @@ async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean 
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
   }
+
   return {
     ok: true,
     value: {
       salonId: profile.salon_id,
-      rolesEnabled: hasSalonFeature(profile, "roles"),
+      rolesEnabled: await isEffectiveSalonModuleEnabled(profile, "roles"),
     },
   };
 }
@@ -46,10 +52,21 @@ export async function createEmployeeAction(
 ): Promise<Result<CreateEmployeeResult>> {
   const g = await guard();
   if (!g.ok) return g;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: g.value.salonId, moduleKey: "employees" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.active" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const roleId = g.value.rolesEnabled
     ? (formData.get("role_id") as string)?.trim() || null
     : null;
+
+  // Con rol asignado se emite una invitacion de acceso propio: tambien
+  // consume el cupo de usuarios con login del plan.
+  if (roleId) {
+    const loginLimit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.login_users" });
+    if (!loginLimit.ok) return { ok: false, error: loginLimit.error };
+  }
 
   const parsed = CreateEmployeeSchema.safeParse({
     first_name: formData.get("first_name"),
@@ -80,6 +97,8 @@ export async function findArchivedEmployeeByEmailAction(email: string): Promise<
 export async function reactivateEmployeeAction(employeeId: string): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.active" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const result = await reactivateEmployee(employeeId, g.value.salonId);
   if (result.ok) {
@@ -203,6 +222,9 @@ export async function generateEmployeeInviteAction(
   if (!g.value.rolesEnabled) {
     return { ok: false, error: "Los roles estan deshabilitados para este salon." };
   }
+  // Un acceso propio nuevo consume el cupo de usuarios con login del plan.
+  const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.login_users" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const invite = await createEmployeeInviteForExistingEmployee({
     employeeId,

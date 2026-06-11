@@ -1,13 +1,15 @@
 import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { Package } from "lucide-react";
 import { InventoryManager } from "./inventory-manager";
 
 export default async function InventoryPage() {
   const profile = await requireProfile();
+  const inventoryEnabled = await isEffectiveSalonModuleEnabled(profile, "inventory");
 
-  if (!hasSalonFeature(profile, "inventory") || !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
+  if (!inventoryEnabled || !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
     return (
       <div className="py-16 text-center">
         <p className="text-stone-400">No tienes permiso para gestionar inventario.</p>

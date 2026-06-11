@@ -4,19 +4,17 @@ import { revalidatePath } from "next/cache";
 import { CreateExpenseSchema } from "@/features/expenses/schemas";
 import { createExpense, createInventoryPurchaseExpense } from "@/features/expenses/use-cases/expenses";
 import { InventoryPurchaseSchema } from "@/features/inventory/schemas";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
 
 async function guard(options: { inventoryPurchase?: boolean } = {}): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
-  if (!hasSalonFeature(profile, "expenses") || !hasPermission(profile, PERMISSIONS.EXPENSES_MANAGE)) {
+  if (!hasPermission(profile, PERMISSIONS.EXPENSES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar gastos." };
   }
-  if (
-    options.inventoryPurchase &&
-    (!hasSalonFeature(profile, "inventory") || !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE))
-  ) {
+  if (options.inventoryPurchase && !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
     return { ok: false, error: "No tienes permiso para registrar compras de inventario." };
   }
   return { ok: true, value: { salonId: profile.salon_id } };
@@ -36,6 +34,10 @@ export async function createExpenseAction(
 ): Promise<Result<string>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "expenses" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "expenses.total" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = CreateExpenseSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
@@ -51,6 +53,10 @@ export async function createInventoryPurchaseExpenseAction(
 ): Promise<Result<string>> {
   const guarded = await guard({ inventoryPurchase: true });
   if (!guarded.ok) return guarded;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "inventory" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "inventory.movements" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = InventoryPurchaseSchema.safeParse({
     ...Object.fromEntries(formData),

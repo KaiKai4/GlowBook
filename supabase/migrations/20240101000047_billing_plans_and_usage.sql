@@ -1,0 +1,3 @@
+-- Legacy migration placeholder.
+-- This version exists in staging migration history from a discarded billing-plans implementation.
+-- The clean commercial plans schema is defined in 20240101000049_reset_commercial_plans.sql.

@@ -1,14 +1,16 @@
 import { getExpensesPage } from "@/features/expenses/use-cases/expenses";
 import { getInventoryProductOptions } from "@/features/inventory/use-cases/inventory-product-options";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { ReceiptText } from "lucide-react";
 import { ExpensesManager } from "./expenses-manager";
 
 export default async function ExpensesPage() {
   const profile = await requireProfile();
+  const expensesEnabled = await isEffectiveSalonModuleEnabled(profile, "expenses");
 
-  if (!hasSalonFeature(profile, "expenses") || !hasPermission(profile, PERMISSIONS.EXPENSES_MANAGE)) {
+  if (!expensesEnabled || !hasPermission(profile, PERMISSIONS.EXPENSES_MANAGE)) {
     return (
       <div className="py-16 text-center">
         <p className="text-stone-400">No tienes permiso para gestionar gastos.</p>
@@ -18,7 +20,8 @@ export default async function ExpensesPage() {
 
   const expenses = await getExpensesPage(profile.salon_id);
   const canManageInventory =
-    hasSalonFeature(profile, "inventory") && hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE);
+    (await isEffectiveSalonModuleEnabled(profile, "inventory")) &&
+    hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE);
   const inventoryProducts = canManageInventory ? await getInventoryProductOptions(profile.salon_id) : [];
 
   return (

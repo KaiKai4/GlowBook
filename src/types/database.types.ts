@@ -856,6 +856,7 @@ export type Database = {
           expires_at: string
           id: string
           invited_by: string
+          plan_id: string | null
           salon_id: string | null
           status: string
           token: string
@@ -867,6 +868,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by: string
+          plan_id?: string | null
           salon_id?: string | null
           status?: string
           token?: string
@@ -878,6 +880,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string
+          plan_id?: string | null
           salon_id?: string | null
           status?: string
           token?: string

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/session";
-import { getDisabledSalonFeatures, getPermissions, hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
+import { getPermissions, hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { isSalonFeatureDisabled } from "@/features/salon/domain/salon-features";
 import {
@@ -28,7 +29,7 @@ import {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const disabledFeatures = getDisabledSalonFeatures(profile);
+  const disabledFeatures = await getEffectiveDisabledSalonFeatures(profile);
   const visibleNav = getVisibleNavItems(
     getPermissions(profile),
     profile.is_owner,

@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
@@ -12,8 +13,9 @@ export async function markReminderSentAction(
   templateId?: string
 ): Promise<Result<string>> {
   const profile = await requireActiveProfile();
+  const remindersEnabled = await isEffectiveSalonModuleEnabled(profile, "recordatorios");
 
-  if (!hasSalonFeature(profile, "recordatorios") || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
+  if (!remindersEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return { ok: false, error: "No tienes permiso para enviar recordatorios." };
   }
 

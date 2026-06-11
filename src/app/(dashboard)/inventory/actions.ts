@@ -13,13 +13,14 @@ import {
   updateInventoryProductProfile,
 } from "@/features/inventory/use-cases/inventory-products";
 import { transferInventoryStock } from "@/features/inventory/use-cases/inventory-movements";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
-  if (!hasSalonFeature(profile, "inventory") || !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
+  if (!hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar inventario." };
   }
   return { ok: true, value: { salonId: profile.salon_id } };
@@ -37,6 +38,10 @@ export async function createInventoryProductAction(
 ): Promise<Result<string>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "inventory" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "inventory.products" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = CreateInventoryProductSchema.safeParse({
     ...Object.fromEntries(formData),
@@ -81,6 +86,10 @@ export async function transferInventoryStockAction(
 ): Promise<Result<string>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "inventory" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "inventory.movements" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = InventoryTransferSchema.safeParse({
     ...Object.fromEntries(formData),

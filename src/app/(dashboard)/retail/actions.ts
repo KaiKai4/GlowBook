@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { RetailSaleSchema } from "@/features/retail/schemas";
 import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
-  if (!hasSalonFeature(profile, "retail") || !hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
+  if (!hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar vitrina." };
   }
   return { ok: true, value: { salonId: profile.salon_id } };
@@ -22,6 +23,10 @@ export async function createRetailSaleAction(
 ): Promise<Result<string>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "retail" });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "retail.sales" });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = RetailSaleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };

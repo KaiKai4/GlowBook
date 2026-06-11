@@ -25,6 +25,19 @@ export async function findAllSalons() {
   }));
 }
 
+export async function findSalonNamesByIds(salonIds: string[]): Promise<Map<string, string>> {
+  if (salonIds.length === 0) return new Map();
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("salons")
+    .select("id, name")
+    .in("id", salonIds);
+
+  if (error) throw error;
+  return new Map((data ?? []).map((salon) => [salon.id, salon.name]));
+}
+
 export async function setSalonDisabledFeatures(
   salonId: string,
   disabledFeatures: readonly string[]

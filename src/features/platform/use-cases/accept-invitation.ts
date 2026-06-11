@@ -12,6 +12,8 @@ import {
 } from "@/features/platform/data/platform-auth.repo";
 import { captureError } from "@/lib/observability";
 import { personNameField } from "@/lib/validation/name";
+import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
+import { recordPlatformAction } from "./platform-audit";
 import { z } from "zod";
 
 const AcceptSchema = z.object({
@@ -125,8 +127,9 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     createdNewUser = true;
   }
 
+  let salonId: string;
   try {
-    await acceptSalonInvitationAsAdmin({
+    salonId = await acceptSalonInvitationAsAdmin({
       token,
       userId,
       email,
@@ -143,6 +146,33 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     const message = error instanceof Error ? error.message : "Error desconocido";
     return err(translateAcceptError(message));
   }
+
+  // El salon ya existe: asignar el plan elegido en la invitacion y dejar
+  // rastro en auditoria. Si algo falla aqui no se revierte el onboarding;
+  // la plataforma puede asignar el plan manualmente desde Suscripciones.
+  if (invitation.plan_id) {
+    const assigned = await autoAssignPlanOnAcceptance({
+      salonId,
+      planId: invitation.plan_id,
+      acceptedByUserId: userId,
+    });
+    if (!assigned.ok) {
+      captureError(new Error(assigned.error), {
+        module: "platform",
+        action: "accept_invitation_assign_plan",
+        metadata: { salonId, planId: invitation.plan_id },
+      });
+    }
+  }
+
+  await recordPlatformAction({
+    actorUserId: userId,
+    action: "invitation_accepted",
+    status: "succeeded",
+    targetSalonId: salonId,
+    targetResourceType: "salon_invitation",
+    metadata: { emailDomain, planId: invitation.plan_id ?? null },
+  });
 
   return ok(undefined);
 }

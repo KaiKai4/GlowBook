@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { NotificationTemplateSchema } from "@/features/notifications/schemas";
 import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
 import type { Result } from "@/lib/result";
 
@@ -12,7 +13,8 @@ export async function updateNotificationTemplateAction(
   formData: FormData
 ): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  if (!hasSalonFeature(profile, "plantillas") || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
+  const templatesEnabled = await isEffectiveSalonModuleEnabled(profile, "plantillas");
+  if (!templatesEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return { ok: false, error: "No tienes permiso para editar plantillas." };
   }
 

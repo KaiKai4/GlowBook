@@ -6,6 +6,7 @@ const srcRoot = path.join(root, "src");
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx"]);
 
 const allowedAdminClientImporters = new Set([
+  "src/features/billing/data/billing-db.ts",
   "src/features/employees/data/employee-access.repo.ts",
   "src/features/platform/data/delete-salon.repo.ts",
   "src/features/platform/data/feedback-moderation.repo.ts",

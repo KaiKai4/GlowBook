@@ -1,0 +1,113 @@
+import { AlertTriangle, BadgeDollarSign, Building2, Hourglass } from "lucide-react";
+
+import {
+  getSalonSubscriptionDetail,
+  getSubscriptionsPage,
+} from "@/features/billing/use-cases/salon-subscriptions";
+import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { requirePlatformAdmin } from "@/lib/auth/session";
+import { SalonSubscriptionList } from "./salon-list";
+import { SubscriptionDetail } from "./subscription-detail";
+
+export default async function PlatformSubscriptionsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ salon?: string }>;
+}) {
+  await requirePlatformAdmin();
+  const params = await searchParams;
+  const salonView = await getPlatformSalonOverviews();
+  const data = await getSubscriptionsPage(salonView.salons);
+
+  const selectedSalonId =
+    data.rows.find((row) => row.salonId === params?.salon)?.salonId ?? data.rows[0]?.salonId ?? null;
+  const selectedRow = data.rows.find((row) => row.salonId === selectedSalonId) ?? null;
+  const detail = selectedSalonId ? await getSalonSubscriptionDetail(selectedSalonId) : null;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-950">Suscripciones</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
+            Asigna planes a salones, vende o regala extras y revisa que tanto usan de su plan.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <HeaderMetric
+            icon={<BadgeDollarSign className="h-4 w-4" />}
+            label="MRR estimado"
+            value={`$${data.totals.mrr.toFixed(2)}`}
+            accent="success"
+          />
+          <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Con plan" value={String(data.totals.salonsWithPlan)} />
+          <HeaderMetric icon={<Hourglass className="h-4 w-4" />} label="En trial" value={String(data.totals.trialing)} />
+          <HeaderMetric
+            icon={<AlertTriangle className="h-4 w-4" />}
+            label="Alertas"
+            value={String(data.totals.openAlerts)}
+            accent={data.totals.openAlerts > 0 ? "warning" : "default"}
+          />
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+        <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[320px_1fr]">
+          <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-stone-50/60 lg:border-b-0 lg:border-r">
+            <div className="flex items-center justify-between border-b border-brand-100 px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Salones</p>
+                <p className="mt-1 text-sm text-stone-500">{data.rows.length} registrados</p>
+              </div>
+              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                {data.totals.salonsWithPlan} con plan
+              </span>
+            </div>
+            <SalonSubscriptionList rows={data.rows} selectedSalonId={selectedSalonId} />
+          </aside>
+
+          {detail && selectedRow ? (
+            <SubscriptionDetail
+              salonName={selectedRow.salonName}
+              detail={detail}
+              catalog={{
+                plans: data.plans,
+                addons: data.addons,
+                metrics: data.metrics,
+                modules: data.modules,
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center p-8">
+              <p className="max-w-sm text-center text-sm leading-6 text-stone-500">
+                No hay salones registrados todavia. Invita un salon desde Invitaciones para asignarle un plan.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeaderMetric({
+  icon,
+  label,
+  value,
+  accent = "default",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent?: "default" | "success" | "warning";
+}) {
+  return (
+    <div className="inline-flex h-11 items-center gap-3 rounded-xl border border-brand-100 bg-white px-4 shadow-sm">
+      <span className={accent === "success" ? "text-emerald-600" : accent === "warning" ? "text-amber-500" : "text-brand-600"}>
+        {icon}
+      </span>
+      <span className="text-xl font-bold text-neutral-950">{value}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">{label}</span>
+    </div>
+  );
+}

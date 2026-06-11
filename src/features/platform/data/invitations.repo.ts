@@ -9,31 +9,68 @@ export interface PendingSalonInvitation {
   status: string;
   expires_at: string;
   created_at: string;
+  plan_id: string | null;
+}
+
+export interface AcceptedSalonInvitation {
+  id: string;
+  email: string;
+  accepted_at: string | null;
+  salon_id: string | null;
+  plan_id: string | null;
 }
 
 export interface SalonInvitationForAcceptance {
   email: string;
   status: string;
   expires_at: string;
+  plan_id: string | null;
 }
 
-export async function createSalonInvitation(email: string): Promise<string> {
+export async function createSalonInvitation(
+  email: string,
+  planId: string | null
+): Promise<string> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("invite_salon", {
     p_email: email,
   });
 
   if (error) throw error;
-  return data as string;
+  const token = data as string;
+
+  if (planId) {
+    const admin = createSupabaseAdminClient();
+    const { error: planError } = await admin
+      .from("salon_invitations")
+      .update({ plan_id: planId })
+      .eq("token", token);
+    if (planError) throw planError;
+  }
+
+  return token;
 }
 
 export async function findPendingInvitations(): Promise<PendingSalonInvitation[]> {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("salon_invitations")
-    .select("id, email, token, status, expires_at, created_at")
+    .select("id, email, token, status, expires_at, created_at, plan_id")
     .eq("status", "pending")
     .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function findRecentAcceptedInvitations(limit = 10): Promise<AcceptedSalonInvitation[]> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("salon_invitations")
+    .select("id, email, accepted_at, salon_id, plan_id")
+    .eq("status", "accepted")
+    .order("accepted_at", { ascending: false })
+    .limit(limit);
 
   if (error) throw error;
   return data ?? [];
@@ -70,7 +107,7 @@ export async function findSalonInvitationForAcceptance(
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("salon_invitations")
-    .select("email, status, expires_at")
+    .select("email, status, expires_at, plan_id")
     .eq("token", token)
     .maybeSingle();
 
@@ -102,9 +139,9 @@ export async function acceptSalonInvitationAsAdmin({
   email: string;
   salonName: string;
   fullName: string;
-}): Promise<void> {
+}): Promise<string> {
   const admin = createSupabaseAdminClient();
-  const { error } = await admin.rpc("accept_invitation_admin", {
+  const { data, error } = await admin.rpc("accept_invitation_admin", {
     p_token: token,
     p_user_id: userId,
     p_email: email,
@@ -113,4 +150,5 @@ export async function acceptSalonInvitationAsAdmin({
   });
 
   if (error) throw error;
+  return data as string;
 }

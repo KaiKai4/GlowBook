@@ -13,6 +13,7 @@ import { confirmAppointment } from "@/features/appointments/use-cases/confirm-ap
 import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import {
   CompleteAppointmentSchema,
   CreateAppointmentSchema,
@@ -63,6 +64,16 @@ export async function createAppointmentAction(
   const profile = await requireActiveProfile();
   const permission = canManageAppointments(profile);
   if (!permission.ok) return { ok: false, error: "No tienes permiso para crear citas." };
+  const moduleAccess = await checkPlanModuleAccess({
+    salonId: profile.salon_id,
+    moduleKey: "appointments",
+  });
+  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
+  const limit = await checkPlanLimit({
+    salonId: profile.salon_id,
+    metricKey: "appointments.total",
+  });
+  if (!limit.ok) return { ok: false, error: limit.error };
 
   const raw = Object.fromEntries(formData);
   let assignments: unknown;

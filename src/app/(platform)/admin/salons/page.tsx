@@ -1,128 +1,105 @@
-import Link from "next/link";
-import { ArrowLeft, Building2, CalendarDays, Users } from "lucide-react";
+import { AlertTriangle, Building2, CalendarDays, Users } from "lucide-react";
+
+import {
+  getSalonSubscriptionDetail,
+  getSubscriptionsPage,
+} from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DeleteSalonButton } from "./delete-salon-button";
-import { SalonFeaturesControl } from "./salon-features-control";
-import { SalonStatusControl } from "./salon-status-control";
+import { SalonSubscriptionList } from "../subscriptions/salon-list";
+import { SalonWorkspace } from "./salon-workspace";
 
-export default async function PlatformSalonsPage() {
+export default async function PlatformSalonsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ salon?: string }>;
+}) {
   await requirePlatformAdmin();
+  const params = await searchParams;
   const view = await getPlatformSalonOverviews();
+  const data = await getSubscriptionsPage(view.salons);
+
+  const selectedSalon =
+    view.salons.find((salon) => salon.id === params?.salon) ?? view.salons[0] ?? null;
+  const selectedRow = selectedSalon
+    ? data.rows.find((row) => row.salonId === selectedSalon.id) ?? null
+    : null;
+  const detail = selectedSalon ? await getSalonSubscriptionDetail(selectedSalon.id) : null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900">
-          <ArrowLeft className="h-4 w-4" />
-          Volver al panel
-        </Link>
-        <div className="mt-2">
-          <h1 className="text-2xl font-bold text-neutral-900">Salones</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Información global de salones registrados, funciones disponibles y eliminación completa de tenants.
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-950">Salones</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
+            Informacion global de cada salon: contacto, plan asignado, consumo de limites y acciones de plataforma.
           </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Salones" value={view.metrics.totalSalons} />
+          <HeaderMetric
+            icon={<Users className="h-4 w-4" />}
+            label="Activos"
+            value={view.metrics.activeSalons}
+            accent="success"
+          />
+          <HeaderMetric icon={<CalendarDays className="h-4 w-4" />} label="Citas totales" value={view.metrics.totalAppointments} />
+          <HeaderMetric
+            icon={<AlertTriangle className="h-4 w-4" />}
+            label="Alertas"
+            value={data.totals.openAlerts}
+            accent={data.totals.openAlerts > 0 ? "warning" : "default"}
+          />
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard icon={<Building2 className="h-5 w-5 text-blue-600" />} label="Total salones" value={view.metrics.totalSalons} />
-        <MetricCard icon={<Users className="h-5 w-5 text-emerald-600" />} label="Activos" value={view.metrics.activeSalons} />
-        <MetricCard icon={<CalendarDays className="h-5 w-5 text-brand-600" />} label="Citas totales" value={view.metrics.totalAppointments} />
-      </div>
+      <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+        <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[320px_1fr]">
+          <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-stone-50/60 lg:border-b-0 lg:border-r">
+            <div className="flex items-center justify-between border-b border-brand-100 px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Salones</p>
+                <p className="mt-1 text-sm text-stone-500">{view.salons.length} registrados</p>
+              </div>
+              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                {view.metrics.activeSalons} activos
+              </span>
+            </div>
+            <SalonSubscriptionList
+              rows={data.rows}
+              selectedSalonId={selectedSalon?.id ?? null}
+              hrefBase="/admin/salons"
+            />
+          </aside>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Salones registrados</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {view.salons.length === 0 ? (
-            <p className="py-10 text-center text-sm text-neutral-400">No hay salones registrados.</p>
+          {selectedSalon && detail ? (
+            <SalonWorkspace
+              salon={{
+                id: selectedSalon.id,
+                name: selectedSalon.name,
+                contactEmail: selectedSalon.contact_email,
+                phone: selectedSalon.phone,
+                isActive: selectedSalon.is_active,
+                createdAtLabel: formatRegistrationDate(selectedSalon.created_at),
+                ownerNames: selectedSalon.owner_names,
+                customerCount: selectedSalon.customer_count,
+                collaboratorCount: selectedSalon.collaborator_count,
+                appointmentCount: selectedSalon.appointment_count,
+                serviceCount: selectedSalon.service_count,
+              }}
+              row={selectedRow}
+              detail={detail}
+              modules={data.modules}
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1240px] text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-100 text-left text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    <th className="px-3 py-3">Salón</th>
-                    <th className="px-3 py-3">Correo</th>
-                    <th className="px-3 py-3">Owners</th>
-                    <th className="px-3 py-3">Datos</th>
-                    <th className="px-3 py-3">Estado</th>
-                    <th className="px-3 py-3">Registrado</th>
-                    <th className="px-3 py-3">Funciones</th>
-                    <th className="px-3 py-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {view.salons.map((salon) => (
-                    <tr key={salon.id} className="align-top">
-                      <td className="px-3 py-4">
-                        <p className="font-semibold text-neutral-900">{salon.name}</p>
-                        <p className="text-xs text-neutral-400">{salon.phone || "Sin teléfono"}</p>
-                        <p className="mt-1 font-mono text-[11px] text-neutral-400">{salon.id}</p>
-                      </td>
-                      <td className="px-3 py-4">
-                        <p className="max-w-[220px] truncate text-sm font-medium text-neutral-800">
-                          {salon.contact_email || "Sin correo registrado"}
-                        </p>
-                        {!salon.email && salon.contact_email ? (
-                          <p className="mt-1 text-[11px] text-neutral-400">Tomado de la invitación aceptada</p>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-4">
-                        {salon.owner_names.length > 0 ? (
-                          <div className="space-y-1">
-                            {salon.owner_names.map((owner) => (
-                              <p key={owner} className="text-xs font-medium text-neutral-700">{owner}</p>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-neutral-400">Sin owner</p>
-                        )}
-                      </td>
-                      <td className="px-3 py-4">
-                        <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600">
-                          <MiniStat label="Clientes" value={salon.customer_count} />
-                          <MiniStat label="Colaboradores" value={salon.collaborator_count} />
-                          <MiniStat label="Citas" value={salon.appointment_count} />
-                          <MiniStat label="Servicios" value={salon.service_count} />
-                        </div>
-                      </td>
-                      <td className="px-3 py-4">
-                        <Badge variant={salon.is_active ? "success" : "danger"}>
-                          {salon.is_active ? "Activo" : "Suspendido"}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-4 text-xs text-neutral-500">
-                        {formatRegistrationDate(salon.created_at)}
-                      </td>
-                      <td className="px-3 py-4">
-                        <SalonFeaturesControl
-                          key={`${salon.id}-${salon.disabled_features.join(",")}`}
-                          salonId={salon.id}
-                          disabledFeatures={salon.disabled_features}
-                        />
-                      </td>
-                      <td className="px-3 py-4 text-right">
-                        <div className="flex flex-col items-end gap-2">
-                          <SalonStatusControl
-                            salonId={salon.id}
-                            salonName={salon.name}
-                            isActive={salon.is_active}
-                          />
-                          <DeleteSalonButton salonId={salon.id} salonName={salon.name} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex items-center justify-center p-8">
+              <p className="max-w-sm text-center text-sm leading-6 text-stone-500">
+                No hay salones registrados. Invita un salon desde Invitaciones para empezar.
+              </p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -137,27 +114,24 @@ function formatRegistrationDate(value: string): string {
   }).format(new Date(value));
 }
 
-function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function HeaderMetric({
+  icon,
+  label,
+  value,
+  accent = "default",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  accent?: "default" | "success" | "warning";
+}) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-neutral-500">{label}</p>
-            <p className="mt-1 text-3xl font-bold text-neutral-900">{value}</p>
-          </div>
-          <div className="rounded-lg bg-neutral-50 p-2">{icon}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-2 py-1.5">
-      <p className="text-[11px] text-neutral-400">{label}</p>
-      <p className="font-semibold text-neutral-800">{value}</p>
+    <div className="inline-flex h-11 items-center gap-3 rounded-xl border border-brand-100 bg-white px-4 shadow-sm">
+      <span className={accent === "success" ? "text-emerald-600" : accent === "warning" ? "text-amber-500" : "text-brand-600"}>
+        {icon}
+      </span>
+      <span className="text-xl font-bold text-neutral-950">{value}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">{label}</span>
     </div>
   );
 }

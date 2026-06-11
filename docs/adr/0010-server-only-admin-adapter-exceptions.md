@@ -46,6 +46,7 @@ The currently authorized service-role data Adapters are:
 - `src/features/platform/data/platform-audit.repo.ts` for audit logging of high-impact Platform actions.
 - `src/features/platform/data/delete-salon.repo.ts` for protected Salon deletion RPC workflows.
 - `src/features/platform/data/feedback-moderation.repo.ts` for Platform feedback moderation.
+- `src/features/billing/data/billing-db.ts` for commercial plan/addon configuration, Salon subscription administration and cross-tenant usage counting (Platform admin views and server-side entitlement checks where the `salon_id` comes from the verified session).
 - `src/features/employees/data/employee-access.repo.ts` for collaborator invitations, profile linkage and collaborator-access cleanup.
 - `src/features/employees/data/employee-auth.repo.ts` for collaborator Auth account creation and revocation.
 - `src/features/platform/data/platform-auth.repo.ts` for invited Owner Auth account creation, reuse and update.

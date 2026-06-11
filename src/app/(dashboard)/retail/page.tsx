@@ -1,13 +1,15 @@
 import { getRetailPage } from "@/features/retail/use-cases/retail-sales";
-import { hasPermission, hasSalonFeature, PERMISSIONS } from "@/lib/auth/permissions";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { ShoppingBag } from "lucide-react";
 import { RetailManager } from "./retail-manager";
 
 export default async function RetailPage() {
   const profile = await requireProfile();
+  const retailEnabled = await isEffectiveSalonModuleEnabled(profile, "retail");
 
-  if (!hasSalonFeature(profile, "retail") || !hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
+  if (!retailEnabled || !hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
     return (
       <div className="py-16 text-center">
         <p className="text-stone-400">No tienes permiso para gestionar vitrina.</p>

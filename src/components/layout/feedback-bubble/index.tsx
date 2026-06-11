@@ -57,7 +57,9 @@ export function FeedbackBubble({
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startSubmit] = useTransition();
-  const [position, setPosition] = useState(defaultPosition);
+  // null hasta montar: la posicion depende de window/localStorage y renderizarla
+  // en SSR provocaria un hydration mismatch.
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   const dragRef = useRef({
     active: false,
     pointerId: 0,
@@ -91,6 +93,7 @@ export function FeedbackBubble({
   useEffect(() => {
     const handleResize = () => {
       setPosition((current) => {
+        if (!current) return current;
         const next = clampPosition(current);
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         return next;
@@ -102,7 +105,7 @@ export function FeedbackBubble({
   }, []);
 
   const panelPosition = useMemo(() => {
-    if (typeof window === "undefined") return undefined;
+    if (typeof window === "undefined" || !position) return undefined;
 
     const panelWidth = Math.min(window.innerWidth - VIEWPORT_PADDING * 2, PANEL_WIDTH);
     const left = Math.min(
@@ -150,7 +153,7 @@ export function FeedbackBubble({
   }, []);
 
   function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || !position) return;
 
     dragRef.current = {
       active: true,
@@ -184,6 +187,8 @@ export function FeedbackBubble({
       drag.active = false;
     }
   }
+
+  if (!position) return null;
 
   return (
     <>
