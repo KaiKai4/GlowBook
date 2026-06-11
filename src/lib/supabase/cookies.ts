@@ -13,13 +13,24 @@ interface SupabaseCookie {
 const READ_ONLY_COOKIE_ERROR =
   "Cookies can only be modified in a Server Action or Route Handler";
 
+export { SESSION_ONLY_COOKIE } from "./session-persistence";
+
+export function sessionScopedOptions(
+  options: CookieOptions,
+  sessionOnly: boolean
+): CookieOptions {
+  if (!sessionOnly) return options;
+  return { ...options, maxAge: undefined, expires: undefined };
+}
+
 export function setSupabaseServerCookies(
   cookieStore: WritableCookieStore,
-  cookiesToSet: SupabaseCookie[]
+  cookiesToSet: SupabaseCookie[],
+  sessionOnly = false
 ) {
   try {
     cookiesToSet.forEach(({ name, value, options }) => {
-      cookieStore.set(name, value, options);
+      cookieStore.set(name, value, sessionScopedOptions(options, sessionOnly));
     });
   } catch (error) {
     if (

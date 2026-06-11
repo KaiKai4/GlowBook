@@ -848,6 +848,50 @@ export type Database = {
           },
         ]
       }
+      salon_activity_log: {
+        Row: {
+          id: string
+          salon_id: string
+          actor_id: string | null
+          actor_email: string
+          table_name: string
+          action: string
+          record_id: string | null
+          record_label: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          salon_id: string
+          actor_id?: string | null
+          actor_email?: string
+          table_name: string
+          action: string
+          record_id?: string | null
+          record_label?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          salon_id?: string
+          actor_id?: string | null
+          actor_email?: string
+          table_name?: string
+          action?: string
+          record_id?: string | null
+          record_label?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_activity_log_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salon_invitations: {
         Row: {
           accepted_at: string | null

@@ -1,7 +1,9 @@
 "use client";
 
 import { Suspense, useState, useTransition } from "react";
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { rememberSessionInBrowser } from "@/lib/supabase/session-persistence";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
@@ -18,12 +20,18 @@ type FieldErrors = {
 
 function JoinedBanner() {
   const searchParams = useSearchParams();
-  if (searchParams.get("joined") !== "1") return null;
+  const message =
+    searchParams.get("joined") === "1"
+      ? "Cuenta creada. Ingresa con tu correo y contraseña."
+      : searchParams.get("reset") === "1"
+        ? "Contraseña actualizada. Ingresa con tu nueva contraseña."
+        : null;
+  if (!message) return null;
 
   return (
     <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
       <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
-      <p className="text-sm text-emerald-700">Cuenta creada. Ingresa con tu correo y contraseña.</p>
+      <p className="text-sm text-emerald-700">{message}</p>
     </div>
   );
 }
@@ -39,6 +47,7 @@ function getEmailError(email: string) {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -67,6 +76,9 @@ export default function LoginPage() {
     if (nextErrors.email || nextErrors.password) return;
 
     startTransition(async () => {
+      // El marcador debe existir antes de que el sign-in escriba las cookies
+      // de auth, para que nazcan ya con la persistencia correcta.
+      rememberSessionInBrowser(remember);
       const supabase = createSupabaseBrowserClient();
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -128,6 +140,24 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
             />
+
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-600">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+                />
+                Mantener sesión iniciada
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-brand-600 hover:text-brand-700 hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
 
             {formError && (
               <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700">

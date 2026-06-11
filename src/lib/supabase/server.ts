@@ -3,10 +3,11 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import type { Database } from "@/types/database.types";
-import { setSupabaseServerCookies } from "./cookies";
+import { SESSION_ONLY_COOKIE, setSupabaseServerCookies } from "./cookies";
 
 export const createSupabaseServerClient = cache(async () => {
   const cookieStore = await cookies();
+  const sessionOnly = cookieStore.get(SESSION_ONLY_COOKIE)?.value === "1";
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -16,7 +17,7 @@ export const createSupabaseServerClient = cache(async () => {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          setSupabaseServerCookies(cookieStore, cookiesToSet);
+          setSupabaseServerCookies(cookieStore, cookiesToSet, sessionOnly);
         },
       },
     }

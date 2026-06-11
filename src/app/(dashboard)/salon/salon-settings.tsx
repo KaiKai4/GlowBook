@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils/cn";
-import { Settings, Clock, Check, Store, Palette, CreditCard, Plus, X } from "lucide-react";
+import { Settings, Clock, Check, History, Store, Palette, CreditCard, Plus, X } from "lucide-react";
 import {
   updateSalonInfoAction,
   updateBusinessHoursAction,
@@ -220,14 +221,23 @@ export function SalonSettings({
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-          <Settings className="h-6 w-6 text-brand-500" />
-          Configuración del salón
-        </h1>
-        <p className="text-sm text-stone-400 mt-0.5">
-          Edita el nombre y los días y horarios de atención.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
+            <Settings className="h-6 w-6 text-brand-500" />
+            Configuración del salón
+          </h1>
+          <p className="text-sm text-stone-400 mt-0.5">
+            Edita el nombre y los días y horarios de atención.
+          </p>
+        </div>
+        <Link
+          href="/salon/actividad"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-brand-100 bg-white px-4 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-brand-300 hover:text-brand-700"
+        >
+          <History className="h-4 w-4" />
+          Log de actividad
+        </Link>
       </div>
 
       {/* ── General info ── */}

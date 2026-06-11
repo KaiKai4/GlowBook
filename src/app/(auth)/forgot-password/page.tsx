@@ -1,0 +1,116 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle, MailOpen } from "lucide-react";
+
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { GlowBookBrand } from "@/components/brand/glowbook-logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!email.trim()) {
+      setError("Escribe el correo de tu cuenta.");
+      return;
+    }
+
+    startTransition(async () => {
+      const supabase = createSupabaseBrowserClient();
+      await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      // Siempre mostramos exito: no revelamos si el correo existe o no.
+      setSent(true);
+    });
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fbf8ff_0%,#ffffff_48%,#f8fafc_100%)] px-4 py-10">
+      <div className="w-full max-w-[420px]">
+        <GlowBookBrand markSize="lg" className="mb-7" />
+
+        <div className="rounded-2xl border border-brand-100 bg-white p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
+          {sent ? (
+            <div className="text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50">
+                <CheckCircle className="h-7 w-7 text-emerald-600" />
+              </div>
+              <h2 className="mt-4 text-xl font-semibold tracking-tight text-stone-950">
+                Revisa tu correo
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-stone-500">
+                Si <span className="font-medium text-stone-700">{email.trim()}</span> tiene una
+                cuenta en GlowBook, te enviamos un enlace para crear una contraseña nueva.
+                Puede tardar unos minutos; revisa tambien el spam.
+              </p>
+              <Link
+                href="/login"
+                className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:text-brand-700 hover:underline"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver a iniciar sesion
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50">
+                  <MailOpen className="h-5 w-5 text-brand-600" />
+                </div>
+                <h2 className="mt-4 text-xl font-semibold tracking-tight text-stone-950">
+                  ¿Olvidaste tu contraseña?
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-stone-500">
+                  Escribe el correo con el que entras a GlowBook y te enviaremos un enlace
+                  para crear una contraseña nueva.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  type="email"
+                  label="Correo"
+                  placeholder="ana@salonluna.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError("");
+                  }}
+                  error={error || undefined}
+                  required
+                  autoComplete="email"
+                />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                  loading={isPending}
+                >
+                  Enviar enlace
+                </Button>
+              </form>
+
+              <Link
+                href="/login"
+                className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-stone-800"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver a iniciar sesion
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

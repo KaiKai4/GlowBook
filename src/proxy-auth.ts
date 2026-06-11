@@ -27,7 +27,11 @@ export function getOptimisticAuthDecision({
   const isLoginRoute = pathname.startsWith("/login");
   const isInvitationRoute = pathname.startsWith("/invite");
   const isJoinRoute = pathname.startsWith("/join");
-  const isAuthRoute = isLoginRoute || isInvitationRoute || isJoinRoute;
+  // Recuperacion de contrasena: accesible sin sesion, y con la sesion
+  // temporal de recovery tampoco debe redirigir al dashboard.
+  const isPasswordRecoveryRoute =
+    pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password");
+  const isAuthRoute = isLoginRoute || isInvitationRoute || isJoinRoute || isPasswordRecoveryRoute;
 
   if (!hasAuthCookie && !isAuthRoute) {
     return { type: "redirect", location: "/login" };
