@@ -23,7 +23,13 @@ export type UntypedQuery = {
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ) => Promise<TResult1 | TResult2>;
 };
-export type UntypedSupabase = { from: (table: string) => UntypedQuery };
+export type UntypedSupabase = {
+  from: (table: string) => UntypedQuery;
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+};
 
 // service_role: la configuracion comercial es cross-tenant y los conteos de uso
 // deben funcionar tambien desde el panel de plataforma (sesion sin claim salon_id).

@@ -9,7 +9,6 @@ import type {
   SalonPlanAssignmentStatus,
   SalonPlanOverride,
   SalonPlanUsageByMetric,
-  UsageCounterKey,
 } from "../domain/commercial-plan";
 import {
   billingDb,
@@ -375,6 +374,9 @@ async function findActiveOverrides(
     .map(mapOverride);
 }
 
+// Las ventanas de ciclo se calculan aqui (logica de negocio con casos como el
+// periodo pagado o el dia ancla); la RPC count_salon_usage solo ejecuta todos
+// los counts en un unico round-trip a la base.
 async function calculateSalonUsage(
   supabase: UntypedSupabase,
   salonId: string,
@@ -382,62 +384,35 @@ async function calculateSalonUsage(
   plan: CommercialPlan | null,
   assignment: AssignmentRow | null
 ): Promise<SalonPlanUsageByMetric> {
+  if (metrics.length === 0) return {};
+
   const scopeByMetric = new Map(metrics.map((metric) => [metric.key, metric.defaultCountScope]));
   for (const limit of plan?.limits ?? []) {
     scopeByMetric.set(limit.metricKey, limit.countScope);
   }
 
-  const entries = await Promise.all(metrics.map(async (metric) => {
+  const counters = metrics.map((metric) => {
     const scope = scopeByMetric.get(metric.key) ?? metric.defaultCountScope;
-    const query = applyCountScope(counterQuery(supabase, metric.counterKey, salonId), scope, assignment);
-    return [metric.key, await countRows(query)] as const;
-  }));
+    const [from, to] = scopeWindow(scope, assignment);
+    return { key: metric.key, counter: metric.counterKey, from, to };
+  });
 
-  return Object.fromEntries(entries);
+  const { data, error } = await supabase.rpc("count_salon_usage", {
+    p_salon_id: salonId,
+    p_counters: counters,
+  });
+  if (error) throw new Error(error.message);
+
+  const counts = (data ?? {}) as Record<string, number>;
+  return Object.fromEntries(metrics.map((metric) => [metric.key, Number(counts[metric.key] ?? 0)]));
 }
 
-function counterQuery(
-  supabase: UntypedSupabase,
-  counterKey: UsageCounterKey,
-  salonId: string
-): UntypedQuery {
-  if (counterKey === "appointments_total") {
-    return supabase.from("appointments").select("*", { count: "exact", head: true }).eq("salon_id", salonId);
-  }
-  if (counterKey === "customers_active") {
-    return supabase.from("customers").select("*", { count: "exact", head: true }).eq("salon_id", salonId).eq("is_active", true);
-  }
-  if (counterKey === "employees_active") {
-    return supabase.from("employees").select("*", { count: "exact", head: true }).eq("salon_id", salonId).eq("is_active", true);
-  }
-  if (counterKey === "login_users_total") {
-    return supabase.from("profiles").select("*", { count: "exact", head: true }).eq("salon_id", salonId).eq("is_active", true);
-  }
-  if (counterKey === "services_active") {
-    return supabase.from("services").select("*", { count: "exact", head: true }).eq("salon_id", salonId).eq("is_active", true);
-  }
-  if (counterKey === "retail_sales_total") {
-    return supabase.from("retail_sales").select("*", { count: "exact", head: true }).eq("salon_id", salonId);
-  }
-  if (counterKey === "inventory_products_active") {
-    return supabase.from("inventory_products").select("*", { count: "exact", head: true }).eq("salon_id", salonId).eq("is_active", true);
-  }
-  if (counterKey === "inventory_movements_total") {
-    return supabase.from("inventory_movements").select("*", { count: "exact", head: true }).eq("salon_id", salonId);
-  }
-  return supabase.from("expenses").select("*", { count: "exact", head: true }).eq("salon_id", salonId);
-}
-
-function applyCountScope(
-  query: UntypedQuery,
+function scopeWindow(
   scope: PlanLimitCountScope,
   assignment: AssignmentRow | null
-): UntypedQuery {
-  if (scope === "current" || scope === "lifetime") return query;
-  const [from, to] = scope === "billing_cycle"
-    ? billingCycleWindow(assignment)
-    : currentMonthWindow();
-  return query.gte("created_at", from).lt("created_at", to);
+): [string | null, string | null] {
+  if (scope === "current" || scope === "lifetime") return [null, null];
+  return scope === "billing_cycle" ? billingCycleWindow(assignment) : currentMonthWindow();
 }
 
 function currentMonthWindow(): [string, string] {
