@@ -10,7 +10,6 @@ import { findSalonNamesByIds } from "@/features/platform/data/salons.repo";
 export interface PlatformInvitationViewModel {
   id: string;
   email: string;
-  token: string;
   planName: string | null;
   createdAtLabel: string;
   expiresAtLabel: string;
@@ -63,7 +62,6 @@ export async function getPlatformInvitations(): Promise<PlatformInvitationsViewM
     return {
       id: invitation.id,
       email: invitation.email,
-      token: invitation.token,
       planName: invitation.plan_id ? planById.get(invitation.plan_id)?.name ?? null : null,
       createdAtLabel: formatDateTime(invitation.created_at),
       expiresAtLabel: formatDateTime(invitation.expires_at),

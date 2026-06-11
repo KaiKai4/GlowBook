@@ -4,6 +4,7 @@ import type { Database, Json } from "@/types/database.types";
 
 export type PlatformAuditAction =
   | "invite_salon"
+  | "regenerate_salon_invitation"
   | "set_salon_status"
   | "update_salon_features"
   | "delete_salon"

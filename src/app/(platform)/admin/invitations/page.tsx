@@ -1,12 +1,10 @@
 import { CheckCircle2, Clock, MailOpen, Plus, TimerOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { getPlatformInvitations } from "@/features/platform/use-cases/get-platform-invitations";
-import { inviteSalonAction } from "../actions";
-import { CopyInviteLink } from "../copy-invite-link";
+import { RegenerateInviteLink } from "../regenerate-invite-link";
+import { InviteSalonForm } from "./invite-salon-form";
 
 export default async function PlatformInvitationsPage() {
   await requirePlatformAdmin();
@@ -44,40 +42,7 @@ export default async function PlatformInvitationsPage() {
               toda invitacion lleva el plan que tendra el salon al aceptar.
             </p>
           ) : (
-            <>
-              <form action={inviteSalonAction} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                <div className="flex-1">
-                  <label className="mb-1.5 block text-sm font-semibold text-stone-700" htmlFor="invite-email">
-                    Correo del owner
-                  </label>
-                  <input
-                    id="invite-email"
-                    type="email"
-                    name="email"
-                    placeholder="owner@salon.com"
-                    required
-                    className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  />
-                </div>
-                <div className="sm:w-72">
-                  <Select name="planId" label="Plan del salon" defaultValue={view.assignablePlans[0].id}>
-                    {view.assignablePlans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name} — {plan.priceLabel}
-                        {plan.trialDays > 0 ? ` · ${plan.trialDays}d trial` : ""}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <Button type="submit" variant="primary">
-                  Invitar
-                </Button>
-              </form>
-              <p className="mt-2 text-xs text-stone-400">
-                Al aceptar la invitacion, el salon nace con este plan: trial, modulos y limites quedan activos
-                antes del primer inicio de sesion.
-              </p>
-            </>
+            <InviteSalonForm plans={view.assignablePlans} />
           )}
         </CardContent>
       </Card>
@@ -120,7 +85,7 @@ export default async function PlatformInvitationsPage() {
                 <p className="text-xs text-neutral-500 md:text-sm">{invitation.createdAtLabel}</p>
                 <p className="text-xs text-neutral-500 md:text-sm">{invitation.expiresAtLabel}</p>
                 <div>
-                  <CopyInviteLink token={invitation.token} />
+                  <RegenerateInviteLink invitationId={invitation.id} />
                 </div>
               </div>
             ))}

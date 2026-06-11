@@ -1,4 +1,7 @@
-import { createSalonInvitation } from "@/features/platform/data/invitations.repo";
+import {
+  createSalonInvitation,
+  regenerateSalonInvitationToken,
+} from "@/features/platform/data/invitations.repo";
 import { err, ok, type Result } from "@/lib/result";
 import { isPlatformAdmin } from "@/lib/auth/session";
 import { captureError } from "@/lib/observability";
@@ -50,5 +53,44 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
       errorMessage: error instanceof Error ? error.message : "Error desconocido",
     });
     return err("Error al crear la invitacion.");
+  }
+}
+
+/**
+ * Reemplaza el token de una invitacion pendiente. El enlace anterior queda
+ * invalidado y el nuevo se muestra una sola vez.
+ */
+export async function regenerateSalonInvitation(input: {
+  invitationId: string;
+  actorUserId?: string | null;
+}): Promise<Result<string>> {
+  const isAdmin = await isPlatformAdmin();
+  if (!isAdmin) return err("No autorizado.");
+
+  try {
+    const token = await regenerateSalonInvitationToken(input.invitationId);
+    await recordPlatformAction({
+      actorUserId: input.actorUserId ?? null,
+      action: "regenerate_salon_invitation",
+      status: "succeeded",
+      targetResourceType: "salon_invitation",
+      targetResourceId: input.invitationId,
+    });
+    return ok(token);
+  } catch (error) {
+    captureError(error, {
+      module: "platform",
+      action: "regenerate_salon_invitation",
+      metadata: { invitationId: input.invitationId },
+    });
+    await recordPlatformAction({
+      actorUserId: input.actorUserId ?? null,
+      action: "regenerate_salon_invitation",
+      status: "failed",
+      targetResourceType: "salon_invitation",
+      targetResourceId: input.invitationId,
+      errorMessage: error instanceof Error ? error.message : "Error desconocido",
+    });
+    return err("No se pudo regenerar el enlace.");
   }
 }

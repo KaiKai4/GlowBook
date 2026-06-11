@@ -284,9 +284,11 @@ export async function deleteWorkSchedule(id: string, salonId: string) {
   if (error) throw error;
 }
 
+// El token en claro no existe en la DB (solo su hash), asi que una invitacion
+// pendiente solo expone metadatos: el enlace se muestra una unica vez al
+// generarse y despues solo puede regenerarse.
 export interface EmployeeInvitationRow {
   id: string;
-  token: string;
   email: string;
   role_id: string | null;
   expires_at: string;
@@ -300,7 +302,7 @@ export async function findLatestEmployeeInvitation(
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("employee_invitations")
-    .select("id, token, email, role_id, expires_at, accepted_at")
+    .select("id, email, role_id, expires_at, accepted_at")
     .eq("employee_id", employeeId)
     .eq("salon_id", salonId)
     .order("created_at", { ascending: false })

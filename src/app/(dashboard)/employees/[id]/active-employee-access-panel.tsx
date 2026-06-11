@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions";
 import { EmployeeInviteLinkCard } from "../employee-invite-link-card";
-import type { PendingEmployeeInvitation, RoleOption } from "../types";
+import type { RoleOption } from "../types";
 
 interface ActiveEmployeeAccessPanelProps {
   employeeId: string;
@@ -28,12 +28,11 @@ export function ActiveEmployeeAccessPanel({
   const [resetPending, startReset] = useTransition();
   const [roleSaved, setRoleSaved] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
-  const [resetInvitation, setResetInvitation] = useState<PendingEmployeeInvitation | null>(null);
+  // El token en claro solo existe en la respuesta del action; se guarda la URL
+  // construida para mostrarla una unica vez.
+  const [resetLink, setResetLink] = useState<{ url: string; expiresAt: string } | null>(null);
 
   const roleDirty = roleId !== (currentRoleId ?? "");
-  const resetInviteUrl = resetInvitation
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${resetInvitation.token}`
-    : null;
 
   function handleRoleSave() {
     setRoleError(null);
@@ -49,10 +48,9 @@ export function ActiveEmployeeAccessPanel({
     startReset(async () => {
       const res = await resetEmployeeAccessAction(employeeId, roleId || currentRoleId || null);
       if (res.ok) {
-        setResetInvitation({
-          token: res.value.token,
+        setResetLink({
+          url: `${window.location.origin}/join/${res.value.token}`,
           expiresAt: res.value.expiresAt,
-          roleId: roleId || currentRoleId || null,
         });
       } else {
         setRoleError(res.error);
@@ -115,8 +113,8 @@ export function ActiveEmployeeAccessPanel({
         </Button>
       </div>
 
-      {resetInvitation && resetInviteUrl && (
-        <EmployeeInviteLinkCard url={resetInviteUrl} title="Nuevo enlace generado" />
+      {resetLink && (
+        <EmployeeInviteLinkCard url={resetLink.url} title="Nuevo enlace generado" expiresAt={resetLink.expiresAt} />
       )}
 
       {roleSaved && !roleDirty && (

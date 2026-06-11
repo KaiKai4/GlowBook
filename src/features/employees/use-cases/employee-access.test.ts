@@ -96,7 +96,7 @@ describe("employee access", () => {
       salon_id: "salon-1",
       email: "staff@example.com",
       role_id: "role-1",
-      token: expect.any(String),
+      token_hash: expect.any(String),
       expires_at: "2026-06-02T12:00:00.000Z",
     });
 

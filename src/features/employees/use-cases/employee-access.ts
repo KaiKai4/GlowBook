@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { generateInvitationToken } from "@/lib/auth/invitation-tokens";
 import { findEmployeeById } from "@/features/employees/data/employees.repo";
 import {
   deleteEmployeeInvitations,
@@ -61,14 +61,14 @@ export async function replacePendingEmployeeInvitation({
     return { ok: false, error: "No se pudo invalidar el enlace anterior del colaborador." };
   }
 
-  const token = randomBytes(24).toString("hex");
+  const { token, tokenHash } = generateInvitationToken();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const { error: inviteError } = await insertEmployeeInvitation({
     employee_id: employeeId,
     salon_id: salonId,
     email,
     role_id: assignableRole.value,
-    token,
+    token_hash: tokenHash,
     expires_at: expiresAt,
   });
 

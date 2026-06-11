@@ -54,7 +54,6 @@ describe("get platform invitations", () => {
       {
         id: "invite-1",
         email: "owner@example.com",
-        token: "token-1",
         status: "pending",
         created_at: "2026-05-29T12:00:00.000Z",
         expires_at: "2026-05-31T12:00:00.000Z",
@@ -63,7 +62,6 @@ describe("get platform invitations", () => {
       {
         id: "invite-2",
         email: "expired@example.com",
-        token: "token-2",
         status: "pending",
         created_at: "2026-05-20T12:00:00.000Z",
         expires_at: "2026-05-21T12:00:00.000Z",
@@ -78,7 +76,6 @@ describe("get platform invitations", () => {
     expect(view.pendingInvitations[0]).toMatchObject({
       id: "invite-1",
       email: "owner@example.com",
-      token: "token-1",
       planName: "Agenda",
       expired: false,
     });

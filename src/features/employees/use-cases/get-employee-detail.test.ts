@@ -64,7 +64,6 @@ describe("get employee detail", () => {
   it("maps employee detail rows and pending invitation state", async () => {
     mockedFindLatestEmployeeInvitation.mockResolvedValue({
       id: "invitation-1",
-      token: "token-1",
       email: "ana@example.com",
       role_id: "role-1",
       expires_at: "2026-06-05T00:00:00.000Z",
@@ -105,7 +104,6 @@ describe("get employee detail", () => {
         },
       ],
       pendingInvitation: {
-        token: "token-1",
         expiresAt: "2026-06-05T00:00:00.000Z",
         roleId: "role-1",
       },

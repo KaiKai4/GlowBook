@@ -363,7 +363,7 @@ export type Database = {
           id: string
           role_id: string | null
           salon_id: string
-          token: string
+          token_hash: string
         }
         Insert: {
           accepted_at?: string | null
@@ -374,7 +374,7 @@ export type Database = {
           id?: string
           role_id?: string | null
           salon_id: string
-          token: string
+          token_hash: string
         }
         Update: {
           accepted_at?: string | null
@@ -385,7 +385,7 @@ export type Database = {
           id?: string
           role_id?: string | null
           salon_id?: string
-          token?: string
+          token_hash?: string
         }
         Relationships: [
           {
@@ -903,7 +903,7 @@ export type Database = {
           plan_id: string | null
           salon_id: string | null
           status: string
-          token: string
+          token_hash: string
         }
         Insert: {
           accepted_at?: string | null
@@ -915,7 +915,7 @@ export type Database = {
           plan_id?: string | null
           salon_id?: string | null
           status?: string
-          token?: string
+          token_hash: string
         }
         Update: {
           accepted_at?: string | null
@@ -927,7 +927,7 @@ export type Database = {
           plan_id?: string | null
           salon_id?: string | null
           status?: string
-          token?: string
+          token_hash?: string
         }
         Relationships: [
           {

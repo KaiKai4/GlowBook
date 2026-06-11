@@ -18,7 +18,7 @@ import { getSubscriptionsPage, type SalonSubscriptionRow } from "@/features/bill
 import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { CopyInviteLink } from "./copy-invite-link";
+import { RegenerateInviteLink } from "./regenerate-invite-link";
 
 export default async function PlatformAdminPage() {
   await requirePlatformAdmin();
@@ -133,7 +133,7 @@ export default async function PlatformAdminPage() {
                       {invitation.email}
                     </span>
                     <div className="flex shrink-0 items-center gap-2">
-                      <CopyInviteLink token={invitation.token} />
+                      <RegenerateInviteLink invitationId={invitation.id} />
                       <Badge variant="warning">Pendiente</Badge>
                     </div>
                   </li>

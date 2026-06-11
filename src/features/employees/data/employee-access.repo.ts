@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { hashInvitationToken } from "@/lib/auth/invitation-tokens";
 import type { Database } from "@/types/database.types";
 
 type DbError = { message: string; status?: number };
@@ -14,7 +15,7 @@ export interface EmployeeInvitationInsert {
   salon_id: string;
   email: string;
   role_id: string | null;
-  token: string;
+  token_hash: string;
   expires_at: string;
 }
 
@@ -149,6 +150,7 @@ export async function findEmployeeInvitationForJoin(
   token: string
 ): Promise<{ data: EmployeeInvitationForJoin | null; error: DbError | null }> {
   const admin = createSupabaseAdminClient();
+  // La DB solo conoce el hash; el token en claro viaja en la URL del enlace.
   const { data, error } = await admin
     .from("employee_invitations")
     .select(`
@@ -156,7 +158,7 @@ export async function findEmployeeInvitationForJoin(
       employees(first_name, last_name),
       salons(name)
     `)
-    .eq("token", token)
+    .eq("token_hash", hashInvitationToken(token))
     .maybeSingle();
 
   return {

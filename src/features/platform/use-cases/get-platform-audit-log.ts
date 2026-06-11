@@ -10,6 +10,7 @@ import type { Json } from "@/types/database.types";
 
 const ACTION_LABELS: Record<PlatformAuditAction, string> = {
   invite_salon: "Invitar Salon",
+  regenerate_salon_invitation: "Regenerar enlace de invitacion",
   set_salon_status: "Actualizar estado de Salon",
   update_salon_features: "Actualizar funciones",
   delete_salon: "Eliminar Salon",

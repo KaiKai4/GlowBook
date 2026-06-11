@@ -22,15 +22,14 @@ export function PendingEmployeeAccessPanel({
   roles,
 }: PendingEmployeeAccessPanelProps) {
   const [invitation, setInvitation] = useState<PendingEmployeeInvitation | null>(initialInvitation);
+  // El enlace en claro solo existe recien generado: la DB guarda el hash, asi
+  // que una invitacion previa se muestra como metadatos + boton de regenerar.
+  const [freshLink, setFreshLink] = useState<{ url: string; expiresAt: string } | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>(
     initialInvitation?.roleId ?? roles[0]?.id ?? ""
   );
   const [invitePending, startInvite] = useTransition();
   const [inviteError, setInviteError] = useState<string | null>(null);
-
-  const inviteUrl = invitation
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${invitation.token}`
-    : null;
 
   function handleGenerate() {
     setInviteError(null);
@@ -38,9 +37,12 @@ export function PendingEmployeeAccessPanel({
       const res = await generateEmployeeInviteAction(employeeId, selectedRole || null);
       if (res.ok) {
         setInvitation({
-          token: res.value.token,
           expiresAt: res.value.expiresAt,
           roleId: selectedRole || null,
+        });
+        setFreshLink({
+          url: `${window.location.origin}/join/${res.value.token}`,
+          expiresAt: res.value.expiresAt,
         });
       } else {
         setInviteError(res.error);
@@ -74,9 +76,19 @@ export function PendingEmployeeAccessPanel({
         )}
       </div>
 
-      {invitation && inviteUrl && (
-        <EmployeeInviteLinkCard url={inviteUrl} title="Enlace generado" expiresAt={invitation.expiresAt} />
-      )}
+      {freshLink ? (
+        <EmployeeInviteLinkCard url={freshLink.url} title="Enlace generado" expiresAt={freshLink.expiresAt} />
+      ) : invitation ? (
+        <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-stone-500">
+          Hay un enlace activo que expira el{" "}
+          {new Date(invitation.expiresAt).toLocaleDateString("es-PA", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+          . Por seguridad no puede volver a mostrarse; si se perdió, regenera uno nuevo (el anterior queda invalidado).
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-2">
         {!invitation ? (

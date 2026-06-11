@@ -1,11 +1,16 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  generateInvitationToken,
+  hashInvitationToken,
+} from "@/lib/auth/invitation-tokens";
 
+// Sin token: la DB solo guarda el hash. El enlace se muestra una vez al
+// crear o regenerar la invitacion.
 export interface PendingSalonInvitation {
   id: string;
   email: string;
-  token: string;
   status: string;
   expires_at: string;
   created_at: string;
@@ -44,10 +49,33 @@ export async function createSalonInvitation(
     const { error: planError } = await admin
       .from("salon_invitations")
       .update({ plan_id: planId })
-      .eq("token", token);
+      .eq("token_hash", hashInvitationToken(token));
     if (planError) throw planError;
   }
 
+  return token;
+}
+
+/**
+ * Emite un token nuevo para una invitacion pendiente (el anterior queda
+ * invalidado) y extiende la expiracion. Devuelve el token en claro para
+ * mostrar el enlace una unica vez.
+ */
+export async function regenerateSalonInvitationToken(invitationId: string): Promise<string> {
+  const { token, tokenHash } = generateInvitationToken();
+  const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("salon_invitations")
+    .update({ token_hash: tokenHash, expires_at: expiresAt })
+    .eq("id", invitationId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error("La invitacion no existe o ya no esta pendiente.");
   return token;
 }
 
@@ -55,7 +83,7 @@ export async function findPendingInvitations(): Promise<PendingSalonInvitation[]
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("salon_invitations")
-    .select("id, email, token, status, expires_at, created_at, plan_id")
+    .select("id, email, status, expires_at, created_at, plan_id")
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
@@ -108,7 +136,7 @@ export async function findSalonInvitationForAcceptance(
   const { data, error } = await admin
     .from("salon_invitations")
     .select("email, status, expires_at, plan_id")
-    .eq("token", token)
+    .eq("token_hash", hashInvitationToken(token))
     .maybeSingle();
 
   if (error) throw error;

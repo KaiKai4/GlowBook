@@ -3,20 +3,39 @@
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
-import { inviteSalon } from "@/features/platform/use-cases/invite-salon";
+import {
+  inviteSalon,
+  regenerateSalonInvitation,
+} from "@/features/platform/use-cases/invite-salon";
 import { updateSalonStatus } from "@/features/platform/use-cases/update-salon-status";
 import type { Result } from "@/lib/result";
 
-export async function inviteSalonAction(formData: FormData): Promise<void> {
+// Devuelve el token en claro: el enlace solo puede mostrarse en esta
+// respuesta porque la DB guarda unicamente el hash.
+export async function inviteSalonAction(
+  _prev: Result<string> | null,
+  formData: FormData
+): Promise<Result<string>> {
   const actorUserId = await requirePlatformAdmin();
   const result = await inviteSalon({
     email: String(formData.get("email") ?? ""),
     planId: String(formData.get("planId") ?? ""),
     actorUserId,
   });
-  if (!result.ok) throw new Error(result.error);
-  revalidatePath("/admin");
-  revalidatePath("/admin/invitations");
+  if (result.ok) {
+    revalidatePath("/admin");
+    revalidatePath("/admin/invitations");
+  }
+  return result;
+}
+
+export async function regenerateSalonInvitationAction(
+  invitationId: string
+): Promise<Result<string>> {
+  const actorUserId = await requirePlatformAdmin();
+  const result = await regenerateSalonInvitation({ invitationId, actorUserId });
+  if (result.ok) revalidatePath("/admin/invitations");
+  return result;
 }
 
 export async function deleteSalonAction(

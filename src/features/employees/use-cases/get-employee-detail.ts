@@ -49,7 +49,6 @@ export interface EmployeeDetailRoleOption {
 }
 
 export interface EmployeeDetailPendingInvitation {
-  token: string;
   expiresAt: string;
   roleId: string | null;
 }
@@ -95,7 +94,6 @@ function toPendingInvitation(
   if (new Date(invitation.expires_at).getTime() < now.getTime()) return null;
 
   return {
-    token: invitation.token,
     expiresAt: invitation.expires_at,
     roleId: invitation.role_id,
   };
