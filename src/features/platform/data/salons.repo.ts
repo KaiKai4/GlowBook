@@ -38,18 +38,6 @@ export async function findSalonNamesByIds(salonIds: string[]): Promise<Map<strin
   return new Map((data ?? []).map((salon) => [salon.id, salon.name]));
 }
 
-export async function setSalonDisabledFeatures(
-  salonId: string,
-  disabledFeatures: readonly string[]
-): Promise<void> {
-  const admin = createSupabaseAdminClient();
-  const update: Database["public"]["Tables"]["salons"]["Update"] = {
-    disabled_features: normalizeDisabledSalonFeatures(disabledFeatures),
-  };
-  const { error } = await admin.from("salons").update(update).eq("id", salonId);
-  if (error) throw error;
-}
-
 export async function setSalonActiveStatus(
   salonId: string,
   isActive: boolean

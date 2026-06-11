@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { ProfileWithRole } from "@/types/app.types";
+import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
 
 export const getProfile = cache(async (): Promise<ProfileWithRole | null> => {
   const supabase = await createSupabaseServerClient();
@@ -16,7 +17,13 @@ export const getProfile = cache(async (): Promise<ProfileWithRole | null> => {
     .single();
 
   if (!data) return null;
-  return data as unknown as ProfileWithRole;
+  const profile = data as unknown as ProfileWithRole;
+
+  // El perfil sale con los modulos efectivos del plan comercial (con fallback
+  // a salons.disabled_features si no hay plan): hasPermission y la navegacion
+  // deben decidir con la misma fuente, no con la columna legacy a secas.
+  const disabledFeatures = await getEffectiveDisabledSalonFeatures(profile);
+  return { ...profile, salon: { disabled_features: disabledFeatures } };
 });
 
 export async function requireProfile(): Promise<ProfileWithRole> {

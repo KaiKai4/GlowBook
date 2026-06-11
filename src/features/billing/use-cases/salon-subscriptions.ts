@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { z } from "zod";
 
 import { err, ok, type Result } from "@/lib/result";
@@ -99,7 +100,9 @@ const ManualExtraSchema = z.object({
   endsAt: z.string().trim().optional(),
 });
 
-export async function getEffectiveSalonPlan(salonId: string): Promise<EffectiveSalonPlan> {
+// cache(): el plan efectivo se consulta desde el perfil, el shell y las
+// paginas dentro del mismo request; una sola lectura alimenta a todos.
+export const getEffectiveSalonPlan = cache(async (salonId: string): Promise<EffectiveSalonPlan> => {
   const rows = await findEffectivePlanRows(salonId);
   const activeAssignment = rows.assignment?.status === "trialing" || rows.assignment?.status === "active";
   const plan = activeAssignment ? rows.plan : null;
@@ -118,7 +121,7 @@ export async function getEffectiveSalonPlan(salonId: string): Promise<EffectiveS
     limits: buildEffectiveLimits(plan, rows.metrics, rows.overrides, rows.usage, enabled),
     usage: rows.usage,
   };
-}
+});
 
 export async function checkPlanLimit(input: {
   salonId: string;
