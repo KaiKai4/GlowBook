@@ -1,6 +1,7 @@
 "use server";
 
 import { acceptInvitation } from "@/features/platform/use-cases/accept-invitation";
+import { assertAnonymousRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
 
 export async function acceptInvitationAction(input: {
@@ -10,5 +11,9 @@ export async function acceptInvitationAction(input: {
   salon_name: string;
   full_name: string;
 }): Promise<Result<void>> {
+  // Endpoint sin sesion: limitar por IP frena la fuerza bruta de tokens.
+  const limited = await assertAnonymousRateLimit("accept-invitation");
+  if (!limited.ok) return limited;
+
   return acceptInvitation(input);
 }

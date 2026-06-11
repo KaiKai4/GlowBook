@@ -14,6 +14,7 @@ import { createAppointment } from "@/features/appointments/use-cases/create-appo
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import {
   CompleteAppointmentSchema,
   CreateAppointmentSchema,
@@ -24,11 +25,12 @@ import type { Result } from "@/lib/result";
 function canManageAppointments(
   profile: Awaited<ReturnType<typeof requireActiveProfile>>
 ): Result<void> {
-  if (hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
-    return { ok: true, value: undefined };
+  if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
+    return { ok: false, error: "No tienes permiso para gestionar citas." };
   }
 
-  return { ok: false, error: "No tienes permiso para gestionar citas." };
+  // Generoso para el uso real del wizard, pero frena martilleo automatizado.
+  return assertActionRateLimit(profile.id, "appointments", { max: 120, windowMs: 60_000 });
 }
 
 function revalidateAppointmentFlows(): void {

@@ -29,6 +29,7 @@ import {
   checkPlanModuleAccess,
   isEffectiveSalonModuleEnabled,
 } from "@/features/billing/use-cases/commercial-plans";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean }>> {
@@ -36,6 +37,11 @@ async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean 
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
   }
+
+  // Estas acciones crean cuentas Auth y enlaces de acceso: un limite por
+  // usuario evita generacion masiva automatizada.
+  const limited = assertActionRateLimit(profile.id, "employees", { max: 30, windowMs: 60_000 });
+  if (!limited.ok) return limited;
 
   return {
     ok: true,
