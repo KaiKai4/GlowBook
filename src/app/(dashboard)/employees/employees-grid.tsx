@@ -7,6 +7,7 @@ import { AlertTriangle, ChevronRight, Link2, ShieldCheck, Users } from "lucide-r
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 import { reactivateEmployeeAction } from "./actions";
 import type { EmployeeListItem } from "./types";
 
@@ -26,6 +27,7 @@ export function EmployeesGrid({
   onClearFilters,
 }: EmployeesGridProps) {
   const router = useRouter();
+  const toast = useToast();
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
   const [reactivateError, setReactivateError] = useState<string | null>(null);
   const [reactivationPending, startReactivation] = useTransition();
@@ -36,6 +38,7 @@ export function EmployeesGrid({
       const res = await reactivateEmployeeAction(employeeId);
       setReactivatingId(null);
       if (res.ok) {
+        toast.success("Colaborador reactivado.");
         router.refresh();
       } else {
         setReactivateError(res.error ?? "No se pudo reactivar el colaborador.");

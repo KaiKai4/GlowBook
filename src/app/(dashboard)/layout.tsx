@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
 import { UnsavedChangesProvider } from "@/components/layout/unsaved-changes";
+import { ToastProvider } from "@/components/ui/toast";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { submitFeedbackAction } from "./feedback/actions";
 import { LogOut } from "lucide-react";
@@ -56,6 +57,7 @@ export default async function DashboardLayout({
 
   if (minimalChrome) {
     return (
+      <ToastProvider>
       <div data-theme={theme} className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-neutral-50">
         <header className="flex items-center justify-between gap-4 border-b border-brand-100 bg-white px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
           <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
@@ -79,10 +81,12 @@ export default async function DashboardLayout({
         </main>
         <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />
       </div>
+      </ToastProvider>
     );
   }
 
   return (
+    <ToastProvider>
     <UnsavedChangesProvider>
       <div
         data-theme={theme}
@@ -101,5 +105,6 @@ export default async function DashboardLayout({
         <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />
       </div>
     </UnsavedChangesProvider>
+    </ToastProvider>
   );
 }
