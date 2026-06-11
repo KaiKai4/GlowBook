@@ -6,28 +6,33 @@ const months = [
   { monthKey: "2026-06", label: "jun" },
 ];
 
+const emptyBuckets = {
+  appointmentMonths: [],
+  busyHours: [],
+  retailMonths: [],
+  expenseGroups: [],
+  purchaseMonths: [],
+  productMonths: [],
+  inventoryProducts: [],
+};
+
 describe("historical report analytics", () => {
   it("combines active revenue and expense modules without duplicating restocks", () => {
     const analytics = calculateHistoricalReportAnalytics({
-      timezone: "UTC",
+      ...emptyBuckets,
       months,
       modules: { inventory: true, retail: true, expenses: true },
-      appointments: [
-        { status: "completed", totalPrice: 100, startTime: "2026-06-05T15:00:00.000Z" },
-        { status: "cancelled", totalPrice: 50, startTime: "2026-06-05T16:00:00.000Z" },
+      appointmentMonths: [{ monthKey: "2026-06", completedRevenue: 100, completedCount: 1 }],
+      busyHours: [
+        { hour: 15, total: 1 },
+        { hour: 16, total: 1 },
       ],
-      retailSales: [{ date: "2026-06-06T15:00:00.000Z", amount: 40 }],
-      expenses: [{ date: "2026-06-02", amount: 25, label: "Alquiler" }],
-      inventoryPurchases: [{ date: "2026-06-03", amount: 15 }],
-      retailItems: [
-        {
-          date: "2026-06-06T15:00:00.000Z",
-          productId: "product-1",
-          productName: "Aceite",
-          quantity: 2,
-        },
+      retailMonths: [{ monthKey: "2026-06", amount: 40 }],
+      expenseGroups: [{ monthKey: "2026-06", label: "Alquiler", amount: 25 }],
+      purchaseMonths: [{ monthKey: "2026-06", amount: 15 }],
+      productMonths: [
+        { productId: "product-1", productName: "Aceite", monthKey: "2026-06", quantity: 2 },
       ],
-      inventoryProducts: [],
     });
 
     expect(analytics.months[1]).toMatchObject({
@@ -44,21 +49,18 @@ describe("historical report analytics", () => {
       { label: "Reposiciones de inventario", amount: 15 },
     ]);
     expect(analytics.productSales[0]).toMatchObject({ name: "Aceite", total: 2, months: [0, 2] });
+    expect(analytics.busyHours.map((point) => point.hour)).toEqual([15, 16]);
   });
 
   it("omits disabled module data from every historical calculation", () => {
     const analytics = calculateHistoricalReportAnalytics({
-      timezone: "UTC",
+      ...emptyBuckets,
       months,
       modules: { inventory: false, retail: false, expenses: false },
-      appointments: [
-        { status: "completed", totalPrice: 80, startTime: "2026-06-05T15:00:00.000Z" },
-      ],
-      retailSales: [{ date: "2026-06-06T15:00:00.000Z", amount: 40 }],
-      expenses: [{ date: "2026-06-02", amount: 25, label: "Alquiler" }],
-      inventoryPurchases: [{ date: "2026-06-03", amount: 15 }],
-      retailItems: [],
-      inventoryProducts: [],
+      appointmentMonths: [{ monthKey: "2026-06", completedRevenue: 80, completedCount: 1 }],
+      retailMonths: [{ monthKey: "2026-06", amount: 40 }],
+      expenseGroups: [{ monthKey: "2026-06", label: "Alquiler", amount: 25 }],
+      purchaseMonths: [{ monthKey: "2026-06", amount: 15 }],
     });
 
     expect(analytics.months[1]).toMatchObject({
@@ -70,16 +72,30 @@ describe("historical report analytics", () => {
     expect(analytics.inventoryAlerts).toEqual([]);
   });
 
+  it("ignores buckets outside the requested month window", () => {
+    const analytics = calculateHistoricalReportAnalytics({
+      ...emptyBuckets,
+      months,
+      modules: { inventory: true, retail: true, expenses: true },
+      appointmentMonths: [
+        { monthKey: "2026-06", completedRevenue: 100, completedCount: 1 },
+        { monthKey: "2026-01", completedRevenue: 999, completedCount: 9 },
+      ],
+      productMonths: [
+        { productId: "product-1", productName: "Aceite", monthKey: "2026-01", quantity: 7 },
+      ],
+    });
+
+    expect(analytics.months[1].appointmentRevenue).toBe(100);
+    expect(analytics.months.every((month) => month.appointmentRevenue <= 100)).toBe(true);
+    expect(analytics.productSales).toEqual([]);
+  });
+
   it("adapts stock alerts to the three inventory locations", () => {
     const analytics = calculateHistoricalReportAnalytics({
-      timezone: "UTC",
+      ...emptyBuckets,
       months,
       modules: { inventory: true, retail: true, expenses: false },
-      appointments: [],
-      retailSales: [],
-      expenses: [],
-      inventoryPurchases: [],
-      retailItems: [],
       inventoryProducts: [
         {
           id: "product-1",

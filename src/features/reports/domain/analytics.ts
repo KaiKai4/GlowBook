@@ -1,24 +1,33 @@
-import { formatLocalDateISO } from "@/lib/utils/dates";
+// Las entradas llegan ya agregadas desde SQL (RPC report_monthly_history):
+// el bucketing por mes/hora se hace en la base, en la zona horaria del salon.
+// Este dominio solo combina buckets en los puntos que consumen las graficas.
 
-export interface AnalyticsAppointment {
-  status: string;
-  totalPrice: number;
-  startTime: string | null;
+export interface AppointmentMonthBucket {
+  monthKey: string;
+  completedRevenue: number;
+  completedCount: number;
 }
 
-export interface AnalyticsMoneyRow {
-  date: string;
+export interface BusyHourBucket {
+  hour: number;
+  total: number;
+}
+
+export interface MonthAmountBucket {
+  monthKey: string;
   amount: number;
 }
 
-export interface AnalyticsExpenseRow extends AnalyticsMoneyRow {
+export interface ExpenseGroupBucket {
+  monthKey: string;
   label: string;
+  amount: number;
 }
 
-export interface AnalyticsRetailItem {
-  date: string;
+export interface ProductMonthBucket {
   productId: string;
   productName: string;
+  monthKey: string;
   quantity: number;
 }
 
@@ -93,19 +102,15 @@ export interface HistoricalReportAnalytics {
 }
 
 export interface HistoricalAnalyticsInput {
-  appointments: AnalyticsAppointment[];
-  retailSales: AnalyticsMoneyRow[];
-  expenses: AnalyticsExpenseRow[];
-  inventoryPurchases: AnalyticsMoneyRow[];
-  retailItems: AnalyticsRetailItem[];
+  appointmentMonths: AppointmentMonthBucket[];
+  busyHours: BusyHourBucket[];
+  retailMonths: MonthAmountBucket[];
+  expenseGroups: ExpenseGroupBucket[];
+  purchaseMonths: MonthAmountBucket[];
+  productMonths: ProductMonthBucket[];
   inventoryProducts: InventoryAlertProduct[];
   months: Array<{ monthKey: string; label: string }>;
-  timezone: string;
   modules: ReportModuleAvailability;
-}
-
-function monthKeyFromTimestamp(value: string, timezone: string): string {
-  return formatLocalDateISO(new Date(value), timezone).slice(0, 7);
 }
 
 function hourLabel(hour: number): string {
@@ -114,19 +119,6 @@ function hourLabel(hour: number): string {
     hour12: true,
     timeZone: "UTC",
   }).format(new Date(Date.UTC(2026, 0, 1, hour)));
-}
-
-function appointmentHour(value: string, timezone: string): number {
-  const hour = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    hour: "2-digit",
-    hour12: false,
-  })
-    .formatToParts(new Date(value))
-    .find((part) => part.type === "hour")?.value;
-
-  const parsed = Number(hour ?? 0);
-  return parsed === 24 ? 0 : parsed;
 }
 
 function inventoryAlert(product: InventoryAlertProduct): InventoryAlert {
@@ -152,14 +144,14 @@ function inventoryAlert(product: InventoryAlertProduct): InventoryAlert {
 }
 
 export function calculateHistoricalReportAnalytics({
-  appointments,
-  retailSales,
-  expenses,
-  inventoryPurchases,
-  retailItems,
+  appointmentMonths,
+  busyHours,
+  retailMonths,
+  expenseGroups,
+  purchaseMonths,
+  productMonths,
   inventoryProducts,
   months,
-  timezone,
   modules,
 }: HistoricalAnalyticsInput): HistoricalReportAnalytics {
   const monthly = new Map(
@@ -175,39 +167,33 @@ export function calculateHistoricalReportAnalytics({
       },
     ])
   );
-  const busyHours = new Map<number, number>();
 
-  for (const appointment of appointments) {
-    if (!appointment.startTime) continue;
-    const month = monthly.get(monthKeyFromTimestamp(appointment.startTime, timezone));
-    if (appointment.status === "completed" && month) {
-      month.appointmentRevenue += appointment.totalPrice;
-      month.completedAppointments += 1;
-    }
-    if (!["cancelled", "no_show"].includes(appointment.status)) {
-      const hour = appointmentHour(appointment.startTime, timezone);
-      busyHours.set(hour, (busyHours.get(hour) ?? 0) + 1);
+  for (const bucket of appointmentMonths) {
+    const month = monthly.get(bucket.monthKey);
+    if (month) {
+      month.appointmentRevenue += bucket.completedRevenue;
+      month.completedAppointments += bucket.completedCount;
     }
   }
 
   if (modules.retail) {
-    for (const sale of retailSales) {
-      const month = monthly.get(monthKeyFromTimestamp(sale.date, timezone));
-      if (month) month.retailRevenue += sale.amount;
+    for (const bucket of retailMonths) {
+      const month = monthly.get(bucket.monthKey);
+      if (month) month.retailRevenue += bucket.amount;
     }
   }
 
   if (modules.expenses) {
-    for (const expense of expenses) {
-      const month = monthly.get(expense.date.slice(0, 7));
-      if (month) month.operationalExpenses += expense.amount;
+    for (const group of expenseGroups) {
+      const month = monthly.get(group.monthKey);
+      if (month) month.operationalExpenses += group.amount;
     }
   }
 
   if (modules.inventory) {
-    for (const purchase of inventoryPurchases) {
-      const month = monthly.get(purchase.date.slice(0, 7));
-      if (month) month.inventoryPurchases += purchase.amount;
+    for (const bucket of purchaseMonths) {
+      const month = monthly.get(bucket.monthKey);
+      if (month) month.inventoryPurchases += bucket.amount;
     }
   }
 
@@ -230,37 +216,39 @@ export function calculateHistoricalReportAnalytics({
     { id: string; name: string; total: number; monthTotals: Map<string, number> }
   >();
   if (modules.retail) {
-    for (const item of retailItems) {
-      const monthKey = monthKeyFromTimestamp(item.date, timezone);
-      if (!monthly.has(monthKey)) continue;
-      const product = productMap.get(item.productId) ?? {
-        id: item.productId,
-        name: item.productName,
+    for (const bucket of productMonths) {
+      if (!monthly.has(bucket.monthKey)) continue;
+      const product = productMap.get(bucket.productId) ?? {
+        id: bucket.productId,
+        name: bucket.productName,
         total: 0,
         monthTotals: new Map<string, number>(),
       };
-      product.total += item.quantity;
-      product.monthTotals.set(monthKey, (product.monthTotals.get(monthKey) ?? 0) + item.quantity);
-      productMap.set(item.productId, product);
+      product.total += bucket.quantity;
+      product.monthTotals.set(
+        bucket.monthKey,
+        (product.monthTotals.get(bucket.monthKey) ?? 0) + bucket.quantity
+      );
+      productMap.set(bucket.productId, product);
     }
   }
 
   const groupedExpenses = new Map<string, number>();
   if (modules.expenses) {
-    for (const expense of expenses) {
-      groupedExpenses.set(expense.label, (groupedExpenses.get(expense.label) ?? 0) + expense.amount);
+    for (const group of expenseGroups) {
+      groupedExpenses.set(group.label, (groupedExpenses.get(group.label) ?? 0) + group.amount);
     }
   }
   if (modules.inventory) {
-    const restockTotal = inventoryPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+    const restockTotal = purchaseMonths.reduce((sum, bucket) => sum + bucket.amount, 0);
     if (restockTotal > 0) groupedExpenses.set("Reposiciones de inventario", restockTotal);
   }
 
   return {
     months: monthPoints,
-    busyHours: [...busyHours.entries()]
-      .map(([hour, total]) => ({ hour, label: hourLabel(hour), total }))
-      .sort((a, b) => a.hour - b.hour),
+    busyHours: [...busyHours]
+      .sort((a, b) => a.hour - b.hour)
+      .map((bucket) => ({ hour: bucket.hour, label: hourLabel(bucket.hour), total: bucket.total })),
     productSales: [...productMap.values()]
       .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
       .slice(0, 5)

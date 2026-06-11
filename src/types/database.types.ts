@@ -1200,6 +1200,19 @@ export type Database = {
       }
       has_permission: { Args: { perm: string }; Returns: boolean }
       invite_salon: { Args: { p_email: string }; Returns: string }
+      count_salon_usage: {
+        Args: { p_salon_id: string; p_counters: Json }
+        Returns: Json
+      }
+      report_monthly_history: {
+        Args: {
+          p_salon_id: string
+          p_start: string
+          p_end: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
       is_owner: { Args: never; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       platform_salon_overviews: {

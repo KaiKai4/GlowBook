@@ -153,12 +153,12 @@ async function getHistoricalAnalytics({
     salonId,
     start: historyBounds.start,
     end: historyBounds.end,
+    timezone,
   });
 
   return calculateHistoricalReportAnalytics({
     ...historicalRows,
     months,
-    timezone,
     modules,
   });
 }

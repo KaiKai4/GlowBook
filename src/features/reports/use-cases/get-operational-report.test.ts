@@ -32,11 +32,12 @@ describe("get operational report", () => {
       inventoryPurchases: 15,
     });
     mockedHistoricalRows.mockResolvedValue({
-      appointments: [],
-      retailSales: [],
-      expenses: [],
-      inventoryPurchases: [],
-      retailItems: [],
+      appointmentMonths: [],
+      busyHours: [],
+      retailMonths: [],
+      expenseGroups: [],
+      purchaseMonths: [],
+      productMonths: [],
       inventoryProducts: [],
     });
     mockedRows.mockResolvedValue({

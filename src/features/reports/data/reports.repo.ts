@@ -8,11 +8,12 @@ import {
   type ReportAppointmentItem,
 } from "../domain/metrics";
 import type {
-  AnalyticsAppointment,
-  AnalyticsExpenseRow,
-  AnalyticsMoneyRow,
-  AnalyticsRetailItem,
+  AppointmentMonthBucket,
+  BusyHourBucket,
+  ExpenseGroupBucket,
   InventoryAlertProduct,
+  MonthAmountBucket,
+  ProductMonthBucket,
 } from "../domain/analytics";
 
 type AppointmentRow = Pick<
@@ -44,12 +45,17 @@ export interface OperationalReportRowQuery {
 }
 
 export interface HistoricalReportRows {
-  appointments: AnalyticsAppointment[];
-  retailSales: AnalyticsMoneyRow[];
-  expenses: AnalyticsExpenseRow[];
-  inventoryPurchases: AnalyticsMoneyRow[];
-  retailItems: AnalyticsRetailItem[];
+  appointmentMonths: AppointmentMonthBucket[];
+  busyHours: BusyHourBucket[];
+  retailMonths: MonthAmountBucket[];
+  expenseGroups: ExpenseGroupBucket[];
+  purchaseMonths: MonthAmountBucket[];
+  productMonths: ProductMonthBucket[];
   inventoryProducts: InventoryAlertProduct[];
+}
+
+export interface HistoricalReportRowQuery extends OperationalReportRowQuery {
+  timezone: string;
 }
 
 function firstRelation<T>(value: RelatedOne<T>): T | null {
@@ -141,143 +147,87 @@ export async function findOperationalReportRows({
   };
 }
 
+interface MonthlyHistoryPayload {
+  appointmentMonths: AppointmentMonthBucket[] | null;
+  busyHours: BusyHourBucket[] | null;
+  retailMonths: MonthAmountBucket[] | null;
+  expenseGroups: ExpenseGroupBucket[] | null;
+  purchaseMonths: MonthAmountBucket[] | null;
+  productMonths: ProductMonthBucket[] | null;
+}
+
+// La agregacion por mes/hora corre en SQL (RPC report_monthly_history) en la
+// zona horaria del salon: el costo deja de crecer con el numero de filas del
+// periodo. La RPC es security invoker, asi que la RLS del usuario aplica igual
+// que con las queries directas que reemplaza. Los productos de inventario se
+// consultan aparte porque alimentan alertas de stock, no series temporales.
 export async function findHistoricalReportRows({
   salonId,
   start,
   end,
-}: OperationalReportRowQuery): Promise<HistoricalReportRows> {
+  timezone,
+}: HistoricalReportRowQuery): Promise<HistoricalReportRows> {
   const supabase = await createSupabaseServerClient();
+  // Los tipos generados aun no incluyen las tablas de inventario; mismo cast
+  // puntual que usaba la version anterior de esta query.
   const external = supabase as unknown as {
     from: (table: string) => {
       select: (columns: string) => {
-        eq: (column: string, value: string) => {
-          gte: (column: string, value: string) => {
-            lte: (column: string, value: string) => Promise<{ data: unknown; error: Error | null }>;
-          };
-        };
+        eq: (column: string, value: string) => Promise<{ data: unknown; error: Error | null }>;
       };
     };
   };
 
-  const [
-    appointmentsResponse,
-    retailSalesResponse,
-    expensesResponse,
-    inventoryPurchasesResponse,
-    retailItemsResponse,
-    inventoryProductsResponse,
-  ] = await Promise.all([
-    supabase
-      .from("appointments")
-      .select("status, total_price, start_time")
-      .eq("salon_id", salonId)
-      .gte("start_time", start)
-      .lte("start_time", end),
+  const [historyResponse, inventoryProductsResponse] = await Promise.all([
+    supabase.rpc("report_monthly_history", {
+      p_salon_id: salonId,
+      p_start: start,
+      p_end: end,
+      p_timezone: timezone,
+    }),
     external
-      .from("retail_sales")
-      .select("sale_date, total_amount")
-      .eq("salon_id", salonId)
-      .gte("sale_date", start)
-      .lte("sale_date", end),
-    external
-      .from("expenses")
-      .select("expense_date, amount, concept, custom_category, category")
-      .eq("salon_id", salonId)
-      .gte("expense_date", start.slice(0, 10))
-      .lte("expense_date", end.slice(0, 10)),
-    external
-      .from("inventory_purchases")
-      .select("purchase_date, total_cost")
-      .eq("salon_id", salonId)
-      .gte("purchase_date", start.slice(0, 10))
-      .lte("purchase_date", end.slice(0, 10)),
-    external
-      .from("retail_sale_items")
-      .select("quantity, product:inventory_products(id, name), sale:retail_sales(sale_date)")
-      .eq("salon_id", salonId)
-      .gte("created_at", start)
-      .lte("created_at", end),
-    (external.from("inventory_products").select(
-      "id, name, is_retail_enabled, is_active, deleted_at, inventory_stock_locations(location, quantity, minimum_quantity)"
-    ).eq("salon_id", salonId) as unknown as Promise<{ data: unknown; error: Error | null }>),
+      .from("inventory_products")
+      .select(
+        "id, name, is_retail_enabled, is_active, deleted_at, inventory_stock_locations(location, quantity, minimum_quantity)"
+      )
+      .eq("salon_id", salonId),
   ]);
 
-  const responses = [
-    appointmentsResponse,
-    retailSalesResponse,
-    expensesResponse,
-    inventoryPurchasesResponse,
-    retailItemsResponse,
-    inventoryProductsResponse,
-  ];
-  const failed = responses.find((response) => response.error);
-  if (failed?.error) throw failed.error;
+  if (historyResponse.error) throw historyResponse.error;
+  if (inventoryProductsResponse.error) throw inventoryProductsResponse.error;
 
-  type RelatedOne<T> = T | T[] | null;
-  const one = <T,>(value: RelatedOne<T>): T | null =>
-    Array.isArray(value) ? value[0] ?? null : value;
+  const history = (historyResponse.data ?? {}) as unknown as MonthlyHistoryPayload;
+  const inventoryRows = (inventoryProductsResponse.data ?? []) as unknown as Array<{
+    id: string;
+    name: string;
+    is_retail_enabled: boolean;
+    is_active: boolean;
+    deleted_at: string | null;
+    inventory_stock_locations: Array<{
+      location: "retail" | "internal" | "storage";
+      quantity: number | string;
+      minimum_quantity: number | string;
+    }> | null;
+  }>;
 
   return {
-    appointments: (appointmentsResponse.data ?? []).map((row) => ({
-      status: row.status,
-      totalPrice: Number(row.total_price ?? 0),
-      startTime: row.start_time,
-    })),
-    retailSales: ((retailSalesResponse.data ?? []) as Array<{
-      sale_date: string;
-      total_amount: number | string;
-    }>).map((row) => ({ date: row.sale_date, amount: Number(row.total_amount ?? 0) })),
-    expenses: ((expensesResponse.data ?? []) as Array<{
-      expense_date: string;
-      amount: number | string;
-      concept: string | null;
-      custom_category: string | null;
-      category: string;
-    }>).map((row) => ({
-      date: row.expense_date,
-      amount: Number(row.amount ?? 0),
-      label: row.concept || row.custom_category || row.category || "Otros gastos",
-    })),
-    inventoryPurchases: ((inventoryPurchasesResponse.data ?? []) as Array<{
-      purchase_date: string;
-      total_cost: number | string;
-    }>).map((row) => ({ date: row.purchase_date, amount: Number(row.total_cost ?? 0) })),
-    retailItems: ((retailItemsResponse.data ?? []) as Array<{
-      quantity: number | string;
-      product: RelatedOne<{ id: string; name: string }>;
-      sale: RelatedOne<{ sale_date: string }>;
-    }>).flatMap((row) => {
-      const product = one(row.product);
-      const sale = one(row.sale);
-      return product && sale
-        ? [{
-            date: sale.sale_date,
-            productId: product.id,
-            productName: product.name,
-            quantity: Number(row.quantity ?? 0),
-          }]
-        : [];
-    }),
-    inventoryProducts: ((inventoryProductsResponse.data ?? []) as Array<{
-      id: string;
-      name: string;
-      is_retail_enabled: boolean;
-      is_active: boolean;
-      deleted_at: string | null;
-      inventory_stock_locations: Array<{
-        location: "retail" | "internal" | "storage";
-        quantity: number | string;
-        minimum_quantity: number | string;
-      }> | null;
-    }>).filter((row) => row.is_active && !row.deleted_at).map((row) => ({
-      id: row.id,
-      name: row.name,
-      isRetailEnabled: row.is_retail_enabled,
-      locations: (row.inventory_stock_locations ?? []).map((location) => ({
-        location: location.location,
-        quantity: Number(location.quantity ?? 0),
-        minimumQuantity: Number(location.minimum_quantity ?? 0),
+    appointmentMonths: history.appointmentMonths ?? [],
+    busyHours: history.busyHours ?? [],
+    retailMonths: history.retailMonths ?? [],
+    expenseGroups: history.expenseGroups ?? [],
+    purchaseMonths: history.purchaseMonths ?? [],
+    productMonths: history.productMonths ?? [],
+    inventoryProducts: inventoryRows
+      .filter((row) => row.is_active && !row.deleted_at)
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        isRetailEnabled: row.is_retail_enabled,
+        locations: (row.inventory_stock_locations ?? []).map((location) => ({
+          location: location.location,
+          quantity: Number(location.quantity ?? 0),
+          minimumQuantity: Number(location.minimum_quantity ?? 0),
+        })),
       })),
-    })),
   };
 }
