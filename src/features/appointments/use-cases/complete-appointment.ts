@@ -1,5 +1,6 @@
 import { promoteCustomer } from "@/features/customers/use-cases/customer-temporary";
 import { err, ok, type Result } from "@/lib/result";
+import { captureError } from "@/lib/observability";
 import {
   findAppointmentForCommand,
   findAppointmentItemsForPricing,
@@ -33,7 +34,7 @@ export async function completeAppointment(
   try {
     appointment = await findAppointmentForCommand(appointmentId, salonId);
   } catch (error) {
-    console.error("[appointments:complete]", error);
+    captureError(error, { module: "appointments", action: "complete" });
     return err("Cita no encontrada.");
   }
 
@@ -107,7 +108,7 @@ export async function completeAppointment(
       return err("Solo puedes cambiar el precio de servicios con precio variable.");
     }
 
-    console.error("[appointments:complete]", error);
+    captureError(error, { module: "appointments", action: "complete" });
     return err("Error al calcular el cobro de la cita.");
   }
 
@@ -122,7 +123,7 @@ export async function completeAppointment(
       completionPriceNote: completionPriceNote.trim().slice(0, 500),
     });
   } catch (error) {
-    console.error("[appointments:complete]", error);
+    captureError(error, { module: "appointments", action: "complete" });
     return err("Error al completar la cita.");
   }
 
@@ -133,14 +134,14 @@ export async function completeAppointment(
       blocksCalendar: false,
     });
   } catch (error) {
-    console.error("[appointments:complete]", error);
+    captureError(error, { module: "appointments", action: "complete" });
     return err("La cita se completo, pero no se pudo liberar la agenda.");
   }
 
   if (appointment.customer_id) {
     const promoted = await promoteCustomer(appointment.customer_id, salonId);
     if (!promoted.ok) {
-      console.error("[appointments:complete]", promoted.error);
+      captureError(promoted.error, { module: "appointments", action: "complete" });
     }
   }
 

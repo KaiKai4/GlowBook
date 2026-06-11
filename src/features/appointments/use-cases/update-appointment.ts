@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "@/lib/result";
+import { captureError } from "@/lib/observability";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
@@ -27,7 +28,7 @@ export async function updateAppointmentSchedule(
   try {
     appointment = await findAppointmentForCommand(input.appointment_id, salonId);
   } catch (error) {
-    console.error("[appointments:update]", error);
+    captureError(error, { module: "appointments", action: "update" });
     return err("No se pudo cargar la cita.");
   }
 
@@ -46,7 +47,7 @@ export async function updateAppointmentSchedule(
       assignments: input.assignments,
     });
   } catch (error) {
-    console.error("[appointments:update]", error);
+    captureError(error, { module: "appointments", action: "update" });
     return err("Datos invÃ¡lidos.");
   }
 
@@ -82,7 +83,7 @@ export async function updateAppointmentSchedule(
       }
     }
   } catch (error) {
-    console.error("[appointments:update]", error);
+    captureError(error, { module: "appointments", action: "update" });
     return err("No se pudo validar la disponibilidad del profesional.");
   }
 
@@ -136,7 +137,7 @@ export async function updateAppointmentSchedule(
   try {
     updated = await updateAppointmentWithRpc(rpcPayload);
   } catch (error) {
-    console.error("[appointments:update]", error);
+    captureError(error, { module: "appointments", action: "update" });
     return err("Error al actualizar la cita. Intenta de nuevo.");
   }
 

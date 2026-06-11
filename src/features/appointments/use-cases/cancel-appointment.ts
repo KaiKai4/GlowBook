@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "@/lib/result";
+import { captureError } from "@/lib/observability";
 import {
   findAppointmentForCommand,
   setAppointmentItemsCalendarBlocking,
@@ -14,7 +15,7 @@ export async function cancelAppointment(
   try {
     appointment = await findAppointmentForCommand(appointmentId, salonId);
   } catch (error) {
-    console.error("[appointments:cancel]", error);
+    captureError(error, { module: "appointments", action: "cancel" });
     return err("Cita no encontrada.");
   }
 
@@ -33,14 +34,14 @@ export async function cancelAppointment(
       blocksCalendar: false,
     });
   } catch (error) {
-    console.error("[appointments:cancel]", error);
+    captureError(error, { module: "appointments", action: "cancel" });
     return err("Error al liberar la agenda.");
   }
 
   try {
     await updateAppointmentStatus({ appointmentId, salonId, status: "cancelled" });
   } catch (error) {
-    console.error("[appointments:cancel]", error);
+    captureError(error, { module: "appointments", action: "cancel" });
     return err("Error al cancelar la cita.");
   }
 

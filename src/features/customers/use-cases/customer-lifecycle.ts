@@ -1,5 +1,6 @@
 import { updateCustomer } from "@/features/customers/data/customers.repo";
 import type { Result } from "@/lib/result";
+import { captureError } from "@/lib/observability";
 
 export async function reactivateCustomer(
   customerId: string,
@@ -13,7 +14,7 @@ export async function reactivateCustomer(
 
     return { ok: true, value: undefined };
   } catch (error) {
-    console.error("[customers:lifecycle]", error);
+    captureError(error, { module: "customers", action: "lifecycle" });
     return { ok: false, error: "No se pudo reactivar el cliente." };
   }
 }
@@ -35,7 +36,7 @@ export async function archiveCustomer(
       },
     };
   } catch (error) {
-    console.error("[customers:lifecycle]", error);
+    captureError(error, { module: "customers", action: "lifecycle" });
     return { ok: false, error: "No se pudo archivar el cliente." };
   }
 }

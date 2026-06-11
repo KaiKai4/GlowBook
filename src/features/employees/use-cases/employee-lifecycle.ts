@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/observability";
 import {
   findEmployeeById,
   updateEmployee,
@@ -16,7 +17,7 @@ export async function reactivateEmployee(
     await updateEmployee(employeeId, salonId, { is_active: true });
     return { ok: true, value: undefined };
   } catch (err) {
-    console.error("[employees:lifecycle]", err);
+    captureError(err, { module: "employees", action: "lifecycle" });
     return { ok: false, error: "No se pudo reactivar el colaborador." };
   }
 }
@@ -49,7 +50,7 @@ export async function archiveEmployee(
       },
     };
   } catch (err) {
-    console.error("[employees:lifecycle]", err);
+    captureError(err, { module: "employees", action: "lifecycle" });
     return { ok: false, error: "No se pudo archivar el colaborador." };
   }
 }

@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/observability";
 import "server-only";
 
 import type { Result } from "@/lib/result";
@@ -42,7 +43,7 @@ export async function updateSalonPaymentMethods(
     await updateSalonPaymentMethodsRepo(salonId, normalizePaymentMethods(paymentMethods));
     return { ok: true, value: undefined };
   } catch (error) {
-    console.error("Error saving salon payment methods", error);
+    captureError(error, { module: "salon", action: "update-payment-methods" });
     return {
       ok: false,
       error: `Error al guardar los metodos de pago: ${errorMessage(error)}`,

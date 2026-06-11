@@ -1,4 +1,5 @@
 import "server-only";
+import { captureError } from "@/lib/observability";
 
 import { getAppointmentReminderTarget } from "@/features/appointments/use-cases/appointment-reminder-target";
 import { createManualReminderLog } from "../data/reminder-log.repo";
@@ -27,7 +28,7 @@ export async function recordManualReminder(input: {
 
     return { ok: true, value: sentAt };
   } catch (error) {
-    console.error("[reminders:manual]", error);
+    captureError(error, { module: "reminders", action: "manual" });
     return { ok: false, error: "No se pudo marcar el recordatorio como enviado." };
   }
 }

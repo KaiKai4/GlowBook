@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/observability";
 import {
   createCustomer,
   updateCustomer,
@@ -52,7 +53,7 @@ export async function updateCustomerProfile(
     await updateCustomer(customerId, salonId, normalizeCustomerPhone(input));
     return { ok: true, value: undefined };
   } catch (error) {
-    console.error("[customers:profile]", error);
+    captureError(error, { module: "customers", action: "profile" });
     return {
       ok: false,
       error: mapCustomerConstraintError(error, "Error al actualizar el cliente."),

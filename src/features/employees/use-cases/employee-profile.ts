@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/observability";
 import {
   createEmployee as insertEmployee,
   findEmployeeById,
@@ -88,7 +89,7 @@ export async function createEmployeeProfile(
 
     return { ok: true, value: { id: created.id } };
   } catch (err) {
-    console.error("[employees:profile]", err);
+    captureError(err, { module: "employees", action: "profile" });
     return { ok: false, error: "Error al crear el colaborador." };
   }
 }
@@ -133,7 +134,7 @@ export async function updateEmployeeProfile(
         await findLatestPendingEmployeeInvitationRole(employeeId, salonId);
 
       if (latestInviteError) {
-        console.error("[employees:profile]", latestInviteError);
+        captureError(latestInviteError, { module: "employees", action: "profile" });
         return { ok: false, error: "No se pudo verificar la invitacion pendiente." };
       }
 
@@ -160,7 +161,7 @@ export async function updateEmployeeProfile(
 
     return { ok: true, value: undefined };
   } catch (err) {
-    console.error("[employees:profile]", err);
+    captureError(err, { module: "employees", action: "profile" });
     return { ok: false, error: "Error al actualizar el colaborador." };
   }
 }

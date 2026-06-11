@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "@/lib/result";
+import { captureError } from "@/lib/observability";
 import {
   createAppointmentWithRpc,
   findAppointmentCreationResources,
@@ -30,7 +31,7 @@ export async function createAppointment(
       assignments: input.assignments,
     });
   } catch (error) {
-    console.error("[appointments:create]", error);
+    captureError(error, { module: "appointments", action: "create" });
     return err("Datos inválidos.");
   }
 
@@ -65,7 +66,7 @@ export async function createAppointment(
       }
     }
   } catch (error) {
-    console.error("[appointments:create]", error);
+    captureError(error, { module: "appointments", action: "create" });
     return err("No se pudo validar la disponibilidad del profesional.");
   }
 
@@ -120,7 +121,7 @@ export async function createAppointment(
   try {
     created = await createAppointmentWithRpc(rpcPayload);
   } catch (error) {
-    console.error("[appointments:create]", error);
+    captureError(error, { module: "appointments", action: "create" });
     return err("Error al crear la cita. Intenta de nuevo.");
   }
 

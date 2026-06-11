@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/observability";
 import {
   findAssignableEmployeeRole,
   findEmployeeInvitationForJoin,
@@ -40,7 +41,7 @@ export async function getEmployeeInvitationJoinView(
   const { data: invitation, error } = await findEmployeeInvitationForJoin(token);
 
   if (error) {
-    console.error("[employee-join]", error);
+    captureError(error, { module: "employees", action: "join" });
     return { status: "not_found" };
   }
 
@@ -60,7 +61,7 @@ export async function getEmployeeInvitationJoinView(
 async function rollbackAuthUser(userId: string, context: string): Promise<void> {
   const { error } = await deleteEmployeeAuthUser(userId);
   if (error && error.status !== 404) {
-    console.error(`[employee-join:${context}:rollback]`, error);
+    captureError(error, { module: "employees", action: "join-rollback", metadata: { context } });
   }
 }
 
@@ -77,7 +78,7 @@ export async function acceptEmployeeInvitation({
 
   const { data: invitation, error } = await findEmployeeInvitationForJoin(token);
   if (error) {
-    console.error("[employee-join]", error);
+    captureError(error, { module: "employees", action: "join" });
     return { ok: false, error: "No se pudo verificar la invitacion." };
   }
 
@@ -96,7 +97,7 @@ export async function acceptEmployeeInvitation({
     );
 
     if (roleError) {
-      console.error("[employee-join]", roleError);
+      captureError(roleError, { module: "employees", action: "join" });
       return { ok: false, error: "No se pudo verificar el rol de la invitacion." };
     }
 
@@ -150,7 +151,7 @@ export async function acceptEmployeeInvitation({
 
   const { error: acceptedError } = await markEmployeeInvitationAccepted(invitation.id);
   if (acceptedError) {
-    console.error("[employee-join]", acceptedError);
+    captureError(acceptedError, { module: "employees", action: "join" });
     await rollbackAuthUser(user.id, "accepted");
     return { ok: false, error: "Error al confirmar la invitacion. Solicita un enlace nuevo." };
   }

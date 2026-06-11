@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/observability";
 import {
   deleteWorkSchedule,
   upsertWorkSchedule,
@@ -17,7 +18,7 @@ export async function addEmployeeWorkSchedule(
     await upsertWorkSchedule(salonId, schedule);
     return { ok: true, value: undefined };
   } catch (err) {
-    console.error("[employees:schedule]", err);
+    captureError(err, { module: "employees", action: "schedule" });
     return { ok: false, error: "Error al guardar el horario (¿ya existe ese bloque?)." };
   }
 }
@@ -30,7 +31,7 @@ export async function removeEmployeeWorkSchedule(
     await deleteWorkSchedule(scheduleId, salonId);
     return { ok: true, value: undefined };
   } catch (err) {
-    console.error("[employees:schedule]", err);
+    captureError(err, { module: "employees", action: "schedule" });
     return { ok: false, error: "Error al eliminar el horario." };
   }
 }

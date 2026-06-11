@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/observability";
 import {
   createCustomer,
   deleteCustomer,
@@ -66,7 +67,7 @@ export async function findOrCreateTemporaryCustomer({
     return { ok: true, value: customer.id };
   } catch (error) {
     if (!isPhoneUniquenessError(error) || !normalizedPhone) {
-      console.error("[customers:temporary:create]", error);
+      captureError(error, { module: "customers", action: "temporary-create" });
       return { ok: false, error: "Error al crear el cliente." };
     }
 
@@ -83,7 +84,7 @@ export async function findOrCreateTemporaryCustomer({
         });
         return { ok: true, value: updated.id };
       } catch (updateError) {
-        console.error("[customers:temporary:update-existing]", updateError);
+        captureError(updateError, { module: "customers", action: "temporary-update-existing" });
         return { ok: false, error: "Error al actualizar el cliente temporal." };
       }
     }
@@ -111,7 +112,7 @@ export async function promoteCustomer(
 
     return { ok: true, value: undefined };
   } catch (error) {
-    console.error("[customers:temporary]", error);
+    captureError(error, { module: "customers", action: "temporary" });
     return { ok: false, error: "Error al guardar el cliente." };
   }
 }
@@ -124,7 +125,7 @@ export async function deleteTemporaryCustomer(
     await deleteCustomer(customerId, salonId);
     return { ok: true, value: undefined };
   } catch (error) {
-    console.error("[customers:temporary]", error);
+    captureError(error, { module: "customers", action: "temporary" });
     return { ok: false, error: "Error al descartar el cliente." };
   }
 }

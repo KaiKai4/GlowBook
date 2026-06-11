@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "@/lib/result";
+import { captureError } from "@/lib/observability";
 import {
   findAppointmentForCommand,
   updateAppointmentStatus,
@@ -13,7 +14,7 @@ export async function confirmAppointment(
   try {
     appointment = await findAppointmentForCommand(appointmentId, salonId);
   } catch (error) {
-    console.error("[appointments:confirm]", error);
+    captureError(error, { module: "appointments", action: "confirm" });
     return err("Cita no encontrada.");
   }
 
@@ -28,7 +29,7 @@ export async function confirmAppointment(
   try {
     await updateAppointmentStatus({ appointmentId, salonId, status: "confirmed" });
   } catch (error) {
-    console.error("[appointments:confirm]", error);
+    captureError(error, { module: "appointments", action: "confirm" });
     return err("Error al confirmar la cita.");
   }
 

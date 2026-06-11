@@ -1,4 +1,5 @@
 import "server-only";
+import { captureError } from "@/lib/observability";
 
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
@@ -79,7 +80,7 @@ async function getCurrentRoleId(
 
   const { data, error } = await findEmployeeAccessProfile(profileId, salonId);
   if (error) {
-    console.error("[employees:detail]", error);
+    captureError(error, { module: "employees", action: "detail" });
     return null;
   }
 

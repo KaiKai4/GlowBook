@@ -1,5 +1,6 @@
 import { generateInvitationToken } from "@/lib/auth/invitation-tokens";
 import { findEmployeeById } from "@/features/employees/data/employees.repo";
+import { captureError } from "@/lib/observability";
 import {
   deleteEmployeeInvitations,
   deletePendingEmployeeInvitations,
@@ -26,7 +27,7 @@ async function validateAssignableRoleId(
   const { data, error } = await findAssignableEmployeeRole(salonId, roleId);
 
   if (error) {
-    console.error("[employees:access]", error);
+    captureError(error, { module: "employees", action: "access" });
     return { ok: false, error: "No se pudo verificar el rol del colaborador." };
   }
 
@@ -57,7 +58,7 @@ export async function replacePendingEmployeeInvitation({
   );
 
   if (deleteInviteError) {
-    console.error("[employees:access]", deleteInviteError);
+    captureError(deleteInviteError, { module: "employees", action: "access" });
     return { ok: false, error: "No se pudo invalidar el enlace anterior del colaborador." };
   }
 
@@ -73,7 +74,7 @@ export async function replacePendingEmployeeInvitation({
   });
 
   if (inviteError) {
-    console.error("[employees:access]", inviteError);
+    captureError(inviteError, { module: "employees", action: "access" });
     return { ok: false, error: "No se pudo generar el nuevo enlace de acceso." };
   }
 
@@ -110,7 +111,7 @@ export async function revokeEmployeeAuthAccess(
   );
 
   if (profileError) {
-    console.error("[employees:access]", profileError);
+    captureError(profileError, { module: "employees", action: "access" });
     return { ok: false, error: "No se pudo verificar el acceso actual del colaborador." };
   }
 
@@ -120,14 +121,14 @@ export async function revokeEmployeeAuthAccess(
 
   const { error: deleteUserError } = await deleteEmployeeAuthUser(profileId);
   if (deleteUserError) {
-    console.error("[employees:access]", deleteUserError);
+    captureError(deleteUserError, { module: "employees", action: "access" });
     return { ok: false, error: "No se pudo revocar la cuenta anterior del colaborador." };
   }
 
   const { error: unlinkError } = await unlinkEmployeeProfile(employeeId, salonId);
 
   if (unlinkError) {
-    console.error("[employees:access]", unlinkError);
+    captureError(unlinkError, { module: "employees", action: "access" });
     return { ok: false, error: "La cuenta fue revocada, pero no se pudo desvincular el colaborador." };
   }
 
@@ -150,7 +151,7 @@ export async function revokeEmployeeAccessForArchive({
     );
 
     if (profileError) {
-      console.error("[employees:access]", profileError);
+      captureError(profileError, { module: "employees", action: "access" });
       return { ok: false, error: "Error al verificar el acceso del colaborador." };
     }
 
@@ -160,7 +161,7 @@ export async function revokeEmployeeAccessForArchive({
 
     const { error: authDeleteError } = await deleteEmployeeAuthUser(profileId);
     if (authDeleteError) {
-      console.error("[employees:access]", authDeleteError);
+      captureError(authDeleteError, { module: "employees", action: "access" });
       return { ok: false, error: "No se pudo revocar el acceso del colaborador." };
     }
   }
@@ -168,7 +169,7 @@ export async function revokeEmployeeAccessForArchive({
   const { error: inviteCleanupError } = await deleteEmployeeInvitations(employeeId, salonId);
 
   if (inviteCleanupError) {
-    console.error("[employees:access]", inviteCleanupError);
+    captureError(inviteCleanupError, { module: "employees", action: "access" });
     return { ok: false, error: "No se pudo limpiar la invitación del colaborador." };
   }
 
@@ -190,7 +191,7 @@ export async function changeEmployeeRole(
   );
 
   if (error) {
-    console.error("[employees:access]", error);
+    captureError(error, { module: "employees", action: "access" });
     return { ok: false, error: "Error al cambiar el rol." };
   }
 
