@@ -104,7 +104,10 @@ const ManualExtraSchema = z.object({
 // paginas dentro del mismo request; una sola lectura alimenta a todos.
 export const getEffectiveSalonPlan = cache(async (salonId: string): Promise<EffectiveSalonPlan> => {
   const rows = await findEffectivePlanRows(salonId);
-  const activeAssignment = rows.assignment?.status === "trialing" || rows.assignment?.status === "active";
+  const activeAssignment =
+    rows.assignment?.status === "trialing" ||
+    rows.assignment?.status === "active" ||
+    rows.assignment?.status === "past_due";
   const plan = activeAssignment ? rows.plan : null;
   const enabled = resolveEnabledModules(plan, rows.overrides);
 

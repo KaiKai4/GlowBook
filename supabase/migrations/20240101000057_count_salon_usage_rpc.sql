@@ -2,8 +2,8 @@
 -- metrica con limite ejecutaba su propio count (N round-trips por request).
 -- El backend calcula las ventanas de ciclo (logica de negocio) y esta funcion
 -- solo cuenta; recibe [{ key, counter, from, to }] y devuelve { key: count }.
-create or replace function count_salon_usage(p_salon_id uuid, p_counters jsonb)
-returns jsonb language plpgsql stable as $$
+create or replace function public.count_salon_usage(p_salon_id uuid, p_counters jsonb)
+returns jsonb language plpgsql stable set search_path = public as $$
 declare
   item jsonb;
   result jsonb := '{}'::jsonb;
@@ -72,4 +72,5 @@ begin
 end $$;
 
 -- Solo el backend (service_role) consulta uso: sin acceso desde el browser.
-revoke execute on function count_salon_usage(uuid, jsonb) from public, anon, authenticated;
+revoke execute on function public.count_salon_usage(uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.count_salon_usage(uuid, jsonb) to service_role;

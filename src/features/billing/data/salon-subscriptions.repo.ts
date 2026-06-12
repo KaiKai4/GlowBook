@@ -16,7 +16,6 @@ import {
   assertOk,
   selectRows,
   selectWhere,
-  type UntypedQuery,
   type UntypedSupabase,
 } from "./billing-db";
 import { findPlanWithChildren, findActiveMetrics } from "./commercial-plans.repo";

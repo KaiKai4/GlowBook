@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       appointment_items: {
@@ -257,6 +232,263 @@ export type Database = {
           },
         ]
       }
+      commercial_addons: {
+        Row: {
+          code: string
+          created_at: string
+          currency: string
+          description: string
+          id: string
+          kind: string
+          limit_delta: number | null
+          metric_key: string | null
+          module_key: string | null
+          monthly_price: number
+          name: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          kind: string
+          limit_delta?: number | null
+          metric_key?: string | null
+          module_key?: string | null
+          monthly_price?: number
+          name: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          kind?: string
+          limit_delta?: number | null
+          metric_key?: string | null
+          module_key?: string | null
+          monthly_price?: number
+          name?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_addons_metric_key_fkey"
+            columns: ["metric_key"]
+            isOneToOne: false
+            referencedRelation: "commercial_limit_metrics"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "commercial_addons_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "platform_modules"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      commercial_limit_metrics: {
+        Row: {
+          counter_key: string
+          created_at: string
+          default_count_scope: string
+          description: string
+          is_active: boolean
+          is_archived: boolean
+          key: string
+          module_key: string
+          name: string
+          sort_order: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          counter_key: string
+          created_at?: string
+          default_count_scope?: string
+          description?: string
+          is_active?: boolean
+          is_archived?: boolean
+          key: string
+          module_key: string
+          name: string
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          counter_key?: string
+          created_at?: string
+          default_count_scope?: string
+          description?: string
+          is_active?: boolean
+          is_archived?: boolean
+          key?: string
+          module_key?: string
+          name?: string
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_limit_metrics_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "platform_modules"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      commercial_plan_limits: {
+        Row: {
+          count_scope: string
+          created_at: string
+          enforcement_mode: string
+          id: string
+          max_value: number | null
+          metric_key: string
+          plan_id: string
+          updated_at: string
+          warning_threshold: number
+        }
+        Insert: {
+          count_scope?: string
+          created_at?: string
+          enforcement_mode?: string
+          id?: string
+          max_value?: number | null
+          metric_key: string
+          plan_id: string
+          updated_at?: string
+          warning_threshold?: number
+        }
+        Update: {
+          count_scope?: string
+          created_at?: string
+          enforcement_mode?: string
+          id?: string
+          max_value?: number | null
+          metric_key?: string
+          plan_id?: string
+          updated_at?: string
+          warning_threshold?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_plan_limits_metric_key_fkey"
+            columns: ["metric_key"]
+            isOneToOne: false
+            referencedRelation: "commercial_limit_metrics"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "commercial_plan_limits_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_plan_modules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          module_key: string
+          plan_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_key: string
+          plan_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_key?: string
+          plan_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_plan_modules_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "platform_modules"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "commercial_plan_modules_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_plans: {
+        Row: {
+          code: string
+          created_at: string
+          currency: string
+          description: string
+          id: string
+          is_public: boolean
+          monthly_price: number
+          name: string
+          sort_order: number
+          status: string
+          trial_days: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          is_public?: boolean
+          monthly_price?: number
+          name: string
+          sort_order?: number
+          status?: string
+          trial_days?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          is_public?: boolean
+          monthly_price?: number
+          name?: string
+          sort_order?: number
+          status?: string
+          trial_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           birth_date: string | null
@@ -270,7 +502,7 @@ export type Database = {
           notes: string
           phone: string | null
           salon_id: string
-          search_name: string
+          search_name: string | null
           updated_at: string
         }
         Insert: {
@@ -285,7 +517,7 @@ export type Database = {
           notes?: string
           phone?: string | null
           salon_id: string
-          search_name?: never
+          search_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -300,7 +532,7 @@ export type Database = {
           notes?: string
           phone?: string | null
           salon_id?: string
-          search_name?: never
+          search_name?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -514,6 +746,56 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          concept: string | null
+          created_at: string
+          custom_category: string | null
+          expense_date: string
+          id: string
+          note: string | null
+          salon_id: string
+          updated_at: string
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          concept?: string | null
+          created_at?: string
+          custom_category?: string | null
+          expense_date?: string
+          id?: string
+          note?: string | null
+          salon_id: string
+          updated_at?: string
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          concept?: string | null
+          created_at?: string
+          custom_category?: string | null
+          expense_date?: string
+          id?: string
+          note?: string | null
+          salon_id?: string
+          updated_at?: string
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback_reports: {
         Row: {
           category: string
@@ -552,6 +834,260 @@ export type Database = {
           },
           {
             foreignKeyName: "feedback_reports_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          movement_type: string
+          note: string | null
+          product_id: string
+          quantity_after: number
+          quantity_delta: number
+          reference_id: string | null
+          reference_type: string | null
+          salon_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          movement_type: string
+          note?: string | null
+          product_id: string
+          quantity_after: number
+          quantity_delta: number
+          reference_id?: string | null
+          reference_type?: string | null
+          salon_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          movement_type?: string
+          note?: string | null
+          product_id?: string
+          quantity_after?: number
+          quantity_delta?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_products: {
+        Row: {
+          category: string | null
+          cost_price: number
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          is_retail_enabled: boolean
+          name: string
+          sale_price: number
+          salon_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          cost_price?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_retail_enabled?: boolean
+          name: string
+          sale_price?: number
+          salon_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          cost_price?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_retail_enabled?: boolean
+          name?: string
+          sale_price?: number
+          salon_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_products_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_purchase_items: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          product_id: string
+          purchase_id: string
+          quantity: number
+          salon_id: string
+          total_cost: number
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          product_id: string
+          purchase_id: string
+          quantity: number
+          salon_id: string
+          total_cost?: number
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          product_id?: string
+          purchase_id?: string
+          quantity?: number
+          salon_id?: string
+          total_cost?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_purchase_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_purchase_items_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_purchases: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          purchase_date: string
+          salon_id: string
+          supplier_name: string | null
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          purchase_date?: string
+          salon_id: string
+          supplier_name?: string | null
+          total_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          purchase_date?: string
+          salon_id?: string
+          supplier_name?: string | null
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_purchases_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_stock_locations: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          minimum_quantity: number
+          product_id: string
+          quantity: number
+          salon_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          minimum_quantity?: number
+          product_id: string
+          quantity?: number
+          salon_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          minimum_quantity?: number
+          product_id?: string
+          quantity?: number
+          salon_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_stock_locations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_stock_locations_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
@@ -684,6 +1220,45 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_modules: {
+        Row: {
+          created_at: string
+          description: string
+          icon_name: string
+          is_active: boolean
+          is_archived: boolean
+          key: string
+          name: string
+          nav_href: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          icon_name?: string
+          is_active?: boolean
+          is_archived?: boolean
+          key: string
+          name: string
+          nav_href?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon_name?: string
+          is_active?: boolean
+          is_archived?: boolean
+          key?: string
+          name?: string
+          nav_href?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -725,6 +1300,115 @@ export type Database = {
           },
           {
             foreignKeyName: "profiles_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_sale_items: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          product_id: string
+          quantity: number
+          sale_id: string
+          salon_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          product_id: string
+          quantity: number
+          sale_id: string
+          salon_id: string
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          product_id?: string
+          quantity?: number
+          sale_id?: string
+          salon_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "retail_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_sale_items_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_sales: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          note: string | null
+          payment_method: string
+          sale_date: string
+          salon_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          note?: string | null
+          payment_method?: string
+          sale_date?: string
+          salon_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          note?: string | null
+          payment_method?: string
+          sale_date?: string
+          salon_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_sales_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
@@ -807,6 +1491,50 @@ export type Database = {
           },
         ]
       }
+      salon_activity_log: {
+        Row: {
+          action: string
+          actor_email: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          record_id: string | null
+          record_label: string
+          salon_id: string
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          record_id?: string | null
+          record_label?: string
+          salon_id: string
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          record_id?: string | null
+          record_label?: string
+          salon_id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_activity_log_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salon_business_hours: {
         Row: {
           close_time: string | null
@@ -841,50 +1569,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "salon_business_hours_salon_id_fkey"
-            columns: ["salon_id"]
-            isOneToOne: false
-            referencedRelation: "salons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      salon_activity_log: {
-        Row: {
-          id: string
-          salon_id: string
-          actor_id: string | null
-          actor_email: string
-          table_name: string
-          action: string
-          record_id: string | null
-          record_label: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          salon_id: string
-          actor_id?: string | null
-          actor_email?: string
-          table_name: string
-          action: string
-          record_id?: string | null
-          record_label?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          salon_id?: string
-          actor_id?: string | null
-          actor_email?: string
-          table_name?: string
-          action?: string
-          record_id?: string | null
-          record_label?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salon_activity_log_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
@@ -931,7 +1615,288 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "salon_invitations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "salon_invitations_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salon_plan_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          metric_key: string | null
+          module_key: string | null
+          plan_id: string | null
+          salon_id: string
+          severity: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          metric_key?: string | null
+          module_key?: string | null
+          plan_id?: string | null
+          salon_id: string
+          severity?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          metric_key?: string | null
+          module_key?: string | null
+          plan_id?: string | null
+          salon_id?: string
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_plan_alerts_metric_key_fkey"
+            columns: ["metric_key"]
+            isOneToOne: false
+            referencedRelation: "commercial_limit_metrics"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "salon_plan_alerts_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "platform_modules"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "salon_plan_alerts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salon_plan_alerts_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salon_plan_assignments: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          ends_at: string | null
+          id: string
+          notes: string
+          plan_id: string
+          salon_id: string
+          starts_at: string | null
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ends_at?: string | null
+          id?: string
+          notes?: string
+          plan_id: string
+          salon_id: string
+          starts_at?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ends_at?: string | null
+          id?: string
+          notes?: string
+          plan_id?: string
+          salon_id?: string
+          starts_at?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_plan_assignments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salon_plan_assignments_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: true
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salon_plan_overrides: {
+        Row: {
+          addon_id: string | null
+          created_at: string
+          ends_at: string | null
+          enforcement_mode: string | null
+          id: string
+          is_gift: boolean
+          max_delta: number | null
+          max_override: number | null
+          metric_key: string | null
+          module_enabled: boolean | null
+          module_key: string | null
+          price_override: number | null
+          quantity: number
+          reason: string
+          salon_id: string
+          starts_at: string | null
+          status: string
+          updated_at: string
+          warning_threshold: number | null
+        }
+        Insert: {
+          addon_id?: string | null
+          created_at?: string
+          ends_at?: string | null
+          enforcement_mode?: string | null
+          id?: string
+          is_gift?: boolean
+          max_delta?: number | null
+          max_override?: number | null
+          metric_key?: string | null
+          module_enabled?: boolean | null
+          module_key?: string | null
+          price_override?: number | null
+          quantity?: number
+          reason?: string
+          salon_id: string
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+          warning_threshold?: number | null
+        }
+        Update: {
+          addon_id?: string | null
+          created_at?: string
+          ends_at?: string | null
+          enforcement_mode?: string | null
+          id?: string
+          is_gift?: boolean
+          max_delta?: number | null
+          max_override?: number | null
+          metric_key?: string | null
+          module_enabled?: boolean | null
+          module_key?: string | null
+          price_override?: number | null
+          quantity?: number
+          reason?: string
+          salon_id?: string
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+          warning_threshold?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_plan_overrides_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salon_plan_overrides_metric_key_fkey"
+            columns: ["metric_key"]
+            isOneToOne: false
+            referencedRelation: "commercial_limit_metrics"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "salon_plan_overrides_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "platform_modules"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "salon_plan_overrides_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salon_plan_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string
+          paid_at: string
+          period_end: string
+          period_start: string
+          plan_id: string | null
+          salon_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string
+          paid_at?: string
+          period_end: string
+          period_start: string
+          plan_id?: string | null
+          salon_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string
+          paid_at?: string
+          period_end?: string
+          period_start?: string
+          plan_id?: string | null
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_plan_payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salon_plan_payments_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
@@ -1176,8 +2141,24 @@ export type Database = {
         }
         Returns: string
       }
+      apply_inventory_stock_delta: {
+        Args: {
+          p_delta: number
+          p_location: string
+          p_movement_type: string
+          p_note?: string
+          p_product_id: string
+          p_reference_id?: string
+          p_reference_type?: string
+          p_salon_id: string
+        }
+        Returns: number
+      }
+      count_salon_usage: {
+        Args: { p_counters: Json; p_salon_id: string }
+        Returns: Json
+      }
       create_appointment: { Args: { payload: Json }; Returns: string }
-      update_appointment: { Args: { payload: Json }; Returns: undefined }
       create_salon_with_owner:
         | {
             Args: {
@@ -1200,19 +2181,6 @@ export type Database = {
       }
       has_permission: { Args: { perm: string }; Returns: boolean }
       invite_salon: { Args: { p_email: string }; Returns: string }
-      count_salon_usage: {
-        Args: { p_salon_id: string; p_counters: Json }
-        Returns: Json
-      }
-      report_monthly_history: {
-        Args: {
-          p_salon_id: string
-          p_start: string
-          p_end: string
-          p_timezone: string
-        }
-        Returns: Json
-      }
       is_owner: { Args: never; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       platform_salon_overviews: {
@@ -1235,7 +2203,53 @@ export type Database = {
           service_count: number
         }[]
       }
+      record_inventory_purchase: {
+        Args: {
+          p_note?: string
+          p_product_id: string
+          p_purchase_date: string
+          p_quantity: number
+          p_salon_id: string
+          p_supplier_name: string
+          p_unit_cost: number
+        }
+        Returns: string
+      }
+      record_inventory_transfer: {
+        Args: {
+          p_from_location: string
+          p_note?: string
+          p_product_id: string
+          p_quantity: number
+          p_salon_id: string
+          p_to_location: string
+        }
+        Returns: undefined
+      }
+      record_retail_sale: {
+        Args: {
+          p_customer_id: string
+          p_location: string
+          p_note?: string
+          p_payment_method: string
+          p_product_id: string
+          p_quantity: number
+          p_salon_id: string
+          p_unit_price: number
+        }
+        Returns: string
+      }
+      report_monthly_history: {
+        Args: {
+          p_end: string
+          p_salon_id: string
+          p_start: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
       salon_id: { Args: never; Returns: string }
+      update_appointment: { Args: { payload: Json }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
@@ -1364,9 +2378,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

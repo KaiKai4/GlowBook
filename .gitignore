@@ -47,3 +47,5 @@ next-env.d.ts
 # skills CLI (local installations)
 /.agents/
 /skills-lock.json
+
+.vercel

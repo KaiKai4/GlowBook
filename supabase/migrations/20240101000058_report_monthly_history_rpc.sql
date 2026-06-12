@@ -5,7 +5,7 @@
 -- security invoker: las politicas RLS del usuario que consulta siguen aplicando
 -- (aislamiento por salon y visibilidad por colaborador identicos a las queries
 -- directas que reemplaza).
-create or replace function report_monthly_history(
+create or replace function public.report_monthly_history(
   p_salon_id uuid,
   p_start timestamptz,
   p_end timestamptz,
@@ -103,3 +103,8 @@ create or replace function report_monthly_history(
     ), '[]'::jsonb)
   );
 $$;
+
+revoke execute on function public.report_monthly_history(uuid, timestamptz, timestamptz, text)
+  from public, anon;
+grant execute on function public.report_monthly_history(uuid, timestamptz, timestamptz, text)
+  to authenticated, service_role;
