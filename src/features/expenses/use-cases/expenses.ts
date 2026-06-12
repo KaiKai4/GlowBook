@@ -1,15 +1,20 @@
 import { err, ok, type Result } from "@/lib/result";
 import type { CreateExpenseInput } from "../schemas";
-import { findExpenses, insertExpense } from "../data/expenses.repo";
+import {
+  findExpenses,
+  findLifetimeExpenseTotals,
+  insertExpense,
+} from "../data/expenses.repo";
 import { getInventoryPurchaseExpenseHistory } from "@/features/inventory/use-cases/inventory-purchase-expenses";
 import { recordInventoryPurchase } from "@/features/inventory/use-cases/inventory-movements";
 import type { InventoryPurchaseInput } from "@/features/inventory/schemas";
 
 export interface ExpensesPageView {
   history: ExpenseHistoryItem[];
+  /** Egresos del mes calendario en curso. */
   monthTotal: number;
-  manualTotal: number;
-  inventoryPurchaseTotal: number;
+  /** Egresos acumulados de toda la vida del salon (manuales + compras). */
+  lifetimeTotal: number;
 }
 
 export interface ExpenseHistoryItem {
@@ -25,9 +30,10 @@ export interface ExpenseHistoryItem {
 }
 
 export async function getExpensesPage(salonId: string): Promise<ExpensesPageView> {
-  const [expenses, inventoryPurchaseExpenses] = await Promise.all([
+  const [expenses, inventoryPurchaseExpenses, lifetimeTotals] = await Promise.all([
     findExpenses(salonId),
     getInventoryPurchaseExpenseHistory(salonId),
+    findLifetimeExpenseTotals(salonId),
   ]);
 
   const manualHistory: ExpenseHistoryItem[] = expenses.map((expense) => ({
@@ -72,8 +78,7 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
   return {
     history,
     monthTotal,
-    manualTotal: manualHistory.reduce((sum, expense) => sum + expense.amount, 0),
-    inventoryPurchaseTotal: purchaseHistory.reduce((sum, expense) => sum + expense.amount, 0),
+    lifetimeTotal: lifetimeTotals.total,
   };
 }
 

@@ -3,6 +3,7 @@ import { getExternalOperationalMoney } from "@/features/finance/use-cases/operat
 import {
   findHistoricalReportRows,
   findOperationalReportRows,
+  findSalonReportIdentity,
   findSalonTimezone,
 } from "../data/reports.repo";
 import { getOperationalReport, getOperationalReportPeriod } from "./get-operational-report";
@@ -14,6 +15,7 @@ vi.mock("@/features/finance/use-cases/operational-money", () => ({
 vi.mock("../data/reports.repo", () => ({
   findHistoricalReportRows: vi.fn(),
   findOperationalReportRows: vi.fn(),
+  findSalonReportIdentity: vi.fn(),
   findSalonTimezone: vi.fn(),
 }));
 
@@ -21,11 +23,17 @@ const mockedExternalMoney = vi.mocked(getExternalOperationalMoney);
 const mockedRows = vi.mocked(findOperationalReportRows);
 const mockedHistoricalRows = vi.mocked(findHistoricalReportRows);
 const mockedTimezone = vi.mocked(findSalonTimezone);
+const mockedIdentity = vi.mocked(findSalonReportIdentity);
 
 describe("get operational report", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedTimezone.mockResolvedValue("UTC");
+    mockedIdentity.mockResolvedValue({
+      name: "Glow Studio",
+      timezone: "UTC",
+      created_at: "2026-01-01T00:00:00.000Z",
+    });
     mockedExternalMoney.mockResolvedValue({
       retailRevenue: 25,
       manualExpenses: 10,

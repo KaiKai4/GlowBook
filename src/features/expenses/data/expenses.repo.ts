@@ -39,6 +39,17 @@ export interface ExpenseRow {
   created_at: string;
 }
 
+interface HistoricalExpensePayload {
+  expenseGroups?: Array<{ amount: number }> | null;
+  purchaseMonths?: Array<{ amount: number }> | null;
+}
+
+export interface LifetimeExpenseTotals {
+  manual: number;
+  inventoryPurchases: number;
+  total: number;
+}
+
 export async function insertExpense(
   salonId: string,
   input: {
@@ -76,6 +87,36 @@ export async function findExpenses(salonId: string, limit = 40): Promise<Expense
 
   if (error) throw error;
   return (data ?? []) as ExpenseRow[];
+}
+
+export async function findLifetimeExpenseTotals(
+  salonId: string
+): Promise<LifetimeExpenseTotals> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("report_monthly_history", {
+    p_salon_id: salonId,
+    p_start: "0001-01-01T00:00:00.000Z",
+    p_end: "9999-12-31T23:59:59.999Z",
+    p_timezone: "UTC",
+  });
+
+  if (error) throw error;
+
+  const history = (data ?? {}) as HistoricalExpensePayload;
+  const manual = (history.expenseGroups ?? []).reduce(
+    (sum, group) => sum + Number(group.amount ?? 0),
+    0
+  );
+  const inventoryPurchases = (history.purchaseMonths ?? []).reduce(
+    (sum, month) => sum + Number(month.amount ?? 0),
+    0
+  );
+
+  return {
+    manual,
+    inventoryPurchases,
+    total: manual + inventoryPurchases,
+  };
 }
 
 export async function sumExpensesTotal(

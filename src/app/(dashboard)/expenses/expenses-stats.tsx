@@ -1,14 +1,13 @@
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
 import { formatCurrency } from "@/lib/utils/dates";
 
+// Mensual y acumulado lado a lado: sin ambiguedad sobre que suma cada cifra.
 export function ExpensesStats({ expenses }: { expenses: ExpensesPageView }) {
-  const total = expenses.history.reduce((sum, item) => sum + item.amount, 0);
-
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <Metric label="Egresos este mes" value={formatCurrency(expenses.monthTotal)} />
-      <Metric label="Registros" value={expenses.history.length} />
-      <Metric label="Total listado" value={formatCurrency(total)} />
+      <Metric label="Egresos históricos" value={formatCurrency(expenses.lifetimeTotal)} />
+      <Metric label="Movimientos (histórico)" value={expenses.history.length} />
     </div>
   );
 }

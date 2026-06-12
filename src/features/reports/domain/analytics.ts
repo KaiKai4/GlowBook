@@ -143,6 +143,160 @@ function inventoryAlert(product: InventoryAlertProduct): InventoryAlert {
   };
 }
 
+export interface LifetimeReportTotals {
+  appointmentRevenue: number;
+  retailRevenue: number;
+  grossRevenue: number;
+  operationalExpenses: number;
+  inventoryPurchases: number;
+  totalExpenses: number;
+  estimatedProfit: number;
+  completedAppointments: number;
+}
+
+// Acumulado de toda la vida del salon: el contraste contra las cards del mes
+// seleccionado. Respeta los modulos activos igual que las metricas mensuales.
+export function calculateLifetimeTotals(
+  input: Pick<
+    HistoricalAnalyticsInput,
+    "appointmentMonths" | "retailMonths" | "expenseGroups" | "purchaseMonths" | "modules"
+  >
+): LifetimeReportTotals {
+  const appointmentRevenue = input.appointmentMonths.reduce(
+    (sum, bucket) => sum + bucket.completedRevenue,
+    0
+  );
+  const completedAppointments = input.appointmentMonths.reduce(
+    (sum, bucket) => sum + bucket.completedCount,
+    0
+  );
+  const retailRevenue = input.modules.retail
+    ? input.retailMonths.reduce((sum, bucket) => sum + bucket.amount, 0)
+    : 0;
+  const operationalExpenses = input.modules.expenses
+    ? input.expenseGroups.reduce((sum, group) => sum + group.amount, 0)
+    : 0;
+  const inventoryPurchases = input.modules.inventory
+    ? input.purchaseMonths.reduce((sum, bucket) => sum + bucket.amount, 0)
+    : 0;
+
+  const grossRevenue = appointmentRevenue + retailRevenue;
+  const totalExpenses = operationalExpenses + inventoryPurchases;
+
+  return {
+    appointmentRevenue,
+    retailRevenue,
+    grossRevenue,
+    operationalExpenses,
+    inventoryPurchases,
+    totalExpenses,
+    estimatedProfit: grossRevenue - totalExpenses,
+    completedAppointments,
+  };
+}
+
+export interface MonthlyExportRow {
+  monthKey: string;
+  completedAppointments: number;
+  appointmentRevenue: number;
+  retailRevenue: number;
+  grossRevenue: number;
+  operationalExpenses: number;
+  inventoryPurchases: number;
+  totalExpenses: number;
+  profit: number;
+}
+
+function monthKeyRange(firstKey: string, lastKey: string): string[] {
+  const [firstYear, firstMonth] = firstKey.split("-").map(Number);
+  const [lastYear, lastMonth] = lastKey.split("-").map(Number);
+  const start = firstYear * 12 + (firstMonth - 1);
+  const end = lastYear * 12 + (lastMonth - 1);
+  if (end < start) return [];
+
+  return Array.from({ length: end - start + 1 }, (_, index) => {
+    const absolute = start + index;
+    const year = Math.floor(absolute / 12);
+    const month = (absolute % 12) + 1;
+    return `${year}-${String(month).padStart(2, "0")}`;
+  });
+}
+
+/**
+ * Filas mensuales para la exportacion: cubre desde el primer mes con
+ * actividad hasta el mes actual, incluyendo meses sin movimientos (en cero)
+ * para que la serie sea continua en la hoja de calculo.
+ */
+export function buildMonthlyExportRows(
+  input: Pick<
+    HistoricalAnalyticsInput,
+    "appointmentMonths" | "retailMonths" | "expenseGroups" | "purchaseMonths" | "modules"
+  >,
+  currentMonthKey: string
+): MonthlyExportRow[] {
+  const keys = [
+    ...input.appointmentMonths.map((bucket) => bucket.monthKey),
+    ...(input.modules.retail ? input.retailMonths.map((bucket) => bucket.monthKey) : []),
+    ...(input.modules.expenses ? input.expenseGroups.map((group) => group.monthKey) : []),
+    ...(input.modules.inventory ? input.purchaseMonths.map((bucket) => bucket.monthKey) : []),
+  ];
+  if (keys.length === 0) return [];
+
+  const firstKey = keys.reduce((min, key) => (key < min ? key : min));
+  const lastKey = keys.reduce(
+    (max, key) => (key > max ? key : max),
+    currentMonthKey
+  );
+
+  const rows = new Map<string, MonthlyExportRow>(
+    monthKeyRange(firstKey, lastKey).map((monthKey) => [
+      monthKey,
+      {
+        monthKey,
+        completedAppointments: 0,
+        appointmentRevenue: 0,
+        retailRevenue: 0,
+        grossRevenue: 0,
+        operationalExpenses: 0,
+        inventoryPurchases: 0,
+        totalExpenses: 0,
+        profit: 0,
+      },
+    ])
+  );
+
+  for (const bucket of input.appointmentMonths) {
+    const row = rows.get(bucket.monthKey);
+    if (!row) continue;
+    row.completedAppointments += bucket.completedCount;
+    row.appointmentRevenue += bucket.completedRevenue;
+  }
+  if (input.modules.retail) {
+    for (const bucket of input.retailMonths) {
+      const row = rows.get(bucket.monthKey);
+      if (row) row.retailRevenue += bucket.amount;
+    }
+  }
+  if (input.modules.expenses) {
+    for (const group of input.expenseGroups) {
+      const row = rows.get(group.monthKey);
+      if (row) row.operationalExpenses += group.amount;
+    }
+  }
+  if (input.modules.inventory) {
+    for (const bucket of input.purchaseMonths) {
+      const row = rows.get(bucket.monthKey);
+      if (row) row.inventoryPurchases += bucket.amount;
+    }
+  }
+
+  return [...rows.values()].map((row) => {
+    const grossRevenue = row.appointmentRevenue + row.retailRevenue;
+    const totalExpenses = row.operationalExpenses + row.inventoryPurchases;
+    return { ...row, grossRevenue, totalExpenses, profit: grossRevenue - totalExpenses };
+  });
+}
+
 export function calculateHistoricalReportAnalytics({
   appointmentMonths,
   busyHours,

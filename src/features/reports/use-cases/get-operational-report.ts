@@ -4,11 +4,14 @@ import { getExternalOperationalMoney } from "@/features/finance/use-cases/operat
 import {
   findHistoricalReportRows,
   findOperationalReportRows,
+  findSalonReportIdentity,
   findSalonTimezone,
 } from "../data/reports.repo";
 import {
   calculateHistoricalReportAnalytics,
+  calculateLifetimeTotals,
   type HistoricalReportAnalytics,
+  type LifetimeReportTotals,
   type ReportModuleAvailability,
 } from "../domain/analytics";
 import {
@@ -30,6 +33,8 @@ export interface OperationalReportPeriodViewModel extends OperationalReportMetri
 
 export interface OperationalReportViewModel extends OperationalReportPeriodViewModel {
   analytics: HistoricalReportAnalytics;
+  /** Acumulado de toda la vida del salon: contraste contra el mes elegido. */
+  lifetime: LifetimeReportTotals;
 }
 
 export interface GetOperationalReportInput {
@@ -68,7 +73,7 @@ export async function getOperationalReport({
   now = new Date(),
 }: GetOperationalReportInput): Promise<OperationalReportViewModel> {
   const timezone = (await findSalonTimezone(salonId)) ?? DEFAULT_REPORT_TIMEZONE;
-  const [period, analytics] = await Promise.all([
+  const [period, analytics, lifetime] = await Promise.all([
     getOperationalReportPeriod({
       salonId,
       filters,
@@ -77,9 +82,40 @@ export async function getOperationalReport({
       timezone,
     }),
     getHistoricalAnalytics({ salonId, modules, now, timezone }),
+    getLifetimeTotals({ salonId, modules, now, timezone }),
   ]);
 
-  return { ...period, analytics };
+  return { ...period, analytics, lifetime };
+}
+
+/**
+ * Acumulado historico real: trae los buckets agregados desde la creacion del
+ * salon hasta hoy (un solo round-trip, agregado en SQL) y los suma.
+ */
+export async function getLifetimeTotals({
+  salonId,
+  modules,
+  now,
+  timezone,
+}: {
+  salonId: string;
+  modules: ReportModuleAvailability;
+  now: Date;
+  timezone: string;
+}): Promise<LifetimeReportTotals> {
+  const identity = await findSalonReportIdentity(salonId);
+  const fromDate = (identity?.created_at ?? "2024-01-01").slice(0, 10);
+  const toDate = localDateString(now, timezone);
+  const bounds = utcBounds(fromDate, toDate, timezone);
+
+  const rows = await findHistoricalReportRows({
+    salonId,
+    start: bounds.start,
+    end: bounds.end,
+    timezone,
+  });
+
+  return calculateLifetimeTotals({ ...rows, modules });
 }
 
 interface GetOperationalReportPeriodInternalInput extends GetOperationalReportInput {

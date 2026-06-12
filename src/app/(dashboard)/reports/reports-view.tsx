@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   BarChart3,
   CalendarCheck,
+  Download,
   CalendarClock,
   CalendarX,
   CircleDollarSign,
@@ -83,15 +84,26 @@ export function ReportsView(report: OperationalReportViewModel) {
           </h1>
           <p className="mt-1 text-sm capitalize text-stone-500">{monthLabel(month)}</p>
         </div>
-        <DatePicker
-          label="Mes de las métricas"
-          value={month}
-          onChange={changeMonth}
-          disabled={pending}
-          granularity="month"
-          className="min-w-52"
-          ariaLabel="Seleccionar mes de las métricas"
-        />
+        <div className="flex flex-wrap items-end gap-2">
+          <DatePicker
+            label="Mes de las métricas"
+            value={month}
+            onChange={changeMonth}
+            disabled={pending}
+            granularity="month"
+            className="min-w-52"
+            ariaLabel="Seleccionar mes de las métricas"
+          />
+          {/* Descarga todo el histórico (por mes + totales), no solo el mes visible. */}
+          <a
+            href="/api/reports/export"
+            download
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-brand-200 bg-white px-4 text-sm font-semibold text-brand-700 shadow-sm transition-colors hover:bg-brand-50"
+          >
+            <Download className="h-4 w-4" />
+            Exportar Excel
+          </a>
+        </div>
       </header>
 
       <div className="rounded-xl border border-brand-100 bg-white">
@@ -140,15 +152,15 @@ export function ReportsView(report: OperationalReportViewModel) {
 function SummaryTab({ report }: { report: OperationalReportViewModel }) {
   const cards = [
     {
-      label: "Ingresos totales",
+      label: "Ingresos del mes",
       value: formatCurrency(report.grossRevenue),
-      detail: report.modules.retail ? "Citas y vitrina" : "Citas completadas",
+      detail: report.modules.retail ? "Citas y vitrina del mes elegido" : "Citas completadas del mes elegido",
       icon: CircleDollarSign,
       tone: "positive" as const,
       visible: true,
     },
     {
-      label: "Egresos totales",
+      label: "Egresos del mes",
       value: formatCurrency(report.totalExpenses),
       detail: expenseSources(report),
       icon: TrendingDown,
@@ -156,9 +168,9 @@ function SummaryTab({ report }: { report: OperationalReportViewModel }) {
       visible: report.modules.expenses || report.modules.inventory,
     },
     {
-      label: "Ganancias totales",
+      label: "Ganancia del mes",
       value: formatCurrency(report.estimatedProfit),
-      detail: "Ingresos menos egresos",
+      detail: "Ingresos menos egresos del mes",
       icon: report.estimatedProfit >= 0 ? TrendingUp : TrendingDown,
       tone: report.estimatedProfit >= 0 ? "positive" as const : "negative" as const,
       visible: true,
@@ -166,7 +178,7 @@ function SummaryTab({ report }: { report: OperationalReportViewModel }) {
     {
       label: "Citas completadas",
       value: report.completedCount.toString(),
-      detail: "Durante el mes",
+      detail: "Durante el mes elegido",
       icon: CalendarCheck,
       tone: "brand" as const,
       visible: true,
@@ -184,6 +196,7 @@ function SummaryTab({ report }: { report: OperationalReportViewModel }) {
   return (
     <div className="space-y-5">
       <MetricGrid cards={cards} />
+      <LifetimeTotalsStrip report={report} />
       <MonthlyAreaChart
         title="Ingresos vs. egresos"
         description="Comparación mensual de los últimos 12 meses"
@@ -448,6 +461,53 @@ const TONES: Record<MetricTone, { icon: string; surface: string }> = {
   blue: { icon: "text-sky-700", surface: "bg-sky-50" },
   amber: { icon: "text-amber-700", surface: "bg-amber-50" },
 };
+
+// El contraste que evita la ambiguedad mensual-vs-acumulado: misma fila,
+// pero con los totales de toda la vida del salon.
+function LifetimeTotalsStrip({ report }: { report: OperationalReportViewModel }) {
+  const { lifetime } = report;
+  const items = [
+    {
+      label: "Ingresos históricos",
+      value: formatCurrency(lifetime.grossRevenue),
+      visible: true,
+    },
+    {
+      label: "Egresos históricos",
+      value: formatCurrency(lifetime.totalExpenses),
+      visible: report.modules.expenses || report.modules.inventory,
+    },
+    {
+      label: "Ganancia histórica",
+      value: formatCurrency(lifetime.estimatedProfit),
+      visible: true,
+    },
+    {
+      label: "Citas completadas (histórico)",
+      value: lifetime.completedAppointments.toString(),
+      visible: true,
+    },
+  ];
+
+  return (
+    <section
+      aria-label="Acumulado histórico del salón"
+      className="rounded-xl border border-stone-200 bg-stone-50/70 px-5 py-4"
+    >
+      <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
+        Acumulado histórico · desde el inicio del salón
+      </p>
+      <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {items.filter((item) => item.visible).map((item) => (
+          <div key={item.label}>
+            <p className="text-xs font-medium text-stone-500">{item.label}</p>
+            <p className="mt-0.5 text-lg font-bold tabular-nums text-stone-800">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function MetricGrid({ cards }: { cards: MetricCardData[] }) {
   return (

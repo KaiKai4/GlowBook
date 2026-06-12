@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calculateHistoricalReportAnalytics } from "./analytics";
+import {
+  buildMonthlyExportRows,
+  calculateHistoricalReportAnalytics,
+  calculateLifetimeTotals,
+} from "./analytics";
 
 const months = [
   { monthKey: "2026-05", label: "may" },
@@ -122,5 +126,101 @@ describe("historical report analytics", () => {
         state: "bajo",
       },
     ]);
+  });
+});
+
+describe("lifetime report totals", () => {
+  const buckets = {
+    appointmentMonths: [
+      { monthKey: "2026-01", completedRevenue: 100, completedCount: 4 },
+      { monthKey: "2026-06", completedRevenue: 50, completedCount: 2 },
+    ],
+    retailMonths: [{ monthKey: "2026-03", amount: 30 }],
+    expenseGroups: [
+      { monthKey: "2026-02", label: "Alquiler", amount: 20 },
+      { monthKey: "2026-05", label: "Insumos", amount: 10 },
+    ],
+    purchaseMonths: [{ monthKey: "2026-04", amount: 15 }],
+  };
+
+  it("sums every month of history respecting active modules", () => {
+    const totals = calculateLifetimeTotals({
+      ...buckets,
+      modules: { inventory: true, retail: true, expenses: true },
+    });
+
+    expect(totals).toEqual({
+      appointmentRevenue: 150,
+      retailRevenue: 30,
+      grossRevenue: 180,
+      operationalExpenses: 30,
+      inventoryPurchases: 15,
+      totalExpenses: 45,
+      estimatedProfit: 135,
+      completedAppointments: 6,
+    });
+  });
+
+  it("excludes disabled modules from the lifetime totals", () => {
+    const totals = calculateLifetimeTotals({
+      ...buckets,
+      modules: { inventory: false, retail: false, expenses: false },
+    });
+
+    expect(totals.grossRevenue).toBe(150);
+    expect(totals.totalExpenses).toBe(0);
+    expect(totals.estimatedProfit).toBe(150);
+  });
+});
+
+describe("monthly export rows", () => {
+  it("fills the whole range from first activity to the current month", () => {
+    const rows = buildMonthlyExportRows(
+      {
+        appointmentMonths: [{ monthKey: "2026-03", completedRevenue: 100, completedCount: 2 }],
+        retailMonths: [{ monthKey: "2026-05", amount: 40 }],
+        expenseGroups: [{ monthKey: "2026-04", label: "Alquiler", amount: 25 }],
+        purchaseMonths: [],
+        modules: { inventory: true, retail: true, expenses: true },
+      },
+      "2026-06"
+    );
+
+    expect(rows.map((row) => row.monthKey)).toEqual(["2026-03", "2026-04", "2026-05", "2026-06"]);
+    expect(rows[0]).toMatchObject({ appointmentRevenue: 100, grossRevenue: 100, profit: 100 });
+    expect(rows[1]).toMatchObject({ operationalExpenses: 25, totalExpenses: 25, profit: -25 });
+    expect(rows[2]).toMatchObject({ retailRevenue: 40, grossRevenue: 40 });
+    expect(rows[3]).toMatchObject({ grossRevenue: 0, totalExpenses: 0, profit: 0 });
+  });
+
+  it("returns no rows when the salon has no activity at all", () => {
+    const rows = buildMonthlyExportRows(
+      {
+        appointmentMonths: [],
+        retailMonths: [],
+        expenseGroups: [],
+        purchaseMonths: [],
+        modules: { inventory: true, retail: true, expenses: true },
+      },
+      "2026-06"
+    );
+
+    expect(rows).toEqual([]);
+  });
+
+  it("skips data from disabled modules", () => {
+    const rows = buildMonthlyExportRows(
+      {
+        appointmentMonths: [{ monthKey: "2026-06", completedRevenue: 80, completedCount: 1 }],
+        retailMonths: [{ monthKey: "2026-06", amount: 40 }],
+        expenseGroups: [{ monthKey: "2026-06", label: "Alquiler", amount: 25 }],
+        purchaseMonths: [],
+        modules: { inventory: false, retail: false, expenses: false },
+      },
+      "2026-06"
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ grossRevenue: 80, totalExpenses: 0, profit: 80 });
   });
 });

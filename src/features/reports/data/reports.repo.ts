@@ -101,6 +101,27 @@ export async function findSalonTimezone(salonId: string): Promise<string | null>
   return data?.timezone ?? null;
 }
 
+export interface SalonReportIdentity {
+  name: string;
+  timezone: string | null;
+  created_at: string;
+}
+
+/** Identidad para reportes historicos: el created_at acota el rango total. */
+export async function findSalonReportIdentity(
+  salonId: string
+): Promise<SalonReportIdentity | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("salons")
+    .select("name, timezone, created_at")
+    .eq("id", salonId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function findOperationalReportRows({
   salonId,
   start,
