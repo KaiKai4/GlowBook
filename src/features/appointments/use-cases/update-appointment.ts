@@ -3,6 +3,7 @@ import { captureError } from "@/lib/observability";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
+  findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
   updateAppointmentWithRpc,
@@ -62,11 +63,15 @@ export async function updateAppointmentSchedule(
   const startTime = new Date(input.start_time);
   const schedulesCache = new Map<string, WorkSchedule[]>();
   const slotsCache = new Map<string, OccupiedSlot[]>();
+  const exceptionsCache = new Map<string, string[]>();
 
   try {
     for (const { employee } of validAssignments) {
       if (!schedulesCache.has(employee.id)) {
         schedulesCache.set(employee.id, await findEmployeeWorkSchedulesForCommand(employee.id));
+      }
+      if (!exceptionsCache.has(employee.id)) {
+        exceptionsCache.set(employee.id, await findEmployeeExceptionDatesForCommand(employee.id));
       }
 
       const key = `${employee.id}-${startTime.toDateString()}`;
@@ -93,6 +98,7 @@ export async function updateAppointmentSchedule(
     getWorkSchedules: (employeeId) => schedulesCache.get(employeeId) ?? [],
     getOccupiedSlots: (employeeId, date) =>
       slotsCache.get(`${employeeId}-${date.toDateString()}`) ?? [],
+    getExceptionDates: (employeeId) => exceptionsCache.get(employeeId) ?? [],
     excludeAppointmentId: input.appointment_id,
   };
 

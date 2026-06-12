@@ -19,7 +19,7 @@ export default async function PlatformInvitationsPage() {
             Invitaciones
           </h1>
           <p className="mt-0.5 text-sm text-neutral-500">
-            Invita salones con su plan ya definido: al aceptar, el salon nace con los modulos y limites correctos.
+            Invita salones con su plan ya definido: al aceptar, el salon nace con los modulos y límites correctos.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600">

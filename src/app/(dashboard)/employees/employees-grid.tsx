@@ -81,7 +81,7 @@ export function EmployeesGrid({
                 {!employee.is_active && <Badge variant="default" className="ml-1">Inactivo</Badge>}
               </div>
               <p className="truncate text-xs text-stone-400">
-                {employee.categories.length > 0 ? employee.categories.join(" · ") : "Sin categorias"}
+                {employee.categories.length > 0 ? employee.categories.join(" · ") : "Sin categorías"}
               </p>
               <p className="mt-0.5 text-xs font-medium text-brand-500">{employee.serviceCount} servicios</p>
             </div>

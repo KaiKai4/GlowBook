@@ -11,6 +11,7 @@ import { DeleteEmployeeButton } from "./delete-employee-button";
 import { EditEmployeeModal } from "./edit-employee-modal";
 import { EmployeeAccessPanel } from "./employee-access-panel";
 import { WorkScheduleEditor } from "./work-schedule-editor";
+import { ScheduleExceptionsPanel } from "./schedule-exceptions-panel";
 
 export default async function EmployeeDetailPage({
   params,
@@ -105,8 +106,14 @@ export default async function EmployeeDetailPage({
 
         <Card>
           <CardHeader><CardTitle>Disponibilidad</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <WorkScheduleEditor employeeId={view.employee.id} schedules={view.schedules} />
+            <div className="border-t border-stone-100 pt-5">
+              <ScheduleExceptionsPanel
+                employeeId={view.employee.id}
+                exceptions={view.scheduleExceptions}
+              />
+            </div>
           </CardContent>
         </Card>
 

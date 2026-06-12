@@ -11,7 +11,7 @@ import { recordPlatformAction } from "./platform-audit";
 // El plan es obligatorio: el salon debe nacer con su plan asignado para que
 // el owner nunca vea funcionalidades fuera de lo contratado.
 const InviteSchema = z.object({
-  email: z.string().email("Email invalido"),
+  email: z.string().email("Email inválido"),
   planId: z.string().uuid("Selecciona el plan que tendra el salon."),
 });
 

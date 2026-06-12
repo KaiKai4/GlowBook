@@ -26,8 +26,8 @@ export default async function PlatformPlansPage({
           <h1 className="text-3xl font-bold tracking-tight text-neutral-950">Planes y extras</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
             {view === "plans"
-              ? "Crea planes comerciales, activa modulos y define limites maximos por plan."
-              : "Define el catalogo de extras: modulos sueltos y bloques de limite para vender o regalar."}
+              ? "Crea planes comerciales, activa modulos y define límites maximos por plan."
+              : "Define el catalogo de extras: modulos sueltos y bloques de límite para vender o regalar."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

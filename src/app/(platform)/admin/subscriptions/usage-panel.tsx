@@ -18,13 +18,13 @@ export function UsagePanel({
 }: {
   detail: SalonSubscriptionDetail;
   modules: SubscriptionsPageData["modules"];
-  /** Abre el flujo de extras con este limite preseleccionado. */
+  /** Abre el flujo de extras con este límite preseleccionado. */
   onExpandLimit?: (metricKey: string) => void;
 }) {
   if (!detail.plan) {
     return (
       <p className="rounded-xl border border-dashed border-brand-200 bg-white px-4 py-8 text-center text-sm text-stone-400">
-        Asigna un plan para ver el consumo de limites de este salon.
+        Asigna un plan para ver el consumo de límites de este salon.
       </p>
     );
   }
@@ -37,7 +37,7 @@ export function UsagePanel({
         <Panel
           icon={<AlertTriangle className="h-4 w-4" />}
           title="Alertas abiertas"
-          description="Avisos generados por limites alcanzados o cercanos. Resuelvelas cuando ya las atendiste."
+          description="Avisos generados por límites alcanzados o cercanos. Resuelvelas cuando ya las atendiste."
         >
           <div className="divide-y divide-brand-100">
             {detail.openAlerts.map((alert) => (
@@ -65,11 +65,11 @@ export function UsagePanel({
 
       <Panel
         icon={<Gauge className="h-4 w-4" />}
-        title="Consumo de limites"
+        title="Consumo de límites"
         description="Que tanto del plan asignado (mas extras) esta usando este salon."
       >
         {detail.limits.length === 0 ? (
-          <p className="text-sm text-stone-500">El plan no tiene limites configurados.</p>
+          <p className="text-sm text-stone-500">El plan no tiene límites configurados.</p>
         ) : (
           <div className="space-y-4">
             {detail.limits.map((limit) => (
@@ -128,7 +128,7 @@ function UsageBar({
             {limit.used}
           </span>
           {limit.maxValue === null ? (
-            <span className="text-stone-400"> / sin limite</span>
+            <span className="text-stone-400"> / sin límite</span>
           ) : (
             <span className="text-stone-400"> / {limit.maxValue} {limit.metric.unit}</span>
           )}
@@ -162,7 +162,7 @@ function UsageBar({
               onClick={() => onExpandLimit(limit.metric.key)}
               className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline"
             >
-              Ampliar limite con un extra
+              Ampliar límite con un extra
               <ArrowRight className="h-3 w-3" />
             </button>
           ) : null}

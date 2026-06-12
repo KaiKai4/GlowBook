@@ -26,7 +26,7 @@ interface PlansWorkspaceData {
 const PLAN_TABS: Array<{ key: PlanEditorTab; label: string }> = [
   { key: "info", label: "Informacion" },
   { key: "modules", label: "Modulos" },
-  { key: "limits", label: "Limites" },
+  { key: "limits", label: "Límites" },
   { key: "summary", label: "Resumen" },
 ];
 
@@ -139,7 +139,7 @@ export function PlansWorkspace({
                       ) : null}
                     </div>
                     <p className="mt-1 text-sm text-stone-500">
-                      {selectedPlan.description || "Configura informacion, modulos y limites de este plan."}
+                      {selectedPlan.description || "Configura informacion, modulos y límites de este plan."}
                     </p>
                   </div>
                 </div>

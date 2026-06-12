@@ -12,7 +12,7 @@ const TABLE_LABELS: Record<string, string> = {
   inventory_products: "un producto de inventario",
   inventory_movements: "un movimiento de inventario",
   roles: "un rol",
-  salons: "la configuracion del salon",
+  salons: "la configuración del salon",
 };
 
 const ACTION_VERBS: Record<ActivityLogRow["action"], string> = {
@@ -54,7 +54,7 @@ export async function getSalonActivity(): Promise<SalonActivityViewModel> {
 
 function describeAction(row: ActivityLogRow): string {
   const verb = ACTION_VERBS[row.action];
-  if (row.table_name === "salons") return "Actualizo la configuracion del salon";
+  if (row.table_name === "salons") return "Actualizo la configuración del salon";
   const subject = TABLE_LABELS[row.table_name] ?? `un registro de ${row.table_name}`;
   return `${verb} ${subject}`;
 }

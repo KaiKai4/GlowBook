@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
+import { findUpcomingEmployeeExceptions } from "../data/employee-exceptions.repo";
 import { findEmployeeById, findLatestEmployeeInvitation } from "../data/employees.repo";
 import { getEmployeeDetail } from "./get-employee-detail";
 
@@ -12,6 +13,10 @@ vi.mock("../data/employees.repo", () => ({
 
 vi.mock("../data/employee-access.repo", () => ({
   findEmployeeAccessProfile: vi.fn(),
+}));
+
+vi.mock("../data/employee-exceptions.repo", () => ({
+  findUpcomingEmployeeExceptions: vi.fn(),
 }));
 
 vi.mock("@/features/services/use-cases/category-service-options", () => ({
@@ -25,6 +30,7 @@ vi.mock("@/features/access/use-cases/role-options", () => ({
 const mockedFindEmployeeById = vi.mocked(findEmployeeById);
 const mockedFindLatestEmployeeInvitation = vi.mocked(findLatestEmployeeInvitation);
 const mockedFindEmployeeAccessProfile = vi.mocked(findEmployeeAccessProfile);
+const mockedFindUpcomingEmployeeExceptions = vi.mocked(findUpcomingEmployeeExceptions);
 const mockedGetCategoryServiceOptions = vi.mocked(getCategoryServiceOptions);
 const mockedGetAssignableRoleOptions = vi.mocked(getAssignableRoleOptions);
 
@@ -58,6 +64,7 @@ describe("get employee detail", () => {
     mockedFindLatestEmployeeInvitation.mockResolvedValue(null);
     mockedFindEmployeeAccessProfile.mockResolvedValue({ data: null, error: null });
     mockedGetCategoryServiceOptions.mockResolvedValue([]);
+    mockedFindUpcomingEmployeeExceptions.mockResolvedValue([]);
     mockedGetAssignableRoleOptions.mockResolvedValue([]);
   });
 

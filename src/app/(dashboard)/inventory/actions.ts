@@ -99,7 +99,7 @@ export async function transferInventoryStockAction(
 
   const inventory = await getInventoryPage(guarded.value.salonId);
   const product = inventory.products.find((item) => item.id === parsed.data.product_id);
-  if (!product) return { ok: false, error: "Producto invalido." };
+  if (!product) return { ok: false, error: "Producto inválido." };
   if (!product.isRetailEnabled && parsed.data.to_location !== "internal") {
     return { ok: false, error: "Este producto solo puede transferirse de Bodega a Uso interno." };
   }

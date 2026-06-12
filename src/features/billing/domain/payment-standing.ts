@@ -10,7 +10,7 @@ export interface PaymentStanding {
   state: PaymentStandingState;
   /** Fecha (YYYY-MM-DD) en que vencio el periodo o trial. */
   overdueSince: string | null;
-  /** Dias de gracia restantes cuando state = "grace". */
+  /** Días de gracia restantes cuando state = "grace". */
   graceDaysLeft: number;
 }
 

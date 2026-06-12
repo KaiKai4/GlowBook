@@ -104,7 +104,7 @@ export async function saveMetricAction(
   }, actorUserId);
 
   if (!result.ok) return { ok: false, message: result.error };
-  return done("Limite guardado.");
+  return done("Límite guardado.");
 }
 
 export async function savePlanModulesAction(
@@ -142,7 +142,7 @@ export async function savePlanLimitsAction(
   }, actorUserId);
 
   if (!result.ok) return { ok: false, message: result.error };
-  return done("Limites del plan actualizados.");
+  return done("Límites del plan actualizados.");
 }
 
 export async function saveAddonAction(

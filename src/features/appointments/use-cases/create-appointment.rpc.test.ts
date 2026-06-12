@@ -70,7 +70,7 @@ async function createFixture(admin: Db, salonId: string): Promise<Fixture> {
   });
 
   if (!businessHour || !businessHour.open_time || !businessHour.close_time) {
-    throw new Error("El test RPC necesita al menos un dia abierto de 30 minutos en el salon de prueba.");
+    throw new Error("El test RPC necesita al menos un día abierto de 30 minutos en el salon de prueba.");
   }
 
   const dayOfWeek = businessHour.day_of_week;

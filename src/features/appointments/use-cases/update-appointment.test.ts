@@ -3,6 +3,7 @@ import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
   findEmployeeOccupiedSlotsForCommand,
+  findEmployeeExceptionDatesForCommand,
   findEmployeeWorkSchedulesForCommand,
   updateAppointmentWithRpc,
 } from "../data/appointment-commands.repo";
@@ -12,6 +13,7 @@ vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
   findEmployeeOccupiedSlotsForCommand: vi.fn(),
+  findEmployeeExceptionDatesForCommand: vi.fn(),
   findEmployeeWorkSchedulesForCommand: vi.fn(),
   updateAppointmentWithRpc: vi.fn(),
 }));
@@ -19,6 +21,7 @@ vi.mock("../data/appointment-commands.repo", () => ({
 const mockedFindAppointmentForCommand = vi.mocked(findAppointmentForCommand);
 const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
 const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findEmployeeWorkSchedulesForCommand);
+const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findEmployeeExceptionDatesForCommand);
 const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findEmployeeOccupiedSlotsForCommand);
 const mockedUpdateAppointmentWithRpc = vi.mocked(updateAppointmentWithRpc);
 
@@ -81,6 +84,7 @@ function mockValidUpdate() {
     ],
   });
   mockedFindEmployeeWorkSchedulesForCommand.mockResolvedValue(workAllWeek);
+  mockedFindEmployeeExceptionDatesForCommand.mockResolvedValue([]);
   mockedFindEmployeeOccupiedSlotsForCommand.mockResolvedValue([]);
   mockedUpdateAppointmentWithRpc.mockResolvedValue({ ok: true });
 }

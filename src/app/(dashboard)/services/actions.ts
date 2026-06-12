@@ -43,7 +43,7 @@ function readServiceDuration(formData: FormData): Result<number> {
   if (!isValidServiceDurationParts(parts)) {
     return {
       ok: false,
-      error: "Indica una duracion valida: horas desde 0 y minutos entre 0 y 59.",
+      error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
     };
   }
 

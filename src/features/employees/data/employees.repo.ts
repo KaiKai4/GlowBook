@@ -148,7 +148,7 @@ export async function validateEmployeeAssignments(
 
     if (error) throw error;
     if ((categories ?? []).length !== uniqueCategoryIds.length) {
-      throw new Error("Una o mas categorias no pertenecen al salon o estan inactivas.");
+      throw new Error("Una o mas categorías no pertenecen al salon o estan inactivas.");
     }
   }
 

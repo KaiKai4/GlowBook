@@ -73,4 +73,33 @@ describe("appointment availability", () => {
 
     expect(violations.map((violation) => violation.code)).toEqual(["min_duration"]);
   });
+
+  it("blocks the collaborator's day-off exceptions even inside their weekly shift", () => {
+    // 2026-05-25T15:00Z = lunes 10:00 en Panama, dentro del turno semanal.
+    const violations = evaluateTimeRange({
+      start: new Date("2026-05-25T15:00:00.000Z"),
+      end: new Date("2026-05-25T16:00:00.000Z"),
+      salonConfig,
+      businessHours: mondayBusinessHours,
+      workSchedules: mondayWorkSchedule,
+      occupiedSlots: [],
+      employeeExceptionDates: ["2026-05-25"],
+    });
+
+    expect(violations.map((violation) => violation.code)).toContain("employee_exception");
+  });
+
+  it("ignores exceptions on other dates", () => {
+    const violations = evaluateTimeRange({
+      start: new Date("2026-05-25T15:00:00.000Z"),
+      end: new Date("2026-05-25T16:00:00.000Z"),
+      salonConfig,
+      businessHours: mondayBusinessHours,
+      workSchedules: mondayWorkSchedule,
+      occupiedSlots: [],
+      employeeExceptionDates: ["2026-05-26"],
+    });
+
+    expect(violations).toEqual([]);
+  });
 });

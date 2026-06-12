@@ -181,7 +181,7 @@ function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDetail })
         <Panel
           icon={<History className="h-4 w-4" />}
           title="Historial de pagos"
-          description="Ultimos pagos registrados y el mes que cubrio cada uno."
+          description="Últimos pagos registrados y el mes que cubrio cada uno."
         >
           <div className="divide-y divide-brand-100">
             {detail.payments.map((payment) => (
@@ -224,7 +224,7 @@ function AssignPlanForm({ detail, plans }: { detail: SalonSubscriptionDetail; pl
     <Panel
       icon={<CalendarClock className="h-4 w-4" />}
       title={detail.assignment ? "Cambiar plan o estado" : "Asignar plan"}
-      description="Las fechas se calculan solas: el plan es mensual y se renueva, y el trial sale de los dias de prueba del plan."
+      description="Las fechas se calculan solas: el plan es mensual y se renueva, y el trial sale de los días de prueba del plan."
     >
       <form action={action} className="space-y-4">
         <input type="hidden" name="salonId" value={detail.salonId} />
@@ -314,7 +314,7 @@ function ScheduleSummary({
             : !plan
               ? "Selecciona un plan"
               : plan.trialDays > 0
-                ? `${plan.trialDays} dias de prueba del plan`
+                ? `${plan.trialDays} días de prueba del plan`
                 : "Este plan no ofrece prueba"
         }
       />

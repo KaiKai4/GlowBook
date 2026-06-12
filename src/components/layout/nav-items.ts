@@ -45,7 +45,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Gestion",
+    label: "Gestión",
     items: [
       { label: "Clientes", href: "/customers", icon: Users, permissions: ["customers.manage"], feature: "customers" },
       { label: "Colaboradores", href: "/employees", icon: UserCog, permissions: ["employees.manage"], feature: "employees" },
@@ -55,7 +55,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Administracion",
+    label: "Administración",
     items: [
       { label: "Reportes", href: "/reports", icon: BarChart3, permissions: ["reports.view"], feature: "reports" },
       { label: "Gastos", href: "/expenses", icon: ReceiptText, permissions: ["expenses.manage"], feature: "expenses" },

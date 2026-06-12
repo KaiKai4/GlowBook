@@ -31,7 +31,7 @@ export function PlanInfoEditor({ plan, assignedSalons }: { plan: CommercialPlan;
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-4">
         <MiniMetric label="Precio" value={`${plan.currency} ${plan.monthlyPrice.toFixed(2)}`} />
-        <MiniMetric label="Trial" value={`${plan.trialDays} dias`} />
+        <MiniMetric label="Trial" value={`${plan.trialDays} días`} />
         <MiniMetric label="Estado" value={statusLabel(plan.status)} />
         <MiniMetric label="Salones" value={String(assignedSalons)} />
       </div>
@@ -47,7 +47,7 @@ export function PlanForm({ plan, compact = false }: { plan: CommercialPlan | nul
     <Panel
       icon={<Plus className="h-4 w-4" />}
       title={plan ? "Informacion del plan" : "Nuevo plan"}
-      description={plan ? "Edita el contenedor comercial. Los limites se configuran en su propia pestaña." : "Crea el plan y luego configura modulos y limites."}
+      description={plan ? "Edita el contenedor comercial. Los límites se configuran en su propia pestaña." : "Crea el plan y luego configura modulos y límites."}
       compact={compact}
     >
       <form action={action} className="space-y-4">
@@ -57,7 +57,7 @@ export function PlanForm({ plan, compact = false }: { plan: CommercialPlan | nul
         <Textarea name="description" label="Descripcion" rows={compact ? 2 : 3} defaultValue={plan?.description ?? ""} />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Input name="monthlyPrice" label="Precio mensual" type="number" min="0" step="0.01" defaultValue={plan?.monthlyPrice ?? 0} />
-          <Input name="trialDays" label="Trial dias" type="number" min="0" defaultValue={plan?.trialDays ?? 0} />
+          <Input name="trialDays" label="Trial días" type="number" min="0" defaultValue={plan?.trialDays ?? 0} />
           <Input name="currency" label="Moneda" maxLength={3} defaultValue={plan?.currency ?? "USD"} />
           <Input name="sortOrder" label="Orden" type="number" defaultValue={plan?.sortOrder ?? 0} />
         </div>
@@ -135,7 +135,7 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
   const [state, action] = useActionState(savePlanLimitsAction, PLATFORM_PLAN_IDLE_STATE);
   const moduleByKey = new Map(modules.map((module) => [module.key, module]));
   const limitByMetric = new Map(plan.limits.map((limit) => [limit.metricKey, limit]));
-  // Solo se configuran limites de modulos incluidos en el plan: un limite de
+  // Solo se configuran límites de modulos incluidos en el plan: un límite de
   // un modulo apagado no controla nada.
   const enabledModuleKeys = new Set(
     plan.modules.filter((module) => module.enabled).map((module) => module.moduleKey)
@@ -152,7 +152,7 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
   if (visibleMetrics.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-brand-200 bg-white px-4 py-10 text-center text-sm text-stone-500">
-        Este plan no tiene modulos activos. Activa modulos en la pestaña Modulos y aqui apareceran sus limites.
+        Este plan no tiene modulos activos. Activa modulos en la pestaña Modulos y aqui apareceran sus límites.
       </div>
     );
   }
@@ -162,14 +162,14 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
       <input type="hidden" name="planId" value={plan.id} />
 
       <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex justify-end border-b border-brand-100 bg-white/95 px-5 py-3 backdrop-blur">
-        <SaveAllButton label="Guardar limites" />
+        <SaveAllButton label="Guardar límites" />
       </div>
 
       {groupMetrics(visibleMetrics).map(([moduleKey, group]) => (
         <section key={moduleKey} className="overflow-hidden rounded-xl border border-brand-100 bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/30 px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Limites</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Límites</p>
               <h3 className="mt-1 font-semibold text-stone-950">{moduleByKey.get(moduleKey as PlatformModule["key"])?.name ?? moduleKey}</h3>
             </div>
             <span className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-brand-700">{group.length} controles</span>
@@ -184,8 +184,8 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
 
       {hiddenModuleNames.length > 0 ? (
         <p className="text-xs leading-5 text-stone-400">
-          Modulos sin limites configurables porque no estan incluidos en este plan: {hiddenModuleNames.join(", ")}.
-          Activalos en la pestaña Modulos para configurar sus limites.
+          Modulos sin límites configurables porque no estan incluidos en este plan: {hiddenModuleNames.join(", ")}.
+          Activalos en la pestaña Modulos para configurar sus límites.
         </p>
       ) : null}
       <InlineState state={state} block />
@@ -210,14 +210,14 @@ function PlanLimitRow({
         </div>
         <p className="mt-2 text-sm text-stone-500">{metric.description}</p>
       </div>
-      <Input name="maxValue" label={`Maximo (${metric.unit || "total"})`} type="number" min="0" defaultValue={limit?.maxValue ?? ""} placeholder="Sin limite" />
+      <Input name="maxValue" label={`Maximo (${metric.unit || "total"})`} type="number" min="0" defaultValue={limit?.maxValue ?? ""} placeholder="Sin límite" />
       <Select name="countScope" label="Tipo de conteo" defaultValue={limit?.countScope ?? metric.defaultCountScope}>
         <option value="current">Actual</option>
         <option value="billing_cycle">Ciclo de facturacion</option>
         <option value="monthly">Mes calendario</option>
         <option value="lifetime">Historico total</option>
       </Select>
-      <Select name="enforcementMode" label="Al llegar al limite" defaultValue={limit?.enforcementMode ?? "warn"}>
+      <Select name="enforcementMode" label="Al llegar al límite" defaultValue={limit?.enforcementMode ?? "warn"}>
         <option value="none">Sin control</option>
         <option value="warn">Advertencia</option>
         <option value="block">Bloqueo</option>
@@ -247,10 +247,10 @@ export function PlanSummary({ plan, modules, metrics }: { plan: CommercialPlan; 
           ))}
         </div>
       </Panel>
-      <Panel icon={<ToggleLeft className="h-4 w-4" />} title="Limites configurados" description="Topes y comportamiento al llegar al maximo.">
+      <Panel icon={<ToggleLeft className="h-4 w-4" />} title="Límites configurados" description="Topes y comportamiento al llegar al maximo.">
         <div className="space-y-2">
           {visibleLimits.length === 0 ? (
-            <p className="text-sm text-stone-500">Este plan aun no tiene limites en sus modulos activos.</p>
+            <p className="text-sm text-stone-500">Este plan aun no tiene límites en sus modulos activos.</p>
           ) : (
             visibleLimits.map((limit) => {
               const metric = metricByKey.get(limit.metricKey);
@@ -263,7 +263,7 @@ export function PlanSummary({ plan, modules, metrics }: { plan: CommercialPlan; 
                     </p>
                   </div>
                   <span className="font-mono text-sm text-stone-600">
-                    {limit.maxValue === null ? "Sin limite" : `${limit.maxValue} ${metric?.unit ?? ""}`}
+                    {limit.maxValue === null ? "Sin límite" : `${limit.maxValue} ${metric?.unit ?? ""}`}
                   </span>
                 </div>
               );

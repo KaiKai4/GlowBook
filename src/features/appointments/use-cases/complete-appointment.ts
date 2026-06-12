@@ -57,7 +57,7 @@ export async function completeAppointment(
     const currentIds = new Set(currentItems.map((item) => item.id));
 
     for (const item of itemPrices) {
-      if (!currentIds.has(item.id)) return err("Precio de servicio invalido.");
+      if (!currentIds.has(item.id)) return err("Precio de servicio inválido.");
       if (!Number.isFinite(item.price) || item.price < 0) {
         return err("El precio del servicio no puede ser negativo.");
       }

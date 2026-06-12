@@ -31,7 +31,7 @@ export type UntypedSupabase = {
   ) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
 
-// service_role: la configuracion comercial es cross-tenant y los conteos de uso
+// service_role: la configuración comercial es cross-tenant y los conteos de uso
 // deben funcionar tambien desde el panel de plataforma (sesion sin claim salon_id).
 // Todo acceso pasa por use-cases server-only que ya validaron al actor.
 export function billingDb(): UntypedSupabase {

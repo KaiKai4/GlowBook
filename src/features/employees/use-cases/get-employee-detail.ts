@@ -4,6 +4,7 @@ import { captureError } from "@/lib/observability";
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
+import { findUpcomingEmployeeExceptions } from "../data/employee-exceptions.repo";
 import { findEmployeeById, findLatestEmployeeInvitation } from "../data/employees.repo";
 
 type AssignedServiceRef = {
@@ -54,11 +55,18 @@ export interface EmployeeDetailPendingInvitation {
   roleId: string | null;
 }
 
+export interface EmployeeDetailScheduleException {
+  id: string;
+  date: string;
+  reason: string;
+}
+
 export interface EmployeeDetailViewModel {
   employee: EmployeeDetailEmployeeViewModel;
   services: EmployeeDetailNamedRef[];
   categories: EmployeeDetailNamedRef[];
   schedules: EmployeeDetailSchedule[];
+  scheduleExceptions: EmployeeDetailScheduleException[];
   categoryOptions: EmployeeDetailCategoryOption[];
   roleOptions: EmployeeDetailRoleOption[];
   currentRoleId: string | null;
@@ -114,11 +122,12 @@ export async function getEmployeeDetail({
 
   if (!employee) return null;
 
-  const [currentRoleId, invitation] = await Promise.all([
+  const [currentRoleId, invitation, scheduleExceptions] = await Promise.all([
     getCurrentRoleId(employee.profile_id, salonId),
     employee.profile_id
       ? Promise.resolve(null)
       : findLatestEmployeeInvitation(employeeId, salonId),
+    findUpcomingEmployeeExceptions(employeeId, salonId),
   ]);
 
   const services = ((employee.services ?? []) as AssignedServiceRef[])
@@ -147,6 +156,11 @@ export async function getEmployeeDetail({
       day_of_week: schedule.day_of_week,
       start_time: schedule.start_time,
       end_time: schedule.end_time,
+    })),
+    scheduleExceptions: scheduleExceptions.map((exception) => ({
+      id: exception.id,
+      date: exception.exception_date,
+      reason: exception.reason,
     })),
     categoryOptions: allCategories,
     roleOptions: allRoles,

@@ -26,7 +26,7 @@ describe("set feedback report status", () => {
       setFeedbackReportStatus({ id: "   ", status: "resolved" })
     ).resolves.toEqual({
       ok: false,
-      error: "Reporte invalido.",
+      error: "Reporte inválido.",
     });
     expect(mockedSetFeedbackStatus).not.toHaveBeenCalled();
   });

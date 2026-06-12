@@ -79,7 +79,7 @@ export function EmployeeCreateForm({
         <Input name="last_name" label="Apellido" required />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Input name="phone" label="Telefono" type="tel" />
+        <Input name="phone" label="Teléfono" type="tel" />
         <Input
           name="email"
           label="Email"
@@ -94,7 +94,7 @@ export function EmployeeCreateForm({
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Input name="commission_percentage" label="Comision (%)" type="number" min={0} max={100} defaultValue={0} />
+        <Input name="commission_percentage" label="Comisión (%)" type="number" min={0} max={100} defaultValue={0} />
         <div>
           <label className="mb-1.5 block text-xs font-medium text-stone-600">Rol</label>
           {roles.length === 0 ? (
@@ -117,9 +117,9 @@ export function EmployeeCreateForm({
         onCategoryIdsChange={setSelectedCats}
         onServiceIdsChange={setSelectedServices}
         renderHiddenInputs
-        categoryTitle="1. Categorias que atiende"
+        categoryTitle="1. Categorías que atiende"
         serviceTitle="2. Servicios que realiza"
-        emptyCategoryMessage="No hay categorias. Crea servicios primero."
+        emptyCategoryMessage="No hay categorías. Crea servicios primero."
       />
 
       <p className="rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-400">
@@ -130,7 +130,7 @@ export function EmployeeCreateForm({
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
           <p className="font-semibold">Ya existe un colaborador con ese email: {archivedMatch.name}</p>
           <p className="mt-1 text-xs">
-            Restaurarlo conserva su historial. Luego puedes editar servicios, categorias, horarios y generar un nuevo enlace.
+            Restaurarlo conserva su historial. Luego puedes editar servicios, categorías, horarios y generar un nuevo enlace.
           </p>
           <Button
             type="button"

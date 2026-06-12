@@ -39,7 +39,7 @@ export async function getSalonPaymentStanding(salonId: string): Promise<PaymentS
 }
 
 /**
- * Advertencias de limites que ve el owner en el dashboard (solo ahi, no en
+ * Advertencias de límites que ve el owner en el dashboard (solo ahi, no en
  * cada modulo). Capacidades al tope no alertan; ver isActionableLimitWarning.
  */
 export async function getOwnerPlanLimitWarnings(salonId: string): Promise<PlanLimitWarning[]> {

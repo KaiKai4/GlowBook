@@ -361,6 +361,28 @@ export async function findEmployeeWorkSchedulesForCommand(
   return (data ?? []) as WorkSchedule[];
 }
 
+/**
+ * Días libres puntuales del profesional desde hoy hacia adelante (fechas
+ * locales del salon). Set pequeno: vacaciones y permisos próximos.
+ */
+export async function findEmployeeExceptionDatesForCommand(
+  employeeId: string
+): Promise<string[]> {
+  const supabase = await createSupabaseServerClient();
+  const today = new Date();
+  // Margen de un día hacia atras para cubrir cualquier desfase de zona horaria.
+  today.setUTCDate(today.getUTCDate() - 1);
+
+  const { data, error } = await supabase
+    .from("schedule_exceptions")
+    .select("exception_date")
+    .eq("employee_id", employeeId)
+    .gte("exception_date", today.toISOString().slice(0, 10));
+
+  if (error) throw error;
+  return (data ?? []).map((row) => row.exception_date);
+}
+
 export async function findEmployeeOccupiedSlotsForCommand({
   employeeId,
   date,
@@ -456,13 +478,29 @@ export async function findOccupiedSlotsForSalonDate(
     query = query.neq("appointment_id", excludeAppointmentId);
   }
 
-  const { data } = await query;
+  const [{ data }, { data: exceptions }] = await Promise.all([
+    query,
+    // Días libres del día consultado: el wizard los ve como un bloqueo de día
+    // completo y no ofrece horarios de ese profesional.
+    supabase
+      .from("schedule_exceptions")
+      .select("employee_id")
+      .eq("salon_id", salonId)
+      .eq("exception_date", date),
+  ]);
 
   const occupied: OccupiedByEmployee = {};
   for (const item of data ?? []) {
     (occupied[item.employee_id] ??= []).push({
       start_time: item.start_time,
       end_time: item.end_time,
+    });
+  }
+
+  for (const exception of exceptions ?? []) {
+    (occupied[exception.employee_id] ??= []).push({
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
     });
   }
 

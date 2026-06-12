@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { err, ok, type Result } from "@/lib/result";
 
 // Rate limiting de ventana fija en memoria. En Vercel cada instancia tiene su
-// propio mapa, asi que el limite efectivo es por instancia: suficiente contra
+// propio mapa, asi que el límite efectivo es por instancia: suficiente contra
 // rafagas y fuerza bruta (que golpean la misma instancia caliente), sin
 // infraestructura extra. Si el SaaS crece, cambiar el almacen por Redis/KV
 // manteniendo esta misma interfaz.
@@ -15,7 +15,7 @@ interface Bucket {
 export interface RateLimitOptions {
   /** Maximo de intentos dentro de la ventana. */
   max: number;
-  /** Duracion de la ventana en milisegundos. */
+  /** Duración de la ventana en milisegundos. */
   windowMs: number;
 }
 

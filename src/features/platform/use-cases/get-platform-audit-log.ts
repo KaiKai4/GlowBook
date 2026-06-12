@@ -17,7 +17,7 @@ const ACTION_LABELS: Record<PlatformAuditAction, string> = {
   set_feedback_status: "Moderar reporte",
   billing_feature_saved: "Guardar capacidad de plan",
   billing_plan_created: "Crear plan",
-  billing_entitlement_saved: "Guardar limite de plan",
+  billing_entitlement_saved: "Guardar límite de plan",
   billing_plan_assigned: "Asignar plan a Salon",
   billing_override_saved: "Guardar extra de Salon",
   commercial_module_saved: "Guardar modulo comercial",
@@ -25,8 +25,8 @@ const ACTION_LABELS: Record<PlatformAuditAction, string> = {
   commercial_plan_archived: "Archivar plan comercial",
   commercial_plan_deleted: "Eliminar plan comercial",
   commercial_plan_module_saved: "Guardar modulo de plan",
-  commercial_limit_metric_saved: "Guardar metrica de limite",
-  commercial_plan_limit_saved: "Guardar limite de plan",
+  commercial_limit_metric_saved: "Guardar metrica de límite",
+  commercial_plan_limit_saved: "Guardar límite de plan",
   commercial_plan_assigned: "Asignar plan comercial",
   commercial_plan_override_saved: "Guardar extra comercial",
   commercial_addon_saved: "Guardar extra del catalogo",
@@ -35,7 +35,7 @@ const ACTION_LABELS: Record<PlatformAuditAction, string> = {
   commercial_plan_extra_assigned: "Asignar extra a Salon",
   commercial_plan_extra_canceled: "Cancelar extra de Salon",
   commercial_plan_payment_recorded: "Registrar pago de Salon",
-  commercial_plan_alert_resolved: "Resolver alerta de limite",
+  commercial_plan_alert_resolved: "Resolver alerta de límite",
   invitation_accepted: "Invitacion aceptada",
 };
 

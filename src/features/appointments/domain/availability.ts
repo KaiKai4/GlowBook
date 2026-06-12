@@ -1,4 +1,4 @@
-import { getZonedTimeParts, timeToMinutes } from "@/lib/utils/dates";
+import { formatLocalDateISO, getZonedTimeParts, timeToMinutes } from "@/lib/utils/dates";
 import type {
   BusinessHour,
   OccupiedSlot,
@@ -111,6 +111,7 @@ export function evaluateTimeRange({
   businessHours,
   workSchedules = [],
   occupiedSlots = [],
+  employeeExceptionDates = [],
   enforceSalonSchedule = true,
   enforceMinDuration = true,
 }: RangeEvaluationInput): ValidationViolation[] {
@@ -120,7 +121,7 @@ export function evaluateTimeRange({
   if (enforceMinDuration && durationMinutes < salonConfig.min_appointment_duration_minutes) {
     violations.push({
       code: "min_duration",
-      message: `La duracion minima es ${salonConfig.min_appointment_duration_minutes} minutos.`,
+      message: `La duración minima es ${salonConfig.min_appointment_duration_minutes} minutos.`,
     });
   }
 
@@ -130,11 +131,23 @@ export function evaluateTimeRange({
   if (enforceSalonSchedule) {
     const salonWindows = getSalonWindows(dayOfWeek, businessHours);
     if (salonWindows.length === 0) {
-      violations.push({ code: "salon_closed_day", message: "El salon esta cerrado ese dia." });
+      violations.push({ code: "salon_closed_day", message: "El salon esta cerrado ese día." });
     } else if (!isWithinWindows(startMins, endMins, salonWindows)) {
       violations.push({
         code: "salon_off_hours",
-        message: "El horario esta fuera del horario de atencion del salon.",
+        message: "El horario esta fuera del horario de atención del salon.",
+      });
+    }
+  }
+
+  // Día libre puntual (vacaciones, permiso): bloquea aunque el horario
+  // semanal recurrente diga que ese día trabaja.
+  if (employeeExceptionDates.length > 0) {
+    const localDate = formatLocalDateISO(start, salonConfig.timezone);
+    if (employeeExceptionDates.includes(localDate)) {
+      violations.push({
+        code: "employee_exception",
+        message: "El profesional tiene el día libre en esa fecha.",
       });
     }
   }
@@ -142,7 +155,7 @@ export function evaluateTimeRange({
   if (workSchedules.length > 0) {
     const employeeWindows = getEmployeeWindows(dayOfWeek, workSchedules);
     if (employeeWindows.length === 0) {
-      violations.push({ code: "employee_day_off", message: "El profesional no trabaja ese dia." });
+      violations.push({ code: "employee_day_off", message: "El profesional no trabaja ese día." });
     } else if (!isWithinWindows(startMins, endMins, employeeWindows)) {
       violations.push({
         code: "employee_outside_hours",

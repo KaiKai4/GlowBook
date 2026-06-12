@@ -1973,6 +1973,48 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_exceptions: {
+        Row: {
+          created_at: string
+          employee_id: string
+          exception_date: string
+          id: string
+          reason: string
+          salon_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          exception_date: string
+          id?: string
+          reason?: string
+          salon_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          exception_date?: string
+          id?: string
+          reason?: string
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_exceptions_employee_salon_fk"
+            columns: ["salon_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["salon_id", "id"]
+          },
+          {
+            foreignKeyName: "schedule_exceptions_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           created_at: string
@@ -2196,6 +2238,7 @@ export type Database = {
           id: string
           invitation_count: number
           is_active: boolean
+          last_appointment_at: string
           name: string
           owner_count: number
           owner_names: string[]

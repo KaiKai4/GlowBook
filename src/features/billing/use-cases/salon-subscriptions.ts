@@ -172,8 +172,8 @@ export async function checkPlanLimit(input: {
   return ok(undefined);
 }
 
-// Una alerta abierta por salon y limite: las acciones repetidas cerca del
-// limite no deben inundar el panel de plataforma.
+// Una alerta abierta por salon y límite: las acciones repetidas cerca del
+// límite no deben inundar el panel de plataforma.
 async function recordPlanAlertOnce(values: Parameters<typeof recordPlanAlert>[0]) {
   if (values.metricKey && (await hasOpenPlanAlert(values.salonId, values.metricKey))) return;
   await recordPlanAlert(values);
@@ -261,7 +261,7 @@ export async function assignSalonCommercialPlanConfig(
 
 /**
  * Asigna el plan elegido en la invitacion apenas el salon se crea.
- * Asi el salon nace con sus modulos y limites correctos y nunca ve
+ * Asi el salon nace con sus modulos y límites correctos y nunca ve
  * funcionalidades que su plan no incluye.
  */
 export async function autoAssignPlanOnAcceptance(input: {
@@ -303,7 +303,7 @@ const PaymentSchema = z.object({
   paidAt: z
     .string()
     .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de pago invalida.")
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de pago inválida.")
     .optional(),
   notes: z.string().trim().max(400).default(""),
 });
@@ -396,7 +396,7 @@ export async function saveSalonManualExtraConfig(
   const parsed = ManualExtraSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0].message);
   if (!parsed.data.moduleKey && !parsed.data.metricKey) {
-    return err("Selecciona un modulo o un limite para el extra.");
+    return err("Selecciona un modulo o un límite para el extra.");
   }
 
   try {
@@ -685,7 +685,7 @@ function buildEffectiveLimits(
   if (!plan) return [];
   const limitByMetric = new Map(plan.limits.map((limit) => [limit.metricKey, limit]));
 
-  // Solo los limites de modulos que el salon realmente tiene: un limite de un
+  // Solo los límites de modulos que el salon realmente tiene: un límite de un
   // modulo apagado no controla nada y solo hace ruido.
   return metrics.filter((metric) => enabledModules.has(metric.moduleKey)).map((metric) => {
     const base = limitByMetric.get(metric.key);
@@ -730,9 +730,9 @@ function extraDetail(
   const metric = override.metricKey ? metricByKey.get(override.metricKey) : null;
   const unit = metric?.unit ?? "";
   const delta = override.maxDelta ?? addon?.limitDelta ?? null;
-  if (override.maxOverride !== null) return `Limite fijado en ${override.maxOverride} ${unit}`.trim();
+  if (override.maxOverride !== null) return `Límite fijado en ${override.maxOverride} ${unit}`.trim();
   if (delta !== null) return `+${delta * override.quantity} ${unit}`.trim();
-  return "Ajuste de limite";
+  return "Ajuste de límite";
 }
 
 function round2(value: number): number {

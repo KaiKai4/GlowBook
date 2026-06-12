@@ -32,7 +32,7 @@ export default async function PlatformSalonsPage({
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-neutral-950">Salones</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
-            Informacion global de cada salon: contacto, plan asignado, consumo de limites y acciones de plataforma.
+            Informacion global de cada salon: contacto, plan asignado, consumo de límites y acciones de plataforma.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

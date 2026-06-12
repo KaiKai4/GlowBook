@@ -9,7 +9,7 @@ export async function updateSalonBackground(
   bgStyle: string
 ): Promise<Result<void>> {
   if (!SALON_BG_STYLES.includes(bgStyle as SalonBgStyle)) {
-    return { ok: false, error: "Estilo de fondo invalido." };
+    return { ok: false, error: "Estilo de fondo inválido." };
   }
 
   try {

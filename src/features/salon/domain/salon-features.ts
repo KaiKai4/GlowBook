@@ -12,7 +12,7 @@ export const SALON_FEATURES = [
   {
     key: "customers",
     label: "Clientes",
-    description: "Gestion de clientes.",
+    description: "Gestión de clientes.",
   },
   {
     key: "employees",
@@ -57,7 +57,7 @@ export const SALON_FEATURES = [
   {
     key: "salon",
     label: "Salon",
-    description: "Configuracion del negocio.",
+    description: "Configuración del negocio.",
   },
 ] as const;
 

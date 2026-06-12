@@ -99,15 +99,15 @@ export function EditEmployeeModal({
         Editar datos
       </Button>
 
-      <Dialog open={open} onClose={handleClose} title="Editar colaborador" description="Actualiza datos, categorias y servicios." className="max-w-2xl">
+      <Dialog open={open} onClose={handleClose} title="Editar colaborador" description="Actualiza datos, categorías y servicios." className="max-w-2xl">
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <Input label="Nombre" value={firstName} onChange={(e) => { setFirstName(e.target.value); setError(null); }} autoFocus />
             <Input label="Apellido" value={lastName} onChange={(e) => { setLastName(e.target.value); setError(null); }} />
-            <Input label="Telefono" type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} />
+            <Input label="Teléfono" type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} />
             <Input label="Email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} />
             <Input label="Especialidad" value={specialty} onChange={(e) => { setSpecialty(e.target.value); setError(null); }} />
-            <Input label="Comision (%)" type="number" min={0} max={100} value={commission} onChange={(e) => { setCommission(e.target.value); setError(null); }} />
+            <Input label="Comisión (%)" type="number" min={0} max={100} value={commission} onChange={(e) => { setCommission(e.target.value); setError(null); }} />
           </div>
 
           <CategoryServicePicker

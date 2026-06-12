@@ -69,7 +69,7 @@ const PlanSchema = z.object({
 const MetricSchema = z.object({
   key: z.string().trim().min(2).max(80),
   moduleKey: z.string().trim().min(2).max(60),
-  name: z.string().trim().min(2, "Escribe el nombre del limite.").max(100),
+  name: z.string().trim().min(2, "Escribe el nombre del límite.").max(100),
   description: z.string().trim().max(400).default(""),
   unit: z.string().trim().max(40).default(""),
   defaultCountScope: z.enum(["current", "monthly", "billing_cycle", "lifetime"]).default("current"),
@@ -97,7 +97,7 @@ const PlanModuleSchema = z.object({
 
 const PlanLimitSchema = z.object({
   planId: z.string().uuid("Selecciona un plan."),
-  metricKey: z.string().trim().min(1, "Selecciona un limite."),
+  metricKey: z.string().trim().min(1, "Selecciona un límite."),
   maxValue: z
     .union([z.coerce.number().int().min(0), z.literal("")])
     .transform((value) => (value === "" ? null : value))
@@ -262,7 +262,7 @@ export async function saveCommercialLimitMetricConfig(
     await auditBilling(actorUserId, "commercial_limit_metric_saved", parsed.data.key);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo guardar el limite.", error));
+    return err(errorMessage("No se pudo guardar el límite.", error));
   }
 }
 
@@ -277,13 +277,13 @@ export async function saveCommercialPlanLimitConfig(
     await auditBilling(actorUserId, "commercial_plan_limit_saved", parsed.data.planId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo guardar el limite del plan.", error));
+    return err(errorMessage("No se pudo guardar el límite del plan.", error));
   }
 }
 
 const PlanLimitsBatchSchema = z.object({
   planId: z.string().uuid("Selecciona un plan."),
-  limits: z.array(PlanLimitSchema.omit({ planId: true })).min(1, "No hay limites para guardar."),
+  limits: z.array(PlanLimitSchema.omit({ planId: true })).min(1, "No hay límites para guardar."),
 });
 
 export async function saveCommercialPlanLimitsBatch(
@@ -299,6 +299,6 @@ export async function saveCommercialPlanLimitsBatch(
     await auditBilling(actorUserId, "commercial_plan_limit_saved", parsed.data.planId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudieron guardar los limites del plan.", error));
+    return err(errorMessage("No se pudieron guardar los límites del plan.", error));
   }
 }

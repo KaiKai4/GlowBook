@@ -156,7 +156,7 @@ export function calculateLimitState(input: {
     input.maxValue === null || input.maxValue === 0
       ? null
       : Math.round((input.used / input.maxValue) * 100);
-  // Un limite en 0 sin uso no esta "superado": significa que el plan no
+  // Un límite en 0 sin uso no esta "superado": significa que el plan no
   // incluye ese recurso y simplemente no se ha usado.
   const isOver = input.maxValue !== null && input.used >= input.maxValue && input.used > 0;
   const isNear = percentage !== null && percentage >= input.warningThreshold;
@@ -216,7 +216,7 @@ export function checkLimitAction(input: {
       used: input.used,
       maxValue: input.maxValue,
       remaining,
-      message: `${input.metricName} alcanzo el limite del plan (${input.maxValue}).`,
+      message: `${input.metricName} alcanzo el límite del plan (${input.maxValue}).`,
     };
   }
 
@@ -252,6 +252,6 @@ function limitMessage(
   if (warningLevel === "none") return "";
   if (maxValue === null) return "";
   if (warningLevel === "near_limit") return `${metricName}: vas ${used} de ${maxValue} en tu plan.`;
-  if (used > maxValue) return `${metricName}: superaste el limite de tu plan (${used} de ${maxValue}).`;
-  return `${metricName}: alcanzaste el limite de tu plan (${used} de ${maxValue}).`;
+  if (used > maxValue) return `${metricName}: superaste el límite de tu plan (${used} de ${maxValue}).`;
+  return `${metricName}: alcanzaste el límite de tu plan (${used} de ${maxValue}).`;
 }

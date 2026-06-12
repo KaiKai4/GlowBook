@@ -18,6 +18,10 @@ import {
   removeEmployeeWorkSchedule,
 } from "@/features/employees/use-cases/employee-schedule";
 import {
+  addEmployeeScheduleException,
+  removeEmployeeScheduleException,
+} from "@/features/employees/use-cases/employee-exceptions";
+import {
   createEmployeeProfile,
   findArchivedEmployeeByEmail,
   updateEmployeeProfile,
@@ -31,6 +35,7 @@ import {
 } from "@/features/billing/use-cases/commercial-plans";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
+import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
 
 async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean }>> {
   const profile = await requireActiveProfile();
@@ -38,7 +43,7 @@ async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean 
     return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
   }
 
-  // Estas acciones crean cuentas Auth y enlaces de acceso: un limite por
+  // Estas acciones crean cuentas Auth y enlaces de acceso: un límite por
   // usuario evita generacion masiva automatizada.
   const limited = assertActionRateLimit(profile.id, "employees", { max: 30, windowMs: 60_000 });
   if (!limited.ok) return limited;
@@ -254,6 +259,48 @@ export async function deleteEmployeeAction(
     revalidatePath("/employees");
     revalidatePath(`/employees/${employeeId}`);
     revalidatePath("/appointments/new");
+  }
+  return result;
+}
+
+export async function addScheduleExceptionAction(
+  employeeId: string,
+  exceptionDate: string,
+  reason: string
+): Promise<Result<void>> {
+  const g = await guard();
+  if (!g.ok) return g;
+  const { salonConfig } = await getSalonSchedulingConfig(g.value.salonId);
+
+  const result = await addEmployeeScheduleException({
+    salonId: g.value.salonId,
+    employeeId,
+    exceptionDate,
+    reason,
+    timezone: salonConfig.timezone,
+  });
+  if (result.ok) {
+    revalidatePath(`/employees/${employeeId}`);
+    revalidatePath("/appointments");
+  }
+  return result;
+}
+
+export async function removeScheduleExceptionAction(
+  employeeId: string,
+  exceptionId: string
+): Promise<Result<void>> {
+  const g = await guard();
+  if (!g.ok) return g;
+
+  const result = await removeEmployeeScheduleException(
+    g.value.salonId,
+    employeeId,
+    exceptionId
+  );
+  if (result.ok) {
+    revalidatePath(`/employees/${employeeId}`);
+    revalidatePath("/appointments");
   }
   return result;
 }

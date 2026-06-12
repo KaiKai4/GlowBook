@@ -18,6 +18,7 @@ describe("platform salon overview read model", () => {
       collaborator_count: 3,
       appointment_count: 40,
       service_count: 9,
+      last_appointment_at: null,
       invitation_count: 2,
     };
 
@@ -36,6 +37,7 @@ describe("platform salon overview read model", () => {
       collaborator_count: 3,
       appointment_count: 40,
       service_count: 9,
+      last_appointment_at: null,
       invitation_count: 2,
     });
   });

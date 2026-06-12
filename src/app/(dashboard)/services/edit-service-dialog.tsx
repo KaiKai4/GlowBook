@@ -28,7 +28,7 @@ export function EditServiceDialog({
       open={true}
       onClose={onClose}
       title="Editar servicio"
-      description="Actualiza precio, duracion, categoria y estado."
+      description="Actualiza precio, duración, categoria y estado."
     >
       <form action={onSubmit} className="space-y-4">
         <Select name="category_id" label="Categoria" defaultValue={service.category_id} required>

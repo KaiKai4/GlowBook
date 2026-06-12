@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
 import { AppointmentsCalendar } from "./appointments-calendar";
+import { MobileAgenda } from "./mobile-agenda";
 import { AppointmentDetailDialog } from "./dialogs/appointment-detail";
 import { CompleteAppointmentDialog } from "./dialogs/complete-appointment";
 import { CancelAppointmentDialog } from "./dialogs/cancel-appointment";
@@ -193,17 +194,23 @@ export function AppointmentsDayView({
         </div>
       )}
 
-      {/* Calendar */}
-      <AppointmentsCalendar
-        appointments={calendarAppts}
-        tz={tz}
-        onApptClick={setDetailAppt}
-        mode={view === "semanal" ? "semanal" : "diaria"}
-        weekDates={view === "semanal" ? weekDates : undefined}
-        title={calendarTitle}
-        businessStart={businessStart}
-        businessEnd={businessEnd}
-      />
+      {/* Calendario: grilla horaria en pantallas medianas/grandes, agenda en
+          lista en el teléfono (la grilla no es usable en pantallas chicas). */}
+      <div className="hidden sm:block">
+        <AppointmentsCalendar
+          appointments={calendarAppts}
+          tz={tz}
+          onApptClick={setDetailAppt}
+          mode={view === "semanal" ? "semanal" : "diaria"}
+          weekDates={view === "semanal" ? weekDates : undefined}
+          title={calendarTitle}
+          businessStart={businessStart}
+          businessEnd={businessEnd}
+        />
+      </div>
+      <div className="sm:hidden">
+        <MobileAgenda appointments={calendarAppts} tz={tz} onApptClick={setDetailAppt} />
+      </div>
 
       {/* Appointment list */}
       <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-visible">
@@ -334,6 +341,14 @@ export function AppointmentsDayView({
           open={!!detailAppt}
           onClose={() => setDetailAppt(null)}
           canManage={canManage}
+          onComplete={() => {
+            setCompleteAppt(detailAppt);
+            setDetailAppt(null);
+          }}
+          onCancel={() => {
+            setCancelAppt(detailAppt);
+            setDetailAppt(null);
+          }}
         />
       )}
       {completeAppt && (

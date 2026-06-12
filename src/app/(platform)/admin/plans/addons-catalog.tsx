@@ -145,7 +145,7 @@ function AddonForm({
     <Panel
       icon={<Plus className="h-4 w-4" />}
       title={addon ? "Informacion del extra" : "Nuevo extra"}
-      description="Un extra activa un modulo fuera del plan o aumenta un limite. Se vende a precio mensual o se regala desde Suscripciones."
+      description="Un extra activa un modulo fuera del plan o aumenta un límite. Se vende a precio mensual o se regala desde Suscripciones."
     >
       <form action={action} className="space-y-4">
         {addon ? <input type="hidden" name="id" value={addon.id} /> : null}
@@ -158,7 +158,7 @@ function AddonForm({
         <div className="grid gap-3 sm:grid-cols-2">
           <Select name="kind" label="Tipo de extra" value={kind} onChange={(event) => setKind(event.target.value as CommercialAddon["kind"])}>
             <option value="module">Activa un modulo</option>
-            <option value="limit_boost">Aumenta un limite</option>
+            <option value="limit_boost">Aumenta un límite</option>
           </Select>
           {kind === "module" ? (
             <Select name="moduleKey" label="Modulo que activa" defaultValue={addon?.moduleKey ?? ""}>
@@ -168,8 +168,8 @@ function AddonForm({
               ))}
             </Select>
           ) : (
-            <Select name="metricKey" label="Limite que aumenta" defaultValue={addon?.metricKey ?? ""}>
-              <option value="">Selecciona un limite</option>
+            <Select name="metricKey" label="Límite que aumenta" defaultValue={addon?.metricKey ?? ""}>
+              <option value="">Selecciona un límite</option>
               {metrics.filter((metric) => !metric.isArchived).map((metric) => (
                 <option key={metric.key} value={metric.key}>{metric.name}</option>
               ))}
@@ -210,5 +210,5 @@ function AddonForm({
 }
 
 function kindLabel(kind: CommercialAddon["kind"]) {
-  return kind === "module" ? "Modulo" : "Limite";
+  return kind === "module" ? "Modulo" : "Límite";
 }

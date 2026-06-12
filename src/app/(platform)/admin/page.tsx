@@ -28,7 +28,18 @@ export default async function PlatformAdminPage() {
     getPlatformSalonOverviews(),
   ]);
   const billing = await getSubscriptionsPage(salonView.salons);
-  const attention = buildAttentionList(billing.rows);
+  // Salones dormidos (sin citas en 30 días) entran a la lista de atención:
+  // son los candidatos a churn que conviene contactar antes de que cancelen.
+  const attention = [
+    ...buildAttentionList(billing.rows),
+    ...salonView.dormantSalons.map((salon) => ({
+      salonId: salon.id,
+      salonName: salon.name,
+      reason: "Dormido",
+      detail: "Sin citas en los últimos 30 días: contacto recomendado.",
+      severity: "warning" as const,
+    })),
+  ];
 
   return (
     <div className="space-y-6">
@@ -36,13 +47,13 @@ export default async function PlatformAdminPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-white px-3 py-1 text-xs font-semibold text-brand-700 shadow-sm">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Administracion global
+            Administración global
           </div>
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-neutral-950">
             Panel de Plataforma
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-500">
-            Estado del negocio: ingresos, salones, suscripciones y lo que requiere tu atencion hoy.
+            Estado del negocio: ingresos, salones, suscripciones y lo que requiere tu atención hoy.
           </p>
         </div>
         <Link
@@ -81,13 +92,13 @@ export default async function PlatformAdminPage() {
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <Card className="overflow-hidden">
           <CardHeader className="border-b border-neutral-100 bg-white pb-5">
-            <CardTitle>Requieren atencion</CardTitle>
+            <CardTitle>Requieren atención</CardTitle>
           </CardHeader>
           <CardContent>
             {attention.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 text-center">
                 <p className="text-sm text-neutral-400">
-                  Todo en orden: sin alertas, morosos ni trials por vencer.
+                  Todo en orden: sin alertas, morosos, trials por vencer ni salones dormidos.
                 </p>
               </div>
             ) : (
@@ -186,7 +197,7 @@ export default async function PlatformAdminPage() {
               href="/admin/plans"
               icon={<CreditCard className="h-4 w-4 text-brand-600" />}
               title="Planes y extras"
-              detail="Catalogo comercial, modulos y limites"
+              detail="Catalogo comercial, modulos y límites"
             />
             <AdminShortcut
               href="/admin/audit"
@@ -226,8 +237,8 @@ function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[] {
       items.push({
         salonId: row.salonId,
         salonName: row.salonName,
-        reason: "Limites",
-        detail: `${row.openAlertCount} alerta${row.openAlertCount === 1 ? "" : "s"} de limite abierta${row.openAlertCount === 1 ? "" : "s"}.`,
+        reason: "Límites",
+        detail: `${row.openAlertCount} alerta${row.openAlertCount === 1 ? "" : "s"} de límite abierta${row.openAlertCount === 1 ? "" : "s"}.`,
         severity: "danger",
       });
     }
@@ -254,7 +265,7 @@ function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[] {
         salonId: row.salonId,
         salonName: row.salonName,
         reason: "Sin plan",
-        detail: "Salon activo sin plan: ve todo sin limites.",
+        detail: "Salon activo sin plan: ve todo sin límites.",
         severity: "warning",
       });
     }

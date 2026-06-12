@@ -85,7 +85,7 @@ function ResetPasswordForm() {
           <AlertCircle className="h-7 w-7 text-red-500" />
         </div>
         <h2 className="mt-4 text-xl font-semibold tracking-tight text-stone-950">
-          Enlace invalido o vencido
+          Enlace inválido o vencido
         </h2>
         <p className="mt-2 text-sm leading-6 text-stone-500">
           Los enlaces de recuperacion vencen rapido por seguridad. Solicita uno nuevo.
@@ -110,7 +110,7 @@ function ResetPasswordForm() {
           Crea tu nueva contraseña
         </h2>
         <p className="mt-1 text-sm text-stone-500">
-          Minimo 8 caracteres. La usaras la proxima vez que inicies sesion.
+          Minimo 8 caracteres. La usaras la próxima vez que inicies sesion.
         </p>
       </div>
 

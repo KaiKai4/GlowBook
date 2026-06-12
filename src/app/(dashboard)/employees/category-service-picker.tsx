@@ -22,9 +22,9 @@ export function CategoryServicePicker({
   onCategoryIdsChange,
   onServiceIdsChange,
   renderHiddenInputs = false,
-  categoryTitle = "Categorias que atiende",
+  categoryTitle = "Categorías que atiende",
   serviceTitle = "Servicios que realiza",
-  emptyCategoryMessage = "No hay categorias configuradas.",
+  emptyCategoryMessage = "No hay categorías configuradas.",
 }: CategoryServicePickerProps) {
   const selectedCategories = categories.filter((category) => categoryIds.includes(category.id));
 

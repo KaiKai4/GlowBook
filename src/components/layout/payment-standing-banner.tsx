@@ -3,7 +3,7 @@ import { CalendarClock } from "lucide-react";
 import type { PaymentStanding } from "@/features/billing/domain/payment-standing";
 
 // Aviso de pago vencido en periodo de gracia. Vive solo en el dashboard
-// (consistente con los avisos de limites): es accionable por el owner, que es
+// (consistente con los avisos de límites): es accionable por el owner, que es
 // quien coordina el pago con la plataforma.
 export function PaymentStandingBanner({ standing }: { standing: PaymentStanding }) {
   if (standing.state !== "grace") return null;

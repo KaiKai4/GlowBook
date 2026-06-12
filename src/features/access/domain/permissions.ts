@@ -3,7 +3,7 @@ export const PERMISSION_CATALOG = [
   { key: "salon.manage", description: "Editar datos del salon y ajustes" },
   { key: "roles.manage", description: "Crear roles y asignar permisos" },
   { key: "employees.manage", description: "Gestionar colaboradores" },
-  { key: "services.manage", description: "Gestionar categorias y servicios" },
+  { key: "services.manage", description: "Gestionar categorías y servicios" },
   { key: "inventory.manage", description: "Gestionar inventario y movimientos de stock" },
   { key: "retail.manage", description: "Registrar ventas de vitrina" },
   { key: "expenses.manage", description: "Registrar gastos del salon" },

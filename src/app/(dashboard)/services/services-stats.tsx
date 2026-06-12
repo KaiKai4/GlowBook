@@ -30,10 +30,10 @@ export function ServicesStats({
     <div className="flex items-start justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold text-neutral-900">Servicios</h1>
-        <p className="mt-1 text-sm text-neutral-500">Catalogo del salon por categorias</p>
+        <p className="mt-1 text-sm text-neutral-500">Catalogo del salon por categorías</p>
       </div>
       <div className="flex items-center gap-3">
-        <Metric value={categoryCount} label="categorias" sub="0 inact." />
+        <Metric value={categoryCount} label="categorías" sub="0 inact." />
         <Metric value={serviceCount} label="servicios" sub={`${inactiveServiceCount} inact.`} />
         <Button variant="primary" onClick={onCreateService} disabled={!canCreateService}>
           <Plus className="h-4 w-4" />

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
     "next-env.d.ts",
+    // Artefactos del prebuild de Vercel CLI (vercel build): no son fuente.
+    ".vercel/**",
   ]),
 ]);
 

@@ -374,7 +374,7 @@ async function findActiveOverrides(
 }
 
 // Las ventanas de ciclo se calculan aqui (logica de negocio con casos como el
-// periodo pagado o el dia ancla); la RPC count_salon_usage solo ejecuta todos
+// periodo pagado o el día ancla); la RPC count_salon_usage solo ejecuta todos
 // los counts en un unico round-trip a la base.
 async function calculateSalonUsage(
   supabase: UntypedSupabase,

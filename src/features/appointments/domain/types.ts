@@ -32,6 +32,7 @@ export interface OccupiedSlot {
 export type ValidationCode =
   | "min_duration"
   | "employee_day_off"
+  | "employee_exception"
   | "employee_outside_hours"
   | "occupied"
   | "salon_closed_day"
@@ -49,6 +50,8 @@ export interface RangeEvaluationInput {
   businessHours: BusinessHour[];
   workSchedules?: WorkSchedule[];
   occupiedSlots?: OccupiedSlot[];
+  /** Días libres del profesional (YYYY-MM-DD en la zona del salon). */
+  employeeExceptionDates?: string[];
   excludeAppointmentId?: string;
   enforceSalonSchedule?: boolean;
   enforceMinDuration?: boolean;

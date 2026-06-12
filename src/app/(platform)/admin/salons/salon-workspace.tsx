@@ -140,7 +140,7 @@ function SummaryTab({
         >
           <dl className="space-y-3 text-sm">
             <InfoRow label="Correo" value={salon.contactEmail || "Sin correo registrado"} />
-            <InfoRow label="Telefono" value={salon.phone || "Sin telefono"} />
+            <InfoRow label="Teléfono" value={salon.phone || "Sin teléfono"} />
             <InfoRow label="Registrado" value={salon.createdAtLabel} />
             <InfoRow label="ID" value={salon.id} mono />
           </dl>

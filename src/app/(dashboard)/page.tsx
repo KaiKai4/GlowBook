@@ -16,6 +16,8 @@ import {
 } from "@/features/salon/use-cases/get-dashboard-shell";
 import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
 import { PaymentStandingBanner } from "@/components/layout/payment-standing-banner";
+import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
+import { OnboardingChecklistCard } from "./onboarding-checklist-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatDate } from "@/lib/utils/dates";
@@ -46,14 +48,15 @@ export default async function DashboardPage() {
     redirect(visibleNav[0].href);
   }
 
-  // Los avisos del plan (limites y pago vencido) solo viven aqui: el owner
-  // los ve al entrar al dashboard, sin perseguirlo por el resto de modulos.
-  const [planWarnings, paymentStanding] = profile.is_owner
+  // Los avisos del plan (límites y pago vencido) y la guia de arranque solo
+  // viven aqui: el owner los ve al entrar, sin perseguirlo por los modulos.
+  const [planWarnings, paymentStanding, onboarding] = profile.is_owner
     ? await Promise.all([
         getOwnerPlanLimitWarnings(profile.salon_id),
         getSalonPaymentStanding(profile.salon_id),
+        getOnboardingChecklist(profile.salon_id),
       ])
-    : [[], null];
+    : [[], null, null];
 
   const canViewReports = hasPermission(profile, PERMISSIONS.REPORTS_VIEW);
   const canManageAppointments = hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE);
@@ -107,6 +110,8 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold text-neutral-900">Bienvenido</h1>
         <p className="mt-1 text-sm text-neutral-500">{formatDate(new Date())}</p>
       </div>
+
+      {onboarding ? <OnboardingChecklistCard checklist={onboarding} /> : null}
 
       {metrics && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

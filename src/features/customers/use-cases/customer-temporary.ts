@@ -73,7 +73,7 @@ export async function findOrCreateTemporaryCustomer({
 
     const existing = await findCustomerByPhone(salonId, normalizedPhone);
     if (!existing) {
-      return { ok: false, error: "Ya existe un cliente con ese telefono." };
+      return { ok: false, error: "Ya existe un cliente con ese teléfono." };
     }
 
     if (existing.is_temporary) {

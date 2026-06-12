@@ -15,7 +15,7 @@ function mapCustomerConstraintError(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
 
   if (message.includes("uq_customer_phone_per_salon")) {
-    return "Ya existe un cliente con ese telefono.";
+    return "Ya existe un cliente con ese teléfono.";
   }
 
   if (message.includes("uq_customer_email_per_salon")) {

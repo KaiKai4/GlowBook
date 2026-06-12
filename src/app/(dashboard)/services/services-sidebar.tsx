@@ -51,7 +51,7 @@ export function ServicesSidebar({
       <div className="rounded-xl border border-neutral-100 bg-white p-2">
         <div className="flex items-center justify-between px-2 py-1.5">
           <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-            Categorias
+            Categorías
           </span>
           <button
             onClick={onCreateCategory}

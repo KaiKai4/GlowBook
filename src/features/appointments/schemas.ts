@@ -40,13 +40,13 @@ export const UpdateAppointmentStatusSchema = z.object({
 });
 
 export const CompleteAppointmentSchema = z.object({
-  appointment_id: z.string().uuid("ID de cita invalido"),
+  appointment_id: z.string().uuid("ID de cita inválido"),
   payment_method: PaymentMethodSchema,
   completion_price_note: z.string().max(500).optional().default(""),
   item_charges: z
     .array(
       z.object({
-        id: z.string().uuid("ID de servicio invalido"),
+        id: z.string().uuid("ID de servicio inválido"),
         price: z.number().min(0, "El precio no puede ser negativo"),
         discountPercentage: z
           .number()

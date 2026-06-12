@@ -4,8 +4,14 @@ import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-fe
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
 import type { Database } from "@/types/database.types";
 
-type SalonOverviewRow =
+type GeneratedSalonOverviewRow =
   Database["public"]["Functions"]["platform_salon_overviews"]["Returns"][number];
+
+// Supabase genera columnas RETURNS TABLE como no anulables, pero el LEFT JOIN
+// de appointment_stats devuelve null para salones que nunca tuvieron citas.
+type SalonOverviewRow = Omit<GeneratedSalonOverviewRow, "last_appointment_at"> & {
+  last_appointment_at: string | null;
+};
 
 export interface SalonOverview {
   id: string;
@@ -23,6 +29,7 @@ export interface SalonOverview {
   appointment_count: number;
   service_count: number;
   invitation_count: number;
+  last_appointment_at: string | null;
 }
 
 export function mapSalonOverviewRow(row: SalonOverviewRow): SalonOverview {
@@ -42,6 +49,7 @@ export function mapSalonOverviewRow(row: SalonOverviewRow): SalonOverview {
     appointment_count: row.appointment_count,
     service_count: row.service_count,
     invitation_count: row.invitation_count,
+    last_appointment_at: row.last_appointment_at,
   };
 }
 

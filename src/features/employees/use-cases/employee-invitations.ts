@@ -102,7 +102,7 @@ export async function acceptEmployeeInvitation({
     }
 
     if (!role) {
-      return { ok: false, error: "Este enlace tiene un rol invalido. Solicita un enlace nuevo." };
+      return { ok: false, error: "Este enlace tiene un rol inválido. Solicita un enlace nuevo." };
     }
 
     roleId = role.id;

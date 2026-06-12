@@ -53,7 +53,7 @@ export function InviteSalonForm({ plans }: InviteSalonFormProps) {
       {state?.ok ? <InviteLinkReveal token={state.value} /> : null}
 
       <p className="text-xs text-stone-400">
-        Al aceptar la invitacion, el salon nace con este plan: trial, modulos y limites quedan activos
+        Al aceptar la invitacion, el salon nace con este plan: trial, modulos y límites quedan activos
         antes del primer inicio de sesion.
       </p>
     </div>

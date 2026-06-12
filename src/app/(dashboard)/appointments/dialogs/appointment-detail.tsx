@@ -1,10 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
-import { User, Phone, CreditCard, Timer, Pencil } from "lucide-react";
+import {
+  CheckCheck,
+  CheckCircle2,
+  CreditCard,
+  MessageCircle,
+  Pencil,
+  Phone,
+  Timer,
+  Trash2,
+  User,
+} from "lucide-react";
+import { confirmAppointmentAction } from "../actions";
 
 interface ApptItem {
   id: string;
@@ -46,14 +60,22 @@ const ITEM_ACCENT: Record<string, string> = {
 };
 
 export function AppointmentDetailDialog({
-  appt, tz, open, onClose, canManage,
+  appt, tz, open, onClose, canManage, onComplete, onCancel,
 }: {
   appt: ApptForDetail;
   tz: string;
   open: boolean;
   onClose: () => void;
   canManage: boolean;
+  /** Abre el flujo de cobro existente (cierra este detalle primero). */
+  onComplete?: () => void;
+  /** Abre el flujo de cancelación existente (cierra este detalle primero). */
+  onCancel?: () => void;
 }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [confirming, startConfirm] = useTransition();
+
   const customerName = appt.customer
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
     : "Cliente desconocido";
@@ -62,6 +84,20 @@ export function AppointmentDetailDialog({
   const canEdit = canManage && !["completed", "cancelled", "no_show"].includes(appt.status);
   const subtotal = appt.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
   const discountAmount = Number(appt.discount_amount ?? 0);
+  const whatsappPhone = appt.customer?.phone?.replace(/\D/g, "") ?? "";
+
+  function handleConfirm() {
+    startConfirm(async () => {
+      const res = await confirmAppointmentAction(appt.id);
+      if (res.ok) {
+        toast.success("Cita confirmada.");
+        router.refresh();
+        onClose();
+      } else {
+        toast.error(res.error ?? "No se pudo confirmar la cita.");
+      }
+    });
+  }
 
   return (
     <Dialog open={open} onClose={onClose} title="Detalles de la cita" className="max-w-md">
@@ -90,7 +126,7 @@ export function AppointmentDetailDialog({
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 shrink-0">
             <User className="h-4 w-4 text-brand-600" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs text-brand-500 font-semibold">Cliente</p>
             <p className="text-sm font-bold text-stone-800">{customerName}</p>
             {appt.customer?.phone && (
@@ -100,6 +136,17 @@ export function AppointmentDetailDialog({
               </div>
             )}
           </div>
+          {whatsappPhone && (
+            <a
+              href={`https://wa.me/${whatsappPhone}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Contactar por WhatsApp"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors hover:bg-emerald-200"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </a>
+          )}
         </div>
 
         {/* Servicios — cada uno como card elevada */}
@@ -175,6 +222,49 @@ export function AppointmentDetailDialog({
           <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-3">
             <p className="text-xs font-semibold text-stone-500 mb-1">Notas</p>
             <p className="text-sm text-stone-700">{appt.notes}</p>
+          </div>
+        )}
+
+        {/* Acciones rápidas: el camino corto desde el calendario sin pasar
+            por el resumen ni por la edición completa. */}
+        {canEdit && (
+          <div className="flex flex-wrap gap-2 border-t border-stone-100 pt-4">
+            {appt.status === "scheduled" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                loading={confirming}
+                onClick={handleConfirm}
+              >
+                <CheckCheck className="h-4 w-4" />
+                Confirmar
+              </Button>
+            )}
+            {onComplete && (
+              <Button
+                variant="primary"
+                size="sm"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                disabled={confirming}
+                onClick={onComplete}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Completar
+              </Button>
+            )}
+            {onCancel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 text-red-600 hover:bg-red-50 hover:text-red-700"
+                disabled={confirming}
+                onClick={onCancel}
+              >
+                <Trash2 className="h-4 w-4" />
+                Cancelar cita
+              </Button>
+            )}
           </div>
         )}
       </div>

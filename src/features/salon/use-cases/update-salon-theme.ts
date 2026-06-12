@@ -9,7 +9,7 @@ export async function updateSalonTheme(
   theme: string
 ): Promise<Result<void>> {
   if (!SALON_THEMES.includes(theme as SalonTheme)) {
-    return { ok: false, error: "Tema invalido." };
+    return { ok: false, error: "Tema inválido." };
   }
 
   try {

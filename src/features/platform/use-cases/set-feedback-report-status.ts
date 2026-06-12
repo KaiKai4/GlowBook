@@ -14,7 +14,7 @@ export async function setFeedbackReportStatus({
   status,
   actorUserId,
 }: SetFeedbackReportStatusInput): Promise<Result<void>> {
-  if (!id.trim()) return { ok: false, error: "Reporte invalido." };
+  if (!id.trim()) return { ok: false, error: "Reporte inválido." };
 
   try {
     await setFeedbackStatus(id, status);

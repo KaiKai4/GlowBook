@@ -16,7 +16,7 @@ export async function updateSalonStatus({
 }: UpdateSalonStatusInput): Promise<Result<boolean>> {
   const trimmedSalonId = salonId.trim();
   if (!trimmedSalonId) {
-    return { ok: false, error: "Salon invalido." };
+    return { ok: false, error: "Salon inválido." };
   }
 
   try {

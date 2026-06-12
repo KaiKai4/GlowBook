@@ -47,7 +47,7 @@ describe("update salon status", () => {
       actorUserId,
     });
 
-    expect(result).toEqual({ ok: false, error: "Salon invalido." });
+    expect(result).toEqual({ ok: false, error: "Salon inválido." });
     expect(mockedSetSalonActiveStatus).not.toHaveBeenCalled();
     expect(mockedRecordPlatformAction).not.toHaveBeenCalled();
   });

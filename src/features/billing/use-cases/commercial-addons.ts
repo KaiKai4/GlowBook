@@ -36,10 +36,10 @@ const AddonSchema = z
       ctx.addIssue({ code: "custom", message: "Selecciona el modulo que activa este extra." });
     }
     if (value.kind === "limit_boost" && !value.metricKey) {
-      ctx.addIssue({ code: "custom", message: "Selecciona el limite que aumenta este extra." });
+      ctx.addIssue({ code: "custom", message: "Selecciona el límite que aumenta este extra." });
     }
     if (value.kind === "limit_boost" && value.limitDelta === null) {
-      ctx.addIssue({ code: "custom", message: "Indica cuanto aumenta el limite." });
+      ctx.addIssue({ code: "custom", message: "Indica cuanto aumenta el límite." });
     }
   });
 

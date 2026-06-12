@@ -38,7 +38,7 @@ export function EmployeeCreateDialog({
       open={open}
       onClose={closeDialog}
       title={inviteResult ? "Colaborador creado" : "Nuevo colaborador"}
-      description={inviteResult ? undefined : "Elige las categorias y los servicios que realiza."}
+      description={inviteResult ? undefined : "Elige las categorías y los servicios que realiza."}
       className="max-w-lg"
     >
       {inviteResult ? (
@@ -54,7 +54,7 @@ export function EmployeeCreateDialog({
 
           <EmployeeInviteLinkCard
             url={inviteUrl}
-            title="Enlace de acceso valido 7 dias"
+            title="Enlace de acceso valido 7 días"
             description="El colaborador abrira este link para crear su contrasena y acceder al sistema."
           />
 

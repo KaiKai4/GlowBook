@@ -29,7 +29,7 @@ export function ExtrasPanel({
   addons: CommercialAddon[];
   metrics: CommercialLimitMetric[];
   modules: SubscriptionsPageData["modules"];
-  /** Limite que el admin quiere ampliar (viene del panel de uso). */
+  /** Límite que el admin quiere ampliar (viene del panel de uso). */
   suggestedMetricKey?: string | null;
 }) {
   const suggestedAddon = suggestedMetricKey
@@ -46,7 +46,7 @@ export function ExtrasPanel({
           Estas ampliando <span className="font-semibold">{suggestedMetricName}</span>.
           {suggestedAddon
             ? " El extra del catalogo que lo aumenta ya esta seleccionado: vendelo o regalalo."
-            : " No hay un extra de catalogo para este limite: usa la cortesia personalizada o crea el extra en Planes → Extras."}
+            : " No hay un extra de catalogo para este límite: usa la cortesia personalizada o crea el extra en Planes → Extras."}
         </p>
       ) : null}
       <ActiveExtrasList salonId={salonId} extras={extras} />
@@ -68,7 +68,7 @@ function ActiveExtrasList({ salonId, extras }: { salonId: string; extras: SalonE
     <Panel
       icon={<Gift className="h-4 w-4" />}
       title="Extras vigentes"
-      description="Modulos y aumentos de limite activos para este salon, vendidos o regalados."
+      description="Modulos y aumentos de límite activos para este salon, vendidos o regalados."
     >
       {extras.length === 0 ? (
         <p className="text-sm text-stone-500">Este salon no tiene extras vigentes.</p>
@@ -206,7 +206,7 @@ function GiveCourtesyForm({
     <Panel
       icon={<HandHeart className="h-4 w-4" />}
       title="Cortesia personalizada"
-      description="Regalo puntual sin catalogo: util cuando un salon esta llegando a su limite y quieres darle margen."
+      description="Regalo puntual sin catalogo: util cuando un salon esta llegando a su límite y quieres darle margen."
     >
       <form action={action} className="space-y-4">
         <input type="hidden" name="salonId" value={salonId} />
@@ -218,12 +218,12 @@ function GiveCourtesyForm({
             value={targetType}
             onChange={(event) => setTargetType(event.target.value as "metric" | "module")}
           >
-            <option value="metric">Aumentar un limite</option>
+            <option value="metric">Aumentar un límite</option>
             <option value="module">Activar un modulo</option>
           </Select>
           {targetType === "metric" ? (
-            <Select name="metricKey" label="Limite" defaultValue={initialMetricKey ?? ""} required>
-              <option value="">Selecciona un limite</option>
+            <Select name="metricKey" label="Límite" defaultValue={initialMetricKey ?? ""} required>
+              <option value="">Selecciona un límite</option>
               {metrics.map((metric) => (
                 <option key={metric.key} value={metric.key}>{metric.name}</option>
               ))}
@@ -244,7 +244,7 @@ function GiveCourtesyForm({
           <Input name="startsAt" label="Inicio (opcional)" type="date" />
           <Input name="endsAt" label="Vence (opcional)" type="date" />
         </div>
-        <Input name="reason" label="Motivo / nota" placeholder="Ej. llego al limite de citas este mes" />
+        <Input name="reason" label="Motivo / nota" placeholder="Ej. llego al límite de citas este mes" />
         <SubmitButton label="Regalar cortesia" />
         <InlineState state={state} block />
       </form>

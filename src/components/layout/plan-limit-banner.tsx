@@ -22,7 +22,7 @@ export function PlanLimitBanner({ warnings }: { warnings: PlanLimitWarning[] }) 
         </span>
         <div className="min-w-0">
           <p className={cn("text-sm font-semibold", hasDanger ? "text-red-800" : "text-amber-800")}>
-            {hasDanger ? "Tu plan llego a uno de sus limites" : "Te estas acercando a los limites de tu plan"}
+            {hasDanger ? "Tu plan llego a uno de sus límites" : "Te estas acercando a los límites de tu plan"}
           </p>
           <ul className={cn("mt-1 space-y-0.5 text-sm", hasDanger ? "text-red-700" : "text-amber-700")}>
             {warnings.map((warning) => (

@@ -21,7 +21,7 @@ export interface AssignmentSchedule {
  *
  * - startsAt: se conserva el inicio existente; si no hay, es hoy.
  * - trialEndsAt: inicio + trialDays, solo cuando el estado es "trialing"
- *   y el plan ofrece dias de prueba. En cualquier otro estado es null.
+ *   y el plan ofrece días de prueba. En cualquier otro estado es null.
  */
 export function deriveAssignmentSchedule(input: AssignmentScheduleInput): AssignmentSchedule {
   const startsAt = input.existingStartsAt?.trim() || input.today;

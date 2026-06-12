@@ -24,8 +24,8 @@ type Period = "pendientes_hoy" | "manana" | "48h" | "7dias";
 const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "pendientes_hoy", label: "Pendientes hoy" },
   { value: "manana", label: "Mañana" },
-  { value: "48h", label: "Proximos 2 dias" },
-  { value: "7dias", label: "Proximos 7 dias" },
+  { value: "48h", label: "Próximos 2 días" },
+  { value: "7dias", label: "Próximos 7 días" },
 ];
 
 const STATUS_OPTIONS = [
@@ -252,7 +252,7 @@ export function RemindersView({
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
             Ventana operativa
           </p>
-          <p className="mt-2 text-sm font-semibold text-stone-800">Hoy a proximos 7 dias</p>
+          <p className="mt-2 text-sm font-semibold text-stone-800">Hoy a próximos 7 días</p>
         </div>
       </div>
 

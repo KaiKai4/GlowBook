@@ -17,8 +17,8 @@ import { recordPlatformAction } from "./platform-audit";
 import { z } from "zod";
 
 const AcceptSchema = z.object({
-  token: z.string().min(1, "Token invalido"),
-  email: z.string().email("Email invalido"),
+  token: z.string().min(1, "Token inválido"),
+  email: z.string().email("Email inválido"),
   password: z.string().min(8, "La contrasena debe tener al menos 8 caracteres"),
   salon_name: z.string().min(1, "El nombre del salon es obligatorio").max(120),
   full_name: personNameField("Tu nombre es obligatorio", "Tu nombre"),
@@ -35,7 +35,7 @@ function translateAcceptError(message: string): string {
       "Cada cuenta puede pertenecer a un solo salon: usa un correo distinto para crear el nuevo salon."
     );
   }
-  // The RPC already raises user-facing Spanish messages (token invalido/expirado).
+  // The RPC already raises user-facing Spanish messages (token inválido/expirado).
   if (m.includes("invitaci")) return message;
   return "No se pudo crear el salon. Intentalo de nuevo o solicita una nueva invitacion.";
 }
@@ -73,7 +73,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
   }
 
   if (!invitation || invitation.status !== "pending") {
-    return err("Invitacion invalida o ya utilizada.");
+    return err("Invitacion inválida o ya utilizada.");
   }
   if (new Date(invitation.expires_at) < new Date()) return err("La invitacion expiro.");
   if (invitation.email.toLowerCase() !== email.toLowerCase()) {
