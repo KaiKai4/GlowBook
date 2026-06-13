@@ -35,6 +35,32 @@ export function localDateString(date: Date, timezone: string): string {
   return `${partMap.year}-${partMap.month}-${partMap.day}`;
 }
 
+/** Año calendario local (en la zona del salón) de una fecha dada. */
+export function localYear(date: Date, timezone: string): number {
+  return Number(localDateString(date, timezone).slice(0, 4));
+}
+
+/**
+ * Rango de un año calendario: 1 de enero a 31 de diciembre. Es lo que hace que
+ * el acumulado "se reinicie" cada 1 de enero — el año nuevo arranca vacío sin
+ * borrar nada, solo filtrando por fechas.
+ */
+export function getYearRange(year: number): ReportDateRange {
+  return { from: `${year}-01-01`, to: `${year}-12-31` };
+}
+
+/**
+ * Años con datos disponibles para consultar: desde el año de creación del
+ * salón (o el más antiguo con movimientos) hasta el año en curso, del más
+ * reciente al más antiguo.
+ */
+export function availableReportYears(earliestYear: number, currentYear: number): number[] {
+  const first = Math.min(earliestYear, currentYear);
+  const years: number[] = [];
+  for (let year = currentYear; year >= first; year--) years.push(year);
+  return years;
+}
+
 function previousMonthRange(today: string): ReportDateRange {
   const [yearText, monthText] = today.split("-");
   const year = Number(yearText);

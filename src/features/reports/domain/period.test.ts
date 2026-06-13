@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getReportPresetRange, localDateString } from "./period";
+import {
+  availableReportYears,
+  getReportPresetRange,
+  getYearRange,
+  localDateString,
+  localYear,
+} from "./period";
 
 describe("report period", () => {
   it("formats local dates in the requested timezone", () => {
@@ -51,5 +57,24 @@ describe("report period", () => {
       from: "2030-04-02",
       to: "2030-06-30",
     });
+  });
+
+  it("derives the local calendar year of a date", () => {
+    // 1 de enero 00:30 UTC todavía es 31 de diciembre del año anterior en Panamá.
+    const date = new Date("2027-01-01T00:30:00.000Z");
+
+    expect(localYear(date, "UTC")).toBe(2027);
+    expect(localYear(date, "America/Panama")).toBe(2026);
+  });
+
+  it("spans a full calendar year for the annual accumulator", () => {
+    expect(getYearRange(2026)).toEqual({ from: "2026-01-01", to: "2026-12-31" });
+  });
+
+  it("lists years from the current one back to the salon's first year", () => {
+    expect(availableReportYears(2024, 2026)).toEqual([2026, 2025, 2024]);
+    expect(availableReportYears(2026, 2026)).toEqual([2026]);
+    // Si el dato más antiguo fuera posterior al año actual (reloj raro), no rompe.
+    expect(availableReportYears(2030, 2026)).toEqual([2026]);
   });
 });

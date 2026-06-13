@@ -18,7 +18,13 @@ import {
   calculateOperationalReportMetrics,
   type OperationalReportMetrics,
 } from "../domain/metrics";
-import { getReportPresetRange, localDateString } from "../domain/period";
+import {
+  availableReportYears,
+  getReportPresetRange,
+  getYearRange,
+  localDateString,
+  localYear,
+} from "../domain/period";
 import type { ReportFilters, SelectedReportPreset } from "../schemas";
 
 const DEFAULT_REPORT_TIMEZONE = "America/Panama";
@@ -33,14 +39,20 @@ export interface OperationalReportPeriodViewModel extends OperationalReportMetri
 
 export interface OperationalReportViewModel extends OperationalReportPeriodViewModel {
   analytics: HistoricalReportAnalytics;
-  /** Acumulado de toda la vida del salon: contraste contra el mes elegido. */
-  lifetime: LifetimeReportTotals;
+  /** Acumulado del año seleccionado: se reinicia cada 1 de enero. */
+  yearly: LifetimeReportTotals;
+  /** Año del acumulado mostrado. */
+  selectedYear: number;
+  /** Años con datos consultables, del más reciente al más antiguo. */
+  availableYears: number[];
 }
 
 export interface GetOperationalReportInput {
   salonId: string;
   filters: ReportFilters;
   modules?: ReportModuleAvailability;
+  /** Año del acumulado; por defecto el año en curso. */
+  year?: number;
   now?: Date;
 }
 
@@ -70,10 +82,21 @@ export async function getOperationalReport({
   salonId,
   filters,
   modules = { inventory: true, retail: true, expenses: true },
+  year,
   now = new Date(),
 }: GetOperationalReportInput): Promise<OperationalReportViewModel> {
-  const timezone = (await findSalonTimezone(salonId)) ?? DEFAULT_REPORT_TIMEZONE;
-  const [period, analytics, lifetime] = await Promise.all([
+  const identity = await findSalonReportIdentity(salonId);
+  const timezone = identity?.timezone ?? DEFAULT_REPORT_TIMEZONE;
+
+  const currentYear = localYear(now, timezone);
+  const earliestYear = identity?.created_at
+    ? localYear(new Date(identity.created_at), timezone)
+    : currentYear;
+  const availableYears = availableReportYears(earliestYear, currentYear);
+  // Solo se consultan años con datos; un año fuera de rango cae al actual.
+  const selectedYear = year && availableYears.includes(year) ? year : currentYear;
+
+  const [period, analytics, yearly] = await Promise.all([
     getOperationalReportPeriod({
       salonId,
       filters,
@@ -82,38 +105,40 @@ export async function getOperationalReport({
       timezone,
     }),
     getHistoricalAnalytics({ salonId, modules, now, timezone }),
-    getLifetimeTotals({ salonId, modules, now, timezone }),
+    getYearTotals({ salonId, modules, timezone, year: selectedYear }),
   ]);
 
-  return { ...period, analytics, lifetime };
+  return { ...period, analytics, yearly, selectedYear, availableYears };
 }
 
+// Limites fijos lejanos: para alcances "histórico completo" hay salones con
+// movimientos anteriores a su creacion (historial importado, datos
+// retroactivos). La RPC agrega en SQL, asi que el rango amplio no trae filas
+// crudas. (Se mantiene para la exportacion del histórico completo.)
+export const LIFETIME_RANGE = {
+  start: "0001-01-01T00:00:00.000Z",
+  end: "9999-12-31T23:59:59.999Z",
+} as const;
+
 /**
- * Acumulado historico real: trae los buckets agregados desde la creacion del
- * salon hasta hoy (un solo round-trip, agregado en SQL) y los suma.
+ * Acumulado de un año calendario (1 de enero a 31 de diciembre, en la zona del
+ * salon). Es lo que el dashboard muestra como "Acumulado del año": se reinicia
+ * cada 1 de enero porque el año nuevo arranca sin movimientos, sin borrar nada.
  */
-export async function getLifetimeTotals({
+export async function getYearTotals({
   salonId,
   modules,
-  now,
   timezone,
+  year,
 }: {
   salonId: string;
   modules: ReportModuleAvailability;
-  now: Date;
   timezone: string;
+  year: number;
 }): Promise<LifetimeReportTotals> {
-  const identity = await findSalonReportIdentity(salonId);
-  const fromDate = (identity?.created_at ?? "2024-01-01").slice(0, 10);
-  const toDate = localDateString(now, timezone);
-  const bounds = utcBounds(fromDate, toDate, timezone);
-
-  const rows = await findHistoricalReportRows({
-    salonId,
-    start: bounds.start,
-    end: bounds.end,
-    timezone,
-  });
+  const range = getYearRange(year);
+  const { start, end } = utcBounds(range.from, range.to, timezone);
+  const rows = await findHistoricalReportRows({ salonId, start, end, timezone });
 
   return calculateLifetimeTotals({ ...rows, modules });
 }

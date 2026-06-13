@@ -1,6 +1,11 @@
 import type { ReportQueryInput } from "@/features/reports/schemas";
 
-export function buildReportsHref(input: ReportQueryInput): string {
+export interface ReportsHrefInput extends ReportQueryInput {
+  /** Año del acumulado anual; el page lo valida contra los años disponibles. */
+  year?: number;
+}
+
+export function buildReportsHref(input: ReportsHrefInput): string {
   const params = new URLSearchParams();
 
   if (input.from && input.to) {
@@ -9,6 +14,8 @@ export function buildReportsHref(input: ReportQueryInput): string {
   } else if (input.preset) {
     params.set("preset", input.preset);
   }
+
+  if (input.year) params.set("year", String(input.year));
 
   const query = params.toString();
   return query ? `/reports?${query}` : "/reports";

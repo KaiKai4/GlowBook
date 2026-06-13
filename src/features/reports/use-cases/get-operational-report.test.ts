@@ -95,6 +95,58 @@ describe("get operational report", () => {
     });
   });
 
+  it("defaults the annual accumulator to the current year and lists available years", async () => {
+    mockedIdentity.mockResolvedValue({
+      name: "Glow Studio",
+      timezone: "UTC",
+      created_at: "2024-03-10T00:00:00.000Z",
+    });
+
+    const report = await getOperationalReport({
+      salonId: "salon-1",
+      filters: { preset: "mes" },
+      now: new Date("2026-06-03T12:00:00.000Z"),
+    });
+
+    expect(report.selectedYear).toBe(2026);
+    expect(report.availableYears).toEqual([2026, 2025, 2024]);
+    expect(report.yearly).toMatchObject({ grossRevenue: expect.any(Number) });
+  });
+
+  it("honors a requested past year within the available range", async () => {
+    mockedIdentity.mockResolvedValue({
+      name: "Glow Studio",
+      timezone: "UTC",
+      created_at: "2024-03-10T00:00:00.000Z",
+    });
+
+    const report = await getOperationalReport({
+      salonId: "salon-1",
+      filters: { preset: "mes" },
+      year: 2025,
+      now: new Date("2026-06-03T12:00:00.000Z"),
+    });
+
+    expect(report.selectedYear).toBe(2025);
+  });
+
+  it("falls back to the current year when the requested year has no data", async () => {
+    mockedIdentity.mockResolvedValue({
+      name: "Glow Studio",
+      timezone: "UTC",
+      created_at: "2026-01-01T00:00:00.000Z",
+    });
+
+    const report = await getOperationalReport({
+      salonId: "salon-1",
+      filters: { preset: "mes" },
+      year: 2020,
+      now: new Date("2026-06-03T12:00:00.000Z"),
+    });
+
+    expect(report.selectedYear).toBe(2026);
+  });
+
   it("loads only monthly metrics when the filter changes", async () => {
     const report = await getOperationalReportPeriod({
       salonId: "salon-1",

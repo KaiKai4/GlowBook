@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   BarChart3,
   CalendarCheck,
-  Download,
   CalendarClock,
   CalendarX,
   CircleDollarSign,
@@ -28,6 +27,8 @@ import {
   TopExpensesChart,
 } from "./report-charts";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Select } from "@/components/ui/select";
+import { ExportReportDialog } from "./export-report-dialog";
 
 type ReportTab = "summary" | "finance" | "appointments" | "inventory" | "expenses";
 
@@ -59,16 +60,35 @@ function monthLabel(month: string): string {
   );
 }
 
+function currentYear(): number {
+  return new Date().getFullYear();
+}
+
 export function ReportsView(report: OperationalReportViewModel) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ReportTab>("summary");
   const [month, setMonth] = useState(selectedMonth(report.from));
   const [pending, startTransition] = useTransition();
 
+  // El año del acumulado solo viaja en la URL si no es el año en curso, para
+  // mantener limpia la URL del caso comun.
+  const yearParam = report.selectedYear === currentYear() ? undefined : report.selectedYear;
+
   function changeMonth(nextMonth: string) {
     setMonth(nextMonth);
     startTransition(() => {
-      router.replace(buildReportsHref(monthRange(nextMonth)));
+      router.replace(buildReportsHref({ ...monthRange(nextMonth), year: yearParam }));
+    });
+  }
+
+  function changeYear(nextYear: number) {
+    startTransition(() => {
+      router.replace(
+        buildReportsHref({
+          ...monthRange(month),
+          year: nextYear === currentYear() ? undefined : nextYear,
+        })
+      );
     });
   }
 
@@ -94,15 +114,11 @@ export function ReportsView(report: OperationalReportViewModel) {
             className="min-w-52"
             ariaLabel="Seleccionar mes de las métricas"
           />
-          {/* Descarga todo el histórico (por mes + totales), no solo el mes visible. */}
-          <a
-            href="/api/reports/export"
-            download
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-brand-200 bg-white px-4 text-sm font-semibold text-brand-700 shadow-sm transition-colors hover:bg-brand-50"
-          >
-            <Download className="h-4 w-4" />
-            Exportar Excel
-          </a>
+          <ExportReportDialog
+            monthKey={month}
+            monthLabel={monthLabel(month)}
+            year={report.selectedYear}
+          />
         </div>
       </header>
 
@@ -130,7 +146,7 @@ export function ReportsView(report: OperationalReportViewModel) {
 
       <div className={cn("transition-opacity duration-200", pending && "opacity-55")}>
         {activeTab === "summary" && (
-          <SummaryTab report={report} />
+          <SummaryTab report={report} onChangeYear={changeYear} yearPending={pending} />
         )}
         {activeTab === "finance" && (
           <FinanceTab report={report} />
@@ -149,7 +165,15 @@ export function ReportsView(report: OperationalReportViewModel) {
   );
 }
 
-function SummaryTab({ report }: { report: OperationalReportViewModel }) {
+function SummaryTab({
+  report,
+  onChangeYear,
+  yearPending,
+}: {
+  report: OperationalReportViewModel;
+  onChangeYear: (year: number) => void;
+  yearPending: boolean;
+}) {
   const cards = [
     {
       label: "Ingresos del mes",
@@ -196,7 +220,7 @@ function SummaryTab({ report }: { report: OperationalReportViewModel }) {
   return (
     <div className="space-y-5">
       <MetricGrid cards={cards} />
-      <LifetimeTotalsStrip report={report} />
+      <YearlyTotalsStrip report={report} onChangeYear={onChangeYear} pending={yearPending} />
       <MonthlyAreaChart
         title="Ingresos vs. egresos"
         description="Comparación mensual de los últimos 12 meses"
@@ -462,41 +486,65 @@ const TONES: Record<MetricTone, { icon: string; surface: string }> = {
   amber: { icon: "text-amber-700", surface: "bg-amber-50" },
 };
 
-// El contraste que evita la ambiguedad mensual-vs-acumulado: misma fila,
-// pero con los totales de toda la vida del salon.
-function LifetimeTotalsStrip({ report }: { report: OperationalReportViewModel }) {
-  const { lifetime } = report;
+// Acumulado del año seleccionado: se reinicia cada 1 de enero (el año nuevo
+// arranca sin movimientos). El selector permite consultar años anteriores; el
+// histórico completo sigue disponible en la exportación.
+function YearlyTotalsStrip({
+  report,
+  onChangeYear,
+  pending,
+}: {
+  report: OperationalReportViewModel;
+  onChangeYear: (year: number) => void;
+  pending: boolean;
+}) {
+  const { yearly, selectedYear, availableYears } = report;
   const items = [
     {
-      label: "Ingresos históricos",
-      value: formatCurrency(lifetime.grossRevenue),
+      label: `Ingresos ${selectedYear}`,
+      value: formatCurrency(yearly.grossRevenue),
       visible: true,
     },
     {
-      label: "Egresos históricos",
-      value: formatCurrency(lifetime.totalExpenses),
+      label: `Egresos ${selectedYear}`,
+      value: formatCurrency(yearly.totalExpenses),
       visible: report.modules.expenses || report.modules.inventory,
     },
     {
-      label: "Ganancia histórica",
-      value: formatCurrency(lifetime.estimatedProfit),
+      label: `Ganancia ${selectedYear}`,
+      value: formatCurrency(yearly.estimatedProfit),
       visible: true,
     },
     {
-      label: "Citas completadas (histórico)",
-      value: lifetime.completedAppointments.toString(),
+      label: `Citas completadas ${selectedYear}`,
+      value: yearly.completedAppointments.toString(),
       visible: true,
     },
   ];
 
   return (
     <section
-      aria-label="Acumulado histórico del salón"
+      aria-label={`Acumulado del año ${selectedYear}`}
       className="rounded-xl border border-stone-200 bg-stone-50/70 px-5 py-4"
     >
-      <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
-        Acumulado histórico · desde el inicio del salón
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
+          Acumulado del año · reinicia cada 1 de enero
+        </p>
+        <Select
+          value={String(selectedYear)}
+          onChange={(event) => onChangeYear(Number(event.target.value))}
+          disabled={pending}
+          className="h-9 w-32"
+          title="Año del acumulado"
+        >
+          {availableYears.map((year) => (
+            <option key={year} value={year}>
+              Año {year}
+            </option>
+          ))}
+        </Select>
+      </div>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {items.filter((item) => item.visible).map((item) => (
           <div key={item.label}>
