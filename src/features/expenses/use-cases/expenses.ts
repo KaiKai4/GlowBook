@@ -5,6 +5,16 @@ import {
   findLifetimeExpenseTotals,
   insertExpense,
 } from "../data/expenses.repo";
+import {
+  EXPENSE_CATEGORY_LABELS,
+  expenseDisplayLabel,
+  type ExpenseCategory,
+} from "../domain/categories";
+import {
+  aggregateByCategory,
+  topCategory,
+  type CategoryTotal,
+} from "../domain/category-totals";
 import { getInventoryPurchaseExpenseHistory } from "@/features/inventory/use-cases/inventory-purchase-expenses";
 import { recordInventoryPurchase } from "@/features/inventory/use-cases/inventory-movements";
 import type { InventoryPurchaseInput } from "@/features/inventory/schemas";
@@ -15,6 +25,10 @@ export interface ExpensesPageView {
   monthTotal: number;
   /** Egresos acumulados de toda la vida del salon (manuales + compras). */
   lifetimeTotal: number;
+  /** Desglose por categoria del mes en curso (mayor a menor). */
+  categoryTotals: CategoryTotal[];
+  /** Categoria con mayor gasto del mes, o null. */
+  topCategory: CategoryTotal | null;
 }
 
 export interface ExpenseHistoryItem {
@@ -23,10 +37,18 @@ export interface ExpenseHistoryItem {
   date: string;
   amount: number;
   concept: string;
+  /** Etiqueta de categoria (o texto libre en "other"; "Compra de inventario"). */
+  categoryLabel: string;
   commerceName: string | null;
+  receiptUrl: string | null;
   note: string | null;
   createdAt: string;
   detail: string;
+}
+
+function isInCurrentMonth(dateIso: string, now: Date): boolean {
+  const date = new Date(`${dateIso}T12:00:00`);
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
 }
 
 export async function getExpensesPage(salonId: string): Promise<ExpensesPageView> {
@@ -36,13 +58,17 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
     findLifetimeExpenseTotals(salonId),
   ]);
 
+  const now = new Date();
+
   const manualHistory: ExpenseHistoryItem[] = expenses.map((expense) => ({
     id: expense.id,
     type: "manual",
     date: expense.expense_date,
     amount: Number(expense.amount ?? 0),
     concept: expense.concept || expense.custom_category || "Gasto general",
+    categoryLabel: expenseDisplayLabel(expense.category, expense.custom_category),
     commerceName: expense.vendor_name,
+    receiptUrl: expense.receipt_url,
     note: expense.note,
     createdAt: expense.created_at,
     detail: expense.note || "Gasto general",
@@ -54,7 +80,9 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
     date: purchase.date,
     amount: purchase.amount,
     concept: "Compra de inventario",
+    categoryLabel: EXPENSE_CATEGORY_LABELS.products,
     commerceName: purchase.commerceName,
+    receiptUrl: null,
     note: purchase.note,
     createdAt: purchase.createdAt,
     detail: purchase.detail,
@@ -66,19 +94,37 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
     return b.createdAt.localeCompare(a.createdAt);
   });
 
-  const now = new Date();
-  const month = now.getMonth();
-  const year = now.getFullYear();
-  const monthTotal = history.reduce((sum, expense) => {
-    const date = new Date(`${expense.date}T12:00:00`);
-    if (date.getFullYear() !== year || date.getMonth() !== month) return sum;
-    return sum + expense.amount;
-  }, 0);
+  const monthTotal = history.reduce(
+    (sum, expense) => (isInCurrentMonth(expense.date, now) ? sum + expense.amount : sum),
+    0
+  );
+
+  // Desglose por categoria del mes: gastos manuales con su categoria + las
+  // compras de inventario agrupadas bajo "Productos e insumos".
+  const monthCategoryInput = [
+    ...expenses
+      .filter((expense) => isInCurrentMonth(expense.expense_date, now))
+      .map((expense) => ({
+        category: expense.category as ExpenseCategory,
+        customCategory: expense.custom_category,
+        amount: Number(expense.amount ?? 0),
+      })),
+    ...inventoryPurchaseExpenses
+      .filter((purchase) => isInCurrentMonth(purchase.date, now))
+      .map((purchase) => ({
+        category: "products" as ExpenseCategory,
+        customCategory: null,
+        amount: purchase.amount,
+      })),
+  ];
+  const categoryTotals = aggregateByCategory(monthCategoryInput);
 
   return {
     history,
     monthTotal,
     lifetimeTotal: lifetimeTotals.total,
+    categoryTotals,
+    topCategory: topCategory(categoryTotals),
   };
 }
 

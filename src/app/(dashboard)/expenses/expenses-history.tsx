@@ -23,6 +23,7 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
     return history.filter((item) => {
       const haystack = [
         item.concept,
+        item.categoryLabel,
         item.detail,
         item.commerceName ?? "",
         item.note ?? "",
@@ -110,9 +111,23 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
                     {expenseTypeLabel(item.type)}
                   </span>
                 </span>
-                <div>
-                  <p className="font-semibold text-stone-900">{item.concept}</p>
-                  <p className="text-xs text-stone-400">{item.detail}</p>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-600">
+                      {item.categoryLabel}
+                    </span>
+                    {item.receiptUrl && (
+                      <a
+                        href={item.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-semibold text-brand-600 hover:underline"
+                      >
+                        Ver comprobante
+                      </a>
+                    )}
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-stone-400">{item.detail}</p>
                 </div>
                 <span className="hidden truncate text-stone-500 md:block">
                   {item.commerceName || "Sin registrar"}

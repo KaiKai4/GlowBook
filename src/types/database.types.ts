@@ -756,6 +756,7 @@ export type Database = {
           expense_date: string
           id: string
           note: string | null
+          receipt_url: string | null
           salon_id: string
           updated_at: string
           vendor_name: string | null
@@ -769,6 +770,7 @@ export type Database = {
           expense_date?: string
           id?: string
           note?: string | null
+          receipt_url?: string | null
           salon_id: string
           updated_at?: string
           vendor_name?: string | null
@@ -782,6 +784,7 @@ export type Database = {
           expense_date?: string
           id?: string
           note?: string | null
+          receipt_url?: string | null
           salon_id?: string
           updated_at?: string
           vendor_name?: string | null

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
 import type { InventoryProductOption } from "@/features/inventory/use-cases/inventory-product-options";
 import { ExpenseGeneralForm } from "./expense-general-form";
+import { ExpensesCategoryBreakdown } from "./expenses-category-breakdown";
 import { ExpensesHistory } from "./expenses-history";
 import { ExpensesStats } from "./expenses-stats";
 import { ExpensesTabs, type ExpensesTab } from "./expenses-tabs";
@@ -73,7 +74,12 @@ export function ExpensesManager({
           onResult={handleResult}
         />
       )}
-      {activeTab === "history" && <ExpensesHistory history={expenses.history} />}
+      {activeTab === "history" && (
+        <div className="space-y-6">
+          <ExpensesCategoryBreakdown expenses={expenses} />
+          <ExpensesHistory history={expenses.history} />
+        </div>
+      )}
     </div>
   );
 }

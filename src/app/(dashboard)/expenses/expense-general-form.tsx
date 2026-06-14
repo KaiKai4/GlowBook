@@ -1,26 +1,18 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  EXPENSE_CATEGORIES,
+  EXPENSE_CATEGORY_LABELS,
+} from "@/features/expenses/schemas";
 import { createExpenseAction } from "./actions";
-
-const CONCEPT_SUGGESTIONS = [
-  "Alquiler",
-  "Luz",
-  "Agua",
-  "Internet",
-  "Suministros",
-  "Herramientas",
-  "Equipo",
-  "Marketing",
-  "Impuestos",
-  "Nomina/comisiones",
-];
 
 export function ExpenseGeneralForm({
   onResult,
@@ -29,6 +21,9 @@ export function ExpenseGeneralForm({
 }) {
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const [pending, startTransition] = useTransition();
+  const [category, setCategory] = useState<string>("rent");
+
+  const isOther = category === "other";
 
   function handleCreateExpense(formData: FormData) {
     startTransition(async () => {
@@ -43,27 +38,52 @@ export function ExpenseGeneralForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nuevo gasto general</CardTitle>
+        <CardTitle>Nuevo gasto</CardTitle>
       </CardHeader>
       <CardContent>
         <form action={handleCreateExpense} className="grid gap-4 lg:grid-cols-2">
           <DatePicker name="expense_date" label="Fecha" defaultValue={today} required />
           <Input name="amount" type="number" step="0.01" min="0.01" label="Monto" required />
-          <div>
+
+          <Select
+            name="category"
+            label="Categoría"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+          >
+            {EXPENSE_CATEGORIES.map((value) => (
+              <option key={value} value={value}>
+                {EXPENSE_CATEGORY_LABELS[value]}
+              </option>
+            ))}
+          </Select>
+
+          {/* El concepto libre solo aplica a "Otro"; en las demás categorías la
+              etiqueta sale del catálogo. */}
+          {isOther ? (
             <Input
               name="concept"
-              label="Concepto del gasto"
-              placeholder="Luz, computadora, impuestos..."
-              list="expense-concepts"
+              label="Describe el gasto"
+              placeholder="Donación, multa, imprevisto..."
               required
             />
-            <datalist id="expense-concepts">
-              {CONCEPT_SUGGESTIONS.map((concept) => (
-                <option key={concept} value={concept} />
-              ))}
-            </datalist>
-          </div>
-          <Input name="vendor_name" label="Comercio / empresa" placeholder="Naturgy, Panafoto, arrendador..." />
+          ) : (
+            <Input
+              name="concept"
+              label="Detalle (opcional)"
+              placeholder="Ej. recibo de luz de marzo"
+            />
+          )}
+
+          <Input name="vendor_name" label="Comercio / proveedor" placeholder="Naturgy, Panafoto, arrendador..." />
+
+          <Input
+            name="receipt_url"
+            type="url"
+            label="Comprobante (enlace, opcional)"
+            placeholder="https://..."
+          />
+
           <div className="lg:col-span-2">
             <Textarea name="note" label="Nota" />
           </div>

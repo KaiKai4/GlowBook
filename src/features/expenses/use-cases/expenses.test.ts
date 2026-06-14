@@ -34,10 +34,11 @@ describe("getExpensesPage", () => {
         id: "expense-1",
         expense_date: "2026-06-10",
         amount: 25,
-        category: "other",
+        category: "utilities",
         custom_category: null,
         concept: "Internet",
         vendor_name: null,
+        receipt_url: null,
         note: null,
         created_at: "2026-06-10T12:00:00.000Z",
       },
@@ -64,5 +65,55 @@ describe("getExpensesPage", () => {
     expect(result.monthTotal).toBe(65);
     expect(result.lifetimeTotal).toBe(500);
     expect(result.history).toHaveLength(2);
+  });
+
+  it("breaks the month down by category, counting inventory purchases as products", async () => {
+    mockedFindExpenses.mockResolvedValue([
+      {
+        id: "e1",
+        expense_date: "2026-06-05",
+        amount: 500,
+        category: "rent",
+        custom_category: null,
+        concept: null,
+        vendor_name: null,
+        receipt_url: null,
+        note: null,
+        created_at: "2026-06-05T12:00:00.000Z",
+      },
+      {
+        id: "e2",
+        expense_date: "2026-06-06",
+        amount: 80,
+        category: "marketing",
+        custom_category: null,
+        concept: null,
+        vendor_name: null,
+        receipt_url: null,
+        note: null,
+        created_at: "2026-06-06T12:00:00.000Z",
+      },
+    ]);
+    mockedPurchaseHistory.mockResolvedValue([
+      {
+        id: "p1",
+        date: "2026-06-07",
+        amount: 120,
+        commerceName: null,
+        note: null,
+        createdAt: "2026-06-07T12:00:00.000Z",
+        detail: "Tintes",
+      },
+    ]);
+    mockedFindLifetimeExpenseTotals.mockResolvedValue({ manual: 0, inventoryPurchases: 0, total: 0 });
+
+    const result = await getExpensesPage("salon-1");
+
+    expect(result.topCategory).toMatchObject({ label: "Alquiler", amount: 500 });
+    expect(result.categoryTotals).toEqual([
+      { category: "rent", label: "Alquiler", amount: 500 },
+      { category: "products", label: "Productos e insumos", amount: 120 },
+      { category: "marketing", label: "Publicidad y marketing", amount: 80 },
+    ]);
   });
 });

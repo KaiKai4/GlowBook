@@ -35,9 +35,13 @@ export interface ExpenseRow {
   custom_category: string | null;
   concept: string | null;
   vendor_name: string | null;
+  receipt_url: string | null;
   note: string | null;
   created_at: string;
 }
+
+const EXPENSE_COLUMNS =
+  "id, expense_date, amount, category, custom_category, concept, vendor_name, receipt_url, note, created_at";
 
 interface HistoricalExpensePayload {
   expenseGroups?: Array<{ amount: number }> | null;
@@ -55,20 +59,27 @@ export async function insertExpense(
   input: {
     expense_date: string;
     amount: number;
-    concept: string;
+    category: ExpenseCategory;
+    concept?: string;
     vendor_name?: string;
+    receipt_url?: string;
     note?: string;
   }
 ): Promise<void> {
   const supabase = db(await createSupabaseServerClient());
+  // custom_category solo guarda el texto libre del caso "other"; para las demas
+  // categorias la etiqueta sale del catalogo, no de un texto guardado.
+  const customCategory = input.category === "other" ? input.concept?.trim() || null : null;
+
   const { error } = await supabase.from("expenses").insert({
     salon_id: salonId,
     expense_date: input.expense_date,
     amount: input.amount,
-    category: "other",
-    custom_category: input.concept,
-    concept: input.concept,
+    category: input.category,
+    custom_category: customCategory,
+    concept: input.concept?.trim() || null,
     vendor_name: input.vendor_name || null,
+    receipt_url: input.receipt_url?.trim() || null,
     note: input.note || null,
   });
 
@@ -79,7 +90,7 @@ export async function findExpenses(salonId: string, limit = 40): Promise<Expense
   const supabase = db(await createSupabaseServerClient());
   const { data, error } = await supabase
     .from("expenses")
-    .select("id, expense_date, amount, category, custom_category, concept, vendor_name, note, created_at")
+    .select(EXPENSE_COLUMNS)
     .eq("salon_id", salonId)
     .order("expense_date", { ascending: false })
     .order("created_at", { ascending: false })
