@@ -25,10 +25,12 @@ import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
 import {
   AlertCircle,
   BellRing,
+  CalendarCheck,
   CalendarDays,
   ChevronRight,
   Clock,
   DollarSign,
+  PackageSearch,
   ReceiptText,
   Scissors,
   TrendingUp,
@@ -64,6 +66,7 @@ export default async function DashboardPage() {
   const canManageCustomers = hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE);
   const hasExpensesFeature = !isSalonFeatureDisabled(disabledFeatures, "expenses");
   const hasRetailFeature = !isSalonFeatureDisabled(disabledFeatures, "retail");
+  const hasInventoryFeature = !isSalonFeatureDisabled(disabledFeatures, "inventory");
 
   const { metrics, topServices, monthlyCompletedAppointments, pending } =
     canViewReports || canManageAppointments
@@ -128,6 +131,21 @@ export default async function DashboardPage() {
             />
           )}
           <MetricCard title="Citas hoy" value={String(metrics.todayAppointments)} icon={CalendarDays} color="blue" />
+          <MetricCard
+            title="Citas completadas (mes)"
+            value={String(metrics.completedThisMonth)}
+            icon={CalendarCheck}
+            color="emerald"
+          />
+          <MetricCard title="Clientes registrados" value={String(metrics.totalCustomers)} icon={Users} color="blue" />
+          {hasInventoryFeature && (
+            <MetricCard
+              title="Productos con bajo stock"
+              value={String(metrics.lowStockProducts)}
+              icon={PackageSearch}
+              color={metrics.lowStockProducts > 0 ? "red" : "emerald"}
+            />
+          )}
         </div>
       )}
 
