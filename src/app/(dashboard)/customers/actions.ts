@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireActiveProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import { CreateCustomerSchema, UpdateCustomerSchema } from "@/features/customers/schemas";
 import {
   checkPermanentCustomerByPhone,
@@ -26,11 +27,11 @@ import {
 import type { Result } from "@/lib/result";
 
 function canManageCustomers(profile: Awaited<ReturnType<typeof requireActiveProfile>>): Result<void> {
-  if (hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE)) {
-    return { ok: true, value: undefined };
+  if (!hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE)) {
+    return { ok: false, error: "No tienes permiso para gestionar clientes." };
   }
 
-  return { ok: false, error: "No tienes permiso para gestionar clientes." };
+  return assertActionRateLimit(profile.id, "customers", { max: 60, windowMs: 60_000 });
 }
 
 function revalidateCustomerFlows(): void {

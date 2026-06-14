@@ -6,6 +6,7 @@ import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
 
@@ -14,6 +15,9 @@ async function guard(): Promise<Result<{ salonId: string }>> {
   if (!hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar vitrina." };
   }
+
+  const limited = assertActionRateLimit(profile.id, "retail", { max: 60, windowMs: 60_000 });
+  if (!limited.ok) return limited;
   return { ok: true, value: { salonId: profile.salon_id } };
 }
 

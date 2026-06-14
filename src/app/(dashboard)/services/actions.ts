@@ -18,6 +18,7 @@ import {
 } from "@/features/services/schemas";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
 
@@ -26,6 +27,9 @@ async function guard(): Promise<Result<{ salonId: string }>> {
   if (!hasPermission(profile, PERMISSIONS.SERVICES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar servicios." };
   }
+
+  const limited = assertActionRateLimit(profile.id, "services", { max: 60, windowMs: 60_000 });
+  if (!limited.ok) return limited;
 
   return { ok: true, value: { salonId: profile.salon_id } };
 }

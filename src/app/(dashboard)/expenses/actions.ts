@@ -7,6 +7,7 @@ import { InventoryPurchaseSchema } from "@/features/inventory/schemas";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
 
 async function guard(options: { inventoryPurchase?: boolean } = {}): Promise<Result<{ salonId: string }>> {
@@ -17,6 +18,8 @@ async function guard(options: { inventoryPurchase?: boolean } = {}): Promise<Res
   if (options.inventoryPurchase && !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
     return { ok: false, error: "No tienes permiso para registrar compras de inventario." };
   }
+  const limited = assertActionRateLimit(profile.id, "expenses", { max: 40, windowMs: 60_000 });
+  if (!limited.ok) return limited;
   return { ok: true, value: { salonId: profile.salon_id } };
 }
 

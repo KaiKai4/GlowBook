@@ -13,6 +13,7 @@ import {
 } from "@/features/salon/schemas";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
@@ -20,6 +21,9 @@ async function guard(): Promise<Result<{ salonId: string }>> {
   if (!hasPermission(profile, PERMISSIONS.SALON_MANAGE)) {
     return { ok: false, error: "No tienes permiso para editar el salon." };
   }
+
+  const limited = assertActionRateLimit(profile.id, "salon", { max: 60, windowMs: 60_000 });
+  if (!limited.ok) return limited;
 
   return { ok: true, value: { salonId: profile.salon_id } };
 }
