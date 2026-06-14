@@ -61,6 +61,7 @@ describe("get operational report", () => {
           serviceName: "Manicura",
           employeeId: "employee-1",
           employeeName: "Ana Mora",
+          employeeCommissionPct: 0,
         },
       ],
       newCustomers: 2,

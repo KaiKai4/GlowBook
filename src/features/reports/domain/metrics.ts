@@ -1,3 +1,5 @@
+import { calculateCommissionReport, type CommissionReport } from "./commissions";
+
 export const COMPLETED_APPOINTMENT_STATUS = "completed";
 
 export const REPORT_STATUS_ORDER = [
@@ -22,6 +24,8 @@ export interface ReportAppointmentItem {
   serviceName: string | null;
   employeeId: string | null;
   employeeName: string | null;
+  /** % de comisión del empleado al momento del reporte. */
+  employeeCommissionPct: number;
 }
 
 export interface ReportStatusBreakdown {
@@ -53,6 +57,7 @@ export interface OperationalReportMetrics {
   statusBreakdown: ReportStatusBreakdown[];
   byEmployee: ReportEntityBreakdown[];
   byService: ReportEntityBreakdown[];
+  commissions: CommissionReport;
 }
 
 function toPercent(value: number, total: number): number {
@@ -100,6 +105,7 @@ export function calculateOperationalReportMetrics(
     statusBreakdown: calculateStatusBreakdown(appointments),
     byEmployee: calculateEmployeeBreakdown(items),
     byService: calculateServiceBreakdown(items),
+    commissions: calculateCommissionReport(items),
   };
 }
 

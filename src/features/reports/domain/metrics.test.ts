@@ -23,6 +23,7 @@ const items: ReportAppointmentItem[] = [
     serviceName: "Corte",
     employeeId: "emp-1",
     employeeName: "Ana Lopez",
+    employeeCommissionPct: 0,
   },
   {
     appointmentId: "appt-1",
@@ -31,6 +32,7 @@ const items: ReportAppointmentItem[] = [
     serviceName: "Barba",
     employeeId: "emp-1",
     employeeName: "Ana Lopez",
+    employeeCommissionPct: 0,
   },
   {
     appointmentId: "appt-2",
@@ -39,6 +41,7 @@ const items: ReportAppointmentItem[] = [
     serviceName: "Corte",
     employeeId: "emp-2",
     employeeName: "Luis Vega",
+    employeeCommissionPct: 0,
   },
 ];
 
@@ -93,6 +96,7 @@ describe("report metrics", () => {
       statusBreakdown: [],
       byEmployee: [],
       byService: [],
+      commissions: { rows: [], totalRevenue: 0, totalCommission: 0 },
     });
   });
 });

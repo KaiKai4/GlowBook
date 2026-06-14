@@ -28,7 +28,12 @@ type AppointmentItemRow = {
   price: number | null;
   discount_amount: number | null;
   service: RelatedOne<{ id: string; name: string }>;
-  employee: RelatedOne<{ id: string; first_name: string; last_name: string }>;
+  employee: RelatedOne<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    commission_percentage: number | string | null;
+  }>;
   appointment?: RelatedOne<{ status: string }>;
 };
 
@@ -86,6 +91,7 @@ function normalizeItem(row: AppointmentItemRow): ReportAppointmentItem {
     serviceName: service?.name ?? null,
     employeeId: employee?.id ?? null,
     employeeName: employeeName || null,
+    employeeCommissionPct: employee ? Number(employee.commission_percentage ?? 0) : 0,
   };
 }
 
@@ -139,7 +145,7 @@ export async function findOperationalReportRows({
     supabase
       .from("appointment_items")
       .select(
-        "appointment_id, price, discount_amount, service:services(id, name), employee:employees(id, first_name, last_name), appointment:appointments!inner(status)"
+        "appointment_id, price, discount_amount, service:services(id, name), employee:employees(id, first_name, last_name, commission_percentage), appointment:appointments!inner(status)"
       )
       .eq("salon_id", salonId)
       .eq("appointment.status", COMPLETED_APPOINTMENT_STATUS)
