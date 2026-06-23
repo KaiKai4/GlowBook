@@ -1,4 +1,4 @@
-import { Tags } from "lucide-react";
+import { Tags, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { Category, ServiceItem } from "./services-types";
 import { ServiceCard } from "./service-card";
@@ -10,6 +10,9 @@ export function ServicesCategorySection({
   onTogglePricingMode,
   onCreateService,
   onEditService,
+  onArchiveCategory,
+  archivePending,
+  archiveCategoryId,
 }: {
   category: Category;
   pricingPending: boolean;
@@ -17,7 +20,12 @@ export function ServicesCategorySection({
   onTogglePricingMode: (category: Category) => void;
   onCreateService: (categoryId: string) => void;
   onEditService: (service: ServiceItem) => void;
+  onArchiveCategory: (category: Category) => void;
+  archivePending: boolean;
+  archiveCategoryId: string | null;
 }) {
+  const deleting = archivePending && archiveCategoryId === category.id;
+
   return (
     <section>
       <div className="mb-3 flex items-center gap-2">
@@ -45,6 +53,16 @@ export function ServicesCategorySection({
           className="ml-auto text-xs text-rose-600 hover:underline"
         >
           + Agregar
+        </button>
+        <button
+          type="button"
+          onClick={() => onArchiveCategory(category)}
+          disabled={deleting}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Archivar categoria"
+          aria-label={`Archivar categoria ${category.name}`}
+        >
+          <Trash2 className="h-4 w-4" />
         </button>
       </div>
       {category.services.length === 0 ? (

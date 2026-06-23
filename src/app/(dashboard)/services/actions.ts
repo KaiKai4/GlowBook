@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { archiveServiceCategory } from "@/features/services/use-cases/archive-category";
 import { createServiceCategory } from "@/features/services/use-cases/create-category";
 import { createCatalogService } from "@/features/services/use-cases/create-service";
 import { updateServiceCategory } from "@/features/services/use-cases/update-category";
@@ -85,6 +86,15 @@ export async function updateCategoryPricingModeAction(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   const result = await updateServiceCategory(categoryId, guarded.value.salonId, parsed.data);
+  if (result.ok) revalidatePath("/services");
+  return result;
+}
+
+export async function archiveCategoryAction(categoryId: string): Promise<Result<void>> {
+  const guarded = await guard();
+  if (!guarded.ok) return guarded;
+
+  const result = await archiveServiceCategory(categoryId, guarded.value.salonId);
   if (result.ok) revalidatePath("/services");
   return result;
 }

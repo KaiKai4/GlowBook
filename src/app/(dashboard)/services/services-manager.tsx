@@ -3,11 +3,13 @@
 import { useMemo, useState, useTransition } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
+  archiveCategoryAction,
   createCategoryAction,
   createServiceAction,
   updateCategoryPricingModeAction,
   updateServiceAction,
 } from "./actions";
+import { ArchiveCategoryDialog } from "./archive-category-dialog";
 import { CategoryDialog } from "./category-dialog";
 import { EditServiceDialog } from "./edit-service-dialog";
 import { EmptyServicesState } from "./empty-services-state";
@@ -35,10 +37,14 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
   const [servicePending, startService] = useTransition();
   const [editPending, startEdit] = useTransition();
   const [pricingPending, startPricing] = useTransition();
+  const [archivePending, startArchive] = useTransition();
   const [pricingCategoryId, setPricingCategoryId] = useState<string | null>(null);
+  const [archiveCategoryId, setArchiveCategoryId] = useState<string | null>(null);
+  const [categoryToArchive, setCategoryToArchive] = useState<Category | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
 
   const totals = useMemo(() => {
     const allServices = categories.flatMap((category) => category.services);
@@ -150,6 +156,36 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
     });
   }
 
+  function handleArchiveCategory(category: Category) {
+    setArchiveError(null);
+    setCategoryToArchive(category);
+  }
+
+  function closeArchiveCategoryDialog() {
+    if (archivePending) return;
+    setArchiveError(null);
+    setCategoryToArchive(null);
+  }
+
+  function confirmArchiveCategory() {
+    if (!categoryToArchive) return;
+
+    setArchiveError(null);
+    setArchiveCategoryId(categoryToArchive.id);
+    startArchive(async () => {
+      const result = await archiveCategoryAction(categoryToArchive.id);
+      if (result.ok) {
+        if (activeCategoryId === categoryToArchive.id) setActiveCategoryId("all");
+        setCategoryToArchive(null);
+        setArchiveCategoryId(null);
+        return;
+      }
+
+      setArchiveCategoryId(null);
+      setArchiveError(result.error);
+    });
+  }
+
   return (
     <div className="space-y-6">
       <ServicesStats
@@ -191,6 +227,9 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
                     onTogglePricingMode={handleToggleCategoryPricingMode}
                     onCreateService={openNewService}
                     onEditService={openEditService}
+                    onArchiveCategory={handleArchiveCategory}
+                    archivePending={archivePending}
+                    archiveCategoryId={archiveCategoryId}
                   />
                 ))}
               </div>
@@ -241,6 +280,14 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
         error={categoryError}
         onClose={() => setCategoryDialogOpen(false)}
         onSubmit={handleCreateCategory}
+      />
+
+      <ArchiveCategoryDialog
+        category={categoryToArchive}
+        pending={archivePending}
+        error={archiveError}
+        onClose={closeArchiveCategoryDialog}
+        onConfirm={confirmArchiveCategory}
       />
 
       <NewServiceDialog

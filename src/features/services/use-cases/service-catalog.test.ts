@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createCategory, createService, updateService } from "../data/services.repo";
+import { archiveCategory, createCategory, createService, updateService } from "../data/services.repo";
+import { archiveServiceCategory } from "./archive-category";
 import { createServiceCategory } from "./create-category";
 import { createCatalogService } from "./create-service";
 import { updateCatalogService } from "./update-service";
 
 vi.mock("../data/services.repo", () => ({
+  archiveCategory: vi.fn(),
   createCategory: vi.fn(),
   createService: vi.fn(),
   updateService: vi.fn(),
 }));
 
+const mockedArchiveCategory = vi.mocked(archiveCategory);
 const mockedCreateCategory = vi.mocked(createCategory);
 const mockedCreateService = vi.mocked(createService);
 const mockedUpdateService = vi.mocked(updateService);
@@ -49,6 +52,26 @@ describe("service catalog use-cases", () => {
     expect(result).toEqual({
       ok: false,
       error: "Ya existe una categoria con ese nombre.",
+    });
+  });
+
+  it("archives a category without deleting historical relationships", async () => {
+    mockedArchiveCategory.mockResolvedValue({ id: "category-1" } as never);
+
+    const result = await archiveServiceCategory("category-1", "salon-1");
+
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(mockedArchiveCategory).toHaveBeenCalledWith("category-1", "salon-1");
+  });
+
+  it("returns a business error when a category cannot be archived", async () => {
+    mockedArchiveCategory.mockRejectedValue(new Error("not found"));
+
+    const result = await archiveServiceCategory("category-1", "salon-1");
+
+    expect(result).toEqual({
+      ok: false,
+      error: "No se pudo archivar la categoria.",
     });
   });
 

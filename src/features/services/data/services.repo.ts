@@ -67,6 +67,21 @@ export async function updateCategory(
   return data;
 }
 
+export async function archiveCategory(id: string, salonId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("service_categories")
+    .update({ is_active: false })
+    .eq("id", id)
+    .eq("salon_id", salonId)
+    .eq("is_active", true)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function createService(
   salonId: string,
   input: Omit<Database["public"]["Tables"]["services"]["Insert"], "salon_id">
