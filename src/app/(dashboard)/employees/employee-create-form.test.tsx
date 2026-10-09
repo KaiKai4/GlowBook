@@ -216,9 +216,10 @@ describe("EmployeeCreateForm", () => {
     setFieldValue(fieldByName(mounted.container, "first_name"), "Marta");
     setFieldValue(fieldByName(mounted.container, "last_name"), "Lima");
     await submitForm(formOf(mounted.container));
-    await flushAsync();
 
-    expect(onCreatedWithInvite).toHaveBeenCalledWith(created);
+    // El envío calcula la clave de idempotencia de forma asíncrona: se espera al
+    // callback en lugar de suponer un número fijo de microtareas (lento en CI).
+    await vi.waitFor(() => expect(onCreatedWithInvite).toHaveBeenCalledWith(created));
   });
 
   it("al salir del email busca un colaborador archivado y bloquea la creación", async () => {

@@ -139,6 +139,12 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
+      # Ubuntu 24.04 restringe los user namespaces sin privilegios (AppArmor) y
+      # Chromium aborta con "No usable sandbox". Se habilitan en el runner para
+      # que Lighthouse lance Chrome CON sandbox (sin --no-sandbox). Setup del runner.
+      - name: Allow Chromium sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Verify job lighthouse
         run: npm run verify:job -- lighthouse
 
@@ -184,6 +190,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
+      # actions: read lo exige codeql-action en repositorios privados para leer el run.
+      actions: read
       contents: read
       security-events: write
     steps:

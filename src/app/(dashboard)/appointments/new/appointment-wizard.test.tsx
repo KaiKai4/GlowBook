@@ -232,9 +232,9 @@ describe("AppointmentWizard", () => {
       const [prevState, formData] = vi.mocked(createAppointmentAction).mock.calls[0] ?? [];
       expect(prevState).toBeNull();
       expect(formData?.get("customer_id")).toBe(CUSTOMER_ID);
-      // CONDUCTA ACTUAL (posible bug): el inicio se interpreta en la zona horaria del navegador,
-      // no en la del salón (salonConfig.timezone). Se afirma la conversión local que hace el componente.
-      expect(formData?.get("start_time")).toBe(new Date(`${TEST_DATE}T09:00:00`).toISOString());
+      // El inicio se interpreta en la zona del salón (America/Panama, UTC-5 sin horario de verano),
+      // no en la del navegador: 09:00 en el salón son las 14:00 UTC en cualquier máquina.
+      expect(formData?.get("start_time")).toBe(`${TEST_DATE}T14:00:00.000Z`);
       expect(formData?.get("notes")).toBe("Sin lácteos");
       expect(JSON.parse(String(formData?.get("assignments")))).toEqual([
         { service_id: "svc-corte", employee_id: "emp-1" },
