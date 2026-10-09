@@ -71,6 +71,7 @@ describe("InventoryManager (acciones sobre productos)", () => {
   it("guardar la edición de un producto llama a la acción con su id y muestra el resultado", async () => {
     updateMock.mockResolvedValue({ ok: true, value: undefined });
     mounted = mountComponent(<InventoryManager inventory={inventoryWithProduct()} />);
+    clickElement(findButtonByText(mounted.container, "Editar producto"));
 
     await submitFormAsync(requireElement<HTMLFormElement>(mounted.container, "form"));
     await flushAsync();
@@ -84,6 +85,7 @@ describe("InventoryManager (acciones sobre productos)", () => {
   it("eliminar un producto tras confirmar llama a la acción con su id", async () => {
     deleteMock.mockResolvedValue({ ok: true, value: "Producto eliminado." });
     mounted = mountComponent(<InventoryManager inventory={inventoryWithProduct()} />);
+    clickElement(findButtonByText(mounted.container, "Editar producto"));
 
     clickElement(findButtonByText(mounted.container, "Eliminar producto"));
     clickElement(findButtonByText(mounted.container, "Confirmar eliminar"));
@@ -96,6 +98,7 @@ describe("InventoryManager (acciones sobre productos)", () => {
   it("si eliminar falla muestra el motivo como aviso de error", async () => {
     deleteMock.mockResolvedValue({ ok: false, error: "El producto tiene movimientos recientes" });
     mounted = mountComponent(<InventoryManager inventory={inventoryWithProduct()} />);
+    clickElement(findButtonByText(mounted.container, "Editar producto"));
 
     clickElement(findButtonByText(mounted.container, "Eliminar producto"));
     clickElement(findButtonByText(mounted.container, "Confirmar eliminar"));
