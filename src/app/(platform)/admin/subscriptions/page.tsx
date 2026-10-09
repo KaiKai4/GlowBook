@@ -6,7 +6,7 @@ import {
 } from "@/features/billing/use-cases/salon-subscriptions";
 import { PageHeader } from "@/components/ui/page-header";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { SalonSubscriptionList } from "./salon-list";
 import { SubscriptionDetail } from "./subscription-detail";
 

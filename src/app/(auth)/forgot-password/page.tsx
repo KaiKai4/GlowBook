@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, MailOpen } from "lucide-react";
 
-import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { requestPasswordResetAction } from "./actions";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -24,10 +24,11 @@ export default function ForgotPasswordPage() {
     }
 
     startTransition(async () => {
-      const supabase = createSupabaseBrowserClient();
-      await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const result = await requestPasswordResetAction(email);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
       // Siempre mostramos exito: no revelamos si el correo existe o no.
       setSent(true);
     });

@@ -1,0 +1,299 @@
+%% Generado por scripts/quality/code-map.mjs. No editar a mano.
+flowchart LR
+  subgraph g_app["app"]
+    app["app (3)"]
+    app__auth_["app/(auth) (12)"]
+    app__dashboard_["app/(dashboard) (168)"]
+    app__platform_["app/(platform) (32)"]
+    app__composition["app/_composition (2)"]
+    app_api["app/api (4)"]
+  end
+  subgraph g_components["components"]
+    components_brand["components/brand (1)"]
+    components_forms["components/forms (5)"]
+    components_layout["components/layout (11)"]
+    components_ui["components/ui (26)"]
+  end
+  subgraph g_features["features"]
+    features_access["features/access (14)"]
+    features_appointments["features/appointments (35)"]
+    features_audit["features/audit (6)"]
+    features_billing["features/billing (25)"]
+    features_customers["features/customers (9)"]
+    features_dashboard["features/dashboard (7)"]
+    features_employees["features/employees (22)"]
+    features_expenses["features/expenses (7)"]
+    features_feedback["features/feedback (4)"]
+    features_inventory["features/inventory (11)"]
+    features_notifications["features/notifications (7)"]
+    features_payments["features/payments (2)"]
+    features_platform["features/platform (19)"]
+    features_reminders["features/reminders (4)"]
+    features_reports["features/reports (9)"]
+    features_retail["features/retail (4)"]
+    features_salon["features/salon (17)"]
+    features_salon_features["features/salon-features (2)"]
+    features_services["features/services (13)"]
+  end
+  subgraph g_infra["infra"]
+    infra["infra (3)"]
+    infra_auth["infra/auth (4)"]
+    infra_effects["infra/effects (1)"]
+    infra_events["infra/events (2)"]
+    infra_format["infra/format (2)"]
+    infra_http["infra/http (2)"]
+    infra_idempotency["infra/idempotency (1)"]
+    infra_observability["infra/observability (5)"]
+    infra_security["infra/security (4)"]
+    infra_supabase["infra/supabase (7)"]
+    infra_validation["infra/validation (4)"]
+  end
+  subgraph g_npm["npm"]
+    npm__supabase_ssr["npm/@supabase/ssr"]
+    npm__supabase_supabase_js["npm/@supabase/supabase-js"]
+    npm_next["npm/next"]
+    npm_react["npm/react"]
+    npm_react_dom["npm/react-dom"]
+    npm_server_only["npm/server-only"]
+  end
+  subgraph g_src["src"]
+    src["src (2)"]
+  end
+  subgraph g_types["types"]
+    types["types (2)"]
+  end
+  app --> components_brand
+  app --> npm_next
+  app__auth_ --> components_brand
+  app__auth_ --> components_ui
+  app__auth_ --> features_employees
+  app__auth_ --> features_platform
+  app__auth_ --> infra
+  app__auth_ --> infra_auth
+  app__auth_ --> infra_security
+  app__auth_ --> infra_validation
+  app__auth_ --> npm_next
+  app__auth_ --> npm_react
+  app__dashboard_ --> app__composition
+  app__dashboard_ --> components_brand
+  app__dashboard_ --> components_forms
+  app__dashboard_ --> components_layout
+  app__dashboard_ --> components_ui
+  app__dashboard_ --> features_access
+  app__dashboard_ --> features_appointments
+  app__dashboard_ --> features_billing
+  app__dashboard_ --> features_customers
+  app__dashboard_ --> features_dashboard
+  app__dashboard_ --> features_employees
+  app__dashboard_ --> features_expenses
+  app__dashboard_ --> features_feedback
+  app__dashboard_ --> features_inventory
+  app__dashboard_ --> features_notifications
+  app__dashboard_ --> features_payments
+  app__dashboard_ --> features_reminders
+  app__dashboard_ --> features_reports
+  app__dashboard_ --> features_retail
+  app__dashboard_ --> features_salon
+  app__dashboard_ --> features_salon_features
+  app__dashboard_ --> features_services
+  app__dashboard_ --> infra
+  app__dashboard_ --> infra_format
+  app__dashboard_ --> infra_security
+  app__dashboard_ --> infra_validation
+  app__dashboard_ --> npm_next
+  app__dashboard_ --> npm_react
+  app__platform_ --> app__composition
+  app__platform_ --> components_brand
+  app__platform_ --> components_forms
+  app__platform_ --> components_ui
+  app__platform_ --> features_billing
+  app__platform_ --> features_platform
+  app__platform_ --> infra
+  app__platform_ --> infra_security
+  app__platform_ --> infra_validation
+  app__platform_ --> npm_next
+  app__platform_ --> npm_react
+  app__platform_ --> npm_react_dom
+  app__composition --> features_access
+  app__composition --> features_billing
+  app__composition --> infra
+  app__composition --> infra_auth
+  app__composition --> infra_observability
+  app__composition --> infra_security
+  app__composition --> infra_validation
+  app__composition --> npm_next
+  app__composition --> npm_react
+  app__composition --> npm_server_only
+  app__composition --> types
+  app_api --> app__composition
+  app_api --> features_access
+  app_api --> features_billing
+  app_api --> features_reports
+  app_api --> infra_auth
+  app_api --> infra_http
+  app_api --> infra_observability
+  app_api --> infra_security
+  components_brand --> components_ui
+  components_brand --> npm_next
+  components_forms --> npm_react
+  components_layout --> components_brand
+  components_layout --> components_ui
+  components_layout --> features_access
+  components_layout --> features_billing
+  components_layout --> features_feedback
+  components_layout --> features_salon
+  components_layout --> features_salon_features
+  components_layout --> infra
+  components_layout --> npm_next
+  components_layout --> npm_react
+  components_ui --> npm_react
+  components_ui --> npm_react_dom
+  features_access --> features_salon_features
+  features_access --> infra
+  features_access --> infra_supabase
+  features_access --> infra_validation
+  features_access --> npm_server_only
+  features_access --> types
+  features_appointments --> features_customers
+  features_appointments --> features_employees
+  features_appointments --> features_notifications
+  features_appointments --> features_payments
+  features_appointments --> features_salon
+  features_appointments --> features_services
+  features_appointments --> infra
+  features_appointments --> infra_format
+  features_appointments --> infra_idempotency
+  features_appointments --> infra_observability
+  features_appointments --> infra_supabase
+  features_appointments --> infra_validation
+  features_appointments --> npm_server_only
+  features_appointments --> types
+  features_audit --> infra_events
+  features_audit --> infra_supabase
+  features_audit --> npm_server_only
+  features_audit --> types
+  features_billing --> features_access
+  features_billing --> features_audit
+  features_billing --> features_salon_features
+  features_billing --> infra
+  features_billing --> infra_effects
+  features_billing --> infra_supabase
+  features_billing --> infra_validation
+  features_billing --> npm_server_only
+  features_billing --> types
+  features_customers --> infra
+  features_customers --> infra_format
+  features_customers --> infra_observability
+  features_customers --> infra_supabase
+  features_customers --> infra_validation
+  features_customers --> npm_server_only
+  features_customers --> types
+  features_dashboard --> features_salon
+  features_dashboard --> infra_format
+  features_dashboard --> infra_supabase
+  features_dashboard --> infra_validation
+  features_dashboard --> npm_server_only
+  features_employees --> features_access
+  features_employees --> features_services
+  features_employees --> infra
+  features_employees --> infra_auth
+  features_employees --> infra_format
+  features_employees --> infra_idempotency
+  features_employees --> infra_observability
+  features_employees --> infra_supabase
+  features_employees --> infra_validation
+  features_employees --> npm__supabase_supabase_js
+  features_employees --> npm_server_only
+  features_employees --> types
+  features_expenses --> features_inventory
+  features_expenses --> infra
+  features_expenses --> infra_supabase
+  features_expenses --> infra_validation
+  features_expenses --> npm_server_only
+  features_feedback --> infra
+  features_feedback --> infra_supabase
+  features_feedback --> infra_validation
+  features_feedback --> npm_server_only
+  features_inventory --> infra
+  features_inventory --> infra_supabase
+  features_inventory --> infra_validation
+  features_inventory --> npm_server_only
+  features_notifications --> infra
+  features_notifications --> infra_supabase
+  features_notifications --> infra_validation
+  features_notifications --> npm_server_only
+  features_notifications --> types
+  features_platform --> features_audit
+  features_platform --> features_billing
+  features_platform --> features_feedback
+  features_platform --> features_salon_features
+  features_platform --> infra
+  features_platform --> infra_auth
+  features_platform --> infra_observability
+  features_platform --> infra_supabase
+  features_platform --> infra_validation
+  features_platform --> npm__supabase_supabase_js
+  features_platform --> npm_server_only
+  features_platform --> types
+  features_reminders --> features_appointments
+  features_reminders --> features_employees
+  features_reminders --> features_notifications
+  features_reminders --> features_salon
+  features_reminders --> infra
+  features_reminders --> infra_format
+  features_reminders --> infra_observability
+  features_reminders --> infra_supabase
+  features_reminders --> npm_server_only
+  features_reminders --> types
+  features_reports --> infra_supabase
+  features_reports --> infra_validation
+  features_reports --> npm_server_only
+  features_retail --> features_customers
+  features_retail --> features_inventory
+  features_retail --> features_payments
+  features_retail --> features_salon
+  features_retail --> infra
+  features_retail --> infra_supabase
+  features_retail --> infra_validation
+  features_retail --> npm_server_only
+  features_salon --> features_access
+  features_salon --> features_billing
+  features_salon --> features_payments
+  features_salon --> features_salon_features
+  features_salon --> infra
+  features_salon --> infra_observability
+  features_salon --> infra_supabase
+  features_salon --> infra_validation
+  features_salon --> npm_server_only
+  features_salon --> types
+  features_services --> infra
+  features_services --> infra_supabase
+  features_services --> infra_validation
+  features_services --> npm_server_only
+  features_services --> types
+  infra --> infra_observability
+  infra_auth --> infra_supabase
+  infra_auth --> infra_validation
+  infra_auth --> npm__supabase_supabase_js
+  infra_auth --> npm_next
+  infra_auth --> npm_server_only
+  infra_effects --> infra_observability
+  infra_events --> infra_effects
+  infra_events --> infra_observability
+  infra_http --> npm_next
+  infra_observability --> npm_next
+  infra_security --> infra
+  infra_security --> infra_observability
+  infra_security --> infra_supabase
+  infra_security --> infra_validation
+  infra_security --> npm_next
+  infra_supabase --> infra_validation
+  infra_supabase --> npm__supabase_ssr
+  infra_supabase --> npm__supabase_supabase_js
+  infra_supabase --> npm_next
+  infra_supabase --> npm_server_only
+  infra_supabase --> types
+  src --> infra_observability
+  src --> infra_security
+  src --> infra_supabase
+  src --> npm_next

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { PERMISSIONS } from "@/infra/auth/permissions";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { PERMISSIONS } from "@/features/access";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { err, ok } from "@/infra/result";
 import { buildProfile, SALON_ID, USER_ID } from "@/test/action-fixtures";
 import { guard } from "./employee-action-guard";
 
-vi.mock("@/infra/auth/session", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   isEffectiveSalonModuleEnabled: vi.fn(),

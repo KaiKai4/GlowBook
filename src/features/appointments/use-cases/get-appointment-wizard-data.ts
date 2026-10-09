@@ -1,9 +1,9 @@
 import "server-only";
 
-import { getActiveCustomerOptions } from "@/features/customers/use-cases/customer-options";
-import { getEmployeeSchedulingOptions } from "@/features/employees/use-cases/employee-scheduling-options";
-import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
-import { getServiceSchedulingOptions } from "@/features/services/use-cases/service-scheduling-options";
+import { getActiveCustomerOptions } from "@/features/customers";
+import { getEmployeeSchedulingOptions } from "@/features/employees";
+import { getSalonSchedulingConfig } from "@/features/salon";
+import { getServiceSchedulingOptions } from "@/features/services";
 import type { AppointmentWizardData } from "../view-models";
 
 export async function getAppointmentWizardData(salonId: string): Promise<AppointmentWizardData> {

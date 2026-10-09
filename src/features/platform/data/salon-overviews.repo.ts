@@ -1,7 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/infra/supabase/admin";
-import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-features";
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import { normalizeDisabledSalonFeatures, type SalonFeatureKey } from "@/features/salon-features";
 import type { Database } from "@/types/database.types";
 
 type GeneratedSalonOverviewRow =

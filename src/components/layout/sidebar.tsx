@@ -6,11 +6,16 @@ import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
 import { GlowBookBrand, GlowBookMark } from "@/components/brand/glowbook-logo";
-import type { Permission } from "@/infra/auth/permissions";
+import type { Permission } from "@/features/access";
 import { cn } from "@/components/ui/cn";
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 
 import { getVisibleNavGroups } from "./nav-items";
+import {
+  getSidebarCollapsed,
+  setSidebarCollapsed,
+  subscribeSidebarCollapsed,
+} from "./sidebar-store";
 import { useNavigationGuard } from "./unsaved-changes";
 
 interface SidebarProps {
@@ -18,27 +23,6 @@ interface SidebarProps {
   userPermissions: Permission[];
   isOwner: boolean;
   disabledFeatures: SalonFeatureKey[];
-}
-
-const SIDEBAR_STORAGE_KEY = "glowbook-sidebar-collapsed";
-const SIDEBAR_CHANGE_EVENT = "glowbook-sidebar-change";
-
-function getSidebarSnapshot() {
-  try {
-    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function subscribeToSidebarState(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(SIDEBAR_CHANGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(SIDEBAR_CHANGE_EVENT, onStoreChange);
-  };
 }
 
 export function Sidebar({
@@ -50,8 +34,8 @@ export function Sidebar({
   const pathname = usePathname();
   const confirmNavigate = useNavigationGuard();
   const isCollapsed = useSyncExternalStore(
-    subscribeToSidebarState,
-    getSidebarSnapshot,
+    subscribeSidebarCollapsed,
+    getSidebarCollapsed,
     () => false,
   );
 
@@ -66,15 +50,7 @@ export function Sidebar({
   );
 
   function toggleSidebar() {
-    const next = !isCollapsed;
-
-    try {
-      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
-    } catch {
-      return;
-    }
-
-    window.dispatchEvent(new Event(SIDEBAR_CHANGE_EVENT));
+    setSidebarCollapsed(!isCollapsed);
   }
 
   function handleNav(event: React.MouseEvent, href: string) {

@@ -8,8 +8,8 @@ import {
   CreateRoleSchema,
   UpdateRolePermissionsSchema,
 } from "@/features/access/schemas";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { parseUuid } from "@/infra/validation/route-id";
 import type { Result } from "@/infra/result";

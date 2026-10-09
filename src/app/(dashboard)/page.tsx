@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireProfile } from "@/infra/auth/session";
+import { requireProfile } from "@/app/_composition/request-context";
 import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
-import { getPermissions, hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { getPermissions, hasPermission, PERMISSIONS } from "@/features/access";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
-import { isSalonFeatureDisabled } from "@/features/salon/domain/salon-features";
+import { isSalonFeatureDisabled } from "@/features/salon-features";
 import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
 import { selectDashboardMoney } from "@/features/dashboard/domain/dashboard-money";
 import {

@@ -4,11 +4,12 @@ import { acceptInvitation } from "@/features/platform/use-cases/accept-invitatio
 import { err, ok } from "@/infra/result";
 import { acceptInvitationAction } from "./actions";
 
-const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
+const { rpc, signIn } = vi.hoisted(() => ({ rpc: vi.fn(), signIn: vi.fn() }));
 
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/auth/password-auth", () => ({ signInWithPassword: signIn }));
 vi.mock("@/features/platform/use-cases/accept-invitation", () => ({
   acceptInvitation: vi.fn(),
 }));
@@ -30,6 +31,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   requestHeaders({ "x-real-ip": "203.0.113.7" });
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
+  signIn.mockResolvedValue({ error: null });
 });
 
 describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
@@ -60,7 +62,32 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     const result = await acceptInvitationAction(INPUT);
 
     expect(acceptInvitation).toHaveBeenCalledWith(INPUT);
-    expect(result).toEqual(ok(undefined));
+    expect(result).toEqual(ok({ signedIn: true }));
+  });
+
+  it("entra al panel con el correo y la contraseña de la invitacion tras aceptarla", async () => {
+    vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
+
+    await acceptInvitationAction(INPUT);
+
+    expect(signIn).toHaveBeenCalledWith({ email: INPUT.email, password: INPUT.password });
+  });
+
+  it("si el inicio de sesion falla la invitacion sigue aceptada y devuelve signedIn false", async () => {
+    vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
+    signIn.mockResolvedValue({ error: new Error("Email not confirmed") });
+
+    const result = await acceptInvitationAction(INPUT);
+
+    expect(result).toEqual(ok({ signedIn: false }));
+  });
+
+  it("si la invitacion no se acepta no intenta iniciar sesion", async () => {
+    vi.mocked(acceptInvitation).mockResolvedValue(err("El enlace ha caducado."));
+
+    await acceptInvitationAction(INPUT);
+
+    expect(signIn).not.toHaveBeenCalled();
   });
 
   it("devuelve el error de validacion del caso de uso tal cual", async () => {

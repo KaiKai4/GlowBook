@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { parseUuid } from "@/infra/validation/route-id";
 import {

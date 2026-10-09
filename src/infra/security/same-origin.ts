@@ -11,13 +11,21 @@ function firstValue(value: string | null): string | null {
   return first ? first : null;
 }
 
+/**
+ * Origen (esquema + host) por el que el cliente alcanzo la aplicacion, leido de
+ * las cabeceras de la peticion. Si no hay cabecera de host se usa el fallback.
+ */
+export function originFromHeaders(requestHeaders: Headers, fallbackOrigin: string): string {
+  const host = firstValue(requestHeaders.get("x-forwarded-host")) ?? firstValue(requestHeaders.get("host"));
+  if (!host) return fallbackOrigin;
+  const fallbackProtocol = new URL(fallbackOrigin).protocol.slice(0, -1);
+  const protocol = firstValue(requestHeaders.get("x-forwarded-proto")) ?? fallbackProtocol;
+  return `${protocol}://${host}`;
+}
+
 /** Origen (esquema + host) por el que el cliente alcanzo la aplicacion. */
 export function requestOrigin(request: Request): string {
-  const url = new URL(request.url);
-  const host = firstValue(request.headers.get("x-forwarded-host")) ?? firstValue(request.headers.get("host"));
-  if (!host) return url.origin;
-  const protocol = firstValue(request.headers.get("x-forwarded-proto")) ?? url.protocol.slice(0, -1);
-  return `${protocol}://${host}`;
+  return originFromHeaders(request.headers, new URL(request.url).origin);
 }
 
 export function isSameOriginRequest(request: Request): boolean {

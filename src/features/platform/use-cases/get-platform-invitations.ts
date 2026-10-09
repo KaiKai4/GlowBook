@@ -4,7 +4,7 @@ import {
   findPendingInvitations,
   findRecentAcceptedInvitations,
 } from "@/features/platform/data/invitations.repo";
-import { getPlanCatalogSummary } from "@/features/billing/use-cases/commercial-plans";
+import { getPlanCatalogSummary } from "@/features/billing";
 import { findSalonNamesByIds } from "@/features/platform/data/salons.repo";
 
 interface PlatformInvitationViewModel {

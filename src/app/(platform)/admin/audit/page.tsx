@@ -3,7 +3,7 @@ import { AlertTriangle, Clock, History, ShieldCheck, UserRound } from "lucide-re
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import type {
   PlatformAuditLogEntryViewModel,
   PlatformAuditLogViewModel,

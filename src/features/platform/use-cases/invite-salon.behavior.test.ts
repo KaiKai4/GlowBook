@@ -3,7 +3,6 @@ import {
   createSalonInvitation,
   regenerateSalonInvitationToken,
 } from "@/features/platform/data/invitations.repo";
-import { isPlatformAdmin } from "@/infra/auth/session";
 import { captureError } from "@/infra/observability";
 import { inviteSalon, regenerateSalonInvitation } from "./invite-salon";
 import { publishAuditEvent } from "@/features/audit";
@@ -18,10 +17,6 @@ vi.mock("@/features/platform/data/invitations.repo", () => ({
   regenerateSalonInvitationToken: vi.fn(),
 }));
 
-vi.mock("@/infra/auth/session", () => ({
-  isPlatformAdmin: vi.fn(),
-}));
-
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
@@ -32,7 +27,6 @@ vi.mock("@/features/audit", () => ({
 
 const mockedCreate = vi.mocked(createSalonInvitation);
 const mockedRegenerate = vi.mocked(regenerateSalonInvitationToken);
-const mockedIsAdmin = vi.mocked(isPlatformAdmin);
 const mockedAudit = vi.mocked(publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
@@ -40,9 +34,11 @@ const ACTOR_ID = "00000000-0000-4000-8000-000000000001";
 const PLAN_ID = "00000000-0000-4000-8000-00000000000a";
 const INVITATION_ID = "00000000-0000-4000-8000-0000000000bb";
 
+let isAdmin = true;
+
 beforeEach(() => {
   vi.resetAllMocks();
-  mockedIsAdmin.mockResolvedValue(true);
+  isAdmin = true;
   mockedCreate.mockResolvedValue("token-1");
   mockedRegenerate.mockResolvedValue("token-2");
   mockedAudit.mockResolvedValue([]);
@@ -50,9 +46,9 @@ beforeEach(() => {
 
 describe("inviteSalon authorization and validation", () => {
   it("never validates or creates anything for a non-admin caller", async () => {
-    mockedIsAdmin.mockResolvedValue(false);
+    isAdmin = false;
 
-    const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
+    const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "No autorizado." });
     expect(mockedCreate).not.toHaveBeenCalled();
@@ -60,13 +56,10 @@ describe("inviteSalon authorization and validation", () => {
   });
 
   it("asks the platform admin check about the current session", async () => {
-    await inviteSalon({ email: "owner@example.com", planId: PLAN_ID });
-
-    expect(mockedIsAdmin).toHaveBeenCalledTimes(1);
-  });
+    await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorIsPlatformAdmin: isAdmin });  });
 
   it("requires the plan to be a UUID with a domain message", async () => {
-    const result = await inviteSalon({ email: "owner@example.com", planId: "plan-libre" });
+    const result = await inviteSalon({ email: "owner@example.com", planId: "plan-libre", actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({
       ok: false,
@@ -76,13 +69,13 @@ describe("inviteSalon authorization and validation", () => {
   });
 
   it("returns the first validation message when the email is missing", async () => {
-    const result = await inviteSalon({ email: "", planId: PLAN_ID });
+    const result = await inviteSalon({ email: "", planId: PLAN_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "Email inválido" });
   });
 
   it("records the invitation with the actor but no target salon yet", async () => {
-    await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
+    await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(mockedAudit).toHaveBeenCalledWith("platform.salon_invited", {
       actorUserId: ACTOR_ID,
@@ -95,14 +88,14 @@ describe("inviteSalon authorization and validation", () => {
   });
 
   it("audits with a null actor when the caller did not provide one", async () => {
-    const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID });
+    const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: true, value: "token-1" });
     expect(mockedAudit).toHaveBeenCalledWith("platform.salon_invited", expect.objectContaining({ actorUserId: null }));
   });
 
   it("only exposes the domain of the invited email in the audit trail", async () => {
-    await inviteSalon({ email: "ana.privada@salon-glow.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
+    await inviteSalon({ email: "ana.privada@salon-glow.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     const auditInput = firstOf(mockedAudit.mock.calls)[1];
     expect(JSON.stringify(auditInput)).not.toContain("ana.privada");
@@ -115,7 +108,7 @@ describe("inviteSalon failures", () => {
     const adapterError = new Error("rpc down");
     mockedCreate.mockRejectedValue(adapterError);
 
-    const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
+    const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "Error al crear la invitacion." });
     expect(mockedCaptureError).toHaveBeenCalledWith(adapterError, {
@@ -131,7 +124,7 @@ describe("inviteSalon failures", () => {
   it("audits a generic error text when the adapter rejects with a non-Error value", async () => {
     mockedCreate.mockRejectedValue("oops");
 
-    await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
+    await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(mockedAudit).toHaveBeenCalledWith(
       "platform.salon_invited", expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
@@ -141,16 +134,16 @@ describe("inviteSalon failures", () => {
 
 describe("regenerateSalonInvitation", () => {
   it("rejects non-admin callers before touching the invitation", async () => {
-    mockedIsAdmin.mockResolvedValue(false);
+    isAdmin = false;
 
-    const result = await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorUserId: ACTOR_ID });
+    const result = await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "No autorizado." });
     expect(mockedRegenerate).not.toHaveBeenCalled();
   });
 
   it("returns the new one-time token and audits the regeneration against the invitation", async () => {
-    const result = await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorUserId: ACTOR_ID });
+    const result = await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: true, value: "token-2" });
     expect(mockedRegenerate).toHaveBeenCalledWith(INVITATION_ID);
@@ -167,7 +160,7 @@ describe("regenerateSalonInvitation", () => {
     const adapterError = new Error("ya no esta pendiente");
     mockedRegenerate.mockRejectedValue(adapterError);
 
-    const result = await regenerateSalonInvitation({ invitationId: INVITATION_ID });
+    const result = await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "No se pudo regenerar el enlace." });
     expect(mockedCaptureError).toHaveBeenCalledWith(adapterError, {
@@ -188,7 +181,7 @@ describe("regenerateSalonInvitation", () => {
   it("audits a generic error text when the failure is not an Error", async () => {
     mockedRegenerate.mockRejectedValue(42);
 
-    await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorUserId: ACTOR_ID });
+    await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(mockedAudit).toHaveBeenCalledWith(
       "platform.salon_invitation_regenerated", expect.objectContaining({ errorMessage: "Error desconocido" })

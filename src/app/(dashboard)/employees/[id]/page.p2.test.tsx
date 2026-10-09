@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { notFound } from "next/navigation";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { getEmployeeDetail, type EmployeeDetailViewModel } from "@/features/employees/use-cases/get-employee-detail";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
-import { requireProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireProfile } from "@/app/_composition/request-context";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EmployeeDetailPage from "./page";
@@ -14,9 +14,9 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   }),
 }));
-vi.mock("@/infra/auth/session", () => ({ requireProfile: vi.fn() }));
-vi.mock("@/infra/auth/permissions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/infra/auth/permissions")>()),
+vi.mock("@/app/_composition/request-context", () => ({ requireProfile: vi.fn() }));
+vi.mock("@/features/access", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/access")>()),
   hasPermission: vi.fn(),
 }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({

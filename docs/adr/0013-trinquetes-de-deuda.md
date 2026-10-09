@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada.
+Aceptada, con partes superadas por ADR 0019. Los trinquetes de tokens de diseño, tamaño de módulos y violaciones de grafo se retiran: son controles absolutos sin baseline. Sigue vigente el trinquete de cobertura.
 
 ## Contexto
 
@@ -18,12 +18,17 @@ Trinquetes activos:
 
 | Trinquete | Archivo de linea base | Gate |
 |---|---|---|
-| Tokens de diseno (colores, tipografias y tamanos literales) | `quality/baselines/design-tokens.json` | `check-design-tokens.mjs` |
-| Tamano de modulos (lineas por archivo) | `quality/baselines/module-size.json` | `check-module-size.mjs` |
-| Violaciones conocidas de dependency-cruiser | `.dependency-cruiser-known-violations.json` | paso `architecture` con `--ignore-known` |
 | Cobertura global | `quality/coverage-baseline.json` | `check-coverage.mjs` |
 
-Estado de las lineas base: los archivos de linea base se generan al cierre de la fase 1, con el paso de calidad correspondiente. Hasta que existan, los gates de tokens, tamano de modulos, violaciones conocidas y cobertura fallan de forma explicita. No se crean lineas base vacias ni se desactivan gates para cerrar la fase.
+Retirados por ADR 0019 (controles absolutos, sin linea base):
+
+| Control | Antes | Ahora |
+|---|---|---|
+| Tokens de diseno (colores, tipografias y tamanos literales) | baseline de tokens (eliminada) | `check-design-tokens.mjs` falla con cualquier token crudo |
+| Tamano de modulos (lineas por archivo) | baseline de tamano (eliminada) | `check-module-size.mjs` falla por encima de 300 lineas, salvo la excepcion permanente |
+| Violaciones conocidas de dependency-cruiser | lista de violaciones conocidas (eliminada) | paso `architecture` sin `--ignore-known`; cero violaciones |
+
+Los controles absolutos no tienen archivo de linea base ni opcion para crearlo.
 
 Reglas de los trinquetes:
 
@@ -43,4 +48,4 @@ Reducir deuda tiene un efecto automatico: al bajar la linea base, el valor anter
 
 Un gate que falla por un trinquete no se resuelve subiendo el valor en la linea base. Si la subida fuera necesaria, debe justificarse en un ADR nuevo que reemplace este.
 
-Las violaciones conocidas de dependency-cruiser son deuda real. Se eliminan al refactorizar el modulo afectado, y el archivo de violaciones se regenera sin ellas.
+Las violaciones conocidas de dependency-cruiser ya no existen: se eliminaron al refactorizar, y el archivo de violaciones se retiro (ADR 0019).

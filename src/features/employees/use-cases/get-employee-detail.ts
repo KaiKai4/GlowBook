@@ -1,8 +1,8 @@
 import "server-only";
 import { captureError } from "@/infra/observability";
 
-import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
-import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
+import { getAssignableRoleOptions } from "@/features/access";
+import { getCategoryServiceOptions } from "@/features/services";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
 import { findUpcomingEmployeeExceptions } from "../data/employee-exceptions.repo";
 import { findEmployeeById, findLatestEmployeeInvitation } from "../data/employees.repo";

@@ -12,7 +12,7 @@ import {
 } from "@/features/platform/data/platform-auth.repo";
 import { captureError } from "@/infra/observability";
 import { personNameField } from "@/infra/validation/name";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
+import { autoAssignPlanOnAcceptance } from "@/features/billing";
 import { publishAuditEvent } from "@/features/audit";
 import { z } from "@/infra/validation/zod";
 import { firstIssueMessage } from "@/infra/validation/first-issue";

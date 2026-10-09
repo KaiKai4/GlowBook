@@ -1,7 +1,7 @@
 import "server-only";
 import { captureError } from "@/infra/observability";
 
-import { getAppointmentReminderTarget } from "@/features/appointments/use-cases/appointment-reminder-target";
+import { getAppointmentReminderTarget } from "@/features/appointments";
 import {
   createManualReminderLog,
   findManualReminderSentAt,

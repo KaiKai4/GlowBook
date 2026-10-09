@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
 import {
   inviteSalon,
@@ -19,7 +19,7 @@ import {
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/platform/use-cases/invite-salon", () => ({
@@ -91,6 +91,7 @@ describe("inviteSalonAction", () => {
       email: "dueno@salon.com",
       planId: "plan-1",
       actorUserId: ADMIN_ID,
+      actorIsPlatformAdmin: true,
     });
     expect(result).toEqual(ok("token-en-claro"));
     expect(revalidatePath).toHaveBeenCalledWith("/admin");
@@ -102,7 +103,7 @@ describe("inviteSalonAction", () => {
 
     const result = await inviteSalonAction(null, new FormData());
 
-    expect(inviteSalon).toHaveBeenCalledWith({ email: "", planId: "", actorUserId: ADMIN_ID });
+    expect(inviteSalon).toHaveBeenCalledWith({ email: "", planId: "", actorUserId: ADMIN_ID, actorIsPlatformAdmin: true });
     expect(result).toEqual(err("El correo ya tiene una invitación."));
     expect(revalidatePath).not.toHaveBeenCalled();
   });
@@ -124,6 +125,7 @@ describe("regenerateSalonInvitationAction", () => {
     expect(regenerateSalonInvitation).toHaveBeenCalledWith({
       invitationId: INVITATION_ID,
       actorUserId: ADMIN_ID,
+      actorIsPlatformAdmin: true,
     });
     expect(result).toEqual(ok("nuevo-token"));
     expect(revalidatePath).toHaveBeenCalledWith("/admin/invitations");

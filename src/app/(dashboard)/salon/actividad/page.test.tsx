@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSalonActivity, type SalonActivityViewModel } from "@/features/salon/use-cases/get-salon-activity";
-import { hasPermission } from "@/infra/auth/permissions";
+import { hasPermission } from "@/features/access";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import SalonActivityPage from "./page";
 
-vi.mock("@/infra/auth/session", () => ({
+vi.mock("@/app/_composition/request-context", () => ({
   requireProfile: vi.fn(async () => ({ id: "user-1", salon_id: "salon-1" })),
 }));
 
-vi.mock("@/infra/auth/permissions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/infra/auth/permissions")>()),
+vi.mock("@/features/access", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/access")>()),
   hasPermission: vi.fn(),
 }));
 

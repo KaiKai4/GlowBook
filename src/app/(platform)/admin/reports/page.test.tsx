@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import {
   getPlatformFeedbackReports,
   type PlatformFeedbackReportsViewModel,
@@ -8,7 +8,7 @@ import {
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import AdminReportsPage from "./page";
 
-vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/platform/use-cases/get-platform-feedback-reports", () => ({
   getPlatformFeedbackReports: vi.fn(),
 }));

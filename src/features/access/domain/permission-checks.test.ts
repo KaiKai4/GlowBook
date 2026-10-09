@@ -6,7 +6,7 @@ import {
   getPermissions,
   hasPermission,
   type Permission,
-} from "./permissions";
+} from "./permission-checks";
 
 type RolePermissionKey = string | null;
 

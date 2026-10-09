@@ -1,8 +1,5 @@
 import { z } from "@/infra/validation/zod";
-import {
-  normalizePaymentMethod,
-  normalizePaymentMethods,
-} from "@/features/payments/domain/payment-methods";
+import { normalizePaymentMethod, normalizePaymentMethods } from "@/features/payments";
 
 export const SALON_THEMES = ["violet", "mocco", "tiffany", "viridian", "yellow", "rosewater"] as const;
 export type SalonTheme = (typeof SALON_THEMES)[number];

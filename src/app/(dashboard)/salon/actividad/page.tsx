@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft, History } from "lucide-react";
 
-import { requireProfile } from "@/infra/auth/session";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import {
   getSalonActivity,
   type SalonActivityEntry,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requireActiveProfile } from "./session";
+import { requireActiveProfile } from "./request-context";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 vi.mock("next/navigation", () => ({

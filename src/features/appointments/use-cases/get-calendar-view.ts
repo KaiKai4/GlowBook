@@ -1,11 +1,9 @@
 import "server-only";
 
 import { findAppointmentsBySalon } from "../data/appointments.repo";
-import { getEmployeeCalendarOptions } from "@/features/employees/use-cases/employee-calendar-options";
-import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
-import { getSalonBusinessHours } from "@/features/salon/use-cases/salon-business-hours";
-import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
-import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
+import { getEmployeeCalendarOptions } from "@/features/employees";
+import { getActiveMessageTemplate } from "@/features/notifications";
+import { getSalonBusinessHours, getSalonIdentity, getSalonPaymentMethods } from "@/features/salon";
 import { formatLocalDateISO, utcBounds } from "@/infra/format/dates";
 import {
   countActiveCalendarAppointments,

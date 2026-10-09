@@ -5,8 +5,8 @@ import {
   findEmployeeById,
   findEmployeeByEmail,
   updateEmployeeProfileRecord,
-  validateEmployeeAssignments,
 } from "@/features/employees/data/employees.repo";
+import { validateEmployeeAssignments } from "@/features/employees/use-cases/employee-assignments";
 import {
   generateEmployeeInvitation,
   replacePendingEmployeeInvitation,

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import { useParams, useRouter } from "next/navigation";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
@@ -105,19 +104,13 @@ export default function InvitePage() {
         return;
       }
 
-      const supabase = createSupabaseBrowserClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      setDone(true);
 
-      if (signInError) {
-        setDone(true);
+      if (!res.value.signedIn) {
         setTimeout(() => router.push("/login"), 1800);
         return;
       }
 
-      setDone(true);
       setTimeout(() => {
         router.push("/");
         router.refresh();

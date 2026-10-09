@@ -24,25 +24,29 @@ Documentos relacionados: `CONTEXT.md` (vocabulario de dominio), `DESIGN.md` (UI)
 
 ## 2. Capas y dependencias
 
-Estructura:
+Estructura (ADR 0019):
 
-- `src/app/`: rutas del App Router. Grupos `(auth)`, `(dashboard)`, `(platform)`, y `api/`. Las Server Actions solo orquestan.
-- `src/features/<modulo>/`: lógica de negocio por dominio con `domain/` (funciones puras), `use-cases/` (orquestación), `data/` (repositorios Supabase y RPC), `schemas.ts` (DTOs Zod) e `index.ts` (interfaz pública del módulo).
-- `src/infra/`: infraestructura compartida (`supabase/`, `auth/`, `security/`, `observability/`, `idempotency/`, `validation/`, `http/`, `errors.ts`, `result.ts`).
+- `src/infra/`: infraestructura transversal (`supabase/`, `auth/`, `observability/`, `security/`, `validation/`, `http/`, `events/`, `effects/`, `idempotency/`, `format/`, `errors.ts`, `result.ts`). No importa `src/features`, `src/app`, `src/components` ni React.
+- `src/features/<modulo>/`: módulo de negocio con `domain/` (funciones puras), `data/*.repo.ts` (adaptadores Supabase finos, con `import "server-only"`, sin decisiones de negocio), `use-cases/` (orquestación que recibe el contexto por parámetro), `schemas.ts` (DTOs Zod) e `index.ts` (interfaz pública: el único punto de entrada para otros módulos).
+- `src/app/`: presentación del App Router (rutas, layouts, route handlers, Server Actions). `src/app/_composition/` es el composition root: el único sitio que lee la sesión y construye el `RequestContext` (`request-context.ts`, con `react cache`), y el pipeline de acciones `define-action.ts`.
 - `src/components/`: sistema de diseño (`ui/`, `layout/`, `forms/`, `brand/`).
 - `supabase/migrations/`: SQL versionado. `supabase/tests/`: pruebas pgTAP.
 
-Reglas (las que cubre `scripts/check-architecture.mjs` y `.dependency-cruiser.cjs`):
+Server Actions: contexto -> permiso por clave -> rate limit -> validación -> UNA llamada a un caso de uso -> revalidación. Se escriben con `defineAction` (`src/app/_composition/define-action.ts`). No contienen reglas de negocio y nunca comprueban nombres de rol.
 
-- `src/infra` no importa de `src/features`, `src/app`, `src/components` ni React (`infra-no-upward`).
-- `domain/` no importa `use-cases/`, `data/`, `app/`, `components/`, React, Next ni Supabase (`domain-isolation`). Solo puede importar de otro módulo a través de su `index.ts` (`domain-isolation-cross-module`).
-- Un módulo solo importa de otro módulo a través de su `index.ts` (`cross-module-via-index`).
-- `use-cases/` no importa React, componentes, rutas ni hooks de UI (`use-cases-no-ui`).
-- `app/` y `components/` no usan Supabase en runtime; solo importaciones de tipos (`presentation-no-runtime-db`).
-- Cliente `service_role` y Auth Admin solo en las listas permitidas de `scripts/check-architecture.mjs` (`allowedAdminClientImporters`, `allowedAuthAdminImporters`) y en `src/infra/security/` (ADR 0010, ADR 0017).
-- No hay dependencias circulares (`no-circular`).
-- Las violaciones heredadas están congeladas en `.dependency-cruiser-known-violations.json`. No se añaden violaciones nuevas ni se editan para esconder hallazgos.
-- Control: paso `architecture`.
+Reglas (las comprueba `.dependency-cruiser.cjs` por patrón, sin listas de archivos ni excepciones):
+
+- `src/infra` no importa de `src/features`, `src/app`, `src/components`, React ni React-DOM (`infra-no-upward`; además `src/infra/architecture-boundaries.test.ts`).
+- `domain/` no importa `use-cases/`, `data/`, `src/app`, `src/components`, `src/infra/supabase`, Next, React, `@supabase/*` ni `server-only` (`domain-pure`).
+- `data/` no importa `use-cases/`, `src/app`, `src/components` ni React (`data-no-upward`).
+- Un módulo importa de otro solo a través de su `index.ts` (`cross-module-via-index`).
+- `use-cases/` no importa React, componentes, rutas ni `next/navigation` (`use-cases-no-ui`).
+- `app/` y `components/` solo importan Supabase como tipo (`presentation-no-runtime-db`); `src/app/_composition` queda fuera de la regla.
+- Los clientes `service_role` (`src/infra/supabase/admin.ts`, `auth-admin.ts`) solo se importan desde `src/infra` o `features/*/data` (`admin-client-boundary`, ADR 0010).
+- No hay dependencias circulares (`no-circular`). No hay violaciones conocidas: `npx depcruise src --config .dependency-cruiser.cjs` termina en cero, sin baseline.
+- Control: paso `architecture` (`scripts/check-architecture.mjs` y `dependency-cruiser`).
+
+Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por módulo, agrupado por capa) y `docs/code-map/graph.json` (el mismo grafo en JSON). Para ver quién depende de quién, consulta el mapa antes de rastrear imports. Se regenera con `node scripts/quality/code-map.mjs`; el paso `code-map` falla si está desactualizado.
 
 ## 3. Multi-tenancy y RLS
 
@@ -56,9 +60,9 @@ Reglas (las que cubre `scripts/check-architecture.mjs` y `.dependency-cruiser.cj
 
 - Los permisos son un catálogo global fijo, en la base de datos y en `src/features/access/domain/permissions.ts` (ADR 0003).
 - Los roles son por salón. El owner asigna permisos desde `/roles`.
-- La autorización pregunta `public.has_permission('clave')` (BD) o el equivalente de `src/infra/auth/permissions.ts`. Nunca se compara por nombre de rol.
+- La autorización pregunta `public.has_permission('clave')` (BD) o el equivalente de `src/features/access/domain/permission-checks.ts`. Nunca se compara por nombre de rol.
 - `is_owner = true` es cortocircuito (super-admin del salón).
-- Control: pruebas de permisos en `supabase/tests/02_permissions_and_hook.sql` (paso `db-tests`) y `src/infra/auth/permissions.test.ts` (paso `unit`).
+- Control: pruebas de permisos en `supabase/tests/02_permissions_and_hook.sql` (paso `db-tests`) y `src/features/access/domain/permission-checks.test.ts` (paso `unit`).
 
 ## 5. Onboarding cerrado
 
@@ -116,7 +120,7 @@ Reglas (las que cubre `scripts/check-architecture.mjs` y `.dependency-cruiser.cj
 - Los tokens semánticos de `DESIGN.md` son la fuente de color, tipografía y sombra. No se usan clases de paleta cruda (`bg-red-500`) ni colores literales fuera de los tokens.
 - Sin `font-bold` (usar `font-semibold`) ni tamaños fuera de la escala de `DESIGN.md` §4.
 - Móvil de 375 px sin scroll horizontal y gutter lateral de 16 px (`DESIGN.md` §3).
-- Control: paso `design-tokens` (trinquete: ninguna cifra sube), `e2e` con axe para accesibilidad.
+- Control: paso `design-tokens` (absoluto, sin baseline), `e2e` con axe para accesibilidad.
 
 ## 13. Código TypeScript
 
@@ -126,13 +130,13 @@ Reglas (las que cubre `scripts/check-architecture.mjs` y `.dependency-cruiser.cj
 - La lógica de negocio no va en componentes React ni en Server Actions: solo orquestan y delegan en `use-cases/`.
 - Los datos de Supabase usan los tipos generados (`src/types/database.types.ts`), nunca `any`.
 - No se hardcodean nombres de roles: se comprueban permisos.
-- Control: paso `lint` (`--max-warnings 0`), `types`, `module-size` (300 líneas, trinquete), `dead-code` (knip).
+- Control: paso `lint` (`--max-warnings 0`), `types`, `module-size` (300 líneas, absoluto), `dead-code` (knip).
 
 ## 14. Pruebas y umbrales
 
 - Pruebas proporcionales al riesgo (ADR 0008). Un cambio de dominio, RLS, RPC, permisos o seguridad lleva pruebas de conducta que crucen la interfaz pública.
 - Umbrales de cobertura: global 80% líneas y funciones, 70% ramas. Rutas críticas (`src/infra/auth`, `src/infra/security`, `src/features/access`, `src/features/platform`, `src/proxy*.ts`): 90% líneas y funciones, 80% ramas. El código cambiado debe cumplir los mismos umbrales (paso `coverage`).
-- Los umbrales no se bajan. Los trinquetes (`quality/baselines/`, `quality/coverage-baseline.json`) solo pueden subir o quedarse igual (ADR 0013).
+- Los umbrales no se bajan. El trinquete de cobertura (`quality/coverage-baseline.json`) solo puede subir o quedarse igual (ADR 0013). Tokens de diseño, tamaño de módulos y grafo son controles absolutos sin baseline (ADR 0019).
 - Sin `skip`, `only` ni tests desactivados. Las pruebas de integración fallan si falta la BD local; no se marcan como saltadas.
 - Pruebas de scripts con `node:test`, registradas en la lista explícita del paso `scripts-tests` (`scripts/quality/steps.mjs`).
 

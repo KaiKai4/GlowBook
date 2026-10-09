@@ -1,4 +1,4 @@
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 import type { PlanEnforcementMode, SalonPlanOverride } from "./commercial-plan";
 
 export type CommercialAddonKind = "module" | "limit_boost";

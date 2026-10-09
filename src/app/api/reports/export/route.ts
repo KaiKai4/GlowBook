@@ -1,5 +1,5 @@
-import { getProfile } from "@/infra/auth/session";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { getProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import {
   getReportExportData,

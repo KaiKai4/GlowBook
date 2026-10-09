@@ -1,4 +1,4 @@
-// Pruebas de la categoría "invalid" del trinquete de tokens de diseño.
+// Pruebas de la categoría "invalid" del control de tokens de diseño.
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";

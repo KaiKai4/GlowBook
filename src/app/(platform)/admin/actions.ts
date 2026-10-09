@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { parseUuid } from "@/infra/validation/route-id";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
@@ -25,6 +25,7 @@ export async function inviteSalonAction(
     email: String(formData.get("email") ?? ""),
     planId: String(formData.get("planId") ?? ""),
     actorUserId,
+    actorIsPlatformAdmin: true, // requirePlatformAdmin ya redirigio si no lo es
   });
   if (result.ok) {
     revalidatePath("/admin");
@@ -40,7 +41,11 @@ export async function regenerateSalonInvitationAction(
   const limited = await assertActionRateLimit(actorUserId, "admin:regenerateSalonInvitationAction");
   if (!limited.ok) return limited;
   if (!parseUuid(invitationId)) return { ok: false, error: "Identificador inválido." };
-  const result = await regenerateSalonInvitation({ invitationId, actorUserId });
+  const result = await regenerateSalonInvitation({
+    invitationId,
+    actorUserId,
+    actorIsPlatformAdmin: true, // requirePlatformAdmin ya redirigio si no lo es
+  });
   if (result.ok) revalidatePath("/admin/invitations");
   return result;
 }

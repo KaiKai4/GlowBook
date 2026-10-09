@@ -16,9 +16,11 @@ import {
   topCategory,
   type CategoryTotal,
 } from "../domain/category-totals";
-import { getInventoryPurchaseExpenseHistory } from "@/features/inventory/use-cases/inventory-purchase-expenses";
-import { recordInventoryPurchase } from "@/features/inventory/use-cases/inventory-movements";
-import type { InventoryPurchaseInput } from "@/features/inventory/schemas";
+import {
+  getInventoryPurchaseExpenseHistory,
+  recordInventoryPurchase,
+  type InventoryPurchaseInput,
+} from "@/features/inventory";
 
 export interface ExpensesPageView {
   history: ExpenseHistoryItem[];

@@ -87,7 +87,8 @@ Do not create empty `domain`, `data` or `use-cases` folders for appearance. A fo
 - `docs/adr/0010-server-only-admin-adapter-exceptions.md`: allowed `service_role` usage.
 - `docs/adr/0011-verificador-local-igual-ci.md`: local verification and CI share one step manifest.
 - `docs/adr/0012-toolchain-de-calidad.md`: reason for each quality tool.
-- `docs/adr/0013-trinquetes-de-deuda.md`: debt ratchets that only go down.
+- `docs/adr/0013-trinquetes-de-deuda.md`: debt ratchets that only go down (coverage).
+- `docs/adr/0019-arquitectura-por-capas-verificada.md`: layer rules enforced by tooling, with no exception lists; code map in `docs/code-map/`.
 - `docs/adr/0014-bd-de-pruebas-supabase-local.md`: test database is local Supabase; forward-only migrations.
 - `docs/adr/0015-politica-excepciones-auditoria.md`: dependency audit exception policy.
 - `docs/adr/0016-migraciones-forward-only-expand-contract.md`: forward-only migrations with expand/contract.

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
-import { getProfile } from "@/infra/auth/session";
-import { PERMISSIONS } from "@/infra/auth/permissions";
+import { getProfile } from "@/app/_composition/request-context";
+import { PERMISSIONS } from "@/features/access";
 import { captureError } from "@/infra/observability";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { getReportExportData } from "@/features/reports/use-cases/get-report-export";
@@ -13,7 +13,7 @@ const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/infra/auth/session", () => ({ getProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ getProfile: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));

@@ -1,5 +1,5 @@
 import { z } from "@/infra/validation/zod";
-import { normalizePaymentMethod } from "@/features/payments/domain/payment-methods";
+import { normalizePaymentMethod } from "@/features/payments";
 
 const PaymentMethodSchema = z
   .string()
@@ -64,3 +64,4 @@ export const CompleteAppointmentSchema = z.object({
 
 export type CreateAppointmentInput = z.infer<typeof CreateAppointmentSchema>;
 export type UpdateAppointmentScheduleInput = z.infer<typeof UpdateAppointmentScheduleSchema>;
+export type CompleteAppointmentInput = z.infer<typeof CompleteAppointmentSchema>;
