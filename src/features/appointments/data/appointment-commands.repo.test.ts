@@ -6,15 +6,12 @@ import {
   type AppointmentsSupabaseDouble,
 } from "@/test/appointments-feature-supabase";
 import {
-  createAppointmentWithRpc,
   findAppointmentCreationResources,
   findAppointmentForCommand,
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
   findOccupiedSlotsForSalonDate,
-  updateAppointmentWithRpc,
-  type CreateAppointmentRpcPayload,
 } from "./appointment-commands.repo";
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -400,76 +397,6 @@ describe("comandos de cita: disponibilidad del profesional", () => {
         timezone: "America/Panama",
       })
     ).rejects.toEqual(failure);
-  });
-});
-
-describe("comandos de cita: RPC de creación y actualización", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  const payload: CreateAppointmentRpcPayload = {
-    salon_id: salonId,
-    customer_id: customerId,
-    created_by: employeeA,
-    notes: "",
-    items: [
-      {
-        salon_id: salonId,
-        service_id: serviceA,
-        employee_id: employeeA,
-        start_time: "2026-05-25T15:00:00.000Z",
-        end_time: "2026-05-25T15:30:00.000Z",
-        duration_minutes: 30,
-        price: 25,
-        ordering: 1,
-        blocks_calendar: true,
-      },
-    ],
-  };
-
-  it("crea la cita con la función de base de datos y devuelve su id", async () => {
-    const double = createAppointmentsSupabaseDouble({}, { data: "appointment-new", error: null });
-    useDouble(double);
-
-    expect(await createAppointmentWithRpc(payload)).toEqual({
-      ok: true,
-      appointmentId: "appointment-new",
-    });
-    expect(double.rpc).toHaveBeenCalledWith("create_appointment", { payload });
-  });
-
-  it("si la función de creación rechaza el payload devuelve ok false", async () => {
-    useDouble(createAppointmentsSupabaseDouble({}, { data: null, error: failure }));
-
-    const result = await createAppointmentWithRpc(payload);
-
-    expect(result.ok).toBe(false);
-    expect(result.appointmentId).toBeUndefined();
-  });
-
-  it("actualiza la cita con la función de base de datos", async () => {
-    const double = createAppointmentsSupabaseDouble({}, { data: null, error: null });
-    useDouble(double);
-
-    expect(
-      await updateAppointmentWithRpc({
-        appointment_id: appointmentId,
-        notes: "Nueva nota",
-        items: payload.items,
-      })
-    ).toEqual({ ok: true });
-    expect(double.rpc).toHaveBeenCalledWith("update_appointment", {
-      payload: { appointment_id: appointmentId, notes: "Nueva nota", items: payload.items },
-    });
-  });
-
-  it("si la función de actualización rechaza el payload devuelve ok false", async () => {
-    useDouble(createAppointmentsSupabaseDouble({}, { data: null, error: failure }));
-
-    const result = await updateAppointmentWithRpc({ appointment_id: appointmentId, notes: "", items: [] });
-
-    expect(result.ok).toBe(false);
   });
 });
 

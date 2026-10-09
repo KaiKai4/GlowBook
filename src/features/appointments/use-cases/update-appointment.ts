@@ -7,9 +7,11 @@ import {
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
+} from "../data/appointment-commands.repo";
+import {
   updateAppointmentWithRpc,
   type UpdateAppointmentRpcPayload,
-} from "../data/appointment-commands.repo";
+} from "../data/rpc/update-appointment";
 import { evaluateTimeRange } from "../domain/availability";
 import { buildItemPayloads, type SchedulingContext } from "../domain/scheduling";
 import type { BusinessHour, OccupiedSlot, ServiceAssignment, WorkSchedule } from "../domain/types";
@@ -17,13 +19,15 @@ import type { UpdateAppointmentScheduleInput } from "../schemas";
 
 interface Deps {
   salonId: string;
+  /** Clave de idempotencia del formulario (uuid). Un reenvio no reemplaza los items dos veces. */
+  idempotencyKey: string;
 }
 
 const CLOSED_STATUSES = new Set(["completed", "cancelled", "no_show"]);
 
 export async function updateAppointmentSchedule(
   input: UpdateAppointmentScheduleInput,
-  { salonId }: Deps
+  { salonId, idempotencyKey }: Deps
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
 
@@ -146,7 +150,7 @@ export async function updateAppointmentSchedule(
 
   let updated: Awaited<ReturnType<typeof updateAppointmentWithRpc>>;
   try {
-    updated = await updateAppointmentWithRpc(rpcPayload);
+    updated = await updateAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
     return err("Error al actualizar la cita. Intenta de nuevo.");

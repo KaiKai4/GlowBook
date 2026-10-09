@@ -203,8 +203,23 @@ describe("inventory actions", () => {
   });
 
   describe("transferInventoryStockAction", () => {
+    const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000c1";
     const transferForm = (overrides: Record<string, string>) =>
-      formDataOf({ product_id: RECORD_ID, to_location: "internal", quantity: "2", ...overrides });
+      formDataOf({
+        product_id: RECORD_ID,
+        to_location: "internal",
+        quantity: "2",
+        idempotency_key: IDEMPOTENCY_KEY,
+        ...overrides,
+      });
+
+    it("exige una clave de idempotencia uuid antes de transferir", async () => {
+      expect(await transferInventoryStockAction(null, transferForm({ idempotency_key: "" }))).toEqual({
+        ok: false,
+        error: "La clave de idempotencia debe ser un uuid.",
+      });
+      expect(transferInventoryStock).not.toHaveBeenCalled();
+    });
 
     it("rechaza un identificador de producto inválido", async () => {
       expect(await transferInventoryStockAction(null, transferForm({ product_id: "bad" }))).toEqual({
@@ -254,7 +269,8 @@ describe("inventory actions", () => {
       expect(result).toEqual({ ok: true, value: "Transferencia registrada." });
       expect(transferInventoryStock).toHaveBeenCalledWith(
         SALON_ID,
-        expect.objectContaining({ product_id: RECORD_ID, from_location: "storage", to_location: "internal", quantity: 2 })
+        expect.objectContaining({ product_id: RECORD_ID, from_location: "storage", to_location: "internal", quantity: 2 }),
+        IDEMPOTENCY_KEY
       );
       expect(revalidatePath).toHaveBeenCalledWith("/inventory");
       expect(revalidatePath).toHaveBeenCalledWith("/retail");

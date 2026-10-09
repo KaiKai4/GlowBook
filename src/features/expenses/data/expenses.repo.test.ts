@@ -17,6 +17,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const SALON_ID = "salon-1";
+const KEY = "00000000-0000-4000-8000-0000000000c1";
 
 function useDb(script: Parameters<typeof createSupabaseDouble>[0] = {}): SupabaseDouble {
   const db = createSupabaseDouble(script);
@@ -42,13 +43,14 @@ describe("expenses.repo", () => {
         vendor_name: "",
         receipt_url: "  https://files.example/r.pdf  ",
         note: "",
-      });
+      }, KEY);
 
       expect(operationsOn(db, "expenses")).toContainEqual({
         target: "expenses",
         method: "insert",
         args: [
           {
+            id: KEY,
             salon_id: SALON_ID,
             expense_date: "2026-06-10",
             amount: 25,
@@ -71,7 +73,7 @@ describe("expenses.repo", () => {
         amount: 10,
         category: "other",
         concept: "  Regalos de temporada ",
-      });
+      }, KEY);
 
       expect(operationsOn(db, "expenses")[0]).toEqual({
         target: "expenses",
@@ -91,18 +93,58 @@ describe("expenses.repo", () => {
     it("no guarda categoria libre si 'other' llega sin texto", async () => {
       const db = useDb({ expenses: { data: null, error: null } });
 
-      await insertExpense(SALON_ID, { expense_date: "2026-06-10", amount: 10, category: "other", concept: "   " });
+      await insertExpense(
+        SALON_ID,
+        { expense_date: "2026-06-10", amount: 10, category: "other", concept: "   " },
+        KEY
+      );
 
       expect(operationsOn(db, "expenses")[0]?.args[0]).toMatchObject({ custom_category: null, concept: null });
     });
 
     it("propaga el error de insercion", async () => {
-      const dbError = { message: "fallo" };
+      const dbError = { message: "fallo", code: "42501" };
       useDb({ expenses: { data: null, error: dbError } });
 
       await expect(
-        insertExpense(SALON_ID, { expense_date: "2026-06-10", amount: 10, category: "rent" })
+        insertExpense(SALON_ID, { expense_date: "2026-06-10", amount: 10, category: "rent" }, KEY)
       ).rejects.toBe(dbError);
+    });
+
+    it("un reenvio con la misma clave se trata como exito si la fila ya existe en el salon", async () => {
+      const db = useDb({
+        expenses: [
+          { data: null, error: { message: "duplicate key", code: "23505" } },
+          { data: { id: KEY }, error: null },
+        ],
+      });
+
+      await expect(
+        insertExpense(SALON_ID, { expense_date: "2026-06-10", amount: 10, category: "rent" }, KEY)
+      ).resolves.toBeUndefined();
+      expect(operationsOn(db, "expenses").map((op) => op.method)).toEqual([
+        "insert",
+        "select",
+        "eq",
+        "eq",
+        "maybeSingle",
+      ]);
+      expect(operationsOn(db, "expenses")).toContainEqual({
+        target: "expenses",
+        method: "eq",
+        args: ["salon_id", SALON_ID],
+      });
+    });
+
+    it("rechaza la clave repetida si la fila pertenece a otro salon", async () => {
+      const conflict = { message: "duplicate key", code: "23505" };
+      useDb({
+        expenses: [{ data: null, error: conflict }, { data: null, error: null }],
+      });
+
+      await expect(
+        insertExpense(SALON_ID, { expense_date: "2026-06-10", amount: 10, category: "rent" }, KEY)
+      ).rejects.toBe(conflict);
     });
   });
 

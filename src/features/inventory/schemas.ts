@@ -39,6 +39,7 @@ export const InventoryTransferSchema = z.object({
   to_location: InventoryLocationSchema,
   quantity: positiveQuantity,
   note: z.string().trim().max(500).optional().default(""),
+  idempotency_key: z.string().uuid("La clave de idempotencia debe ser un uuid."),
 }).refine((value) => value.from_location !== value.to_location, {
   path: ["to_location"],
   message: "El destino debe ser diferente al origen.",
@@ -52,6 +53,7 @@ export const InventoryPurchaseSchema = z.object({
   quantity: positiveQuantity,
   unit_cost: money.default(0),
   note: z.string().trim().max(500).optional().default(""),
+  idempotency_key: z.string().uuid("La clave de idempotencia debe ser un uuid."),
 });
 
 export type CreateInventoryProductInput = z.infer<typeof CreateInventoryProductSchema>;

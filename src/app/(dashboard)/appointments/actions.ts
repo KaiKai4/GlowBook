@@ -16,6 +16,7 @@ import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salo
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import {
+  AppointmentLifecycleSchema,
   CompleteAppointmentSchema,
   CreateAppointmentSchema,
   UpdateAppointmentScheduleSchema,
@@ -101,6 +102,7 @@ export async function createAppointmentAction(
   const result = await createAppointment(parsed.data, {
     salonId: profile.salon_id,
     userId: profile.id,
+    idempotencyKey: parsed.data.idempotency_key,
   });
 
   if (result.ok) revalidateAppointmentFlows();
@@ -134,34 +136,43 @@ export async function updateAppointmentScheduleAction(
 
   const result = await updateAppointmentSchedule(parsed.data, {
     salonId: profile.salon_id,
+    idempotencyKey: parsed.data.idempotency_key,
   });
 
   if (result.ok) revalidateAppointmentFlows();
   return result;
 }
 
-export async function cancelAppointmentAction(
-  appointmentId: string
-): Promise<Result<void>> {
+export async function cancelAppointmentAction(formData: FormData): Promise<Result<void>> {
   const profile = await requireActiveProfile();
   const permission = await canManageAppointments(profile, "No tienes permiso para cancelar citas.");
   if (!permission.ok) return permission;
-  if (!parseUuid(appointmentId)) return { ok: false, error: "Identificador inválido." };
 
-  const result = await cancelAppointment(appointmentId, profile.salon_id);
+  const parsed = AppointmentLifecycleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
+
+  const result = await cancelAppointment(
+    parsed.data.appointment_id,
+    profile.salon_id,
+    parsed.data.idempotency_key
+  );
   if (result.ok) revalidateAppointmentFlows();
   return result;
 }
 
-export async function confirmAppointmentAction(
-  appointmentId: string
-): Promise<Result<void>> {
+export async function confirmAppointmentAction(formData: FormData): Promise<Result<void>> {
   const profile = await requireActiveProfile();
   const permission = await canManageAppointments(profile, "No tienes permiso para confirmar citas.");
   if (!permission.ok) return permission;
-  if (!parseUuid(appointmentId)) return { ok: false, error: "Identificador inválido." };
 
-  const result = await confirmAppointment(appointmentId, profile.salon_id);
+  const parsed = AppointmentLifecycleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
+
+  const result = await confirmAppointment(
+    parsed.data.appointment_id,
+    profile.salon_id,
+    parsed.data.idempotency_key
+  );
   if (result.ok) revalidateAppointmentFlows();
   return result;
 }
@@ -183,6 +194,7 @@ export async function completeAppointmentAction(
 
   const parsed = CompleteAppointmentSchema.safeParse({
     appointment_id: formData.get("appointment_id"),
+    idempotency_key: formData.get("idempotency_key"),
     payment_method: formData.get("payment_method"),
     completion_price_note: formData.get("completion_price_note") ?? "",
     item_charges: itemCharges,
@@ -205,7 +217,8 @@ export async function completeAppointmentAction(
     profile.salon_id,
     parsed.data.payment_method,
     parsed.data.item_charges,
-    parsed.data.completion_price_note
+    parsed.data.completion_price_note,
+    parsed.data.idempotency_key
   );
 
   if (result.ok) {

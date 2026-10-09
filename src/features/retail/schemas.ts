@@ -20,6 +20,7 @@ export const RetailSaleSchema = z.object({
   unit_price: z.coerce.number().min(0, "El precio no puede ser negativo."),
   payment_method: PaymentMethodSchema.default("cash"),
   note: z.string().trim().max(500).optional().default(""),
+  idempotency_key: z.string().uuid("La clave de idempotencia debe ser un uuid."),
 });
 
 export type RetailSaleInput = z.infer<typeof RetailSaleSchema>;

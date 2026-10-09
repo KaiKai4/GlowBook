@@ -43,7 +43,7 @@ describe("confirmAppointment", () => {
   it("no confirma una cita que no existe en el salón", async () => {
     mockedFind.mockResolvedValue(null);
 
-    expect(await confirmAppointment(appointmentId, salonId)).toEqual({
+    expect(await confirmAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: "Cita no encontrada.",
     });
@@ -54,7 +54,7 @@ describe("confirmAppointment", () => {
     const failure = new Error("read failed");
     mockedFind.mockRejectedValue(failure);
 
-    expect(await confirmAppointment(appointmentId, salonId)).toEqual({
+    expect(await confirmAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: "Cita no encontrada.",
     });
@@ -70,7 +70,7 @@ describe("confirmAppointment", () => {
     async (status) => {
       mockedFind.mockResolvedValue(appointmentIn(status));
 
-      expect(await confirmAppointment(appointmentId, salonId)).toEqual({
+      expect(await confirmAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
         ok: false,
         error: `No se puede cambiar el estado de "${status}" a "confirmed".`,
       });
@@ -85,7 +85,7 @@ describe("confirmAppointment", () => {
       message: 'No se puede cambiar el estado de "cancelled" a "confirmed".',
     });
 
-    expect(await confirmAppointment(appointmentId, salonId)).toEqual({
+    expect(await confirmAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: 'No se puede cambiar el estado de "cancelled" a "confirmed".',
     });
@@ -96,7 +96,7 @@ describe("confirmAppointment", () => {
     const failure = new Error("write failed");
     mockedRpc.mockRejectedValue(failure);
 
-    expect(await confirmAppointment(appointmentId, salonId)).toEqual({
+    expect(await confirmAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: "Error al confirmar la cita.",
     });

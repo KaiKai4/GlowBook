@@ -2,7 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getUtcDayBoundaries } from "@/lib/utils/dates";
-import type { Database, Json } from "@/types/database.types";
+import type { Database } from "@/types/database.types";
 import type { AppointmentStatus } from "../domain/lifecycle";
 import type {
   BusinessHour,
@@ -36,41 +36,6 @@ export interface AppointmentCreationResources {
     service: ServiceAssignment["service"] | null;
     employee: ServiceAssignment["employee"] | null;
   }>;
-}
-
-export interface CreateAppointmentRpcPayload {
-  salon_id: string;
-  customer_id: string;
-  created_by: string;
-  notes: string;
-  items: Array<{
-    salon_id: string;
-    service_id: string;
-    employee_id: string;
-    start_time: string;
-    end_time: string;
-    duration_minutes: number;
-    price: number;
-    ordering: number;
-    blocks_calendar: boolean;
-  }>;
-}
-
-export interface CreateAppointmentRpcResult {
-  ok: boolean;
-  appointmentId?: string;
-  errorMessage?: string;
-}
-
-export interface UpdateAppointmentRpcPayload {
-  appointment_id: string;
-  notes: string;
-  items: CreateAppointmentRpcPayload["items"];
-}
-
-export interface UpdateAppointmentRpcResult {
-  ok: boolean;
-  errorMessage?: string;
 }
 
 export type OccupiedByEmployee = Record<string, OccupiedSlot[]>;
@@ -287,36 +252,6 @@ export async function findEmployeeOccupiedSlotsForCommand({
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as OccupiedSlot[];
-}
-
-export async function createAppointmentWithRpc(
-  payload: CreateAppointmentRpcPayload
-): Promise<CreateAppointmentRpcResult> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("create_appointment", {
-    payload: payload as unknown as Json,
-  });
-
-  if (error) {
-    return { ok: false, errorMessage: error.message };
-  }
-
-  return { ok: true, appointmentId: data as string };
-}
-
-export async function updateAppointmentWithRpc(
-  payload: UpdateAppointmentRpcPayload
-): Promise<UpdateAppointmentRpcResult> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("update_appointment", {
-    payload: payload as unknown as Json,
-  });
-
-  if (error) {
-    return { ok: false, errorMessage: error.message };
-  }
-
-  return { ok: true };
 }
 
 export async function findOccupiedSlotsForSalonDate(

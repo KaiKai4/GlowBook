@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { CreateExpenseSchema, EXPENSE_CATEGORIES } from "./schemas";
 
+const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000c1";
+
 const validExpense = {
   expense_date: "2026-06-10",
   amount: "25.5",
   category: "utilities",
+  idempotency_key: IDEMPOTENCY_KEY,
 };
 
 describe("CreateExpenseSchema", () => {
@@ -17,11 +20,17 @@ describe("CreateExpenseSchema", () => {
       vendor_name: "",
       note: "",
       receipt_url: undefined,
+      idempotency_key: IDEMPOTENCY_KEY,
     });
   });
 
+  it("exige una clave de idempotencia uuid", () => {
+    expect(CreateExpenseSchema.safeParse({ ...validExpense, idempotency_key: "" }).success).toBe(false);
+    expect(CreateExpenseSchema.safeParse({ ...validExpense, idempotency_key: undefined }).success).toBe(false);
+  });
+
   it("usa 'other' como categoria por defecto y exige concepto en ese caso", () => {
-    const result = CreateExpenseSchema.safeParse({ expense_date: "2026-06-10", amount: 10 });
+    const result = CreateExpenseSchema.safeParse({ ...validExpense, category: undefined });
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.path).toEqual(["concept"]);
@@ -31,10 +40,10 @@ describe("CreateExpenseSchema", () => {
   it("exige concepto solo cuando la categoria es 'other', tambien si viene con espacios", () => {
     expect(CreateExpenseSchema.safeParse({ ...validExpense, concept: "" }).success).toBe(true);
     expect(
-      CreateExpenseSchema.safeParse({ expense_date: "2026-06-10", amount: 10, concept: "   " }).success
+      CreateExpenseSchema.safeParse({ ...validExpense, category: "other", concept: "   " }).success
     ).toBe(false);
     expect(
-      CreateExpenseSchema.safeParse({ expense_date: "2026-06-10", amount: 10, concept: "Regalos" }).success
+      CreateExpenseSchema.safeParse({ ...validExpense, category: "other", concept: "Regalos" }).success
     ).toBe(true);
   });
 

@@ -5,8 +5,8 @@ import {
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeExceptionDatesForCommand,
   findEmployeeWorkSchedulesForCommand,
-  updateAppointmentWithRpc,
 } from "../data/appointment-commands.repo";
+import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
@@ -15,8 +15,12 @@ vi.mock("../data/appointment-commands.repo", () => ({
   findEmployeeOccupiedSlotsForCommand: vi.fn(),
   findEmployeeExceptionDatesForCommand: vi.fn(),
   findEmployeeWorkSchedulesForCommand: vi.fn(),
+}));
+vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
 }));
+
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
 const mockedFindAppointmentForCommand = vi.mocked(findAppointmentForCommand);
 const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
@@ -102,8 +106,9 @@ describe("update appointment schedule", () => {
         start_time: startTime,
         notes: "Nuevo horario",
         assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
       },
-      { salonId }
+      { salonId, idempotencyKey }
     );
 
     expect(result).toEqual({ ok: true, value: undefined });
@@ -116,21 +121,24 @@ describe("update appointment schedule", () => {
       excludeAppointmentId: appointmentId,
     });
     expect(mockedUpdateAppointmentWithRpc).toHaveBeenCalledWith({
-      appointment_id: appointmentId,
-      notes: "Nuevo horario",
-      items: [
-        {
-          salon_id: salonId,
-          service_id: serviceId,
-          employee_id: employeeId,
-          start_time: "2030-01-01T10:00:00.000Z",
-          end_time: "2030-01-01T10:30:00.000Z",
-          duration_minutes: 30,
-          price: 25,
-          ordering: 1,
-          blocks_calendar: true,
-        },
-      ],
+      idempotencyKey,
+      payload: {
+        appointment_id: appointmentId,
+        notes: "Nuevo horario",
+        items: [
+          {
+            salon_id: salonId,
+            service_id: serviceId,
+            employee_id: employeeId,
+            start_time: "2030-01-01T10:00:00.000Z",
+            end_time: "2030-01-01T10:30:00.000Z",
+            duration_minutes: 30,
+            price: 25,
+            ordering: 1,
+            blocks_calendar: true,
+          },
+        ],
+      },
     });
   });
 
@@ -148,8 +156,9 @@ describe("update appointment schedule", () => {
         start_time: startTime,
         notes: "",
         assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
       },
-      { salonId }
+      { salonId, idempotencyKey }
     );
 
     expect(result.ok).toBe(false);
@@ -168,8 +177,9 @@ describe("update appointment schedule", () => {
         start_time: startTime,
         notes: "",
         assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
       },
-      { salonId }
+      { salonId, idempotencyKey }
     );
 
     expect(result).toEqual({

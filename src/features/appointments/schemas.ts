@@ -13,6 +13,8 @@ const AssignmentSchema = z.object({
   employee_id: z.string().uuid("ID de profesional inválido"),
 });
 
+const IdempotencyKeySchema = z.string().uuid("La clave de idempotencia debe ser un uuid.");
+
 export const CreateAppointmentSchema = z.object({
   customer_id: z.string().uuid("ID de cliente inválido"),
   start_time: z.string().datetime("Fecha/hora inválida"),
@@ -20,6 +22,7 @@ export const CreateAppointmentSchema = z.object({
   assignments: z
     .array(AssignmentSchema)
     .min(1, "Selecciona al menos un servicio"),
+  idempotency_key: IdempotencyKeySchema,
 });
 
 export const UpdateAppointmentScheduleSchema = z.object({
@@ -29,10 +32,18 @@ export const UpdateAppointmentScheduleSchema = z.object({
   assignments: z
     .array(AssignmentSchema)
     .min(1, "Selecciona al menos un servicio"),
+  idempotency_key: IdempotencyKeySchema,
+});
+
+/** Cancelar o confirmar: FormData con el id de la cita y la clave de idempotencia. */
+export const AppointmentLifecycleSchema = z.object({
+  appointment_id: z.string().uuid("ID de cita inválido"),
+  idempotency_key: IdempotencyKeySchema,
 });
 
 export const CompleteAppointmentSchema = z.object({
   appointment_id: z.string().uuid("ID de cita inválido"),
+  idempotency_key: IdempotencyKeySchema,
   payment_method: PaymentMethodSchema,
   completion_price_note: z.string().max(500).optional().default(""),
   item_charges: z

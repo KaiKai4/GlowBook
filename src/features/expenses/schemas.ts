@@ -25,6 +25,7 @@ export const CreateExpenseSchema = z
       .optional()
       .or(z.literal("")),
     note: z.string().trim().max(500).optional().default(""),
+    idempotency_key: z.string().uuid("La clave de idempotencia debe ser un uuid."),
   })
   .refine(
     (value) => value.category !== "other" || value.concept.trim().length > 0,

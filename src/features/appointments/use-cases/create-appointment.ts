@@ -2,13 +2,15 @@ import { toPublicErrorMessage } from "@/lib/errors";
 import { err, ok, type Result } from "@/lib/result";
 import { captureError } from "@/lib/observability";
 import {
-  createAppointmentWithRpc,
   findAppointmentCreationResources,
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
-  type CreateAppointmentRpcPayload,
 } from "../data/appointment-commands.repo";
+import {
+  createAppointmentWithRpc,
+  type CreateAppointmentRpcPayload,
+} from "../data/rpc/create-appointment";
 import { evaluateTimeRange } from "../domain/availability";
 import { buildItemPayloads } from "../domain/scheduling";
 import type { SchedulingContext } from "../domain/scheduling";
@@ -18,11 +20,13 @@ import type { CreateAppointmentInput } from "../schemas";
 interface Deps {
   salonId: string;
   userId: string;
+  /** Clave de idempotencia del formulario (uuid). Un reenvio no crea una segunda cita. */
+  idempotencyKey: string;
 }
 
 export async function createAppointment(
   input: CreateAppointmentInput,
-  { salonId, userId }: Deps
+  { salonId, userId, idempotencyKey }: Deps
 ): Promise<Result<string>> {
   let resources: Awaited<ReturnType<typeof findAppointmentCreationResources>>;
 
@@ -130,7 +134,7 @@ export async function createAppointment(
 
   let created: Awaited<ReturnType<typeof createAppointmentWithRpc>>;
   try {
-    created = await createAppointmentWithRpc(rpcPayload);
+    created = await createAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "create" });
     return err("Error al crear la cita. Intenta de nuevo.");

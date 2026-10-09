@@ -219,6 +219,7 @@ describe("expenses use-cases (ramas)", () => {
   });
 
   describe("createExpense", () => {
+    const KEY = "00000000-0000-4000-8000-0000000000c1";
     const input: CreateExpenseInput = {
       expense_date: "2026-06-10",
       amount: 25,
@@ -227,19 +228,20 @@ describe("expenses use-cases (ramas)", () => {
       vendor_name: "",
       note: "",
       receipt_url: undefined,
+      idempotency_key: KEY,
     };
 
-    it("registra el gasto del salon y confirma con mensaje de exito", async () => {
+    it("registra el gasto del salon con la clave y confirma con mensaje de exito", async () => {
       mockedInsertExpense.mockResolvedValue(undefined);
 
-      expect(await createExpense(SALON_ID, input)).toEqual({ ok: true, value: "Gasto registrado." });
-      expect(mockedInsertExpense).toHaveBeenCalledWith(SALON_ID, input);
+      expect(await createExpense(SALON_ID, input, KEY)).toEqual({ ok: true, value: "Gasto registrado." });
+      expect(mockedInsertExpense).toHaveBeenCalledWith(SALON_ID, input, KEY);
     });
 
     it("devuelve error legible cuando la insercion lanza un Error", async () => {
       mockedInsertExpense.mockRejectedValue(new Error("sin conexion"));
 
-      const result = await createExpense(SALON_ID, input);
+      const result = await createExpense(SALON_ID, input, KEY);
 
       expect(result.ok).toBe(false);
       expect(typeof (result as { error: unknown }).error).toBe("string");
@@ -248,7 +250,7 @@ describe("expenses use-cases (ramas)", () => {
     it("usa el mensaje generico cuando el fallo no es un Error", async () => {
       mockedInsertExpense.mockRejectedValue("fallo");
 
-      expect(await createExpense(SALON_ID, input)).toEqual({
+      expect(await createExpense(SALON_ID, input, KEY)).toEqual({
         ok: false,
         error: "No se pudo registrar el gasto.",
       });
@@ -256,6 +258,7 @@ describe("expenses use-cases (ramas)", () => {
   });
 
   describe("createInventoryPurchaseExpense", () => {
+    const KEY = "00000000-0000-4000-8000-0000000000c1";
     const purchase = {
       supplier_name: "Distribuidora",
       purchase_date: "2026-06-10",
@@ -264,23 +267,28 @@ describe("expenses use-cases (ramas)", () => {
       quantity: 2,
       unit_cost: 5,
       note: "",
+      idempotency_key: KEY,
     };
 
-    it("registra la compra en bodega y confirma con mensaje de exito", async () => {
+    it("registra la compra en bodega con la clave y confirma con mensaje de exito", async () => {
       mockedRecordPurchase.mockResolvedValue({ ok: true, value: undefined });
 
-      expect(await createInventoryPurchaseExpense(SALON_ID, purchase)).toEqual({
+      expect(await createInventoryPurchaseExpense(SALON_ID, purchase, KEY)).toEqual({
         ok: true,
         value: "Compra de inventario registrada.",
       });
-      expect(mockedRecordPurchase).toHaveBeenCalledWith(SALON_ID, { ...purchase, location: "storage" });
+      expect(mockedRecordPurchase).toHaveBeenCalledWith(
+        SALON_ID,
+        { ...purchase, location: "storage" },
+        KEY
+      );
     });
 
     it("propaga el error del registro de inventario tal cual", async () => {
       const failure = { ok: false as const, error: "Stock no disponible." };
       mockedRecordPurchase.mockResolvedValue(failure);
 
-      expect(await createInventoryPurchaseExpense(SALON_ID, purchase)).toBe(failure);
+      expect(await createInventoryPurchaseExpense(SALON_ID, purchase, KEY)).toBe(failure);
     });
   });
 });

@@ -16,9 +16,8 @@
   "src/components/ui/date-picker.tsx": 525,
   "src/components/ui/select.tsx": 315,
   "src/components/ui/time-picker.tsx": 470,
-  "src/features/appointments/data/appointment-commands.repo.ts": 385,
+  "src/features/appointments/data/appointment-commands.repo.ts": 320,
   "src/features/billing/data/salon-subscriptions.repo.ts": 455,
   "src/features/billing/use-cases/salon-subscriptions.ts": 739,
-  "src/features/inventory/data/inventory.repo.ts": 337,
   "src/features/reports/domain/analytics.ts": 426
 }

@@ -3,7 +3,8 @@ import { createRetailSale, getRetailPage } from "./retail-sales";
 import { getActiveCustomerOptions } from "@/features/customers/use-cases/customer-options";
 import { getRetailInventoryProducts } from "@/features/inventory/use-cases/retail-inventory-products";
 import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
-import { findRecentRetailSales, recordRetailSaleAtomically } from "../data/retail.repo";
+import { findRecentRetailSales } from "../data/retail.repo";
+import { recordRetailSaleRpc } from "../data/rpc/record-retail-sale";
 
 vi.mock("@/features/customers/use-cases/customer-options", () => ({
   getActiveCustomerOptions: vi.fn(),
@@ -19,57 +20,68 @@ vi.mock("@/features/salon/use-cases/salon-payment-methods", () => ({
 
 vi.mock("../data/retail.repo", () => ({
   findRecentRetailSales: vi.fn(),
-  recordRetailSaleAtomically: vi.fn(),
 }));
+
+vi.mock("../data/rpc/record-retail-sale", () => ({
+  recordRetailSaleRpc: vi.fn(),
+}));
+
+const KEY = "00000000-0000-4000-8000-0000000000c1";
 
 const mockedGetActiveCustomerOptions = vi.mocked(getActiveCustomerOptions);
 const mockedGetRetailInventoryProducts = vi.mocked(getRetailInventoryProducts);
 const mockedGetSalonPaymentMethods = vi.mocked(getSalonPaymentMethods);
 const mockedRecentSales = vi.mocked(findRecentRetailSales);
-const mockedRecordSale = vi.mocked(recordRetailSaleAtomically);
+const mockedRecordSale = vi.mocked(recordRetailSaleRpc);
+
+const sale = {
+  customer_id: "",
+  product_id: "product-1",
+  location: "retail" as const,
+  quantity: 2,
+  unit_price: 12.5,
+  payment_method: "cash",
+  note: "Venta de shampoo",
+  idempotency_key: KEY,
+};
 
 describe("retail sales use-cases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("registers retail sales through the atomic retail sale adapter", async () => {
-    mockedRecordSale.mockResolvedValue({ id: "sale-1" });
+  it("registra la venta con el adaptador RPC y reenvia la clave de idempotencia", async () => {
+    mockedRecordSale.mockResolvedValue("sale-1");
 
-    const result = await createRetailSale("salon-1", {
-      customer_id: "",
-      product_id: "product-1",
-      location: "retail",
-      quantity: 2,
-      unit_price: 12.5,
-      payment_method: "cash",
-      note: "Venta de shampoo",
-    });
+    const result = await createRetailSale("salon-1", sale, KEY);
 
     expect(result).toEqual({ ok: true, value: "Venta registrada." });
-    expect(mockedRecordSale).toHaveBeenCalledWith("salon-1", {
-      customer_id: null,
-      product_id: "product-1",
+    expect(mockedRecordSale).toHaveBeenCalledWith({
+      salonId: "salon-1",
+      customerId: null,
+      productId: "product-1",
       location: "retail",
       quantity: 2,
-      unit_price: 12.5,
-      payment_method: "cash",
+      unitPrice: 12.5,
+      paymentMethod: "cash",
       note: "Venta de shampoo",
+      idempotencyKey: KEY,
     });
+  });
+
+  it("envia la misma clave cuando el formulario se reenvia", async () => {
+    mockedRecordSale.mockResolvedValue("sale-1");
+
+    await createRetailSale("salon-1", sale, KEY);
+    await createRetailSale("salon-1", sale, KEY);
+
+    expect(mockedRecordSale.mock.calls.map(([input]) => input.idempotencyKey)).toEqual([KEY, KEY]);
   });
 
   it("preserves our own RAISE messages (SQLSTATE P0001) when a retail sale fails", async () => {
     mockedRecordSale.mockRejectedValue({ code: "P0001", message: "Stock insuficiente para completar la venta." });
 
-    const result = await createRetailSale("salon-1", {
-      customer_id: "",
-      product_id: "product-1",
-      location: "retail",
-      quantity: 10,
-      unit_price: 12.5,
-      payment_method: "cash",
-      note: "",
-    });
+    const result = await createRetailSale("salon-1", { ...sale, quantity: 10, note: "" }, KEY);
 
     expect(result).toEqual({
       ok: false,
