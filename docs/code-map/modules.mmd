@@ -5,7 +5,7 @@ flowchart LR
     app__auth_["app/(auth) (12)"]
     app__dashboard_["app/(dashboard) (166)"]
     app__platform_["app/(platform) (32)"]
-    app__composition["app/_composition (3)"]
+    app__composition["app/_composition (4)"]
     app_api["app/api (4)"]
   end
   subgraph g_components["components"]
@@ -16,24 +16,24 @@ flowchart LR
   end
   subgraph g_features["features"]
     features_access["features/access (15)"]
-    features_appointments["features/appointments (35)"]
+    features_appointments["features/appointments (37)"]
     features_audit["features/audit (6)"]
     features_billing["features/billing (27)"]
-    features_customers["features/customers (9)"]
+    features_customers["features/customers (10)"]
     features_dashboard["features/dashboard (7)"]
     features_employees["features/employees (26)"]
-    features_expenses["features/expenses (7)"]
+    features_expenses["features/expenses (9)"]
     features_feedback["features/feedback (4)"]
-    features_inventory["features/inventory (11)"]
-    features_notifications["features/notifications (7)"]
+    features_inventory["features/inventory (13)"]
+    features_notifications["features/notifications (8)"]
     features_payments["features/payments (2)"]
     features_platform["features/platform (20)"]
-    features_reminders["features/reminders (4)"]
+    features_reminders["features/reminders (5)"]
     features_reports["features/reports (9)"]
-    features_retail["features/retail (4)"]
-    features_salon["features/salon (17)"]
+    features_retail["features/retail (5)"]
+    features_salon["features/salon (18)"]
     features_salon_features["features/salon-features (2)"]
-    features_services["features/services (13)"]
+    features_services["features/services (15)"]
   end
   subgraph g_infra["infra"]
     infra["infra (3)"]
@@ -155,6 +155,7 @@ flowchart LR
   features_access --> infra_validation
   features_access --> npm_server_only
   features_access --> types
+  features_appointments --> features_billing
   features_appointments --> features_customers
   features_appointments --> features_employees
   features_appointments --> features_notifications
@@ -182,6 +183,7 @@ flowchart LR
   features_billing --> infra_validation
   features_billing --> npm_server_only
   features_billing --> types
+  features_customers --> features_billing
   features_customers --> infra
   features_customers --> infra_format
   features_customers --> infra_observability
@@ -207,6 +209,7 @@ flowchart LR
   features_employees --> npm__supabase_supabase_js
   features_employees --> npm_server_only
   features_employees --> types
+  features_expenses --> features_billing
   features_expenses --> features_inventory
   features_expenses --> infra
   features_expenses --> infra_supabase
@@ -216,6 +219,7 @@ flowchart LR
   features_feedback --> infra_supabase
   features_feedback --> infra_validation
   features_feedback --> npm_server_only
+  features_inventory --> features_billing
   features_inventory --> infra
   features_inventory --> infra_supabase
   features_inventory --> infra_validation
@@ -245,11 +249,13 @@ flowchart LR
   features_reminders --> infra_format
   features_reminders --> infra_observability
   features_reminders --> infra_supabase
+  features_reminders --> infra_validation
   features_reminders --> npm_server_only
   features_reminders --> types
   features_reports --> infra_supabase
   features_reports --> infra_validation
   features_reports --> npm_server_only
+  features_retail --> features_billing
   features_retail --> features_customers
   features_retail --> features_inventory
   features_retail --> features_payments
