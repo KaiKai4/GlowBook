@@ -1,33 +1,44 @@
-import { requireActiveProfile } from "@/app/_composition/request-context";
-import { hasPermission, PERMISSIONS } from "@/features/access";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import type { Result } from "@/infra/result";
+import { PERMISSIONS } from "@/features/access";
+import {
+  checkPlanLimit,
+  checkPlanModuleAccess,
+  isEffectiveSalonModuleEnabled,
+} from "@/features/billing/use-cases/commercial-plans";
+import type { EmployeeAdmissionInput } from "@/features/employees/use-cases/employee-admission";
+import type { ProfileWithRole } from "@/types/app.types";
 
-// Roles deshabilitados en el plan: las acciones de rol no se ejecutan.
-export function requireRolesEnabled(rolesEnabled: boolean): Result<void> {
-  if (rolesEnabled) return { ok: true, value: undefined };
-  return { ok: false, error: "Los roles estan deshabilitados para este salon." };
-}
+// Politica comun de las acciones de colaboradores: permiso por clave y limite de
+// peticiones por usuario. Cada accion la extiende con defineAction; ninguna la
+// reimplementa. Vive aparte para mantener actions.ts bajo el limite de lineas.
 
-// Guardia de las acciones de colaboradores: permiso, limite de peticiones y
-// modulo de roles. Vive aparte para mantener actions.ts bajo el limite de lineas.
-export async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean }>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
-  }
-
+export const EMPLOYEE_GUARD = {
+  permission: {
+    key: PERMISSIONS.EMPLOYEES_MANAGE,
+    deniedMessage: "No tienes permiso para gestionar colaboradores.",
+  },
   // Estas acciones crean cuentas Auth y enlaces de acceso: un límite por
   // usuario evita generacion masiva automatizada.
-  const limited = await assertActionRateLimit(profile.id, "employees", { max: 30, windowMs: 60_000 });
-  if (!limited.ok) return limited;
+  rateLimit: { scope: "employees", options: { max: 30, windowMs: 60_000 } },
+};
 
+/** Roles habilitados en el plan del salon para el perfil de la sesion. */
+export function rolesEnabledOf(profile: ProfileWithRole): Promise<boolean> {
+  return isEffectiveSalonModuleEnabled(profile, "roles");
+}
+
+export function activeLimitCheck(salonId: string): () => ReturnType<typeof checkPlanLimit> {
+  return () => checkPlanLimit({ salonId, metricKey: "employees.active" });
+}
+
+export function loginLimitCheck(salonId: string): () => ReturnType<typeof checkPlanLimit> {
+  return () => checkPlanLimit({ salonId, metricKey: "employees.login_users" });
+}
+
+/** Chequeos de admision de un alta: modulo, cupo de activos y cupo de login. */
+export function admissionChecks(salonId: string): EmployeeAdmissionInput["checks"] {
   return {
-    ok: true,
-    value: {
-      salonId: profile.salon_id,
-      rolesEnabled: await isEffectiveSalonModuleEnabled(profile, "roles"),
-    },
+    checkModuleAccess: () => checkPlanModuleAccess({ salonId, moduleKey: "employees" }),
+    checkActiveLimit: activeLimitCheck(salonId),
+    checkLoginLimit: loginLimitCheck(salonId),
   };
 }
