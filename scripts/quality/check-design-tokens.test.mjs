@@ -46,7 +46,9 @@ test("countTokens expone la categoría invalid junto a las demás", () => {
 });
 
 test("ningún archivo de src/ (sin tests) contiene clases corruptas", () => {
+  /** @type {string[]} */
   const offenders = [];
+  /** @param {string} relativeDir */
   const walk = (relativeDir) => {
     for (const entry of readdirSync(path.join(ROOT, relativeDir), { withFileTypes: true })) {
       const relativePath = `${relativeDir}/${entry.name}`;

@@ -1,12 +1,4 @@
 {
-  "scripts/seed-staging-pricing-benchmark-v2.mjs": 678,
-  "scripts/seed-staging-pricing-study.mjs": 667,
-  "src/app/(dashboard)/appointments/[id]/edit/appointment-edit-form.tsx": 419,
-  "src/app/(dashboard)/recordatorios/reminders-view.tsx": 495,
-  "src/app/(dashboard)/salon/salon-settings.tsx": 558,
-  "src/components/ui/date-picker.tsx": 525,
-  "src/components/ui/select.tsx": 315,
-  "src/components/ui/time-picker.tsx": 470,
   "src/features/billing/data/salon-subscriptions.repo.ts": 455,
   "src/features/billing/use-cases/salon-subscriptions.ts": 739
 }
