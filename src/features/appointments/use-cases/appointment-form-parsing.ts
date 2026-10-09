@@ -15,7 +15,6 @@ import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const INVALID_SERVICES_MESSAGE = "Datos de servicios invalidos.";
 const INVALID_CHARGES_MESSAGE = "Cobros de servicios invalidos.";
-const PAYMENT_METHOD_DISABLED_MESSAGE = "Ese metodo de pago no esta habilitado para este salon.";
 
 type RawForm = Record<string, FormDataEntryValue>;
 
@@ -46,14 +45,10 @@ export function parseUpdateAppointmentScheduleForm(form: RawForm): Result<Update
 }
 
 /**
- * Lee el formulario de completar cita. `isPaymentMethodEnabled` llega por
- * parametro (el caso de uso no conoce el modulo de salon): el metodo de pago debe
- * estar habilitado en el salon.
+ * Lee y valida el formulario de completar cita (sin consultar el salon: que el
+ * metodo de pago este habilitado es una regla del caso de uso).
  */
-export async function parseCompleteAppointmentForm(
-  formData: FormData,
-  isPaymentMethodEnabled: (method: CompleteAppointmentInput["payment_method"]) => Promise<boolean>
-): Promise<Result<CompleteAppointmentInput>> {
+export function parseCompleteAppointmentForm(formData: FormData): Result<CompleteAppointmentInput> {
   const itemCharges = parseJsonField(formData.get("item_charges") ?? "[]", INVALID_CHARGES_MESSAGE);
   if (!itemCharges.ok) return itemCharges;
 
@@ -65,9 +60,5 @@ export async function parseCompleteAppointmentForm(
     item_charges: itemCharges.value,
   });
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
-
-  if (!(await isPaymentMethodEnabled(parsed.data.payment_method))) {
-    return err(PAYMENT_METHOD_DISABLED_MESSAGE);
-  }
   return ok(parsed.data);
 }

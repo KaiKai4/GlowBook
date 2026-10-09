@@ -16,10 +16,10 @@ flowchart LR
   end
   subgraph g_features["features"]
     features_access["features/access (14)"]
-    features_appointments["features/appointments (35)"]
+    features_appointments["features/appointments (37)"]
     features_audit["features/audit (6)"]
     features_billing["features/billing (25)"]
-    features_customers["features/customers (9)"]
+    features_customers["features/customers (10)"]
     features_dashboard["features/dashboard (7)"]
     features_employees["features/employees (22)"]
     features_expenses["features/expenses (7)"]
@@ -154,6 +154,7 @@ flowchart LR
   features_access --> infra_validation
   features_access --> npm_server_only
   features_access --> types
+  features_appointments --> features_billing
   features_appointments --> features_customers
   features_appointments --> features_employees
   features_appointments --> features_notifications
@@ -181,6 +182,7 @@ flowchart LR
   features_billing --> infra_validation
   features_billing --> npm_server_only
   features_billing --> types
+  features_customers --> features_billing
   features_customers --> infra
   features_customers --> infra_format
   features_customers --> infra_observability

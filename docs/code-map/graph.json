@@ -58,7 +58,7 @@
     {
       "id": "features/appointments",
       "kind": "internal",
-      "files": 35
+      "files": 37
     },
     {
       "id": "features/audit",
@@ -73,7 +73,7 @@
     {
       "id": "features/customers",
       "kind": "internal",
-      "files": 9
+      "files": 10
     },
     {
       "id": "features/dashboard",
@@ -340,12 +340,12 @@
     {
       "from": "app/(dashboard)",
       "to": "features/billing",
-      "count": 19
+      "count": 17
     },
     {
       "from": "app/(dashboard)",
       "to": "features/customers",
-      "count": 8
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
@@ -400,7 +400,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/salon",
-      "count": 16
+      "count": 15
     },
     {
       "from": "app/(dashboard)",
@@ -425,17 +425,17 @@
     {
       "from": "app/(dashboard)",
       "to": "infra/security",
-      "count": 11
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
       "to": "infra/validation",
-      "count": 21
+      "count": 20
     },
     {
       "from": "app/(dashboard)",
       "to": "npm/next",
-      "count": 44
+      "count": 42
     },
     {
       "from": "app/(dashboard)",
@@ -704,6 +704,11 @@
     },
     {
       "from": "features/appointments",
+      "to": "features/billing",
+      "count": 1
+    },
+    {
+      "from": "features/appointments",
       "to": "features/customers",
       "count": 1
     },
@@ -725,7 +730,7 @@
     {
       "from": "features/appointments",
       "to": "features/salon",
-      "count": 3
+      "count": 4
     },
     {
       "from": "features/appointments",
@@ -735,7 +740,7 @@
     {
       "from": "features/appointments",
       "to": "infra",
-      "count": 13
+      "count": 15
     },
     {
       "from": "features/appointments",
@@ -839,8 +844,13 @@
     },
     {
       "from": "features/customers",
+      "to": "features/billing",
+      "count": 1
+    },
+    {
+      "from": "features/customers",
       "to": "infra",
-      "count": 4
+      "count": 5
     },
     {
       "from": "features/customers",
