@@ -17,7 +17,7 @@ import {
   updateEmployee,
   updateEmployeeProfileRecord,
   upsertWorkSchedule,
-  validateEmployeeAssignments,
+  findActiveAssignmentReferences,
 } from "./employees.repo";
 import { createEmployeeWithAssignmentsRpc } from "@/features/employees/data/rpc/create-employee-rpc";
 import { updateEmployeeProfileRpc } from "@/features/employees/data/rpc/update-employee-rpc";
@@ -199,20 +199,23 @@ describe("employees repo", () => {
     });
   });
 
-  describe("validateEmployeeAssignments", () => {
+  describe("findActiveAssignmentReferences", () => {
     it("no consulta nada cuando no hay servicios ni categorías", async () => {
       useTables({});
 
-      await validateEmployeeAssignments(SALON_ID, [], []);
-
+      await expect(findActiveAssignmentReferences(SALON_ID, [], [])).resolves.toEqual({
+        activeCategoryIds: [],
+        services: [],
+      });
       expect(db.calls).toHaveLength(0);
     });
 
-    it("valida categorías únicas del salón y activas antes de aceptar la asignación", async () => {
-      useTables({ service_categories: [{ data: [{ id: CATEGORY_A }, { id: CATEGORY_B }] }] });
+    it("consulta las categorías activas del salón y devuelve sus ids", async () => {
+      useTables({ service_categories: [{ data: [{ id: CATEGORY_A }] }] });
 
-      await validateEmployeeAssignments(SALON_ID, [], [CATEGORY_A, CATEGORY_B, CATEGORY_A]);
+      const result = await findActiveAssignmentReferences(SALON_ID, [], [CATEGORY_A, CATEGORY_B]);
 
+      expect(result.activeCategoryIds).toEqual([CATEGORY_A]);
       expect(db.callsFor("service_categories").map((call) => [call.method, call.args])).toEqual([
         ["select", ["id"]],
         ["eq", ["salon_id", SALON_ID]],
@@ -221,54 +224,25 @@ describe("employees repo", () => {
       ]);
     });
 
-    it("rechaza categorías que no pertenecen al salón o están inactivas", async () => {
-      useTables({ service_categories: [{ data: [{ id: CATEGORY_A }] }] });
-
-      await expect(
-        validateEmployeeAssignments(SALON_ID, [], [CATEGORY_A, CATEGORY_B])
-      ).rejects.toThrow("Una o mas categorías no pertenecen al salon o estan inactivas.");
-    });
-
     it("propaga el error de consulta de categorías", async () => {
       useTables({ service_categories: [{ error: { message: "caido" } }] });
 
-      await expect(validateEmployeeAssignments(SALON_ID, [], [CATEGORY_A])).rejects.toEqual({
+      await expect(findActiveAssignmentReferences(SALON_ID, [], [CATEGORY_A])).rejects.toEqual({
         message: "caido",
       });
     });
 
-    it("rechaza servicios que no pertenecen al salón o están inactivos", async () => {
+    it("consulta los servicios activos del salón con su categoría", async () => {
       useTables({
-        service_categories: [{ data: [{ id: CATEGORY_A }] }],
         services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_A }] }],
       });
 
-      await expect(
-        validateEmployeeAssignments(SALON_ID, [SERVICE_1, SERVICE_2], [CATEGORY_A])
-      ).rejects.toThrow("Uno o mas servicios no pertenecen al salon o estan inactivos.");
-    });
+      const result = await findActiveAssignmentReferences(SALON_ID, [SERVICE_1], []);
 
-    it("rechaza servicios cuya categoría no fue asignada al colaborador", async () => {
-      useTables({
-        service_categories: [{ data: [{ id: CATEGORY_A }] }],
-        services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_B }] }],
+      expect(result).toEqual({
+        activeCategoryIds: [],
+        services: [{ id: SERVICE_1, category_id: CATEGORY_A }],
       });
-
-      await expect(
-        validateEmployeeAssignments(SALON_ID, [SERVICE_1], [CATEGORY_A])
-      ).rejects.toThrow("Para asignar un servicio al colaborador, tambien debes asignar su categoria.");
-    });
-
-    it("acepta servicios cuando su categoría también está asignada, con ids deduplicados", async () => {
-      useTables({
-        service_categories: [{ data: [{ id: CATEGORY_A }] }],
-        services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_A }] }],
-      });
-
-      await expect(
-        validateEmployeeAssignments(SALON_ID, [SERVICE_1, SERVICE_1], [CATEGORY_A])
-      ).resolves.toBeUndefined();
-
       expect(db.argsOf("services", "in")).toEqual(["id", [SERVICE_1]]);
       expect(eqCalls("services")).toEqual([
         ["salon_id", SALON_ID],
@@ -276,20 +250,10 @@ describe("employees repo", () => {
       ]);
     });
 
-    it("rechaza servicios sin categorías asignadas", async () => {
-      useTables({
-        services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_A }] }],
-      });
-
-      await expect(validateEmployeeAssignments(SALON_ID, [SERVICE_1], [])).rejects.toThrow(
-        "Para asignar un servicio al colaborador, tambien debes asignar su categoria."
-      );
-    });
-
     it("propaga el error de consulta de servicios", async () => {
       useTables({ services: [{ error: { message: "servicios caidos" } }] });
 
-      await expect(validateEmployeeAssignments(SALON_ID, [SERVICE_1], [])).rejects.toEqual({
+      await expect(findActiveAssignmentReferences(SALON_ID, [SERVICE_1], [])).rejects.toEqual({
         message: "servicios caidos",
       });
     });

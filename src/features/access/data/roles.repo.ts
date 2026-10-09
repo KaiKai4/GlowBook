@@ -1,3 +1,4 @@
+import "server-only";
 import { PublicError } from "@/infra/public-error";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 

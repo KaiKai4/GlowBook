@@ -33,7 +33,8 @@ import {
   checkPlanModuleAccess,
 } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/infra/result";
-import { guard } from "./employee-action-guard";
+import { guard, requireRolesEnabled } from "./employee-action-guard";
+import { admitNewEmployee } from "@/features/employees/use-cases/employee-admission";
 import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 import { parseUuid } from "@/infra/validation/route-id";
@@ -44,32 +45,36 @@ export async function createEmployeeAction(
 ): Promise<Result<CreateEmployeeResult>> {
   const g = await guard();
   if (!g.ok) return g;
-  const moduleAccess = await checkPlanModuleAccess({ salonId: g.value.salonId, moduleKey: "employees" });
-  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
-  const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.active" });
-  if (!limit.ok) return { ok: false, error: limit.error };
+  const { salonId, rolesEnabled } = g.value;
 
-  const roleId = g.value.rolesEnabled
-    ? (formData.get("role_id") as string)?.trim() || null
-    : null;
-
-  // Con rol asignado se emite una invitacion de acceso propio: tambien
-  // consume el cupo de usuarios con login del plan.
-  if (roleId) {
-    const loginLimit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.login_users" });
-    if (!loginLimit.ok) return { ok: false, error: loginLimit.error };
-  }
+  // Plan y cupos (y el consumo del cupo de login solo si el alta lleva rol) se
+  // deciden en el caso de uso de admision, antes de leer el resto del formulario.
+  const admission = await admitNewEmployee({
+    rolesEnabled,
+    requestedRoleId: requestedRoleIdOf(formData),
+    checks: {
+      checkModuleAccess: () => checkPlanModuleAccess({ salonId, moduleKey: "employees" }),
+      checkActiveLimit: () => checkPlanLimit({ salonId, metricKey: "employees.active" }),
+      checkLoginLimit: () => checkPlanLimit({ salonId, metricKey: "employees.login_users" }),
+    },
+  });
+  if (!admission.ok) return admission;
 
   const key = readIdempotencyKey(formData);
   if (!key.ok) return key;
   const parsed = parseCreateEmployeeForm(formData);
   if (!parsed.ok) return parsed;
 
-  const result = await createEmployeeProfile(g.value.salonId, parsed.value, roleId, key.value);
+  const result = await createEmployeeProfile(salonId, parsed.value, admission.value.roleId, key.value);
   if (result.ok) {
     revalidatePath("/employees");
   }
   return result;
+}
+
+function requestedRoleIdOf(formData: FormData): string | null {
+  const raw = formData.get("role_id");
+  return typeof raw === "string" ? raw : null;
 }
 
 export async function findArchivedEmployeeByEmailAction(email: string): Promise<ArchivedEmployeeMatch | null> {
@@ -125,9 +130,8 @@ export async function changeEmployeeRoleAction(
   if (!g.ok) return g;
   if (!parseUuid(profileId)) return { ok: false, error: "Identificador inválido." };
   if (roleId !== null && !parseUuid(roleId)) return { ok: false, error: "Identificador inválido." };
-  if (!g.value.rolesEnabled) {
-    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
-  }
+  const roles = requireRolesEnabled(g.value.rolesEnabled);
+  if (!roles.ok) return roles;
 
   const result = await changeEmployeeRole(g.value.salonId, profileId, roleId);
   if (result.ok) {
@@ -144,9 +148,8 @@ export async function resetEmployeeAccessAction(
   if (!g.ok) return g;
   if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
   if (roleId !== null && !parseUuid(roleId)) return { ok: false, error: "Identificador inválido." };
-  if (!g.value.rolesEnabled) {
-    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
-  }
+  const roles = requireRolesEnabled(g.value.rolesEnabled);
+  if (!roles.ok) return roles;
 
   const invite = await resetEmployeeAccess({
     employeeId,
@@ -205,9 +208,8 @@ export async function generateEmployeeInviteAction(
   if (!g.ok) return g;
   if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
   if (roleId !== null && !parseUuid(roleId)) return { ok: false, error: "Identificador inválido." };
-  if (!g.value.rolesEnabled) {
-    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
-  }
+  const roles = requireRolesEnabled(g.value.rolesEnabled);
+  if (!roles.ok) return roles;
   // Un acceso propio nuevo consume el cupo de usuarios con login del plan.
   const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.login_users" });
   if (!limit.ok) return { ok: false, error: limit.error };

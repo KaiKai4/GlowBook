@@ -6,8 +6,8 @@ import {
   findEmployeeByEmail,
   findEmployeeById,
   updateEmployeeProfileRecord,
-  validateEmployeeAssignments,
 } from "../data/employees.repo";
+import { validateEmployeeAssignments } from "./employee-assignments";
 import { findLatestPendingEmployeeInvitationRole } from "../data/employee-access.repo";
 import {
   generateEmployeeInvitation,
@@ -32,6 +32,9 @@ vi.mock("../data/employees.repo", () => ({
   findEmployeeByEmail: vi.fn(),
   findEmployeeById: vi.fn(),
   updateEmployeeProfileRecord: vi.fn(),
+}));
+
+vi.mock("./employee-assignments", () => ({
   validateEmployeeAssignments: vi.fn(),
 }));
 
