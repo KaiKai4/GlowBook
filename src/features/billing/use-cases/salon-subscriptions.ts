@@ -188,8 +188,8 @@ export async function resolveSalonPlanAlertConfig(
 ): Promise<Result<void>> {
   try {
     await resolvePlanAlert(alertId);
-    await auditBilling(actorUserId, "commercial_plan_alert_resolved", salonId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_alert_resolved", salonId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo resolver la alerta."));
   }
@@ -254,8 +254,8 @@ export async function assignSalonCommercialPlanConfig(
       trialEndsAt: schedule.trialEndsAt,
       notes: parsed.data.notes,
     });
-    await auditBilling(actorUserId, "commercial_plan_assigned", parsed.data.salonId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_assigned", parsed.data.salonId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo asignar el plan."));
   }
@@ -292,8 +292,8 @@ export async function autoAssignPlanOnAcceptance(input: {
       trialEndsAt: schedule.trialEndsAt,
       notes: "Asignado automaticamente al aceptar la invitacion.",
     });
-    await auditBilling(input.acceptedByUserId, "commercial_plan_assigned", input.salonId);
-    return ok(undefined);
+    const warnings = await auditBilling(input.acceptedByUserId, "commercial_plan_assigned", input.salonId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo asignar el plan de la invitacion."));
   }
@@ -346,8 +346,8 @@ export async function registerSalonPlanPaymentConfig(
       periodStart: period.periodStart,
       periodEnd: period.periodEnd,
     });
-    await auditBilling(actorUserId, "commercial_plan_payment_recorded", parsed.data.salonId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_payment_recorded", parsed.data.salonId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo registrar el pago."));
   }
@@ -383,8 +383,8 @@ export async function assignSalonAddonConfig(
       isGift: parsed.data.isGift,
       priceOverride: parsed.data.priceOverride,
     });
-    await auditBilling(actorUserId, "commercial_plan_extra_assigned", parsed.data.salonId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_extra_assigned", parsed.data.salonId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo asignar el extra."));
   }
@@ -419,8 +419,8 @@ export async function saveSalonManualExtraConfig(
       isGift: parsed.data.isGift,
       priceOverride: null,
     });
-    await auditBilling(actorUserId, "commercial_plan_override_saved", parsed.data.salonId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_override_saved", parsed.data.salonId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
   }
@@ -433,8 +433,8 @@ export async function cancelSalonExtraConfig(
 ): Promise<Result<void>> {
   try {
     await updateSalonPlanOverrideStatus(overrideId, "canceled");
-    await auditBilling(actorUserId, "commercial_plan_extra_canceled", salonId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_extra_canceled", salonId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo cancelar el extra."));
   }

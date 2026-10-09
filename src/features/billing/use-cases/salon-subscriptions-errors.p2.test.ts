@@ -26,7 +26,7 @@ import {
 
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 vi.mock("./billing-shared", () => ({
-  auditBilling: vi.fn(async () => undefined),
+  auditBilling: vi.fn(async () => []),
   dateOrNull: (value?: string | null) => (value ? value : null),
   normalizeKey: (value: string) => value,
 }));

@@ -29,7 +29,7 @@ vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
 }));
 
 vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/observability", () => ({

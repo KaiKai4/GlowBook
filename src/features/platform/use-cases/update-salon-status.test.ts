@@ -8,7 +8,7 @@ vi.mock("@/features/platform/data/salons.repo", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const mockedSetSalonActiveStatus = vi.mocked(setSalonActiveStatus);

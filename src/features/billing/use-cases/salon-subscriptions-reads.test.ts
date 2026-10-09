@@ -54,7 +54,7 @@ vi.mock("../data/commercial-plans.repo", () => ({
   findPlanWithChildren: vi.fn(),
 }));
 vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const findSubscriptionRowsMock = vi.mocked(findSubscriptionRows);

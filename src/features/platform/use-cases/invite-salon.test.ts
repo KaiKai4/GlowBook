@@ -13,7 +13,7 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const mockedCreateSalonInvitation = vi.mocked(createSalonInvitation);

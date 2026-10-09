@@ -24,8 +24,8 @@ export async function auditBilling(
   actorUserId: string | null | undefined,
   action: CommercialAuditAction,
   targetResourceId: string
-) {
-  await recordPlatformAction({
+): Promise<string[]> {
+  return recordPlatformAction({
     actorUserId: actorUserId ?? null,
     action,
     status: "succeeded",

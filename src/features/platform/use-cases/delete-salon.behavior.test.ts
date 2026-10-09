@@ -17,7 +17,7 @@ vi.mock("@/lib/observability", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const mockedDeleteCompletely = vi.mocked(deleteSalonCompletely);
@@ -30,7 +30,7 @@ const ACTOR_ID = "00000000-0000-4000-8000-000000000001";
 beforeEach(() => {
   vi.resetAllMocks();
   mockedDeleteCompletely.mockResolvedValue(undefined);
-  mockedAudit.mockResolvedValue(undefined);
+  mockedAudit.mockResolvedValue([]);
 });
 
 describe("deleteSalon confirmation", () => {

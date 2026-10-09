@@ -3,9 +3,9 @@ import { recordPlatformAudit } from "@/features/platform/data/platform-audit.rep
 import { captureError } from "@/lib/observability";
 import { recordPlatformAction } from "./platform-audit";
 
-// Auditoria best-effort: sin actor no hay nada que registrar, y un fallo al
-// escribir la auditoria nunca debe tumbar la accion del super-admin, pero si
-// queda registrado en observabilidad.
+// La accion del super-admin se emite como evento post-commit. El manejador
+// escribe la auditoria; si falla, el caso de uso recibe un aviso y nunca se
+// rechaza la accion ya confirmada.
 
 vi.mock("@/features/platform/data/platform-audit.repo", () => ({
   recordPlatformAudit: vi.fn(),
@@ -27,9 +27,10 @@ beforeEach(() => {
 });
 
 describe("recordPlatformAction", () => {
-  it("skips the write entirely when there is no acting admin", async () => {
-    await recordPlatformAction({ actorUserId: null, action: "set_salon_status", status: "succeeded" });
+  it("skips the event entirely when there is no acting admin", async () => {
+    const warnings = await recordPlatformAction({ actorUserId: null, action: "set_salon_status", status: "succeeded" });
 
+    expect(warnings).toEqual([]);
     expect(mockedRecordAudit).not.toHaveBeenCalled();
   });
 
@@ -39,43 +40,61 @@ describe("recordPlatformAction", () => {
     expect(mockedRecordAudit).not.toHaveBeenCalled();
   });
 
-  it("forwards the full audit input when an admin acted", async () => {
-    const input = {
+  it("hands the manejador the full audit payload with normalized targets", async () => {
+    await recordPlatformAction({
       actorUserId: ACTOR_ID,
-      action: "set_salon_status" as const,
-      status: "succeeded" as const,
+      action: "set_salon_status",
+      status: "succeeded",
       targetSalonId: SALON_ID,
       metadata: { isActive: false },
-    };
+    });
 
-    await recordPlatformAction(input);
-
-    expect(mockedRecordAudit).toHaveBeenCalledWith(input);
+    expect(mockedRecordAudit).toHaveBeenCalledWith({
+      actorUserId: ACTOR_ID,
+      action: "set_salon_status",
+      status: "succeeded",
+      targetSalonId: SALON_ID,
+      targetResourceType: null,
+      targetResourceId: null,
+      metadata: { isActive: false },
+      errorMessage: null,
+    });
   });
 
-  it("swallows adapter failures and reports them with the audit context", async () => {
+  it("returns a warning and reports the failure when the audit write fails", async () => {
     const adapterError = new Error("insert denied");
     mockedRecordAudit.mockRejectedValue(adapterError);
 
-    await expect(
-      recordPlatformAction({
-        actorUserId: ACTOR_ID,
-        action: "delete_salon",
-        status: "failed",
-        targetSalonId: SALON_ID,
-        targetResourceId: "res-1",
-      })
-    ).resolves.toBeUndefined();
+    const warnings = await recordPlatformAction({
+      actorUserId: ACTOR_ID,
+      action: "delete_salon",
+      status: "failed",
+      targetSalonId: SALON_ID,
+      targetResourceId: "res-1",
+    });
 
+    expect(warnings).toEqual(["No se completó el paso «platform.salon_deleted»."]);
     expect(mockedCaptureError).toHaveBeenCalledWith(adapterError, {
       module: "platform",
       action: "record_audit",
       metadata: {
+        effect: "platform.salon_deleted",
         auditAction: "delete_salon",
         auditStatus: "failed",
         targetSalonId: SALON_ID,
         targetResourceId: "res-1",
       },
     });
+  });
+
+  it("returns no warnings when the audit write succeeds", async () => {
+    const warnings = await recordPlatformAction({
+      actorUserId: ACTOR_ID,
+      action: "invite_salon",
+      status: "succeeded",
+    });
+
+    expect(warnings).toEqual([]);
+    expect(mockedCaptureError).not.toHaveBeenCalled();
   });
 });

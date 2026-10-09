@@ -26,7 +26,7 @@ import {
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("./billing-shared", () => ({
-  auditBilling: vi.fn(async () => undefined),
+  auditBilling: vi.fn(async () => []),
   normalizeKey: (value: string) => value.trim().toLowerCase().replace(/\s+/g, "_"),
 }));
 vi.mock("../data/commercial-addons.repo", () => ({

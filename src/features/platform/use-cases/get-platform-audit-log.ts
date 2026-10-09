@@ -7,37 +7,7 @@ import {
   type PlatformAuditStatus,
 } from "@/features/platform/data/platform-audit.repo";
 import type { Json } from "@/types/database.types";
-
-const ACTION_LABELS: Record<PlatformAuditAction, string> = {
-  invite_salon: "Invitar Salon",
-  regenerate_salon_invitation: "Regenerar enlace de invitacion",
-  set_salon_status: "Actualizar estado de Salon",
-  update_salon_features: "Actualizar funciones",
-  delete_salon: "Eliminar Salon",
-  set_feedback_status: "Moderar reporte",
-  billing_feature_saved: "Guardar capacidad de plan",
-  billing_plan_created: "Crear plan",
-  billing_entitlement_saved: "Guardar límite de plan",
-  billing_plan_assigned: "Asignar plan a Salon",
-  billing_override_saved: "Guardar extra de Salon",
-  commercial_module_saved: "Guardar modulo comercial",
-  commercial_plan_saved: "Guardar plan comercial",
-  commercial_plan_archived: "Archivar plan comercial",
-  commercial_plan_deleted: "Eliminar plan comercial",
-  commercial_plan_module_saved: "Guardar modulo de plan",
-  commercial_limit_metric_saved: "Guardar metrica de límite",
-  commercial_plan_limit_saved: "Guardar límite de plan",
-  commercial_plan_assigned: "Asignar plan comercial",
-  commercial_plan_override_saved: "Guardar extra comercial",
-  commercial_addon_saved: "Guardar extra del catalogo",
-  commercial_addon_archived: "Archivar extra del catalogo",
-  commercial_addon_deleted: "Eliminar extra del catalogo",
-  commercial_plan_extra_assigned: "Asignar extra a Salon",
-  commercial_plan_extra_canceled: "Cancelar extra de Salon",
-  commercial_plan_payment_recorded: "Registrar pago de Salon",
-  commercial_plan_alert_resolved: "Resolver alerta de límite",
-  invitation_accepted: "Invitacion aceptada",
-};
+import { auditActionOptions, auditActionText, isKnownAuditAction } from "./audit-messages";
 
 const STATUS_LABELS: Record<PlatformAuditStatus, string> = {
   succeeded: "Correcta",
@@ -83,8 +53,7 @@ function lookupLabel(labels: Record<string, string>, key: string): string {
 }
 
 function isAuditAction(value: string | undefined): value is PlatformAuditAction {
-  // Object.hasOwn: "toString" u otras claves del prototipo no son acciones válidas.
-  return Boolean(value && Object.hasOwn(ACTION_LABELS, value));
+  return value !== undefined && isKnownAuditAction(value);
 }
 
 function isAuditStatus(value: string | undefined): value is PlatformAuditStatus {
@@ -140,7 +109,7 @@ function toViewModel(entry: PlatformAuditRow): PlatformAuditLogEntryViewModel {
   return {
     id: entry.id,
     action,
-    actionLabel: lookupLabel(ACTION_LABELS, entry.action),
+    actionLabel: auditActionText(entry.action),
     status,
     statusLabel: lookupLabel(STATUS_LABELS, entry.status),
     actorLabel: entry.actor_user_id ? `Admin ${shortId(entry.actor_user_id)}` : "Admin eliminado",
@@ -171,10 +140,7 @@ export async function getPlatformAuditLog({
     failedCount: entries.filter((entry) => entry.status === "failed").length,
     actions: [
       { value: "all", label: "Todas" },
-      ...Object.entries(ACTION_LABELS).map(([value, label]) => ({
-        value: value as PlatformAuditAction,
-        label,
-      })),
+      ...auditActionOptions(),
     ],
     statuses: [
       { value: "all", label: "Todos" },

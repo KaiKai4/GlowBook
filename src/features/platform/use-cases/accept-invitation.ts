@@ -151,6 +151,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
   // El salon ya existe: asignar el plan elegido en la invitacion y dejar
   // rastro en auditoria. Si algo falla aqui no se revierte el onboarding;
   // la plataforma puede asignar el plan manualmente desde Suscripciones.
+  const warnings: string[] = [];
   if (invitation.plan_id) {
     const assigned = await autoAssignPlanOnAcceptance({
       salonId,
@@ -163,10 +164,12 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
         action: "accept_invitation_assign_plan",
         metadata: { salonId, planId: invitation.plan_id },
       });
+    } else {
+      warnings.push(...(assigned.warnings ?? []));
     }
   }
 
-  await recordPlatformAction({
+  const auditWarnings = await recordPlatformAction({
     actorUserId: userId,
     action: "invitation_accepted",
     status: "succeeded",
@@ -174,6 +177,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     targetResourceType: "salon_invitation",
     metadata: { emailDomain, planId: invitation.plan_id ?? null },
   });
+  warnings.push(...auditWarnings);
 
-  return ok(undefined);
+  return ok(undefined, warnings);
 }

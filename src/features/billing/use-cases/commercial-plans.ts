@@ -118,8 +118,8 @@ export async function saveCommercialPlanConfig(
       code: normalizeKey(parsed.data.code || parsed.data.name),
       currency: parsed.data.currency.toUpperCase(),
     });
-    await auditBilling(actorUserId, "commercial_plan_saved", id);
-    return ok(id);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_saved", id);
+    return ok(id, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el plan."));
   }
@@ -133,8 +133,12 @@ export async function removeCommercialPlanConfig(
   try {
     if (hasAssignments) await archiveCommercialPlan(plan.id);
     else await deleteCommercialPlan(plan.id);
-    await auditBilling(actorUserId, hasAssignments ? "commercial_plan_archived" : "commercial_plan_deleted", plan.id);
-    return ok(undefined);
+    const warnings = await auditBilling(
+      actorUserId,
+      hasAssignments ? "commercial_plan_archived" : "commercial_plan_deleted",
+      plan.id
+    );
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo eliminar el plan."));
   }
@@ -159,8 +163,8 @@ export async function saveCommercialPlanModulesBatch(
         savePlanModule({ planId: parsed.data.planId, moduleKey, enabled: enabled.has(moduleKey) })
       )
     );
-    await auditBilling(actorUserId, "commercial_plan_module_saved", parsed.data.planId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_module_saved", parsed.data.planId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudieron guardar los modulos del plan."));
   }
@@ -181,8 +185,8 @@ export async function saveCommercialPlanLimitsBatch(
     await Promise.all(
       parsed.data.limits.map((limit) => savePlanLimit({ ...limit, planId: parsed.data.planId }))
     );
-    await auditBilling(actorUserId, "commercial_plan_limit_saved", parsed.data.planId);
-    return ok(undefined);
+    const warnings = await auditBilling(actorUserId, "commercial_plan_limit_saved", parsed.data.planId);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudieron guardar los límites del plan."));
   }

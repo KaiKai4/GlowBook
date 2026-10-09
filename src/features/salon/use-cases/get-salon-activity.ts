@@ -1,25 +1,7 @@
 import "server-only";
 
-import { findSalonActivity, type ActivityLogRow } from "../data/activity-log.repo";
-
-const TABLE_LABELS: Record<string, string> = {
-  appointments: "una cita",
-  customers: "un cliente",
-  services: "un servicio",
-  employees: "un colaborador",
-  expenses: "un gasto",
-  retail_sales: "una venta de vitrina",
-  inventory_products: "un producto de inventario",
-  inventory_movements: "un movimiento de inventario",
-  roles: "un rol",
-  salons: "la configuración del salon",
-};
-
-const ACTION_VERBS: Record<ActivityLogRow["action"], string> = {
-  insert: "Creo",
-  update: "Actualizo",
-  delete: "Elimino",
-};
+import { findSalonActivity } from "../data/activity-log.repo";
+import { describeSalonActivity } from "../domain/activity-messages";
 
 export interface SalonActivityEntry {
   id: string;
@@ -43,20 +25,13 @@ export async function getSalonActivity(): Promise<SalonActivityViewModel> {
       return {
         id: row.id,
         actorEmail: row.actor_email || "sistema",
-        actionLabel: describeAction(row),
+        actionLabel: describeSalonActivity(row.action, row.table_name),
         recordLabel: row.record_label,
         dateLabel: formatDate(createdAt),
         timeLabel: formatTime(createdAt),
       };
     }),
   };
-}
-
-function describeAction(row: ActivityLogRow): string {
-  const verb = ACTION_VERBS[row.action];
-  if (row.table_name === "salons") return "Actualizo la configuración del salon";
-  const subject = TABLE_LABELS[row.table_name] ?? `un registro de ${row.table_name}`;
-  return `${verb} ${subject}`;
 }
 
 function formatDate(value: Date): string {
