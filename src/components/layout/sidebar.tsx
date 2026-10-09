@@ -12,6 +12,7 @@ import type { SalonFeatureKey } from "@/features/salon-features";
 
 import { getVisibleNavGroups } from "./nav-items";
 import {
+  getServerSidebarCollapsed,
   getSidebarCollapsed,
   setSidebarCollapsed,
   subscribeSidebarCollapsed,
@@ -36,7 +37,7 @@ export function Sidebar({
   const isCollapsed = useSyncExternalStore(
     subscribeSidebarCollapsed,
     getSidebarCollapsed,
-    () => false,
+    getServerSidebarCollapsed,
   );
 
   const groups = getVisibleNavGroups(
