@@ -1121,6 +1121,9 @@ isOneToOne: false
 "create_appointment":
 { Args: { "payload": Json }; Returns: string
                            },
+"create_employee_with_assignments":
+{ Args: { "payload": Json }; Returns: Json
+                           },
 "create_salon_with_owner":
 { Args: { "p_full_name": string,"p_owner_id": string,"p_salon_name": string }; Returns: string
                            } |
@@ -1168,6 +1171,9 @@ isOneToOne: false
                            },
 "record_retail_sale":
 { Args: { "p_customer_id": string,"p_idempotency_key"?: string,"p_location": string,"p_note"?: string,"p_payment_method": string,"p_product_id": string,"p_quantity": number,"p_salon_id": string,"p_unit_price": number }; Returns: string
+                           },
+"replace_employee_assignments":
+{ Args: { "payload": Json }; Returns: undefined
                            },
 "report_busy_hours":
 { Args: { "p_from": string,"p_timezone": string,"p_to": string }; Returns: Json
@@ -1221,6 +1227,9 @@ isOneToOne: false
                            },
 "update_appointment":
 { Args: { "payload": Json }; Returns: undefined
+                           },
+"update_employee_profile":
+{ Args: { "payload": Json }; Returns: Json
                            }
           }
           Enums: {

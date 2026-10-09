@@ -83,7 +83,7 @@ describe("EditEmployeeModal", () => {
   });
 
   it("guarda los datos recortados con categorías y servicios elegidos y refresca la vista", async () => {
-    vi.mocked(updateEmployeeAction).mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(updateEmployeeAction).mockResolvedValue({ ok: true, value: {} });
     mounted = renderModal();
     openModal(mounted.container);
 
@@ -133,7 +133,7 @@ describe("EditEmployeeModal", () => {
   });
 
   it("envía el teléfono y el correo editados", async () => {
-    vi.mocked(updateEmployeeAction).mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(updateEmployeeAction).mockResolvedValue({ ok: true, value: {} });
     mounted = renderModal();
     openModal(mounted.container);
 

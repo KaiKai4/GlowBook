@@ -91,8 +91,15 @@ const RATE_LIMITED = { ok: false, error: "Demasiados intentos. Espera un momento
 const manager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
 const INVITE = { token: "tok-123", expiresAt: "2026-10-10T00:00:00.000Z" };
 
+const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000f1";
+
+// Las escrituras criticas de colaboradores exigen idempotency_key en el FormData.
+function employeeForm(values: Record<string, string>): FormData {
+  return formDataOf({ idempotency_key: IDEMPOTENCY_KEY, ...values });
+}
+
 function validCreateForm(extra: Record<string, string> = {}): FormData {
-  return formDataOf({ first_name: "Ana", last_name: "Pérez", ...extra });
+  return employeeForm({ first_name: "Ana", last_name: "Pérez", ...extra });
 }
 
 describe("employees actions", () => {
@@ -171,7 +178,7 @@ describe("employees actions", () => {
       await createEmployeeAction(null, validCreateForm({ role_id: ROLE_ID }));
 
       expect(checkPlanLimit).toHaveBeenCalledTimes(1);
-      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null);
+      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null, expect.any(String));
     });
 
     it("trata un role_id en blanco como ausencia de rol", async () => {
@@ -180,11 +187,11 @@ describe("employees actions", () => {
       await createEmployeeAction(null, validCreateForm({ role_id: "   " }));
 
       expect(checkPlanLimit).toHaveBeenCalledTimes(1);
-      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null);
+      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null, expect.any(String));
     });
 
     it("rechaza datos inválidos con el primer mensaje de validación", async () => {
-      expect(await createEmployeeAction(null, formDataOf({ first_name: "", last_name: "Pérez" }))).toEqual({
+      expect(await createEmployeeAction(null, employeeForm({ first_name: "", last_name: "Pérez" }))).toEqual({
         ok: false,
         error: "El nombre es obligatorio",
       });
@@ -210,7 +217,8 @@ describe("employees actions", () => {
           service_ids: [SERVICE_ID],
           category_ids: [CATEGORY_ID],
         }),
-        null
+        null,
+        IDEMPOTENCY_KEY
       );
       expect(revalidatePath).toHaveBeenCalledWith("/employees");
     });
@@ -220,7 +228,7 @@ describe("employees actions", () => {
 
       await createEmployeeAction(null, validCreateForm({ role_id: ROLE_ID }));
 
-      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), ROLE_ID);
+      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), ROLE_ID, expect.any(String));
     });
 
     it("no revalida cuando la creación falla", async () => {
@@ -231,6 +239,44 @@ describe("employees actions", () => {
         error: "El email ya existe.",
       });
       expect(revalidatePath).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("idempotencia de las escrituras de colaboradores", () => {
+    const MISSING_KEY = { ok: false, error: "Solicitud inválida. Recarga la página e inténtalo de nuevo." } as const;
+
+    it("createEmployeeAction rechaza el FormData sin idempotency_key antes de escribir", async () => {
+      const form = formDataOf({ first_name: "Ana", last_name: "Pérez" });
+
+      expect(await createEmployeeAction(null, form)).toEqual(MISSING_KEY);
+      expect(createEmployeeProfile).not.toHaveBeenCalled();
+    });
+
+    it("createEmployeeAction rechaza una idempotency_key que no es uuid", async () => {
+      const form = formDataOf({ first_name: "Ana", last_name: "Pérez", idempotency_key: "no-uuid" });
+
+      expect(await createEmployeeAction(null, form)).toEqual(MISSING_KEY);
+      expect(createEmployeeProfile).not.toHaveBeenCalled();
+    });
+
+    it("updateEmployeeAction rechaza el FormData sin idempotency_key antes de escribir", async () => {
+      expect(await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ first_name: "Lucía" }))).toEqual(
+        MISSING_KEY
+      );
+      expect(updateEmployeeProfile).not.toHaveBeenCalled();
+    });
+
+    it("pasa la clave de idempotencia al caso de uso de edicion", async () => {
+      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok({}));
+
+      await updateEmployeeAction(EMPLOYEE_ID, null, employeeForm({ first_name: "Lucía" }));
+
+      expect(updateEmployeeProfile).toHaveBeenCalledWith(
+        EMPLOYEE_ID,
+        SALON_ID,
+        expect.any(Object),
+        IDEMPOTENCY_KEY
+      );
     });
   });
 
@@ -310,7 +356,7 @@ describe("employees actions", () => {
     });
 
     it("rechaza datos inválidos sin persistir", async () => {
-      expect(await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ email: "no-es-email" }))).toEqual({
+      expect(await updateEmployeeAction(EMPLOYEE_ID, null, employeeForm({ email: "no-es-email" }))).toEqual({
         ok: false,
         error: "Email inválido",
       });
@@ -318,16 +364,17 @@ describe("employees actions", () => {
     });
 
     it("actualiza solo los campos enviados y convierte la comisión a número", async () => {
-      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok(undefined));
+      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok({}));
 
       expect(
-        await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ first_name: "Lucía", commission_percentage: "12" }))
-      ).toEqual(ok(undefined));
+        await updateEmployeeAction(EMPLOYEE_ID, null, employeeForm({ first_name: "Lucía", commission_percentage: "12" }))
+      ).toEqual(ok({}));
 
       expect(updateEmployeeProfile).toHaveBeenCalledWith(
         EMPLOYEE_ID,
         SALON_ID,
-        expect.objectContaining({ first_name: "Lucía", commission_percentage: 12 })
+        expect.objectContaining({ first_name: "Lucía", commission_percentage: 12 }),
+        IDEMPOTENCY_KEY
       );
       const patch = vi.mocked(updateEmployeeProfile).mock.calls[0]?.[2];
       expect(patch?.last_name).toBeUndefined();
@@ -336,9 +383,9 @@ describe("employees actions", () => {
     });
 
     it("sin comisión, teléfono, email ni especialidad en el formulario el parche no los toca", async () => {
-      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok(undefined));
+      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok({}));
 
-      await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ first_name: "Lucía" }));
+      await updateEmployeeAction(EMPLOYEE_ID, null, employeeForm({ first_name: "Lucía" }));
 
       const patch = vi.mocked(updateEmployeeProfile).mock.calls[0]?.[2];
       expect(patch?.commission_percentage).toBeUndefined();
@@ -348,9 +395,9 @@ describe("employees actions", () => {
     });
 
     it("un campo enviado vacío sí se guarda como vacío (borrado explícito)", async () => {
-      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok(undefined));
+      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok({}));
 
-      await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ phone: "", specialty: "" }));
+      await updateEmployeeAction(EMPLOYEE_ID, null, employeeForm({ phone: "", specialty: "" }));
 
       const patch = vi.mocked(updateEmployeeProfile).mock.calls[0]?.[2];
       expect(patch?.phone).toBe("");
@@ -360,7 +407,7 @@ describe("employees actions", () => {
     it("no revalida cuando la actualización falla", async () => {
       vi.mocked(updateEmployeeProfile).mockResolvedValue(err("Conflicto de email."));
 
-      expect(await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ first_name: "Lucía" }))).toEqual({
+      expect(await updateEmployeeAction(EMPLOYEE_ID, null, employeeForm({ first_name: "Lucía" }))).toEqual({
         ok: false,
         error: "Conflicto de email.",
       });
@@ -462,7 +509,7 @@ describe("employees actions", () => {
 
   describe("addWorkScheduleAction", () => {
     it("rechaza un horario con formato de hora inválido", async () => {
-      const form = formDataOf({
+      const form = employeeForm({
         employee_id: EMPLOYEE_ID,
         day_of_week: "1",
         start_time: "9am",
@@ -475,7 +522,7 @@ describe("employees actions", () => {
 
     it("añade el turno y revalida la ficha del colaborador", async () => {
       vi.mocked(addEmployeeWorkSchedule).mockResolvedValue(ok(undefined));
-      const form = formDataOf({
+      const form = employeeForm({
         employee_id: EMPLOYEE_ID,
         day_of_week: "2",
         start_time: "09:00",
@@ -492,7 +539,7 @@ describe("employees actions", () => {
 
     it("no revalida cuando el turno no se puede añadir", async () => {
       vi.mocked(addEmployeeWorkSchedule).mockResolvedValue(err("Solapa con otro turno."));
-      const form = formDataOf({
+      const form = employeeForm({
         employee_id: EMPLOYEE_ID,
         day_of_week: "2",
         start_time: "09:00",
