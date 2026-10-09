@@ -16,6 +16,5 @@
   "src/components/ui/time-picker.tsx": 470,
   "src/features/appointments/data/appointment-commands.repo.ts": 320,
   "src/features/billing/data/salon-subscriptions.repo.ts": 455,
-  "src/features/billing/use-cases/salon-subscriptions.ts": 739,
-  "src/features/reports/domain/analytics.ts": 426
+  "src/features/billing/use-cases/salon-subscriptions.ts": 739
 }

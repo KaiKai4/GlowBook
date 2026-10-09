@@ -34,14 +34,31 @@ Cambio de conducta (Fase 5):
 - Gastos operativos e inventario son fuentes distintas: las reposiciones no se
   suman dentro de gastos manuales para evitar egresos duplicados.
 
+Historial y exportacion (SQL, migracion 066):
+
+- Serie mensual, horas ocupadas, gastos por concepto, productos vendidos y
+  alertas de inventario salen de `report_monthly_series`, `report_busy_hours`,
+  `report_expense_concepts`, `report_product_sales` y `report_inventory_alerts`.
+  Los acumulados (anual e historico) salen de `report_period_totals`.
+- El historico completo usa una ventana fija amplia (desde 1970-01 hasta el
+  año siguiente al actual). La base rellena los meses vacios en cero y
+  `trimMonthlyRows` recorta la serie al primer y ultimo mes con movimientos.
+- Diferencias conocidas frente al calculo JS anterior: un mes con solo movimientos
+  de importe cero se recorta; el top de productos de la exportacion agrupa por
+  producto (id) y no por nombre; los gastos con concepto "Reposiciones de
+  inventario" se suman en lugar de sobrescribirse; movimientos con fecha posterior
+  al año siguiente al actual no entran en el historico completo.
+
 Adapters externos:
 
-- `data/reports.repo.ts` para identidad del salon y el historial mensual.
-- `data/rpc/reports-read-models.rpc.ts` para los agregados SQL del periodo.
+- `data/reports.repo.ts` para la identidad y la zona horaria del salon.
+- `data/rpc/reports-read-models.rpc.ts` para los agregados SQL del periodo y acumulados.
+- `data/rpc/reports-history.rpc.ts` para la serie mensual, horas, gastos, productos y alertas.
 
 Tests que protegen el Module:
 
 - `use-cases/get-operational-report.parity.test.ts`
+- `use-cases/reports-sql-parity.test.ts` (oraculo JS del historial y exportacion)
 - `domain/period.test.ts`
 
 No debe vivir aqui:
