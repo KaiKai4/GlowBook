@@ -1,13 +1,17 @@
-import { CreateEmployeeSchema, EmployeeIdempotencySchema } from "@/features/employees/schemas";
+import {
+  CreateEmployeeSchema,
+  EmployeeIdempotencySchema,
+  EmployeePatchSchema,
+} from "@/features/employees/schemas";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@/features/employees/schemas";
-import { EmployeePatchSchema } from "./employee-patch-schema";
 import type { Result } from "@/infra/result";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const INVALID_IDEMPOTENCY_KEY = "Solicitud inválida. Recarga la página e inténtalo de nuevo.";
 
-// Lectura y validacion del FormData de las acciones de colaboradores. Vive aparte
-// para mantener actions.ts bajo el limite de lineas (como employee-action-guard.ts).
+// Lectura y validacion del FormData de las acciones de colaboradores. Vive en el
+// caso de uso (no en la accion): el orden de los errores es parte de la conducta,
+// el plan se admite antes de validar la clave de idempotencia y el formulario.
 
 export function readIdempotencyKey(formData: FormData): Result<string> {
   const parsed = EmployeeIdempotencySchema.safeParse({
