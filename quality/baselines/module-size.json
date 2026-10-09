@@ -20,6 +20,6 @@
   "src/features/appointments/data/appointment-commands.repo.ts": 508,
   "src/features/billing/data/salon-subscriptions.repo.ts": 455,
   "src/features/billing/use-cases/salon-subscriptions.ts": 740,
-  "src/features/inventory/data/inventory.repo.ts": 359,
+  "src/features/inventory/data/inventory.repo.ts": 337,
   "src/features/reports/domain/analytics.ts": 426
 }

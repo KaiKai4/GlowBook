@@ -7,7 +7,6 @@ import {
 import {
   findInventoryProducts,
   findInventoryPurchaseHistory,
-  findLowStockProductCount,
   findRecentInventoryMovements,
   insertInventoryMovement,
   insertInventoryProduct,
@@ -60,45 +59,6 @@ describe("inventory.repo", () => {
       const dbError = { message: "fallo" };
       useDb({ inventory_products: { data: null, error: dbError } });
       await expect(findInventoryProducts(SALON_ID)).rejects.toBe(dbError);
-    });
-  });
-
-  describe("findLowStockProductCount", () => {
-    it("cuenta productos distintos sin stock o bajo su minimo, ignorando los de minimo cero que tienen stock", async () => {
-      const db = useDb({
-        inventory_stock_locations: {
-          data: [
-            { product_id: "p-agotado", quantity: 0, minimum_quantity: 0 },
-            { product_id: "p-bajo", quantity: "2", minimum_quantity: "5" },
-            { product_id: "p-bajo", quantity: 1, minimum_quantity: 5 },
-            { product_id: "p-ok", quantity: 10, minimum_quantity: 5 },
-            { product_id: "p-sin-minimo", quantity: 3, minimum_quantity: 0 },
-            { product_id: "p-sin-datos", quantity: null, minimum_quantity: null },
-          ],
-          error: null,
-        },
-      });
-
-      expect(await findLowStockProductCount(SALON_ID)).toBe(3);
-      expect(operationsOn(db, "inventory_stock_locations")).toContainEqual({
-        target: "inventory_stock_locations",
-        method: "eq",
-        args: ["salon_id", SALON_ID],
-      });
-      expect(operationsOn(db, "inventory_stock_locations")).toContainEqual({
-        target: "inventory_stock_locations",
-        method: "is",
-        args: ["product.deleted_at", null],
-      });
-    });
-
-    it("devuelve cero sin filas y propaga errores", async () => {
-      useDb({ inventory_stock_locations: { data: null, error: null } });
-      expect(await findLowStockProductCount(SALON_ID)).toBe(0);
-
-      const dbError = { message: "fallo" };
-      useDb({ inventory_stock_locations: { data: null, error: dbError } });
-      await expect(findLowStockProductCount(SALON_ID)).rejects.toBe(dbError);
     });
   });
 

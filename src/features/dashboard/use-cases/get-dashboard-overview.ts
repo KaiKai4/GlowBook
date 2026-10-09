@@ -1,17 +1,16 @@
 import "server-only";
 
-import { getUtcDayBoundaries, formatLocalDateISO } from "@/lib/utils/dates";
+import { formatLocalDateISO, getUtcDayBoundaries } from "@/lib/utils/dates";
 import { calculateOperationalMoneyTotals } from "@/features/finance/domain/operational-money";
-import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
-import { getLowStockSummary } from "@/features/inventory/use-cases/low-stock-summary";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
+import { findPendingConfirmationRows, type DashboardPendingConfirmationRow } from "../data/dashboard.repo";
 import {
-  findDashboardReportRows,
-  findPendingConfirmationRows,
-  type DashboardBookedServiceRow,
-  type DashboardMonthlyCompletedAppointmentRow,
-  type DashboardPendingConfirmationRow,
-} from "../data/dashboard.repo";
+  fetchDashboardMetrics,
+  fetchMonthlyAppointmentSeries,
+  fetchTopServices,
+  type DashboardMetricsRow,
+  type MonthlyAppointmentSeriesRow,
+} from "../data/rpc/dashboard-read-models.rpc";
 
 export interface TopService {
   name: string;
@@ -104,55 +103,36 @@ function getMonthSequence(monthStart: Date, timezone: string, count = 12) {
   });
 }
 
-function calculateMonthlyCompletedAppointments(
-  rows: DashboardMonthlyCompletedAppointmentRow[],
-  months: { monthKey: string; label: string }[],
-  timezone: string
-): MonthlyAppointmentPoint[] {
-  const counts = new Map(months.map((month) => [month.monthKey, 0]));
-
-  for (const row of rows) {
-    if (!row.start_time) continue;
-    const monthKey = formatLocalDateISO(new Date(row.start_time), timezone).slice(0, 7);
-    if (!counts.has(monthKey)) continue;
-    counts.set(monthKey, (counts.get(monthKey) ?? 0) + 1);
-  }
-
-  return months.map((month, index) => {
-    const total = counts.get(month.monthKey) ?? 0;
-    const previousMonth = index > 0 ? months[index - 1] : undefined;
-    const previous = previousMonth ? counts.get(previousMonth.monthKey) ?? 0 : total;
-    const delta = total - previous;
-
-    return {
-      ...month,
-      total,
-      delta,
-      trend: delta > 0 ? "up" : delta < 0 ? "down" : "flat",
-    };
+function toDashboardMetrics(row: DashboardMetricsRow): DashboardMetrics {
+  const money = calculateOperationalMoneyTotals({
+    appointmentRevenue: row.appointmentRevenue,
+    retailRevenue: row.retailRevenue,
+    manualExpenses: row.manualExpenses,
+    inventoryPurchases: row.inventoryPurchases,
   });
+
+  return {
+    todayAppointments: row.todayAppointments,
+    appointmentRevenue: money.appointmentRevenue,
+    retailRevenue: money.retailRevenue,
+    monthRevenue: money.grossRevenue,
+    monthExpenses: money.totalExpenses,
+    estimatedProfit: money.estimatedProfit,
+    lowStockProducts: row.lowStockProducts,
+    totalCustomers: row.totalCustomers,
+    completedThisMonth: row.completedThisMonth,
+  };
 }
 
-function calculateTopServices(rows: DashboardBookedServiceRow[]): TopService[] {
-  const counts = new Map<string, number>();
+function withMonthLabels(
+  points: MonthlyAppointmentSeriesRow[],
+  months: { monthKey: string; label: string }[]
+): MonthlyAppointmentPoint[] {
+  const labels = new Map(months.map((month) => [month.monthKey, month.label]));
 
-  for (const row of rows) {
-    const status = firstRelation(row.appointment)?.status;
-    if (status === "cancelled" || status === "no_show") continue;
-
-    const name = firstRelation(row.service)?.name;
-    if (!name) continue;
-
-    counts.set(name, (counts.get(name) ?? 0) + 1);
-  }
-
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const max = sorted[0]?.[1] ?? 0;
-
-  return sorted.map(([name, count]) => ({
-    name,
-    count,
-    pct: max ? (count / max) * 100 : 0,
+  return points.map((point) => ({
+    ...point,
+    label: labels.get(point.monthKey) ?? point.monthKey,
   }));
 }
 
@@ -193,71 +173,20 @@ export async function getDashboardOverview({
 
   const salon = await getSalonIdentity(salonId);
   const timezone = salon?.timezone ?? "UTC";
-  const { start: todayStart, end: todayEnd } = getUtcDayBoundaries(now, timezone);
-  const monthStart = getMonthStart(now, timezone);
-  const monthSequence = getMonthSequence(monthStart, timezone);
-  const [firstMonth] = monthSequence;
-  if (!firstMonth) throw new Error("Invariante de dashboard: sin meses para el gráfico.");
-  const chartStart = getMonthStart(new Date(`${firstMonth.monthKey}-15T12:00:00.000Z`), timezone);
-  const todayLocal = formatLocalDateISO(now, timezone);
-  const monthStartLocal = formatLocalDateISO(monthStart, timezone);
+  const monthSequence = getMonthSequence(getMonthStart(now, timezone), timezone);
+  const input = { timezone, now };
 
-  const [reportRows, pendingRows, externalMoney, lowStockSummary] = await Promise.all([
-    wantsReports
-      ? findDashboardReportRows({
-          salonId,
-          todayStart: todayStart.toISOString(),
-          todayEnd: todayEnd.toISOString(),
-          monthStart: monthStart.toISOString(),
-          chartStart: chartStart.toISOString(),
-        })
-      : null,
+  const [metricsRow, seriesRows, topServiceRows, pendingRows] = await Promise.all([
+    wantsReports ? fetchDashboardMetrics(input) : null,
+    wantsReports ? fetchMonthlyAppointmentSeries(input) : null,
+    wantsReports ? fetchTopServices(input) : null,
     wantsConfirmations ? findPendingConfirmationRows(salonId, now.toISOString()) : [],
-    wantsReports
-      ? getExternalOperationalMoney({
-          salonId,
-          fromIso: monthStart.toISOString(),
-          toIso: now.toISOString(),
-          fromDate: monthStartLocal,
-          toDate: todayLocal,
-        })
-      : null,
-    wantsReports ? getLowStockSummary(salonId) : null,
   ]);
 
-  const metrics = reportRows
-    ? (() => {
-        const appointmentRevenue = reportRows.monthAppointments.reduce(
-          (sum, appointment) => sum + Number(appointment.total_price ?? 0),
-          0
-        );
-        const money = calculateOperationalMoneyTotals({
-          appointmentRevenue,
-          retailRevenue: externalMoney?.retailRevenue ?? 0,
-          manualExpenses: externalMoney?.manualExpenses ?? 0,
-          inventoryPurchases: externalMoney?.inventoryPurchases ?? 0,
-        });
-
-        return {
-        todayAppointments: reportRows.todayAppointments,
-        appointmentRevenue: money.appointmentRevenue,
-        retailRevenue: money.retailRevenue,
-        monthRevenue: money.grossRevenue,
-        monthExpenses: money.totalExpenses,
-        estimatedProfit: money.estimatedProfit,
-        lowStockProducts: lowStockSummary?.productCount ?? 0,
-        totalCustomers: reportRows.totalCustomers,
-        completedThisMonth: reportRows.monthAppointments.length,
-      };
-    })()
-    : null;
-
   return {
-    metrics,
-    topServices: reportRows ? calculateTopServices(reportRows.bookedServices) : [],
-    monthlyCompletedAppointments: reportRows
-      ? calculateMonthlyCompletedAppointments(reportRows.monthlyCompletedAppointments, monthSequence, timezone)
-      : [],
+    metrics: metricsRow ? toDashboardMetrics(metricsRow) : null,
+    topServices: topServiceRows ?? [],
+    monthlyCompletedAppointments: seriesRows ? withMonthLabels(seriesRows, monthSequence) : [],
     pending: mapPendingConfirmations(pendingRows, timezone),
   };
 }

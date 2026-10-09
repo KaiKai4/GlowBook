@@ -95,28 +95,6 @@ export async function findInventoryProducts(salonId: string): Promise<InventoryP
   return (data ?? []) as InventoryProductRow[];
 }
 
-export async function findLowStockProductCount(salonId: string): Promise<number> {
-  const supabase = db(await createSupabaseServerClient());
-  const { data, error } = await supabase
-    .from("inventory_stock_locations")
-    .select("product_id, quantity, minimum_quantity, product:inventory_products!inner(deleted_at)")
-    .eq("salon_id", salonId)
-    .is("product.deleted_at", null);
-
-  if (error) throw error;
-
-  const lowStockProductIds = new Set<string>();
-  for (const row of (data ?? []) as InventoryStockRow[]) {
-    const quantity = Number(row.quantity ?? 0);
-    const minimumQuantity = Number(row.minimum_quantity ?? 0);
-    if (quantity <= 0 || (minimumQuantity > 0 && quantity <= minimumQuantity)) {
-      lowStockProductIds.add(row.product_id);
-    }
-  }
-
-  return lowStockProductIds.size;
-}
-
 export async function findRecentInventoryMovements(
   salonId: string,
   limit = 8
