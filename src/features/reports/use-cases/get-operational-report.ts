@@ -1,12 +1,14 @@
 import { utcBounds } from "@/lib/utils/dates";
-import { calculateOperationalMoneyTotals } from "@/features/finance/domain/operational-money";
-import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
 import {
   findHistoricalReportRows,
-  findOperationalReportRows,
   findSalonReportIdentity,
   findSalonTimezone,
 } from "../data/reports.repo";
+import {
+  fetchCommissionReport,
+  fetchOperationalBreakdown,
+  fetchPeriodTotals,
+} from "../data/rpc/reports-read-models.rpc";
 import {
   calculateHistoricalReportAnalytics,
   calculateLifetimeTotals,
@@ -14,10 +16,7 @@ import {
   type LifetimeReportTotals,
   type ReportModuleAvailability,
 } from "../domain/analytics";
-import {
-  calculateOperationalReportMetrics,
-  type OperationalReportMetrics,
-} from "../domain/metrics";
+import type { OperationalReportMetrics } from "../domain/metrics";
 import {
   availableReportYears,
   getReportPresetRange,
@@ -159,36 +158,20 @@ async function getOperationalReportPeriod({
   const range = hasCustomRange
     ? { from: filters.from as string, to: filters.to as string }
     : getReportPresetRange(filters.preset, timezone, now);
-  const { start, end } = utcBounds(range.from, range.to, timezone);
-  const [rows, externalMoney] = await Promise.all([
-    findOperationalReportRows({ salonId, start, end }),
-    getExternalOperationalMoney({
-      salonId,
-      fromIso: start,
-      toIso: end,
-      fromDate: range.from,
-      toDate: range.to,
-    }),
+  const [totals, breakdown, commissions] = await Promise.all([
+    fetchPeriodTotals({ from: range.from, to: range.to, timezone, modules }),
+    fetchOperationalBreakdown({ from: range.from, to: range.to, timezone }),
+    fetchCommissionReport({ from: range.from, to: range.to, timezone }),
   ]);
-  const metrics = calculateOperationalReportMetrics(rows.appointments, rows.items);
-  const money = calculateOperationalMoneyTotals({
-    appointmentRevenue: metrics.revenue,
-    retailRevenue: modules.retail ? externalMoney.retailRevenue : 0,
-    manualExpenses: modules.expenses ? externalMoney.manualExpenses : 0,
-    inventoryPurchases: modules.inventory ? externalMoney.inventoryPurchases : 0,
-  });
 
   return {
     ...range,
     preset: hasCustomRange ? "custom" : filters.preset,
-    ...metrics,
-    retailRevenue: money.retailRevenue,
-    grossRevenue: money.grossRevenue,
-    manualExpenses: money.manualExpenses,
-    inventoryPurchases: money.inventoryPurchases,
-    totalExpenses: money.totalExpenses,
-    estimatedProfit: money.estimatedProfit,
-    newCustomers: rows.newCustomers,
+    ...totals,
+    statusBreakdown: breakdown.statusBreakdown,
+    byEmployee: breakdown.byEmployee,
+    byService: breakdown.byService,
+    commissions,
     modules,
   };
 }

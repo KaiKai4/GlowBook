@@ -44,30 +44,12 @@ export interface DashboardReadModelInput {
   now: Date;
 }
 
-type DashboardReadModelFunction =
-  | "report_dashboard_metrics"
-  | "report_dashboard_monthly_appointments"
-  | "report_dashboard_top_services";
-
-// Las funciones de lectura aun no estan en los tipos generados (db:types tras aplicar la migracion 066),
-// por eso el cliente se tipa aqui con la firma minima que usamos, como en inventory.repo.
-type ReadModelRpcClient = {
-  rpc: (
-    fn: DashboardReadModelFunction,
-    args: Record<string, string>
-  ) => PromiseLike<{ data: unknown; error: Error | null }>;
-};
-
-function readModelRpc(client: unknown): ReadModelRpcClient {
-  return client as ReadModelRpcClient;
-}
-
 async function callDashboardReadModel<T extends z.ZodType>(
-  functionName: DashboardReadModelFunction,
+  functionName: "report_dashboard_metrics" | "report_dashboard_monthly_appointments" | "report_dashboard_top_services",
   { timezone, now }: DashboardReadModelInput,
   schema: T
 ): Promise<z.infer<T>> {
-  const supabase = readModelRpc(await createSupabaseServerClient());
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc(functionName, {
     p_timezone: timezone,
     p_now: now.toISOString(),

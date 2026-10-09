@@ -1,12 +1,6 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Database } from "@/types/database.types";
-import {
-  COMPLETED_APPOINTMENT_STATUS,
-  type ReportAppointment,
-  type ReportAppointmentItem,
-} from "../domain/metrics";
 import type {
   AppointmentMonthBucket,
   BusyHourBucket,
@@ -15,39 +9,6 @@ import type {
   MonthAmountBucket,
   ProductMonthBucket,
 } from "../domain/analytics";
-
-type AppointmentRow = Pick<
-  Database["public"]["Tables"]["appointments"]["Row"],
-  "id" | "status" | "total_price" | "discount_amount"
->;
-
-type RelatedOne<T> = T | T[] | null;
-
-type AppointmentItemRow = {
-  appointment_id: string;
-  price: number | null;
-  discount_amount: number | null;
-  service: RelatedOne<{ id: string; name: string }>;
-  employee: RelatedOne<{
-    id: string;
-    first_name: string;
-    last_name: string;
-    commission_percentage: number | string | null;
-  }>;
-  appointment?: RelatedOne<{ status: string }>;
-};
-
-export interface OperationalReportRows {
-  appointments: ReportAppointment[];
-  items: ReportAppointmentItem[];
-  newCustomers: number;
-}
-
-export interface OperationalReportRowQuery {
-  salonId: string;
-  start: string;
-  end: string;
-}
 
 export interface HistoricalReportRows {
   appointmentMonths: AppointmentMonthBucket[];
@@ -59,40 +20,11 @@ export interface HistoricalReportRows {
   inventoryProducts: InventoryAlertProduct[];
 }
 
-export interface HistoricalReportRowQuery extends OperationalReportRowQuery {
+export interface HistoricalReportRowQuery {
+  salonId: string;
+  start: string;
+  end: string;
   timezone: string;
-}
-
-function firstRelation<T>(value: RelatedOne<T>): T | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value;
-}
-
-function normalizeAppointment(row: AppointmentRow): ReportAppointment {
-  return {
-    id: row.id,
-    status: row.status,
-    totalPrice: Number(row.total_price ?? 0),
-    discountAmount: Number(row.discount_amount ?? 0),
-  };
-}
-
-function normalizeItem(row: AppointmentItemRow): ReportAppointmentItem {
-  const service = firstRelation(row.service);
-  const employee = firstRelation(row.employee);
-  const employeeName = employee
-    ? `${employee.first_name} ${employee.last_name}`.trim()
-    : null;
-
-  return {
-    appointmentId: row.appointment_id,
-    price: Math.max(0, Number(row.price ?? 0) - Number(row.discount_amount ?? 0)),
-    serviceId: service?.id ?? null,
-    serviceName: service?.name ?? null,
-    employeeId: employee?.id ?? null,
-    employeeName: employeeName || null,
-    employeeCommissionPct: employee ? Number(employee.commission_percentage ?? 0) : 0,
-  };
 }
 
 export async function findSalonTimezone(salonId: string): Promise<string | null> {
@@ -126,52 +58,6 @@ export async function findSalonReportIdentity(
 
   if (error) throw error;
   return data;
-}
-
-export async function findOperationalReportRows({
-  salonId,
-  start,
-  end,
-}: OperationalReportRowQuery): Promise<OperationalReportRows> {
-  const supabase = await createSupabaseServerClient();
-
-  const [appointmentsResponse, itemsResponse, newCustomersResponse] = await Promise.all([
-    supabase
-      .from("appointments")
-      .select("id, status, total_price, discount_amount")
-      .eq("salon_id", salonId)
-      .gte("start_time", start)
-      .lte("start_time", end),
-    supabase
-      .from("appointment_items")
-      .select(
-        "appointment_id, price, discount_amount, service:services(id, name), employee:employees(id, first_name, last_name, commission_percentage), appointment:appointments!inner(status)"
-      )
-      .eq("salon_id", salonId)
-      .eq("appointment.status", COMPLETED_APPOINTMENT_STATUS)
-      .gte("start_time", start)
-      .lte("start_time", end),
-    supabase
-      .from("customers")
-      .select("id", { count: "exact", head: true })
-      .eq("salon_id", salonId)
-      .eq("is_temporary", false)
-      .gte("created_at", start)
-      .lte("created_at", end),
-  ]);
-
-  if (appointmentsResponse.error) throw appointmentsResponse.error;
-  if (itemsResponse.error) throw itemsResponse.error;
-  if (newCustomersResponse.error) throw newCustomersResponse.error;
-
-  const appointments = (appointmentsResponse.data ?? []).map(normalizeAppointment);
-  const items = ((itemsResponse.data ?? []) as unknown as AppointmentItemRow[]).map(normalizeItem);
-
-  return {
-    appointments,
-    items,
-    newCustomers: newCustomersResponse.count ?? 0,
-  };
 }
 
 interface MonthlyHistoryPayload {
