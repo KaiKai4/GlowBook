@@ -121,6 +121,7 @@ export const STEPS = [
       "scripts/lib/target-guard.test.mjs",
       "scripts/ops/synthetic-alert.test.mjs",
       "scripts/ops/synthetic-check.test.mjs",
+      "scripts/quality/generate-db-types.test.mjs",
       "scripts/quality/lib-process.test.mjs",
       "scripts/quality/migration-rules.test.mjs",
       "scripts/quality/scripts-tests-list.test.mjs",

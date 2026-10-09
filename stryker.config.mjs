@@ -54,6 +54,13 @@ const config = {
   ],
   tempDirName: ".stryker-tmp",
   incremental: false,
+  // Los mutantes estáticos (inicializadores de módulo, constantes) multiplicaban por ~10 el tiempo
+  // sin aportar señal de tests; se excluyen. Nightly corre en ubuntu-latest (4 vCPU).
+  ignoreStatic: true,
+  concurrency: 4,
+  // La batería unit completa (~2.700 tests) tarda ~5 min solo en la ejecución inicial en Windows;
+  // el valor por defecto de Stryker (5 min) cortaba la ejecución antes de medir mutantes.
+  dryRunTimeoutMinutes: 15,
 };
 
 export default config;

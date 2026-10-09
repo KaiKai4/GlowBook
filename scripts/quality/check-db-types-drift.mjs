@@ -2,19 +2,19 @@
 // la base LOCAL a partir de las migraciones del repo. NO regenera el archivo versionado:
 // si hay diferencias, falla con un resumen del diff (.quality/database-types.diff tiene el completo).
 //
-// Comparacion canonica: se imprime el AST con el printer de TypeScript (mismo formato para ambos)
-// y se normalizan solo diferencias de presentacion (comillas de claves, comas finales, parentesis
-// redundantes). Cualquier diferencia de tipos o de columnas sigue contando como drift.
+// Comparacion: ambos lados pasan por el mismo formateador determinista (printer de TypeScript,
+// ver generate-db-types.mjs) y se comparan normalizando EOL. Cualquier diferencia de tipos o de
+// columnas cuenta como drift; los cambios solo de formato o de fin de linea no.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { ensureLocalSupabase } from "./supabase-env.mjs";
-import { DATABASE_TYPES_PATH, generateLocalDatabaseTypes } from "./generate-db-types.mjs";
-
-const require = createRequire(import.meta.url);
-/** @type {typeof import("typescript")} */
-const ts = require("typescript");
+import {
+  DATABASE_TYPES_PATH,
+  formatDatabaseTypes,
+  generateLocalDatabaseTypes,
+  sameDatabaseTypes,
+} from "./generate-db-types.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const ARTIFACT_DIR = path.join(ROOT, ".quality");
@@ -25,24 +25,6 @@ const SUMMARY_LINES = 60;
 /** @param {string} filePath @returns {string} */
 function readNormalized(filePath) {
   return readFileSync(filePath, "utf8").replace(/\r\n/g, "\n");
-}
-
-/**
- * Imprime el AST con el printer de TypeScript y normaliza diferencias de presentación.
- * @param {string} text
- * @returns {string}
- */
-function canonicalize(text) {
-  const sourceFile = ts.createSourceFile("database.types.ts", text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  const printed = ts
-    .createPrinter({ newLine: ts.NewLineKind.LineFeed, removeComments: true })
-    .printFile(sourceFile);
-
-  return printed
-    .replace(/"([A-Za-z_][A-Za-z0-9_]*)"(\??):/g, "$1$2:")
-    .replace(/'([^'\n]*)'/g, '"$1"')
-    .replace(/\((\w+)\)\[\]/g, "$1[]")
-    .replace(/,(\s*\n\s*[}\]])/g, "$1");
 }
 
 // Diff por lineas (LCS). Devuelve lineas con prefijo "+", "-" o " ".
@@ -88,27 +70,25 @@ function lineDiff(oldLines, newLines) {
 async function main() {
   await ensureLocalSupabase();
 
+  // generateLocalDatabaseTypes devuelve la salida ya formateada.
   const generated = generateLocalDatabaseTypes();
   mkdirSync(ARTIFACT_DIR, { recursive: true });
   writeFileSync(GENERATED_PATH, generated, "utf8");
 
   const versioned = readNormalized(DATABASE_TYPES_PATH);
-  const versionedCanonical = canonicalize(versioned);
-  const generatedCanonical = canonicalize(generated.replace(/\r\n/g, "\n"));
-
-  if (versionedCanonical === generatedCanonical) {
+  if (sameDatabaseTypes(versioned, generated)) {
     console.log("Sin drift: src/types/database.types.ts coincide con las migraciones locales.");
     return 0;
   }
 
-  const diff = lineDiff(versionedCanonical.split("\n"), generatedCanonical.split("\n"));
+  const diff = lineDiff(formatDatabaseTypes(versioned).split("\n"), generated.split("\n"));
   const changed = diff.filter((line) => line.startsWith("+") || line.startsWith("-"));
   const added = changed.filter((line) => line.startsWith("+")).length;
   const removed = changed.length - added;
   writeFileSync(DIFF_PATH, diff.join("\n"), "utf8");
 
   console.error(
-    `Drift entre src/types/database.types.ts (versionado) y la base local: +${added} / -${removed} lineas canonicas.`
+    `Drift entre src/types/database.types.ts (versionado) y la base local: +${added} / -${removed} lineas formateadas.`
   );
   console.error("Diff resumido (- versionado, + generado desde migraciones locales):");
   for (const line of changed.slice(0, SUMMARY_LINES)) console.error(line);
