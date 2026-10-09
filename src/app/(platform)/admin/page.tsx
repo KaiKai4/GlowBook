@@ -11,8 +11,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { getSubscriptionsPage, type SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
@@ -113,7 +113,7 @@ export default async function PlatformAdminPage() {
                         <p className="truncate text-sm font-semibold text-fg">{item.salonName}</p>
                         <p className="mt-0.5 text-xs text-fg-subtle">{item.detail}</p>
                       </div>
-                      <Badge variant={item.severity === "danger" ? "danger" : "warning"}>{item.reason}</Badge>
+                      <StatusBadge variant={item.severity === "danger" ? "danger" : "warning"} label={item.reason} />
                     </Link>
                   </li>
                 ))}
@@ -145,7 +145,7 @@ export default async function PlatformAdminPage() {
                     </span>
                     <div className="flex shrink-0 items-center gap-2">
                       <RegenerateInviteLink invitationId={invitation.id} />
-                      <Badge variant="warning">Pendiente</Badge>
+                      <StatusBadge variant="warning" label="Pendiente" />
                     </div>
                   </li>
                 ))}
@@ -181,7 +181,7 @@ export default async function PlatformAdminPage() {
                         : "Sin plan asignado"}
                     </p>
                   </div>
-                  <Badge variant={statusBadge(row.status)}>{statusLabel(row.status)}</Badge>
+                  <StatusBadge variant={statusBadge(row.status)} label={statusLabel(row.status)} />
                 </Link>
               ))}
             </div>
@@ -227,9 +227,9 @@ function statusLabel(status: SalonSubscriptionRow["status"]): string {
   return "Sin plan";
 }
 
-function statusBadge(status: SalonSubscriptionRow["status"]): "success" | "warning" | "danger" | "default" {
+function statusBadge(status: SalonSubscriptionRow["status"]): "success" | "warning" | "danger" | "neutral" {
   if (status === "active") return "success";
   if (status === "trialing") return "warning";
   if (status === "past_due" || status === "canceled") return "danger";
-  return "default";
+  return "neutral";
 }

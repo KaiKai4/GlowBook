@@ -4,6 +4,7 @@ import {
   getSalonSubscriptionDetail,
   getSubscriptionsPage,
 } from "@/features/billing/use-cases/salon-subscriptions";
+import { PageHeader } from "@/components/ui/page-header";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/infra/auth/session";
 import { SalonSubscriptionList } from "./salon-list";
@@ -26,30 +27,28 @@ export default async function PlatformSubscriptionsPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg-strong">Suscripciones</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-fg-subtle">
-            Asigna planes a salones, vende o regala extras y revisa que tanto usan de su plan.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <HeaderMetric
-            icon={<BadgeDollarSign className="h-4 w-4" />}
-            label="MRR estimado"
-            value={`$${data.totals.mrr.toFixed(2)}`}
-            accent="success"
-          />
-          <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Con plan" value={String(data.totals.salonsWithPlan)} />
-          <HeaderMetric icon={<Hourglass className="h-4 w-4" />} label="En trial" value={String(data.totals.trialing)} />
-          <HeaderMetric
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Alertas"
-            value={String(data.totals.openAlerts)}
-            accent={data.totals.openAlerts > 0 ? "warning" : "default"}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Suscripciones"
+        description="Asigna planes a salones, vende o regala extras y revisa que tanto usan de su plan."
+        actions={
+          <>
+            <HeaderMetric
+              icon={<BadgeDollarSign className="h-4 w-4" />}
+              label="MRR estimado"
+              value={`$${data.totals.mrr.toFixed(2)}`}
+              accent="success"
+            />
+            <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Con plan" value={String(data.totals.salonsWithPlan)} />
+            <HeaderMetric icon={<Hourglass className="h-4 w-4" />} label="En trial" value={String(data.totals.trialing)} />
+            <HeaderMetric
+              icon={<AlertTriangle className="h-4 w-4" />}
+              label="Alertas"
+              value={String(data.totals.openAlerts)}
+              accent={data.totals.openAlerts > 0 ? "warning" : "default"}
+            />
+          </>
+        }
+      />
 
       <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-soft">
         <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[320px_1fr]">

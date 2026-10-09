@@ -1,10 +1,84 @@
-import { CheckCircle2, Clock, MailOpen, Plus, TimerOff } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Clock, MailOpen, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { requirePlatformAdmin } from "@/infra/auth/session";
 import { getPlatformInvitations } from "@/features/platform/use-cases/get-platform-invitations";
+import type { PlatformInvitationsViewModel } from "@/features/platform/use-cases/get-platform-invitations";
 import { RegenerateInviteLink } from "../regenerate-invite-link";
 import { InviteSalonForm } from "./invite-salon-form";
+
+type PendingInvitation = PlatformInvitationsViewModel["pendingInvitations"][number];
+type AcceptedInvitation = PlatformInvitationsViewModel["acceptedInvitations"][number];
+
+const PENDING_COLUMNS: DataTableColumn<PendingInvitation>[] = [
+  {
+    id: "email",
+    header: "Email",
+    cell: (invitation) => (
+      <div className="min-w-0">
+        <p className="truncate font-semibold text-fg">{invitation.email}</p>
+        <div className="mt-1">
+          {invitation.expired ? (
+            <StatusBadge variant="danger" label="Expirada" />
+          ) : (
+            <StatusBadge variant="warning" label="Pendiente" />
+          )}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "plan",
+    header: "Plan",
+    cell: (invitation) =>
+      invitation.planName ?? <span className="text-fg-subtle">Sin plan</span>,
+  },
+  {
+    id: "created",
+    header: "Creada",
+    secondary: true,
+    cell: (invitation) => <span className="text-xs text-fg-subtle md:text-sm">{invitation.createdAtLabel}</span>,
+  },
+  {
+    id: "expires",
+    header: "Expira",
+    secondary: true,
+    cell: (invitation) => <span className="text-xs text-fg-subtle md:text-sm">{invitation.expiresAtLabel}</span>,
+  },
+  {
+    id: "action",
+    header: "Accion",
+    cell: (invitation) => <RegenerateInviteLink invitationId={invitation.id} />,
+  },
+];
+
+const ACCEPTED_COLUMNS: DataTableColumn<AcceptedInvitation>[] = [
+  {
+    id: "email",
+    header: "Email",
+    cell: (invitation) => <p className="truncate font-semibold text-fg">{invitation.email}</p>,
+  },
+  {
+    id: "salon",
+    header: "Salón",
+    secondary: true,
+    cell: (invitation) => <span className="truncate text-fg-secondary">{invitation.salonName}</span>,
+  },
+  {
+    id: "plan",
+    header: "Plan",
+    cell: (invitation) =>
+      invitation.planName ?? <span className="text-fg-subtle">Sin plan</span>,
+  },
+  {
+    id: "accepted",
+    header: "Aceptada",
+    secondary: true,
+    cell: (invitation) => <span className="text-xs text-fg-subtle md:text-sm">{invitation.acceptedAtLabel}</span>,
+  },
+];
 
 export default async function PlatformInvitationsPage() {
   await requirePlatformAdmin();
@@ -12,21 +86,21 @@ export default async function PlatformInvitationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
-            <MailOpen className="h-6 w-6 text-accent" />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <MailOpen className="h-6 w-6 text-accent" aria-hidden="true" />
             Invitaciones
-          </h1>
-          <p className="mt-0.5 text-sm text-fg-subtle">
-            Invita salones con su plan ya definido: al aceptar, el salon nace con los modulos y límites correctos.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-fg-muted">
-          <Clock className="h-4 w-4 text-warning-fg" />
-          {view.pendingCount} pendiente{view.pendingCount === 1 ? "" : "s"}
-        </div>
-      </div>
+          </span>
+        }
+        description="Invita salones con su plan ya definido: al aceptar, el salon nace con los modulos y límites correctos."
+        actions={
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-fg-muted">
+            <Clock className="h-4 w-4 text-warning-fg" aria-hidden="true" />
+            {view.pendingCount} pendiente{view.pendingCount === 1 ? "" : "s"}
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -52,45 +126,13 @@ export default async function PlatformInvitationsPage() {
           <p className="text-sm text-fg-subtle">No hay invitaciones pendientes.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-          <div className="hidden grid-cols-[1.2fr_0.8fr_0.7fr_0.7fr_0.7fr] gap-3 border-b border-border-subtle bg-surface-muted px-4 py-3 text-xs font-semibold uppercase text-fg-subtle md:grid">
-            <span>Email</span>
-            <span>Plan</span>
-            <span>Creada</span>
-            <span>Expira</span>
-            <span>Accion</span>
-          </div>
-          <div className="divide-y divide-border-subtle">
-            {view.pendingInvitations.map((invitation) => (
-              <div
-                key={invitation.id}
-                className="grid gap-3 px-4 py-4 text-sm md:grid-cols-[1.2fr_0.8fr_0.7fr_0.7fr_0.7fr]"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-fg">{invitation.email}</p>
-                  <div className="mt-1">
-                    {invitation.expired ? (
-                      <Badge variant="danger">
-                        <TimerOff className="mr-1 h-3 w-3" />
-                        Expirada
-                      </Badge>
-                    ) : (
-                      <Badge variant="warning">Pendiente</Badge>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs font-medium text-fg-secondary md:text-sm">
-                  {invitation.planName ?? <span className="text-fg-subtle">Sin plan</span>}
-                </p>
-                <p className="text-xs text-fg-subtle md:text-sm">{invitation.createdAtLabel}</p>
-                <p className="text-xs text-fg-subtle md:text-sm">{invitation.expiresAtLabel}</p>
-                <div>
-                  <RegenerateInviteLink invitationId={invitation.id} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DataTable
+          label="Invitaciones pendientes"
+          columns={PENDING_COLUMNS}
+          rows={view.pendingInvitations}
+          getRowId={(invitation) => invitation.id}
+          emptyMessage="No hay invitaciones pendientes."
+        />
       )}
 
       <Card>
@@ -106,21 +148,13 @@ export default async function PlatformInvitationsPage() {
               Cuando alguien acepte una invitacion aparecera aqui con su salon y plan.
             </p>
           ) : (
-            <div className="divide-y divide-border-subtle">
-              {view.acceptedInvitations.map((invitation) => (
-                <div
-                  key={invitation.id}
-                  className="grid gap-2 py-3 text-sm md:grid-cols-[1.2fr_1fr_0.8fr_0.8fr]"
-                >
-                  <p className="truncate font-semibold text-fg">{invitation.email}</p>
-                  <p className="truncate text-fg-secondary">{invitation.salonName}</p>
-                  <p className="text-fg-secondary">
-                    {invitation.planName ?? <span className="text-fg-subtle">Sin plan</span>}
-                  </p>
-                  <p className="text-xs text-fg-subtle md:text-sm">{invitation.acceptedAtLabel}</p>
-                </div>
-              ))}
-            </div>
+            <DataTable
+              label="Invitaciones aceptadas"
+              columns={ACCEPTED_COLUMNS}
+              rows={view.acceptedInvitations}
+              getRowId={(invitation) => invitation.id}
+              emptyMessage="Cuando alguien acepte una invitacion aparecera aqui con su salon y plan."
+            />
           )}
         </CardContent>
       </Card>

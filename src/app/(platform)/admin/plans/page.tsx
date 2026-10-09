@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Blocks, CreditCard, Gauge, Gift, Layers3, Plus } from "lucide-react";
 
+import { PageHeader } from "@/components/ui/page-header";
 import { getCommercialPlansPage } from "@/features/billing/use-cases/commercial-plans";
 import { requirePlatformAdmin } from "@/infra/auth/session";
 import { cn } from "@/components/ui/cn";
@@ -21,31 +22,31 @@ export default async function PlatformPlansPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg-strong">Planes y extras</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-fg-subtle">
-            {view === "plans"
-              ? "Crea planes comerciales, activa modulos y define límites maximos por plan."
-              : "Define el catalogo de extras: modulos sueltos y bloques de límite para vender o regalar."}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <HeaderMetric icon={<CreditCard className="h-4 w-4" />} label="Planes" value={billing.plans.length} />
-          <HeaderMetric icon={<Gauge className="h-4 w-4" />} label="Activos" value={activePlans} accent="success" />
-          <HeaderMetric icon={<Blocks className="h-4 w-4" />} label="Asignados" value={assignedSalons} />
-          <HeaderMetric icon={<Gift className="h-4 w-4" />} label="Extras" value={billing.addons.length} />
-          {view === "plans" ? (
-            <Link
-              href="/admin/plans?new=1#new-plan"
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-surface shadow-sm transition hover:bg-brand-700"
-            >
-              <Plus className="h-4 w-4" />
-              Nuevo plan
-            </Link>
-          ) : null}
-        </div>
-      </div>
+      <PageHeader
+        title="Planes y extras"
+        description={
+          view === "plans"
+            ? "Crea planes comerciales, activa modulos y define límites maximos por plan."
+            : "Define el catalogo de extras: modulos sueltos y bloques de límite para vender o regalar."
+        }
+        actions={
+          <>
+            <HeaderMetric icon={<CreditCard className="h-4 w-4" />} label="Planes" value={billing.plans.length} />
+            <HeaderMetric icon={<Gauge className="h-4 w-4" />} label="Activos" value={activePlans} accent="success" />
+            <HeaderMetric icon={<Blocks className="h-4 w-4" />} label="Asignados" value={assignedSalons} />
+            <HeaderMetric icon={<Gift className="h-4 w-4" />} label="Extras" value={billing.addons.length} />
+            {view === "plans" ? (
+              <Link
+                href="/admin/plans?new=1#new-plan"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-surface shadow-sm transition hover:bg-brand-700"
+              >
+                <Plus className="h-4 w-4" />
+                Nuevo plan
+              </Link>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="flex w-fit items-center gap-1 rounded-xl border border-brand-100 bg-surface p-1 shadow-sm">
         <ViewTab href="/admin/plans" active={view === "plans"} icon={<Layers3 className="h-4 w-4" />}>
