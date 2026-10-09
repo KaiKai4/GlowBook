@@ -56,7 +56,26 @@ describe("CustomersList", () => {
       <CustomersList customers={[buildCustomerRow({ phone: null, email: null })]} mode="active" />
     );
 
-    expect(mounted.container.querySelectorAll("span.text-xs")).toHaveLength(0);
+    expect(mounted.container.querySelectorAll("tbody span")).toHaveLength(0);
+  });
+
+  it("presenta los clientes en una tabla con cabeceras de nombre, teléfono, correo y acciones", () => {
+    mounted = mountComponent(<CustomersList customers={[ANA]} mode="active" />);
+
+    expect(mounted.container.querySelector('table[aria-label="Clientes"]')).not.toBeNull();
+    expect(Array.from(mounted.container.querySelectorAll("th")).map((th) => th.textContent)).toEqual([
+      "Cliente",
+      "Teléfono",
+      "Correo",
+      "Acciones",
+    ]);
+  });
+
+  it("en modo archivado la tabla se identifica como clientes archivados", () => {
+    mounted = mountComponent(<CustomersList customers={[ANA]} mode="archived" />);
+
+    expect(mounted.container.querySelector('table[aria-label="Clientes archivados"]')).not.toBeNull();
+    expect(mounted.container.textContent).not.toContain("Editar");
   });
 
   it("marca como Temporal a los clientes temporales", () => {
