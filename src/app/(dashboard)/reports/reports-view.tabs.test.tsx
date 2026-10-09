@@ -225,4 +225,82 @@ describe("ReportsView (pestañas, inventario y módulos)", () => {
 
     expect(mounted.container.textContent).toContain("Aún no hay gastos para comparar.");
   });
+
+  it("la tabla de inventario avisa cuando no hay alertas de stock", () => {
+    const base = buildReport();
+    mounted = mountComponent(
+      <ReportsView {...base} analytics={{ ...base.analytics, inventoryAlerts: [] }} />
+    );
+
+    clickElement(findButtonByText(mounted.container, "Inventario"));
+
+    expect(mounted.container.querySelector("table[aria-label='Alertas de inventario']")).not.toBeNull();
+    expect(mounted.container.textContent).toContain("No hay alertas de stock.");
+  });
+
+  it("la tabla de inventario pagina las alertas de 10 en 10", () => {
+    const base = buildReport();
+    const alerts = Array.from({ length: 11 }, (_, index) => ({
+      id: `p-${index + 1}`,
+      name: `Producto ${index + 1}`,
+      retail: 0,
+      internal: 0,
+      storage: 0,
+      total: 0,
+      minimum: 2,
+      state: "agotado" as const,
+    }));
+    mounted = mountComponent(
+      <ReportsView {...base} analytics={{ ...base.analytics, inventoryAlerts: alerts }} />
+    );
+
+    clickElement(findButtonByText(mounted.container, "Inventario"));
+    expect(mounted.container.textContent).toContain("Página 1 de 2");
+    expect(mounted.container.textContent).not.toContain("Producto 11");
+
+    const next = mounted.container.querySelector<HTMLButtonElement>("button[aria-label='Página siguiente']");
+    if (!next) throw new Error("No se encontró el botón de página siguiente");
+    clickElement(next);
+    expect(mounted.container.textContent).toContain("Página 2 de 2");
+    expect(mounted.container.textContent).toContain("Producto 11");
+  });
+
+  it("el estado de cada alerta se indica con texto e icono además del color", () => {
+    mounted = mountComponent(<ReportsView {...buildReport()} />);
+
+    clickElement(findButtonByText(mounted.container, "Inventario"));
+
+    const badges = Array.from(mounted.container.querySelectorAll("table[aria-label='Alertas de inventario'] span.rounded-full"));
+    expect(badges.map((badge) => badge.textContent)).toEqual(["Agotado", "Stock bajo"]);
+    expect(badges.every((badge) => badge.querySelector("svg") !== null)).toBe(true);
+  });
+
+  it("la pestaña Citas muestra el total a pagar y la tabla de comisiones con su aviso vacío", () => {
+    mounted = mountComponent(<ReportsView {...buildReport()} />);
+
+    clickElement(findButtonByText(mounted.container, "Citas"));
+
+    expect(mounted.container.querySelector("table[aria-label='Comisiones del mes']")).not.toBeNull();
+    expect(mounted.container.textContent).toContain("Total a pagar");
+    expect(mounted.container.textContent).toContain("Sin citas completadas con empleado en este mes.");
+  });
+
+  it("las tarjetas de Resumen ocultan los egresos cuando sus módulos están inactivos", () => {
+    mounted = mountComponent(
+      <ReportsView {...buildReport({ modules: { inventory: false, retail: false, expenses: false } })} />
+    );
+
+    expect(mounted.container.textContent).toContain("Ingresos del mes");
+    expect(mounted.container.textContent).toContain("Ganancia del mes");
+    expect(mounted.container.textContent).not.toContain("Egresos del mes");
+  });
+
+  it("el valor de la ganancia negativa se muestra con tono de peligro", () => {
+    mounted = mountComponent(<ReportsView {...buildReport({ estimatedProfit: -50 })} />);
+
+    const valueParagraph = Array.from(mounted.container.querySelectorAll("p")).find(
+      (paragraph) => paragraph.previousElementSibling?.textContent === "Ganancia del mes"
+    );
+    expect(valueParagraph?.className).toContain("text-danger");
+  });
 });

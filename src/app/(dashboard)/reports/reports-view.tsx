@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils/cn";
 import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 import { buildReportsHref } from "./report-url";
 import { DatePicker } from "@/components/ui/date-picker";
+import { PageHeader } from "@/components/ui/page-header";
 import { ExportReportDialog } from "./export-report-dialog";
 import { SummaryTab } from "./report-summary-tab";
 import { FinanceTab } from "./report-finance-tab";
@@ -59,31 +60,33 @@ export function ReportsView(report: OperationalReportViewModel) {
 
   return (
     <div className="space-y-5 pb-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
-            <BarChart3 className="h-6 w-6 text-brand-600" />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-brand-600" aria-hidden="true" />
             Reportes
-          </h1>
-          <p className="mt-1 text-sm capitalize text-fg-subtle">{monthLabel(month)}</p>
-        </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <DatePicker
-            label="Mes de las métricas"
-            value={month}
-            onChange={changeMonth}
-            disabled={pending}
-            granularity="month"
-            className="min-w-52"
-            ariaLabel="Seleccionar mes de las métricas"
-          />
-          <ExportReportDialog
-            monthKey={month}
-            monthLabel={monthLabel(month)}
-            year={report.selectedYear}
-          />
-        </div>
-      </header>
+          </span>
+        }
+        description={<span className="capitalize">{monthLabel(month)}</span>}
+        actions={
+          <>
+            <DatePicker
+              label="Mes de las métricas"
+              value={month}
+              onChange={changeMonth}
+              disabled={pending}
+              granularity="month"
+              className="min-w-52"
+              ariaLabel="Seleccionar mes de las métricas"
+            />
+            <ExportReportDialog
+              monthKey={month}
+              monthLabel={monthLabel(month)}
+              year={report.selectedYear}
+            />
+          </>
+        }
+      />
 
       <div className="rounded-xl border border-brand-100 bg-surface">
         <nav className="flex overflow-x-auto border-b border-brand-100 px-4" aria-label="Secciones de reportes">

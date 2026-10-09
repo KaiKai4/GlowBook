@@ -1,4 +1,3 @@
-import { PackageSearch, ReceiptText, TrendingDown } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/dates";
 import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 import { TopExpensesChart } from "./report-charts";
@@ -18,24 +17,21 @@ export function ExpensesTab({ report }: { report: OperationalReportViewModel }) 
             label: "Gastos totales",
             value: formatCurrency(report.totalExpenses),
             detail: expenseSources(report.modules),
-            icon: TrendingDown,
-            tone: "negative",
+            tone: "danger",
             visible: true,
           },
           {
             label: "Gastos de restock",
             value: formatCurrency(report.inventoryPurchases),
             detail: "Reposiciones de productos",
-            icon: PackageSearch,
-            tone: "amber",
+            tone: "warning",
             visible: report.modules.inventory,
           },
           {
             label: "Gastos operativos",
             value: formatCurrency(report.manualExpenses),
             detail: "Egresos registrados",
-            icon: ReceiptText,
-            tone: "negative",
+            tone: "danger",
             visible: report.modules.expenses,
           },
         ]}
