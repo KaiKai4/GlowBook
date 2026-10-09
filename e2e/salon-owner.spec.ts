@@ -41,7 +41,7 @@ async function login(page: Page) {
 // El Select del proyecto (src/components/ui/select.tsx) es un combobox: el disparador
 // es un botón etiquetado y las opciones son role="option" dentro de un listbox en portal.
 async function selectFirstRealOption(page: Page, label: string | RegExp) {
-  const trigger = page.getByLabel(label);
+  const trigger = page.getByLabel(label, { exact: typeof label === "string" });
   await expect(trigger).toBeEnabled();
   await trigger.click();
   await page.getByRole("listbox").getByRole("option", { disabled: false }).first().click();
