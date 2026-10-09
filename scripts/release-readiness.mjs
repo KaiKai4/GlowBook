@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -12,10 +13,6 @@ function loadEnvFileIfPresent() {
     const [key, ...valueParts] = trimmed.split("=");
     if (!process.env[key]) process.env[key] = valueParts.join("=");
   }
-}
-
-function normalizeUrl(value = "") {
-  return value.replace(/\/+$/, "").toLowerCase();
 }
 
 function isLocalUrl(value = "") {
@@ -82,9 +79,9 @@ const expectedDocs = [
   "docs/archive/architecture-history/architecture-audit-2026-06-01.md",
   "docs/archive/architecture-history/architecture-audit-phases-2026-05-31.md",
   "docs/production-readiness-checklist.md",
-  "docs/release-readiness-2026-05-31.md",
+  "docs/archive/readiness-snapshots/release-readiness-2026-05-31.md",
   "docs/runbooks/deploy.md",
-  "docs/runbooks/database-restore.md",
+  "docs/runbooks/restore.md",
   "docs/runbooks/load-smoke-5-salons.md",
   "docs/launch-support.md",
 ];

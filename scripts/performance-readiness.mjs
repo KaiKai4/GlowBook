@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const PERFORMANCE_DOC = "docs/performance-review-2026-06-01.md";
+const PERFORMANCE_DOC = "docs/archive/readiness-snapshots/performance-review-2026-06-01.md";
 
 const REQUIRED_TEXT = [
   "Batch: scale-20260601-100",

@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -14,11 +15,6 @@ function loadEnvFileIfPresent() {
     const [key, ...valueParts] = trimmed.split("=");
     if (!process.env[key]) process.env[key] = valueParts.join("=");
   }
-}
-
-/** @param {string} value @returns {string} */
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
 }
 
 /** @param {string} value @returns {boolean} */

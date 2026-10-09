@@ -1,7 +1,4 @@
-function normalizeUrl(value = "") {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+import { normalizeUrl } from "./lib/url.mjs";
 /** @param {string} value */
 function hostFor(value) {
   try {

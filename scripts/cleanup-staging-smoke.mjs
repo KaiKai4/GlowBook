@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
@@ -16,11 +17,6 @@ function loadEnvFileIfPresent() {
     const [key, ...valueParts] = trimmed.split("=");
     if (!process.env[key]) process.env[key] = valueParts.join("=");
   }
-}
-
-/** @param {string} value */
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
 }
 
 /** @param {string} message @returns {never} */

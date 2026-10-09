@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 // Utilidades compartidas por los scripts de seed de staging (smoke, scale y pricing).
 // Son funciones puras de E/S o de lote; cada script conserva sus constantes y su propio "fail".
 import { existsSync, readFileSync } from "node:fs";
@@ -18,11 +19,6 @@ export function loadEnvFileIfPresent() {
     const [key, ...valueParts] = trimmed.split("=");
     if (!process.env[key]) process.env[key] = valueParts.join("=");
   }
-}
-
-/** @param {string} value */
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
 }
 
 /**
