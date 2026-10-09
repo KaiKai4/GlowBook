@@ -1,63 +1,108 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
+import { PERMISSIONS } from "@/features/access";
 import {
   CreateInventoryProductSchema,
   InventoryTransferSchema,
   UpdateInventoryProductSchema,
+  type CreateInventoryProductInput,
+  type InventoryTransferInput,
+  type UpdateInventoryProductInput,
 } from "@/features/inventory/schemas";
+import { deleteInventoryProduct, updateInventoryProductProfile } from "@/features/inventory/use-cases/inventory-products";
 import {
-  createInventoryProduct,
-  deleteInventoryProduct,
-  getInventoryPage,
-  updateInventoryProductProfile,
-} from "@/features/inventory/use-cases/inventory-products";
-import { transferInventoryStock } from "@/features/inventory/use-cases/inventory-movements";
-import { hasPermission, PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import type { Result } from "@/infra/result";
-import { firstIssueMessage } from "@/infra/validation/first-issue";
+  createInventoryProductWithPlanLimits,
+  transferInventoryStockWithPlanLimits,
+} from "@/features/inventory/use-cases/inventory-product-writes";
+import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
 
-async function guard(): Promise<Result<{ salonId: string }>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar inventario." };
-  }
+// Vistas que dependen del inventario: vitrina y reportes incluidos.
+const INVENTORY_PATHS = ["/inventory", "/retail", "/reports"] as const;
 
-  const limited = await assertActionRateLimit(profile.id, "inventory", { max: 60, windowMs: 60_000 });
-  if (!limited.ok) return limited;
-  return { ok: true, value: { salonId: profile.salon_id } };
+const createProductFlow = defineAction<FormData, CreateInventoryProductInput, string>({
+  permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
+  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  parse: (formData) =>
+    parseWithSchema(CreateInventoryProductSchema)({
+      ...Object.fromEntries(formData),
+      is_retail_enabled: formData.get("is_retail_enabled") === "true",
+    }),
+  run: async (input, session) => {
+    const result = await createInventoryProductWithPlanLimits(session.salonId, input);
+    return result.ok ? ok("Producto creado.") : result;
+  },
+  revalidate: () => INVENTORY_PATHS,
+});
+
+interface UpdateProductRaw {
+  productId: string;
+  formData: FormData;
 }
 
-function revalidateInventory() {
-  revalidatePath("/inventory");
-  revalidatePath("/retail");
-  revalidatePath("/reports");
+interface UpdateProductInput {
+  productId: string;
+  data: UpdateInventoryProductInput;
 }
+
+const updateProductFlow = defineAction<UpdateProductRaw, UpdateProductInput, void>({
+  permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
+  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  parse: ({ productId, formData }) => {
+    if (!parseUuid(productId)) return err("Identificador inválido.");
+
+    // Un campo ausente en FormData llega como null; se pasa como undefined para que
+    // Zod aplique los defaults del schema en lugar de rechazar el null.
+    const field = (key: string) => formData.get(key) ?? undefined;
+    const parsed = parseWithSchema(UpdateInventoryProductSchema)({
+      name: field("name"),
+      category: field("category"),
+      cost_price: field("cost_price"),
+      sale_price: field("sale_price"),
+      is_retail_enabled: formData.get("is_retail_enabled") === "true",
+      is_active: formData.get("is_active") === "true",
+      retail_minimum: field("retail_minimum"),
+      internal_minimum: field("internal_minimum"),
+      storage_minimum: field("storage_minimum"),
+    });
+    return parsed.ok ? ok({ productId, data: parsed.value }) : parsed;
+  },
+  run: (input, session) => updateInventoryProductProfile(input.productId, session.salonId, input.data),
+  revalidate: () => INVENTORY_PATHS,
+});
+
+const transferStockFlow = defineAction<FormData, InventoryTransferInput, string>({
+  permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
+  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  parse: (formData) =>
+    parseWithSchema(InventoryTransferSchema)({
+      ...Object.fromEntries(formData),
+      from_location: "storage",
+    }),
+  run: async (input, session) => {
+    const result = await transferInventoryStockWithPlanLimits(session.salonId, input);
+    return result.ok ? ok("Transferencia registrada.") : result;
+  },
+  revalidate: () => INVENTORY_PATHS,
+});
+
+const deleteProductFlow = defineAction<string, string, string>({
+  permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
+  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  parse: (productId) => (parseUuid(productId) ? ok(productId) : err("Identificador inválido.")),
+  run: async (productId, session) => {
+    const result = await deleteInventoryProduct(productId, session.salonId);
+    return result.ok ? ok("Producto eliminado.") : result;
+  },
+  revalidate: () => INVENTORY_PATHS,
+});
 
 export async function createInventoryProductAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "inventory" });
-  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
-  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "inventory.products" });
-  if (!limit.ok) return { ok: false, error: limit.error };
-
-  const parsed = CreateInventoryProductSchema.safeParse({
-    ...Object.fromEntries(formData),
-    is_retail_enabled: formData.get("is_retail_enabled") === "true",
-  });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
-
-  const result = await createInventoryProduct(guarded.value.salonId, parsed.data);
-  if (result.ok) revalidateInventory();
-  return result.ok ? { ok: true, value: "Producto creado." } : result;
+  return createProductFlow(formData);
 }
 
 export async function updateInventoryProductAction(
@@ -65,70 +110,16 @@ export async function updateInventoryProductAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  if (!parseUuid(productId)) return { ok: false, error: "Identificador inválido." };
-
-  // Un campo ausente en FormData llega como null; se pasa como undefined para que
-  // Zod aplique los defaults del schema en lugar de rechazar el null.
-  const field = (key: string) => formData.get(key) ?? undefined;
-  const parsed = UpdateInventoryProductSchema.safeParse({
-    name: field("name"),
-    category: field("category"),
-    cost_price: field("cost_price"),
-    sale_price: field("sale_price"),
-    is_retail_enabled: formData.get("is_retail_enabled") === "true",
-    is_active: formData.get("is_active") === "true",
-    retail_minimum: field("retail_minimum"),
-    internal_minimum: field("internal_minimum"),
-    storage_minimum: field("storage_minimum"),
-  });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
-
-  const result = await updateInventoryProductProfile(productId, guarded.value.salonId, parsed.data);
-  if (result.ok) revalidateInventory();
-  return result;
+  return updateProductFlow({ productId, formData });
 }
 
 export async function transferInventoryStockAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "inventory" });
-  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
-  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "inventory.movements" });
-  if (!limit.ok) return { ok: false, error: limit.error };
-
-  const parsed = InventoryTransferSchema.safeParse({
-    ...Object.fromEntries(formData),
-    from_location: "storage",
-  });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
-
-  const inventory = await getInventoryPage(guarded.value.salonId);
-  const product = inventory.products.find((item) => item.id === parsed.data.product_id);
-  if (!product) return { ok: false, error: "Producto inválido." };
-  if (!product.isRetailEnabled && parsed.data.to_location !== "internal") {
-    return { ok: false, error: "Este producto solo puede transferirse de Bodega a Uso interno." };
-  }
-
-  const result = await transferInventoryStock(
-    guarded.value.salonId,
-    parsed.data,
-    parsed.data.idempotency_key
-  );
-  if (result.ok) revalidateInventory();
-  return result.ok ? { ok: true, value: "Transferencia registrada." } : result;
+  return transferStockFlow(formData);
 }
 
 export async function deleteInventoryProductAction(productId: string): Promise<Result<string>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  if (!parseUuid(productId)) return { ok: false, error: "Identificador inválido." };
-
-  const result = await deleteInventoryProduct(productId, guarded.value.salonId);
-  if (result.ok) revalidateInventory();
-  return result.ok ? { ok: true, value: "Producto eliminado." } : result;
+  return deleteProductFlow(productId);
 }
