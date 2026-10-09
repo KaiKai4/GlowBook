@@ -5,7 +5,7 @@ flowchart LR
     app__auth_["app/(auth) (12)"]
     app__dashboard_["app/(dashboard) (168)"]
     app__platform_["app/(platform) (32)"]
-    app__composition["app/_composition (2)"]
+    app__composition["app/_composition (3)"]
     app_api["app/api (4)"]
   end
   subgraph g_components["components"]
@@ -18,7 +18,7 @@ flowchart LR
     features_access["features/access (14)"]
     features_appointments["features/appointments (35)"]
     features_audit["features/audit (6)"]
-    features_billing["features/billing (25)"]
+    features_billing["features/billing (27)"]
     features_customers["features/customers (9)"]
     features_dashboard["features/dashboard (7)"]
     features_employees["features/employees (22)"]
@@ -27,7 +27,7 @@ flowchart LR
     features_inventory["features/inventory (11)"]
     features_notifications["features/notifications (7)"]
     features_payments["features/payments (2)"]
-    features_platform["features/platform (19)"]
+    features_platform["features/platform (20)"]
     features_reminders["features/reminders (4)"]
     features_reports["features/reports (9)"]
     features_retail["features/retail (4)"]
@@ -46,7 +46,7 @@ flowchart LR
     infra_observability["infra/observability (5)"]
     infra_security["infra/security (4)"]
     infra_supabase["infra/supabase (7)"]
-    infra_validation["infra/validation (4)"]
+    infra_validation["infra/validation (5)"]
   end
   subgraph g_npm["npm"]
     npm__supabase_ssr["npm/@supabase/ssr"]
@@ -109,7 +109,6 @@ flowchart LR
   app__platform_ --> features_billing
   app__platform_ --> features_platform
   app__platform_ --> infra
-  app__platform_ --> infra_security
   app__platform_ --> infra_validation
   app__platform_ --> npm_next
   app__platform_ --> npm_react

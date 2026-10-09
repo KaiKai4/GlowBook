@@ -1,20 +1,31 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { definePlatformAction } from "@/app/_composition/define-platform-action";
+import { ok } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
+import {
+  readFeedbackStatusForm,
+  type FeedbackStatusForm,
+} from "@/features/platform/use-cases/set-feedback-status-form";
 import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedback-report-status";
 
 // Form action: toggle a report between 'new' and 'resolved'. Returns void
 // (React form actions must), authorization enforced by requirePlatformAdmin.
+// Un id invalido no es un error: no se toca el reporte ni se revalida nada.
+const setFeedbackStatusFlow = definePlatformAction<FormData, FeedbackStatusForm | null, void>({
+  rateLimit: { scope: "admin:setFeedbackStatusAction" },
+  parse: (formData) => {
+    const form = readFeedbackStatusForm(formData);
+    return ok(parseUuid(form.id) ? form : null);
+  },
+  run: async (form, session) => {
+    if (form) await setFeedbackReportStatus({ ...form, actorUserId: session.userId });
+    return ok(undefined);
+  },
+  revalidate: (_output, form) => (form ? ["/admin/reports"] : []),
+});
+
 export async function setFeedbackStatusAction(formData: FormData): Promise<void> {
-  const actorUserId = await requirePlatformAdmin();
-  const limited = await assertActionRateLimit(actorUserId, "admin:setFeedbackStatusAction");
-  if (!limited.ok) throw new Error(limited.error);
-  const id = String(formData.get("id") ?? "");
-  const status = String(formData.get("status") ?? "") === "resolved" ? "resolved" : "new";
-  if (!parseUuid(id)) return;
-  await setFeedbackReportStatus({ id, status, actorUserId });
-  revalidatePath("/admin/reports");
+  const result = await setFeedbackStatusFlow(formData);
+  if (!result.ok) throw new Error(result.error);
 }
