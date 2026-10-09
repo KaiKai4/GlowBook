@@ -77,9 +77,12 @@ describe("appointment lifecycle commands", () => {
       salonId,
       status: "cancelled",
     });
-    expect(
-      mockedSetAppointmentItemsCalendarBlocking.mock.invocationCallOrder[0]
-    ).toBeLessThan(mockedUpdateAppointmentStatus.mock.invocationCallOrder[0]);
+    const [blockingOrder] = mockedSetAppointmentItemsCalendarBlocking.mock.invocationCallOrder;
+    const [statusOrder] = mockedUpdateAppointmentStatus.mock.invocationCallOrder;
+    if (blockingOrder === undefined || statusOrder === undefined) {
+      throw new Error("Ambas funciones deben haberse llamado.");
+    }
+    expect(blockingOrder).toBeLessThan(statusOrder);
   });
 
   it("completes with editable variable prices, item-level discounts, calendar release and customer promotion", async () => {

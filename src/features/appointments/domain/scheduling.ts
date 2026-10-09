@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/public-error";
 import { addMinutes } from "@/lib/utils/dates";
 import { evaluateTimeRange } from "./availability";
 import type {
@@ -24,22 +25,22 @@ function validateAssignment(
   salonId: string
 ): void {
   if (assignment.service.salon_id !== salonId) {
-    throw new Error("El servicio no pertenece al salón.");
+    throw new PublicError("El servicio no pertenece al salón.");
   }
   if (!assignment.service.is_active) {
-    throw new Error(`El servicio no está activo.`);
+    throw new PublicError(`El servicio no está activo.`);
   }
   if (assignment.employee.salon_id !== salonId) {
-    throw new Error("El profesional no pertenece al salón.");
+    throw new PublicError("El profesional no pertenece al salón.");
   }
   if (!assignment.employee.is_active) {
-    throw new Error("El profesional no está activo.");
+    throw new PublicError("El profesional no está activo.");
   }
   if (!assignment.employee.service_ids.includes(assignment.service.id)) {
-    throw new Error("El profesional seleccionado no realiza ese servicio.");
+    throw new PublicError("El profesional seleccionado no realiza ese servicio.");
   }
   if (!assignment.employee.category_ids.includes(assignment.service.category_id)) {
-    throw new Error("El profesional seleccionado no atiende esa categoría.");
+    throw new PublicError("El profesional seleccionado no atiende esa categoría.");
   }
 }
 
@@ -53,7 +54,7 @@ export function buildItemPayloads(
   ctx: SchedulingContext
 ): AppointmentItemPayload[] {
   if (assignments.length === 0) {
-    throw new Error("Selecciona al menos un servicio.");
+    throw new PublicError("Selecciona al menos un servicio.");
   }
 
   let cursor = startTime;
@@ -78,8 +79,9 @@ export function buildItemPayloads(
       enforceMinDuration: false,
     });
 
-    if (violations.length > 0) {
-      throw new Error(violations[0].message);
+    const [firstViolation] = violations;
+    if (firstViolation) {
+      throw new PublicError(firstViolation.message);
     }
 
     payloads.push({

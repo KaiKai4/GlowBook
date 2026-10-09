@@ -17,7 +17,7 @@ import type {
   UpdateInventoryProductInput,
 } from "../schemas";
 
-export interface InventoryStockView {
+interface InventoryStockView {
   location: InventoryLocation;
   label: string;
   quantity: number;
@@ -37,7 +37,7 @@ export interface InventoryProductView {
   stock: InventoryStockView[];
 }
 
-export interface InventoryMovementView {
+interface InventoryMovementView {
   id: string;
   productName: string;
   location: InventoryLocation;

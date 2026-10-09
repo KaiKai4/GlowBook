@@ -1,0 +1,45 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "error",
+    "unlisted": "error",
+    "binaries": "error",
+    "exports": "error",
+    "types": "error",
+    "nsExports": "error",
+    "nsTypes": "error",
+    "enumMembers": "error",
+    "duplicates": "error"
+  },
+  "playwright": false,
+  "vitest": {
+    "project": [
+      "src/test/**/*.ts",
+      "e2e/support/**/*.ts"
+    ]
+  },
+  "entry": [
+    "playwright.config.ts",
+    "e2e/**/*.spec.ts",
+    "e2e/global-setup.ts",
+    "src/test/server-only.ts",
+    "src/types/database.types.ts",
+    "scripts/quality/check-ci-parity.mjs",
+    "scripts/quality/check-coverage.mjs",
+    "scripts/quality/check-db-types-drift.mjs",
+    "scripts/quality/check-design-tokens.mjs",
+    "scripts/quality/check-module-size.mjs",
+    "scripts/quality/check-secrets.mjs",
+    "scripts/quality/lint-migrations.mjs",
+    "scripts/quality/run-sequence.mjs",
+    "scripts/quality/write-sbom.mjs"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,css}!",
+    "scripts/**/*.{mjs,cts}",
+    "e2e/**/*.ts",
+    "*.{ts,mjs,cjs}"
+  ]
+}

@@ -47,8 +47,3 @@ export function normalizeKey(value: string) {
 export function dateOrNull(value?: string | null) {
   return value && value.trim() ? value : null;
 }
-
-export function errorMessage(prefix: string, error: unknown) {
-  if (error instanceof Error && error.message) return `${prefix} ${error.message}`;
-  return prefix;
-}

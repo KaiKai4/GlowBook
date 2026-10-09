@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils/cn";
 import { forwardRef } from "react";
 
-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
 }
@@ -12,7 +12,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={textareaId} className="text-sm font-semibold text-stone-700">
+          <label htmlFor={textareaId} className="text-sm font-semibold text-fg-secondary">
             {label}
           </label>
         )}
@@ -20,15 +20,15 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={textareaId}
           className={cn(
-            "w-full rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900",
-            "placeholder:text-stone-400 resize-y min-h-[80px]",
+            "w-full rounded-lg border border-border-input bg-surface px-3 py-2.5 text-sm text-fg",
+            "placeholder:text-fg-subtle resize-y min-h-[80px]",
             "focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow",
-            error && "border-red-400 focus:ring-red-500",
+            error && "border-danger focus:ring-danger",
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
       </div>
     );
   }

@@ -54,11 +54,11 @@ export function SubscriptionDetail({
   }
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 px-5 py-4">
         <div className="min-w-0">
-          <h2 className="truncate text-xl font-bold text-stone-950">{salonName}</h2>
-          <p className="mt-1 text-sm text-stone-500">
+          <h2 className="truncate text-xl font-semibold text-fg-strong">{salonName}</h2>
+          <p className="mt-1 text-sm text-fg-subtle">
             {detail.plan
               ? `${detail.plan.name} · ${STATUS_LABELS[detail.assignment?.status ?? ""] ?? "Sin estado"} · ${detail.plan.currency} ${detail.monthlyTotal.toFixed(2)}/mes`
               : "Este salon todavia no tiene plan asignado."}
@@ -74,16 +74,16 @@ export function SubscriptionDetail({
                 "inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition",
                 tab === item.key
                   ? "border-brand-300 bg-brand-50 text-brand-700"
-                  : "border-brand-100 bg-white text-stone-600 hover:border-brand-200 hover:text-brand-700"
+                  : "border-brand-100 bg-surface text-fg-muted hover:border-brand-200 hover:text-brand-700"
               )}
             >
               {item.icon}
               {item.label}
               {item.key === "extras" && detail.extras.length > 0 ? (
-                <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] text-brand-700">{detail.extras.length}</span>
+                <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-700">{detail.extras.length}</span>
               ) : null}
               {item.key === "usage" && warningCount > 0 ? (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-700">{warningCount}</span>
+                <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs text-warning-strong">{warningCount}</span>
               ) : null}
             </button>
           ))}
@@ -173,7 +173,7 @@ function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDetail })
             <InlineState state={state} block />
           </form>
         ) : (
-          <p className="text-sm text-stone-500">Asigna un plan antes de registrar pagos.</p>
+          <p className="text-sm text-fg-subtle">Asigna un plan antes de registrar pagos.</p>
         )}
       </Panel>
 
@@ -187,15 +187,15 @@ function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDetail })
             {detail.payments.map((payment) => (
               <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-stone-900">
+                  <p className="text-sm font-semibold text-fg">
                     {payment.currency} {payment.amount.toFixed(2)}
-                    <span className="ml-2 text-xs font-normal text-stone-400">
+                    <span className="ml-2 text-xs font-normal text-fg-subtle">
                       pagado el {formatDate(payment.paidAt)}
                     </span>
                   </p>
-                  {payment.notes ? <p className="mt-0.5 text-xs text-stone-500">{payment.notes}</p> : null}
+                  {payment.notes ? <p className="mt-0.5 text-xs text-fg-subtle">{payment.notes}</p> : null}
                 </div>
-                <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                <span className="rounded-lg bg-success-subtle px-2.5 py-1 text-xs font-semibold text-success-strong">
                   {formatDate(payment.periodStart)} — {formatDate(payment.periodEnd)}
                 </span>
               </div>
@@ -325,9 +325,9 @@ function ScheduleSummary({
 function ScheduleItem({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className="mt-1 text-base font-bold text-stone-950">{value}</p>
-      <p className="mt-0.5 text-xs text-stone-500">{hint}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">{label}</p>
+      <p className="mt-1 text-base font-semibold text-fg-strong">{value}</p>
+      <p className="mt-0.5 text-xs text-fg-subtle">{hint}</p>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import type {
   ReportMonthPoint,
   TopExpense,
 } from "@/features/reports/domain/analytics";
+import { compactNumber, niceMaximum, smoothPath } from "./chart-format";
 
 const WIDTH = 760;
 const HEIGHT = 292;
@@ -45,6 +46,7 @@ export function MonthlyAreaChart({
   const max = percent ? Math.ceil(magnitude / 25) * 25 : niceMaximum(magnitude);
   const min = rawMin < 0 ? -max : 0;
   const chart = buildChart(points, series, min, max);
+  const activePoint = active === null ? undefined : points[active];
 
   return (
     <ChartFrame title={title} description={description}>
@@ -60,7 +62,7 @@ export function MonthlyAreaChart({
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="h-[292px] min-w-[640px] w-full"
-          role="img"
+          role="group"
           aria-label={`${title}. ${description}`}
           onPointerLeave={() => setActive(null)}
         >
@@ -89,19 +91,23 @@ export function MonthlyAreaChart({
             </g>
           ))}
 
-          {chart.series.map((item, index) => (
-            <g key={item.label}>
-              <path d={item.area} fill={`url(#${id}-${index})`} />
-              <path
-                d={item.path}
-                fill="none"
-                stroke={series[index].color}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-              />
-            </g>
-          ))}
+          {chart.series.map((item, index) => {
+            const config = series[index];
+            if (!config) throw new Error("Invariante de gráfico: serie sin configuración.");
+            return (
+              <g key={item.label}>
+                <path d={item.area} fill={`url(#${id}-${index})`} />
+                <path
+                  d={item.path}
+                  fill="none"
+                  stroke={config.color}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                />
+              </g>
+            );
+          })}
 
           {active !== null && (
             <line
@@ -143,9 +149,9 @@ export function MonthlyAreaChart({
             </g>
           ))}
 
-          {active !== null && (
+          {activePoint !== undefined && active !== null && (
             <AreaTooltip
-              point={points[active]}
+              point={activePoint}
               index={active}
               x={chart.x(active)}
               series={series}
@@ -265,14 +271,14 @@ export function ProductSalesChart({
                         key={product.id}
                         className="w-full max-w-3 rounded-t-sm transition-opacity hover:opacity-75"
                         style={{
-                          height: `${Math.max(product.months[monthIndex] > 0 ? 6 : 0, (product.months[monthIndex] / max) * 190)}px`,
+                          height: `${Math.max((product.months[monthIndex] ?? 0) > 0 ? 6 : 0, ((product.months[monthIndex] ?? 0) / max) * 190)}px`,
                           background: PRODUCT_COLORS[productIndex],
                         }}
-                        title={`${month.label}, ${product.name}: ${product.months[monthIndex]} unidades`}
+                        title={`${month.label}, ${product.name}: ${product.months[monthIndex] ?? 0} unidades`}
                       />
                     ))}
                   </div>
-                  <span className="pb-2 text-center text-[10px] font-semibold uppercase text-stone-400">
+                  <span className="pb-2 text-center text-[10px] font-semibold uppercase text-stone-500">
                     {month.label}
                   </span>
                 </div>
@@ -344,18 +350,6 @@ function EmptyChart({ label = "Aún no hay datos para graficar." }: { label?: st
   return <p className="py-20 text-center text-sm text-stone-500">{label}</p>;
 }
 
-function compactNumber(value: number): string {
-  return new Intl.NumberFormat("es-PA", {
-    notation: value >= 1000 ? "compact" : "standard",
-    maximumFractionDigits: 1,
-  }).format(value);
-}
-
-function niceMaximum(value: number): number {
-  const exponent = 10 ** Math.floor(Math.log10(Math.max(value, 1)));
-  return Math.ceil(value / exponent) * exponent;
-}
-
 function buildChart(points: ReportMonthPoint[], series: Series[], min: number, max: number) {
   const innerWidth = WIDTH - PAD.left - PAD.right;
   const innerHeight = HEIGHT - PAD.top - PAD.bottom;
@@ -385,13 +379,4 @@ function buildChart(points: ReportMonthPoint[], series: Series[], min: number, m
       };
     }),
   };
-}
-
-function smoothPath(points: Array<{ x: number; y: number }>): string {
-  return points.reduce((path, point, index) => {
-    if (index === 0) return `M ${point.x} ${point.y}`;
-    const previous = points[index - 1];
-    const control = (point.x - previous.x) * 0.4;
-    return `${path} C ${previous.x + control} ${previous.y}, ${point.x - control} ${point.y}, ${point.x} ${point.y}`;
-  }, "");
 }

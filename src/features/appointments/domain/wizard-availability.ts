@@ -89,7 +89,8 @@ export function buildSequentialSchedule<TService extends WizardServiceOption>({
 
   return rows.reduce<AppointmentScheduleItem<TService>[]>((schedule, row) => {
     const service = serviceMap.get(row.serviceId);
-    const start = schedule.length ? schedule[schedule.length - 1].end : base;
+    const previous = schedule.at(-1);
+    const start = previous ? previous.end : base;
     const end = service && start ? addMinutes(start, service.duration_minutes) : start;
     return [...schedule, { row, service, start, end }];
   }, []);

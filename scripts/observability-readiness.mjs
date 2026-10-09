@@ -14,15 +14,18 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[observability-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[observability-readiness] OK ${message}`);
 }
 
+/** @param {string} value */
 function hasUsableUrl(value) {
   if (!value) return false;
   try {
@@ -55,7 +58,9 @@ const REQUIRED_ALERT_ENVS = [
   "GLOWBOOK_OBSERVABILITY_RETENTION_DAYS",
 ];
 
+/** @param {string} url @param {string | undefined} token */
 async function postWebhook(url, token) {
+  /** @type {Record<string, string>} */
   const headers = { "content-type": "application/json" };
   if (token) headers.authorization = `Bearer ${token}`;
 

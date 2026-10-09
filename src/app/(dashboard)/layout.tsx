@@ -37,14 +37,14 @@ export default async function DashboardLayout({
 
   if (!shell.isActive) {
     return (
-      <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden bg-neutral-50 px-4">
+      <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden bg-surface-muted px-4">
         <div className="max-w-md text-center">
-          <h1 className="text-xl font-semibold text-neutral-900">Salón suspendido</h1>
-          <p className="mt-2 text-sm text-neutral-500">
+          <h1 className="text-xl font-semibold text-fg">Salón suspendido</h1>
+          <p className="mt-2 text-sm text-fg-subtle">
             Este salón ha sido suspendido. Contacta a la plataforma para reactivarlo.
           </p>
           <form action="/api/auth/signout" method="post" className="mt-6">
-            <button className="text-sm text-rose-600 hover:underline">Cerrar sesión</button>
+            <button className="text-sm text-accent hover:underline">Cerrar sesión</button>
           </form>
         </div>
       </div>
@@ -56,15 +56,15 @@ export default async function DashboardLayout({
   // el pago. Se evalua al acceder; no requiere ningun job programado.
   if (shell.paymentStanding.state === "suspended") {
     return (
-      <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden bg-neutral-50 px-4">
+      <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden bg-surface-muted px-4">
         <div className="max-w-md text-center">
-          <h1 className="text-xl font-semibold text-neutral-900">Salón suspendido por falta de pago</h1>
-          <p className="mt-2 text-sm text-neutral-500">
+          <h1 className="text-xl font-semibold text-fg">Salón suspendido por falta de pago</h1>
+          <p className="mt-2 text-sm text-fg-subtle">
             El plan venció el {shell.paymentStanding.overdueSince} y pasó el período de gracia.
             Contacta a GlowBook para registrar tu pago y reactivar el salón.
           </p>
           <form action="/api/auth/signout" method="post" className="mt-6">
-            <button className="text-sm text-rose-600 hover:underline">Cerrar sesión</button>
+            <button className="text-sm text-accent hover:underline">Cerrar sesión</button>
           </form>
         </div>
       </div>
@@ -78,20 +78,20 @@ export default async function DashboardLayout({
   if (minimalChrome) {
     return (
       <ToastProvider>
-      <div data-theme={theme} className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-neutral-50">
-        <header className="flex items-center justify-between gap-4 border-b border-brand-100 bg-white px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <div data-theme={theme} className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-surface-muted">
+        <header className="flex items-center justify-between gap-4 border-b border-brand-100 bg-surface px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
           <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
             <GlowBookBrand markSize="sm" align="center" />
             <div className="min-w-0 max-w-full">
-              <p className="text-sm font-semibold leading-tight text-stone-900 break-words">{shell.salonName}</p>
+              <p className="text-sm font-semibold leading-tight text-fg break-words">{shell.salonName}</p>
             </div>
           </div>
           <form action="/api/auth/signout" method="post">
             <button
               type="submit"
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-fg-subtle hover:bg-surface-muted hover:text-fg-secondary transition-colors"
             >
-              <LogOut className="h-4 w-4 text-stone-400" />
+              <LogOut className="h-4 w-4 text-fg-subtle" />
               Cerrar sesión
             </button>
           </form>
@@ -111,7 +111,7 @@ export default async function DashboardLayout({
       <div
         data-theme={theme}
         data-bg={bgStyle}
-        className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-neutral-50"
+        className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-surface-muted"
       >
         <Sidebar
           salonName={shell.salonName}

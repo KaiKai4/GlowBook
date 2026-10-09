@@ -29,14 +29,14 @@ export function MonthlyAppointmentsChart({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>Citas completadas por mes</CardTitle>
-            <p className="mt-1 text-xs text-stone-500">
+            <p className="mt-1 text-xs text-fg-subtle">
               Evolución de los últimos 12 meses
             </p>
           </div>
           <TrendBadge delta={delta} />
         </div>
         <div className="flex justify-end">
-          <div className="inline-flex items-center gap-2 text-xs font-medium text-stone-600">
+          <div className="inline-flex items-center gap-2 text-xs font-medium text-fg-muted">
             <span className="h-2.5 w-2.5 rounded-sm bg-brand-600" aria-hidden="true" />
             Citas completadas
           </div>
@@ -44,7 +44,7 @@ export function MonthlyAppointmentsChart({
       </CardHeader>
       <CardContent>
         {points.length === 0 ? (
-          <p className="py-10 text-center text-sm text-stone-500">
+          <p className="py-10 text-center text-sm text-fg-subtle">
             Aún no hay citas completadas para graficar.
           </p>
         ) : (
@@ -53,7 +53,7 @@ export function MonthlyAppointmentsChart({
               <svg
                 viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
                 className="h-[264px] w-full"
-                role="img"
+                role="group"
                 aria-label="Gráfica de citas completadas durante los últimos 12 meses"
                 onPointerLeave={() => setActiveIndex(null)}
               >
@@ -88,7 +88,7 @@ export function MonthlyAppointmentsChart({
                       x={PADDING.left - 10}
                       y={tick.y + 4}
                       textAnchor="end"
-                      className="fill-stone-400 text-[11px]"
+                      className="fill-fg-subtle text-xs"
                     >
                       {tick.value}
                     </text>
@@ -141,7 +141,7 @@ export function MonthlyAppointmentsChart({
                         cx={point.x}
                         cy={point.y}
                         r={active ? 5 : 3}
-                        fill="white"
+                        fill="var(--color-surface)"
                         stroke="var(--color-brand-600)"
                         strokeWidth={active ? 3 : 2}
                         className="pointer-events-none transition-all duration-150"
@@ -151,8 +151,8 @@ export function MonthlyAppointmentsChart({
                         y={HEIGHT - 12}
                         textAnchor="middle"
                         className={cn(
-                          "text-[10px] font-medium uppercase",
-                          active ? "fill-brand-700" : "fill-stone-400"
+                          "text-xs font-medium uppercase",
+                          active ? "fill-brand-700" : "fill-fg-subtle"
                         )}
                       >
                         {point.label}
@@ -181,9 +181,9 @@ function TrendBadge({ delta }: { delta: number }) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
-        delta > 0 && "bg-emerald-50 text-emerald-700",
-        delta < 0 && "bg-red-50 text-red-700",
-        delta === 0 && "bg-stone-100 text-stone-600"
+        delta > 0 && "bg-success-subtle text-success-fg",
+        delta < 0 && "bg-danger-subtle text-danger-strong",
+        delta === 0 && "bg-surface-sunken text-fg-muted"
       )}
     >
       {delta > 0 && <TrendingUp className="h-3.5 w-3.5" />}
@@ -204,11 +204,11 @@ function ChartTooltip({ point }: { point: ChartPoint }) {
 
   return (
     <g className="pointer-events-none">
-      <rect x={x} y={y} width={width} height={height} rx="8" fill="#1c1917" opacity="0.96" />
-      <text x={x + 12} y={y + 20} className="fill-stone-300 text-[10px] font-medium uppercase">
+      <rect x={x} y={y} width={width} height={height} rx="8" fill="var(--color-fg)" opacity="0.96" />
+      <text x={x + 12} y={y + 20} className="fill-border-strong text-xs font-medium uppercase">
         {point.label}
       </text>
-      <text x={x + 12} y={y + 40} className="fill-white text-[13px] font-semibold">
+      <text x={x + 12} y={y + 40} className="fill-surface text-sm font-semibold">
         {point.total} {point.total === 1 ? "cita" : "citas"}
       </text>
       {point.delta !== 0 && (
@@ -217,8 +217,8 @@ function ChartTooltip({ point }: { point: ChartPoint }) {
           y={y + 40}
           textAnchor="end"
           className={cn(
-            "text-[10px] font-semibold",
-            point.delta > 0 ? "fill-emerald-300" : "fill-red-300"
+            "text-xs font-semibold",
+            point.delta > 0 ? "fill-success" : "fill-danger-border"
           )}
         >
           {point.delta > 0 ? "+" : ""}
@@ -266,13 +266,15 @@ function buildAreaChart(points: MonthlyAppointmentPoint[]) {
   const path = chartPoints.reduce((result, point, index) => {
     if (index === 0) return `M ${point.x} ${point.y}`;
     const previous = chartPoints[index - 1];
+    if (!previous) throw new Error("Invariante de gráfico: punto previo ausente.");
     const control = (point.x - previous.x) * 0.42;
     return `${result} C ${previous.x + control} ${previous.y}, ${point.x - control} ${point.y}, ${point.x} ${point.y}`;
   }, "");
 
   const baseline = HEIGHT - PADDING.bottom;
   const first = chartPoints[0];
-  const last = chartPoints.at(-1)!;
+  const last = chartPoints.at(-1);
+  if (!first || !last) throw new Error("Invariante de gráfico: se esperaban puntos.");
 
   return {
     points: chartPoints,

@@ -61,7 +61,7 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
         className="max-w-sm"
       >
         <div className="space-y-4">
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+          <div className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2.5 text-sm text-warning-strong">
             <div className="flex gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>Si tiene citas asociadas, se archivará y conservará su información para trazabilidad.</p>
@@ -69,7 +69,7 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-600">
+            <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2.5 text-sm text-danger-strong">
               {error}
             </div>
           )}
@@ -92,7 +92,7 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
         className="max-w-sm"
       >
         <div className="space-y-4">
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+          <div className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2.5 text-sm text-warning-strong">
             <div className="flex gap-2">
               <Archive className="mt-0.5 h-4 w-4 shrink-0" />
               <p>{archivedMessage}</p>

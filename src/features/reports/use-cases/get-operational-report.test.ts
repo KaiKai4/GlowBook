@@ -6,7 +6,7 @@ import {
   findSalonReportIdentity,
   findSalonTimezone,
 } from "../data/reports.repo";
-import { getOperationalReport, getOperationalReportPeriod } from "./get-operational-report";
+import { getOperationalReport } from "./get-operational-report";
 
 vi.mock("@/features/finance/use-cases/operational-money", () => ({
   getExternalOperationalMoney: vi.fn(),
@@ -148,8 +148,8 @@ describe("get operational report", () => {
     expect(report.selectedYear).toBe(2026);
   });
 
-  it("loads only monthly metrics when the filter changes", async () => {
-    const report = await getOperationalReportPeriod({
+  it("loads the selected period metrics for the filter", async () => {
+    const report = await getOperationalReport({
       salonId: "salon-1",
       filters: {
         preset: "mes",
@@ -168,6 +168,5 @@ describe("get operational report", () => {
     expect(report.manualExpenses).toBe(0);
     expect(report.inventoryPurchases).toBe(0);
     expect(report.totalExpenses).toBe(0);
-    expect(mockedHistoricalRows).not.toHaveBeenCalled();
   });
 });

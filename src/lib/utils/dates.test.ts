@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   addDaysToDateISO,
   addMinutes,
-  diffMinutes,
   formatLocalDateISO,
   getUtcDayBoundaries,
   getZonedTimeParts,
@@ -11,13 +10,12 @@ import {
 } from "./dates";
 
 describe("date utilities", () => {
-  it("adds and diffs minutes without mutating the original date", () => {
+  it("adds minutes without mutating the original date", () => {
     const start = new Date("2026-05-29T15:00:00.000Z");
     const end = addMinutes(start, 45);
 
     expect(start.toISOString()).toBe("2026-05-29T15:00:00.000Z");
     expect(end.toISOString()).toBe("2026-05-29T15:45:00.000Z");
-    expect(diffMinutes(end, start)).toBe(45);
   });
 
   it("reads wall-clock parts in the salon timezone", () => {

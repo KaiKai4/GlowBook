@@ -31,7 +31,7 @@ export interface ProductMonthBucket {
   quantity: number;
 }
 
-export interface InventoryAlertLocation {
+interface InventoryAlertLocation {
   location: "retail" | "internal" | "storage";
   quantity: number;
   minimumQuantity: number;
@@ -82,7 +82,7 @@ export interface TopExpense {
   amount: number;
 }
 
-export interface InventoryAlert {
+interface InventoryAlert {
   id: string;
   name: string;
   retail: number;
@@ -208,8 +208,8 @@ export interface MonthlyExportRow {
 }
 
 function monthKeyRange(firstKey: string, lastKey: string): string[] {
-  const [firstYear, firstMonth] = firstKey.split("-").map(Number);
-  const [lastYear, lastMonth] = lastKey.split("-").map(Number);
+  const [firstYear = NaN, firstMonth = NaN] = firstKey.split("-").map(Number);
+  const [lastYear = NaN, lastMonth = NaN] = lastKey.split("-").map(Number);
   const start = firstYear * 12 + (firstMonth - 1);
   const end = lastYear * 12 + (lastMonth - 1);
   if (end < start) return [];

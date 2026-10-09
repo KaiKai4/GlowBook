@@ -3,8 +3,8 @@ import "server-only";
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from "@/features/feedback/schemas";
 import { findFeedbackReports } from "../data/feedback-moderation.repo";
 
-export type PlatformFeedbackCategoryVariant = "danger" | "warning" | "info" | "default";
-export type PlatformFeedbackStatus = "new" | "resolved";
+type PlatformFeedbackCategoryVariant = "danger" | "warning" | "info" | "default";
+type PlatformFeedbackStatus = "new" | "resolved";
 
 const CATEGORY_VARIANT: Record<string, PlatformFeedbackCategoryVariant> = {
   bug: "danger",
@@ -13,7 +13,7 @@ const CATEGORY_VARIANT: Record<string, PlatformFeedbackCategoryVariant> = {
   other: "default",
 };
 
-export interface PlatformFeedbackReportViewModel {
+interface PlatformFeedbackReportViewModel {
   id: string;
   category: string;
   categoryLabel: string;

@@ -38,8 +38,8 @@ export function useToast(): ToastApi {
 const TOAST_DURATION_MS = 4000;
 
 const KIND_STYLES: Record<ToastKind, { container: string; icon: typeof CheckCircle2 }> = {
-  success: { container: "border-emerald-200 bg-emerald-50 text-emerald-800", icon: CheckCircle2 },
-  error: { container: "border-red-200 bg-red-50 text-red-700", icon: XCircle },
+  success: { container: "border-success-border bg-success-subtle text-success-strong", icon: CheckCircle2 },
+  error: { container: "border-danger-border bg-danger-subtle text-danger-strong", icon: XCircle },
   info: { container: "border-brand-200 bg-brand-50 text-brand-800", icon: Info },
 };
 

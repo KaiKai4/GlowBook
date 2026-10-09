@@ -22,7 +22,7 @@ Evidencia local completada:
   desde `20240101000000` hasta `20240101000028`.
 - `npm run db:types` paso contra staging y no produjo cambios reales en
   `src/types/database.types.ts`.
-- `npm run ci:verify` paso: lint, guardrails, type-check, 143 tests y build.
+- `npm run ci:verify` (histórico) paso: lint, guardrails, type-check, 143 tests y build.
 - `npm run test:e2e:staging` paso: 13 tests E2E contra app local conectada a
   Supabase staging.
 - `npm run smoke:seed-5-salons` paso con batch `smoke-20260531-e2e`: creo 5
@@ -58,7 +58,7 @@ Pendientes no bloqueantes:
 ## Arquitectura
 
 - [ ] `npm run architecture:check` pasa.
-- [ ] `npm run architecture:health` no reporta riesgos nuevos sin decision.
+- [ ] `npm run verify:fast` no reporta riesgos nuevos sin decision.
 - [ ] `src/app` consume use-cases/read Modules, no Adapters `data`.
 - [ ] Nuevos usos de `service_role` estan en ADR 0010.
 - [ ] SQL/RLS/RPC siguen documentados en `docs/database-contracts.md`.
@@ -77,7 +77,7 @@ Pendientes no bloqueantes:
 ## CI/CD
 
 - [ ] PR gates: lint, type-check, test y build.
-- [ ] `npm run ci:verify` pasa localmente antes de merge.
+- [ ] `npm run verify:full` pasa localmente antes de merge.
 - [ ] CI de `main` corre E2E/health cuando existen secrets staging.
 - [ ] Deploy de staging validado antes de production.
 

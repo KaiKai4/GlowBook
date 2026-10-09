@@ -42,7 +42,7 @@ export function getDisabledSalonFeatures(profile: ProfileWithRole): SalonFeature
   return normalizeDisabledSalonFeatures(profile.salon?.disabled_features);
 }
 
-export function hasSalonFeature(
+function hasSalonFeature(
   profile: ProfileWithRole,
   feature: SalonFeatureKey
 ): boolean {

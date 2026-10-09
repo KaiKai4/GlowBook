@@ -9,7 +9,7 @@ export default async function RolesPage() {
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para gestionar roles.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar roles.</p>
       </div>
     );
   }

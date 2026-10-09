@@ -1,0 +1,85 @@
+name: GlowBook Synthetic
+
+# Check sintetico de disponibilidad cada hora, en SOLO LECTURA, contra produccion y staging.
+# Si falla: POST al webhook de alertas (payload sin secretos) y issue con la etiqueta synthetic-failure.
+# Si falta un secreto el job FALLA con un mensaje explicito; ningun paso se salta en silencio.
+# Ver docs/runbooks/synthetic-checks.md.
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  synthetic:
+    name: Synthetic (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [production, staging]
+    concurrency:
+      group: glowbook-synthetic-${{ matrix.target }}
+      cancel-in-progress: false
+    env:
+      SYNTHETIC_TARGET: ${{ matrix.target }}
+      SYNTHETIC_BASE_URL_PRODUCTION: ${{ secrets.SYNTHETIC_BASE_URL }}
+      SYNTHETIC_BASE_URL_STAGING: ${{ secrets.STAGING_BASE_URL }}
+      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+      SYNTHETIC_RESULT_FILE: .quality/synthetic-${{ matrix.target }}.json
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      COMMIT_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      # Resuelve la URL base del target y exige todos los secretos antes de tocar nada.
+      - name: Require secrets and resolve base URL
+        run: |
+          set -euo pipefail
+          case "$SYNTHETIC_TARGET" in
+            production)
+              base="$SYNTHETIC_BASE_URL_PRODUCTION"
+              name="SYNTHETIC_BASE_URL"
+              ;;
+            staging)
+              base="$SYNTHETIC_BASE_URL_STAGING"
+              name="STAGING_BASE_URL"
+              ;;
+            *)
+              echo "::error::Target desconocido: $SYNTHETIC_TARGET"
+              exit 1
+              ;;
+          esac
+          if [ -z "$base" ]; then
+            echo "::error::Falta el secreto $name. El check sintetico de $SYNTHETIC_TARGET no puede ejecutarse."
+            exit 1
+          fi
+          if [ -z "$ALERT_WEBHOOK_URL" ]; then
+            echo "::error::Falta el secreto ALERT_WEBHOOK_URL. Sin webhook no hay alertas; el job falla a proposito."
+            exit 1
+          fi
+          echo "::add-mask::$base"
+          echo "SYNTHETIC_BASE_URL=$base" >> "$GITHUB_ENV"
+
+      - name: Run synthetic check (solo lectura)
+        id: check
+        run: node scripts/quality/synthetic-check.mjs
+
+      # Se ejecuta tanto en fallo como en recuperacion; la decision vive en scripts/ops.
+      - name: Alert or close incident issue
+        if: ${{ always() && steps.check.outcome != 'skipped' }}
+        run: node scripts/ops/synthetic-alert-cli.mjs

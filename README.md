@@ -82,21 +82,20 @@ Do not create empty `domain`, `data` or `use-cases` folders for appearance. A fo
 - `docs/adr/0008-tests-as-safety-net.md`: critical domain rules need tests.
 - `docs/adr/0009-modular-monolith-feature-architecture.md`: feature-first modular monolith rules.
 - `docs/adr/0010-server-only-admin-adapter-exceptions.md`: allowed `service_role` usage.
+- `docs/adr/0011-verificador-local-igual-ci.md`: local verification and CI share one step manifest.
+- `docs/adr/0012-toolchain-de-calidad.md`: reason for each quality tool.
+- `docs/adr/0013-trinquetes-de-deuda.md`: debt ratchets that only go down.
+- `docs/adr/0014-bd-de-pruebas-supabase-local.md`: test database is local Supabase; forward-only migrations.
+- `docs/adr/0015-politica-excepciones-auditoria.md`: dependency audit exception policy.
 
 Additional architecture docs:
 
 - `docs/README.md`
-- `docs/architecture-audit-2026-05-31.md`
-- `docs/architecture-audit-phases-2026-05-31.md`
-- `docs/architecture-audit-2026-05-30.md`
-- `docs/architecture-audit-phases-2026-05-30.md`
-- `docs/architecture-production-readiness-audit-2026-05-30.md`
-- `docs/architecture-production-readiness-phases-2026-05-30.md`
 - `docs/database-contracts.md`
 - `docs/production-readiness-checklist.md`
-- `docs/release-readiness-2026-05-31.md`
 - `docs/environments.md`
 - `docs/security.md`
+- `docs/archive/architecture-history/README.md`: auditorias y roadmaps reemplazados, solo para trazabilidad.
 
 ## Supabase Contracts
 
@@ -120,45 +119,48 @@ See `docs/database-contracts.md` before changing RPCs, triggers, constraints or 
 npm run dev          # Start local Next dev server
 npm run build        # Build production bundle
 npm run start        # Start production server after build
-npm run lint         # Run ESLint and architecture guardrails
+npm run verify:fast  # Quality tier fast: static checks and unit tests
+npm run verify:full  # Quality tier full: everything in verify:fast plus DB, build, E2E and Lighthouse
+npm run verify:job -- <job>  # Run the steps of one CI job locally
+npm run lint         # Run ESLint with zero warnings
 npm run architecture:check # Run architecture guardrails only
 npm run release:readiness # Check release blockers for 5+ salon launch
-npm run ci:verify   # Reproduce mandatory CI gates locally
-npm run test         # Run Vitest
+npm run test         # Run Vitest unit tests
+npm run test:integration # Run Vitest integration tests against local Supabase
+npm run test:coverage # Run Vitest with v8 coverage
 npm run test:e2e     # Run local Playwright critical flows
 npm run test:e2e:staging # Run Playwright against deployed staging
 npm run type-check   # Run TypeScript without emitting
-npm run db:types     # Regenerate Supabase generated types
+npm run db:start     # Start local Supabase (Docker)
+npm run db:reset     # Rebuild local database from migrations
+npm run db:test      # Run pgTAP tests against local database
+npm run db:types     # Regenerate Supabase generated types from local database
 npm run db:migrate   # Push Supabase migrations
 npm run smoke:seed-5-salons # Seed realistic staging smoke data
 npm run smoke:cleanup-5-salons # Cleanup a staging smoke batch
 npm run bootstrap:admin -- <email> <password>
 ```
 
-Before shipping a change, prefer:
+Before shipping a change, run the full local gate on a clean checkout with
+Docker running:
 
 ```bash
-npm run ci:verify
+npm run verify:full
 ```
 
-That script runs the mandatory CI gates:
-
-```bash
-npm run lint
-npm run type-check
-npm run test
-npm run build
-```
-
-The `main` branch and manual CI runs also execute E2E/architecture health when
-Supabase staging secrets are configured.
+`verify:full` runs the steps declared in `scripts/quality/steps.mjs`, the same
+steps CI executes per job. See `docs/testing.md` for what each step checks and
+`docs/adr/0011-verificador-local-igual-ci.md` for why local and CI share one
+manifest.
 
 ## Generated Supabase Types
 
-`src/types/database.types.ts` is generated from the linked Supabase project.
-Regenerate it after every migration that changes schema, RPCs or enums:
+`src/types/database.types.ts` is generated from the local Supabase database,
+which is built from `supabase/migrations`. Regenerate it after every migration
+that changes schema, RPCs or enums:
 
 ```bash
+npm run db:start
 npm run db:types
 ```
 

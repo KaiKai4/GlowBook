@@ -21,12 +21,15 @@ import {
   UpdateAppointmentScheduleSchema,
 } from "@/features/appointments/schemas";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { parseUuid } from "@/lib/validation/route-id";
 
-function canManageAppointments(
-  profile: Awaited<ReturnType<typeof requireActiveProfile>>
-): Result<void> {
+async function canManageAppointments(
+  profile: Awaited<ReturnType<typeof requireActiveProfile>>,
+  deniedMessage: string
+): Promise<Result<void>> {
   if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar citas." };
+    return { ok: false, error: deniedMessage };
   }
 
   // Generoso para el uso real del wizard, pero frena martilleo automatizado.
@@ -42,7 +45,7 @@ function revalidateAppointmentFlows(): void {
 // Used by the wizard to compute real availability before booking.
 export async function getOccupiedSlotsForDate(date: string): Promise<OccupiedByEmployee> {
   const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
+  const permission = await canManageAppointments(profile, "No tienes permiso para consultar la agenda.");
   if (!permission.ok) return {};
 
   return getOccupiedSlotsForSalonDate(profile.salon_id, date);
@@ -53,8 +56,9 @@ export async function getOccupiedSlotsForEditDate(
   appointmentId: string
 ): Promise<OccupiedByEmployee> {
   const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
+  const permission = await canManageAppointments(profile, "No tienes permiso para consultar la agenda.");
   if (!permission.ok) return {};
+  if (!parseUuid(appointmentId)) return {};
 
   return getOccupiedSlotsForSalonDate(profile.salon_id, date, appointmentId);
 }
@@ -64,8 +68,8 @@ export async function createAppointmentAction(
   formData: FormData
 ): Promise<Result<string>> {
   const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para crear citas." };
+  const permission = await canManageAppointments(profile, "No tienes permiso para crear citas.");
+  if (!permission.ok) return permission;
   const moduleAccess = await checkPlanModuleAccess({
     salonId: profile.salon_id,
     moduleKey: "appointments",
@@ -91,7 +95,7 @@ export async function createAppointmentAction(
   });
 
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0].message };
+    return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
   const result = await createAppointment(parsed.data, {
@@ -108,8 +112,8 @@ export async function updateAppointmentScheduleAction(
   formData: FormData
 ): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para editar citas." };
+  const permission = await canManageAppointments(profile, "No tienes permiso para editar citas.");
+  if (!permission.ok) return permission;
 
   const raw = Object.fromEntries(formData);
   let assignments: unknown;
@@ -125,7 +129,7 @@ export async function updateAppointmentScheduleAction(
   });
 
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0].message };
+    return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
   const result = await updateAppointmentSchedule(parsed.data, {
@@ -140,8 +144,9 @@ export async function cancelAppointmentAction(
   appointmentId: string
 ): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para cancelar citas." };
+  const permission = await canManageAppointments(profile, "No tienes permiso para cancelar citas.");
+  if (!permission.ok) return permission;
+  if (!parseUuid(appointmentId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await cancelAppointment(appointmentId, profile.salon_id);
   if (result.ok) revalidateAppointmentFlows();
@@ -152,8 +157,9 @@ export async function confirmAppointmentAction(
   appointmentId: string
 ): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para confirmar citas." };
+  const permission = await canManageAppointments(profile, "No tienes permiso para confirmar citas.");
+  if (!permission.ok) return permission;
+  if (!parseUuid(appointmentId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await confirmAppointment(appointmentId, profile.salon_id);
   if (result.ok) revalidateAppointmentFlows();
@@ -165,8 +171,8 @@ export async function completeAppointmentAction(
   formData: FormData
 ): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para completar citas." };
+  const permission = await canManageAppointments(profile, "No tienes permiso para completar citas.");
+  if (!permission.ok) return permission;
 
   let itemCharges: unknown;
   try {
@@ -183,7 +189,7 @@ export async function completeAppointmentAction(
   });
 
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0].message };
+    return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
   const paymentEnabled = await assertSalonPaymentMethodEnabled(

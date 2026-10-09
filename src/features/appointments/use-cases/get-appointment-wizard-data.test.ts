@@ -75,7 +75,7 @@ describe("get appointment wizard data", () => {
         price: 31,
       },
     ]);
-    expect(view.employees[0].service_ids).toEqual(["service-active"]);
+    expect(view.employees[0]?.service_ids).toEqual(["service-active"]);
     expect(mockedGetEmployeeSchedulingOptions).toHaveBeenCalledWith(
       "salon-1",
       new Set(["service-active"])

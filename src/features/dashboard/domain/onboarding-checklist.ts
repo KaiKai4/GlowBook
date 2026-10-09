@@ -2,7 +2,7 @@
 // (servicios -> colaboradores -> clientes -> primera cita). Se muestra en el
 // dashboard hasta completarse; despues desaparece para siempre.
 
-export interface OnboardingStep {
+interface OnboardingStep {
   key: "services" | "employees" | "customers" | "appointments";
   label: string;
   description: string;

@@ -26,7 +26,7 @@ interface SelectOption {
   hidden: boolean;
 }
 
-export interface SelectProps
+interface SelectProps
   extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size" | "multiple"> {
   label?: string;
   error?: string;
@@ -183,7 +183,7 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={selectId} className="text-sm font-semibold text-stone-700">
+          <label htmlFor={selectId} className="text-sm font-semibold text-fg-secondary">
             {label}
           </label>
         )}
@@ -223,21 +223,21 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
           }}
           onKeyDown={handleTriggerKeyDown}
           className={cn(
-            "flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-3 text-left text-sm text-stone-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color]",
+            "flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-border-input bg-surface px-3 text-left text-sm text-fg shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color]",
             "hover:border-brand-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500",
-            "disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-400",
+            "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle",
             open && "border-brand-500 ring-2 ring-brand-100",
-            error && "border-red-400 bg-red-50/30 focus:ring-red-500",
+            error && "border-danger bg-danger-subtle/30 focus:ring-danger",
             className
           )}
         >
-          <span className={cn("truncate", !selectedOption && "text-stone-500")}>
+          <span className={cn("truncate", !selectedOption && "text-fg-subtle")}>
             {selectedOption?.label ?? placeholder ?? "Selecciona una opcion"}
           </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-stone-400" />
+          <ChevronsUpDown className="h-4 w-4 shrink-0 text-fg-subtle" />
         </button>
         {error && (
-          <p id={descriptionId} className="text-xs text-red-600">
+          <p id={descriptionId} className="text-xs text-danger">
             {error}
           </p>
         )}
@@ -249,10 +249,10 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
               role="listbox"
               aria-labelledby={selectId}
               style={{ top: position.top, left: position.left, width: position.width }}
-              className="fixed z-[80] max-h-72 overflow-y-auto rounded-xl border border-stone-100 bg-white p-1.5 shadow-[0_18px_42px_rgba(15,23,42,0.18),0_2px_8px_rgba(15,23,42,0.08)]"
+              className="fixed z-[80] max-h-72 overflow-y-auto rounded-xl border border-border-subtle bg-surface p-1.5 shadow-[0_18px_42px_rgba(15,23,42,0.18),0_2px_8px_rgba(15,23,42,0.08)]"
             >
               {selectableOptions.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-stone-400">Sin opciones</div>
+                <div className="px-3 py-2 text-sm text-fg-subtle">Sin opciones</div>
               ) : null}
 
               {selectableOptions.map((option, index) => {
@@ -268,9 +268,9 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => selectOption(option)}
                     className={cn(
-                      "flex min-h-10 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-stone-700 transition-colors",
-                      active && "bg-stone-100 text-stone-950",
-                      option.disabled && "cursor-not-allowed text-stone-300 hover:bg-transparent"
+                      "flex min-h-10 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-fg-secondary transition-colors",
+                      active && "bg-surface-sunken text-fg-strong",
+                      option.disabled && "cursor-not-allowed text-fg-disabled hover:bg-transparent"
                     )}
                   >
                     <span className="min-w-0 truncate">{option.label}</span>

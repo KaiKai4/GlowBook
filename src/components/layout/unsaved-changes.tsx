@@ -75,10 +75,10 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
       >
         <div className="space-y-5">
           <div className="flex gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-subtle">
+              <AlertTriangle className="h-5 w-5 text-warning" />
             </div>
-            <p className="text-sm text-stone-600">
+            <p className="text-sm text-fg-muted">
               Hiciste cambios que todavía no has guardado. Si sales de esta sección
               ahora, esos cambios se perderán.
             </p>

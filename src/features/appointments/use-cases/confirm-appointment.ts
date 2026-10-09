@@ -1,3 +1,4 @@
+import { toPublicErrorMessage } from "@/lib/errors";
 import { err, ok, type Result } from "@/lib/result";
 import { captureError } from "@/lib/observability";
 import {
@@ -23,7 +24,7 @@ export async function confirmAppointment(
   try {
     assertTransition(appointment.status, "confirmed");
   } catch (error) {
-    return err((error as Error).message);
+    return err(toPublicErrorMessage(error, "No se pudo confirmar la cita."));
   }
 
   try {

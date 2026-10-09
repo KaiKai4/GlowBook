@@ -19,7 +19,7 @@ export function InventoryTabs({
   onChange: (tab: InventoryTab) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white p-1">
+    <div className="overflow-x-auto rounded-xl border border-border bg-surface p-1">
       <div className="flex min-w-max gap-1">
         {TABS.map((tab) => (
           <button
@@ -29,8 +29,8 @@ export function InventoryTabs({
             className={cn(
               "h-10 rounded-lg px-4 text-sm font-semibold transition-colors",
               activeTab === tab.value
-                ? "bg-brand-600 text-white shadow-sm"
-                : "text-stone-500 hover:bg-stone-50 hover:text-stone-900"
+                ? "bg-brand-600 text-surface shadow-sm"
+                : "text-fg-subtle hover:bg-surface-muted hover:text-fg"
             )}
           >
             {tab.label}

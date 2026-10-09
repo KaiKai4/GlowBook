@@ -32,12 +32,6 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   other: "Otro",
 };
 
-const EXPENSE_CATEGORY_SET = new Set<string>(EXPENSE_CATEGORIES);
-
-export function isExpenseCategory(value: string): value is ExpenseCategory {
-  return EXPENSE_CATEGORY_SET.has(value);
-}
-
 /**
  * Etiqueta a mostrar para un gasto: para "other" con texto libre se usa ese
  * texto; en cualquier otro caso la etiqueta de la categoria.

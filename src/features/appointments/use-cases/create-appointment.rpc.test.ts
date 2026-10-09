@@ -13,7 +13,6 @@ import type { Database } from "@/types/database.types";
 const integrationEnv = getSupabaseIntegrationEnv();
 const configuredTestEmail = process.env.SUPABASE_TEST_EMAIL;
 const configuredTestPassword = process.env.SUPABASE_TEST_PASSWORD;
-const runRpcTests = Boolean(integrationEnv);
 
 type Db = SupabaseClient<Database>;
 
@@ -43,7 +42,7 @@ function dateForFutureWeekday(dayOfWeek: number, localTime: string): string {
 }
 
 function addMinutesToTime(time: string, minutes: number): string {
-  const [hour, minute] = time.slice(0, 5).split(":").map(Number);
+  const [hour = NaN, minute = NaN] = time.slice(0, 5).split(":").map(Number);
   const total = hour * 60 + minute + minutes;
   const nextHour = Math.floor(total / 60);
   const nextMinute = total % 60;
@@ -189,7 +188,7 @@ async function cleanup(admin: Db) {
   }
 }
 
-describe.skipIf(!runRpcTests)(
+describe(
   "create_appointment RPC (requires Supabase integration env vars)",
   () => {
   let user: Db;
@@ -199,8 +198,8 @@ describe.skipIf(!runRpcTests)(
   let ownerFixture: SalonOwnerFixture | null = null;
 
   beforeAll(async () => {
-    admin = createIntegrationAdminClient(integrationEnv!);
-    user = createIntegrationUserClient(integrationEnv!);
+    admin = createIntegrationAdminClient(integrationEnv);
+    user = createIntegrationUserClient(integrationEnv);
 
     let email = configuredTestEmail;
     let password = configuredTestPassword;

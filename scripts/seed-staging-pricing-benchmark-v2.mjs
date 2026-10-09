@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTargetOrExit, readConfirmFlag } from "./lib/target-guard.mjs";
 import {
   BENCHMARK_BATCH_PREFIX,
-  BENCHMARK_PASSWORD,
+  requireBenchmarkPassword,
   PAYMENT_METHODS,
   assertBenchmarkBatchId,
   assertStagingEnvironment,
@@ -12,44 +13,25 @@ import {
   ownerEmailFor,
   withSalonOverride,
 } from "./pricing-benchmark-shared.mjs";
+import { addMinutes, chunk, dateAt, dateOnly, requireRow } from "./seed-common.mjs";
+import { EXPENSES, FIRST_NAMES, LAST_NAMES, PRODUCT_CATEGORIES, SERVICE_CATALOG } from "./seed-pricing-benchmark-catalog.mjs";
+
+/**
+ * @typedef {ReturnType<typeof getSelectedCohorts>[number]} CohortConfig
+ * @typedef {import("./types/seeds.d.cts").DbRow} DbRow
+ * @typedef {import("./types/seeds.d.cts").PermissionRow} PermissionRow
+ * @typedef {import("./types/seeds.d.cts").ServiceRow} ServiceRow
+ * @typedef {import("./types/seeds.d.cts").ProductRow} ProductRow
+ * @typedef {import("./types/seeds.d.cts").SeedSummary} SeedSummary
+ */
 
 const SCOPE = "seed-pricing-benchmark-v2";
+const BENCHMARK_PASSWORD = requireBenchmarkPassword(SCOPE);
 const INSERT_BATCH_SIZE = Number(process.env.PRICING_BENCHMARK_INSERT_BATCH_SIZE ?? 500);
 const MONTHS_OF_HISTORY = 12;
-const ALLOW_SYNTHETIC_AUTH_ON_FAILURE =
-  process.env.PRICING_BENCHMARK_ALLOW_SYNTHETIC_AUTH_ON_FAILURE === "true";
+const ALLOW_SYNTHETIC_AUTH_ON_FAILURE = process.env.PRICING_BENCHMARK_ALLOW_SYNTHETIC_AUTH_ON_FAILURE === "true";
 
-const SERVICE_CATALOG = [
-  ["Cabello", "fixed", [["Corte y secado", 30, 28], ["Color completo", 120, 85], ["Tratamiento hidratante", 60, 45], ["Peinado", 50, 35], ["Keratina", 150, 120], ["Balayage", 180, 160], ["Rizos", 60, 45], ["Lavado especial", 30, 18]]],
-  ["Unas", "variable", [["Manicura tradicional", 35, 18], ["Softgel", 75, 35], ["Acrilico", 90, 45], ["Pedicura", 45, 24], ["Gel polish", 40, 22], ["Diseno avanzado", 75, 40], ["Retiro", 30, 12], ["Reconstruccion", 110, 75]]],
-  ["Estetica", "fixed", [["Limpieza facial", 70, 55], ["Depilacion de cejas", 30, 20], ["Pestanas lifting", 65, 40], ["Microblading", 120, 95], ["Mascarilla", 45, 28], ["Dermaplaning", 70, 52], ["Hidratacion facial", 60, 42], ["Peeling", 80, 68]]],
-  ["Masaje", "fixed", [["Relajante", 50, 30], ["Deportivo", 80, 55], ["Cuerpo completo", 100, 75], ["Drenaje", 65, 48], ["Piedras calientes", 90, 70], ["Cuello y espalda", 45, 32], ["Reflexologia", 55, 38], ["Post operatorio", 100, 90]]],
-  ["Maquillaje", "variable", [["Social", 75, 65], ["Novia prueba", 120, 110], ["Evento", 90, 80], ["Pestanas extra", 25, 18], ["Piel glow", 55, 42], ["Asesoria", 60, 50], ["Editorial", 140, 135], ["Retoque", 30, 25]]],
-  ["Spa", "fixed", [["Circuito spa", 120, 95], ["Exfoliacion corporal", 60, 52], ["Envoltura", 75, 62], ["Aromaterapia", 45, 35], ["Ritual completo", 180, 150], ["Mascarilla corporal", 50, 38], ["Sauna guiado", 30, 22], ["Pack relax", 150, 125]]],
-  ["Barberia", "fixed", [["Corte caballero", 35, 18], ["Barba", 25, 12], ["Perfilado", 20, 10], ["Corte y barba", 55, 28], ["Color barba", 45, 25], ["Cejas", 15, 8], ["Tratamiento barba", 35, 20], ["Fade premium", 50, 32]]],
-  ["Bronceado", "fixed", [["Spray tan", 45, 35], ["Cuerpo completo", 60, 48], ["Retoque", 30, 22], ["Preparacion piel", 35, 25], ["Pack mensual", 75, 60], ["Piernas", 25, 18], ["Rostro", 20, 15], ["Premium", 90, 78]]],
-];
-
-const FIRST_NAMES = ["Alejandra", "Allan", "Camila", "Daniela", "Elena", "Fabiana", "Gabriel", "Isabella", "Juan", "Karla", "Keily", "Maria", "Nohemy", "Sara", "Sofia", "Valery", "Victoria", "Yamileth", "Laura", "Genesis", "Ana", "Paola", "Nicole", "Andrea"];
-const LAST_NAMES = ["Nunez", "Ordonez", "Herrera", "Rodriguez", "Sanchez", "Pitty", "Villanueva", "Martinez", "Perez", "Castillo", "Morales", "Rojas", "Mendez", "Valderrama", "Gomez", "Rivera"];
-const PRODUCT_CATEGORIES = ["Cabello", "Unas", "Estetica", "Masaje", "Complementos", "Spa"];
-const EXPENSES = [
-  ["rent", "Alquiler mensual", "Administracion Plaza"],
-  ["utilities", "Servicios basicos", "Ensa / Idaan"],
-  ["supplies", "Suministros de salon", "Distribuidora Belleza"],
-  ["payroll", "Comisiones y apoyo", "Equipo interno"],
-  ["maintenance", "Mantenimiento de equipos", "Tecnico certificado"],
-  ["other", "Publicidad local", "Campanas digitales"],
-  ["other", "Lavanderia", "Proveedor local"],
-  ["supplies", "Insumos descartables", "Proveedor mayorista"],
-];
-
-function chunk(rows, size = INSERT_BATCH_SIZE) {
-  const chunks = [];
-  for (let index = 0; index < rows.length; index += size) chunks.push(rows.slice(index, index + size));
-  return chunks;
-}
-
+/** @param {SeedSummary} summary @param {string} cohortKey @param {string} table @param {unknown[]} rows @returns {void} */
 function addPayload(summary, cohortKey, table, rows) {
   summary.totalRows += rows.length;
   summary.cohorts[cohortKey].tables[table] ??= { rows: 0, jsonBytes: 0 };
@@ -57,39 +39,28 @@ function addPayload(summary, cohortKey, table, rows) {
   summary.cohorts[cohortKey].tables[table].jsonBytes += Buffer.byteLength(JSON.stringify(rows), "utf8");
 }
 
+/** @param {import("@supabase/supabase-js").SupabaseClient} admin @param {string} table @param {unknown[]} rows @param {SeedSummary} summary @param {string} cohortKey @param {string} [select] @returns {Promise<DbRow[]>} */
 async function insertRows(admin, table, rows, summary, cohortKey, select = undefined) {
   if (rows.length === 0) return [];
   addPayload(summary, cohortKey, table, rows);
+  /** @type {DbRow[]} */
   const inserted = [];
-  for (const group of chunk(rows)) {
-    let query = admin.from(table).insert(group);
-    if (select) query = query.select(select);
+  for (const group of chunk(rows, INSERT_BATCH_SIZE)) {
+    const insertQuery = admin.from(table).insert(group);
+    const query = select ? insertQuery.select(select) : insertQuery;
     const { data, error } = await query;
     if (error) throw new Error(`${table}: ${error.message}`);
-    if (data) inserted.push(...data);
+    if (data) inserted.push(.../** @type {DbRow[]} */ (/** @type {unknown} */ (data)));
   }
   return inserted;
 }
 
-function dateAt(daysFromToday, hour, minute = 0) {
-  const date = new Date();
-  date.setUTCHours(hour, minute, 0, 0);
-  date.setUTCDate(date.getUTCDate() + daysFromToday);
-  return date;
-}
-
-function addMinutes(date, minutes) {
-  return new Date(date.getTime() + minutes * 60_000);
-}
-
-function dateOnly(date) {
-  return date.toISOString().slice(0, 10);
-}
-
+/** @param {number} value */
 function money(value) {
   return Number(value.toFixed(2));
 }
 
+/** @param {number} index */
 function nameAt(index, salt = 0) {
   return {
     firstName: FIRST_NAMES[(index + salt) % FIRST_NAMES.length],
@@ -97,6 +68,7 @@ function nameAt(index, salt = 0) {
   };
 }
 
+/** @param {number} monthIndex @param {number} appointmentIndex @param {boolean} isFuture */
 function appointmentStatus(monthIndex, appointmentIndex, isFuture) {
   if (isFuture) return appointmentIndex % 3 === 0 ? "confirmed" : "scheduled";
   const mod = (monthIndex * 7 + appointmentIndex) % 20;
@@ -106,11 +78,13 @@ function appointmentStatus(monthIndex, appointmentIndex, isFuture) {
   return "completed";
 }
 
+/** @param {number} monthIndex @param {number} appointmentIndex */
 function daysInMonthWindow(monthIndex, appointmentIndex) {
   const monthStart = -30 * (MONTHS_OF_HISTORY - monthIndex);
   return monthStart + (appointmentIndex % 28);
 }
 
+/** @param {number} appointmentIndex @param {number} employeesCount */
 function timeSlot(appointmentIndex, employeesCount) {
   const employeeIndex = appointmentIndex % employeesCount;
   const dailySlot = Math.floor(appointmentIndex / employeesCount) % 24;
@@ -119,7 +93,9 @@ function timeSlot(appointmentIndex, employeesCount) {
   return { employeeIndex, hour, minute };
 }
 
+/** @param {CohortConfig[]} cohorts */
 function estimateRows(cohorts) {
+  /** @type {{ cohort: string, salons: number, perSalon: Record<string, number>, cohortTotals: Record<string, number> }[]} */
   const estimates = [];
   for (const cohort of cohorts) {
     const appointmentsPerSalon =
@@ -150,7 +126,9 @@ function estimateRows(cohorts) {
   return estimates;
 }
 
+/** @param {import("@supabase/supabase-js").SupabaseClient} admin @param {string} email @param {string} fullName */
 async function createAuthUser(admin, email, fullName) {
+  /** @type {Awaited<ReturnType<typeof admin.auth.admin.createUser>>} */
   let result;
   try {
     result = await admin.auth.admin.createUser({
@@ -175,6 +153,7 @@ async function createAuthUser(admin, email, fullName) {
   return result.data.user.id;
 }
 
+/** @param {import("@supabase/supabase-js").SupabaseClient} admin @param {string} email */
 async function findAuthUserIdByEmail(admin, email) {
   const target = email.toLowerCase();
   const perPage = 1000;
@@ -188,6 +167,7 @@ async function findAuthUserIdByEmail(admin, email) {
   return null;
 }
 
+/** @param {{ admin: import("@supabase/supabase-js").SupabaseClient, cohort: CohortConfig, batchId: string, salonNumber: number, globalSalonIndex: number, summary: SeedSummary, permissionIds: PermissionRow[] }} args @returns {Promise<void>} */
 async function seedSalon({ admin, cohort, batchId, salonNumber, globalSalonIndex, summary, permissionIds }) {
   const cohortKey = cohort.key;
   const ownerEmail = ownerEmailFor(batchId, cohortKey, salonNumber);
@@ -237,8 +217,8 @@ async function seedSalon({ admin, cohort, batchId, salonNumber, globalSalonIndex
     cohortKey,
     "id, name"
   );
-  const ownerRole = roles.find((role) => role.name === "Owner");
-  const collaboratorRole = roles.find((role) => role.name === "Colaborador");
+  const ownerRole = requireRow(roles, (role) => role.name === "Owner", "rol Owner");
+  const collaboratorRole = requireRow(roles, (role) => role.name === "Colaborador", "rol Colaborador");
 
   await insertRows(admin, "profiles", [{
     id: ownerId,
@@ -313,7 +293,7 @@ async function seedSalon({ admin, cohort, batchId, salonNumber, globalSalonIndex
     description: `Categoria ${name} para benchmark.`,
   })), summary, cohortKey, "id, name");
 
-  const services = await insertRows(admin, "services", selectedCatalog.flatMap((category, categoryIndex) =>
+  const services = /** @type {ServiceRow[]} */ (await insertRows(admin, "services", selectedCatalog.flatMap((category, categoryIndex) =>
     category[2].slice(0, cohort.servicesPerCategory).map(([name, duration, price]) => ({
       salon_id: salonId,
       category_id: categories[categoryIndex].id,
@@ -323,7 +303,7 @@ async function seedSalon({ admin, cohort, batchId, salonNumber, globalSalonIndex
       description: `${name} para benchmark de pricing.`,
       is_active: true,
     }))
-  ), summary, cohortKey, "id, category_id, duration_minutes, price, name");
+  ), summary, cohortKey, "id, category_id, duration_minutes, price, name"));
 
   const employeeRows = [];
   const profileRows = [];
@@ -505,7 +485,7 @@ async function seedSalon({ admin, cohort, batchId, salonNumber, globalSalonIndex
   await insertRows(admin, "appointment_reminder_log", reminderLogs, summary, cohortKey);
 
   if (cohort.modules.retail || cohort.modules.inventory) {
-    const products = await insertRows(admin, "inventory_products", Array.from({ length: cohort.products ?? 0 }, (_, index) => {
+    const products = /** @type {ProductRow[]} */ (await insertRows(admin, "inventory_products", Array.from({ length: cohort.products ?? 0 }, (_, index) => {
       const category = PRODUCT_CATEGORIES[index % PRODUCT_CATEGORIES.length];
       const cost = 4 + (index % 18) * 1.25;
       return {
@@ -518,7 +498,7 @@ async function seedSalon({ admin, cohort, batchId, salonNumber, globalSalonIndex
         is_retail_enabled: cohort.modules.retail && index % 6 !== 0,
         deleted_at: null,
       };
-    }), summary, cohortKey, "id, cost_price, sale_price");
+    }), summary, cohortKey, "id, cost_price, sale_price"));
 
     await insertRows(admin, "inventory_stock_locations", products.flatMap((product, index) =>
       ["retail", "internal", "storage"].map((location, locationIndex) => ({
@@ -631,6 +611,7 @@ assertStagingEnvironment(SCOPE);
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!serviceRoleKey) fail(SCOPE, "Set SUPABASE_SERVICE_ROLE_KEY.");
+if (!supabaseUrl) fail(SCOPE, "Set NEXT_PUBLIC_SUPABASE_URL.");
 
 const batchId = process.env.PRICING_BENCHMARK_BATCH_ID ?? `${BENCHMARK_BATCH_PREFIX}-${Date.now()}`;
 assertBenchmarkBatchId(SCOPE, batchId);
@@ -652,6 +633,12 @@ if (cohorts.some((cohort) => cohort.key === "E") && process.env.PRICING_BENCHMAR
   fail(SCOPE, "Cohort E is heavy. Set PRICING_BENCHMARK_HEAVY_CONFIRM=include-stress-cohort or exclude E with PRICING_BENCHMARK_COHORTS.");
 }
 
+assertSafeTargetOrExit("seed-staging-pricing-benchmark-v2", {
+  url: supabaseUrl,
+  env: process.env.GLOWBOOK_ENV ?? process.env.APP_ENV ?? process.env.VERCEL_ENV,
+  confirmFlag: readConfirmFlag(process.argv),
+  productionUrl: process.env.PRODUCTION_SUPABASE_URL,
+});
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
@@ -659,6 +646,7 @@ const admin = createClient(supabaseUrl, serviceRoleKey, {
 const { data: permissions, error: permissionsError } = await admin.from("permissions").select("id, key");
 if (permissionsError) throw permissionsError;
 
+/** @type {SeedSummary} */
 const summary = {
   batchId,
   password: BENCHMARK_PASSWORD,

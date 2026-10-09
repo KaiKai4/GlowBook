@@ -1,6 +1,6 @@
 import type { ReportAppointmentItem } from "./metrics";
 
-export interface EmployeeCommission {
+interface EmployeeCommission {
   employeeId: string;
   name: string;
   /** Citas completadas distintas atendidas en el periodo. */

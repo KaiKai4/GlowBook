@@ -15,7 +15,7 @@ type AssignedCategoryRef = {
   category: { id: string; name: string } | null;
 };
 
-export interface EmployeeDetailEmployeeViewModel {
+interface EmployeeDetailEmployeeViewModel {
   id: string;
   first_name: string;
   last_name: string;
@@ -27,35 +27,35 @@ export interface EmployeeDetailEmployeeViewModel {
   is_active: boolean;
 }
 
-export interface EmployeeDetailNamedRef {
+interface EmployeeDetailNamedRef {
   id: string;
   name: string;
 }
 
-export interface EmployeeDetailSchedule {
+interface EmployeeDetailSchedule {
   id: string;
   day_of_week: number;
   start_time: string;
   end_time: string;
 }
 
-export interface EmployeeDetailCategoryOption {
+interface EmployeeDetailCategoryOption {
   id: string;
   name: string;
   services: EmployeeDetailNamedRef[];
 }
 
-export interface EmployeeDetailRoleOption {
+interface EmployeeDetailRoleOption {
   id: string;
   name: string;
 }
 
-export interface EmployeeDetailPendingInvitation {
+interface EmployeeDetailPendingInvitation {
   expiresAt: string;
   roleId: string | null;
 }
 
-export interface EmployeeDetailScheduleException {
+interface EmployeeDetailScheduleException {
   id: string;
   date: string;
   reason: string;

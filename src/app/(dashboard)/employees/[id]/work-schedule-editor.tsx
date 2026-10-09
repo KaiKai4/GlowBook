@@ -53,7 +53,7 @@ export function WorkScheduleEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-700">Horario laboral</h2>
+        <h2 className="text-sm font-semibold text-fg-secondary">Horario laboral</h2>
         <Button variant="ghost" size="sm" onClick={() => setOpen((v) => !v)}>
           <Plus className="h-4 w-4" />
           Agregar bloque
@@ -61,7 +61,7 @@ export function WorkScheduleEditor({
       </div>
 
       {open && (
-        <form ref={formRef} action={handleAdd} className="flex flex-wrap items-end gap-2 rounded-lg border border-neutral-100 p-3">
+        <form ref={formRef} action={handleAdd} className="flex flex-wrap items-end gap-2 rounded-lg border border-border-subtle p-3">
           <input type="hidden" name="employee_id" value={employeeId} />
           <div className="w-36">
             <Select name="day_of_week" label="Día" defaultValue="0">
@@ -97,25 +97,25 @@ export function WorkScheduleEditor({
       )}
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</p>
       )}
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-neutral-400">
+        <p className="text-sm text-fg-subtle">
           Sin horario configurado. (Si no hay horario, se usa el del salón.)
         </p>
       ) : (
-        <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-100">
+        <ul className="divide-y divide-border-subtle rounded-lg border border-border-subtle">
           {sorted.map((s) => (
             <li key={s.id} className="flex items-center justify-between px-3 py-2">
-              <span className="text-sm text-neutral-700">
+              <span className="text-sm text-fg-secondary">
                 <span className="font-medium">{DAYS[s.day_of_week]}</span>{" "}
                 {s.start_time.slice(0, 5)} – {s.end_time.slice(0, 5)}
               </span>
               <button
                 onClick={() => startDelete(() => { void deleteWorkScheduleAction(s.id, employeeId); })}
                 disabled={isDeleting}
-                className="text-neutral-400 hover:text-red-600 disabled:opacity-50"
+                className="text-fg-subtle hover:text-danger disabled:opacity-50"
                 aria-label="Eliminar"
               >
                 <Trash2 className="h-4 w-4" />

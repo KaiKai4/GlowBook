@@ -31,7 +31,7 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-export const NAV_GROUPS: NavGroup[] = [
+const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       { label: "Inicio", href: "/", icon: LayoutDashboard },
@@ -66,7 +66,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
+const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
 
 function canSee(
   item: NavItem,

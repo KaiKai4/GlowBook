@@ -10,12 +10,12 @@ import {
 
 const integrationEnv = getSupabaseIntegrationEnv();
 
-describe.skipIf(!integrationEnv)(
+describe(
   "platform_salon_overviews RPC grants",
   () => {
     it("denies authenticated salon users and allows service role callers", async () => {
-      const admin = createIntegrationAdminClient(integrationEnv!);
-      const user = createIntegrationUserClient(integrationEnv!);
+      const admin = createIntegrationAdminClient(integrationEnv);
+      const user = createIntegrationUserClient(integrationEnv);
       let fixture: SalonOwnerFixture | null = null;
 
       try {

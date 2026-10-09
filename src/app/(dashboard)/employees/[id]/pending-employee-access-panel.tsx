@@ -52,15 +52,15 @@ export function PendingEmployeeAccessPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-stone-500">
+      <div className="flex items-center gap-2 text-sm text-fg-subtle">
         <span>Correo:</span>
-        <span className="font-medium text-stone-700">{employeeEmail || "-"}</span>
+        <span className="font-medium text-fg-secondary">{employeeEmail || "-"}</span>
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-stone-600">Rol al unirse</label>
+        <label className="mb-1.5 block text-xs font-medium text-fg-muted">Rol al unirse</label>
         {roles.length === 0 ? (
-          <p className="text-xs text-stone-400">No hay roles. Crea uno en <strong>Roles y Permisos</strong> primero.</p>
+          <p className="text-xs text-fg-subtle">No hay roles. Crea uno en <strong>Roles y Permisos</strong> primero.</p>
         ) : (
           <Select
             value={selectedRole}
@@ -79,7 +79,7 @@ export function PendingEmployeeAccessPanel({
       {freshLink ? (
         <EmployeeInviteLinkCard url={freshLink.url} title="Enlace generado" expiresAt={freshLink.expiresAt} />
       ) : invitation ? (
-        <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-stone-500">
+        <div className="rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-xs text-fg-subtle">
           Hay un enlace activo que expira el{" "}
           {new Date(invitation.expiresAt).toLocaleDateString("es-PA", {
             day: "numeric",
@@ -110,7 +110,7 @@ export function PendingEmployeeAccessPanel({
         )}
 
         {!employeeEmail && (
-          <p className="flex items-center gap-1.5 text-xs text-amber-600">
+          <p className="flex items-center gap-1.5 text-xs text-warning-fg">
             <UserX className="h-3.5 w-3.5" />
             Sin email registrado. Edita el colaborador primero.
           </p>
@@ -118,7 +118,7 @@ export function PendingEmployeeAccessPanel({
       </div>
 
       {inviteError && (
-        <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
           {inviteError}
         </p>
       )}

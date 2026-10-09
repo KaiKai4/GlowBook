@@ -11,9 +11,9 @@ describe("date picker calendar", () => {
     const days = getCalendarDays(new Date(2026, 4, 15));
 
     expect(days).toHaveLength(42);
-    expect(days[0].getDay()).toBe(1);
+    expect(days[0]?.getDay()).toBe(1);
     expect(days.at(-1)?.getDay()).toBe(0);
-    expect(toDateValue(days[0])).toBe("2026-04-27");
+    expect(days[0] && toDateValue(days[0])).toBe("2026-04-27");
   });
 
   it("creates the twelve-year block containing the focused year", () => {
@@ -31,4 +31,3 @@ describe("date picker calendar", () => {
     expect(shiftCalendarView(date, "years", 1).getFullYear()).toBe(2038);
   });
 });
-

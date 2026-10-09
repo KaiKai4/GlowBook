@@ -83,7 +83,7 @@ export interface PlanAlert {
   created_at: string;
 }
 
-export function mapOverride(row: OverrideRow): SalonPlanOverride {
+function mapOverride(row: OverrideRow): SalonPlanOverride {
   return {
     id: row.id,
     salonId: row.salon_id,

@@ -5,8 +5,9 @@ import {
 import { err, ok, type Result } from "@/lib/result";
 import { isPlatformAdmin } from "@/lib/auth/session";
 import { captureError } from "@/lib/observability";
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 import { recordPlatformAction } from "./platform-audit";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 // El plan es obligatorio: el salon debe nacer con su plan asignado para que
 // el owner nunca vea funcionalidades fuera de lo contratado.
@@ -24,7 +25,7 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
   if (!isAdmin) return err("No autorizado.");
 
   const parsed = InviteSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   const emailDomain = parsed.data.email.split("@").at(-1) ?? "unknown";
 

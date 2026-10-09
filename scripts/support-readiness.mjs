@@ -32,19 +32,23 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} path */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[support-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[support-readiness] OK ${message}`);
 }
 
+/** @param {string} name */
 function hasEnv(name) {
   return Boolean(process.env[name]?.trim());
 }

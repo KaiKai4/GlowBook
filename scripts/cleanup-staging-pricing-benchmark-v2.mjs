@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTargetOrExit, readConfirmFlag } from "./lib/target-guard.mjs";
 import {
   assertBenchmarkBatchId,
   assertStagingEnvironment,
@@ -22,6 +23,14 @@ if (confirm !== `delete-${batchId}`) {
   fail(SCOPE, `Set PRICING_BENCHMARK_CLEANUP_CONFIRM=delete-${batchId} to delete this staging benchmark batch.`);
 }
 
+if (!supabaseUrl) fail(SCOPE, "Set NEXT_PUBLIC_SUPABASE_URL.");
+
+assertSafeTargetOrExit("cleanup-staging-pricing-benchmark-v2", {
+  url: supabaseUrl,
+  env: process.env.GLOWBOOK_ENV ?? process.env.APP_ENV ?? process.env.VERCEL_ENV,
+  confirmFlag: readConfirmFlag(process.argv),
+  productionUrl: process.env.PRODUCTION_SUPABASE_URL,
+});
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });

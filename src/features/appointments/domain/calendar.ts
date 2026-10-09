@@ -22,7 +22,7 @@ function toISODate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function addCalendarDays(date: string, days: number): string {
+function addCalendarDays(date: string, days: number): string {
   const value = dateFromISO(date);
   value.setUTCDate(value.getUTCDate() + days);
   return toISODate(value);
@@ -38,12 +38,12 @@ export function getWeekDates(date: string): string[] {
   return Array.from({ length: 7 }, (_, index) => addCalendarDays(toISODate(monday), index));
 }
 
-export function businessDayFromISO(date: string): number {
+function businessDayFromISO(date: string): number {
   const jsDay = dateFromISO(date).getUTCDay();
   return jsDay === 0 ? 6 : jsDay - 1;
 }
 
-export function getOpenBusinessDays(businessHours: BusinessDayConfig[]): Set<number> {
+function getOpenBusinessDays(businessHours: BusinessDayConfig[]): Set<number> {
   if (businessHours.length === 0) return new Set([0, 1, 2, 3, 4, 5]);
 
   return new Set(
@@ -62,26 +62,28 @@ export function getVisibleWeekDates(date: string, businessHours: BusinessDayConf
 export function getBusinessHourRange(
   businessHours: BusinessDayConfig[]
 ): { businessStart: number; businessEnd: number } {
-  const openDays = businessHours.filter(
-    (hours) => hours.is_open && hours.open_time && hours.close_time
+  const openDays = businessHours.flatMap((hours) =>
+    hours.is_open && hours.open_time && hours.close_time
+      ? [{ openTime: hours.open_time, closeTime: hours.close_time }]
+      : []
   );
 
   if (openDays.length === 0) return { businessStart: 8, businessEnd: 21 };
 
   return {
     businessStart: Math.min(
-      ...openDays.map((hours) => parseInt(hours.open_time!.slice(0, 2), 10))
+      ...openDays.map((hours) => parseInt(hours.openTime.slice(0, 2), 10))
     ),
     businessEnd: Math.max(
       ...openDays.map((hours) => {
-        const [hour, minute] = hours.close_time!.split(":").map(Number);
+        const [hour = NaN, minute = NaN] = hours.closeTime.split(":").map(Number);
         return minute > 0 ? hour + 1 : hour;
       })
     ),
   };
 }
 
-export function localCalendarDate(iso: string, timezone: string): string {
+function localCalendarDate(iso: string, timezone: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date(iso));
 }
 
@@ -99,6 +101,7 @@ export function formatCalendarDateLabel(
     const displayDates = visibleWeekDates.length > 0 ? visibleWeekDates : weekDates;
     const start = displayDates[0];
     const end = displayDates[displayDates.length - 1];
+    if (!start || !end) throw new Error("Invariante de calendario: sin fechas visibles.");
 
     return `${formatDate(start, { day: "numeric" })} - ${formatDate(end, {
       day: "numeric",

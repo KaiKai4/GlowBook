@@ -5,6 +5,7 @@ import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appo
 import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
+import { parseUuid } from "@/lib/validation/route-id";
 import { AppointmentEditForm } from "./appointment-edit-form";
 
 export default async function EditAppointmentPage({
@@ -14,11 +15,12 @@ export default async function EditAppointmentPage({
 }) {
   const profile = await requireProfile();
   const { id } = await params;
+  if (!parseUuid(id)) notFound();
 
   if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para editar citas.</p>
+        <p className="text-stone-500">No tienes permiso para editar citas.</p>
       </div>
     );
   }
@@ -50,7 +52,7 @@ export default async function EditAppointmentPage({
 
       {isClosed ? (
         <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
-          Esta cita ya estÃ¡ cerrada y no se puede editar.
+          Esta cita ya está cerrada y no se puede editar.
         </div>
       ) : (
         <AppointmentEditForm

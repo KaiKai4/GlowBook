@@ -1,10 +1,16 @@
-import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTargetOrExit, readConfirmFlag } from "./lib/target-guard.mjs";
+import { assertNotProductionUrl, assertSeedEnvironment, chunk, emailFor, loadEnvFileIfPresent, readAppEnv } from "./seed-common.mjs";
+
+/**
+ * @typedef {{ id: string, [column: string]: unknown }} DbRow
+ * @typedef {DbRow & { category_id: string, name: string, duration_minutes: number, price: number }} ServiceRow
+ * @typedef {DbRow & { cost_price: number, sale_price: number }} ProductRow
+ * @typedef {{ tables: Record<string, { rows: number, jsonBytes: number }>, authUsers: number, owners: { salon: string, email: string }[], batchId: string, password: string }} StudySummary
+ */
 
 const PASSWORD = "GlowBookPricing123!";
-const BATCH_SIZE = 100;
 const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Yappy", "Transferencia", "Zinli"];
 
 const SALON_BLUEPRINTS = [
@@ -16,6 +22,7 @@ const SALON_BLUEPRINTS = [
   { name: "GlowBook Pricing Studio 6", theme: "indigo", primaryColor: "#4F46E5" },
 ];
 
+/** @type {{ name: string, pricing_mode: string, services: [string, number, number][] }[]} */
 const CATEGORY_BLUEPRINTS = [
   {
     name: "Cabello",
@@ -100,6 +107,7 @@ const LAST_NAMES = [
   "Rojas",
 ];
 
+/** @type {[string, string, number, number][]} */
 const PRODUCTS = [
   ["Shampoo hidratante", "Cabello", 8, 18],
   ["Acondicionador reparador", "Cabello", 7, 16],
@@ -129,71 +137,50 @@ const EXPENSES = [
   ["supplies", "Insumos descartables", "Proveedor mayorista"],
 ];
 
-function loadEnvFileIfPresent() {
-  const envPath = join(process.cwd(), ".env.local");
-  if (!existsSync(envPath)) return;
-
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
-    const [key, ...valueParts] = trimmed.split("=");
-    if (!process.env[key]) process.env[key] = valueParts.join("=");
-  }
-}
-
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[seed-pricing-study] ${message}`);
   process.exit(1);
 }
 
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+/** @param {string} batchId */
 function assertSafeBatchId(batchId) {
   if (!/^pricing-[a-zA-Z0-9-]+$/.test(batchId)) {
     fail("PRICING_STUDY_BATCH_ID must start with 'pricing-' and contain only letters, numbers and hyphens.");
   }
 }
 
-function chunk(rows, size = BATCH_SIZE) {
-  const chunks = [];
-  for (let index = 0; index < rows.length; index += size) {
-    chunks.push(rows.slice(index, index + size));
-  }
-  return chunks;
-}
-
+/** @param {{ tables: Record<string, { rows: number, jsonBytes: number }> }} summary @param {string} table @param {unknown[]} rows @returns {void} */
 function addPayloadBytes(summary, table, rows) {
   if (!summary.tables[table]) summary.tables[table] = { rows: 0, jsonBytes: 0 };
   summary.tables[table].rows += rows.length;
   summary.tables[table].jsonBytes += Buffer.byteLength(JSON.stringify(rows), "utf8");
 }
 
+/** @param {import("@supabase/supabase-js").SupabaseClient} admin @param {string} table @param {unknown[]} rows @param {{ tables: Record<string, { rows: number, jsonBytes: number }> }} summary @param {string} [select] @returns {Promise<DbRow[]>} */
 async function insertRows(admin, table, rows, summary, select = undefined) {
   if (rows.length === 0) return [];
   addPayloadBytes(summary, table, rows);
 
+  /** @type {DbRow[]} */
   const inserted = [];
   for (const group of chunk(rows)) {
-    let query = admin.from(table).insert(group);
-    if (select) query = query.select(select);
+    const insertQuery = admin.from(table).insert(group);
+    const query = select ? insertQuery.select(select) : insertQuery;
     const { data, error } = await query;
     if (error) throw new Error(`${table}: ${error.message}`);
-    if (data) inserted.push(...data);
+    if (data) inserted.push(.../** @type {DbRow[]} */ (/** @type {unknown} */ (data)));
   }
 
   return inserted;
 }
 
-function emailFor(batchId, entity, salonIndex, itemIndex = 0) {
-  return `glowbook.${batchId}.${entity}.${salonIndex}.${itemIndex}@example.com`;
-}
-
+/** @param {Date} date */
 function dateOnly(date) {
   return date.toISOString().slice(0, 10);
 }
 
+/** @param {number} daysFromToday @param {number} hour */
 function atUtc(daysFromToday, hour, minute = 0) {
   const date = new Date();
   date.setUTCHours(hour, minute, 0, 0);
@@ -201,14 +188,17 @@ function atUtc(daysFromToday, hour, minute = 0) {
   return date;
 }
 
+/** @param {Date} date @param {number} minutes */
 function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60_000);
 }
 
+/** @param {number} value */
 function roundMoney(value) {
   return Number(value.toFixed(2));
 }
 
+/** @param {number} index */
 function appointmentStatus(index) {
   const mod = index % 20;
   if (mod < 12) return "completed";
@@ -218,11 +208,13 @@ function appointmentStatus(index) {
   return "no_show";
 }
 
+/** @param {number} index */
 function appointmentOffset(index) {
   if (index < 160) return -120 + Math.floor(index * 120 / 160);
   return 1 + (index - 160);
 }
 
+/** @param {number} index @param {number} salonIndex */
 function customerName(index, salonIndex) {
   const firstName = FIRST_NAMES[(index + salonIndex) % FIRST_NAMES.length];
   const lastName = LAST_NAMES[(index * 3 + salonIndex) % LAST_NAMES.length];
@@ -231,12 +223,7 @@ function customerName(index, salonIndex) {
 
 loadEnvFileIfPresent();
 
-const appEnv = (
-  process.env.GLOWBOOK_ENV ??
-  process.env.APP_ENV ??
-  process.env.VERCEL_ENV ??
-  ""
-).toLowerCase();
+const appEnv = readAppEnv();
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const productionSupabaseUrl = process.env.PRODUCTION_SUPABASE_URL;
@@ -245,23 +232,24 @@ const batchId = process.env.PRICING_STUDY_BATCH_ID ?? `pricing-${Date.now()}`;
 
 assertSafeBatchId(batchId);
 
-if (appEnv !== "staging" && process.env.PRICING_STUDY_ALLOW_LOCAL !== "true") {
-  fail("Set GLOWBOOK_ENV=staging, or PRICING_STUDY_ALLOW_LOCAL=true for local-only experiments.");
-}
-
-if (appEnv === "production") fail("Refusing to seed a production environment.");
+assertSeedEnvironment({ appEnv, allowLocal: process.env.PRICING_STUDY_ALLOW_LOCAL === "true", allowLocalFlag: "PRICING_STUDY_ALLOW_LOCAL", fail });
 if (!supabaseUrl || !serviceRoleKey) fail("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
-if (productionSupabaseUrl && normalizeUrl(supabaseUrl) === normalizeUrl(productionSupabaseUrl)) {
-  fail("Refusing to seed PRODUCTION_SUPABASE_URL.");
-}
+assertNotProductionUrl({ supabaseUrl, productionSupabaseUrl, fail });
 if (confirm !== "seed-pricing-study") {
   fail("Set PRICING_STUDY_CONFIRM=seed-pricing-study to create persistent staging pricing data.");
 }
 
+assertSafeTargetOrExit("seed-staging-pricing-study", {
+  url: supabaseUrl,
+  env: process.env.GLOWBOOK_ENV ?? process.env.APP_ENV ?? process.env.VERCEL_ENV,
+  confirmFlag: readConfirmFlag(process.argv),
+  productionUrl: process.env.PRODUCTION_SUPABASE_URL,
+});
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+/** @type {StudySummary} */
 const summary = {
   batchId,
   password: PASSWORD,
@@ -354,7 +342,7 @@ for (let salonIndex = 1; salonIndex <= SALON_BLUEPRINTS.length; salonIndex += 1)
     "id, name"
   );
 
-  const services = await insertRows(
+  const services = /** @type {ServiceRow[]} */ (await insertRows(
     admin,
     "services",
     CATEGORY_BLUEPRINTS.flatMap((category, categoryIndex) =>
@@ -370,7 +358,7 @@ for (let salonIndex = 1; salonIndex <= SALON_BLUEPRINTS.length; salonIndex += 1)
     ),
     summary,
     "id, category_id, duration_minutes, price, name"
-  );
+  ));
 
   const employees = await insertRows(
     admin,
@@ -522,7 +510,7 @@ for (let salonIndex = 1; salonIndex <= SALON_BLUEPRINTS.length; salonIndex += 1)
   await insertRows(admin, "appointments", appointments, summary);
   await insertRows(admin, "appointment_items", appointmentItems, summary);
 
-  const products = await insertRows(
+  const products = /** @type {ProductRow[]} */ (await insertRows(
     admin,
     "inventory_products",
     PRODUCTS.map(([name, category, cost, sale], index) => ({
@@ -537,7 +525,7 @@ for (let salonIndex = 1; salonIndex <= SALON_BLUEPRINTS.length; salonIndex += 1)
     })),
     summary,
     "id, cost_price, sale_price, name"
-  );
+  ));
 
   await insertRows(
     admin,

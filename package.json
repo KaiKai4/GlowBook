@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint && node scripts/check-architecture.mjs",
+    "verify:fast": "node scripts/quality/verify.mjs --tier fast",
+    "verify:full": "node scripts/quality/verify.mjs --tier full",
+    "verify:job": "node scripts/quality/verify.mjs --job",
+    "lint": "eslint --max-warnings 0",
     "architecture:check": "node scripts/check-architecture.mjs",
-    "architecture:health": "node scripts/architecture-health.mjs",
     "staging:verify-env": "node scripts/verify-deployed-staging-env.mjs",
     "baseline:readiness": "node scripts/baseline-readiness.mjs",
     "isolation:readiness": "node scripts/isolation-readiness.mjs",
@@ -25,14 +27,19 @@
     "release:scale-readiness": "node scripts/release-scale-readiness.mjs",
     "release:migrations": "node scripts/production-migration-gate.mjs --target=production",
     "staging:migrations": "node scripts/production-migration-gate.mjs --target=staging",
-    "ci:verify": "npm run lint && npm run type-check && npm run test && npm run build",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:staging": "node scripts/require-staging-e2e-env.mjs",
     "test:e2e:ui": "playwright test --ui",
     "type-check": "tsc --noEmit",
-    "db:types": "node scripts/generate-staging-database-types.mjs",
-    "db:migrate": "npx supabase db push",
+    "db:types": "node scripts/quality/generate-db-types.mjs",
+    "db:types:staging": "node scripts/generate-staging-database-types.mjs",
+    "db:start": "node scripts/quality/db-up.mjs",
+    "db:reset": "supabase db reset --local",
+    "db:test": "supabase test db",
+    "db:migrate": "node scripts/db-push-guarded.mjs",
     "bootstrap:admin": "node --env-file=.env.local scripts/bootstrap-platform-admin.mjs",
     "smoke:seed-5-salons": "node scripts/seed-staging-smoke.mjs",
     "smoke:cleanup-5-salons": "node scripts/cleanup-staging-smoke.mjs",
@@ -45,7 +52,11 @@
     "pricing:measure-db": "node scripts/measure-pricing-benchmark.mjs",
     "pricing:measure-routes": "node scripts/measure-pricing-routes.mjs",
     "pricing:report": "node scripts/pricing-benchmark-report.mjs",
-    "scale:measure-routes": "node scripts/measure-scale-routes.mjs"
+    "scale:measure-routes": "node scripts/measure-scale-routes.mjs",
+    "prepare": "husky",
+    "lighthouse:ci": "node scripts/quality/run-lighthouse.mjs",
+    "secretlint": "secretlint",
+    "squawk": "squawk"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -56,7 +67,7 @@
     "date-fns": "^4.4.0",
     "exceljs": "^4.4.0",
     "lucide-react": "^1.16.0",
-    "next": "16.2.6",
+    "next": "16.4.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
@@ -64,17 +75,45 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.60.0",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.7",
+    "@stryker-mutator/api": "^10.0.0",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "~4.1.7",
+    "dependency-cruiser": "^18.5.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.4.0",
+    "fast-check": "^4.10.2",
+    "husky": "^9.1.7",
+    "jsdom": "^26.1.0",
+    "knip": "^6.40.0",
     "pg": "^8.21.0",
+    "playwright": "~1.60.0",
+    "secretlint": "^13.0.7",
+    "squawk-cli": "^2.68.0",
+    "supabase": "2.120.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.7"
+  },
+  "overrides": {
+    "uuid": "11.1.1",
+    "qs": "6.16.0",
+    "tmp": "0.2.7"
+  },
+  "secretlint": {
+    "rules": [
+      {
+        "id": "@secretlint/secretlint-rule-preset-recommend"
+      }
+    ]
   }
 }

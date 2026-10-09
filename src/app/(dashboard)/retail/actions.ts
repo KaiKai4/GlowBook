@@ -9,6 +9,7 @@ import { requireActiveProfile } from "@/lib/auth/session";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
@@ -16,7 +17,7 @@ async function guard(): Promise<Result<{ salonId: string }>> {
     return { ok: false, error: "No tienes permiso para gestionar vitrina." };
   }
 
-  const limited = assertActionRateLimit(profile.id, "retail", { max: 60, windowMs: 60_000 });
+  const limited = await assertActionRateLimit(profile.id, "retail", { max: 60, windowMs: 60_000 });
   if (!limited.ok) return limited;
   return { ok: true, value: { salonId: profile.salon_id } };
 }
@@ -33,7 +34,7 @@ export async function createRetailSaleAction(
   if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = RetailSaleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const paymentEnabled = await assertSalonPaymentMethodEnabled(
     guarded.value.salonId,

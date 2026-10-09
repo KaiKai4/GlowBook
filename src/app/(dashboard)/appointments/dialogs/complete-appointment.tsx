@@ -146,47 +146,47 @@ function CompleteAppointmentForm({
 
   return (
     <div className="space-y-5">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-5 text-center">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+        <div className="rounded-2xl border border-success-border bg-success-subtle px-5 py-5 text-center">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-success-fg">
             Total cobrado
           </p>
           {discountAmount > 0 ? (
             <>
-              <p className="text-sm font-semibold text-emerald-500 line-through">
+              <p className="text-sm font-semibold text-success-fg line-through">
                 {formatCurrency(subtotal)}
               </p>
-              <p className="text-3xl font-bold tracking-tight text-emerald-800">
+              <p className="text-2xl font-semibold tracking-tight text-success-strong">
                 {formatCurrency(finalTotal)}
               </p>
-              <p className="mt-1 text-xs font-medium text-emerald-700">
+              <p className="mt-1 text-xs font-medium text-success-fg">
                 Descuento aplicado: {formatCurrency(discountAmount)}
               </p>
             </>
           ) : (
-            <p className="text-3xl font-bold tracking-tight text-emerald-800">
+            <p className="text-2xl font-semibold tracking-tight text-success-strong">
               {formatCurrency(finalTotal)}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
             Servicios cobrados
           </p>
 
           <div className="space-y-2">
             {chargedItems.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-stone-200 bg-white px-4 py-4">
+              <div key={item.id} className="rounded-2xl border border-border bg-surface px-4 py-4">
                 <div className="grid gap-3 sm:grid-cols-[1fr_216px] sm:items-end">
                   <div className="min-w-0 self-start">
-                    <p className="truncate text-sm font-semibold text-stone-800">
+                    <p className="truncate text-sm font-semibold text-fg-secondary">
                       {item.service?.name ?? "Servicio"}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <label className="space-y-1">
-                      <span className="block text-[10px] font-semibold uppercase text-stone-400">
+                      <span className="block text-xs font-semibold uppercase text-fg-subtle">
                         Precio
                       </span>
                       <input
@@ -204,14 +204,14 @@ function CompleteAppointmentForm({
                         className={cn(
                           "h-10 w-full rounded-xl border px-3 text-right text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500",
                           item.isVariable
-                            ? "border-brand-200 bg-white text-stone-900"
-                            : "border-stone-200 bg-stone-50 text-stone-500"
+                            ? "border-brand-200 bg-surface text-fg"
+                            : "border-border bg-surface-muted text-fg-subtle"
                         )}
                       />
                     </label>
 
                     <label className="space-y-1">
-                      <span className="block text-[10px] font-semibold uppercase text-stone-400">
+                      <span className="block text-xs font-semibold uppercase text-fg-subtle">
                         Desc. %
                       </span>
                       <input
@@ -227,14 +227,14 @@ function CompleteAppointmentForm({
                             [item.id]: event.target.value,
                           }))
                         }
-                        className="h-10 w-full rounded-xl border border-brand-200 bg-white px-3 text-right text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="h-10 w-full rounded-xl border border-brand-200 bg-surface px-3 text-right text-sm font-semibold text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     </label>
                   </div>
                 </div>
 
                 {item.discountAmount > 0 && (
-                  <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                  <div className="mt-2 flex items-center justify-between rounded-lg bg-success-subtle px-3 py-2 text-xs text-success-fg">
                     <span className="inline-flex items-center gap-1 font-medium">
                       <Tag className="h-3 w-3" />
                       Promocion aplicada solo a este servicio
@@ -248,18 +248,18 @@ function CompleteAppointmentForm({
             ))}
           </div>
 
-          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm">
-            <div className="flex items-center justify-between text-stone-600">
+          <div className="rounded-2xl border border-border bg-surface-muted px-4 py-3 text-sm">
+            <div className="flex items-center justify-between text-fg-muted">
               <span>Subtotal servicios</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             {discountAmount > 0 && (
-              <div className="mt-1 flex items-center justify-between text-emerald-700">
+              <div className="mt-1 flex items-center justify-between text-success-fg">
                 <span>Descuentos por servicio</span>
                 <span>-{formatCurrency(discountAmount)}</span>
               </div>
             )}
-            <div className="mt-2 flex items-center justify-between border-t border-stone-200 pt-2 font-bold text-stone-900">
+            <div className="mt-2 flex items-center justify-between border-t border-border pt-2 font-semibold text-fg">
               <span>Total cobrado</span>
               <span>{formatCurrency(finalTotal)}</span>
             </div>
@@ -278,7 +278,7 @@ function CompleteAppointmentForm({
           </Select>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-stone-700">
+            <label className="mb-1.5 block text-sm font-semibold text-fg-secondary">
               Nota del cobro (opcional)
             </label>
             <textarea
@@ -287,13 +287,13 @@ function CompleteAppointmentForm({
               rows={2}
               maxLength={500}
               placeholder="Ej. promocion, ajuste manual o servicio adicional..."
-              className="w-full resize-none rounded-xl border border-stone-200 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm text-fg-secondary focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
             {error}
           </div>
         )}
@@ -312,7 +312,7 @@ function CompleteAppointmentForm({
             variant="primary"
             className={cn(
               "flex-1 transition-[background-color,transform] duration-200 disabled:opacity-100",
-              completed && "bg-emerald-600 hover:bg-emerald-600"
+              completed && "bg-success-solid hover:bg-success-solid"
             )}
             loading={pending && !completed}
             disabled={completed}

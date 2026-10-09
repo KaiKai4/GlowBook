@@ -25,6 +25,7 @@ function stagingProjectId() {
   return match[1];
 }
 
+/** @param {string} value */
 function sessionPoolerUrl(value) {
   const url = new URL(value);
   if (url.port === "6543" && url.hostname.includes("pooler.supabase")) {
@@ -33,6 +34,7 @@ function sessionPoolerUrl(value) {
   return url.toString();
 }
 
+/** @param {string[]} args */
 function runSupabase(args) {
   if (process.platform === "win32") {
     return spawnSync(
@@ -49,6 +51,7 @@ function runSupabase(args) {
   });
 }
 
+/** @param {string} databaseUrl @param {import("node:child_process").SpawnSyncReturns<string>} result */
 function sanitizedError(result, databaseUrl) {
   return `${result.stdout ?? ""}\n${result.stderr ?? ""}`
     .replaceAll(databaseUrl, "[REDACTED_DB_URL]")

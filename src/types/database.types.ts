@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       appointment_items: {
@@ -31,6 +26,7 @@ export type Database = {
           start_time: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           appointment_id: string
           blocks_calendar?: boolean
@@ -106,6 +102,7 @@ export type Database = {
           sent_at: string
           template_id: string | null
         }
+        ComputedFields: never
         Insert: {
           appointment_id: string
           channel: string
@@ -176,6 +173,7 @@ export type Database = {
           total_price: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           completion_price_note?: string
           created_at?: string
@@ -249,6 +247,7 @@ export type Database = {
           status: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           code: string
           created_at?: string
@@ -313,6 +312,7 @@ export type Database = {
           unit: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           counter_key: string
           created_at?: string
@@ -363,6 +363,7 @@ export type Database = {
           updated_at: string
           warning_threshold: number
         }
+        ComputedFields: never
         Insert: {
           count_scope?: string
           created_at?: string
@@ -411,6 +412,7 @@ export type Database = {
           plan_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           enabled?: boolean
@@ -459,6 +461,7 @@ export type Database = {
           trial_days: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           code: string
           created_at?: string
@@ -505,6 +508,7 @@ export type Database = {
           search_name: string | null
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           birth_date?: string | null
           created_at?: string
@@ -517,7 +521,7 @@ export type Database = {
           notes?: string
           phone?: string | null
           salon_id: string
-          search_name?: string | null
+          search_name?: never
           updated_at?: string
         }
         Update: {
@@ -532,7 +536,7 @@ export type Database = {
           notes?: string
           phone?: string | null
           salon_id?: string
-          search_name?: string | null
+          search_name?: never
           updated_at?: string
         }
         Relationships: [
@@ -551,6 +555,7 @@ export type Database = {
           employee_id: string
           salon_id: string
         }
+        ComputedFields: never
         Insert: {
           category_id: string
           employee_id: string
@@ -597,6 +602,7 @@ export type Database = {
           salon_id: string
           token_hash: string
         }
+        ComputedFields: never
         Insert: {
           accepted_at?: string | null
           created_at?: string | null
@@ -649,6 +655,7 @@ export type Database = {
           salon_id: string
           service_id: string
         }
+        ComputedFields: never
         Insert: {
           employee_id: string
           salon_id: string
@@ -699,6 +706,7 @@ export type Database = {
           specialty: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           commission_percentage?: number
           created_at?: string
@@ -761,6 +769,7 @@ export type Database = {
           updated_at: string
           vendor_name: string | null
         }
+        ComputedFields: never
         Insert: {
           amount: number
           category: string
@@ -809,6 +818,7 @@ export type Database = {
           salon_id: string
           status: string
         }
+        ComputedFields: never
         Insert: {
           category?: string
           created_at?: string
@@ -858,6 +868,7 @@ export type Database = {
           reference_type: string | null
           salon_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -915,6 +926,7 @@ export type Database = {
           salon_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           category?: string | null
           cost_price?: number
@@ -963,6 +975,7 @@ export type Database = {
           total_cost: number
           unit_cost: number
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -1020,6 +1033,7 @@ export type Database = {
           total_cost: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -1061,6 +1075,7 @@ export type Database = {
           salon_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -1113,6 +1128,7 @@ export type Database = {
           subject: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           body_html?: string
           body_text: string
@@ -1157,6 +1173,7 @@ export type Database = {
           id: string
           key: string
         }
+        ComputedFields: never
         Insert: {
           description?: string
           id?: string
@@ -1174,6 +1191,7 @@ export type Database = {
           created_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           user_id: string
@@ -1191,19 +1209,20 @@ export type Database = {
           created_at: string
           error_message: string | null
           id: string
-          metadata: Json
+          metadata: NonNullable<Json>
           status: string
           target_resource_id: string | null
           target_resource_type: string | null
           target_salon_id: string | null
         }
+        ComputedFields: never
         Insert: {
           action: string
           actor_user_id?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
-          metadata?: Json
+          metadata?: NonNullable<Json>
           status: string
           target_resource_id?: string | null
           target_resource_type?: string | null
@@ -1215,7 +1234,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
-          metadata?: Json
+          metadata?: NonNullable<Json>
           status?: string
           target_resource_id?: string | null
           target_resource_type?: string | null
@@ -1236,6 +1255,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           description?: string
@@ -1273,6 +1293,7 @@ export type Database = {
           salon_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           full_name?: string
@@ -1310,6 +1331,28 @@ export type Database = {
           },
         ]
       }
+      rate_limit_buckets: {
+        Row: {
+          count: number
+          expires_at: string
+          key: string
+          window_started_at: string
+        }
+        ComputedFields: never
+        Insert: {
+          count: number
+          expires_at: string
+          key: string
+          window_started_at: string
+        }
+        Update: {
+          count?: number
+          expires_at?: string
+          key?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       retail_sale_items: {
         Row: {
           created_at: string
@@ -1322,6 +1365,7 @@ export type Database = {
           total_price: number
           unit_price: number
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -1380,6 +1424,7 @@ export type Database = {
           total_amount: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           customer_id?: string | null
@@ -1425,6 +1470,7 @@ export type Database = {
           role_id: string
           salon_id: string
         }
+        ComputedFields: never
         Insert: {
           permission_id: string
           role_id: string
@@ -1468,6 +1514,7 @@ export type Database = {
           salon_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -1506,6 +1553,7 @@ export type Database = {
           salon_id: string
           table_name: string
         }
+        ComputedFields: never
         Insert: {
           action: string
           actor_email?: string
@@ -1549,6 +1597,7 @@ export type Database = {
           salon_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           close_time?: string | null
           created_at?: string
@@ -1592,6 +1641,7 @@ export type Database = {
           status: string
           token_hash: string
         }
+        ComputedFields: never
         Insert: {
           accepted_at?: string | null
           created_at?: string
@@ -1645,6 +1695,7 @@ export type Database = {
           severity: string
           status: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -1713,6 +1764,7 @@ export type Database = {
           trial_ends_at: string | null
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           current_period_end?: string | null
@@ -1780,6 +1832,7 @@ export type Database = {
           updated_at: string
           warning_threshold: number | null
         }
+        ComputedFields: never
         Insert: {
           addon_id?: string | null
           created_at?: string
@@ -1866,6 +1919,7 @@ export type Database = {
           plan_id: string | null
           salon_id: string
         }
+        ComputedFields: never
         Insert: {
           amount: number
           created_at?: string
@@ -1930,6 +1984,7 @@ export type Database = {
           timezone: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           address?: string
           allow_off_hours_bookings?: boolean
@@ -1985,6 +2040,7 @@ export type Database = {
           reason: string
           salon_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           employee_id: string
@@ -2030,6 +2086,7 @@ export type Database = {
           salon_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           description?: string
@@ -2075,6 +2132,7 @@ export type Database = {
           salon_id: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           category_id: string
           created_at?: string
@@ -2128,6 +2186,7 @@ export type Database = {
           start_time: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           day_of_week: number
@@ -2199,6 +2258,13 @@ export type Database = {
         }
         Returns: number
       }
+      consume_rate_limit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: {
+          allowed: boolean
+          retry_after_seconds: number
+        }[]
+      }
       count_salon_usage: {
         Args: { p_counters: Json; p_salon_id: string }
         Returns: Json
@@ -2226,10 +2292,10 @@ export type Database = {
       }
       has_permission: { Args: { perm: string }; Returns: boolean }
       invite_salon: { Args: { p_email: string }; Returns: string }
-      is_owner: { Args: never; Returns: boolean }
-      is_platform_admin: { Args: never; Returns: boolean }
+      is_owner: { Args: Record<PropertyKey, never>; Returns: boolean }
+      is_platform_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       platform_salon_overviews: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           appointment_count: number
           collaborator_count: number
@@ -2294,7 +2360,7 @@ export type Database = {
         }
         Returns: Json
       }
-      salon_id: { Args: never; Returns: string }
+      salon_id: { Args: Record<PropertyKey, never>; Returns: string }
       update_appointment: { Args: { payload: Json }; Returns: undefined }
     }
     Enums: {
@@ -2319,7 +2385,7 @@ export type Tables<
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never = never
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2341,13 +2407,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never = never
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2366,13 +2431,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never = never
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2391,13 +2455,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never = never
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2414,7 +2477,7 @@ export type CompositeTypes<
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never = never
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

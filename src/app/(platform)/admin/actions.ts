@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { parseUuid } from "@/lib/validation/route-id";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
 import {
   inviteSalon,
@@ -17,6 +19,8 @@ export async function inviteSalonAction(
   formData: FormData
 ): Promise<Result<string>> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:inviteSalonAction");
+  if (!limited.ok) return limited;
   const result = await inviteSalon({
     email: String(formData.get("email") ?? ""),
     planId: String(formData.get("planId") ?? ""),
@@ -33,6 +37,9 @@ export async function regenerateSalonInvitationAction(
   invitationId: string
 ): Promise<Result<string>> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:regenerateSalonInvitationAction");
+  if (!limited.ok) return limited;
+  if (!parseUuid(invitationId)) return { ok: false, error: "Identificador inválido." };
   const result = await regenerateSalonInvitation({ invitationId, actorUserId });
   if (result.ok) revalidatePath("/admin/invitations");
   return result;
@@ -43,6 +50,9 @@ export async function deleteSalonAction(
   confirmation: string
 ): Promise<Result<void>> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:deleteSalonAction");
+  if (!limited.ok) return limited;
+  if (!parseUuid(salonId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await deleteSalon({ salonId, confirmation, actorUserId });
   if (!result.ok) return result;
@@ -57,6 +67,9 @@ export async function updateSalonStatusAction(
   isActive: boolean
 ): Promise<Result<void>> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:updateSalonStatusAction");
+  if (!limited.ok) return limited;
+  if (!parseUuid(salonId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await updateSalonStatus({ salonId, isActive, actorUserId });
   if (!result.ok) return result;

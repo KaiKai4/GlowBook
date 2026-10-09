@@ -23,15 +23,18 @@ function mergeWindows(windows: TimeWindow[]): TimeWindow[] {
   const sorted = [...windows].sort((a, b) =>
     timeToMinutes(a.start) - timeToMinutes(b.start)
   );
-  const merged: TimeWindow[] = [{ ...sorted[0] }];
-  for (let i = 1; i < sorted.length; i++) {
-    const last = merged[merged.length - 1];
-    if (timeToMinutes(sorted[i].start) <= timeToMinutes(last.end)) {
-      last.end = timeToMinutes(sorted[i].end) > timeToMinutes(last.end)
-        ? sorted[i].end
+  const [first, ...rest] = sorted;
+  if (!first) return [];
+  let last: TimeWindow = { ...first };
+  const merged: TimeWindow[] = [last];
+  for (const window of rest) {
+    if (timeToMinutes(window.start) <= timeToMinutes(last.end)) {
+      last.end = timeToMinutes(window.end) > timeToMinutes(last.end)
+        ? window.end
         : last.end;
     } else {
-      merged.push({ ...sorted[i] });
+      last = { ...window };
+      merged.push(last);
     }
   }
   return merged;
@@ -51,37 +54,6 @@ function getEmployeeWindows(dayOfWeek: number, schedules: WorkSchedule[]): TimeW
     .filter((s) => s.is_active && s.day_of_week === dayOfWeek)
     .map((s) => ({ start: s.start_time, end: s.end_time }));
   return mergeWindows(windows);
-}
-
-export function getEffectiveWindows(
-  date: Date,
-  timezone: string,
-  businessHours: BusinessHour[],
-  workSchedules: WorkSchedule[],
-  allowOffHours: boolean
-): TimeWindow[] {
-  const { dayOfWeek } = getZonedTimeParts(date, timezone);
-  const salonWindows = getSalonWindows(dayOfWeek, businessHours);
-  const employeeWindows = getEmployeeWindows(dayOfWeek, workSchedules);
-
-  if (employeeWindows.length === 0) return salonWindows;
-  if (allowOffHours) return employeeWindows;
-
-  const intersection: TimeWindow[] = [];
-  for (const salonWindow of salonWindows) {
-    for (const employeeWindow of employeeWindows) {
-      const start = timeToMinutes(salonWindow.start) > timeToMinutes(employeeWindow.start)
-        ? salonWindow.start
-        : employeeWindow.start;
-      const end = timeToMinutes(salonWindow.end) < timeToMinutes(employeeWindow.end)
-        ? salonWindow.end
-        : employeeWindow.end;
-      if (timeToMinutes(start) < timeToMinutes(end)) {
-        intersection.push({ start, end });
-      }
-    }
-  }
-  return intersection;
 }
 
 function isWithinWindows(

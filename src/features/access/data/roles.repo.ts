@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/public-error";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface RoleWithPermissions {
@@ -57,7 +58,7 @@ export async function setRolePermissions(
     .single();
 
   if (roleError) throw roleError;
-  if (!role) throw new Error("Rol no encontrado.");
+  if (!role) throw new PublicError("Rol no encontrado.");
 
   const { data: permissions, error: permissionsError } = await supabase
     .from("permissions")
@@ -66,7 +67,7 @@ export async function setRolePermissions(
 
   if (permissionsError) throw permissionsError;
   if ((permissions ?? []).length !== permissionKeys.length) {
-    throw new Error("Uno o mas permisos no existen.");
+    throw new PublicError("Uno o mas permisos no existen.");
   }
 
   const { error: deleteError } = await supabase
@@ -90,32 +91,6 @@ export async function setRolePermissions(
   }
 }
 
-export async function assignRoleToProfile(
-  profileId: string,
-  roleId: string,
-  salonId: string
-): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-
-  const { data: role, error: roleError } = await supabase
-    .from("roles")
-    .select("id")
-    .eq("id", roleId)
-    .eq("salon_id", salonId)
-    .single();
-
-  if (roleError) throw roleError;
-  if (!role) throw new Error("El rol no pertenece a este salon.");
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role_id: roleId })
-    .eq("id", profileId)
-    .eq("salon_id", salonId);
-
-  if (error) throw error;
-}
-
 export async function deleteRole(roleId: string, salonId: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
 
@@ -127,8 +102,8 @@ export async function deleteRole(roleId: string, salonId: string): Promise<void>
     .single();
 
   if (roleError) throw roleError;
-  if (!role) throw new Error("Rol no encontrado.");
-  if (role.is_system) throw new Error("Los roles de sistema no se pueden eliminar.");
+  if (!role) throw new PublicError("Rol no encontrado.");
+  if (role.is_system) throw new PublicError("Los roles de sistema no se pueden eliminar.");
 
   const { error } = await supabase
     .from("roles")

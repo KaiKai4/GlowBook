@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildContentSecurityPolicy, generateCspNonce } from "./csp";
+import {
+  buildContentSecurityPolicy,
+  CSP_REPORT_PATH,
+  generateCspNonce,
+  REPORTING_ENDPOINTS_HEADER,
+} from "./csp";
 
 describe("content security policy", () => {
   it("signs scripts with the nonce and never allows unsafe-inline scripts", () => {
@@ -27,5 +32,17 @@ describe("content security policy", () => {
 
     expect(first).not.toBe(second);
     expect(first.length).toBeGreaterThan(20);
+  });
+
+  it("sends violation reports to the report endpoint in both report-uri and report-to", () => {
+    const csp = buildContentSecurityPolicy("n", false);
+
+    expect(csp).toContain(`report-uri ${CSP_REPORT_PATH}`);
+    expect(csp).toContain("report-to csp-endpoint");
+    expect(CSP_REPORT_PATH).toBe("/api/csp-report");
+  });
+
+  it("declares the csp-endpoint group in the Reporting-Endpoints header value", () => {
+    expect(REPORTING_ENDPOINTS_HEADER).toBe('csp-endpoint="/api/csp-report"');
   });
 });

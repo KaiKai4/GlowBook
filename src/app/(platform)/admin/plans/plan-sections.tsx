@@ -90,8 +90,8 @@ export function PlanModules({ plan, modules }: { plan: CommercialPlan; modules: 
         <input key={module.key} type="hidden" name="allModuleKeys" value={module.key} />
       ))}
 
-      <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-white/95 px-5 py-3 backdrop-blur">
-        <p className="text-sm text-stone-500">Marca los apartados que el salon vera en la sidebar con este plan.</p>
+      <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-surface/95 px-5 py-3 backdrop-blur">
+        <p className="text-sm text-fg-subtle">Marca los apartados que el salon vera en la sidebar con este plan.</p>
         <SaveAllButton label="Guardar modulos" />
       </div>
 
@@ -112,20 +112,20 @@ export function PlanModules({ plan, modules }: { plan: CommercialPlan; modules: 
 
 function PlanModuleCard({ module, defaultEnabled }: { module: PlatformModule; defaultEnabled: boolean }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-brand-100 bg-white p-4 transition hover:border-brand-200 hover:bg-brand-50/20 has-[:checked]:border-brand-300 has-[:checked]:bg-brand-50/40">
+    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-brand-100 bg-surface p-4 transition hover:border-brand-200 hover:bg-brand-50/20 has-[:checked]:border-brand-300 has-[:checked]:bg-brand-50/40">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-brand-700">
         <SlidersHorizontal className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-stone-950">{module.name}</p>
-        <p className="mt-1 line-clamp-1 text-sm text-stone-500">{module.description}</p>
+        <p className="font-semibold text-fg-strong">{module.name}</p>
+        <p className="mt-1 line-clamp-1 text-sm text-fg-subtle">{module.description}</p>
       </div>
       <input
         name="enabledModuleKeys"
         value={module.key}
         type="checkbox"
         defaultChecked={defaultEnabled}
-        className="h-5 w-5 shrink-0 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+        className="h-5 w-5 shrink-0 rounded border-border-strong text-brand-600 focus:ring-brand-500"
       />
     </label>
   );
@@ -151,7 +151,7 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
 
   if (visibleMetrics.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-brand-200 bg-white px-4 py-10 text-center text-sm text-stone-500">
+      <div className="rounded-xl border border-dashed border-brand-200 bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
         Este plan no tiene modulos activos. Activa modulos en la pestaña Modulos y aqui apareceran sus límites.
       </div>
     );
@@ -161,18 +161,18 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
     <form action={action} className="space-y-4">
       <input type="hidden" name="planId" value={plan.id} />
 
-      <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex justify-end border-b border-brand-100 bg-white/95 px-5 py-3 backdrop-blur">
+      <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex justify-end border-b border-brand-100 bg-surface/95 px-5 py-3 backdrop-blur">
         <SaveAllButton label="Guardar límites" />
       </div>
 
       {groupMetrics(visibleMetrics).map(([moduleKey, group]) => (
-        <section key={moduleKey} className="overflow-hidden rounded-xl border border-brand-100 bg-white">
+        <section key={moduleKey} className="overflow-hidden rounded-xl border border-brand-100 bg-surface">
           <div className="flex items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/30 px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Límites</p>
-              <h3 className="mt-1 font-semibold text-stone-950">{moduleByKey.get(moduleKey as PlatformModule["key"])?.name ?? moduleKey}</h3>
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Límites</p>
+              <h3 className="mt-1 font-semibold text-fg-strong">{moduleByKey.get(moduleKey as PlatformModule["key"])?.name ?? moduleKey}</h3>
             </div>
-            <span className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-brand-700">{group.length} controles</span>
+            <span className="rounded-lg bg-surface px-3 py-1 text-xs font-semibold text-brand-700">{group.length} controles</span>
           </div>
           <div className="divide-y divide-brand-100">
             {group.map((metric) => (
@@ -183,7 +183,7 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
       ))}
 
       {hiddenModuleNames.length > 0 ? (
-        <p className="text-xs leading-5 text-stone-400">
+        <p className="text-xs leading-5 text-fg-subtle">
           Modulos sin límites configurables porque no estan incluidos en este plan: {hiddenModuleNames.join(", ")}.
           Activalos en la pestaña Modulos para configurar sus límites.
         </p>
@@ -205,10 +205,10 @@ function PlanLimitRow({
       <input type="hidden" name="metricKey" value={metric.key} />
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold text-stone-950">{metric.name}</p>
-          <span className="rounded-lg bg-stone-100 px-2 py-1 font-mono text-xs text-stone-500">{metric.key}</span>
+          <p className="font-semibold text-fg-strong">{metric.name}</p>
+          <span className="rounded-lg bg-surface-sunken px-2 py-1 font-mono text-xs text-fg-muted">{metric.key}</span>
         </div>
-        <p className="mt-2 text-sm text-stone-500">{metric.description}</p>
+        <p className="mt-2 text-sm text-fg-subtle">{metric.description}</p>
       </div>
       <Input name="maxValue" label={`Maximo (${metric.unit || "total"})`} type="number" min="0" defaultValue={limit?.maxValue ?? ""} placeholder="Sin límite" />
       <Select name="countScope" label="Tipo de conteo" defaultValue={limit?.countScope ?? metric.defaultCountScope}>
@@ -240,8 +240,8 @@ export function PlanSummary({ plan, modules, metrics }: { plan: CommercialPlan; 
       <Panel icon={<Layers3 className="h-4 w-4" />} title="Modulos incluidos" description="Apartados que el salon vera en la sidebar.">
         <div className="grid gap-2 sm:grid-cols-2">
           {modules.map((module) => (
-            <div key={module.key} className="flex items-center justify-between rounded-xl border border-brand-100 bg-white px-3 py-2">
-              <span className="text-sm font-semibold text-stone-800">{module.name}</span>
+            <div key={module.key} className="flex items-center justify-between rounded-xl border border-brand-100 bg-surface px-3 py-2">
+              <span className="text-sm font-semibold text-fg-secondary">{module.name}</span>
               <StatusText active={enabledModuleKeys.has(module.key)} activeText="Activo" inactiveText="Off" />
             </div>
           ))}
@@ -250,19 +250,19 @@ export function PlanSummary({ plan, modules, metrics }: { plan: CommercialPlan; 
       <Panel icon={<ToggleLeft className="h-4 w-4" />} title="Límites configurados" description="Topes y comportamiento al llegar al maximo.">
         <div className="space-y-2">
           {visibleLimits.length === 0 ? (
-            <p className="text-sm text-stone-500">Este plan aun no tiene límites en sus modulos activos.</p>
+            <p className="text-sm text-fg-subtle">Este plan aun no tiene límites en sus modulos activos.</p>
           ) : (
             visibleLimits.map((limit) => {
               const metric = metricByKey.get(limit.metricKey);
               return (
-                <div key={limit.metricKey} className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-white px-3 py-2">
+                <div key={limit.metricKey} className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-surface px-3 py-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-stone-950">{metric?.name ?? limit.metricKey}</p>
-                    <p className="mt-1 text-xs text-stone-500">
+                    <p className="truncate text-sm font-semibold text-fg-strong">{metric?.name ?? limit.metricKey}</p>
+                    <p className="mt-1 text-xs text-fg-subtle">
                       {countScopeLabel(limit.countScope)} · {modeLabel(limit.enforcementMode)}
                     </p>
                   </div>
-                  <span className="font-mono text-sm text-stone-600">
+                  <span className="font-mono text-sm text-fg-muted">
                     {limit.maxValue === null ? "Sin límite" : `${limit.maxValue} ${metric?.unit ?? ""}`}
                   </span>
                 </div>

@@ -18,26 +18,26 @@ export default async function AdminReportsPage({
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
-            <MessageSquareWarning className="h-6 w-6 text-rose-500" />
+          <h1 className="text-2xl font-semibold text-fg flex items-center gap-2">
+            <MessageSquareWarning className="h-6 w-6 text-accent" />
             Reportes
           </h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
+          <p className="text-sm text-fg-subtle mt-0.5">
             Fallas, caídas y sugerencias enviadas por los salones.
             {view.newCount > 0 && (
-              <span className="ml-1 font-semibold text-rose-600">
+              <span className="ml-1 font-semibold text-accent">
                 {view.newCount} sin revisar
               </span>
             )}
           </p>
         </div>
-        <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 p-0.5 text-sm">
+        <div className="flex items-center rounded-lg border border-border bg-surface-muted p-0.5 text-sm">
           <Link
             href="/admin/reports"
             className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
               !view.showResolved
-                ? "bg-white text-neutral-900 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
+                ? "bg-surface text-fg shadow-sm"
+                : "text-fg-subtle hover:text-fg-secondary"
             }`}
           >
             Sin revisar
@@ -46,8 +46,8 @@ export default async function AdminReportsPage({
             href="/admin/reports?status=all"
             className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
               view.showResolved
-                ? "bg-white text-neutral-900 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
+                ? "bg-surface text-fg shadow-sm"
+                : "text-fg-subtle hover:text-fg-secondary"
             }`}
           >
             Todas
@@ -56,8 +56,8 @@ export default async function AdminReportsPage({
       </div>
 
       {view.visibleReports.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-neutral-200 bg-white py-16 text-center">
-          <p className="text-sm text-neutral-400">
+        <div className="rounded-xl border border-dashed border-border bg-surface py-16 text-center">
+          <p className="text-sm text-fg-subtle">
             {view.showResolved ? "No hay reportes todavía." : "No hay reportes sin revisar."}
           </p>
         </div>
@@ -66,22 +66,22 @@ export default async function AdminReportsPage({
           {view.visibleReports.map((report) => (
             <div
               key={report.id}
-              className={`rounded-xl border bg-white p-4 shadow-sm ${
-                report.resolved ? "border-neutral-200 opacity-75" : "border-rose-100"
+              className={`rounded-xl border bg-surface p-4 shadow-sm ${
+                report.resolved ? "border-border opacity-75" : "border-accent-border"
               }`}
             >
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={report.categoryVariant}>{report.categoryLabel}</Badge>
-                  <span className="flex items-center gap-1 text-xs text-neutral-500">
+                  <span className="flex items-center gap-1 text-xs text-fg-subtle">
                     <Building2 className="h-3.5 w-3.5" />
                     {report.salonName}
                   </span>
-                  <span className="flex items-center gap-1 text-xs text-neutral-400">
+                  <span className="flex items-center gap-1 text-xs text-fg-subtle">
                     <User className="h-3.5 w-3.5" />
                     {report.reporterName}
                   </span>
-                  <span className="flex items-center gap-1 text-xs text-neutral-400">
+                  <span className="flex items-center gap-1 text-xs text-fg-subtle">
                     <Clock className="h-3.5 w-3.5" />
                     {report.createdAtLabel}
                   </span>
@@ -94,8 +94,8 @@ export default async function AdminReportsPage({
                     type="submit"
                     className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
                       report.resolved
-                        ? "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-                        : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        ? "border-border text-fg-subtle hover:bg-surface-muted"
+                        : "border-success-border bg-success-subtle text-success-fg hover:bg-success-subtle"
                     }`}
                   >
                     {report.resolved ? (
@@ -111,7 +111,7 @@ export default async function AdminReportsPage({
                 </form>
               </div>
 
-              <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-700">{report.message}</p>
+              <p className="mt-3 whitespace-pre-wrap text-sm text-fg-secondary">{report.message}</p>
             </div>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 import { INVENTORY_LOCATIONS } from "./domain/stock";
 
 const money = z.coerce.number().min(0);
@@ -33,14 +33,6 @@ export const UpdateInventoryProductSchema = z.object({
   storage_minimum: quantity.default(0),
 });
 
-export const InventoryMovementSchema = z.object({
-  product_id: z.string().uuid("Producto inválido."),
-  location: InventoryLocationSchema,
-  movement_kind: z.enum(["entry", "internal_use"]),
-  quantity: positiveQuantity,
-  note: z.string().trim().max(500).optional().default(""),
-});
-
 export const InventoryTransferSchema = z.object({
   product_id: z.string().uuid("Producto inválido."),
   from_location: InventoryLocationSchema,
@@ -64,6 +56,5 @@ export const InventoryPurchaseSchema = z.object({
 
 export type CreateInventoryProductInput = z.infer<typeof CreateInventoryProductSchema>;
 export type UpdateInventoryProductInput = z.infer<typeof UpdateInventoryProductSchema>;
-export type InventoryMovementInput = z.infer<typeof InventoryMovementSchema>;
 export type InventoryTransferInput = z.infer<typeof InventoryTransferSchema>;
 export type InventoryPurchaseInput = z.infer<typeof InventoryPurchaseSchema>;

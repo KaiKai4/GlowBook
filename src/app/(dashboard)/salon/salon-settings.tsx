@@ -223,17 +223,17 @@ export function SalonSettings({
     <div className="space-y-6 max-w-3xl">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-fg flex items-center gap-2">
             <Settings className="h-6 w-6 text-brand-500" />
             Configuración del salón
           </h1>
-          <p className="text-sm text-stone-400 mt-0.5">
+          <p className="text-sm text-fg-subtle mt-0.5">
             Edita el nombre y los días y horarios de atención.
           </p>
         </div>
         <Link
           href="/salon/actividad"
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-brand-100 bg-white px-4 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-brand-300 hover:text-brand-700"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-brand-100 bg-surface px-4 text-sm font-semibold text-fg-secondary shadow-sm transition hover:border-brand-300 hover:text-brand-700"
         >
           <History className="h-4 w-4" />
           Log de actividad
@@ -263,13 +263,13 @@ export function SalonSettings({
                 Guardar nombre
               </Button>
               {nameSaved && (
-                <span className="flex items-center gap-1 text-sm text-emerald-600">
+                <span className="flex items-center gap-1 text-sm text-success-fg">
                   <Check className="h-4 w-4" /> Guardado
                 </span>
               )}
             </div>
             {nameError && (
-              <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+              <p className="rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
                 {nameError}
               </p>
             )}
@@ -286,7 +286,7 @@ export function SalonSettings({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-fg-subtle">
             Escribe cada metodo que acepta tu salon. Por ejemplo: Zinli, efectivo, tarjeta o transferencia.
           </p>
 
@@ -306,7 +306,7 @@ export function SalonSettings({
               }}
               placeholder="Escribe un metodo, ej. Zinli"
               maxLength={64}
-              className="h-10 flex-1 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-brand-500"
+              className="h-10 flex-1 rounded-xl border border-border bg-surface px-3 text-sm text-fg-secondary outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-brand-500"
             />
             <Button type="submit" variant="primary">
               <Plus className="h-4 w-4" />
@@ -328,7 +328,7 @@ export function SalonSettings({
                     event.stopPropagation();
                     removePaymentMethod(method);
                   }}
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-brand-500 transition-colors hover:bg-brand-100 hover:text-brand-800"
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100 hover:text-brand-800"
                   aria-label={`Quitar ${paymentMethodLabel(method)}`}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -342,13 +342,13 @@ export function SalonSettings({
               Guardar metodos
             </Button>
             {paymentsSaved && (
-              <span className="flex items-center gap-1 text-sm text-emerald-600">
+              <span className="flex items-center gap-1 text-sm text-success-fg">
                 <Check className="h-4 w-4" /> Metodos actualizados
               </span>
             )}
           </div>
           {paymentsError && (
-            <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            <p className="rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
               {paymentsError}
             </p>
           )}
@@ -363,15 +363,15 @@ export function SalonSettings({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
-          <p className="text-xs text-stone-400 mb-3">
+          <p className="text-xs text-fg-subtle mb-3">
             Estos horarios definen cuándo se pueden agendar citas. Zona horaria: {timezone}
           </p>
 
-          <div className="divide-y divide-stone-100">
+          <div className="divide-y divide-border-subtle">
             {hours.map((day) => (
               <div key={day.day_of_week} className="flex flex-wrap items-center gap-3 py-3">
                 <div className="w-28 shrink-0">
-                  <p className="text-sm font-semibold text-stone-800">{DAY_LABELS[day.day_of_week]}</p>
+                  <p className="text-sm font-semibold text-fg-secondary">{DAY_LABELS[day.day_of_week]}</p>
                 </div>
 
                 <button
@@ -381,7 +381,7 @@ export function SalonSettings({
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors shrink-0",
                     day.is_open
                       ? "border-brand-400 bg-brand-50 text-brand-700"
-                      : "border-stone-200 bg-stone-50 text-stone-400 hover:border-stone-300"
+                      : "border-border bg-surface-muted text-fg-subtle hover:border-border-strong"
                   )}
                 >
                   {day.is_open ? "Abierto" : "Cerrado"}
@@ -395,7 +395,7 @@ export function SalonSettings({
                       ariaLabel={`Hora de apertura del ${DAY_LABELS[day.day_of_week]}`}
                       onChange={(open_time) => updateDay(day.day_of_week, { open_time })}
                     />
-                    <span className="text-stone-400 text-sm">a</span>
+                    <span className="text-fg-subtle text-sm">a</span>
                     <TimePicker
                       value={day.close_time}
                       compact
@@ -404,7 +404,7 @@ export function SalonSettings({
                     />
                   </div>
                 ) : (
-                  <span className="text-sm text-stone-400">Sin atención este día</span>
+                  <span className="text-sm text-fg-subtle">Sin atención este día</span>
                 )}
               </div>
             ))}
@@ -415,13 +415,13 @@ export function SalonSettings({
               Guardar horarios
             </Button>
             {hoursSaved && (
-              <span className="flex items-center gap-1 text-sm text-emerald-600">
+              <span className="flex items-center gap-1 text-sm text-success-fg">
                 <Check className="h-4 w-4" /> Horarios actualizados
               </span>
             )}
           </div>
           {hoursError && (
-            <p className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            <p className="mt-2 rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
               {hoursError}
             </p>
           )}
@@ -437,7 +437,7 @@ export function SalonSettings({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-stone-400 mb-4">
+          <p className="text-xs text-fg-subtle mb-4">
             Cambia el color de botones, líneas y acentos del panel. El fondo se mantiene blanco.
           </p>
 
@@ -453,11 +453,11 @@ export function SalonSettings({
                     "group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all",
                     active
                       ? "border-brand-400 ring-2 ring-brand-400 bg-brand-50"
-                      : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                      : "border-border hover:border-border-strong hover:bg-surface-muted"
                   )}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={cn("text-sm font-semibold", active ? "text-brand-700" : "text-stone-700")}>
+                    <span className={cn("text-sm font-semibold", active ? "text-brand-700" : "text-fg-secondary")}>
                       {t.label}
                     </span>
                     {active && <Check className="h-4 w-4 text-brand-600" />}
@@ -477,7 +477,7 @@ export function SalonSettings({
           </div>
 
           {themeError && (
-            <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            <p className="mt-3 rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
               {themeError}
             </p>
           )}
@@ -493,7 +493,7 @@ export function SalonSettings({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-stone-400 mb-4">
+          <p className="text-xs text-fg-subtle mb-4">
             Elige entre un fondo neutro o un fondo de color degradado que combina con la gama seleccionada.
           </p>
 
@@ -505,17 +505,17 @@ export function SalonSettings({
                 "group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all",
                 selectedBg === "neutral"
                   ? "border-brand-400 ring-2 ring-brand-400 bg-brand-50"
-                  : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                  : "border-border hover:border-border-strong hover:bg-surface-muted"
               )}
             >
               <div className="flex items-center justify-between">
-                <span className={cn("text-sm font-semibold", selectedBg === "neutral" ? "text-brand-700" : "text-stone-700")}>
+                <span className={cn("text-sm font-semibold", selectedBg === "neutral" ? "text-brand-700" : "text-fg-secondary")}>
                   Neutro
                 </span>
                 {selectedBg === "neutral" && <Check className="h-4 w-4 text-brand-600" />}
               </div>
-              <div className="h-14 w-full rounded-lg border border-black/5 bg-neutral-100 flex items-center justify-center gap-2 px-2">
-                <div className="h-6 w-full rounded-md bg-white border border-stone-200 shadow-sm" />
+              <div className="h-14 w-full rounded-lg border border-black/5 bg-surface-sunken flex items-center justify-center gap-2 px-2">
+                <div className="h-6 w-full rounded-md bg-surface border border-border shadow-sm" />
               </div>
             </button>
 
@@ -526,11 +526,11 @@ export function SalonSettings({
                 "group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all",
                 selectedBg === "colored"
                   ? "border-brand-400 ring-2 ring-brand-400 bg-brand-50"
-                  : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                  : "border-border hover:border-border-strong hover:bg-surface-muted"
               )}
             >
               <div className="flex items-center justify-between">
-                <span className={cn("text-sm font-semibold", selectedBg === "colored" ? "text-brand-700" : "text-stone-700")}>
+                <span className={cn("text-sm font-semibold", selectedBg === "colored" ? "text-brand-700" : "text-fg-secondary")}>
                   De color
                 </span>
                 {selectedBg === "colored" && <Check className="h-4 w-4 text-brand-600" />}
@@ -541,13 +541,13 @@ export function SalonSettings({
                   background: "linear-gradient(150deg, var(--color-brand-300) 0%, var(--color-brand-100) 55%, var(--color-brand-200) 100%)",
                 }}
               >
-                <div className="h-6 w-full rounded-md bg-white border border-white/60 shadow-sm" />
+                <div className="h-6 w-full rounded-md bg-surface border border-surface/60 shadow-sm" />
               </div>
             </button>
           </div>
 
           {bgError && (
-            <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            <p className="mt-3 rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
               {bgError}
             </p>
           )}

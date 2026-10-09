@@ -34,17 +34,6 @@ export async function findCustomers(
   return { data: data ?? [], total: count ?? 0 };
 }
 
-export async function findCustomerById(id: string, salonId: string): Promise<CustomerRow | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("id", id)
-    .eq("salon_id", salonId)
-    .single();
-  return data;
-}
-
 export async function createCustomer(
   salonId: string,
   input: Omit<Database["public"]["Tables"]["customers"]["Insert"], "salon_id">

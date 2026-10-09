@@ -1,0 +1,10 @@
+# Configuracion de squawk (lint de migraciones). Ver scripts/quality/lint-migrations.mjs.
+# pg_version debe coincidir con db.major_version de supabase/config.toml (PostgreSQL 17).
+pg_version = "17"
+# Reglas sustituidas por reglas propias mas precisas en scripts/quality/migration-rules.mjs (ADR 0016):
+# - ban-drop-function: migration-rules solo admite DROP FUNCTION si la misma migracion recrea la funcion
+#   (cambio de firma compatible con la version anterior de la app).
+# - require-concurrent-index-creation: Supabase aplica cada migracion en una transaccion y CREATE INDEX
+#   CONCURRENTLY no es posible; migration-rules exige set lock_timeout para indices sobre tablas existentes.
+# Prohibidos los comentarios squawk-ignore en linea: toda decision de reglas vive aqui.
+excluded_rules = ["ban-drop-function", "require-concurrent-index-creation"]

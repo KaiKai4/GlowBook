@@ -4,8 +4,8 @@ Fecha: 2026-05-31
 
 Fuente:
 
-- `docs/architecture-audit-2026-05-31.md`
-- `docs/architecture-audit-phases-2026-05-31.md`
+- `docs/archive/architecture-history/architecture-audit-2026-05-31.md`
+- `docs/archive/architecture-history/architecture-audit-phases-2026-05-31.md`
 - `docs/production-readiness-checklist.md`
 
 ## Decision

@@ -11,7 +11,7 @@ export default async function NewAppointmentPage() {
   if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para crear citas.</p>
+        <p className="text-fg-subtle">No tienes permiso para crear citas.</p>
       </div>
     );
   }
@@ -21,16 +21,16 @@ export default async function NewAppointmentPage() {
   return (
     <div className="space-y-8">
       <div>
-        <Link href="/appointments" className="inline-flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-700 transition-colors">
+        <Link href="/appointments" className="inline-flex items-center gap-1.5 text-sm text-fg-subtle hover:text-fg-secondary transition-colors">
           <ArrowLeft className="h-4 w-4" />
           Agenda
         </Link>
-        <h1 className="text-2xl font-bold text-stone-900 mt-2">Nueva cita</h1>
-        <p className="text-sm text-stone-400 mt-0.5">Completa los pasos para agendar una cita.</p>
+        <h1 className="text-2xl font-semibold text-fg mt-2">Nueva cita</h1>
+        <p className="text-sm text-fg-subtle mt-0.5">Completa los pasos para agendar una cita.</p>
       </div>
 
       {!wizardData.ready ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800 shadow-sm">
+        <div className="rounded-xl border border-warning-border bg-warning-subtle p-5 text-sm text-warning-strong shadow-sm">
           Para agendar necesitas al menos un servicio y un colaborador que lo realice.
           <ul className="mt-2 list-disc pl-5 space-y-1">
             {wizardData.services.length === 0 && (

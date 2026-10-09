@@ -8,9 +8,9 @@ type EmployeeCategoryRef = {
   category: { id: string; name: string } | null;
 };
 
-export type EmployeesPageMode = "active" | "archived";
+type EmployeesPageMode = "active" | "archived";
 
-export interface EmployeeListItemViewModel {
+interface EmployeeListItemViewModel {
   id: string;
   first_name: string;
   last_name: string;
@@ -21,13 +21,13 @@ export interface EmployeeListItemViewModel {
   categoryIds: string[];
 }
 
-export interface EmployeeCategoryOptionViewModel {
+interface EmployeeCategoryOptionViewModel {
   id: string;
   name: string;
   services: { id: string; name: string }[];
 }
 
-export interface EmployeeRoleOptionViewModel {
+interface EmployeeRoleOptionViewModel {
   id: string;
   name: string;
 }

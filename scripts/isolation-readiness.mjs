@@ -13,7 +13,7 @@ const REQUIRED_FILES = [
 const REQUIRED_E2E_TEXT = [
   "multi-tenant isolation",
   "denies direct access to another Salon employee detail",
-  "denies direct access to another Salon appointment detail",
+  "denies direct access to another Salon appointment edit screen",
   "keeps Platform admin routes unavailable to a Salon owner",
   "createSalonOwnerFixture",
   "createScheduledAppointmentFixture",
@@ -44,19 +44,23 @@ const REQUIRED_STAGING_GUARD_TEXT = [
   "assertDeployedSupabaseMatches",
 ];
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[isolation-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[isolation-readiness] OK ${message}`);
 }
 
+/** @param {string} path */
 function read(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} label @param {string} content @param {string[]} requiredTexts */
 function requireText(label, content, requiredTexts) {
   for (const text of requiredTexts) {
     if (content.includes(text)) {

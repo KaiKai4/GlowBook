@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 import { InventoryLocationSchema } from "@/features/inventory/schemas";
 import { normalizePaymentMethod } from "@/features/payments/domain/payment-methods";
 

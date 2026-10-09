@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const REQUIRED_DOCS = [
-  "docs/architecture-scale-phases-2026-06-01.md",
+  "docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md",
   "docs/production-scale-readiness-checklist.md",
   "docs/release-scale-readiness-2026-06-01.md",
 ];
@@ -50,23 +50,28 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[baseline-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[baseline-readiness] OK ${message}`);
 }
 
+/** @param {string} path */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} name */
 function hasEnv(name) {
   return Boolean(process.env[name]?.trim());
 }
 
+/** @param {string} docName @param {string} content @param {string[]} requiredTexts */
 function requireText(docName, content, requiredTexts) {
   for (const text of requiredTexts) {
     if (content.includes(text)) {
@@ -93,8 +98,8 @@ const decisionDoc = existsSync(join(process.cwd(), "docs/release-scale-readiness
 const checklist = existsSync(join(process.cwd(), "docs/production-scale-readiness-checklist.md"))
   ? readDoc("docs/production-scale-readiness-checklist.md")
   : "";
-const phases = existsSync(join(process.cwd(), "docs/architecture-scale-phases-2026-06-01.md"))
-  ? readDoc("docs/architecture-scale-phases-2026-06-01.md")
+const phases = existsSync(join(process.cwd(), "docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md"))
+  ? readDoc("docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md")
   : "";
 
 requireText("release scale decision", decisionDoc, REQUIRED_DECISION_TEXT);

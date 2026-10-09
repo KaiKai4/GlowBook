@@ -22,6 +22,8 @@ import { requireActiveProfile } from "@/lib/auth/session";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { parseUuid } from "@/lib/validation/route-id";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
@@ -29,7 +31,7 @@ async function guard(): Promise<Result<{ salonId: string }>> {
     return { ok: false, error: "No tienes permiso para gestionar servicios." };
   }
 
-  const limited = assertActionRateLimit(profile.id, "services", { max: 60, windowMs: 60_000 });
+  const limited = await assertActionRateLimit(profile.id, "services", { max: 60, windowMs: 60_000 });
   if (!limited.ok) return limited;
 
   return { ok: true, value: { salonId: profile.salon_id } };
@@ -68,7 +70,7 @@ export async function createCategoryAction(
     ordering: Number(formData.get("ordering") ?? 0),
     pricing_mode: formData.get("pricing_mode") === "variable" ? "variable" : "fixed",
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createServiceCategory(guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/services");
@@ -81,9 +83,10 @@ export async function updateCategoryPricingModeAction(
 ): Promise<Result<void>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  if (!parseUuid(categoryId)) return { ok: false, error: "Identificador inválido." };
 
   const parsed = UpdateCategorySchema.safeParse({ pricing_mode: pricingMode });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateServiceCategory(categoryId, guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/services");
@@ -93,6 +96,7 @@ export async function updateCategoryPricingModeAction(
 export async function archiveCategoryAction(categoryId: string): Promise<Result<void>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  if (!parseUuid(categoryId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await archiveServiceCategory(categoryId, guarded.value.salonId);
   if (result.ok) revalidatePath("/services");
@@ -119,7 +123,7 @@ export async function createServiceAction(
     duration_minutes: duration.value,
     price: Number(formData.get("price")),
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createCatalogService(guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/services");
@@ -133,6 +137,7 @@ export async function updateServiceAction(
 ): Promise<Result<void>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  if (!parseUuid(serviceId)) return { ok: false, error: "Identificador inválido." };
   const duration = readServiceDuration(formData);
   if (!duration.ok) return duration;
 
@@ -148,7 +153,7 @@ export async function updateServiceAction(
           ? false
           : undefined,
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateCatalogService(serviceId, guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/services");

@@ -94,8 +94,8 @@ function PermissionGroupList({
       {PERMISSION_GROUPS.map(({ group, icon: Icon, items }) => (
         <div key={group}>
           <div className="flex items-center gap-1.5 mb-2">
-            <Icon className="h-3.5 w-3.5 text-stone-400" />
-            <span className="text-xs font-bold uppercase tracking-wide text-stone-400">{group}</span>
+            <Icon className="h-3.5 w-3.5 text-fg-subtle" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">{group}</span>
           </div>
           <div className="space-y-2 pl-5">
             {items.map((item) => {
@@ -105,7 +105,7 @@ function PermissionGroupList({
                   key={item.key}
                   className={cn(
                     "flex items-start gap-3 rounded-lg p-2 transition-colors",
-                    !disabled && "cursor-pointer hover:bg-stone-50",
+                    !disabled && "cursor-pointer hover:bg-surface-muted",
                     disabled && "opacity-60"
                   )}
                 >
@@ -117,8 +117,8 @@ function PermissionGroupList({
                     className="mt-0.5 h-4 w-4 rounded accent-brand-600"
                   />
                   <span>
-                    <span className="block text-sm font-medium text-stone-800">{item.label}</span>
-                    <span className="block text-xs text-stone-400 mt-0.5">{item.description}</span>
+                    <span className="block text-sm font-medium text-fg-secondary">{item.label}</span>
+                    <span className="block text-xs text-fg-subtle mt-0.5">{item.description}</span>
                   </span>
                 </label>
               );
@@ -167,8 +167,8 @@ export function RolesManager({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Roles y Permisos</h1>
-          <p className="text-sm text-stone-400 mt-1">Define qué puede hacer cada rol en tu salón.</p>
+          <h1 className="text-2xl font-semibold text-fg">Roles y Permisos</h1>
+          <p className="text-sm text-fg-subtle mt-1">Define qué puede hacer cada rol en tu salón.</p>
         </div>
         <Button variant="primary" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -190,11 +190,11 @@ export function RolesManager({
       >
         <form action={handleCreate} className="space-y-4">
           <Input name="name" label="Nombre del rol" placeholder="Estilista, Manicurista..." required autoFocus />
-          <div className="max-h-[380px] overflow-y-auto rounded-xl border border-stone-100 bg-stone-50/50 p-4">
+          <div className="max-h-[380px] overflow-y-auto rounded-xl border border-border-subtle bg-surface-muted/50 p-4">
             <PermissionGroupList selected={newPerms} onChange={toggleNewPerm} />
           </div>
           {createError && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{createError}</p>
+            <p className="rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{createError}</p>
           )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>Cancelar</Button>
@@ -242,18 +242,18 @@ function RoleCard({ role }: { role: Role }) {
         <div className="flex items-center gap-2">
           <div className={cn(
             "flex h-8 w-8 items-center justify-center rounded-lg",
-            role.is_system ? "bg-amber-50" : "bg-brand-50"
+            role.is_system ? "bg-warning-subtle" : "bg-brand-50"
           )}>
-            <Shield className={cn("h-4 w-4", role.is_system ? "text-amber-500" : "text-brand-500")} />
+            <Shield className={cn("h-4 w-4", role.is_system ? "text-warning" : "text-brand-500")} />
           </div>
           <CardTitle className="text-base">{role.name}</CardTitle>
           {role.is_system ? (
-            <Lock className="h-3.5 w-3.5 text-stone-300 ml-auto" />
+            <Lock className="h-3.5 w-3.5 text-fg-disabled ml-auto" />
           ) : (
             <button
               onClick={() => startDelete(() => { void deleteRoleAction(role.id); })}
               disabled={isDeleting}
-              className="ml-auto text-stone-300 hover:text-red-500 disabled:opacity-40 transition-colors"
+              className="ml-auto text-fg-disabled hover:text-danger disabled:opacity-40 transition-colors"
               aria-label="Eliminar rol"
             >
               <Trash2 className="h-4 w-4" />
@@ -263,18 +263,18 @@ function RoleCard({ role }: { role: Role }) {
       </CardHeader>
       <CardContent>
         {role.is_system ? (
-          <div className="rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-700">
+          <div className="rounded-lg bg-warning-subtle border border-warning-border px-4 py-3 text-sm text-warning-strong">
             Este rol siempre tiene todos los permisos del salón y no se puede modificar.
           </div>
         ) : (
           <>
             <PermissionGroupList selected={selected} onChange={toggle} />
-            <div className="mt-4 flex items-center gap-3 border-t border-stone-100 pt-4">
+            <div className="mt-4 flex items-center gap-3 border-t border-border-subtle pt-4">
               <Button variant="primary" size="sm" onClick={handleSave} loading={saving} disabled={!dirty}>
                 Guardar cambios
               </Button>
-              {error && <span className="text-xs text-red-600">{error}</span>}
-              {saved && !dirty && <span className="text-xs text-emerald-600">Guardado</span>}
+              {error && <span className="text-xs text-danger">{error}</span>}
+              {saved && !dirty && <span className="text-xs text-success-fg">Guardado</span>}
             </div>
           </>
         )}

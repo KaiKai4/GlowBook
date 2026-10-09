@@ -1,7 +1,7 @@
+import { toPublicErrorMessage } from "@/lib/errors";
 import "server-only";
-
 import { cache } from "react";
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
 import { err, ok, type Result } from "@/lib/result";
 import { getDisabledSalonFeatures } from "@/lib/auth/permissions";
@@ -52,7 +52,8 @@ import {
   updateSalonPlanOverrideStatus,
 } from "../data/salon-subscriptions.repo";
 import { findPlanCatalog, findPlanWithChildren } from "../data/commercial-plans.repo";
-import { auditBilling, dateOrNull, errorMessage } from "./billing-shared";
+import { auditBilling, dateOrNull } from "./billing-shared";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 const AssignmentSchema = z.object({
   salonId: z.string().uuid("Selecciona un salon."),
@@ -189,7 +190,7 @@ export async function resolveSalonPlanAlertConfig(
     await auditBilling(actorUserId, "commercial_plan_alert_resolved", salonId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo resolver la alerta.", error));
+    return err(toPublicErrorMessage(error, "No se pudo resolver la alerta."));
   }
 }
 
@@ -228,7 +229,7 @@ export async function assignSalonCommercialPlanConfig(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   const parsed = AssignmentSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
     const [plan, existingStartsAt] = await Promise.all([
       findPlanWithChildren(parsed.data.planId),
@@ -255,7 +256,7 @@ export async function assignSalonCommercialPlanConfig(
     await auditBilling(actorUserId, "commercial_plan_assigned", parsed.data.salonId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo asignar el plan.", error));
+    return err(toPublicErrorMessage(error, "No se pudo asignar el plan."));
   }
 }
 
@@ -293,7 +294,7 @@ export async function autoAssignPlanOnAcceptance(input: {
     await auditBilling(input.acceptedByUserId, "commercial_plan_assigned", input.salonId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo asignar el plan de la invitacion.", error));
+    return err(toPublicErrorMessage(error, "No se pudo asignar el plan de la invitacion."));
   }
 }
 
@@ -317,8 +318,7 @@ export async function registerSalonPlanPaymentConfig(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   const parsed = PaymentSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
-
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
     const assignment = await findAssignmentForPayment(parsed.data.salonId);
     if (!assignment) return err("Este salon no tiene plan asignado. Asignale un plan primero.");
@@ -348,7 +348,7 @@ export async function registerSalonPlanPaymentConfig(
     await auditBilling(actorUserId, "commercial_plan_payment_recorded", parsed.data.salonId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo registrar el pago.", error));
+    return err(toPublicErrorMessage(error, "No se pudo registrar el pago."));
   }
 }
 
@@ -357,7 +357,7 @@ export async function assignSalonAddonConfig(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   const parsed = AddonExtraSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   try {
     const addon = await findCommercialAddonById(parsed.data.addonId);
@@ -385,7 +385,7 @@ export async function assignSalonAddonConfig(
     await auditBilling(actorUserId, "commercial_plan_extra_assigned", parsed.data.salonId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo asignar el extra.", error));
+    return err(toPublicErrorMessage(error, "No se pudo asignar el extra."));
   }
 }
 
@@ -394,7 +394,7 @@ export async function saveSalonManualExtraConfig(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   const parsed = ManualExtraSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
   if (!parsed.data.moduleKey && !parsed.data.metricKey) {
     return err("Selecciona un modulo o un límite para el extra.");
   }
@@ -421,7 +421,7 @@ export async function saveSalonManualExtraConfig(
     await auditBilling(actorUserId, "commercial_plan_override_saved", parsed.data.salonId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo guardar el extra.", error));
+    return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
   }
 }
 
@@ -435,7 +435,7 @@ export async function cancelSalonExtraConfig(
     await auditBilling(actorUserId, "commercial_plan_extra_canceled", salonId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo cancelar el extra.", error));
+    return err(toPublicErrorMessage(error, "No se pudo cancelar el extra."));
   }
 }
 
@@ -546,7 +546,7 @@ export interface SalonExtraView {
   reason: string;
 }
 
-export interface SalonPaymentView {
+interface SalonPaymentView {
   id: string;
   amount: number;
   currency: string;
@@ -556,7 +556,7 @@ export interface SalonPaymentView {
   notes: string;
 }
 
-export interface SalonAlertView {
+interface SalonAlertView {
   id: string;
   severity: "info" | "warning" | "danger";
   message: string;

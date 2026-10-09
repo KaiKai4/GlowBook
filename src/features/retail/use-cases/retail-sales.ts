@@ -6,7 +6,7 @@ import {
   getRetailInventoryProducts,
   type RetailInventoryProductView,
 } from "@/features/inventory/use-cases/retail-inventory-products";
-import { getErrorMessage } from "@/lib/errors";
+import { toPublicErrorMessage } from "@/lib/errors";
 import { ok, type Result } from "@/lib/result";
 import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
 import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
@@ -53,6 +53,6 @@ export async function createRetailSale(
 
     return ok("Venta registrada.");
   } catch (error) {
-    return { ok: false, error: getErrorMessage(error, "No se pudo registrar la venta.") };
+    return { ok: false, error: toPublicErrorMessage(error, "No se pudo registrar la venta.") };
   }
 }

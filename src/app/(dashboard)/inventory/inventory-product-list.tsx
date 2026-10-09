@@ -26,7 +26,7 @@ export function InventoryProductList({ products, pendingForm, onSave, onDelete }
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-semibold text-stone-900">Productos</h2>
+      <h2 className="text-lg font-semibold text-fg">Productos</h2>
       <div className="grid gap-4 xl:grid-cols-2">
         {products.map((product) => (
           <ProductCard
@@ -41,7 +41,7 @@ export function InventoryProductList({ products, pendingForm, onSave, onDelete }
           />
         ))}
         {products.length === 0 && (
-          <p className="rounded-xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-400">
+          <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-fg-subtle">
             Aun no hay productos registrados.
           </p>
         )}
@@ -74,14 +74,14 @@ function ProductCard({
       <CardContent className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-semibold text-stone-900">{product.name}</h3>
-            <p className="text-sm text-stone-400">{product.category || "Sin categoria"}</p>
+            <h3 className="font-semibold text-fg">{product.name}</h3>
+            <p className="text-sm text-fg-subtle">{product.category || "Sin categoria"}</p>
           </div>
           <span
             className={
               product.isActive
-                ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
-                : "rounded-full bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-500"
+                ? "rounded-full bg-success-subtle px-2 py-1 text-xs font-semibold text-success-fg"
+                : "rounded-full bg-surface-sunken px-2 py-1 text-xs font-semibold text-fg-muted"
             }
           >
             {product.isActive ? "Activo" : "Inactivo"}
@@ -92,7 +92,7 @@ function ProductCard({
             className={
               product.isRetailEnabled
                 ? "rounded-full bg-brand-50 px-2 py-1 text-xs font-semibold text-brand-700"
-                : "rounded-full bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-500"
+                : "rounded-full bg-surface-sunken px-2 py-1 text-xs font-semibold text-fg-muted"
             }
           >
             {product.isRetailEnabled ? "Se vende en vitrina" : "Solo inventario/trabajo"}
@@ -104,32 +104,32 @@ function ProductCard({
             .map((stock) => {
               const status = stockStatus(stock.quantity, stock.minimumQuantity);
               return (
-                <div key={stock.location} className="rounded-lg border border-stone-100 p-3">
-                  <p className="text-xs font-semibold text-stone-400">
+                <div key={stock.location} className="rounded-lg border border-border-subtle p-3">
+                  <p className="text-xs font-semibold text-fg-subtle">
                     {INVENTORY_LOCATION_LABELS[stock.location]}
                   </p>
                   <p
                     className={
                       status === "empty"
-                        ? "text-xl font-bold text-red-600"
+                        ? "text-xl font-semibold text-danger"
                         : status === "low"
-                          ? "text-xl font-bold text-amber-600"
-                          : "text-xl font-bold text-stone-900"
+                          ? "text-xl font-semibold text-warning-fg"
+                          : "text-xl font-semibold text-fg"
                     }
                   >
                     {stock.quantity}
                   </p>
-                  <p className="text-xs text-stone-400">Min. {stock.minimumQuantity}</p>
+                  <p className="text-xs text-fg-subtle">Min. {stock.minimumQuantity}</p>
                 </div>
               );
             })}
         </div>
-        <div className="text-sm text-stone-500">
+        <div className="text-sm text-fg-subtle">
           Costo {formatCurrency(product.costPrice)}
           {product.isRetailEnabled ? ` - Venta ${formatCurrency(product.salePrice)}` : ""}
         </div>
         <details
-          className="rounded-lg border border-stone-100 p-3"
+          className="rounded-lg border border-border-subtle p-3"
           open={isEditing}
           onToggle={(event) => {
             const nextOpen = event.currentTarget.open;
@@ -175,10 +175,10 @@ function ProductCard({
               </Button>
             </div>
           </form>
-          <div className="mt-4 border-t border-stone-100 pt-4">
+          <div className="mt-4 border-t border-border-subtle pt-4">
             {confirmDelete ? (
               <div className="flex flex-wrap items-center gap-2">
-                <p className="mr-auto text-sm text-stone-500">
+                <p className="mr-auto text-sm text-fg-subtle">
                   Se ocultara de Inventario y Vitrina, conservando el historial.
                 </p>
                 <Button type="button" variant="ghost" onClick={() => setConfirmDelete(false)}>

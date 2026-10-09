@@ -175,10 +175,10 @@ export function AppointmentWizard({
 
   function reorder(from: number, to: number) {
     if (from === to) return;
-
     setRows((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
+      if (moved === undefined) return prev;
       next.splice(to, 0, moved);
       return next;
     });

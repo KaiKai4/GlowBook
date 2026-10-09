@@ -29,16 +29,16 @@ export function FeedbackPanel({
   return (
     <div
       style={position ?? { bottom: 96, right: 24 }}
-      className="fixed z-50 w-[min(92vw,22rem)] rounded-2xl border border-stone-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
+      className="fixed z-50 w-[min(92vw,22rem)] rounded-2xl border border-border bg-surface shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
     >
       <div className="flex items-center justify-between rounded-t-2xl bg-brand-600 px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-white">Reportar a soporte</p>
-          <p className="text-[11px] text-white/80">Fallas, caidas o sugerencias</p>
+          <p className="text-sm font-semibold text-surface">Reportar a soporte</p>
+          <p className="text-xs text-surface/80">Fallas, caidas o sugerencias</p>
         </div>
         <button
           onClick={onClose}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-surface/80 transition-colors hover:bg-surface/15 hover:text-surface"
           aria-label="Cerrar"
         >
           <X className="h-4 w-4" />
@@ -52,19 +52,19 @@ export function FeedbackPanel({
           <FeedbackCategoryPicker value={category} onChange={onCategoryChange} />
 
           <div>
-            <p className="mb-1.5 text-xs font-medium text-stone-500">Descripcion</p>
+            <p className="mb-1.5 text-xs font-medium text-fg-subtle">Descripcion</p>
             <textarea
               value={message}
               onChange={(event) => onMessageChange(event.target.value)}
               rows={4}
               maxLength={2000}
               placeholder="Describe lo que paso o tu sugerencia..."
-              className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-secondary placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+            <p className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-xs text-danger">
               {error}
             </p>
           )}
@@ -72,7 +72,7 @@ export function FeedbackPanel({
           <button
             onClick={onSend}
             disabled={pending || message.trim().length < 5}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
             {pending ? "Enviando..." : "Enviar reporte"}

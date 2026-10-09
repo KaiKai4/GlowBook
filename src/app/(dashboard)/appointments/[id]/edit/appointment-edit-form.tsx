@@ -146,11 +146,10 @@ export function AppointmentEditForm({
 
   function reorderRows(from: number, to: number) {
     setRows((current) => {
-      if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) {
-        return current;
-      }
+      if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) return current;
       const next = [...current];
       const [row] = next.splice(from, 1);
+      if (row === undefined) return current;
       next.splice(to, 0, row);
       return next;
     });
@@ -343,12 +342,12 @@ export function AppointmentEditForm({
           />
           {isClosedDay && (
             <p className="sm:col-span-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-              El salÃ³n estÃ¡ cerrado ese dÃ­a.
+              El salón está cerrado ese día.
             </p>
           )}
           {selectedWindow && (
             <p className="sm:col-span-2 text-xs text-neutral-500">
-              Horario del salÃ³n: {selectedWindow.open} - {selectedWindow.close}.
+              Horario del salón: {selectedWindow.open} - {selectedWindow.close}.
             </p>
           )}
         </CardContent>
@@ -415,7 +414,7 @@ export function AppointmentEditForm({
 
                 <div className="grid gap-3 md:grid-cols-3">
                   <label className="space-y-1 text-sm font-medium text-neutral-700">
-                    CategorÃ­a
+                    Categoría
                     <Select
                       value={row.categoryId}
                       onChange={(event) =>
@@ -467,7 +466,7 @@ export function AppointmentEditForm({
                 {item?.start && item.end && (
                   <p className="mt-2 text-xs text-neutral-500">
                     {formatTimeTz(item.start, salonConfig.timezone)} - {formatTimeTz(item.end, salonConfig.timezone)}
-                    {item.service ? ` Â· ${formatCurrency(item.service.price)}` : ""}
+                    {item.service ? ` · ${formatCurrency(item.service.price)}` : ""}
                   </p>
                 )}
               </div>

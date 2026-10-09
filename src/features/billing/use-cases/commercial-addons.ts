@@ -1,6 +1,7 @@
+import { toPublicErrorMessage } from "@/lib/errors";
 import "server-only";
 
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
 import { err, ok, type Result } from "@/lib/result";
 import type { CommercialAddon } from "../domain/salon-extras";
@@ -10,7 +11,8 @@ import {
   deleteCommercialAddon,
   saveCommercialAddon,
 } from "../data/commercial-addons.repo";
-import { auditBilling, errorMessage, normalizeKey } from "./billing-shared";
+import { auditBilling, normalizeKey } from "./billing-shared";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 const AddonSchema = z
   .object({
@@ -50,7 +52,7 @@ export async function saveCommercialAddonConfig(
   actorUserId?: string | null
 ): Promise<Result<string>> {
   const parsed = AddonSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   try {
     const id = await saveCommercialAddon({
@@ -70,7 +72,7 @@ export async function saveCommercialAddonConfig(
     await auditBilling(actorUserId, "commercial_addon_saved", id);
     return ok(id);
   } catch (error) {
-    return err(errorMessage("No se pudo guardar el extra.", error));
+    return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
   }
 }
 
@@ -89,6 +91,6 @@ export async function removeCommercialAddonConfig(
     }
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo eliminar el extra.", error));
+    return err(toPublicErrorMessage(error, "No se pudo eliminar el extra."));
   }
 }

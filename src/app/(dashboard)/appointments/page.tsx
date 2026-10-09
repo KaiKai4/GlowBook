@@ -18,7 +18,7 @@ export default async function AppointmentsPage({
   if (!canView) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para ver las citas.</p>
+        <p className="text-fg-subtle">No tienes permiso para ver las citas.</p>
       </div>
     );
   }

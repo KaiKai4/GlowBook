@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { ExpenseHistoryItem } from "@/features/expenses/use-cases/expenses";
+import { isHttpsReceiptUrl } from "@/features/expenses/domain/receipt-url";
 import { formatCurrency } from "@/lib/utils/dates";
 
 type ExpenseTypeFilter = "all" | "manual" | "inventory_purchase";
@@ -78,14 +79,14 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle>Historial de egresos</CardTitle>
             <div className="text-right">
-              <p className="text-xs font-semibold uppercase text-stone-400">Total filtrado</p>
+              <p className="text-xs font-semibold uppercase text-stone-500">Total filtrado</p>
               <p className="text-lg font-bold text-red-600">{formatCurrency(filteredTotal)}</p>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-hidden rounded-xl border border-stone-100">
-            <div className="grid grid-cols-[1fr_120px_120px] gap-3 bg-stone-50 px-4 py-3 text-xs font-bold uppercase text-stone-400 md:grid-cols-[130px_170px_1fr_180px_140px]">
+            <div className="grid grid-cols-[1fr_120px_120px] gap-3 bg-stone-50 px-4 py-3 text-xs font-bold uppercase text-stone-500 md:grid-cols-[130px_170px_1fr_180px_140px]">
               <span>Fecha</span>
               <span>Tipo</span>
               <span>Detalle</span>
@@ -116,7 +117,7 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
                     <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-600">
                       {item.categoryLabel}
                     </span>
-                    {item.receiptUrl && (
+                    {isHttpsReceiptUrl(item.receiptUrl) && (
                       <a
                         href={item.receiptUrl}
                         target="_blank"
@@ -127,7 +128,7 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
                       </a>
                     )}
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-stone-400">{item.detail}</p>
+                  <p className="mt-0.5 truncate text-xs text-stone-500">{item.detail}</p>
                 </div>
                 <span className="hidden truncate text-stone-500 md:block">
                   {item.commerceName || "Sin registrar"}
@@ -136,7 +137,7 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
               </div>
             ))}
             {filteredExpenses.length === 0 && (
-              <p className="border-t border-stone-100 px-4 py-8 text-center text-sm text-stone-400">
+              <p className="border-t border-stone-100 px-4 py-8 text-center text-sm text-stone-500">
                 No hay egresos con esos filtros.
               </p>
             )}

@@ -94,7 +94,7 @@ export function CancelAppointmentDialog({
           colaboradores: collaborators,
           salon: salonName,
         });
-        window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank");
+        window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank", "noopener,noreferrer");
       }
 
       onClose();

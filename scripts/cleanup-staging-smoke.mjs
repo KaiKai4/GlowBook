@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTargetOrExit, readConfirmFlag } from "./lib/target-guard.mjs";
 
 const OWNER_EMAIL_PREFIX = "glowbook";
 
@@ -17,21 +18,25 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} value */
 function normalizeUrl(value) {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[cleanup-staging-smoke] ${message}`);
   process.exit(1);
 }
 
+/** @param {string} batchId */
 function assertSafeBatchId(batchId) {
   if (!/^smoke-[a-zA-Z0-9-]+$/.test(batchId)) {
     fail("SMOKE_SEED_BATCH_ID must start with 'smoke-' and contain only letters, numbers and hyphens.");
   }
 }
 
+/** @param {string} batchId @param {import("@supabase/supabase-js").SupabaseClient} admin */
 async function deleteAuthUsersByEmailPrefix(admin, batchId) {
   const prefix = `${OWNER_EMAIL_PREFIX}.${batchId}.`;
   let page = 1;
@@ -99,6 +104,12 @@ if (confirm !== "cleanup-5-salons") {
   fail("Set SMOKE_CLEANUP_CONFIRM=cleanup-5-salons to acknowledge persistent staging data deletion.");
 }
 
+assertSafeTargetOrExit("cleanup-staging-smoke", {
+  url: supabaseUrl,
+  env: process.env.GLOWBOOK_ENV ?? process.env.APP_ENV ?? process.env.VERCEL_ENV,
+  confirmFlag: readConfirmFlag(process.argv),
+  productionUrl: process.env.PRODUCTION_SUPABASE_URL,
+});
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });

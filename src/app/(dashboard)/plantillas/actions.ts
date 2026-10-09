@@ -6,7 +6,9 @@ import { updateMessageTemplate } from "@/features/notifications/use-cases/update
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 export async function updateNotificationTemplateAction(
   _prev: Result<void> | null,
@@ -18,12 +20,15 @@ export async function updateNotificationTemplateAction(
     return { ok: false, error: "No tienes permiso para editar plantillas." };
   }
 
+  const limited = await assertActionRateLimit(profile.id, "plantillas", { max: 30, windowMs: 60_000 });
+  if (!limited.ok) return limited;
+
   const parsed = NotificationTemplateSchema.safeParse({
     event: formData.get("event"),
     body_text: formData.get("body_text"),
     is_active: formData.get("is_active") === "on",
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateMessageTemplate(profile.salon_id, parsed.data);
   if (result.ok) {

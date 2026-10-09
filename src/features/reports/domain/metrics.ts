@@ -2,7 +2,7 @@ import { calculateCommissionReport, type CommissionReport } from "./commissions"
 
 export const COMPLETED_APPOINTMENT_STATUS = "completed";
 
-export const REPORT_STATUS_ORDER = [
+const REPORT_STATUS_ORDER = [
   "completed",
   "confirmed",
   "scheduled",
@@ -28,13 +28,13 @@ export interface ReportAppointmentItem {
   employeeCommissionPct: number;
 }
 
-export interface ReportStatusBreakdown {
+interface ReportStatusBreakdown {
   status: string;
   count: number;
   pct: number;
 }
 
-export interface ReportEntityBreakdown {
+interface ReportEntityBreakdown {
   name: string;
   count: number;
   revenue: number;
@@ -109,7 +109,7 @@ export function calculateOperationalReportMetrics(
   };
 }
 
-export function calculateStatusBreakdown(
+function calculateStatusBreakdown(
   appointments: ReportAppointment[]
 ): ReportStatusBreakdown[] {
   const statusCounts: Record<string, number> = {};
@@ -123,16 +123,13 @@ export function calculateStatusBreakdown(
     .sort();
   const orderedStatuses = [...REPORT_STATUS_ORDER, ...unknownStatuses];
 
-  return orderedStatuses
-    .filter((status) => statusCounts[status])
-    .map((status) => ({
-      status,
-      count: statusCounts[status],
-      pct: toPercent(statusCounts[status], appointments.length),
-    }));
+  return orderedStatuses.flatMap((status) => {
+    const count = statusCounts[status];
+    return count ? [{ status, count, pct: toPercent(count, appointments.length) }] : [];
+  });
 }
 
-export function calculateEmployeeBreakdown(
+function calculateEmployeeBreakdown(
   items: ReportAppointmentItem[]
 ): ReportEntityBreakdown[] {
   const employeeMap: Record<string, { name: string; appointmentIds: Set<string>; revenue: number }> =
@@ -141,13 +138,13 @@ export function calculateEmployeeBreakdown(
   for (const item of items) {
     if (!item.employeeId || !item.employeeName) continue;
 
-    employeeMap[item.employeeId] ??= {
+    const employee = (employeeMap[item.employeeId] ??= {
       name: item.employeeName,
       appointmentIds: new Set<string>(),
       revenue: 0,
-    };
-    employeeMap[item.employeeId].appointmentIds.add(item.appointmentId);
-    employeeMap[item.employeeId].revenue += Number(item.price ?? 0);
+    });
+    employee.appointmentIds.add(item.appointmentId);
+    employee.revenue += Number(item.price ?? 0);
   }
 
   const employees = Object.values(employeeMap)
@@ -165,7 +162,7 @@ export function calculateEmployeeBreakdown(
   }));
 }
 
-export function calculateServiceBreakdown(
+function calculateServiceBreakdown(
   items: ReportAppointmentItem[]
 ): ReportEntityBreakdown[] {
   const serviceMap: Record<string, { name: string; count: number; revenue: number }> = {};
@@ -173,9 +170,9 @@ export function calculateServiceBreakdown(
   for (const item of items) {
     if (!item.serviceId || !item.serviceName) continue;
 
-    serviceMap[item.serviceId] ??= { name: item.serviceName, count: 0, revenue: 0 };
-    serviceMap[item.serviceId].count += 1;
-    serviceMap[item.serviceId].revenue += Number(item.price ?? 0);
+    const service = (serviceMap[item.serviceId] ??= { name: item.serviceName, count: 0, revenue: 0 });
+    service.count += 1;
+    service.revenue += Number(item.price ?? 0);
   }
 
   const services = Object.values(serviceMap).sort(

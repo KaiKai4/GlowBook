@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 import {
   normalizePaymentMethod,
   normalizePaymentMethods,
@@ -34,7 +34,7 @@ const TimeString = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Hora inválida (usa formato HH:MM)");
 
-export const BusinessDaySchema = z
+const BusinessDaySchema = z
   .object({
     day_of_week: z.number().int().min(0).max(6),
     is_open: z.boolean(),

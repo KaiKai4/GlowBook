@@ -1,14 +1,13 @@
 # Archivo Historico De Arquitectura
 
-Esta carpeta conserva auditorias, verificaciones y planes de arquitectura que ya no representan el estado vigente del proyecto.
+Esta carpeta conserva auditorias, verificaciones, fases, revisiones y planes de arquitectura que ya no representan el estado vigente del proyecto.
 
-Documentos vigentes:
+Documentos que sustituyen a este material:
 
-- `docs/architecture-audit-current-state-2026-06-03.md`
-- `docs/architecture-improvement-phases-2026-06-03.md`
-- `docs/adr/*`
-- `docs/runbooks/*`
+- `docs/README.md` (índice vigente)
+- `docs/adr/*` (decisiones vigentes)
+- `docs/runbooks/*` (procedimientos vigentes)
 
 Regla:
 
-Los documentos aqui archivados pueden servir para trazabilidad, pero no deben guiar implementaciones nuevas sin contrastarse contra la auditoria vigente.
+Los documentos aquí archivados pueden servir para trazabilidad, pero no deben guiar implementaciones nuevas sin contrastarse contra el estado vigente indicado en `docs/README.md`.

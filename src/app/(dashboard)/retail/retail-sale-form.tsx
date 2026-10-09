@@ -135,9 +135,9 @@ export function RetailSaleForm({
           <Textarea name="note" label="Nota" />
 
           <div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-            <p className="text-xs font-semibold uppercase text-brand-500">Resumen</p>
-            <p className="mt-1 text-2xl font-bold text-stone-900">{formatCurrency(saleTotal)}</p>
-            <p className="text-sm text-stone-500">
+            <p className="text-xs font-semibold uppercase text-brand-600">Resumen</p>
+            <p className="mt-1 text-2xl font-semibold text-fg">{formatCurrency(saleTotal)}</p>
+            <p className="text-sm text-fg-subtle">
               Disponible en {INVENTORY_LOCATION_LABELS[location]}: {availableUnits}
             </p>
           </div>

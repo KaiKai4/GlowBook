@@ -25,15 +25,18 @@ const REQUIRED_RESTORE_EVIDENCE = [
   "100 auth users eliminados",
 ];
 
+/** @param {string} path @returns {string} */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} message @returns {void} */
 function fail(message) {
   console.error(`[restore-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message @returns {void} */
 function pass(message) {
   console.log(`[restore-readiness] OK ${message}`);
 }

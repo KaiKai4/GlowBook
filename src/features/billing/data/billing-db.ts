@@ -2,8 +2,8 @@ import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-export type QueryResult<T> = { data: T | null; error: { message: string } | null };
-export type CountResult = { count: number | null; error: { message: string } | null };
+type QueryResult<T> = { data: T | null; error: { message: string } | null };
+type CountResult = { count: number | null; error: { message: string } | null };
 export type UntypedQuery = {
   select: (columns?: string, options?: { count?: "exact"; head?: boolean }) => UntypedQuery;
   insert: (values: unknown) => UntypedQuery;

@@ -25,10 +25,15 @@ import {
   promoteCustomer,
 } from "@/features/customers/use-cases/customer-temporary";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { parseUuid } from "@/lib/validation/route-id";
 
-function canManageCustomers(profile: Awaited<ReturnType<typeof requireActiveProfile>>): Result<void> {
+async function canManageCustomers(
+  profile: Awaited<ReturnType<typeof requireActiveProfile>>,
+  deniedMessage = "No tienes permiso para gestionar clientes."
+): Promise<Result<void>> {
   if (!hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar clientes." };
+    return { ok: false, error: deniedMessage };
   }
 
   return assertActionRateLimit(profile.id, "customers", { max: 60, windowMs: 60_000 });
@@ -44,7 +49,7 @@ export async function createCustomerAction(
   formData: FormData
 ): Promise<Result<string>> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
+  const permission = await canManageCustomers(profile);
   if (!permission.ok) return permission;
   const moduleAccess = await checkPlanModuleAccess({ salonId: profile.salon_id, moduleKey: "customers" });
   if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
@@ -52,7 +57,7 @@ export async function createCustomerAction(
   if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = CreateCustomerSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createCustomerProfile(profile.salon_id, parsed.data);
   if (result.ok) revalidatePath("/customers");
@@ -64,7 +69,7 @@ export async function checkCustomerPhoneAction(
   phone: string
 ): Promise<{ exists: boolean; archived?: boolean }> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
+  const permission = await canManageCustomers(profile);
   if (!permission.ok) return { exists: false };
 
   return checkPermanentCustomerByPhone(profile.salon_id, phone);
@@ -75,7 +80,7 @@ export async function findArchivedCustomerByContactAction(
   email?: string
 ): Promise<ArchivedCustomerMatch | null> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
+  const permission = await canManageCustomers(profile);
   if (!permission.ok) return null;
 
   return findArchivedCustomerByContact(profile.salon_id, phone, email);
@@ -83,8 +88,9 @@ export async function findArchivedCustomerByContactAction(
 
 export async function reactivateCustomerAction(customerId: string): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
+  const permission = await canManageCustomers(profile);
   if (!permission.ok) return permission;
+  if (!parseUuid(customerId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await reactivateCustomer(customerId, profile.salon_id);
   if (result.ok) revalidateCustomerFlows();
@@ -99,7 +105,7 @@ export async function findOrCreateCustomerAction(
   phone?: string
 ): Promise<Result<string>> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
+  const permission = await canManageCustomers(profile);
   if (!permission.ok) return permission;
 
   return findOrCreateTemporaryCustomer({
@@ -113,8 +119,9 @@ export async function findOrCreateCustomerAction(
 // Promotes a temporary customer to permanent (visible in customer list, active).
 export async function promoteCustomerAction(customerId: string): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
-  if (!permission.ok) return { ok: false, error: "Sin permiso para gestionar clientes." };
+  const permission = await canManageCustomers(profile, "Sin permiso para gestionar clientes.");
+  if (!permission.ok) return permission;
+  if (!parseUuid(customerId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await promoteCustomer(customerId, profile.salon_id);
   if (result.ok) revalidatePath("/customers");
@@ -125,8 +132,9 @@ export async function promoteCustomerAction(customerId: string): Promise<Result<
 // Only works if the customer is still marked is_temporary=true.
 export async function deleteTemporaryCustomerAction(customerId: string): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
-  if (!permission.ok) return { ok: false, error: "Sin permiso para gestionar clientes." };
+  const permission = await canManageCustomers(profile, "Sin permiso para gestionar clientes.");
+  if (!permission.ok) return permission;
+  if (!parseUuid(customerId)) return { ok: false, error: "Identificador inválido." };
 
   return deleteTemporaryCustomer(customerId, profile.salon_id);
 }
@@ -137,11 +145,12 @@ export async function updateCustomerAction(
   formData: FormData
 ): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
+  const permission = await canManageCustomers(profile);
   if (!permission.ok) return permission;
+  if (!parseUuid(customerId)) return { ok: false, error: "Identificador inválido." };
 
   const parsed = UpdateCustomerSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateCustomerProfile(customerId, profile.salon_id, parsed.data);
   if (result.ok) revalidatePath("/customers");
@@ -152,8 +161,9 @@ export async function deleteCustomerAction(
   customerId: string
 ): Promise<Result<{ outcome: "deleted" | "archived"; message: string }>> {
   const profile = await requireActiveProfile();
-  const permission = canManageCustomers(profile);
+  const permission = await canManageCustomers(profile);
   if (!permission.ok) return permission;
+  if (!parseUuid(customerId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await archiveCustomer(customerId, profile.salon_id);
   if (result.ok) revalidateCustomerFlows();

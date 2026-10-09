@@ -27,8 +27,8 @@ export function ArchiveCategoryDialog({
       className="max-w-lg"
     >
       <div className="space-y-5">
-        <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-amber-600 shadow-sm">
+        <div className="flex gap-3 rounded-xl border border-warning-border bg-warning-subtle p-4 text-warning-strong">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-warning-fg shadow-sm">
             <AlertTriangle className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
@@ -37,7 +37,7 @@ export function ArchiveCategoryDialog({
                 ? `Vas a archivar "${category.name}".`
                 : "Vas a archivar esta categoria."}
             </p>
-            <p className="mt-1 text-sm leading-6 text-amber-800">
+            <p className="mt-1 text-sm leading-6 text-warning-strong">
               {serviceCount > 0
                 ? `Sus ${serviceCount} servicios no apareceran al crear nuevas citas. Las citas, cobros y reportes historicos se conservaran.`
                 : "No tiene servicios asociados. El historial del salon se conservara igual."}
@@ -45,15 +45,15 @@ export function ArchiveCategoryDialog({
           </div>
         </div>
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-4">
-          <p className="text-sm font-semibold text-neutral-900">Despues podras crear otra categoria con el mismo nombre.</p>
-          <p className="mt-1 text-sm leading-6 text-neutral-500">
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <p className="text-sm font-semibold text-fg">Despues podras crear otra categoria con el mismo nombre.</p>
+          <p className="mt-1 text-sm leading-6 text-fg-subtle">
             Sera una categoria nueva y no se mezclara con la categoria archivada.
           </p>
         </div>
 
         {error && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          <p className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
             {error}
           </p>
         )}

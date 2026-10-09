@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 import { DEFAULT_MESSAGE_TEMPLATES } from "./domain/templates";
 
 export const NotificationTemplateSchema = z.object({

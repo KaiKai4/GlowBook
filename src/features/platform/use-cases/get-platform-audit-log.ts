@@ -49,7 +49,7 @@ export interface PlatformAuditLogFilter {
   status?: string;
 }
 
-export interface PlatformAuditMetadataItem {
+interface PlatformAuditMetadataItem {
   key: string;
   value: string;
 }

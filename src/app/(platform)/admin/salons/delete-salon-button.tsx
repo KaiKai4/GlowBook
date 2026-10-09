@@ -56,7 +56,7 @@ export function DeleteSalonButton({ salonId, salonName }: Props) {
         className="max-w-md"
       >
         <div className="space-y-4">
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2.5 text-sm text-danger-strong">
             <div className="flex gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>
@@ -66,8 +66,8 @@ export function DeleteSalonButton({ salonId, salonName }: Props) {
             </div>
           </div>
 
-          <div className="rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-500">
-            ID del salón: <span className="font-mono font-semibold text-stone-700">{salonId}</span>
+          <div className="rounded-lg bg-surface-muted px-3 py-2 text-xs text-fg-subtle">
+            ID del salón: <span className="font-mono font-semibold text-fg-secondary">{salonId}</span>
           </div>
 
           <Input
@@ -78,7 +78,7 @@ export function DeleteSalonButton({ salonId, salonName }: Props) {
           />
 
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
               {error}
             </div>
           )}

@@ -32,7 +32,7 @@ export interface SalonOverview {
   last_appointment_at: string | null;
 }
 
-export function mapSalonOverviewRow(row: SalonOverviewRow): SalonOverview {
+function mapSalonOverviewRow(row: SalonOverviewRow): SalonOverview {
   return {
     id: row.id,
     name: row.name,

@@ -4,6 +4,7 @@ import { ArrowLeft, KeyRound, Mail, Percent, Phone } from "lucide-react";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
+import { parseUuid } from "@/lib/validation/route-id";
 import { getEmployeeDetail } from "@/features/employees/use-cases/get-employee-detail";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,11 +21,12 @@ export default async function EmployeeDetailPage({
 }) {
   const profile = await requireProfile();
   const { id } = await params;
+  if (!parseUuid(id)) notFound();
 
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para gestionar colaboradores.</p>
+        <p className="text-neutral-500">No tienes permiso para gestionar colaboradores.</p>
       </div>
     );
   }
@@ -90,7 +92,7 @@ export default async function EmployeeDetailPage({
               <div className="flex flex-wrap gap-1">
                 {view.categories.length ? view.categories.map((category) => (
                   <Badge key={category.id} variant="info">{category.name}</Badge>
-                )) : <span className="text-xs text-neutral-400">Ninguna</span>}
+                )) : <span className="text-xs text-neutral-500">Ninguna</span>}
               </div>
             </div>
             <div className="pt-1">
@@ -98,7 +100,7 @@ export default async function EmployeeDetailPage({
               <div className="flex flex-wrap gap-1">
                 {view.services.length ? view.services.map((service) => (
                   <Badge key={service.id} variant="primary">{service.name}</Badge>
-                )) : <span className="text-xs text-neutral-400">Ninguno</span>}
+                )) : <span className="text-xs text-neutral-500">Ninguno</span>}
               </div>
             </div>
           </CardContent>

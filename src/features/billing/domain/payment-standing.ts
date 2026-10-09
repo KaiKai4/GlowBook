@@ -4,7 +4,7 @@ import type { SalonPlanAssignmentStatus } from "./commercial-plan";
 // cron. Vencido el periodo pagado (o el trial), corre una ventana de gracia en
 // la que el owner ve un aviso; agotada la gracia, el salon queda suspendido
 // hasta que la plataforma registre el pago.
-export type PaymentStandingState = "ok" | "grace" | "suspended";
+type PaymentStandingState = "ok" | "grace" | "suspended";
 
 export interface PaymentStanding {
   state: PaymentStandingState;
@@ -14,7 +14,7 @@ export interface PaymentStanding {
   graceDaysLeft: number;
 }
 
-export const PAYMENT_GRACE_DAYS = 5;
+const PAYMENT_GRACE_DAYS = 5;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

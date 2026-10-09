@@ -16,10 +16,12 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} value @returns {string} */
 function normalizeUrl(value) {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+/** @param {string} value @returns {boolean} */
 function isLocalUrl(value) {
   try {
     const hostname = new URL(value).hostname.toLowerCase();
@@ -29,6 +31,7 @@ function isLocalUrl(value) {
   }
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[staging-e2e] ${message}`);
   process.exit(1);

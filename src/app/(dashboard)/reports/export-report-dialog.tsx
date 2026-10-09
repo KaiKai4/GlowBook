@@ -43,7 +43,7 @@ export function ExportReportDialog({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 items-center gap-2 rounded-xl border border-brand-200 bg-white px-4 text-sm font-semibold text-brand-700 shadow-sm transition-colors hover:bg-brand-50"
+        className="inline-flex h-11 items-center gap-2 rounded-xl border border-brand-200 bg-surface px-4 text-sm font-semibold text-brand-700 shadow-sm transition-colors hover:bg-brand-50"
       >
         <Download className="h-4 w-4" />
         Exportar Excel
@@ -63,16 +63,16 @@ export function ExportReportDialog({
               href={option.href}
               download
               onClick={() => setOpen(false)}
-              className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white p-3.5 transition-all hover:-translate-y-px hover:border-brand-300 hover:shadow-sm"
+              className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3.5 transition-all hover:-translate-y-px hover:border-brand-300 hover:shadow-sm"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50">
                 <option.icon className="h-4 w-4 text-brand-600" />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold capitalize text-stone-800">
+                <span className="block text-sm font-semibold capitalize text-fg-secondary">
                   {option.title}
                 </span>
-                <span className="mt-0.5 block text-xs text-stone-500">{option.description}</span>
+                <span className="mt-0.5 block text-xs text-fg-subtle">{option.description}</span>
               </span>
             </a>
           ))}

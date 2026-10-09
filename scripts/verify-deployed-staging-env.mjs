@@ -24,15 +24,18 @@ function isLocalUrl(value = "") {
   }
 }
 
+/** @param {string} [value] @returns {string} */
 function normalizeUrl(value = "") {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[verify-deployed-staging-env] ${message}`);
   process.exit(1);
 }
 
+/** @param {string} name @returns {string} */
 function requireEnv(name) {
   const value = process.env[name];
   if (!value) fail(`Set ${name}.`);

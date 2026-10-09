@@ -5,6 +5,7 @@ import { SubmitFeedbackSchema, type SubmitFeedbackInput } from "@/features/feedb
 import { requireActiveProfile } from "@/lib/auth/session";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 export async function submitFeedbackAction(
   input: SubmitFeedbackInput
@@ -12,11 +13,11 @@ export async function submitFeedbackAction(
   const profile = await requireActiveProfile();
 
   // El feedback llega al panel de plataforma: limitar evita spam masivo.
-  const limited = assertActionRateLimit(profile.id, "feedback", { max: 5, windowMs: 300_000 });
+  const limited = await assertActionRateLimit(profile.id, "feedback", { max: 5, windowMs: 300_000 });
   if (!limited.ok) return limited;
 
   const parsed = SubmitFeedbackSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   return submitFeedback(
     { salonId: profile.salon_id, createdBy: profile.id },

@@ -1,0 +1,537 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  createFakeSupabase,
+  type FakeDbResponse,
+  type FakeSupabase,
+  type FakeSupabaseClient,
+} from "@/test/access-employees-supabase-fake";
+import {
+  createEmployee,
+  findActiveEmployeeNames,
+  findEmployeeByEmail,
+  findEmployeeById,
+  findEmployeeListRows,
+  findEmployees,
+  findLatestEmployeeInvitation,
+  deleteWorkSchedule,
+  updateEmployee,
+  updateEmployeeCategories,
+  updateEmployeeServices,
+  upsertWorkSchedule,
+  validateEmployeeAssignments,
+} from "./employees.repo";
+
+// Repositorio de colaboradores (cliente de servidor con RLS). Aun así, cada
+// consulta multi-tenant debe filtrar por salon_id explícitamente, y las
+// validaciones de asignación no deben aceptar servicios o categorías ajenos.
+
+const serverHolder = vi.hoisted(() => ({ current: null as FakeSupabaseClient | null }));
+
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerClient: async () => serverHolder.current,
+}));
+
+const SALON_ID = "salon-1";
+const EMPLOYEE_ID = "employee-1";
+const CATEGORY_A = "cat-a";
+const CATEGORY_B = "cat-b";
+const SERVICE_1 = "svc-1";
+const SERVICE_2 = "svc-2";
+
+let db: FakeSupabase;
+
+function useTables(responses: Record<string, FakeDbResponse[]>) {
+  db = createFakeSupabase(responses);
+  serverHolder.current = db.client;
+}
+
+function eqCalls(table: string): unknown[][] {
+  return db
+    .callsFor(table)
+    .filter((call) => call.method === "eq")
+    .map((call) => call.args);
+}
+
+describe("employees repo", () => {
+  beforeEach(() => {
+    serverHolder.current = null;
+  });
+
+  describe("findEmployees", () => {
+    it("filtra por salón y ordena por apellido, sin filtrar activos si no se pide", async () => {
+      useTables({ employees: [{ data: [{ id: EMPLOYEE_ID }] }] });
+
+      await expect(findEmployees(SALON_ID)).resolves.toEqual([{ id: EMPLOYEE_ID }]);
+
+      expect(eqCalls("employees")).toEqual([["salon_id", SALON_ID]]);
+      expect(db.argsOf("employees", "order")).toEqual(["last_name", { ascending: true }]);
+    });
+
+    it("agrega el filtro de activos cuando se pide explícitamente, también para false", async () => {
+      useTables({ employees: [{ data: [] }, { data: [] }] });
+
+      await findEmployees(SALON_ID, true);
+      await findEmployees(SALON_ID, false);
+
+      expect(eqCalls("employees")).toEqual([
+        ["salon_id", SALON_ID],
+        ["is_active", true],
+        ["salon_id", SALON_ID],
+        ["is_active", false],
+      ]);
+    });
+
+    it("pide servicios, categorías y horarios anidados", async () => {
+      useTables({ employees: [{ data: [] }] });
+
+      await findEmployees(SALON_ID);
+
+      const selected = db.argsOf("employees", "select")?.[0];
+      expect(selected).toEqual(expect.stringContaining("employee_services"));
+      expect(selected).toEqual(expect.stringContaining("employee_categories"));
+      expect(selected).toEqual(expect.stringContaining("work_schedules"));
+    });
+
+    it("devuelve lista vacía sin datos y propaga errores de la consulta", async () => {
+      useTables({ employees: [{ data: null }] });
+      await expect(findEmployees(SALON_ID)).resolves.toEqual([]);
+
+      useTables({ employees: [{ error: { message: "caido" } }] });
+      await expect(findEmployees(SALON_ID)).rejects.toEqual({ message: "caido" });
+    });
+  });
+
+  describe("findEmployeeListRows", () => {
+    it("filtra por salón, aplica el filtro de activos opcional y devuelve las filas", async () => {
+      const rows = [{ id: EMPLOYEE_ID, is_active: true }];
+      useTables({ employees: [{ data: rows }, { data: null }] });
+
+      await expect(findEmployeeListRows(SALON_ID, true)).resolves.toEqual(rows);
+      await expect(findEmployeeListRows(SALON_ID)).resolves.toEqual([]);
+
+      expect(eqCalls("employees")).toEqual([
+        ["salon_id", SALON_ID],
+        ["is_active", true],
+        ["salon_id", SALON_ID],
+      ]);
+    });
+
+    it("propaga el error de la consulta", async () => {
+      useTables({ employees: [{ error: { message: "fallo" } }] });
+
+      await expect(findEmployeeListRows(SALON_ID)).rejects.toEqual({ message: "fallo" });
+    });
+  });
+
+  describe("findActiveEmployeeNames", () => {
+    it("lista solo empleados activos del salón ordenados por nombre", async () => {
+      useTables({ employees: [{ data: [{ id: EMPLOYEE_ID, first_name: "Ana", last_name: "L" }] }] });
+
+      await expect(findActiveEmployeeNames(SALON_ID)).resolves.toEqual([
+        { id: EMPLOYEE_ID, first_name: "Ana", last_name: "L" },
+      ]);
+
+      expect(eqCalls("employees")).toEqual([
+        ["salon_id", SALON_ID],
+        ["is_active", true],
+      ]);
+      expect(db.argsOf("employees", "order")).toEqual(["first_name"]);
+    });
+
+    it("devuelve lista vacía sin datos y propaga errores", async () => {
+      useTables({ employees: [{ data: null }] });
+      await expect(findActiveEmployeeNames(SALON_ID)).resolves.toEqual([]);
+
+      useTables({ employees: [{ error: { message: "caido" } }] });
+      await expect(findActiveEmployeeNames(SALON_ID)).rejects.toEqual({ message: "caido" });
+    });
+  });
+
+  describe("findEmployeeById", () => {
+    it("busca por id y salón y devuelve el colaborador", async () => {
+      useTables({ employees: [{ data: { id: EMPLOYEE_ID } }] });
+
+      await expect(findEmployeeById(EMPLOYEE_ID, SALON_ID)).resolves.toEqual({ id: EMPLOYEE_ID });
+
+      expect(eqCalls("employees")).toEqual([
+        ["id", EMPLOYEE_ID],
+        ["salon_id", SALON_ID],
+      ]);
+      expect(db.callsFor("employees").map((call) => call.method)).toContain("single");
+    });
+
+    it("devuelve null cuando la consulta falla o no encuentra al colaborador", async () => {
+      useTables({ employees: [{ error: { message: "no encontrado" } }] });
+      await expect(findEmployeeById(EMPLOYEE_ID, SALON_ID)).resolves.toBeNull();
+
+      useTables({ employees: [{ data: null }] });
+      await expect(findEmployeeById(EMPLOYEE_ID, SALON_ID)).resolves.toBeNull();
+    });
+  });
+
+  describe("findEmployeeByEmail", () => {
+    it("busca el email sin distinguir mayúsculas dentro del salón", async () => {
+      useTables({ employees: [{ data: { id: EMPLOYEE_ID, email: "ana@salon.test" } }] });
+
+      await expect(findEmployeeByEmail("ANA@salon.test", SALON_ID)).resolves.toEqual({
+        id: EMPLOYEE_ID,
+        email: "ana@salon.test",
+      });
+
+      expect(db.argsOf("employees", "ilike")).toEqual(["email", "ANA@salon.test"]);
+      expect(eqCalls("employees")).toEqual([["salon_id", SALON_ID]]);
+    });
+
+    it("devuelve null cuando no hay coincidencias", async () => {
+      useTables({ employees: [{ data: null }] });
+
+      await expect(findEmployeeByEmail("nadie@salon.test", SALON_ID)).resolves.toBeNull();
+    });
+  });
+
+  describe("validateEmployeeAssignments", () => {
+    it("no consulta nada cuando no hay servicios ni categorías", async () => {
+      useTables({});
+
+      await validateEmployeeAssignments(SALON_ID, [], []);
+
+      expect(db.calls).toHaveLength(0);
+    });
+
+    it("valida categorías únicas del salón y activas antes de aceptar la asignación", async () => {
+      useTables({ service_categories: [{ data: [{ id: CATEGORY_A }, { id: CATEGORY_B }] }] });
+
+      await validateEmployeeAssignments(SALON_ID, [], [CATEGORY_A, CATEGORY_B, CATEGORY_A]);
+
+      expect(db.callsFor("service_categories").map((call) => [call.method, call.args])).toEqual([
+        ["select", ["id"]],
+        ["eq", ["salon_id", SALON_ID]],
+        ["eq", ["is_active", true]],
+        ["in", ["id", [CATEGORY_A, CATEGORY_B]]],
+      ]);
+    });
+
+    it("rechaza categorías que no pertenecen al salón o están inactivas", async () => {
+      useTables({ service_categories: [{ data: [{ id: CATEGORY_A }] }] });
+
+      await expect(
+        validateEmployeeAssignments(SALON_ID, [], [CATEGORY_A, CATEGORY_B])
+      ).rejects.toThrow("Una o mas categorías no pertenecen al salon o estan inactivas.");
+    });
+
+    it("propaga el error de consulta de categorías", async () => {
+      useTables({ service_categories: [{ error: { message: "caido" } }] });
+
+      await expect(validateEmployeeAssignments(SALON_ID, [], [CATEGORY_A])).rejects.toEqual({
+        message: "caido",
+      });
+    });
+
+    it("rechaza servicios que no pertenecen al salón o están inactivos", async () => {
+      useTables({
+        service_categories: [{ data: [{ id: CATEGORY_A }] }],
+        services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_A }] }],
+      });
+
+      await expect(
+        validateEmployeeAssignments(SALON_ID, [SERVICE_1, SERVICE_2], [CATEGORY_A])
+      ).rejects.toThrow("Uno o mas servicios no pertenecen al salon o estan inactivos.");
+    });
+
+    it("rechaza servicios cuya categoría no fue asignada al colaborador", async () => {
+      useTables({
+        service_categories: [{ data: [{ id: CATEGORY_A }] }],
+        services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_B }] }],
+      });
+
+      await expect(
+        validateEmployeeAssignments(SALON_ID, [SERVICE_1], [CATEGORY_A])
+      ).rejects.toThrow("Para asignar un servicio al colaborador, tambien debes asignar su categoria.");
+    });
+
+    it("acepta servicios cuando su categoría también está asignada, con ids deduplicados", async () => {
+      useTables({
+        service_categories: [{ data: [{ id: CATEGORY_A }] }],
+        services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_A }] }],
+      });
+
+      await expect(
+        validateEmployeeAssignments(SALON_ID, [SERVICE_1, SERVICE_1], [CATEGORY_A])
+      ).resolves.toBeUndefined();
+
+      expect(db.argsOf("services", "in")).toEqual(["id", [SERVICE_1]]);
+      expect(eqCalls("services")).toEqual([
+        ["salon_id", SALON_ID],
+        ["is_active", true],
+      ]);
+    });
+
+    it("rechaza servicios sin categorías asignadas", async () => {
+      useTables({
+        services: [{ data: [{ id: SERVICE_1, category_id: CATEGORY_A }] }],
+      });
+
+      await expect(validateEmployeeAssignments(SALON_ID, [SERVICE_1], [])).rejects.toThrow(
+        "Para asignar un servicio al colaborador, tambien debes asignar su categoria."
+      );
+    });
+
+    it("propaga el error de consulta de servicios", async () => {
+      useTables({ services: [{ error: { message: "servicios caidos" } }] });
+
+      await expect(validateEmployeeAssignments(SALON_ID, [SERVICE_1], [])).rejects.toEqual({
+        message: "servicios caidos",
+      });
+    });
+  });
+
+  describe("createEmployee", () => {
+    const input = {
+      first_name: "Ana",
+      last_name: "Lopez",
+      phone: "",
+      email: "",
+      specialty: "",
+      commission_percentage: 0,
+      hire_date: null,
+    };
+
+    it("inserta el colaborador con salon_id y luego sus servicios y categorías", async () => {
+      useTables({
+        employees: [{ data: { id: EMPLOYEE_ID, first_name: "Ana" } }],
+        employee_services: [{}],
+        employee_categories: [{}],
+      });
+
+      await expect(
+        createEmployee(SALON_ID, input, [SERVICE_1, SERVICE_2], [CATEGORY_A])
+      ).resolves.toEqual({ id: EMPLOYEE_ID, first_name: "Ana" });
+
+      expect(db.argsOf("employees", "insert")).toEqual([{ ...input, salon_id: SALON_ID }]);
+      expect(db.argsOf("employee_services", "insert")).toEqual([
+        [
+          { employee_id: EMPLOYEE_ID, service_id: SERVICE_1, salon_id: SALON_ID },
+          { employee_id: EMPLOYEE_ID, service_id: SERVICE_2, salon_id: SALON_ID },
+        ],
+      ]);
+      expect(db.argsOf("employee_categories", "insert")).toEqual([
+        [{ employee_id: EMPLOYEE_ID, category_id: CATEGORY_A, salon_id: SALON_ID }],
+      ]);
+    });
+
+    it("no inserta relaciones cuando no hay servicios ni categorías", async () => {
+      useTables({ employees: [{ data: { id: EMPLOYEE_ID } }] });
+
+      await createEmployee(SALON_ID, input, [], []);
+
+      expect(db.callsFor("employee_services")).toHaveLength(0);
+      expect(db.callsFor("employee_categories")).toHaveLength(0);
+    });
+
+    it("propaga el error de inserción del colaborador", async () => {
+      useTables({ employees: [{ error: { message: "sin espacio" } }] });
+
+      await expect(createEmployee(SALON_ID, input, [], [])).rejects.toEqual({
+        message: "sin espacio",
+      });
+    });
+
+    // CONDUCTA ACTUAL (posible bug): employees.repo.ts (createEmployee) no revisa el
+    // error del insert de employee_services ni de employee_categories; el colaborador
+    // queda creado aunque sus asignaciones fallen en silencio.
+    it("CONDUCTA ACTUAL (posible bug): ignora el error al insertar servicios asignados", async () => {
+      useTables({
+        employees: [{ data: { id: EMPLOYEE_ID } }],
+        employee_services: [{ error: { message: "fk rota" } }],
+      });
+
+      await expect(createEmployee(SALON_ID, input, [SERVICE_1], [])).resolves.toEqual({
+        id: EMPLOYEE_ID,
+      });
+    });
+  });
+
+  describe("updateEmployeeServices and updateEmployeeCategories", () => {
+    it("reemplaza los servicios: borra los anteriores del colaborador y reinserta los nuevos", async () => {
+      useTables({ employee_services: [{}, {}] });
+
+      await updateEmployeeServices(EMPLOYEE_ID, SALON_ID, [SERVICE_1]);
+
+      expect(db.callsFor("employee_services").map((call) => call.method)).toEqual([
+        "delete",
+        "eq",
+        "eq",
+        "insert",
+      ]);
+      expect(eqCalls("employee_services")).toEqual([
+        ["employee_id", EMPLOYEE_ID],
+        ["salon_id", SALON_ID],
+      ]);
+      expect(db.argsOf("employee_services", "insert")).toEqual([
+        [{ employee_id: EMPLOYEE_ID, service_id: SERVICE_1, salon_id: SALON_ID }],
+      ]);
+    });
+
+    it("con lista vacía solo borra las asignaciones anteriores", async () => {
+      useTables({ employee_services: [{}] });
+
+      await updateEmployeeServices(EMPLOYEE_ID, SALON_ID, []);
+
+      expect(db.callsFor("employee_services").map((call) => call.method)).toEqual([
+        "delete",
+        "eq",
+        "eq",
+      ]);
+    });
+
+    // CONDUCTA ACTUAL (posible bug): employees.repo.ts:195-199 no revisa el error del
+    // delete de employee_services; si el borrado falla, se insertan los nuevos servicios
+    // sobre las asignaciones anteriores y el resultado no informa del fallo.
+    it("CONDUCTA ACTUAL (posible bug): ignora el error al borrar los servicios anteriores", async () => {
+      useTables({
+        employee_services: [{ error: { message: "borrado rechazado" } }, {}],
+      });
+
+      await expect(
+        updateEmployeeServices(EMPLOYEE_ID, SALON_ID, [SERVICE_1])
+      ).resolves.toBeUndefined();
+
+      expect(db.argsOf("employee_services", "insert")).toEqual([
+        [{ employee_id: EMPLOYEE_ID, service_id: SERVICE_1, salon_id: SALON_ID }],
+      ]);
+    });
+
+    it("reemplaza las categorías con el mismo patrón acotado por salón", async () => {
+      useTables({ employee_categories: [{}, {}] });
+
+      await updateEmployeeCategories(EMPLOYEE_ID, SALON_ID, [CATEGORY_A, CATEGORY_B]);
+
+      expect(eqCalls("employee_categories")).toEqual([
+        ["employee_id", EMPLOYEE_ID],
+        ["salon_id", SALON_ID],
+      ]);
+      expect(db.argsOf("employee_categories", "insert")).toEqual([
+        [
+          { employee_id: EMPLOYEE_ID, category_id: CATEGORY_A, salon_id: SALON_ID },
+          { employee_id: EMPLOYEE_ID, category_id: CATEGORY_B, salon_id: SALON_ID },
+        ],
+      ]);
+    });
+
+    it("con lista vacía de categorías no inserta nada", async () => {
+      useTables({ employee_categories: [{}] });
+
+      await updateEmployeeCategories(EMPLOYEE_ID, SALON_ID, []);
+
+      expect(db.callsFor("employee_categories").map((call) => call.method)).toEqual([
+        "delete",
+        "eq",
+        "eq",
+      ]);
+    });
+  });
+
+  describe("updateEmployee", () => {
+    it("actualiza solo el colaborador del salón indicado y devuelve la fila", async () => {
+      useTables({ employees: [{ data: { id: EMPLOYEE_ID, is_active: false } }] });
+
+      await expect(updateEmployee(EMPLOYEE_ID, SALON_ID, { is_active: false })).resolves.toEqual({
+        id: EMPLOYEE_ID,
+        is_active: false,
+      });
+
+      expect(db.argsOf("employees", "update")).toEqual([{ is_active: false }]);
+      expect(eqCalls("employees")).toEqual([
+        ["id", EMPLOYEE_ID],
+        ["salon_id", SALON_ID],
+      ]);
+    });
+
+    it("propaga el error de actualización", async () => {
+      useTables({ employees: [{ error: { message: "bloqueado" } }] });
+
+      await expect(updateEmployee(EMPLOYEE_ID, SALON_ID, { first_name: "X" })).rejects.toEqual({
+        message: "bloqueado",
+      });
+    });
+  });
+
+  describe("work schedules", () => {
+    const schedule = {
+      employee_id: EMPLOYEE_ID,
+      day_of_week: 1,
+      start_time: "09:00",
+      end_time: "17:00",
+      is_active: true,
+    };
+
+    it("hace upsert del bloque con salon_id y el conflicto por salón, empleado, día y horas", async () => {
+      useTables({ work_schedules: [{ data: { id: "ws-1" } }] });
+
+      await expect(upsertWorkSchedule(SALON_ID, schedule)).resolves.toEqual({ id: "ws-1" });
+
+      expect(db.argsOf("work_schedules", "upsert")).toEqual([
+        { ...schedule, salon_id: SALON_ID },
+        { onConflict: "salon_id,employee_id,day_of_week,start_time,end_time" },
+      ]);
+    });
+
+    it("propaga el error de upsert", async () => {
+      useTables({ work_schedules: [{ error: { message: "solapado" } }] });
+
+      await expect(upsertWorkSchedule(SALON_ID, schedule)).rejects.toEqual({ message: "solapado" });
+    });
+
+    it("borra un bloque solo dentro del salón indicado", async () => {
+      useTables({ work_schedules: [{}] });
+
+      await deleteWorkSchedule("ws-1", SALON_ID);
+
+      expect(eqCalls("work_schedules")).toEqual([
+        ["id", "ws-1"],
+        ["salon_id", SALON_ID],
+      ]);
+    });
+
+    it("propaga el error de borrado", async () => {
+      useTables({ work_schedules: [{ error: { message: "no borrable" } }] });
+
+      await expect(deleteWorkSchedule("ws-1", SALON_ID)).rejects.toEqual({
+        message: "no borrable",
+      });
+    });
+  });
+
+  describe("findLatestEmployeeInvitation", () => {
+    it("devuelve la invitación más reciente sin exponer el token", async () => {
+      const row = {
+        id: "inv-1",
+        email: "ana@salon.test",
+        role_id: null,
+        expires_at: "2026-10-16T00:00:00.000Z",
+        accepted_at: null,
+      };
+      useTables({ employee_invitations: [{ data: row }] });
+
+      await expect(findLatestEmployeeInvitation(EMPLOYEE_ID, SALON_ID)).resolves.toEqual(row);
+
+      expect(db.argsOf("employee_invitations", "select")).toEqual([
+        "id, email, role_id, expires_at, accepted_at",
+      ]);
+      expect(eqCalls("employee_invitations")).toEqual([
+        ["employee_id", EMPLOYEE_ID],
+        ["salon_id", SALON_ID],
+      ]);
+      expect(db.argsOf("employee_invitations", "order")).toEqual([
+        "created_at",
+        { ascending: false },
+      ]);
+    });
+
+    it("devuelve null cuando no hay invitaciones", async () => {
+      useTables({ employee_invitations: [{ data: null }] });
+
+      await expect(findLatestEmployeeInvitation(EMPLOYEE_ID, SALON_ID)).resolves.toBeNull();
+    });
+  });
+});

@@ -234,16 +234,16 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
                 ))}
               </div>
               {visibleCategories.length > CATEGORIES_PER_PAGE && (
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-4">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
                   <div>
-                    <p className="text-sm font-medium text-neutral-700">
+                    <p className="text-sm font-medium text-fg-secondary">
                       {Math.min((currentCategoryPage - 1) * CATEGORIES_PER_PAGE + 1, visibleCategories.length)}
                       -
                       {Math.min(currentCategoryPage * CATEGORIES_PER_PAGE, visibleCategories.length)}
                       {" de "}
                       {visibleCategories.length}
                     </p>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-fg-subtle">
                       Pagina {currentCategoryPage} de {totalCategoryPages}
                     </p>
                   </div>
@@ -252,7 +252,7 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
                       type="button"
                       onClick={() => setCategoryPage((page) => Math.max(1, page - 1))}
                       disabled={currentCategoryPage === 1}
-                      className="flex min-h-9 items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-white disabled:text-neutral-300"
+                      className="flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-fg-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
                     >
                       <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                       Anterior
@@ -261,7 +261,7 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
                       type="button"
                       onClick={() => setCategoryPage((page) => Math.min(totalCategoryPages, page + 1))}
                       disabled={currentCategoryPage === totalCategoryPages}
-                      className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-white disabled:text-neutral-300"
+                      className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
                     >
                       Siguiente
                       <ChevronRight className="h-4 w-4" aria-hidden="true" />

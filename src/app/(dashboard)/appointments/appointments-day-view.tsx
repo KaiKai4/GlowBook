@@ -21,14 +21,14 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Cancelada", no_show: "No asistió",
 };
 const STATUS_ROW_BG: Record<string, string> = {
-  completed: "bg-emerald-50/40", cancelled: "opacity-50", no_show: "bg-amber-50/40",
+  completed: "bg-success-subtle/40", cancelled: "opacity-50", no_show: "bg-warning-subtle/40",
 };
 const STATUS_BADGE: Record<string, string> = {
-  scheduled: "bg-blue-50 text-blue-700 border-blue-200",
+  scheduled: "bg-info-subtle text-info-fg border-info-border",
   confirmed: "bg-brand-50 text-brand-700 border-brand-200",
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  cancelled: "bg-stone-100 text-stone-500 border-stone-200",
-  no_show: "bg-amber-50 text-amber-700 border-amber-200",
+  completed: "bg-success-subtle text-success-fg border-success-border",
+  cancelled: "bg-surface-sunken text-fg-muted border-border",
+  no_show: "bg-warning-subtle text-warning-fg border-warning-border",
 };
 const SUMMARY_STATUS_ORDER: Record<string, number> = {
   scheduled: 0,
@@ -141,8 +141,8 @@ export function AppointmentsDayView({
       {/* Worker search bar */}
       {view === "trabajador" && (
         <div className="relative">
-          <div className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-white shadow-sm px-4 py-3">
-            <Search className="h-4 w-4 text-stone-400 shrink-0" />
+          <div className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-surface shadow-sm px-4 py-3">
+            <Search className="h-4 w-4 text-fg-subtle shrink-0" />
             <input
               type="text"
               placeholder="Buscar profesional por nombre..."
@@ -156,29 +156,29 @@ export function AppointmentsDayView({
               }}
               onFocus={() => setDropdownOpen(true)}
               onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
-              className="flex-1 text-sm text-stone-800 placeholder:text-stone-400 outline-none bg-transparent"
+              className="flex-1 text-sm text-fg-secondary placeholder:text-fg-subtle outline-none bg-transparent"
             />
             {selectedEmpId ? (
               <button
                 onClick={() => { setSelectedEmpId(null); setEmpSearch(""); }}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-stone-500 hover:bg-red-50 hover:text-red-500 transition-colors"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-sunken text-fg-muted hover:bg-danger-subtle hover:text-danger-strong transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             ) : (
-              <span className="text-xs text-stone-400">{employees.length} profesionales</span>
+              <span className="text-xs text-fg-subtle">{employees.length} profesionales</span>
             )}
           </div>
 
           {dropdownOpen && !selectedEmpId && (
-            <div className="absolute top-full left-0 right-0 z-20 mt-1 rounded-xl border border-stone-200 bg-white shadow-xl overflow-hidden">
+            <div className="absolute top-full left-0 right-0 z-20 mt-1 rounded-xl border border-border bg-surface shadow-xl overflow-hidden">
               {filteredEmps.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-stone-400">Sin resultados</p>
+                <p className="px-4 py-3 text-sm text-fg-subtle">Sin resultados</p>
               ) : (
                 filteredEmps.map((emp) => (
                   <button
                     key={emp.id}
-                    className="w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                    className="w-full text-left px-4 py-2.5 text-sm text-fg-secondary hover:bg-brand-50 hover:text-brand-700 transition-colors"
                     onMouseDown={() => {
                       setSelectedEmpId(emp.id);
                       setEmpSearch("");
@@ -213,8 +213,8 @@ export function AppointmentsDayView({
       </div>
 
       {/* Appointment list */}
-      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-visible">
-        <div className="rounded-t-2xl border-b border-brand-100 bg-white px-5 pt-4">
+      <div className="rounded-2xl border border-brand-100 bg-surface shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-visible">
+        <div className="rounded-t-2xl border-b border-brand-100 bg-surface px-5 pt-4">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <nav className="flex items-end gap-8" aria-label="Filtros del resumen de citas">
               {statusFilters.map((f) => (
@@ -225,14 +225,14 @@ export function AppointmentsDayView({
                     "relative shrink-0 px-0.5 pb-3 text-sm font-medium transition-colors",
                     summaryFilter === f.value
                       ? "text-brand-700 after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand-600"
-                      : "text-stone-500 hover:text-stone-800"
+                      : "text-fg-subtle hover:text-fg-secondary"
                   )}
                 >
                   {f.label}
                 </button>
               ))}
             </nav>
-            <h2 className="flex items-center gap-1.5 pb-3 text-sm font-bold text-brand-700 uppercase tracking-wide">
+            <h2 className="flex items-center gap-1.5 pb-3 text-sm font-semibold text-brand-700 uppercase tracking-wide">
               <ListFilter className="h-3.5 w-3.5" />
               Resumen de citas
             </h2>
@@ -241,42 +241,42 @@ export function AppointmentsDayView({
 
         {listAppts.length === 0 ? (
           <div className="py-12 text-center">
-            <p className="text-sm text-stone-400">No hay citas para este filtro.</p>
+            <p className="text-sm text-fg-subtle">No hay citas para este filtro.</p>
           </div>
         ) : (
-          <div className="divide-y divide-stone-100">
+          <div className="divide-y divide-border-subtle">
             {listAppts.map((appt) => (
               <div
                 key={appt.id}
                 className={cn(
-                  "flex flex-wrap items-center gap-3 px-5 py-3.5 transition-colors hover:bg-stone-50/60",
+                  "flex flex-wrap items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted/60",
                   STATUS_ROW_BG[appt.status] ?? ""
                 )}
               >
                 <div className="w-32 shrink-0">
                   {appt.start_time && (
                     <>
-                      <p className="text-xs font-semibold capitalize text-stone-500">
+                      <p className="text-xs font-semibold capitalize text-fg-subtle">
                         {formatAppointmentDayTz(new Date(appt.start_time), tz)}
                       </p>
-                      <p className="text-xs text-stone-500 tabular-nums">
+                      <p className="text-xs text-fg-subtle tabular-nums">
                         {formatTimeTz(new Date(appt.start_time), tz)}
                       </p>
                     </>
                   )}
                   {appt.end_time && (
-                    <p className="text-xs text-stone-500 tabular-nums">
+                    <p className="text-xs text-fg-subtle tabular-nums">
                       – {formatTimeTz(new Date(appt.end_time), tz)}
                     </p>
                   )}
                 </div>
 
                 <div className="min-w-[140px] flex-1">
-                  <p className="text-sm font-semibold text-stone-800">
+                  <p className="text-sm font-semibold text-fg-secondary">
                     {appt.customer?.first_name} {appt.customer?.last_name}
                   </p>
                   {appt.customer?.phone && (
-                    <p className="text-xs text-stone-500">{appt.customer.phone}</p>
+                    <p className="text-xs text-fg-subtle">{appt.customer.phone}</p>
                   )}
                 </div>
 
@@ -284,7 +284,7 @@ export function AppointmentsDayView({
                   <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[appt.status] ?? ""}`}>
                     {STATUS_LABEL[appt.status]}
                   </span>
-                  <span className="text-sm font-bold text-stone-700">
+                  <span className="text-sm font-semibold text-fg-secondary">
                     {formatCurrency(Number(appt.total_price ?? 0))}
                   </span>
                 </div>
@@ -293,24 +293,24 @@ export function AppointmentsDayView({
                   <div className="relative ml-2 flex shrink-0 items-center gap-2.5">
                     <button
                       onClick={() => setCompleteAppt(appt)}
-                      className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="flex h-9 items-center gap-1.5 rounded-lg border border-success-border bg-success-subtle px-3 text-xs font-semibold text-success-fg transition-colors hover:bg-success-subtle focus:outline-none focus:ring-2 focus:ring-success"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Completar
                     </button>
                     <button
                       type="button"
                       onClick={() => setOpenActionsId(openActionsId === appt.id ? null : appt.id)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition-colors hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-subtle transition-colors hover:bg-surface-muted hover:text-fg-secondary focus:outline-none focus:ring-2 focus:ring-brand-500"
                       aria-label="Abrir acciones de cita"
                       aria-expanded={openActionsId === appt.id}
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </button>
                     {openActionsId === appt.id && (
-                      <div className="absolute right-0 top-10 z-40 w-44 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-[0_12px_28px_rgba(15,23,42,0.16)]">
+                      <div className="absolute right-0 top-10 z-40 w-44 overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-[0_12px_28px_rgba(15,23,42,0.16)]">
                         <Link
                           href={`/appointments/${appt.id}/edit`}
-                          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
+                          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-fg-secondary transition-colors hover:bg-brand-50 hover:text-brand-700"
                         >
                           <Pencil className="h-4 w-4" /> Editar
                         </Link>
@@ -320,7 +320,7 @@ export function AppointmentsDayView({
                             setOpenActionsId(null);
                             setCancelAppt(appt);
                           }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-danger-strong transition-colors hover:bg-danger-subtle"
                         >
                           <Trash2 className="h-4 w-4" /> Cancelar
                         </button>

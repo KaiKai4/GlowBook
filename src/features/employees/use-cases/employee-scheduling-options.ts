@@ -2,7 +2,7 @@ import "server-only";
 
 import { findEmployees } from "../data/employees.repo";
 
-export interface EmployeeSchedulingWorkSchedule {
+interface EmployeeSchedulingWorkSchedule {
   day_of_week: number;
   start_time: string;
   end_time: string;

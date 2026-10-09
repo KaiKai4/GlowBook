@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  recordInventoryMovement,
   recordInventoryPurchase,
   transferInventoryStock,
 } from "./inventory-movements";
@@ -8,20 +7,14 @@ import {
   recordInventoryPurchaseAtomically,
   transferInventoryStockAtomically,
 } from "../data/inventory.repo";
-import { adjustInventoryStock } from "./stock-commands";
 
 vi.mock("../data/inventory.repo", () => ({
   recordInventoryPurchaseAtomically: vi.fn(),
   transferInventoryStockAtomically: vi.fn(),
 }));
 
-vi.mock("./stock-commands", () => ({
-  adjustInventoryStock: vi.fn(),
-}));
-
 const mockedTransfer = vi.mocked(transferInventoryStockAtomically);
 const mockedPurchase = vi.mocked(recordInventoryPurchaseAtomically);
-const mockedAdjustStock = vi.mocked(adjustInventoryStock);
 
 describe("inventory movement use-cases", () => {
   beforeEach(() => {
@@ -49,8 +42,8 @@ describe("inventory movement use-cases", () => {
     });
   });
 
-  it("preserves database error messages when an atomic transfer fails", async () => {
-    mockedTransfer.mockRejectedValue({ message: "Stock insuficiente para completar la transferencia." });
+  it("preserves our own RAISE messages (SQLSTATE P0001) when an atomic transfer fails", async () => {
+    mockedTransfer.mockRejectedValue({ code: "P0001", message: "Stock insuficiente para completar la transferencia." });
 
     const result = await transferInventoryStock("salon-1", {
       product_id: "product-1",
@@ -87,28 +80,6 @@ describe("inventory movement use-cases", () => {
       quantity: 5,
       unit_cost: 4,
       note: "Compra de prueba",
-    });
-  });
-
-  it("keeps one-step manual movements behind the stock delta adapter", async () => {
-    mockedAdjustStock.mockResolvedValue({ ok: true, value: { quantityAfter: 8 } });
-
-    const result = await recordInventoryMovement("salon-1", {
-      product_id: "product-1",
-      location: "internal",
-      movement_kind: "internal_use",
-      quantity: 2,
-      note: "Uso en servicio",
-    });
-
-    expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedAdjustStock).toHaveBeenCalledWith({
-      salonId: "salon-1",
-      productId: "product-1",
-      location: "internal",
-      delta: -2,
-      movementType: "internal_use",
-      note: "Uso en servicio",
     });
   });
 });

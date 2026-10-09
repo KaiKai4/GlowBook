@@ -3,7 +3,7 @@ const PANAMA_COUNTRY_CODE = "507";
 const PANAMA_MOBILE_LENGTH = 8;
 const PANAMA_MOBILE_PREFIX = "6";
 
-export function phoneDigits(value: string): string {
+function phoneDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
 

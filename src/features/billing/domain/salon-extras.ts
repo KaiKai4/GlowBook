@@ -45,14 +45,6 @@ export function buildSalonExtras(
   });
 }
 
-export function monthlyExtrasTotal(extras: SalonExtra[]): number {
-  return roundMoney(
-    extras
-      .filter((extra) => extra.override.status === "active")
-      .reduce((total, extra) => total + extra.monthlyPrice, 0)
-  );
-}
-
 export function resolveOverrideMax(
   base: number | null,
   overrides: SalonPlanOverride[]

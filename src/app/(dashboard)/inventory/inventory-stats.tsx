@@ -21,11 +21,11 @@ function Metric({
   value: number;
   tone?: "neutral" | "warn" | "ok";
 }) {
-  const color = tone === "warn" ? "text-amber-700" : tone === "ok" ? "text-emerald-700" : "text-stone-900";
+  const color = tone === "warn" ? "text-warning-fg" : tone === "ok" ? "text-success-fg" : "text-fg";
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4">
-      <p className="text-xs font-semibold uppercase text-stone-400">{label}</p>
-      <p className={`mt-1 text-3xl font-bold ${color}`}>{value}</p>
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="text-xs font-semibold uppercase text-fg-subtle">{label}</p>
+      <p className={`mt-1 text-2xl font-semibold ${color}`}>{value}</p>
     </div>
   );
 }

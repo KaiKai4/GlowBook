@@ -3,16 +3,19 @@
 // and salons can only be created via an invitation. Chicken-and-egg solved here.
 //
 // Usage (password never goes through git/chat):
-//   node --env-file=.env.local scripts/bootstrap-platform-admin.mjs <email> <password>
+//   node --env-file=.env.local scripts/bootstrap-platform-admin.mjs <email> <password> [--confirm=<project-ref>]
+//
+// Un destino remoto (https://<ref>.supabase.co) exige --confirm=<ref>; produccion se rechaza.
 //
 // Re-runnable: if the user already exists, it just ensures the platform_admins row.
 
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTargetOrExit, readConfirmFlag } from "./lib/target-guard.mjs";
 
-const [, , email, password] = process.argv;
+const [email, password] = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 
 if (!email || !password) {
-  console.error("Uso: node --env-file=.env.local scripts/bootstrap-platform-admin.mjs <email> <password>");
+  console.error("Uso: node --env-file=.env.local scripts/bootstrap-platform-admin.mjs <email> <password> [--confirm=<project-ref>]");
   process.exit(1);
 }
 
@@ -24,6 +27,12 @@ if (!url || !serviceRole) {
   process.exit(1);
 }
 
+assertSafeTargetOrExit("bootstrap-platform-admin", {
+  url,
+  env: process.env.GLOWBOOK_ENV ?? process.env.APP_ENV ?? process.env.VERCEL_ENV,
+  confirmFlag: readConfirmFlag(process.argv),
+  productionUrl: process.env.PRODUCTION_SUPABASE_URL,
+});
 const admin = createClient(url, serviceRole, { auth: { persistSession: false } });
 
 // 1. Create the auth user (email pre-confirmed so they can log in immediately).

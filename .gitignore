@@ -49,3 +49,9 @@ next-env.d.ts
 /skills-lock.json
 
 .vercel
+
+# calidad local (artefactos generados, no versionar)
+.quality/
+.lighthouseci/
+reports/mutation/
+.stryker-tmp/

@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
-export const PricingModeSchema = z.enum(["fixed", "variable"]);
+const PricingModeSchema = z.enum(["fixed", "variable"]);
 
 export const CreateCategorySchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio").max(100),

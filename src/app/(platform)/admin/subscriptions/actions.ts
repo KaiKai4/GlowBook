@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { parseUuid } from "@/lib/validation/route-id";
 import {
   assignSalonAddonConfig,
   assignSalonCommercialPlanConfig,
@@ -30,6 +32,8 @@ export async function assignPlanAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:assignPlanAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const result = await assignSalonCommercialPlanConfig({
     salonId: String(formData.get("salonId") ?? ""),
     planId: String(formData.get("planId") ?? ""),
@@ -47,6 +51,8 @@ export async function giveAddonAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:giveAddonAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const isGift = bool(formData, "isGift");
   const result = await assignSalonAddonConfig({
     salonId: String(formData.get("salonId") ?? ""),
@@ -68,6 +74,8 @@ export async function giveManualExtraAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:giveManualExtraAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const targetType = String(formData.get("targetType") ?? "metric");
   const result = await saveSalonManualExtraConfig({
     salonId: String(formData.get("salonId") ?? ""),
@@ -91,6 +99,8 @@ export async function registerPaymentAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:registerPaymentAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const result = await registerSalonPlanPaymentConfig({
     salonId: String(formData.get("salonId") ?? ""),
     amount: String(formData.get("amount") ?? "0"),
@@ -104,6 +114,10 @@ export async function registerPaymentAction(
 
 export async function resolveAlertAction(alertId: string, salonId: string): Promise<void> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:resolveAlertAction");
+  if (!limited.ok) throw new Error(limited.error);
+  if (!parseUuid(alertId)) throw new Error("Identificador inválido.");
+  if (!parseUuid(salonId)) throw new Error("Identificador inválido.");
   const result = await resolveSalonPlanAlertConfig(alertId, salonId, actorUserId);
   if (!result.ok) throw new Error(result.error);
   done("Alerta resuelta.");
@@ -111,6 +125,10 @@ export async function resolveAlertAction(alertId: string, salonId: string): Prom
 
 export async function cancelExtraAction(overrideId: string, salonId: string): Promise<void> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:cancelExtraAction");
+  if (!limited.ok) throw new Error(limited.error);
+  if (!parseUuid(overrideId)) throw new Error("Identificador inválido.");
+  if (!parseUuid(salonId)) throw new Error("Identificador inválido.");
   const result = await cancelSalonExtraConfig(overrideId, salonId, actorUserId);
   if (!result.ok) throw new Error(result.error);
   done("Extra cancelado.");

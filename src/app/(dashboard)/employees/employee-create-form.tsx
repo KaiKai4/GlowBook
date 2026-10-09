@@ -96,9 +96,9 @@ export function EmployeeCreateForm({
       <div className="grid grid-cols-2 gap-3">
         <Input name="commission_percentage" label="Comisión (%)" type="number" min={0} max={100} defaultValue={0} />
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-stone-600">Rol</label>
+          <label className="mb-1.5 block text-xs font-medium text-fg-muted">Rol</label>
           {roles.length === 0 ? (
-            <p className="pt-1 text-xs text-stone-400">Roles no disponibles para este salon.</p>
+            <p className="pt-1 text-xs text-fg-subtle">Roles no disponibles para este salon.</p>
           ) : (
             <Select name="role_id" className="w-full">
               <option value="">Sin rol por ahora</option>
@@ -122,12 +122,12 @@ export function EmployeeCreateForm({
         emptyCategoryMessage="No hay categorías. Crea servicios primero."
       />
 
-      <p className="rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-400">
+      <p className="rounded-lg bg-surface-muted px-3 py-2 text-xs text-fg-subtle">
         Si ingresas email y seleccionas un rol, se generara automaticamente el enlace de acceso.
       </p>
 
       {archivedMatch && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+        <div className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2.5 text-sm text-warning-strong">
           <p className="font-semibold">Ya existe un colaborador con ese email: {archivedMatch.name}</p>
           <p className="mt-1 text-xs">
             Restaurarlo conserva su historial. Luego puedes editar servicios, categorías, horarios y generar un nuevo enlace.
@@ -145,7 +145,7 @@ export function EmployeeCreateForm({
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+        <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</div>
       )}
 
       <div className="flex justify-end gap-2">

@@ -1,6 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 
@@ -34,33 +32,19 @@ export interface AppointmentFixture {
   startDate: string;
 }
 
-export function loadEnvFileIfPresent() {
-  const envPath = join(process.cwd(), ".env.local");
-  if (!existsSync(envPath)) return;
-
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
-
-    const [key, ...valueParts] = trimmed.split("=");
-    if (!process.env[key]) {
-      process.env[key] = valueParts.join("=");
-    }
-  }
-}
-
 function normalizeUrl(value: string): string {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
-function hasRealEnvValue(value: string | undefined): value is string {
+function isConfiguredValue(value: string | undefined): value is string {
   if (!value) return false;
   if (/^(PASTE|YOUR|TU)[A-Z0-9_-]*_/i.test(value)) return false;
   if (value.includes("your-") || value.includes("here")) return false;
   return true;
 }
 
-function assertSafeIntegrationTarget(env: SupabaseIntegrationEnv): void {
+// Las pruebas de integración solo pueden apuntar a Supabase LOCAL (Docker).
+function assertLocalIntegrationTarget(env: SupabaseIntegrationEnv): void {
   const appEnv = (
     process.env.GLOWBOOK_ENV ??
     process.env.APP_ENV ??
@@ -73,27 +57,37 @@ function assertSafeIntegrationTarget(env: SupabaseIntegrationEnv): void {
     throw new Error("Supabase integration fixtures cannot run when the app environment is production.");
   }
 
-  if (
-    productionUrl &&
-    normalizeUrl(env.url) === normalizeUrl(productionUrl)
-  ) {
+  if (productionUrl && normalizeUrl(env.url) === normalizeUrl(productionUrl)) {
     throw new Error("Supabase integration fixtures refused to run against PRODUCTION_SUPABASE_URL.");
+  }
+
+  if (process.env.GLOWBOOK_TEST_TARGET !== "local") {
+    throw new Error(
+      "Supabase integration fixtures requieren GLOWBOOK_TEST_TARGET=local. Ejecuta \"npm run test:integration\" con Supabase local activo."
+    );
+  }
+
+  const host = new URL(env.url).hostname;
+  if (host !== "127.0.0.1" && host !== "localhost") {
+    throw new Error("Supabase integration fixtures solo admiten un host local (127.0.0.1 o localhost).");
   }
 }
 
-export function getSupabaseIntegrationEnv(): SupabaseIntegrationEnv | null {
-  loadEnvFileIfPresent();
-
+// Toma el entorno SOLO de process.env (nunca de .env.local) y falla si falta:
+// una prueba de integración no se salta en silencio.
+export function getSupabaseIntegrationEnv(): SupabaseIntegrationEnv {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!hasRealEnvValue(url) || !hasRealEnvValue(anonKey) || !hasRealEnvValue(serviceRoleKey)) {
-    return null;
+  if (!isConfiguredValue(url) || !isConfiguredValue(anonKey) || !isConfiguredValue(serviceRoleKey)) {
+    throw new Error(
+      "Faltan variables de Supabase para integración (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY). Ejecuta \"npm run test:integration\" con Supabase local activo."
+    );
   }
 
   const env = { url, anonKey, serviceRoleKey };
-  assertSafeIntegrationTarget(env);
+  assertLocalIntegrationTarget(env);
   return env;
 }
 

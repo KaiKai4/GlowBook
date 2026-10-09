@@ -14,7 +14,8 @@ import { captureError } from "@/lib/observability";
 import { personNameField } from "@/lib/validation/name";
 import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
 import { recordPlatformAction } from "./platform-audit";
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 const AcceptSchema = z.object({
   token: z.string().min(1, "Token inválido"),
@@ -55,7 +56,7 @@ async function rollbackCreatedOwner(userId: string): Promise<void> {
 // salon atomically using the privileged data adapter. No dependency on email confirmation.
 export async function acceptInvitation(input: AcceptInvitationInput): Promise<Result<void>> {
   const parsed = AcceptSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   const { token, email, password, salon_name, full_name } = parsed.data;
   const emailDomain = email.split("@").at(-1) ?? "unknown";

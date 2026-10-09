@@ -1,3 +1,4 @@
+import { toPublicErrorMessage } from "@/lib/errors";
 import { err, ok, type Result } from "@/lib/result";
 import type { CreateExpenseInput } from "../schemas";
 import {
@@ -136,7 +137,7 @@ export async function createExpense(
     await insertExpense(salonId, input);
     return ok("Gasto registrado.");
   } catch (error) {
-    return err(error instanceof Error ? error.message : "No se pudo registrar el gasto.");
+    return err(toPublicErrorMessage(error, "No se pudo registrar el gasto."));
   }
 }
 

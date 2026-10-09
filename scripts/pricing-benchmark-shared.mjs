@@ -1,8 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { join } from "node:path";
 
-export const BENCHMARK_PASSWORD = "GlowBookBenchmark2026";
 export const BENCHMARK_BATCH_PREFIX = "pricing-benchmark-v2";
 export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Yappy", "Transferencia", "Zinli"];
 
@@ -33,7 +31,7 @@ export const TABLES_WITH_SALON_ID = [
   "expenses",
 ];
 
-export const BENCHMARK_COHORTS = [
+const BENCHMARK_COHORTS = [
   {
     key: "A",
     slug: "agenda-minima",
@@ -114,7 +112,7 @@ export const BENCHMARK_COHORTS = [
   },
 ];
 
-export function loadEnvFileIfPresent() {
+function loadEnvFileIfPresent() {
   const envPath = join(process.cwd(), ".env.local");
   if (!existsSync(envPath)) return;
 
@@ -127,15 +125,33 @@ export function loadEnvFileIfPresent() {
   }
 }
 
-export function normalizeUrl(value) {
+/** @param {string} value */
+function normalizeUrl(value) {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+/** @param {string} scope @param {string} message @returns {never} */
 export function fail(scope, message) {
   console.error(`[${scope}] ${message}`);
   process.exit(1);
 }
 
+/**
+ * Contraseña de los usuarios de benchmark. Se lee de GLOWBOOK_BENCHMARK_PASSWORD:
+ * no hay contraseña literal en el código.
+ * @param {string} scope
+ * @returns {string}
+ */
+export function requireBenchmarkPassword(scope) {
+  loadEnvFileIfPresent();
+  const password = process.env.GLOWBOOK_BENCHMARK_PASSWORD;
+  if (!password) {
+    fail(scope, "Define GLOWBOOK_BENCHMARK_PASSWORD con la contraseña de los usuarios de benchmark.");
+  }
+  return password;
+}
+
+/** @param {string} scope */
 export function assertStagingEnvironment(scope) {
   loadEnvFileIfPresent();
 
@@ -160,8 +176,15 @@ export function assertStagingEnvironment(scope) {
   return { appEnv, supabaseUrl };
 }
 
+/**
+ * Contraseña común de los usuarios de benchmark. Se lee del entorno (nunca
+ * literal en el código) y falla con un mensaje claro si no está definida.
+ */
+
+/** @param {string} batchId @param {string} scope */
 export function assertBenchmarkBatchId(scope, batchId) {
-  if (!new RegExp(`^${BENCHMARK_BATCH_PREFIX}-[a-zA-Z0-9-]+$`).test(batchId)) {
+  const prefix = `${BENCHMARK_BATCH_PREFIX}-`;
+  if (!batchId.startsWith(prefix) || !/^[a-zA-Z0-9-]+$/.test(batchId.slice(prefix.length))) {
     fail(
       scope,
       `Batch id must start with '${BENCHMARK_BATCH_PREFIX}-' and contain only letters, numbers and hyphens.`
@@ -169,18 +192,22 @@ export function assertBenchmarkBatchId(scope, batchId) {
   }
 }
 
-export function cohortEmailPrefix(batchId, cohortKey) {
+/** @param {string} batchId @param {string} cohortKey */
+function cohortEmailPrefix(batchId, cohortKey) {
   return `glowbook.${batchId}.${cohortKey.toLowerCase()}`;
 }
 
+/** @param {string} batchId @param {string} cohortKey @param {number} salonIndex */
 export function ownerEmailFor(batchId, cohortKey, salonIndex) {
   return `${cohortEmailPrefix(batchId, cohortKey)}.owner.${salonIndex}.0@example.com`;
 }
 
+/** @param {string} batchId @param {string} cohortKey @param {number} salonIndex @param {number} employeeIndex */
 export function employeeEmailFor(batchId, cohortKey, salonIndex, employeeIndex) {
   return `${cohortEmailPrefix(batchId, cohortKey)}.employee.${salonIndex}.${employeeIndex}@example.com`;
 }
 
+/** @param {string} scope */
 export function getSelectedCohorts(scope) {
   const raw = process.env.PRICING_BENCHMARK_COHORTS;
   if (!raw) return BENCHMARK_COHORTS;
@@ -190,25 +217,23 @@ export function getSelectedCohorts(scope) {
   return cohorts;
 }
 
+/**
+ * @template {{ salons: number }} T
+ * @param {T} cohort
+ * @returns {T}
+ */
 export function withSalonOverride(cohort) {
   const override = Number(process.env.PRICING_BENCHMARK_SALONS_PER_COHORT ?? "");
   if (!Number.isInteger(override) || override < 1) return cohort;
   return { ...cohort, salons: override };
 }
 
-export function requirePg() {
-  try {
-    return createRequire(import.meta.url)("pg");
-  } catch {
-    const fallbackRequire = createRequire("C:/tmp/glowbook-pg-measure/package.json");
-    return fallbackRequire("pg");
-  }
-}
-
+/** @param {number} bytes */
 export function mb(bytes) {
   return Number((Number(bytes) / 1024 / 1024).toFixed(3));
 }
 
+/** @param {number | string} value */
 export function round(value, decimals = 3) {
   return Number(Number(value).toFixed(decimals));
 }

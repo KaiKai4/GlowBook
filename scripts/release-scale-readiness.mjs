@@ -28,6 +28,7 @@ function isLocalUrl(value = "") {
   }
 }
 
+/** @param {string} name */
 function envPresent(name) {
   const value = process.env[name];
   if (!value) return false;
@@ -36,20 +37,25 @@ function envPresent(name) {
   return true;
 }
 
+/** @param {string} name @param {string} expected */
 function envEquals(name, expected) {
   return String(process.env[name] ?? "").toLowerCase() === expected;
 }
 
+/** @param {string} path */
 function docExists(path) {
   return existsSync(join(process.cwd(), path));
 }
 
+/** @type {{ phase: string, status: string, message: string }[]} */
 const checks = [];
 
+/** @param {string} message @param {string} phase @param {string} status */
 function addCheck(phase, status, message) {
   checks.push({ phase, status, message });
 }
 
+/** @param {string} name @param {string} phase */
 function requireEnv(phase, name) {
   if (envPresent(name)) {
     addCheck(phase, "ok", `${name} is set`);
@@ -60,6 +66,7 @@ function requireEnv(phase, name) {
   return false;
 }
 
+/** @param {string} name @param {string} phase @param {string} reason */
 function requireConfirmation(phase, name, reason) {
   if (envEquals(name, "true")) {
     addCheck(phase, "ok", `${name}=true`);
@@ -87,6 +94,7 @@ function requireApprovedStage() {
   return "unconfirmed";
 }
 
+/** @param {string} phase @param {string} scriptPath @param {string} successMessage */
 function runNodeGate(phase, scriptPath, successMessage) {
   if (!docExists(scriptPath)) {
     addCheck(phase, "block", `${scriptPath} is missing`);
@@ -118,8 +126,8 @@ function runNodeGate(phase, scriptPath, successMessage) {
 loadEnvFileIfPresent();
 
 const expectedDocs = [
-  "docs/architecture-audit-2026-06-01.md",
-  "docs/architecture-scale-phases-2026-06-01.md",
+  "docs/archive/architecture-history/architecture-audit-2026-06-01.md",
+  "docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md",
   "docs/production-scale-readiness-checklist.md",
   "docs/release-scale-readiness-2026-06-01.md",
   "docs/capacity-plan.md",

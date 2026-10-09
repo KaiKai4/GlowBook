@@ -1,4 +1,12 @@
 import { Client } from "pg";
+
+/**
+ * @typedef {{ db: string, bytes: string, pretty: string }} DatabaseRow
+ * @typedef {{ table: string, bytes: string, pretty: string }} TableSizeRow
+ * @typedef {{ id: string, cohort: string }} SalonRow
+ * @typedef {{ salon_id: string, rows: string }} CountRow
+ * @typedef {{ cohort: string, salons: number, estimatedBytes: number, rows: Record<string, number> }} CohortSummary
+ */
 import {
   TABLES_WITH_SALON_ID,
   assertBenchmarkBatchId,
@@ -28,11 +36,13 @@ const client = new Client({
   ssl: { rejectUnauthorized: false },
 });
 
+/** @param {number} projectedMb */
 function extraDbCost(projectedMb) {
   const projectedGb = projectedMb / 1024;
   return round(Math.max(projectedGb - SUPABASE_PRO_INCLUDED_DB_GB, 0) * SUPABASE_EXTRA_DB_USD_PER_GB, 4);
 }
 
+/** @param {number} projectedGb */
 function extraEgressCost(projectedGb) {
   return round(Math.max(projectedGb - SUPABASE_INCLUDED_EGRESS_GB, 0) * SUPABASE_EXTRA_EGRESS_USD_PER_GB, 4);
 }
@@ -40,6 +50,7 @@ function extraEgressCost(projectedGb) {
 try {
   await client.connect();
 
+  /** @type {import("pg").QueryResult<DatabaseRow>} */
   const database = await client.query(`
     select
       current_database() as db,
@@ -47,6 +58,7 @@ try {
       pg_size_pretty(pg_database_size(current_database())) as pretty
   `);
 
+  /** @type {import("pg").QueryResult<TableSizeRow>} */
   const tableSizes = await client.query(
     `
       select
@@ -61,6 +73,7 @@ try {
     ["public", TABLES_WITH_SALON_ID]
   );
 
+  /** @type {import("pg").QueryResult<SalonRow>} */
   const salons = await client.query(
     `
       select
@@ -82,29 +95,34 @@ try {
   const salonIds = salons.rows.map((row) => row.id);
   if (salonIds.length === 0) fail(SCOPE, `No benchmark salons found for ${batchId}.`);
 
+  /** @type {{ table: string, salon_id: string, rows: number }[]} */
   const tableRows = [];
   for (const table of TABLES_WITH_SALON_ID) {
-    const result = await client.query(
-      `select salon_id::text as salon_id, count(*)::bigint as rows from public.${table} where salon_id = any($1::uuid[]) group by salon_id`,
-      [salonIds]
-    ).catch(async (error) => {
-      if (table === "salons") {
-        return client.query(
-          "select id::text as salon_id, count(*)::bigint as rows from public.salons where id = any($1::uuid[]) group by id",
-          [salonIds]
-        );
-      }
-      throw error;
-    });
+    const result = await /** @type {Promise<import("pg").QueryResult<CountRow>>} */ (
+      client.query(
+        `select salon_id::text as salon_id, count(*)::bigint as rows from public.${table} where salon_id = any($1::uuid[]) group by salon_id`,
+        [salonIds]
+      ).catch(async (/** @type {unknown} */ error) => {
+        if (table === "salons") {
+          return client.query(
+            "select id::text as salon_id, count(*)::bigint as rows from public.salons where id = any($1::uuid[]) group by id",
+            [salonIds]
+          );
+        }
+        throw error;
+      })
+    );
 
     for (const row of result.rows) tableRows.push({ table, salon_id: row.salon_id, rows: Number(row.rows) });
   }
 
   const salonToCohort = new Map(salons.rows.map((row) => [row.id, row.cohort]));
   const sizeByTable = new Map(tableSizes.rows.map((row) => [row.table, Number(row.bytes)]));
+  /** @type {Map<string, number>} */
   const rowsByTable = new Map();
   for (const row of tableRows) rowsByTable.set(row.table, (rowsByTable.get(row.table) ?? 0) + row.rows);
 
+  /** @type {Record<string, CohortSummary>} */
   const cohortSummaries = {};
   for (const salon of salons.rows) {
     cohortSummaries[salon.cohort] ??= { cohort: salon.cohort, salons: 0, estimatedBytes: 0, rows: {} };
@@ -149,8 +167,8 @@ try {
     JSON.stringify(
       {
         batchId,
-        database: { ...database.rows[0], mb: mb(database.rows[0].bytes) },
-        functionalTables: tableSizes.rows.map((row) => ({ ...row, mb: mb(row.bytes) })),
+        database: { ...database.rows[0], mb: mb(Number(database.rows[0].bytes)) },
+        functionalTables: tableSizes.rows.map((row) => ({ ...row, mb: mb(Number(row.bytes)) })),
         benchmarkSalons: salons.rows.length,
         functionalMB,
         avgFunctionalMBPerSalon,
@@ -167,8 +185,9 @@ try {
       2
     )
   );
-} catch (error) {
-  console.error(JSON.stringify({ error: error.message, code: error.code ?? null }, null, 2));
+} catch (/** @type {unknown} */ error) {
+  const failure = /** @type {{ message?: string, code?: string }} */ (error);
+  console.error(JSON.stringify({ error: failure.message, code: failure.code ?? null }, null, 2));
   process.exitCode = 1;
 } finally {
   await client.end().catch(() => {});

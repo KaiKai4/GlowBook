@@ -54,9 +54,9 @@ export function CategoryServicePicker({
   return (
     <div className="space-y-5">
       <div>
-        <p className="mb-2 text-sm font-semibold text-stone-700">{categoryTitle}</p>
+        <p className="mb-2 text-sm font-semibold text-fg-secondary">{categoryTitle}</p>
         {categories.length === 0 ? (
-          <p className="text-xs text-stone-400">{emptyCategoryMessage}</p>
+          <p className="text-xs text-fg-subtle">{emptyCategoryMessage}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => {
@@ -70,7 +70,7 @@ export function CategoryServicePicker({
                     "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
                     selected
                       ? "border-brand-400 bg-brand-50 text-brand-700"
-                      : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                      : "border-border text-fg-muted hover:bg-surface-muted"
                   )}
                 >
                   {category.name}
@@ -83,19 +83,19 @@ export function CategoryServicePicker({
 
       {selectedCategories.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-semibold text-stone-700">{serviceTitle}</p>
+          <p className="mb-2 text-sm font-semibold text-fg-secondary">{serviceTitle}</p>
           <div className="max-h-56 space-y-3 overflow-y-auto rounded-xl border border-brand-100 bg-brand-50/30 p-3">
             {selectedCategories.map((category) => (
               <div key={category.id}>
-                <p className="text-xs font-bold uppercase tracking-wide text-brand-400">{category.name}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-400">{category.name}</p>
                 {category.services.length === 0 ? (
-                  <p className="mt-1 text-xs text-stone-400">Sin servicios en esta categoria.</p>
+                  <p className="mt-1 text-xs text-fg-subtle">Sin servicios en esta categoria.</p>
                 ) : (
                   <div className="mt-1 space-y-1">
                     {category.services.map((service) => (
                       <label
                         key={service.id}
-                        className="flex cursor-pointer items-center gap-2 text-sm text-stone-700 hover:text-stone-900"
+                        className="flex cursor-pointer items-center gap-2 text-sm text-fg-secondary hover:text-fg"
                       >
                         <input
                           type="checkbox"

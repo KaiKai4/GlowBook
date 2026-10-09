@@ -1,24 +1,28 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assignRole } from "@/features/access/use-cases/assign-role";
 import { createRoleWithPermissions } from "@/features/access/use-cases/create-role";
 import { deleteSalonRole } from "@/features/access/use-cases/delete-role";
 import { updateRolePermissions } from "@/features/access/use-cases/update-role-permissions";
 import {
-  AssignRoleSchema,
   CreateRoleSchema,
   UpdateRolePermissionsSchema,
 } from "@/features/access/schemas";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { parseUuid } from "@/lib/validation/route-id";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return { ok: false, error: "No tienes permiso para gestionar roles." };
   }
+
+  const limited = await assertActionRateLimit(profile.id, "roles", { max: 30, windowMs: 60_000 });
+  if (!limited.ok) return limited;
 
   return { ok: true, value: { salonId: profile.salon_id } };
 }
@@ -53,7 +57,7 @@ export async function createRoleAction(
     name: formData.get("name"),
     permission_keys: permissionKeys.value,
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createRoleWithPermissions(guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/roles");
@@ -74,27 +78,9 @@ export async function updateRolePermissionsAction(
     role_id: formData.get("role_id"),
     permission_keys: permissionKeys.value,
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateRolePermissions(guarded.value.salonId, parsed.data);
-  if (result.ok) revalidatePath("/roles");
-  return result;
-}
-
-export async function assignRoleAction(
-  _prev: Result<void> | null,
-  formData: FormData
-): Promise<Result<void>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-
-  const parsed = AssignRoleSchema.safeParse({
-    profile_id: formData.get("profile_id"),
-    role_id: formData.get("role_id"),
-  });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-
-  const result = await assignRole(guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/roles");
   return result;
 }
@@ -102,6 +88,7 @@ export async function assignRoleAction(
 export async function deleteRoleAction(roleId: string): Promise<Result<void>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  if (!parseUuid(roleId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await deleteSalonRole(guarded.value.salonId, roleId);
   if (result.ok) revalidatePath("/roles");

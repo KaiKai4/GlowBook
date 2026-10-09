@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
 export const CreateRoleSchema = z.object({
   name: z.string().min(1, "El nombre del rol es obligatorio").max(100),
@@ -10,11 +10,5 @@ export const UpdateRolePermissionsSchema = z.object({
   permission_keys: z.array(z.string()),
 });
 
-export const AssignRoleSchema = z.object({
-  profile_id: z.string().uuid(),
-  role_id: z.string().uuid(),
-});
-
 export type CreateRoleInput = z.infer<typeof CreateRoleSchema>;
 export type UpdateRolePermissionsInput = z.infer<typeof UpdateRolePermissionsSchema>;
-export type AssignRoleInput = z.infer<typeof AssignRoleSchema>;

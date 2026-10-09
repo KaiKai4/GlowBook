@@ -3,23 +3,20 @@
 import { revalidatePath } from "next/cache";
 
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { parseUuid } from "@/lib/validation/route-id";
 import {
   removeCommercialPlanConfig,
-  saveCommercialLimitMetricConfig,
   saveCommercialPlanConfig,
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
-  savePlatformModuleConfig,
   type CommercialPlan,
 } from "@/features/billing/use-cases/commercial-plans";
 import {
   removeCommercialAddonConfig,
   saveCommercialAddonConfig,
 } from "@/features/billing/use-cases/commercial-addons";
-import type {
-  PlanLimitCountScope,
-  UsageCounterKey,
-} from "@/features/billing/domain/commercial-plan";
+import type { PlanLimitCountScope } from "@/features/billing/domain/commercial-plan";
 import type { PlatformPlanActionState } from "./action-state";
 
 function bool(formData: FormData, key: string): boolean {
@@ -38,6 +35,8 @@ export async function savePlanAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:savePlanAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const result = await saveCommercialPlanConfig({
     id: String(formData.get("id") ?? "") || undefined,
     name: String(formData.get("name") ?? ""),
@@ -60,51 +59,12 @@ export async function removePlanAction(
   hasAssignments: boolean
 ): Promise<void> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:removePlanAction");
+  if (!limited.ok) throw new Error(limited.error);
+  if (!parseUuid(plan.id)) throw new Error("Identificador inválido.");
   const result = await removeCommercialPlanConfig(plan, hasAssignments, actorUserId);
   if (!result.ok) throw new Error(result.error);
   done(hasAssignments ? "Plan archivado porque ya esta asignado." : "Plan eliminado.");
-}
-
-export async function saveModuleAction(
-  _state: PlatformPlanActionState,
-  formData: FormData
-): Promise<PlatformPlanActionState> {
-  const actorUserId = await requirePlatformAdmin();
-  const result = await savePlatformModuleConfig({
-    key: String(formData.get("key") ?? ""),
-    name: String(formData.get("name") ?? ""),
-    description: String(formData.get("description") ?? ""),
-    navHref: String(formData.get("navHref") ?? ""),
-    iconName: String(formData.get("iconName") ?? ""),
-    sortOrder: String(formData.get("sortOrder") ?? "0"),
-    isActive: bool(formData, "isActive"),
-    isArchived: bool(formData, "isArchived"),
-  }, actorUserId);
-
-  if (!result.ok) return { ok: false, message: result.error };
-  return done("Modulo guardado.");
-}
-
-export async function saveMetricAction(
-  _state: PlatformPlanActionState,
-  formData: FormData
-): Promise<PlatformPlanActionState> {
-  const actorUserId = await requirePlatformAdmin();
-  const result = await saveCommercialLimitMetricConfig({
-    key: String(formData.get("key") ?? ""),
-    moduleKey: String(formData.get("moduleKey") ?? ""),
-    name: String(formData.get("name") ?? ""),
-    description: String(formData.get("description") ?? ""),
-    unit: String(formData.get("unit") ?? ""),
-    defaultCountScope: String(formData.get("defaultCountScope") ?? "current") as PlanLimitCountScope,
-    counterKey: String(formData.get("counterKey") ?? "appointments_total") as UsageCounterKey,
-    sortOrder: String(formData.get("sortOrder") ?? "0"),
-    isActive: bool(formData, "isActive"),
-    isArchived: bool(formData, "isArchived"),
-  }, actorUserId);
-
-  if (!result.ok) return { ok: false, message: result.error };
-  return done("Límite guardado.");
 }
 
 export async function savePlanModulesAction(
@@ -112,6 +72,8 @@ export async function savePlanModulesAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:savePlanModulesAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const result = await saveCommercialPlanModulesBatch({
     planId: String(formData.get("planId") ?? ""),
     allModuleKeys: formData.getAll("allModuleKeys").map(String),
@@ -127,6 +89,8 @@ export async function savePlanLimitsAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:savePlanLimitsAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const metricKeys = formData.getAll("metricKey").map(String);
   const limits = metricKeys.map((metricKey, index) => ({
     metricKey,
@@ -150,6 +114,8 @@ export async function saveAddonAction(
   formData: FormData
 ): Promise<PlatformPlanActionState> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:saveAddonAction");
+  if (!limited.ok) return { ok: false, message: limited.error };
   const result = await saveCommercialAddonConfig({
     id: String(formData.get("id") ?? "") || undefined,
     name: String(formData.get("name") ?? ""),
@@ -171,6 +137,9 @@ export async function saveAddonAction(
 
 export async function removeAddonAction(addonId: string): Promise<void> {
   const actorUserId = await requirePlatformAdmin();
+  const limited = await assertActionRateLimit(actorUserId, "admin:removeAddonAction");
+  if (!limited.ok) throw new Error(limited.error);
+  if (!parseUuid(addonId)) throw new Error("Identificador inválido.");
   const result = await removeCommercialAddonConfig(addonId, actorUserId);
   if (!result.ok) throw new Error(result.error);
   done("Extra eliminado.");

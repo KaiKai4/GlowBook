@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  calculateEmployeeBreakdown,
   calculateOperationalReportMetrics,
-  calculateServiceBreakdown,
-  calculateStatusBreakdown,
   type ReportAppointment,
   type ReportAppointmentItem,
 } from "./metrics";
@@ -58,7 +55,7 @@ describe("report metrics", () => {
   });
 
   it("keeps status breakdown ordered and percent-based", () => {
-    expect(calculateStatusBreakdown(appointments)).toEqual([
+    expect(calculateOperationalReportMetrics(appointments, items).statusBreakdown).toEqual([
       { status: "completed", count: 2, pct: 50 },
       { status: "scheduled", count: 1, pct: 25 },
       { status: "no_show", count: 1, pct: 25 },
@@ -66,14 +63,14 @@ describe("report metrics", () => {
   });
 
   it("counts unique appointments per collaborator and ranks by revenue", () => {
-    expect(calculateEmployeeBreakdown(items)).toEqual([
+    expect(calculateOperationalReportMetrics(appointments, items).byEmployee).toEqual([
       { name: "Ana Lopez", count: 1, revenue: 50, pct: 100 },
       { name: "Luis Vega", count: 1, revenue: 30, pct: 60 },
     ]);
   });
 
   it("counts services by item volume and keeps revenue attached", () => {
-    expect(calculateServiceBreakdown(items)).toEqual([
+    expect(calculateOperationalReportMetrics(appointments, items).byService).toEqual([
       { name: "Corte", count: 2, revenue: 60, pct: 100 },
       { name: "Barba", count: 1, revenue: 20, pct: 50 },
     ]);

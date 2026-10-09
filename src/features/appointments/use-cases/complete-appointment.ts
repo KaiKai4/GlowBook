@@ -1,3 +1,4 @@
+import { toPublicErrorMessage } from "@/lib/errors";
 import { promoteCustomer } from "@/features/customers/use-cases/customer-temporary";
 import { err, ok, type Result } from "@/lib/result";
 import { captureError } from "@/lib/observability";
@@ -43,7 +44,7 @@ export async function completeAppointment(
   try {
     assertTransition(appointment.status, "completed");
   } catch (error) {
-    return err((error as Error).message);
+    return err(toPublicErrorMessage(error, "No se pudo completar la cita."));
   }
 
   let subtotal = 0;

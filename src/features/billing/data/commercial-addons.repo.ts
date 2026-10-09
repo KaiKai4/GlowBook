@@ -26,7 +26,7 @@ interface AddonRow {
   sort_order: number;
 }
 
-export function mapAddon(row: AddonRow): CommercialAddon {
+function mapAddon(row: AddonRow): CommercialAddon {
   return {
     id: row.id,
     code: row.code,

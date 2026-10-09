@@ -90,7 +90,7 @@ describe("historical report analytics", () => {
       ],
     });
 
-    expect(analytics.months[1].appointmentRevenue).toBe(100);
+    expect(analytics.months[1]?.appointmentRevenue).toBe(100);
     expect(analytics.months.every((month) => month.appointmentRevenue <= 100)).toBe(true);
     expect(analytics.productSales).toEqual([]);
   });

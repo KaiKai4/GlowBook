@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { CreateEmployeeSchema, WorkScheduleSchema } from "@/features/employees/schemas";
 import {
   changeEmployeeRole,
@@ -31,31 +29,12 @@ import {
 import {
   checkPlanLimit,
   checkPlanModuleAccess,
-  isEffectiveSalonModuleEnabled,
 } from "@/features/billing/use-cases/commercial-plans";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
+import { guard } from "./employee-action-guard";
 import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
-
-async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean }>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
-  }
-
-  // Estas acciones crean cuentas Auth y enlaces de acceso: un límite por
-  // usuario evita generacion masiva automatizada.
-  const limited = assertActionRateLimit(profile.id, "employees", { max: 30, windowMs: 60_000 });
-  if (!limited.ok) return limited;
-
-  return {
-    ok: true,
-    value: {
-      salonId: profile.salon_id,
-      rolesEnabled: await isEffectiveSalonModuleEnabled(profile, "roles"),
-    },
-  };
-}
+import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { parseUuid } from "@/lib/validation/route-id";
 
 export async function createEmployeeAction(
   _prev: Result<CreateEmployeeResult> | null,
@@ -89,7 +68,7 @@ export async function createEmployeeAction(
     service_ids: formData.getAll("service_ids").map(String),
     category_ids: formData.getAll("category_ids").map(String),
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createEmployeeProfile(g.value.salonId, parsed.data, roleId);
   if (result.ok) {
@@ -108,6 +87,7 @@ export async function findArchivedEmployeeByEmailAction(email: string): Promise<
 export async function reactivateEmployeeAction(employeeId: string): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
   const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.active" });
   if (!limit.ok) return { ok: false, error: limit.error };
 
@@ -127,6 +107,7 @@ export async function updateEmployeeAction(
 ): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
 
   const parsed = CreateEmployeeSchema.partial().safeParse({
     first_name: formData.get("first_name") ?? undefined,
@@ -140,7 +121,7 @@ export async function updateEmployeeAction(
     service_ids: formData.getAll("service_ids").map(String),
     category_ids: formData.getAll("category_ids").map(String),
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateEmployeeProfile(employeeId, g.value.salonId, parsed.data);
   if (result.ok) {
@@ -156,6 +137,8 @@ export async function changeEmployeeRoleAction(
 ): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(profileId)) return { ok: false, error: "Identificador inválido." };
+  if (roleId !== null && !parseUuid(roleId)) return { ok: false, error: "Identificador inválido." };
   if (!g.value.rolesEnabled) {
     return { ok: false, error: "Los roles estan deshabilitados para este salon." };
   }
@@ -173,6 +156,8 @@ export async function resetEmployeeAccessAction(
 ): Promise<Result<{ token: string; expiresAt: string }>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
+  if (roleId !== null && !parseUuid(roleId)) return { ok: false, error: "Identificador inválido." };
   if (!g.value.rolesEnabled) {
     return { ok: false, error: "Los roles estan deshabilitados para este salon." };
   }
@@ -202,7 +187,7 @@ export async function addWorkScheduleAction(
     start_time: formData.get("start_time"),
     end_time: formData.get("end_time"),
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
   const result = await addEmployeeWorkSchedule(g.value.salonId, parsed.data);
   if (result.ok) {
     revalidatePath(`/employees/${parsed.data.employee_id}`);
@@ -216,6 +201,8 @@ export async function deleteWorkScheduleAction(
 ): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(scheduleId)) return { ok: false, error: "Identificador inválido." };
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await removeEmployeeWorkSchedule(g.value.salonId, scheduleId);
   if (result.ok) {
@@ -230,6 +217,8 @@ export async function generateEmployeeInviteAction(
 ): Promise<Result<{ token: string; expiresAt: string }>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
+  if (roleId !== null && !parseUuid(roleId)) return { ok: false, error: "Identificador inválido." };
   if (!g.value.rolesEnabled) {
     return { ok: false, error: "Los roles estan deshabilitados para este salon." };
   }
@@ -253,6 +242,7 @@ export async function deleteEmployeeAction(
 ): Promise<Result<{ outcome: "deleted" | "archived"; message: string }>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await archiveEmployee(employeeId, g.value.salonId);
   if (result.ok) {
@@ -270,6 +260,7 @@ export async function addScheduleExceptionAction(
 ): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
   const { salonConfig } = await getSalonSchedulingConfig(g.value.salonId);
 
   const result = await addEmployeeScheduleException({
@@ -292,6 +283,8 @@ export async function removeScheduleExceptionAction(
 ): Promise<Result<void>> {
   const g = await guard();
   if (!g.ok) return g;
+  if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
+  if (!parseUuid(exceptionId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await removeEmployeeScheduleException(
     g.value.salonId,

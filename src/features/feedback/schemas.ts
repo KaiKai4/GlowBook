@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
 export const FEEDBACK_CATEGORIES = ["bug", "suggestion", "question", "other"] as const;
 export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];

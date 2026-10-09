@@ -44,7 +44,7 @@ export function InventoryPurchaseExpenseForm({
       </CardHeader>
       <CardContent>
         {!canManageInventory ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="rounded-xl border border-warning-border bg-warning-subtle px-4 py-3 text-sm text-warning-strong">
             Necesitas permiso de inventario para registrar compras de productos.
           </p>
         ) : (
@@ -77,10 +77,10 @@ export function InventoryPurchaseExpenseForm({
               required
             />
             <div className="lg:col-span-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase text-brand-500">Destino automatico</p>
-              <p className="text-sm font-semibold text-stone-900">Bodega</p>
-              <p className="mt-1 text-sm text-stone-500">
-                Total de la compra: <span className="font-bold">{formatCurrency(purchasePreview)}</span>
+              <p className="text-xs font-semibold uppercase text-brand-600">Destino automatico</p>
+              <p className="text-sm font-semibold text-fg">Bodega</p>
+              <p className="mt-1 text-sm text-fg-subtle">
+                Total de la compra: <span className="font-semibold">{formatCurrency(purchasePreview)}</span>
               </p>
             </div>
             <div className="lg:col-span-2">
@@ -97,7 +97,7 @@ export function InventoryPurchaseExpenseForm({
               </Button>
             </div>
             {inventoryProducts.length === 0 && (
-              <p className="lg:col-span-2 text-sm text-stone-400">
+              <p className="lg:col-span-2 text-sm text-fg-subtle">
                 Crea un producto en Inventario antes de registrar una compra.
               </p>
             )}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidOptionalPhone, normalizeOptionalPhoneInput, phoneDigits } from "./phone";
+import { isValidOptionalPhone, normalizeOptionalPhoneInput } from "./phone";
 
 describe("phone utils", () => {
   it("allows empty optional phone values", () => {
@@ -25,7 +25,7 @@ describe("phone utils", () => {
     expect(normalizeOptionalPhoneInput("647952132")).toBe("64795213");
   });
 
-  it("extracts only digits", () => {
-    expect(phoneDigits("+507 6000-0000")).toBe("50760000000");
+  it("extracts only digits before normalizing", () => {
+    expect(normalizeOptionalPhoneInput("+507 6000-0000")).toBe("60000000");
   });
 });

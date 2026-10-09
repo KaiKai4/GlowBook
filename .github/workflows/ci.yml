@@ -1,5 +1,10 @@
 name: GlowBook CI
 
+# Todos los jobs corren en cada PR y en cada push a main. No hay condiciones
+# por rama ni "saltar en verde": si un control no puede ejecutarse, el job falla.
+# Cada job delega en un único paso `npm run verify:job -- <job>`, que es el
+# manifiesto de pasos de scripts/quality/steps.mjs (fuente de verdad).
+
 on:
   pull_request:
     branches:
@@ -17,86 +22,181 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Quality Gates
+  static:
+    name: Static (secretos, tokens, arquitectura, lint, tipos, auditoría)
     runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-anon-key' }}
+    timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint and architecture guardrails
-        run: npm run lint
+      - name: Verify job static
+        run: npm run verify:job -- static
 
-      - name: Type check
-        run: npm run type-check
-
-      - name: Unit and integration tests
-        run: npm run test
-
-      - name: Production build
-        run: npm run build
-
-  e2e-and-health:
-    name: E2E And Architecture Health
+  unit:
+    name: Unit tests
     runs-on: ubuntu-latest
-    needs: quality
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-      E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
-      GLOWBOOK_ENV: staging
-      E2E_SALON_OWNER_EMAIL: ${{ secrets.E2E_SALON_OWNER_EMAIL }}
-      E2E_SALON_OWNER_PASSWORD: ${{ secrets.E2E_SALON_OWNER_PASSWORD }}
-      E2E_PLATFORM_ADMIN_EMAIL: ${{ secrets.E2E_PLATFORM_ADMIN_EMAIL }}
-      E2E_PLATFORM_ADMIN_PASSWORD: ${{ secrets.E2E_PLATFORM_ADMIN_PASSWORD }}
+    timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
-      - name: Check E2E environment
-        id: e2e-env
-        shell: bash
-        run: |
-          if [[ -n "$E2E_BASE_URL" && -n "$NEXT_PUBLIC_SUPABASE_URL" && -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" && -n "$SUPABASE_SERVICE_ROLE_KEY" ]]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping staging E2E and architecture:health because E2E_BASE_URL or Supabase staging secrets are not configured."
-          fi
-
       - name: Install dependencies
-        if: steps.e2e-env.outputs.ready == 'true'
         run: npm ci
 
+      - name: Verify job unit
+        run: npm run verify:job -- unit
+
+  db:
+    name: Database (Supabase local, migraciones, tests SQL, integración)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Supabase local se arranca desde el runner (ensureLocalSupabase) sobre
+      # Docker del propio runner. No se usan secretos.
+      - name: Verify job db
+        run: npm run verify:job -- db
+
+  browser:
+    name: Browser (build y E2E con Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Instalación del navegador (setup, no es un control de calidad).
       - name: Install Playwright browser
-        if: steps.e2e-env.outputs.ready == 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: E2E critical flows
-        if: steps.e2e-env.outputs.ready == 'true'
-        run: npm run test:e2e:staging
+      - name: Verify job browser
+        run: npm run verify:job -- browser
 
-      - name: Architecture health report
-        if: steps.e2e-env.outputs.ready == 'true'
-        run: npm run architecture:health
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+  lighthouse:
+    name: Lighthouse (rendimiento y accesibilidad)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Instalación del navegador (setup, no es un control de calidad). Lighthouse
+      # usa el Chromium completo de Playwright (scripts/quality/run-lighthouse.mjs).
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify job lighthouse
+        run: npm run verify:job -- lighthouse
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 14
+          if-no-files-found: warn
+
+  sbom:
+    name: SBOM (dependencias de producción)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify job sbom
+        run: npm run verify:job -- sbom
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: .quality/sbom.json
+          retention-days: 90
+          if-no-files-found: error
+
+  codeql:
+    name: CodeQL (análisis estático de seguridad, solo CI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

@@ -165,7 +165,7 @@ At minimum, security-sensitive database changes should verify:
 
 ## Scale Readiness Evidence 2026-06-01
 
-For Fase 47 of `docs/architecture-scale-phases-2026-06-01.md`, the critical
+For Fase 47 of `docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md`, the critical
 RPC/RLS checks were re-run with Supabase fixtures:
 
 ```text

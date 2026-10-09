@@ -12,7 +12,7 @@ export default async function RetailPage() {
   if (!retailEnabled || !hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para gestionar vitrina.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar vitrina.</p>
       </div>
     );
   }
@@ -22,11 +22,11 @@ export default async function RetailPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-stone-900">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
           <ShoppingBag className="h-6 w-6 text-brand-500" />
           Vitrina
         </h1>
-        <p className="mt-0.5 text-sm text-stone-400">
+        <p className="mt-0.5 text-sm text-fg-subtle">
           Registra ventas de productos y descuenta inventario automaticamente.
         </p>
       </div>

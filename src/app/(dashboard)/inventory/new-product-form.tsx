@@ -67,8 +67,8 @@ function StockInputs({
   disabled?: boolean;
 }) {
   return (
-    <fieldset className="rounded-xl border border-stone-100 p-3">
-      <legend className="px-1 text-xs font-bold uppercase text-stone-400">{label}</legend>
+    <fieldset className="rounded-xl border border-border-subtle p-3">
+      <legend className="px-1 text-xs font-semibold uppercase text-fg-subtle">{label}</legend>
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
           name={`${prefix}_quantity`}

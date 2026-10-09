@@ -2,8 +2,26 @@ import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { mb, round } from "./pricing-benchmark-shared.mjs";
 
+/**
+ * @typedef {{ table: string, bytes: number, mb: number }} FunctionalTable
+ * @typedef {{ cohort: string, salons: number, estimatedMBPerSalon: number, estimatedMB: number }} CohortReport
+ * @typedef {{ route: string, avgTransferMB: number, avgDurationMs: number, failures: number }} RouteReport
+ * @typedef {{
+ *   batchId: string,
+ *   database: { bytes: number },
+ *   benchmarkSalons: number,
+ *   functionalMB: number,
+ *   avgFunctionalMBPerSalon: number,
+ *   functionalTables: FunctionalTable[],
+ *   cohorts: CohortReport[],
+ *   projections: unknown
+ * }} DbReport
+ */
+
+/** @param {Buffer | string} output @returns {DbReport} */
 function parseJsonOutput(output) {
-  const text = output.toString("utf8").trim();
+  const raw = typeof output === "string" ? output : output.toString("utf8");
+  const text = raw.trim();
   const start = text.indexOf("{");
   if (start === -1) throw new Error("Command did not emit JSON.");
   return JSON.parse(text.slice(start));
@@ -17,6 +35,7 @@ const db = parseJsonOutput(
   })
 );
 
+/** @type {{ byRoute: RouteReport[] } | null} */
 let routes = null;
 if (process.env.PRICING_ROUTES_RESULT_FILE && existsSync(process.env.PRICING_ROUTES_RESULT_FILE)) {
   routes = JSON.parse(readFileSync(process.env.PRICING_ROUTES_RESULT_FILE, "utf8"));

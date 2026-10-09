@@ -14,7 +14,7 @@ export default function AppointmentsLoading() {
           <Skeleton className="h-10 w-28" />
         </div>
       </div>
-      <div className="overflow-hidden rounded-xl border border-brand-100 bg-white p-4">
+      <div className="overflow-hidden rounded-xl border border-brand-100 bg-surface p-4">
         <div className="grid grid-cols-5 gap-2">
           {Array.from({ length: 5 }, (_, index) => (
             <Skeleton key={index} className="h-10" />

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 import { isValidOptionalPhone, phoneValidationMessage } from "@/lib/utils/phone";
 
 const OptionalPhoneSchema = z
@@ -22,13 +22,5 @@ export const UpdateCustomerSchema = CreateCustomerSchema.partial().extend({
   is_active: z.boolean().optional(),
 });
 
-export const SearchCustomersSchema = z.object({
-  q: z.string().max(100).optional().default(""),
-  page: z.coerce.number().int().min(1).default(1),
-  per_page: z.coerce.number().int().min(1).max(100).default(20),
-  is_active: z.boolean().optional(),
-});
-
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
-export type SearchCustomersInput = z.infer<typeof SearchCustomersSchema>;

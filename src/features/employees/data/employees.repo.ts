@@ -2,29 +2,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { assertServicesHaveAssignedCategories } from "@/features/employees/domain/collaborator-assignment";
 import type { Database } from "@/types/database.types";
 
-export interface EmployeeWithDetails {
-  id: string;
-  salon_id: string;
-  profile_id: string | null;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  email: string;
-  specialty: string;
-  commission_percentage: number;
-  hire_date: string | null;
-  is_active: boolean;
-  services: Array<{ id: string; name: string; duration_minutes: number; price: number }>;
-  categories: Array<{ id: string; name: string }>;
-  work_schedules: Array<{
-    id: string;
-    day_of_week: number;
-    start_time: string;
-    end_time: string;
-    is_active: boolean;
-  }>;
-}
-
 export interface EmployeeNameRow {
   id: string;
   first_name: string;

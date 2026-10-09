@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
 // People's names: a letter (any alphabet) followed by letters, spaces and common
 // name punctuation (apostrophe, hyphen, period). No digits or other symbols.
-export const PERSON_NAME_REGEX = /^[\p{L}\p{M}][\p{L}\p{M}\s.'’-]*$/u;
+const PERSON_NAME_REGEX = /^[\p{L}\p{M}][\p{L}\p{M}\s.'’-]*$/u;
 
 // Builds a Zod field for a person's name with specific, user-facing messages.
 export function personNameField(requiredMsg: string, label = "El nombre") {

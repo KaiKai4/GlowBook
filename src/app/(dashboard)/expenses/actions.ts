@@ -9,6 +9,7 @@ import { requireActiveProfile } from "@/lib/auth/session";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 async function guard(options: { inventoryPurchase?: boolean } = {}): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
@@ -18,7 +19,7 @@ async function guard(options: { inventoryPurchase?: boolean } = {}): Promise<Res
   if (options.inventoryPurchase && !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
     return { ok: false, error: "No tienes permiso para registrar compras de inventario." };
   }
-  const limited = assertActionRateLimit(profile.id, "expenses", { max: 40, windowMs: 60_000 });
+  const limited = await assertActionRateLimit(profile.id, "expenses", { max: 40, windowMs: 60_000 });
   if (!limited.ok) return limited;
   return { ok: true, value: { salonId: profile.salon_id } };
 }
@@ -43,7 +44,7 @@ export async function createExpenseAction(
   if (!limit.ok) return { ok: false, error: limit.error };
 
   const parsed = CreateExpenseSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createExpense(guarded.value.salonId, parsed.data);
   if (result.ok) revalidateExpenses();
@@ -66,7 +67,7 @@ export async function createInventoryPurchaseExpenseAction(
     supplier_name: formData.get("supplier_name") || formData.get("commerce_name") || "",
     location: "storage",
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createInventoryPurchaseExpense(guarded.value.salonId, parsed.data);
   if (result.ok) revalidateExpenses();

@@ -63,7 +63,7 @@ export function addDays(isoDate: string, days: number): string {
   return base.toISOString().slice(0, 10);
 }
 
-export function addMonths(isoDate: string, months: number): string {
+function addMonths(isoDate: string, months: number): string {
   const base = new Date(`${isoDate}T00:00:00.000Z`);
   const day = base.getUTCDate();
   const target = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + months, 1));

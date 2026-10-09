@@ -1,13 +1,13 @@
 # Politica De Entornos
 
-Fecha: 2026-05-30
+Fecha: 2026-10-09
 
 GlowBook opera como monolito modular con tres entornos separados:
 
 | Entorno | Uso | Supabase | Datos |
 |---|---|---|---|
-| `local` | Desarrollo diario y pruebas manuales locales. | Proyecto local o sandbox personal. | Datos desechables. |
-| `staging` | Validacion de migraciones, E2E desplegado y smoke con 5 salones. | Proyecto Supabase staging. | Datos de prueba persistentes, nunca clientes reales. |
+| `local` | Desarrollo diario y pruebas manuales locales. | Supabase local en Docker (CLI). | Datos desechables. |
+| `staging` | Validacion de migraciones, E2E desplegado, smoke con 5 salones y check sintetico de solo lectura. | Proyecto Supabase staging. | Datos de prueba persistentes, nunca clientes reales. |
 | `production` | Salones reales. | Proyecto Supabase production. | Datos reales protegidos. |
 
 ## Variables Obligatorias
@@ -31,6 +31,52 @@ Reglas:
 - Las credenciales E2E manuales deben pertenecer a staging.
 - En `staging`, `APP_URL` y `E2E_BASE_URL` deben apuntar al deployment real;
   los gates rechazan `localhost` y `127.0.0.1`.
+
+## Quien Puede Migrar Que
+
+| Entorno | Donde se aplican migraciones | Quien puede hacerlo | Estado actual |
+|---|---|---|---|
+| `local` | `npx supabase start` y `supabase db reset` sobre Docker. | Cualquier desarrollador del equipo. | Vigente. |
+| `staging` | `npm run staging:migrations` (gate con `--target=staging`). | Miembros del equipo con acceso a secretos de staging. El job nightly solo verifica drift en lectura. | Vigente. |
+| `production` | `npm run release:migrations` (gate con `--target=production`). | Owner tecnico, tras revision de la migracion y gate verde. | Vigente como procedimiento manual de `docs/runbooks/deploy.md`. |
+
+**Regla objetivo:** las migraciones de `production` solo se aplican desde
+`.github/workflows/release.yml`, nunca desde la maquina de una persona.
+
+**Estado real:** `release.yml` **no existe todavia** en `.github/workflows/`
+(solo existen `ci.yml`, `nightly.yml` y `synthetic.yml`). Hasta que se cree, la
+aplicacion de migraciones de produccion sigue el procedimiento manual de
+`docs/runbooks/deploy.md`, con aprobacion explicita del owner y gate verde.
+No aplicar migraciones de produccion fuera de ese procedimiento.
+
+Principios aplicables a cualquier entorno:
+
+- Una migracion destructiva exige backup reciente (ver `docs/runbooks/restore.md`).
+- Nunca aplicar en produccion una migracion que no haya pasado en staging.
+
+## Reinicio De Staging
+
+Reiniciar staging (borrar datos y volver a sembrar) es una operacion
+destructiva. Solo se ejecuta con **confirmacion explicita**:
+
+```text
+--confirm=<project-ref>
+```
+
+- `<project-ref>` es el **identificador del proyecto Supabase de staging**, no
+  su nombre. El script debe comparar ese valor con el proyecto configurado
+  localmente y abortar si no coincide.
+- Antes de ejecutar, verificar con `npm run staging:verify-env` que
+  `APP_URL` y Supabase apuntan a staging.
+- Si la URL de Supabase coincide con `PRODUCTION_SUPABASE_URL`, abortar sin
+  excepciones.
+- Anunciar el reinicio en el canal del equipo antes de ejecutarlo y registrar
+  quien lo ejecuto y cuando.
+
+**Estado real:** hoy no existe un script de reinicio general con `--confirm`.
+Los scripts `cleanup-staging-*` usan variables `*_CONFIRM` con valores ligados
+al lote (por ejemplo `SMOKE_CLEANUP_CONFIRM=cleanup-5-salons`). Pendiente de
+implementar el flag `--confirm=<project-ref>` antes de usar el reinicio general.
 
 ## Supabase Local
 
@@ -64,6 +110,9 @@ el rango por defecto de Supabase CLI. Mantener los puertos `554xx` evita que
   `APP_URL` o `E2E_BASE_URL` apuntan a localhost.
 - `npm run smoke:seed-5-salons` exige `GLOWBOOK_ENV=staging`, `SMOKE_SEED_CONFIRM=seed-5-salons` y un batch con prefijo `smoke-`.
 - `npm run smoke:cleanup-5-salons` exige `GLOWBOOK_ENV=staging`, `SMOKE_CLEANUP_CONFIRM=cleanup-5-salons` y el mismo `SMOKE_SEED_BATCH_ID`.
+- `synthetic.yml` (cada hora) ejecuta un check de solo lectura contra
+  produccion y staging. Exige sus secretos y falla si faltan. Ver
+  `docs/runbooks/synthetic-checks.md`.
 
 ## Rotacion De Secretos
 
@@ -77,7 +126,7 @@ Rotar inmediatamente si:
 Despues de rotar:
 
 1. Actualizar variables en hosting.
-2. Actualizar GitHub Actions secrets.
-3. Ejecutar `npm run ci:verify`.
+2. Actualizar GitHub Actions secrets (incluido `ALERT_WEBHOOK_URL` si aplica).
+3. Ejecutar `npm run verify:full`.
 4. Ejecutar E2E contra staging.
 5. Confirmar que ninguna variable server-only aparece en el bundle cliente.

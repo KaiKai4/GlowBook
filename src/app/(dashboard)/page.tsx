@@ -46,9 +46,8 @@ export default async function DashboardPage() {
     disabledFeatures
   );
 
-  if (!profile.is_owner && visibleNav.length === 1) {
-    redirect(visibleNav[0].href);
-  }
+  const [onlyNavItem] = visibleNav;
+  if (!profile.is_owner && visibleNav.length === 1 && onlyNavItem && onlyNavItem.href !== "/") redirect(onlyNavItem.href);
 
   // Los avisos del plan (límites y pago vencido) y la guia de arranque solo
   // viven aqui: el owner los ve al entrar, sin perseguirlo por los modulos.

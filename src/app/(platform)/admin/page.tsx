@@ -45,20 +45,20 @@ export default async function PlatformAdminPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-white px-3 py-1 text-xs font-semibold text-brand-700 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-surface px-3 py-1 text-xs font-semibold text-brand-700 shadow-sm">
             <ShieldCheck className="h-3.5 w-3.5" />
             Administración global
           </div>
-          <h1 className="mt-3 text-2xl font-bold tracking-tight text-neutral-950">
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-fg-strong">
             Panel de Plataforma
           </h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-500">
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-fg-subtle">
             Estado del negocio: ingresos, salones, suscripciones y lo que requiere tu atención hoy.
           </p>
         </div>
         <Link
           href="/admin/invitations"
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-surface shadow-sm transition hover:bg-brand-700"
         >
           <MailOpen className="h-4 w-4" />
           Invitar salon
@@ -67,22 +67,22 @@ export default async function PlatformAdminPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <HomeMetric
-          icon={<BadgeDollarSign className="h-5 w-5 text-emerald-600" />}
+          icon={<BadgeDollarSign className="h-5 w-5 text-success-fg" />}
           label="MRR estimado"
           value={`$${billing.totals.mrr.toFixed(2)}`}
         />
         <HomeMetric
-          icon={<Building2 className="h-5 w-5 text-blue-600" />}
+          icon={<Building2 className="h-5 w-5 text-info-fg" />}
           label="Salones activos"
           value={`${home.metrics.activeSalons} de ${home.metrics.totalSalons}`}
         />
         <HomeMetric
-          icon={<Hourglass className="h-5 w-5 text-sky-600" />}
+          icon={<Hourglass className="h-5 w-5 text-info-fg" />}
           label="En trial"
           value={String(billing.totals.trialing)}
         />
         <HomeMetric
-          icon={<AlertTriangle className="h-5 w-5 text-amber-500" />}
+          icon={<AlertTriangle className="h-5 w-5 text-warning" />}
           label="Alertas abiertas"
           value={String(billing.totals.openAlerts)}
           highlight={billing.totals.openAlerts > 0}
@@ -91,27 +91,27 @@ export default async function PlatformAdminPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <Card className="overflow-hidden">
-          <CardHeader className="border-b border-neutral-100 bg-white pb-5">
+          <CardHeader className="border-b border-border-subtle bg-surface pb-5">
             <CardTitle>Requieren atención</CardTitle>
           </CardHeader>
           <CardContent>
             {attention.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 text-center">
-                <p className="text-sm text-neutral-400">
+              <div className="rounded-2xl border border-dashed border-border bg-surface-muted px-4 py-8 text-center">
+                <p className="text-sm text-fg-subtle">
                   Todo en orden: sin alertas, morosos, trials por vencer ni salones dormidos.
                 </p>
               </div>
             ) : (
-              <ul className="divide-y divide-neutral-100">
+              <ul className="divide-y divide-border-subtle">
                 {attention.map((item) => (
                   <li key={`${item.salonId}-${item.reason}`}>
                     <Link
                       href={`/admin/subscriptions?salon=${item.salonId}`}
-                      className="flex items-center justify-between gap-3 py-3 transition hover:bg-neutral-50"
+                      className="flex items-center justify-between gap-3 py-3 transition hover:bg-surface-muted"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-neutral-900">{item.salonName}</p>
-                        <p className="mt-0.5 text-xs text-neutral-500">{item.detail}</p>
+                        <p className="truncate text-sm font-semibold text-fg">{item.salonName}</p>
+                        <p className="mt-0.5 text-xs text-fg-subtle">{item.detail}</p>
                       </div>
                       <Badge variant={item.severity === "danger" ? "danger" : "warning"}>{item.reason}</Badge>
                     </Link>
@@ -123,7 +123,7 @@ export default async function PlatformAdminPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <CardHeader className="border-b border-neutral-100 bg-white pb-5">
+          <CardHeader className="border-b border-border-subtle bg-surface pb-5">
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Invitaciones pendientes</CardTitle>
               <Link href="/admin/invitations" className="text-sm font-medium text-brand-600 hover:text-brand-700">
@@ -133,14 +133,14 @@ export default async function PlatformAdminPage() {
           </CardHeader>
           <CardContent>
             {home.pendingInvitations.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 text-center">
-                <p className="text-sm text-neutral-400">No hay invitaciones pendientes.</p>
+              <div className="rounded-2xl border border-dashed border-border bg-surface-muted px-4 py-8 text-center">
+                <p className="text-sm text-fg-subtle">No hay invitaciones pendientes.</p>
               </div>
             ) : (
-              <ul className="divide-y divide-neutral-100">
+              <ul className="divide-y divide-border-subtle">
                 {home.pendingInvitations.slice(0, 5).map((invitation) => (
                   <li key={invitation.id} className="flex items-center justify-between gap-3 py-3">
-                    <span className="min-w-0 truncate text-sm font-medium text-neutral-800">
+                    <span className="min-w-0 truncate text-sm font-medium text-fg-secondary">
                       {invitation.email}
                     </span>
                     <div className="flex shrink-0 items-center gap-2">
@@ -157,7 +157,7 @@ export default async function PlatformAdminPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <Card className="overflow-hidden">
-          <CardHeader className="border-b border-neutral-100 bg-white pb-5">
+          <CardHeader className="border-b border-border-subtle bg-surface pb-5">
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Suscripciones</CardTitle>
               <Link href="/admin/subscriptions" className="text-sm font-medium text-brand-600 hover:text-brand-700">
@@ -166,16 +166,16 @@ export default async function PlatformAdminPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="divide-y divide-neutral-100">
+            <div className="divide-y divide-border-subtle">
               {billing.rows.slice(0, 8).map((row) => (
                 <Link
                   key={row.salonId}
                   href={`/admin/subscriptions?salon=${row.salonId}`}
-                  className="flex items-center justify-between gap-4 py-3 transition hover:bg-neutral-50"
+                  className="flex items-center justify-between gap-4 py-3 transition hover:bg-surface-muted"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-neutral-950">{row.salonName}</p>
-                    <p className="truncate text-xs text-neutral-500">
+                    <p className="text-sm font-semibold text-fg-strong">{row.salonName}</p>
+                    <p className="truncate text-xs text-fg-subtle">
                       {row.planName
                         ? `${row.planName} · ${row.currency} ${row.monthlyTotal.toFixed(2)}/mes`
                         : "Sin plan asignado"}
@@ -189,7 +189,7 @@ export default async function PlatformAdminPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <CardHeader className="border-b border-neutral-100 bg-white pb-5">
+          <CardHeader className="border-b border-border-subtle bg-surface pb-5">
             <CardTitle>Accesos administrativos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -201,13 +201,13 @@ export default async function PlatformAdminPage() {
             />
             <AdminShortcut
               href="/admin/audit"
-              icon={<History className="h-4 w-4 text-emerald-600" />}
+              icon={<History className="h-4 w-4 text-success-fg" />}
               title="Auditoria"
               detail="Eventos cross-tenant"
             />
             <AdminShortcut
               href="/admin/reports"
-              icon={<MessageSquareWarning className="h-4 w-4 text-amber-600" />}
+              icon={<MessageSquareWarning className="h-4 w-4 text-warning-fg" />}
               title="Reportes"
               detail="Fallas y sugerencias de salones"
             />
@@ -312,12 +312,12 @@ function HomeMetric({
       <CardContent className="pt-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-neutral-500">{label}</p>
-            <p className={`mt-1 text-3xl font-bold ${highlight ? "text-amber-600" : "text-neutral-950"}`}>
+            <p className="text-sm font-medium text-fg-subtle">{label}</p>
+            <p className={`mt-1 text-2xl font-semibold ${highlight ? "text-warning-fg" : "text-fg-strong"}`}>
               {value}
             </p>
           </div>
-          <div className="rounded-xl bg-neutral-50 p-2">{icon}</div>
+          <div className="rounded-xl bg-surface-muted p-2">{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -338,16 +338,16 @@ function AdminShortcut({
   return (
     <Link
       href={href}
-      className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 transition-colors hover:border-brand-200 hover:bg-white"
+      className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface-muted px-3 py-3 transition-colors hover:border-brand-200 hover:bg-surface"
     >
       <div className="flex min-w-0 items-center gap-3">
-        <div className="rounded-xl bg-white p-2 shadow-sm">{icon}</div>
+        <div className="rounded-xl bg-surface p-2 shadow-sm">{icon}</div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-neutral-950">{title}</p>
-          <p className="truncate text-xs text-neutral-500">{detail}</p>
+          <p className="text-sm font-semibold text-fg-strong">{title}</p>
+          <p className="truncate text-xs text-fg-subtle">{detail}</p>
         </div>
       </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-neutral-400" />
+      <ArrowRight className="h-4 w-4 shrink-0 text-fg-subtle" />
     </Link>
   );
 }

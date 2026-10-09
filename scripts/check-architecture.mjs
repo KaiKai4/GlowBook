@@ -18,11 +18,9 @@ const allowedAdminClientImporters = new Set([
   "src/lib/supabase/auth-admin.ts",
 ]);
 
-const allowedAuthAdminImporters = new Set([
-  "src/features/employees/data/employee-auth.repo.ts",
-  "src/features/platform/data/delete-salon.repo.ts",
-  "src/features/platform/data/platform-auth.repo.ts",
-]);
+const allowedAdminClientDirectory = "src/lib/security"; // Capa de seguridad (ADR 0017): rate limit compartido.
+
+const allowedAuthAdminImporters = new Set(["src/features/employees/data/employee-auth.repo.ts", "src/features/platform/data/delete-salon.repo.ts", "src/features/platform/data/platform-auth.repo.ts"]);
 
 const importPatterns = [
   /import\s+(?:type\s+)?[^'"]*?\s+from\s*["']([^"']+)["']/g,
@@ -30,14 +28,17 @@ const importPatterns = [
   /export\s+(?:type\s+)?[^'"]*?\s+from\s*["']([^"']+)["']/g,
 ];
 
+/** @param {string} filePath */
 function toProjectPath(filePath) {
   return path.relative(root, filePath).split(path.sep).join("/");
 }
 
+/** @param {string} projectPath @param {string} dir */
 function isInside(projectPath, dir) {
   return projectPath === dir || projectPath.startsWith(`${dir}/`);
 }
 
+/** @param {string} fromFile @param {string} specifier */
 function resolveImport(fromFile, specifier) {
   if (specifier.startsWith("@/")) {
     return toProjectPath(path.join(srcRoot, specifier.slice(2)));
@@ -50,6 +51,7 @@ function resolveImport(fromFile, specifier) {
   return null;
 }
 
+/** @param {string} dir @returns {string[]} */
 function collectSourceFiles(dir) {
   const entries = readdirSync(dir);
   const files = [];
@@ -71,6 +73,7 @@ function collectSourceFiles(dir) {
   return files;
 }
 
+/** @param {string} dir @returns {string[]} */
 function collectDirectories(dir) {
   const entries = readdirSync(dir);
   const directories = [];
@@ -88,6 +91,7 @@ function collectDirectories(dir) {
   return directories;
 }
 
+/** @param {string} source */
 function collectImports(source) {
   const imports = [];
 
@@ -102,27 +106,33 @@ function collectImports(source) {
   return imports;
 }
 
+/** @param {string} projectPath */
 function isFeatureDomain(projectPath) {
   return /^src\/features\/[^/]+\/domain(\/|$)/.test(projectPath);
 }
 
+/** @param {string} projectPath */
 function isFeatureUseCase(projectPath) {
   return /^src\/features\/[^/]+\/use-cases(\/|$)/.test(projectPath);
 }
 
+/** @param {string} projectPath */
 function isTestSource(projectPath) {
   return /\.(test|spec)\.[jt]sx?$/.test(projectPath);
 }
 
+/** @param {string} projectPath */
 function featureName(projectPath) {
   const match = projectPath.match(/^src\/features\/([^/]+)\//);
   return match?.[1] ?? null;
 }
 
+/** @param {string} projectPath */
 function isFeatureData(projectPath) {
   return /^src\/features\/[^/]+\/data(\/|$)/.test(projectPath);
 }
 
+/** @param {string} specifier @param {string | null} resolvedPath */
 function isForbiddenDomainImport(specifier, resolvedPath) {
   if (specifier === "react" || specifier.startsWith("react/")) return true;
   if (specifier === "next" || specifier.startsWith("next/")) return true;
@@ -134,6 +144,7 @@ function isForbiddenDomainImport(specifier, resolvedPath) {
   return false;
 }
 
+/** @param {string} specifier @param {string | null} resolvedPath */
 function isSupabaseLibImport(specifier, resolvedPath) {
   return (
     specifier === "@/lib/supabase" ||
@@ -142,10 +153,12 @@ function isSupabaseLibImport(specifier, resolvedPath) {
   );
 }
 
+/** @param {string} specifier @param {string | null} resolvedPath */
 function isSupabaseAdminImport(specifier, resolvedPath) {
   return specifier === "@/lib/supabase/admin" || resolvedPath === "src/lib/supabase/admin";
 }
 
+/** @param {string} specifier @param {string | null} resolvedPath */
 function isSupabaseAuthAdminImport(specifier, resolvedPath) {
   return (
     specifier === "@/lib/supabase/auth-admin" ||
@@ -169,6 +182,8 @@ for (const directory of collectDirectories(path.join(srcRoot, "features"))) {
 
 for (const file of collectSourceFiles(srcRoot)) {
   const projectPath = toProjectPath(file);
+  // Los tests quedan fuera de las reglas de capas (importan módulos para mockearlos).
+  if (isTestSource(projectPath)) continue;
   const source = readFileSync(file, "utf8");
   const imports = collectImports(source);
 
@@ -198,7 +213,8 @@ for (const file of collectSourceFiles(srcRoot)) {
 
     if (
       isSupabaseAdminImport(specifier, resolvedPath) &&
-      !allowedAdminClientImporters.has(projectPath)
+      !allowedAdminClientImporters.has(projectPath) &&
+      !isInside(projectPath, allowedAdminClientDirectory)
     ) {
       violations.push({
         file: projectPath,
@@ -250,7 +266,6 @@ for (const file of collectSourceFiles(srcRoot)) {
     }
 
     if (
-      !isTestSource(projectPath) &&
       isFeatureUseCase(projectPath) &&
       resolvedPath &&
       isFeatureData(resolvedPath) &&

@@ -92,7 +92,7 @@ export function Sidebar({
     <aside
       id="dashboard-sidebar"
       className={cn(
-        "relative flex h-full shrink-0 flex-col border-r border-brand-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)] transition-[width] duration-200 ease-out motion-reduce:transition-none",
+        "relative flex h-full shrink-0 flex-col border-r border-brand-100 bg-surface shadow-[1px_0_8px_rgba(0,0,0,0.04)] transition-[width] duration-200 ease-out motion-reduce:transition-none",
         isCollapsed ? "w-20" : "w-64",
       )}
     >
@@ -106,7 +106,7 @@ export function Sidebar({
         }
         title={isCollapsed ? "Expandir menú lateral" : "Contraer menú lateral"}
         className={cn(
-          "absolute z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-white text-stone-500 shadow-sm transition-[border-color,color,box-shadow] duration-150 hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+          "absolute z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-surface text-fg-subtle shadow-sm transition-[border-color,color,box-shadow] duration-150 hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
           isCollapsed
             ? "left-1/2 top-[88px] -translate-x-1/2"
             : "right-12 top-[88px]",
@@ -129,7 +129,7 @@ export function Sidebar({
         >
           <GlowBookBrand markSize="sm" align="center" />
           <div className="min-w-0 max-w-full">
-            <p className="break-words text-sm font-semibold leading-tight text-stone-900">
+            <p className="break-words text-sm font-semibold leading-tight text-fg">
               {salonName}
             </p>
           </div>
@@ -155,7 +155,7 @@ export function Sidebar({
         {groups.length === 0 ? (
           <p
             className={cn(
-              "px-3 py-4 text-xs leading-relaxed text-stone-400",
+              "px-3 py-4 text-xs leading-relaxed text-fg-subtle",
               isCollapsed && "sr-only",
             )}
           >
@@ -178,7 +178,7 @@ export function Sidebar({
                 )}
               >
                 {group.label && !isCollapsed ? (
-                  <p className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                  <p className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-fg-subtle">
                     {group.label}
                   </p>
                 ) : null}
@@ -204,13 +204,13 @@ export function Sidebar({
                               : "grid-cols-[16px_1fr] gap-3 px-3",
                             isActive
                               ? "bg-brand-50 text-brand-700"
-                              : "text-stone-500 hover:bg-stone-50 hover:text-stone-800",
+                              : "text-fg-subtle hover:bg-surface-muted hover:text-fg-secondary",
                           )}
                         >
                           <item.icon
                             className={cn(
                               "h-4 w-4 shrink-0",
-                              isActive ? "text-brand-600" : "text-stone-400",
+                              isActive ? "text-brand-600" : "text-fg-subtle",
                             )}
                             aria-hidden="true"
                           />
@@ -240,14 +240,14 @@ export function Sidebar({
             title={isCollapsed ? "Cerrar sesión" : undefined}
             aria-label={isCollapsed ? "Cerrar sesión" : undefined}
             className={cn(
-              "grid min-h-10 w-full items-center rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-[background-color,color,grid-template-columns,gap,padding] duration-200 hover:bg-stone-50 hover:text-stone-800 motion-reduce:transition-none",
+              "grid min-h-10 w-full items-center rounded-lg py-2.5 text-sm font-medium text-fg-subtle transition-[background-color,color,grid-template-columns,gap,padding] duration-200 hover:bg-surface-muted hover:text-fg-secondary motion-reduce:transition-none",
               isCollapsed
                 ? "grid-cols-[16px_0fr] justify-center gap-0 px-3"
                 : "grid-cols-[16px_1fr] gap-3 px-3",
             )}
           >
             <LogOut
-              className="h-4 w-4 shrink-0 text-stone-400"
+              className="h-4 w-4 shrink-0 text-fg-subtle"
               aria-hidden="true"
             />
             <span

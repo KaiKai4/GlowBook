@@ -3,8 +3,8 @@ import "server-only";
 import { findPendingInvitations } from "../data/invitations.repo";
 import { findAllSalons } from "../data/salons.repo";
 
-export type PlatformAdminSalon = Awaited<ReturnType<typeof findAllSalons>>[number];
-export type PlatformAdminPendingInvitation =
+type PlatformAdminSalon = Awaited<ReturnType<typeof findAllSalons>>[number];
+type PlatformAdminPendingInvitation =
   Awaited<ReturnType<typeof findPendingInvitations>>[number];
 
 export interface PlatformAdminHomeViewModel {

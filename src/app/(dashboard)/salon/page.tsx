@@ -14,7 +14,7 @@ export default async function SalonSettingsPage() {
   if (!hasPermission(profile, PERMISSIONS.SALON_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para configurar el salon.</p>
+        <p className="text-fg-subtle">No tienes permiso para configurar el salon.</p>
       </div>
     );
   }

@@ -15,6 +15,7 @@ import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireActiveProfile } from "@/lib/auth/session";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
@@ -22,7 +23,7 @@ async function guard(): Promise<Result<{ salonId: string }>> {
     return { ok: false, error: "No tienes permiso para editar el salon." };
   }
 
-  const limited = assertActionRateLimit(profile.id, "salon", { max: 60, windowMs: 60_000 });
+  const limited = await assertActionRateLimit(profile.id, "salon", { max: 60, windowMs: 60_000 });
   if (!limited.ok) return limited;
 
   return { ok: true, value: { salonId: profile.salon_id } };
@@ -36,7 +37,7 @@ export async function updateSalonInfoAction(
   if (!guarded.ok) return guarded;
 
   const parsed = SalonInfoSchema.safeParse({ name: formData.get("name") });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateSalonInfo(guarded.value.salonId, parsed.data);
   if (result.ok) revalidatePath("/", "layout");
@@ -73,7 +74,7 @@ export async function updateBusinessHoursAction(hoursJson: string): Promise<Resu
   }
 
   const parsed = BusinessHoursSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateBusinessHours(guarded.value.salonId, parsed.data);
   if (result.ok) {
@@ -92,7 +93,7 @@ export async function updateSalonPaymentMethodsAction(
   if (!guarded.ok) return guarded;
 
   const parsed = SalonPaymentMethodsSchema.safeParse(paymentMethods);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateSalonPaymentMethods(guarded.value.salonId, parsed.data);
   if (result.ok) {

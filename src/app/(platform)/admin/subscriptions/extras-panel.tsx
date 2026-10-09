@@ -71,29 +71,29 @@ function ActiveExtrasList({ salonId, extras }: { salonId: string; extras: SalonE
       description="Modulos y aumentos de límite activos para este salon, vendidos o regalados."
     >
       {extras.length === 0 ? (
-        <p className="text-sm text-stone-500">Este salon no tiene extras vigentes.</p>
+        <p className="text-sm text-fg-subtle">Este salon no tiene extras vigentes.</p>
       ) : (
         <div className="space-y-2">
           {extras.map((extra) => (
             <div
               key={extra.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-white px-3 py-2.5"
+              className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-surface px-3 py-2.5"
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-stone-950">
+                  <p className="truncate text-sm font-semibold text-fg-strong">
                     {extra.name}
                     {extra.quantity > 1 ? ` × ${extra.quantity}` : ""}
                   </p>
                   {extra.isGift ? (
-                    <span className="rounded-lg bg-pink-50 px-2 py-0.5 text-xs font-semibold text-pink-600">Regalo</span>
+                    <span className="rounded-lg bg-accent-subtle px-2 py-0.5 text-xs font-semibold text-accent-strong">Regalo</span>
                   ) : (
-                    <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    <span className="rounded-lg bg-success-subtle px-2 py-0.5 text-xs font-semibold text-success-fg">
                       USD {extra.monthlyPrice.toFixed(2)}/mes
                     </span>
                   )}
                 </div>
-                <p className="mt-1 truncate text-xs text-stone-500">
+                <p className="mt-1 truncate text-xs text-fg-subtle">
                   {extra.detail}
                   {extra.endsAt ? ` · vence ${extra.endsAt}` : ""}
                   {extra.reason ? ` · ${extra.reason}` : ""}
@@ -104,7 +104,7 @@ function ActiveExtrasList({ salonId, extras }: { salonId: string; extras: SalonE
                   type="submit"
                   variant="outline"
                   size="icon"
-                  className="border-red-200 text-red-500 hover:bg-red-50"
+                  className="border-danger-border text-danger hover:bg-danger-subtle"
                   aria-label={`Cancelar ${extra.name}`}
                 >
                   <XCircle className="h-4 w-4" />
@@ -163,9 +163,9 @@ function GiveAddonForm({
             />
           ) : null}
         </div>
-        <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-pink-100 bg-pink-50/50 px-3 text-sm font-medium text-stone-700">
+        <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-accent-border bg-accent-subtle/50 px-3 text-sm font-medium text-fg-secondary">
           <span className="inline-flex items-center gap-2">
-            <Gift className="h-4 w-4 text-pink-500" />
+            <Gift className="h-4 w-4 text-accent" />
             Regalar sin costo
           </span>
           <input
@@ -173,7 +173,7 @@ function GiveAddonForm({
             type="checkbox"
             checked={isGift}
             onChange={(event) => setIsGift(event.target.checked)}
-            className="h-4 w-4 rounded border-stone-300 text-pink-600 focus:ring-pink-500"
+            className="h-4 w-4 rounded border-border-strong text-accent focus:ring-accent"
           />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">

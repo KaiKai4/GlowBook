@@ -8,6 +8,8 @@ import {
   type PlatformAdminFixture,
   type TestSupabaseClient,
 } from "../src/test/supabase-integration-fixtures";
+import { expectNoSeriousA11yViolations } from "./support/a11y";
+import { skipUnlessReady } from "./support/env";
 
 let credentials: AuthCredentials | null =
   process.env.E2E_PLATFORM_ADMIN_EMAIL && process.env.E2E_PLATFORM_ADMIN_PASSWORD
@@ -24,8 +26,8 @@ async function loginPlatformAdmin(page: Page) {
   const activeCredentials = credentials!;
 
   await page.goto("/login");
-  await page.getByLabel("Email").fill(activeCredentials.email);
-  await page.getByLabel(/Contrase/i).fill(activeCredentials.password);
+  await page.getByLabel(/Correo|Email/i).fill(activeCredentials.email);
+  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(activeCredentials.password);
   await page.getByRole("button", { name: /Iniciar/i }).click();
 }
 
@@ -48,7 +50,7 @@ test.describe("platform admin critical smoke", () => {
   });
 
   test("logs in and opens the Platform admin home", async ({ page }) => {
-    test.skip(
+    skipUnlessReady(
       !credentials,
       "Requires E2E_PLATFORM_ADMIN_* credentials or Supabase service role fixture env."
     );
@@ -57,23 +59,26 @@ test.describe("platform admin critical smoke", () => {
 
     await expect(page).toHaveURL(/\/admin/);
     await expect(page.getByRole("heading", { name: /Panel de Plataforma/i })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 
   test("opens the Platform audit log", async ({ page }) => {
-    test.skip(
+    skipUnlessReady(
       !credentials,
       "Requires E2E_PLATFORM_ADMIN_* credentials or Supabase service role fixture env."
     );
 
     await loginPlatformAdmin(page);
-    await page.getByRole("link", { name: /Auditoria/i }).click();
+    // Hay dos accesos a /admin/audit (barra lateral y tarjeta del inicio); ambos llevan al mismo destino.
+    await page.getByRole("link", { name: /Auditoria/i }).first().click();
 
     await expect(page).toHaveURL(/\/admin\/audit/);
     await expect(page.getByRole("heading", { name: /Auditoria de Plataforma/i })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 
   test("opens the Platform invitations page", async ({ page }) => {
-    test.skip(
+    skipUnlessReady(
       !credentials,
       "Requires E2E_PLATFORM_ADMIN_* credentials or Supabase service role fixture env."
     );
@@ -83,5 +88,6 @@ test.describe("platform admin critical smoke", () => {
 
     await expect(page).toHaveURL(/\/admin\/invitations/);
     await expect(page.getByRole("heading", { name: /^Invitaciones$/i })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 });

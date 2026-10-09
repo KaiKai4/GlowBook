@@ -31,11 +31,11 @@ export function AppointmentsClient({
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-stone-900">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
             <CalendarDays className="h-6 w-6 text-brand-500" />
             Agenda
           </h1>
-          <p className="mt-0.5 text-sm capitalize text-stone-500">
+          <p className="mt-0.5 text-sm capitalize text-fg-subtle">
             {calendar.dateLabel} ·{" "}
             <span className="font-semibold text-brand-600">
               {calendar.activeCount} citas activas

@@ -45,13 +45,13 @@ export function PlansWorkspace({
   const visibleLimitsCount = selectedPlan ? countVisibleLimits(selectedPlan, data.metrics) : 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
       <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[300px_1fr]">
-        <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-stone-50/60 lg:border-b-0 lg:border-r">
+        <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-surface-muted/60 lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between border-b border-brand-100 px-5 py-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Planes</p>
-              <p className="mt-1 text-sm text-stone-500">{data.plans.length} registrados</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Planes</p>
+              <p className="mt-1 text-sm text-fg-subtle">{data.plans.length} registrados</p>
             </div>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
               {data.plans.filter((plan) => plan.status === "active").length} activos
@@ -70,7 +70,7 @@ export function PlansWorkspace({
                 "mb-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition",
                 isCreateMode
                   ? "border-brand-300 bg-brand-50 text-brand-700"
-                  : "border-brand-100 bg-white text-stone-700 hover:border-brand-300 hover:text-brand-700"
+                  : "border-brand-100 bg-surface text-fg-secondary hover:border-brand-300 hover:text-brand-700"
               )}
             >
               <Plus className="h-4 w-4" />
@@ -78,7 +78,7 @@ export function PlansWorkspace({
             </button>
 
             {data.plans.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-brand-200 bg-white px-4 py-8 text-center text-sm text-stone-400">
+              <div className="rounded-xl border border-dashed border-brand-200 bg-surface px-4 py-8 text-center text-sm text-fg-subtle">
                 Crea el primer plan para comenzar.
               </div>
             ) : (
@@ -94,20 +94,20 @@ export function PlansWorkspace({
                     "flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition",
                     selectedPlan?.id === plan.id
                       ? "border-brand-300 bg-brand-50 shadow-[inset_3px_0_0_var(--color-brand-600)]"
-                      : "border-transparent hover:border-brand-100 hover:bg-white"
+                      : "border-transparent hover:border-brand-100 hover:bg-surface"
                   )}
                 >
                   <span className={cn(
                     "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
                     selectedPlan?.id === plan.id
-                      ? "border-brand-200 bg-white text-brand-700"
-                      : "border-stone-200 bg-white text-stone-400"
+                      ? "border-brand-200 bg-surface text-brand-700"
+                      : "border-border bg-surface text-fg-subtle"
                   )}>
                     <Layers3 className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-stone-950">{plan.name}</span>
-                    <span className="mt-0.5 block truncate text-xs text-stone-400">
+                    <span className="block truncate text-sm font-semibold text-fg-strong">{plan.name}</span>
+                    <span className="mt-0.5 block truncate text-xs text-fg-muted">
                       {plan.currency} {plan.monthlyPrice.toFixed(2)}/mes · {data.assignmentsByPlan[plan.id] ?? 0} salones
                     </span>
                   </span>
@@ -118,7 +118,7 @@ export function PlansWorkspace({
           </div>
         </aside>
 
-        <section className="flex min-h-0 min-w-0 flex-col bg-white">
+        <section className="flex min-h-0 min-w-0 flex-col bg-surface">
           {selectedPlan ? (
             <>
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-100 px-5 py-4">
@@ -128,23 +128,23 @@ export function PlansWorkspace({
                   </div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-xl font-bold text-stone-950">{selectedPlan.name}</h2>
-                      <span className="rounded-lg bg-stone-100 px-2 py-1 font-mono text-xs text-stone-500">
+                      <h2 className="truncate text-xl font-semibold text-fg-strong">{selectedPlan.name}</h2>
+                      <span className="rounded-lg bg-surface-sunken px-2 py-1 font-mono text-xs text-fg-muted">
                         {selectedPlan.code}
                       </span>
                       {selectedAssignments > 0 ? (
-                        <span className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+                        <span className="rounded-lg bg-warning-subtle px-2 py-1 text-xs font-semibold text-warning-fg">
                           {selectedAssignments} {selectedAssignments === 1 ? "salon asignado" : "salones asignados"}
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-sm text-stone-500">
+                    <p className="mt-1 text-sm text-fg-subtle">
                       {selectedPlan.description || "Configura informacion, modulos y límites de este plan."}
                     </p>
                   </div>
                 </div>
                 <form action={removePlanAction.bind(null, selectedPlan, selectedAssignments > 0)}>
-                  <Button type="submit" variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+                  <Button type="submit" variant="outline" className="border-danger-border text-danger hover:bg-danger-subtle">
                     <Archive className="h-4 w-4" />
                     {selectedAssignments > 0 ? "Archivar" : "Eliminar"}
                   </Button>
@@ -204,13 +204,13 @@ function PlanTab({ active, onClick, count, children }: { active: boolean; onClic
       onClick={onClick}
       className={cn(
         "min-h-11 border-b-2 px-4 text-sm font-semibold transition-colors",
-        active ? "border-brand-600 text-brand-700" : "border-transparent text-stone-500 hover:text-stone-900"
+        active ? "border-brand-600 text-brand-700" : "border-transparent text-fg-subtle hover:text-fg"
       )}
     >
       <span className="inline-flex items-center gap-2">
         {children}
         {typeof count === "number" ? (
-          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">{count}</span>
+          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">{count}</span>
         ) : null}
       </span>
     </button>

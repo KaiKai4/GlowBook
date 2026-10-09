@@ -9,7 +9,7 @@ export default async function ServicesPage() {
   if (!hasPermission(profile, PERMISSIONS.SERVICES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para gestionar servicios.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar servicios.</p>
       </div>
     );
   }

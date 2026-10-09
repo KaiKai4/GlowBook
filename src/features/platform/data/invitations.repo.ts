@@ -1,4 +1,5 @@
 import "server-only";
+import { PublicError } from "@/lib/public-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -75,7 +76,7 @@ export async function regenerateSalonInvitationToken(invitationId: string): Prom
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) throw new Error("La invitacion no existe o ya no esta pendiente.");
+  if (!data) throw new PublicError("La invitacion no existe o ya no esta pendiente.");
   return token;
 }
 

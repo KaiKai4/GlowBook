@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   assertServicesHaveAssignedCategories,
-  findServicesMissingAssignedCategory,
 } from "./collaborator-assignment";
 
 const services = [
@@ -14,12 +13,6 @@ describe("collaborator assignment", () => {
     expect(() =>
       assertServicesHaveAssignedCategories(services, ["hair", "nails"])
     ).not.toThrow();
-  });
-
-  it("detects services whose category is not assigned to the collaborator", () => {
-    expect(findServicesMissingAssignedCategory(services, ["hair"])).toEqual([
-      { id: "manicure", category_id: "nails" },
-    ]);
   });
 
   it("rejects assigning a service without assigning its category", () => {

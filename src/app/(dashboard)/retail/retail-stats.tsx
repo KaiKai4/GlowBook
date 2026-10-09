@@ -18,9 +18,9 @@ export function RetailStats({ retail }: { retail: RetailPageView }) {
 
 function Metric({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4">
-      <p className="text-xs font-semibold uppercase text-stone-400">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-stone-900">{value}</p>
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="text-xs font-semibold uppercase text-fg-subtle">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-fg">{value}</p>
     </div>
   );
 }

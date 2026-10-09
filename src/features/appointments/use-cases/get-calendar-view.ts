@@ -102,8 +102,11 @@ export async function getCalendarView({
 
   const weekDates = getWeekDates(selectedDate);
   const visibleWeekDates = getVisibleWeekDates(selectedDate, businessHours);
-  const startDate = view === "semanal" ? weekDates[0] : selectedDate;
-  const endDate = view === "semanal" ? weekDates[6] : selectedDate;
+  const weekStart = weekDates[0];
+  const weekEnd = weekDates[6];
+  if (!weekStart || !weekEnd) throw new Error("Invariante de calendario: la semana tiene 7 días.");
+  const startDate = view === "semanal" ? weekStart : selectedDate;
+  const endDate = view === "semanal" ? weekEnd : selectedDate;
   const { start, end } = utcBounds(startDate, endDate, timezone);
   const appointments = (await findAppointmentsBySalon(salonId, {
     startDate: start,

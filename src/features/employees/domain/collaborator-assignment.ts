@@ -1,9 +1,10 @@
+import { PublicError } from "@/lib/public-error";
 export interface ServiceCategoryRef {
   id: string;
   category_id: string;
 }
 
-export function findServicesMissingAssignedCategory(
+function findServicesMissingAssignedCategory(
   services: ServiceCategoryRef[],
   assignedCategoryIds: string[]
 ): ServiceCategoryRef[] {
@@ -17,6 +18,6 @@ export function assertServicesHaveAssignedCategories(
 ): void {
   const missing = findServicesMissingAssignedCategory(services, assignedCategoryIds);
   if (missing.length > 0) {
-    throw new Error("Para asignar un servicio al colaborador, tambien debes asignar su categoria.");
+    throw new PublicError("Para asignar un servicio al colaborador, tambien debes asignar su categoria.");
   }
 }

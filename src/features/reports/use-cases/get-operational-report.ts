@@ -29,7 +29,7 @@ import type { ReportFilters, SelectedReportPreset } from "../schemas";
 
 const DEFAULT_REPORT_TIMEZONE = "America/Panama";
 
-export interface OperationalReportPeriodViewModel extends OperationalReportMetrics {
+interface OperationalReportPeriodViewModel extends OperationalReportMetrics {
   from: string;
   to: string;
   preset: SelectedReportPreset;
@@ -58,7 +58,7 @@ export interface GetOperationalReportInput {
 
 function getMonthSequence(now: Date, timezone: string, count = 12) {
   const currentMonthKey = localDateString(now, timezone).slice(0, 7);
-  const [year, month] = currentMonthKey.split("-").map(Number);
+  const [year = NaN, month = NaN] = currentMonthKey.split("-").map(Number);
   const label = new Intl.DateTimeFormat("es-PA", { month: "short", timeZone: "UTC" });
 
   return Array.from({ length: count }, (_, index) => {
@@ -73,7 +73,7 @@ function getMonthSequence(now: Date, timezone: string, count = 12) {
 }
 
 function lastDayOfMonth(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map(Number);
+  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
   const day = new Date(Date.UTC(year, month, 0)).getUTCDate();
   return `${monthKey}-${String(day).padStart(2, "0")}`;
 }
@@ -125,7 +125,7 @@ export const LIFETIME_RANGE = {
  * salon). Es lo que el dashboard muestra como "Acumulado del año": se reinicia
  * cada 1 de enero porque el año nuevo arranca sin movimientos, sin borrar nada.
  */
-export async function getYearTotals({
+async function getYearTotals({
   salonId,
   modules,
   timezone,
@@ -147,7 +147,7 @@ interface GetOperationalReportPeriodInternalInput extends GetOperationalReportIn
   timezone?: string;
 }
 
-export async function getOperationalReportPeriod({
+async function getOperationalReportPeriod({
   salonId,
   filters,
   modules = { inventory: true, retail: true, expenses: true },
@@ -205,9 +205,12 @@ async function getHistoricalAnalytics({
   timezone: string;
 }): Promise<HistoricalReportAnalytics> {
   const months = getMonthSequence(now, timezone);
+  const firstMonth = months[0];
+  const lastMonth = months.at(-1);
+  if (!firstMonth || !lastMonth) throw new Error("Invariante de reporte: sin meses para el historial.");
   const historyBounds = utcBounds(
-    `${months[0].monthKey}-01`,
-    lastDayOfMonth(months.at(-1)!.monthKey),
+    `${firstMonth.monthKey}-01`,
+    lastDayOfMonth(lastMonth.monthKey),
     timezone
   );
   const historicalRows = await findHistoricalReportRows({

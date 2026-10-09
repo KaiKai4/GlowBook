@@ -271,34 +271,6 @@ export async function insertInventoryMovement(
   if (error) throw error;
 }
 
-export async function applyInventoryStockDelta(
-  salonId: string,
-  input: {
-    product_id: string;
-    location: InventoryLocation;
-    delta: number;
-    movement_type: string;
-    reference_type?: string;
-    reference_id?: string;
-    note?: string;
-  }
-): Promise<{ quantityAfter: number }> {
-  const supabase = db(await createSupabaseServerClient());
-  const { data, error } = await supabase.rpc("apply_inventory_stock_delta", {
-    p_salon_id: salonId,
-    p_product_id: input.product_id,
-    p_location: input.location,
-    p_delta: input.delta,
-    p_movement_type: input.movement_type,
-    p_reference_type: input.reference_type ?? null,
-    p_reference_id: input.reference_id ?? null,
-    p_note: input.note || null,
-  });
-
-  if (error) throw error;
-  return { quantityAfter: Number(data ?? 0) };
-}
-
 export async function transferInventoryStockAtomically(
   salonId: string,
   input: {

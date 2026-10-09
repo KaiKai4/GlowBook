@@ -39,25 +39,30 @@ function isLocalUrl(value = "") {
   }
 }
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[security-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[security-readiness] OK ${message}`);
 }
 
+/** @param {string | undefined} value @returns {value is string} */
 function envValueLooksReal(value) {
   return Boolean(value && value.length >= 20 && !value.includes("your-") && !value.includes("here"));
 }
 
+/** @param {string} name */
 function hasEnv(name) {
   return Boolean(process.env[name]?.trim());
 }
 
 async function checkHeaders() {
   const appUrl = process.env.E2E_BASE_URL ?? process.env.APP_URL;
+  /** @type {Record<string, string>} */
   const headers = {};
 
   if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
@@ -114,6 +119,7 @@ async function checkHeaders() {
   }
 }
 
+/** @param {string} root @returns {string[]} */
 function walkFiles(root) {
   if (!existsSync(root)) return [];
 

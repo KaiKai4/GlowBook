@@ -194,7 +194,7 @@ export function RemindersView({
 
   function openWhatsApp(appt: ReminderAppointment) {
     if (!appt.customer?.phone) return;
-    window.open(buildWhatsAppUrl(appt.customer.phone, messageFor(appt)), "_blank");
+    window.open(buildWhatsAppUrl(appt.customer.phone, messageFor(appt)), "_blank", "noopener,noreferrer");
     setReadyToConfirm((current) => ({ ...current, [appt.id]: true }));
   }
 
@@ -307,7 +307,7 @@ export function RemindersView({
         {filtered.length === 0 ? (
           <div className="py-16 text-center">
             <Bell className="mx-auto mb-3 h-8 w-8 text-stone-200" />
-            <p className="text-sm text-stone-400">Sin citas para estos filtros.</p>
+            <p className="text-sm text-stone-500">Sin citas para estos filtros.</p>
           </div>
         ) : (
           <div className="overflow-x-auto lg:overflow-visible">
@@ -346,7 +346,7 @@ export function RemindersView({
                       <td className="px-4 py-3">
                         <p className="font-semibold text-stone-800">{customerName}</p>
                         {appt.customer?.phone && (
-                          <p className="mt-0.5 text-xs text-stone-400">{appt.customer.phone}</p>
+                          <p className="mt-0.5 text-xs text-stone-500">{appt.customer.phone}</p>
                         )}
                       </td>
                       <td className="px-4 py-3 text-stone-700">{employeeNames || "-"}</td>
@@ -365,7 +365,7 @@ export function RemindersView({
                             <p className="font-semibold text-brand-700">
                               {formatTimeTz(new Date(appt.start_time), tz)}
                             </p>
-                            <p className="mt-0.5 text-xs capitalize text-stone-400">
+                            <p className="mt-0.5 text-xs capitalize text-stone-500">
                               {new Date(appt.start_time).toLocaleDateString("es-PA", {
                                 weekday: "short",
                                 day: "numeric",
@@ -388,7 +388,7 @@ export function RemindersView({
                               <Clock className="h-3 w-3" />
                               {sentToday ? "Enviado hoy" : "Enviado"}
                             </span>
-                            <p className="text-xs text-stone-400">{formatSentAt(sentAt, tz)}</p>
+                            <p className="text-xs text-stone-500">{formatSentAt(sentAt, tz)}</p>
                           </div>
                         ) : (
                           <span className="text-xs font-medium text-amber-700">Pendiente</span>

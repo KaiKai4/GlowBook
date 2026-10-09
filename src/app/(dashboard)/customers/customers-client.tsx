@@ -52,8 +52,8 @@ export function CustomersClient({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Clientes</h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <h1 className="text-2xl font-semibold text-fg">Clientes</h1>
+          <p className="mt-1 text-sm text-fg-subtle">
             {view.query
               ? `${view.total} ${view.total === 1 ? "resultado" : "resultados"}`
               : `${view.total} clientes activos`}
@@ -77,7 +77,7 @@ export function CustomersClient({
           placeholder="Buscar por nombre, teléfono o correo..."
           aria-label="Buscar clientes por nombre, teléfono o correo"
           spellCheck={false}
-          className="h-9 flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="h-9 flex-1 rounded-lg border border-border bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         <Button type="submit" variant="outline" loading={pending}>
           Buscar
@@ -95,7 +95,7 @@ export function CustomersClient({
         {view.customers.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
-              <p className="text-neutral-400">
+              <p className="text-fg-subtle">
                 {view.query
                   ? "No se encontraron clientes."
                   : "Aún no hay clientes."}
@@ -108,12 +108,12 @@ export function CustomersClient({
       </div>
 
       {view.totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
           <div>
-            <p className="text-sm font-medium text-neutral-700">
+            <p className="text-sm font-medium text-fg-secondary">
               {firstVisibleCustomer}-{lastVisibleCustomer} de {view.total}
             </p>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-fg-subtle">
               Página {view.page} de {view.totalPages}
             </p>
           </div>
@@ -124,7 +124,7 @@ export function CustomersClient({
                 loadCustomers({ q: view.query, page: view.page - 1 })
               }
               disabled={pending || view.page === 1}
-              className="flex min-h-9 items-center gap-1 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-white disabled:text-neutral-300"
+              className="flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-fg-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               Anterior
@@ -135,7 +135,7 @@ export function CustomersClient({
                 loadCustomers({ q: view.query, page: view.page + 1 })
               }
               disabled={pending || view.page === view.totalPages}
-              className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-white disabled:text-neutral-300"
+              className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
             >
               Siguiente
               <ChevronRight className="h-4 w-4" aria-hidden="true" />

@@ -1,0 +1,134 @@
+name: GlowBook Nightly
+
+# Controles diarios que no caben en cada PR. Ningún job se salta: si falta un
+# secreto o una herramienta, el job FALLA con un mensaje explícito.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: glowbook-nightly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  mutation:
+    name: Mutation testing (Stryker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # El umbral `break` está en stryker.config.mjs; por debajo de él Stryker sale con error.
+      - name: Run Stryker
+        run: npx stryker run
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 14
+          if-no-files-found: warn
+
+  dependency-drift:
+    name: Dependency drift (npm outdated + auditoría completa)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm outdated` sale con código 1 cuando hay paquetes desactualizados;
+      # eso no es un error de ejecución, se evalúa en el paso siguiente.
+      - name: Collect outdated packages
+        run: |
+          mkdir -p .quality
+          npm outdated --json > .quality/outdated.json || true
+
+      - name: Fail when outdated packages exist
+        run: |
+          node -e "const fs=require('fs');const raw=fs.readFileSync('.quality/outdated.json','utf8').trim();if(!raw){console.error('npm outdated no devolvio salida: no se puede evaluar el drift.');process.exit(1);}const o=JSON.parse(raw);const e=Object.entries(o);console.log('Dependencias desactualizadas: '+e.length);for(const [n,v] of e){console.log(n+' current='+v.current+' wanted='+v.wanted+' latest='+v.latest);}if(e.length>0){console.error('Hay dependencias desactualizadas; actualizar o documentar.');process.exit(1);}"
+
+      - name: Audit all dependencies
+        run: node scripts/quality/check-audit.mjs --all
+
+  schema-drift:
+    name: Schema drift (migraciones vs staging, solo lectura)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # production-migration-gate.mjs toma la URL de SUPABASE_DB_URL (prioridad)
+      # o STAGING_DATABASE_URL. Solo se usa en modo lectura (migration list).
+      SUPABASE_DB_URL: ${{ secrets.STAGING_DB_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Require staging DB secret
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Falta el secreto STAGING_DB_URL. El control de schema drift no puede ejecutarse."
+            exit 1
+          fi
+
+      - name: Check migrations against staging (read-only)
+        run: node scripts/production-migration-gate.mjs --target=staging
+
+  synthetic:
+    name: Synthetic check (disponibilidad y cabeceras)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SYNTHETIC_BASE_URL: ${{ secrets.SYNTHETIC_BASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Require synthetic base URL secret
+        run: |
+          if [ -z "$SYNTHETIC_BASE_URL" ]; then
+            echo "::error::Falta el secreto SYNTHETIC_BASE_URL. El check sintetico no puede ejecutarse."
+            exit 1
+          fi
+
+      - name: Run synthetic check
+        run: node scripts/quality/synthetic-check.mjs

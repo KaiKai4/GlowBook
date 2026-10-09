@@ -34,19 +34,23 @@ const REQUIRED_LOG_REVIEW_ENVS = [
   "GLOWBOOK_PERFORMANCE_LOG_REVIEW_MAX_FUNCTION_DURATION_MS",
 ];
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[performance-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[performance-readiness] OK ${message}`);
 }
 
+/** @param {string} path */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} name */
 function hasEnv(name) {
   return Boolean(process.env[name]?.trim());
 }

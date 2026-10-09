@@ -67,7 +67,7 @@ const SALON_FEATURE_KEYS = new Set<string>(
   SALON_FEATURES.map((feature) => feature.key)
 );
 
-export function isSalonFeatureKey(value: string): value is SalonFeatureKey {
+function isSalonFeatureKey(value: string): value is SalonFeatureKey {
   return SALON_FEATURE_KEYS.has(value);
 }
 

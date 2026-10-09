@@ -1,16 +1,17 @@
+import { createHash } from "node:crypto";
 import { headers } from "next/headers";
+import { captureError } from "@/lib/observability";
 import { err, ok, type Result } from "@/lib/result";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-// Rate limiting de ventana fija en memoria. En Vercel cada instancia tiene su
-// propio mapa, asi que el límite efectivo es por instancia: suficiente contra
-// rafagas y fuerza bruta (que golpean la misma instancia caliente), sin
-// infraestructura extra. Si el SaaS crece, cambiar el almacen por Redis/KV
-// manteniendo esta misma interfaz.
-
-interface Bucket {
-  count: number;
-  resetAt: number;
-}
+// Rate limiting de ventana fija compartido por todas las instancias: el
+// contador vive en la tabla rate_limit_buckets y se incrementa con la RPC
+// consume_rate_limit (ver ADR 0017). Solo el service_role puede ejecutarla, y
+// este modulo es la unica puerta de acceso desde la aplicacion.
+//
+// Politica ante fallo del almacen: fail-open. Si la RPC falla, la operacion se
+// permite y el error se registra con captureError. La fuerza bruta de tokens
+// de invitacion queda cubierta por la entropia del token, no por este limite.
 
 export interface RateLimitOptions {
   /** Maximo de intentos dentro de la ventana. */
@@ -19,79 +20,88 @@ export interface RateLimitOptions {
   windowMs: number;
 }
 
-const buckets = new Map<string, Bucket>();
-const MAX_BUCKETS = 10_000;
-
-function pruneExpired(now: number): void {
-  if (buckets.size < MAX_BUCKETS) return;
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetAt <= now) buckets.delete(key);
-  }
-}
-
-export interface RateLimitDecision {
-  allowed: boolean;
-  retryAfterSeconds: number;
-}
-
-export function checkRateLimit(
-  key: string,
-  options: RateLimitOptions,
-  now: number = Date.now()
-): RateLimitDecision {
-  pruneExpired(now);
-
-  const bucket = buckets.get(key);
-  if (!bucket || bucket.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + options.windowMs });
-    return { allowed: true, retryAfterSeconds: 0 };
-  }
-
-  bucket.count += 1;
-  if (bucket.count <= options.max) {
-    return { allowed: true, retryAfterSeconds: 0 };
-  }
-
-  return {
-    allowed: false,
-    retryAfterSeconds: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
-  };
-}
-
-/** Solo para tests: limpia el estado compartido entre casos. */
-export function resetRateLimitStore(): void {
-  buckets.clear();
-}
+const DEFAULT_ACTION_LIMIT: RateLimitOptions = { max: 60, windowMs: 60_000 };
+const DEFAULT_ANONYMOUS_LIMIT: RateLimitOptions = { max: 10, windowMs: 60_000 };
 
 const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a intentarlo.";
 
+// Limites de la RPC: clave de hasta 200 caracteres y ventana de 1 a 86400 s.
+const MAX_KEY_LENGTH = 200;
+const MAX_WINDOW_SECONDS = 86_400;
+const UNSAFE_KEY_CHARS = /[^A-Za-z0-9:._-]/g;
+
 /**
- * Guarda para server actions autenticadas: limita por usuario y ambito.
- * Devuelve Result para encajar en el patron de guardas existente.
+ * Normaliza la clave antes de enviarla: solo caracteres seguros. Si la clave
+ * es demasiado larga se sustituye por su hash SHA-256 (sigue siendo unica).
+ */
+function sanitizeRateLimitKey(raw: string): string {
+  const cleaned = raw.replace(UNSAFE_KEY_CHARS, "_");
+  if (cleaned.length > 0 && cleaned.length <= MAX_KEY_LENGTH) return cleaned;
+  const digest = createHash("sha256").update(raw).digest("hex");
+  return `sha256:${digest}`;
+}
+
+function windowSecondsFor(windowMs: number): number {
+  return Math.min(MAX_WINDOW_SECONDS, Math.max(1, Math.ceil(windowMs / 1000)));
+}
+
+async function consumeRateLimit(
+  rawKey: string,
+  scope: string,
+  options: RateLimitOptions
+): Promise<Result<void>> {
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin.rpc("consume_rate_limit", {
+      p_key: sanitizeRateLimitKey(rawKey),
+      p_max: options.max,
+      p_window_seconds: windowSecondsFor(options.windowMs),
+    });
+    if (error) throw error;
+
+    const decision = Array.isArray(data) ? data[0] : undefined;
+    if (!decision) throw new Error("consume_rate_limit no devolvio decision.");
+    return decision.allowed ? ok(undefined) : err(RATE_LIMIT_MESSAGE);
+  } catch (failure) {
+    captureError(failure, { module: "security", action: "rate-limit", metadata: { scope } });
+    return ok(undefined);
+  }
+}
+
+/**
+ * Guarda para server actions y route handlers autenticados: limita por usuario
+ * y ambito. Debe llamarse con await.
  */
 export function assertActionRateLimit(
   userId: string,
   scope: string,
-  options: RateLimitOptions = { max: 60, windowMs: 60_000 }
-): Result<void> {
-  const decision = checkRateLimit(`user:${userId}:${scope}`, options);
-  if (decision.allowed) return ok(undefined);
-  return err(RATE_LIMIT_MESSAGE);
+  options: RateLimitOptions = DEFAULT_ACTION_LIMIT
+): Promise<Result<void>> {
+  return consumeRateLimit(`user:${userId}:${scope}`, scope, options);
 }
 
 /**
- * Guarda para endpoints sin sesion (aceptacion de invitaciones): limita por IP
- * contra fuerza bruta de tokens.
+ * IP del cliente. En Vercel la plataforma reescribe x-forwarded-for, por eso se
+ * prefiere x-real-ip y, despues, el primer valor de x-forwarded-for. Sin IP, la
+ * clave es el bucket compartido "ip:unknown".
+ */
+async function clientIp(): Promise<string> {
+  const headerList = await headers();
+  const realIp = headerList.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const forwardedFor = headerList.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwardedFor || "unknown";
+}
+
+/**
+ * Guarda para endpoints sin sesion (aceptacion de invitaciones, reportes CSP):
+ * limita por IP.
  */
 export async function assertAnonymousRateLimit(
   scope: string,
-  options: RateLimitOptions = { max: 10, windowMs: 60_000 }
+  options: RateLimitOptions = DEFAULT_ANONYMOUS_LIMIT
 ): Promise<Result<void>> {
-  const headerList = await headers();
-  const forwardedFor = headerList.get("x-forwarded-for");
-  const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
-
-  const decision = checkRateLimit(`ip:${ip}:${scope}`, options);
-  if (decision.allowed) return ok(undefined);
-  return err(RATE_LIMIT_MESSAGE);
+  const ip = await clientIp();
+  return consumeRateLimit(`ip:${ip}:${scope}`, scope, options);
 }

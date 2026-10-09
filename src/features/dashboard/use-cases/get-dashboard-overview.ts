@@ -34,7 +34,7 @@ export interface MonthlyAppointmentPoint {
   trend: "up" | "down" | "flat";
 }
 
-export interface DashboardMetrics {
+interface DashboardMetrics {
   todayAppointments: number;
   appointmentRevenue: number;
   retailRevenue: number;
@@ -83,7 +83,7 @@ function getMonthStart(now: Date, timezone: string): Date {
 
 function getMonthSequence(monthStart: Date, timezone: string, count = 12) {
   const currentMonthKey = formatLocalDateISO(monthStart, timezone).slice(0, 7);
-  const [currentYear, currentMonth] = currentMonthKey.split("-").map(Number);
+  const [currentYear = NaN, currentMonth = NaN] = currentMonthKey.split("-").map(Number);
   const formatter = new Intl.DateTimeFormat("es-PA", {
     timeZone: timezone,
     month: "short",
@@ -120,7 +120,8 @@ function calculateMonthlyCompletedAppointments(
 
   return months.map((month, index) => {
     const total = counts.get(month.monthKey) ?? 0;
-    const previous = index > 0 ? counts.get(months[index - 1].monthKey) ?? 0 : total;
+    const previousMonth = index > 0 ? months[index - 1] : undefined;
+    const previous = previousMonth ? counts.get(previousMonth.monthKey) ?? 0 : total;
     const delta = total - previous;
 
     return {
@@ -195,7 +196,9 @@ export async function getDashboardOverview({
   const { start: todayStart, end: todayEnd } = getUtcDayBoundaries(now, timezone);
   const monthStart = getMonthStart(now, timezone);
   const monthSequence = getMonthSequence(monthStart, timezone);
-  const chartStart = getMonthStart(new Date(`${monthSequence[0].monthKey}-15T12:00:00.000Z`), timezone);
+  const [firstMonth] = monthSequence;
+  if (!firstMonth) throw new Error("Invariante de dashboard: sin meses para el gráfico.");
+  const chartStart = getMonthStart(new Date(`${firstMonth.monthKey}-15T12:00:00.000Z`), timezone);
   const todayLocal = formatLocalDateISO(now, timezone);
   const monthStartLocal = formatLocalDateISO(monthStart, timezone);
 

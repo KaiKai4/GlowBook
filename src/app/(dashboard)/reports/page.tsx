@@ -15,7 +15,7 @@ export default async function ReportsPage({
   if (!hasPermission(profile, PERMISSIONS.REPORTS_VIEW)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para ver reportes.</p>
+        <p className="text-fg-subtle">No tienes permiso para ver reportes.</p>
       </div>
     );
   }

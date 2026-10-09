@@ -96,7 +96,7 @@ export function NewCustomerModal() {
         <div className="space-y-4">
           <div className="flex justify-center pb-1">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_14px_rgba(124,58,237,0.35)]">
-              <UserPlus className="h-5 w-5 text-white" />
+              <UserPlus className="h-5 w-5 text-surface" />
             </div>
           </div>
 
@@ -132,7 +132,7 @@ export function NewCustomerModal() {
           <Textarea label="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Alergias, preferencias, observaciones..." rows={3} />
 
           {archivedMatch && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+            <div className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2.5 text-sm text-warning-strong">
               <p className="font-semibold">Ya existe un cliente con esos datos: {archivedMatch.name}</p>
               <p className="mt-1 text-xs">Restaurarlo conserva su historial y evita duplicados.</p>
               <Button variant="primary" className="mt-3 w-full" onClick={handleReactivate} loading={pending}>
@@ -142,7 +142,7 @@ export function NewCustomerModal() {
           )}
 
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-600">{error}</div>
+            <div className="rounded-lg bg-danger-subtle border border-danger-border px-3 py-2.5 text-sm text-danger-strong">{error}</div>
           )}
 
           <div className="flex gap-2 pt-1">

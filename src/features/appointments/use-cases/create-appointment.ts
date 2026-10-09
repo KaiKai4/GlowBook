@@ -1,3 +1,4 @@
+import { toPublicErrorMessage } from "@/lib/errors";
 import { err, ok, type Result } from "@/lib/result";
 import { captureError } from "@/lib/observability";
 import {
@@ -88,10 +89,12 @@ export async function createAppointment(
   try {
     payloads = buildItemPayloads(salonId, startTime, validAssignments, ctx);
   } catch (error) {
-    return err((error as Error).message);
+    return err(toPublicErrorMessage(error, "Error al crear la cita. Intenta de nuevo."));
   }
 
-  const totalEnd = payloads[payloads.length - 1].end_time;
+  const lastPayload = payloads[payloads.length - 1];
+  if (!lastPayload) throw new Error("Invariante de cita: sin items para calcular el fin.");
+  const totalEnd = lastPayload.end_time;
   const globalViolations = evaluateTimeRange({
     start: startTime,
     end: totalEnd,
@@ -101,8 +104,9 @@ export async function createAppointment(
     enforceMinDuration: true,
   });
 
-  if (globalViolations.length > 0) {
-    return err(globalViolations[0].message);
+  const [firstGlobalViolation] = globalViolations;
+  if (firstGlobalViolation) {
+    return err(firstGlobalViolation.message);
   }
 
   const rpcPayload: CreateAppointmentRpcPayload = {

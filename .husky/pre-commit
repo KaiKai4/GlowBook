@@ -1,0 +1,1 @@
+node scripts/quality/verify.mjs --step secrets --step lint

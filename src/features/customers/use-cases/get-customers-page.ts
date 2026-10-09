@@ -11,9 +11,9 @@ export interface GetCustomersPageInput {
   status?: string;
 }
 
-export type CustomerPageMode = "active" | "archived";
+type CustomerPageMode = "active" | "archived";
 
-export type CustomerPageItem = Awaited<ReturnType<typeof findCustomers>>["data"][number];
+type CustomerPageItem = Awaited<ReturnType<typeof findCustomers>>["data"][number];
 
 export interface CustomersPageViewModel {
   customers: CustomerPageItem[];

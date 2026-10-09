@@ -45,22 +45,23 @@ export function EmployeeInviteLinkCard({
       <div className="flex items-center gap-2">
         <input
           readOnly
+          aria-label="Enlace de invitación"
           value={url}
-          className="h-8 min-w-0 flex-1 cursor-text select-all rounded-md border border-brand-200 bg-white px-2.5 text-xs text-stone-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="h-8 min-w-0 flex-1 cursor-text select-all rounded-md border border-brand-200 bg-surface px-2.5 text-xs text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand-500"
           onClick={(e) => (e.target as HTMLInputElement).select()}
         />
         <button
           onClick={handleCopy}
           className={cn(
             "flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors",
-            copied ? "bg-emerald-100 text-emerald-700" : "border border-brand-200 bg-white text-brand-700 hover:bg-brand-50"
+            copied ? "bg-success-subtle text-success-strong" : "border border-brand-200 bg-surface text-brand-700 hover:bg-brand-50"
           )}
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           {copied ? "Copiado" : "Copiar"}
         </button>
       </div>
-      {description && <p className="text-xs text-stone-400">{description}</p>}
+      {description && <p className="text-xs text-fg-subtle">{description}</p>}
     </div>
   );
 }

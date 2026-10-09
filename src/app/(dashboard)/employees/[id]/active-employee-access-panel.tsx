@@ -60,15 +60,15 @@ export function ActiveEmployeeAccessPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2.5 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
-        <p className="text-sm font-medium text-emerald-800">Acceso activo</p>
-        <span className="ml-auto text-xs text-emerald-600">Este colaborador puede iniciar sesion.</span>
+      <div className="flex items-center gap-2.5 rounded-lg border border-success-border-subtle bg-success-subtle px-4 py-3">
+        <ShieldCheck className="h-4 w-4 shrink-0 text-success-fg" />
+        <p className="text-sm font-medium text-success-strong">Acceso activo</p>
+        <span className="ml-auto text-xs text-success-fg">Este colaborador puede iniciar sesion.</span>
       </div>
 
       <div className="flex items-end gap-3">
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-stone-600">Rol asignado</label>
+          <label className="mb-1.5 block text-xs font-medium text-fg-muted">Rol asignado</label>
           <Select
             value={roleId}
             onChange={(event) => {
@@ -96,9 +96,9 @@ export function ActiveEmployeeAccessPanel({
         </Button>
       </div>
 
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-        <p className="text-sm font-semibold text-amber-900">Reiniciar acceso</p>
-        <p className="mt-1 text-xs text-amber-700">
+      <div className="rounded-lg border border-warning-border bg-warning-subtle px-4 py-3">
+        <p className="text-sm font-semibold text-warning-strong">Reiniciar acceso</p>
+        <p className="mt-1 text-xs text-warning-fg">
           Revoca la cuenta actual y genera un nuevo enlace para que el colaborador cree otra contrasena.
         </p>
         <Button
@@ -118,12 +118,12 @@ export function ActiveEmployeeAccessPanel({
       )}
 
       {roleSaved && !roleDirty && (
-        <p className="flex items-center gap-1 text-xs text-emerald-600">
+        <p className="flex items-center gap-1 text-xs text-success-fg">
           <Check className="h-3.5 w-3.5" /> Rol actualizado
         </p>
       )}
       {roleError && (
-        <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{roleError}</p>
+        <p className="rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{roleError}</p>
       )}
     </div>
   );

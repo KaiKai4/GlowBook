@@ -36,7 +36,7 @@ export interface ReportExportData {
 }
 
 function monthLabel(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map(Number);
+  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
   const formatter = new Intl.DateTimeFormat("es-PA", {
     month: "long",
     year: "numeric",
@@ -46,7 +46,7 @@ function monthLabel(monthKey: string): string {
 }
 
 function lastDayOfMonth(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map(Number);
+  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
   const day = new Date(Date.UTC(year, month, 0)).getUTCDate();
   return `${monthKey}-${String(day).padStart(2, "0")}`;
 }

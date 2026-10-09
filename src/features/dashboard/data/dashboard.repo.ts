@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type RelatedOne<T> = T | T[] | null;
 
-export interface DashboardMonthAppointmentRow {
+interface DashboardMonthAppointmentRow {
   total_price: number | null;
   status: string;
 }

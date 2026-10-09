@@ -3,7 +3,7 @@ import "server-only";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { findAppointmentById } from "../data/appointments.repo";
 
-export type AppointmentStatusVariant =
+type AppointmentStatusVariant =
   | "default"
   | "info"
   | "success"
@@ -27,7 +27,7 @@ const STATUS_VARIANT: Record<string, AppointmentStatusVariant> = {
   no_show: "warning",
 };
 
-export interface AppointmentDetailItemViewModel {
+interface AppointmentDetailItemViewModel {
   id: string;
   serviceId: string;
   employeeId: string;

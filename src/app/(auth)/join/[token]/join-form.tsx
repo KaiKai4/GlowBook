@@ -96,9 +96,9 @@ export function JoinForm({ token, email, employeeName, salonName }: Props) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fbf8ff_0%,#ffffff_48%,#f8fafc_100%)] px-4">
         <div className="space-y-3 text-center">
-          <CheckCircle className="mx-auto h-12 w-12 text-emerald-500" />
-          <h2 className="text-xl font-semibold text-stone-950">Cuenta creada</h2>
-          <p className="text-stone-500">Entrando al panel...</p>
+          <CheckCircle className="mx-auto h-12 w-12 text-success-fg" />
+          <h2 className="text-xl font-semibold text-fg-strong">Cuenta creada</h2>
+          <p className="text-fg-subtle">Entrando al panel...</p>
         </div>
       </div>
     );
@@ -109,16 +109,16 @@ export function JoinForm({ token, email, employeeName, salonName }: Props) {
       <div className="w-full max-w-[420px]">
         <GlowBookBrand markSize="lg" className="mb-7" />
 
-        <div className="rounded-2xl border border-brand-100 bg-white p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
+        <div className="rounded-2xl border border-brand-100 bg-surface p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold tracking-tight text-stone-950">Hola, {employeeName}</h2>
-            <p className="mt-1 text-sm text-stone-500">Crea una contraseña para acceder a {salonName}.</p>
+            <h2 className="text-xl font-semibold tracking-tight text-fg-strong">Hola, {employeeName}</h2>
+            <p className="mt-1 text-sm text-fg-subtle">Crea una contraseña para acceder a {salonName}.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="rounded-lg border border-brand-100 bg-brand-50/60 px-3 py-2.5">
               <p className="text-xs font-semibold text-brand-500">Correo de invitación</p>
-              <p className="mt-0.5 truncate text-sm font-medium text-stone-800">{email}</p>
+              <p className="mt-0.5 truncate text-sm font-medium text-fg-secondary">{email}</p>
             </div>
 
             <PasswordInput
@@ -151,7 +151,7 @@ export function JoinForm({ token, email, employeeName, salonName }: Props) {
             />
 
             {formError && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              <div className="flex items-start gap-2 rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2.5 text-sm text-danger-strong">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>{formError}</p>
               </div>

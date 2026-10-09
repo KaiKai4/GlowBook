@@ -7,12 +7,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-stone-900 text-white hover:bg-stone-800 focus-visible:ring-stone-900",
-        destructive: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
-        outline: "border border-stone-200 bg-white text-stone-800 hover:bg-stone-50 focus-visible:ring-stone-400",
-        ghost: "text-stone-600 hover:bg-stone-100 hover:text-stone-900 focus-visible:ring-stone-400",
-        link: "text-stone-900 underline-offset-4 hover:underline",
-        primary: "bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-600 shadow-sm",
+        default: "bg-fg text-surface hover:bg-fg-secondary focus-visible:ring-fg",
+        destructive: "bg-danger text-surface hover:bg-danger-strong focus-visible:ring-danger",
+        outline: "border border-border bg-surface text-fg-secondary hover:bg-surface-muted focus-visible:ring-fg-subtle",
+        ghost: "text-fg-muted hover:bg-surface-sunken hover:text-fg focus-visible:ring-fg-subtle",
+        link: "text-fg underline-offset-4 hover:underline",
+        primary: "bg-brand-600 text-surface hover:bg-brand-700 focus-visible:ring-brand-600 shadow-sm",
       },
       size: {
         sm: "h-8 px-3 text-xs",
@@ -28,7 +28,7 @@ const buttonVariants = cva(
   }
 );
 
-export interface ButtonProps
+interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   loading?: boolean;

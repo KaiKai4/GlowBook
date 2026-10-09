@@ -119,7 +119,7 @@ export function EditEmployeeModal({
           />
 
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+            <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</div>
           )}
 
           <div className="flex justify-end gap-2">

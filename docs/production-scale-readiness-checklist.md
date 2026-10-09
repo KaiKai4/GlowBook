@@ -142,7 +142,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 ## Fase 54 - Soporte E Incidentes
 
-- [x] Existe `docs/runbooks/incidents.md`.
+- [x] Existe `docs/runbooks/incident.md`.
 - [x] Owner inicial existe en `docs/launch-support.md`.
 - [x] Existe `npm run support:readiness`.
 - [x] `npm run support:readiness` paso en modo actual.

@@ -12,7 +12,7 @@ export default async function RecordatoriosPage() {
   if (!remindersEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para ver recordatorios.</p>
+        <p className="text-fg-subtle">No tienes permiso para ver recordatorios.</p>
       </div>
     );
   }
@@ -22,11 +22,11 @@ export default async function RecordatoriosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
+        <h1 className="text-2xl font-semibold text-fg flex items-center gap-2">
           <Bell className="h-6 w-6 text-brand-500" />
           Recordatorios
         </h1>
-        <p className="text-sm text-stone-400 mt-0.5">
+        <p className="text-sm text-fg-subtle mt-0.5">
           Envia recordatorios de citas de los próximos 7 días.
         </p>
       </div>

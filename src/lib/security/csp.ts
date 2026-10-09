@@ -4,7 +4,12 @@
 // mantienen 'unsafe-inline' porque React renderiza atributos style inline
 // (graficas, alturas calculadas); el riesgo real esta en script-src.
 
-export function supabaseOrigin(): string {
+// Endpoint que recibe los informes de violacion (report-uri / report-to). Va
+// en la cabecera Reporting-Endpoints y en la directiva report-uri.
+export const CSP_REPORT_PATH = "/api/csp-report";
+export const REPORTING_ENDPOINTS_HEADER = `csp-endpoint="${CSP_REPORT_PATH}"`;
+
+function supabaseOrigin(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) return "https://*.supabase.co";
   try {
@@ -29,6 +34,8 @@ export function buildContentSecurityPolicy(nonce: string, isDev: boolean): strin
     // En dev React necesita eval para reconstruir stacks de error del server.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `connect-src 'self' ${origin} https://*.supabase.co wss://*.supabase.co`,
+    `report-uri ${CSP_REPORT_PATH}`,
+    "report-to csp-endpoint",
     ...(isDev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ");
 }

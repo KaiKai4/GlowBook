@@ -12,7 +12,7 @@ export default async function PlantillasPage() {
   if (!templatesEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para editar plantillas.</p>
+        <p className="text-fg-subtle">No tienes permiso para editar plantillas.</p>
       </div>
     );
   }
@@ -22,11 +22,11 @@ export default async function PlantillasPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-stone-900">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
           <MessageSquareText className="h-6 w-6 text-brand-500" />
           Plantillas
         </h1>
-        <p className="mt-0.5 text-sm text-stone-500">
+        <p className="mt-0.5 text-sm text-fg-subtle">
           Personaliza los mensajes de WhatsApp usados en recordatorios y cancelaciones.
         </p>
       </div>

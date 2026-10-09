@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 import { assertDeployedSupabaseMatches } from "./deployed-supabase-check.mjs";
 import {
-  BENCHMARK_PASSWORD,
+  requireBenchmarkPassword,
   assertBenchmarkBatchId,
   assertStagingEnvironment,
   fail,
@@ -34,6 +34,7 @@ const ROUTES = [
   { key: "reports_expenses", path: "/reports?tab=gastos" },
 ];
 
+/** @param {string} value */
 function isLocalUrl(value) {
   try {
     const hostname = new URL(value).hostname.toLowerCase();
@@ -51,6 +52,7 @@ function bypassHeaders() {
   };
 }
 
+/** @param {import("@playwright/test").Page} page @param {string} email @param {string} password */
 async function login(page, email, password) {
   await page.goto("/login", { waitUntil: "networkidle" });
   await page.getByLabel("Email").fill(email);
@@ -61,14 +63,15 @@ async function login(page, email, password) {
   });
 }
 
+/** @param {import("@playwright/test").Page} page */
 async function routeTransferBytes(page) {
   return page.evaluate(() =>
-    performance
-      .getEntriesByType("resource")
+    /** @type {PerformanceResourceTiming[]} */ (performance.getEntriesByType("resource"))
       .reduce((total, entry) => total + (entry.transferSize || entry.encodedBodySize || 0), 0)
   );
 }
 
+/** @param {import("@playwright/test").Page} page @param {{ key: string, path: string }} route */
 async function measureRoute(page, route) {
   await page.evaluate(() => {
     performance.clearResourceTimings();
@@ -101,6 +104,7 @@ if (isLocalUrl(baseUrl)) fail(SCOPE, "Measure against deployed staging, not loca
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!serviceRoleKey) fail(SCOPE, "Set SUPABASE_SERVICE_ROLE_KEY.");
+if (!supabaseUrl) fail(SCOPE, "Set NEXT_PUBLIC_SUPABASE_URL.");
 
 const batchId = process.env.PRICING_BENCHMARK_BATCH_ID;
 if (!batchId) fail(SCOPE, "Set PRICING_BENCHMARK_BATCH_ID.");
@@ -134,9 +138,16 @@ const cohorts = ["A", "B", "C", "D", "E"]
     const salon = salons.find((item) => item.name.startsWith(`Benchmark ${cohort} - `));
     return salon ? { cohort, email: salon.email } : null;
   })
-  .filter(Boolean);
+  .filter((entry) => entry !== null);
 
 const browser = await chromium.launch();
+/**
+ * @typedef {{ cohort: string, route: string, path: string, status: number, durationMs: number | null, transferBytes: number, transferMB: number, error?: string }} RouteResult
+ */
+
+const BENCHMARK_PASSWORD = requireBenchmarkPassword("measure-pricing-routes");
+
+/** @type {RouteResult[]} */
 const results = [];
 
 try {
@@ -171,16 +182,17 @@ try {
   await browser.close();
 }
 
-const byRoute = Object.values(
-  results.reduce((acc, row) => {
+/** @type {Record<string, { route: string, samples: number, totalDurationMs: number, totalTransferBytes: number, failures: number }>} */
+const routeAccumulators = results.reduce((acc, row) => {
     acc[row.route] ??= { route: row.route, samples: 0, totalDurationMs: 0, totalTransferBytes: 0, failures: 0 };
     acc[row.route].samples += 1;
     acc[row.route].totalDurationMs += row.durationMs ?? 0;
     acc[row.route].totalTransferBytes += row.transferBytes ?? 0;
     if (row.status >= 500 || row.status === 0) acc[row.route].failures += 1;
     return acc;
-  }, {})
-).map((row) => ({
+  }, /** @type {Record<string, { route: string, samples: number, totalDurationMs: number, totalTransferBytes: number, failures: number }>} */ ({}));
+
+const byRoute = Object.values(routeAccumulators).map((row) => ({
   route: row.route,
   samples: row.samples,
   avgDurationMs: row.samples ? Math.round(row.totalDurationMs / row.samples) : 0,

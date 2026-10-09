@@ -44,23 +44,28 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[rate-limit-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[rate-limit-readiness] OK ${message}`);
 }
 
+/** @param {string} path */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} name */
 function hasEnv(name) {
   return Boolean(process.env[name]?.trim());
 }
 
+/** @param {string} docName @param {string} content @param {string[]} requiredTexts */
 function requireText(docName, content, requiredTexts) {
   for (const text of requiredTexts) {
     if (content.includes(text)) {

@@ -11,13 +11,13 @@ interface EmployeeRef {
   } | null;
 }
 
-export interface ServiceCatalogEmployeeBadge {
+interface ServiceCatalogEmployeeBadge {
   id: string;
   initials: string;
   name: string;
 }
 
-export interface ServiceCatalogItem {
+interface ServiceCatalogItem {
   id: string;
   category_id: string;
   name: string;

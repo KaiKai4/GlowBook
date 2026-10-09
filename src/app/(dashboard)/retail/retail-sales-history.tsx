@@ -9,21 +9,21 @@ export function RetailSalesHistory({ sales }: { sales: RetailPageView["recentSal
       <CardHeader>
         <CardTitle>Ventas recientes</CardTitle>
       </CardHeader>
-      <CardContent className="divide-y divide-stone-100">
+      <CardContent className="divide-y divide-border-subtle">
         {sales.map((sale) => (
           <div key={sale.id} className="grid gap-2 py-3 text-sm md:grid-cols-[1fr_140px_140px]">
             <div>
-              <p className="font-semibold text-stone-900">{customerName(sale.customer)}</p>
-              <p className="text-xs text-stone-400">{sale.note || "Sin nota"}</p>
+              <p className="font-semibold text-fg">{customerName(sale.customer)}</p>
+              <p className="text-xs text-fg-subtle">{sale.note || "Sin nota"}</p>
             </div>
             <span>{paymentLabel(sale.payment_method)}</span>
-            <span className="font-bold text-emerald-700">
+            <span className="font-semibold text-success-fg">
               {formatCurrency(Number(sale.total_amount ?? 0))}
             </span>
           </div>
         ))}
         {sales.length === 0 && (
-          <p className="py-8 text-center text-sm text-stone-400">Sin ventas registradas todavia.</p>
+          <p className="py-8 text-center text-sm text-fg-subtle">Sin ventas registradas todavia.</p>
         )}
       </CardContent>
     </Card>

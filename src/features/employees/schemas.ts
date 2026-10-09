@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
 export const CreateEmployeeSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio").max(100),
@@ -12,10 +12,6 @@ export const CreateEmployeeSchema = z.object({
   category_ids: z.array(z.string().uuid()).optional().default([]),
 });
 
-export const UpdateEmployeeSchema = CreateEmployeeSchema.partial().extend({
-  is_active: z.boolean().optional(),
-});
-
 export const WorkScheduleSchema = z.object({
   employee_id: z.string().uuid(),
   day_of_week: z.number().int().min(0).max(6),
@@ -25,5 +21,5 @@ export const WorkScheduleSchema = z.object({
 });
 
 export type CreateEmployeeInput = z.infer<typeof CreateEmployeeSchema>;
-export type UpdateEmployeeInput = z.infer<typeof UpdateEmployeeSchema>;
+export type UpdateEmployeeInput = Partial<CreateEmployeeInput> & { is_active?: boolean };
 export type WorkScheduleInput = z.infer<typeof WorkScheduleSchema>;

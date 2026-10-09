@@ -89,9 +89,9 @@ export function ScheduleExceptionsPanel({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <CalendarOff className="h-4 w-4 text-brand-500" />
-        <h3 className="text-sm font-bold text-stone-800">Días libres y excepciones</h3>
+        <h3 className="text-sm font-semibold text-fg-secondary">Días libres y excepciones</h3>
       </div>
-      <p className="text-xs text-stone-500">
+      <p className="text-xs text-fg-subtle">
         En estas fechas no se podrán agendar citas con este colaborador, aunque su horario
         semanal indique que trabaja.
       </p>
@@ -125,29 +125,29 @@ export function ScheduleExceptionsPanel({
       </div>
 
       {error && (
-        <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</p>
       )}
 
       {exceptions.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50 px-3 py-4 text-center text-xs text-stone-400">
+        <p className="rounded-lg border border-dashed border-border bg-surface-muted px-3 py-4 text-center text-xs text-fg-subtle">
           Sin días libres próximos.
         </p>
       ) : (
-        <ul className="divide-y divide-stone-100 rounded-lg border border-stone-200">
+        <ul className="divide-y divide-border-subtle rounded-lg border border-border">
           {exceptions.map((exception) => (
             <li key={exception.id} className="flex items-center gap-3 px-3 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold capitalize text-stone-800">
+                <p className="text-sm font-semibold capitalize text-fg-secondary">
                   {exceptionDateLabel(exception.date)}
                 </p>
-                {exception.reason && <p className="text-xs text-stone-500">{exception.reason}</p>}
+                {exception.reason && <p className="text-xs text-fg-subtle">{exception.reason}</p>}
               </div>
               <button
                 type="button"
                 onClick={() => handleRemove(exception.id)}
                 disabled={removingId === exception.id}
                 aria-label="Eliminar día libre"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-subtle transition-colors hover:bg-danger-subtle hover:text-danger-strong disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

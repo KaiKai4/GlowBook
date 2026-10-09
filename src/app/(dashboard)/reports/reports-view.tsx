@@ -45,7 +45,7 @@ function selectedMonth(from: string): string {
 }
 
 function monthRange(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
+  const [year = NaN, monthNumber = NaN] = month.split("-").map(Number);
   const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
   return {
     from: `${month}-01`,
@@ -54,7 +54,7 @@ function monthRange(month: string) {
 }
 
 function monthLabel(month: string): string {
-  const [year, monthNumber] = month.split("-").map(Number);
+  const [year = NaN, monthNumber = NaN] = month.split("-").map(Number);
   return new Intl.DateTimeFormat("es-PA", { month: "long", year: "numeric" }).format(
     new Date(Date.UTC(year, monthNumber - 1, 15))
   );
@@ -98,11 +98,11 @@ export function ReportsView(report: OperationalReportViewModel) {
     <div className="space-y-5 pb-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-stone-900">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
             <BarChart3 className="h-6 w-6 text-brand-600" />
             Reportes
           </h1>
-          <p className="mt-1 text-sm capitalize text-stone-500">{monthLabel(month)}</p>
+          <p className="mt-1 text-sm capitalize text-fg-subtle">{monthLabel(month)}</p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <DatePicker
@@ -122,7 +122,7 @@ export function ReportsView(report: OperationalReportViewModel) {
         </div>
       </header>
 
-      <div className="rounded-xl border border-brand-100 bg-white">
+      <div className="rounded-xl border border-brand-100 bg-surface">
         <nav className="flex overflow-x-auto border-b border-brand-100 px-4" aria-label="Secciones de reportes">
           {TABS.map((tab) => (
             <button
@@ -131,7 +131,7 @@ export function ReportsView(report: OperationalReportViewModel) {
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 "relative min-h-12 shrink-0 px-4 text-sm font-medium transition-colors",
-                activeTab === tab.id ? "text-brand-700" : "text-stone-600 hover:text-stone-900"
+                activeTab === tab.id ? "text-brand-700" : "text-fg-muted hover:text-fg"
               )}
               aria-current={activeTab === tab.id ? "page" : undefined}
             >
@@ -229,15 +229,15 @@ function SummaryTab({
           {
             key: "totalRevenue",
             label: "Ingresos",
-            color: "#16a34a",
-            fill: "#86efac",
+            color: "var(--color-chart-success)",
+            fill: "var(--color-chart-success-soft)",
             value: (point) => point.totalRevenue,
           },
           {
             key: "totalExpenses",
             label: "Egresos",
-            color: "#ef4444",
-            fill: "#fca5a5",
+            color: "var(--color-chart-danger)",
+            fill: "var(--color-chart-danger-soft)",
             value: (point) => point.totalExpenses,
           },
         ]}
@@ -325,8 +325,8 @@ function FinanceTab({ report }: { report: OperationalReportViewModel }) {
               ? [{
                   key: "retailRevenue" as const,
                   label: "Vitrina",
-                  color: "#0ea5e9",
-                  fill: "#7dd3fc",
+                  color: "var(--color-chart-info)",
+                  fill: "var(--color-chart-info-soft)",
                   value: (point: OperationalReportViewModel["analytics"]["months"][number]) => point.retailRevenue,
                 }]
               : []),
@@ -416,21 +416,21 @@ function CommissionsTable({ report }: { report: OperationalReportViewModel }) {
   const { rows, totalCommission } = report.commissions;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-brand-100 bg-white">
+    <div className="overflow-hidden rounded-xl border border-brand-100 bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 px-5 py-3.5">
-        <h3 className="text-sm font-bold text-stone-800">Comisiones del mes</h3>
+        <h3 className="text-sm font-semibold text-fg-secondary">Comisiones del mes</h3>
         <div className="text-right">
-          <p className="text-xs font-semibold uppercase text-stone-400">Total a pagar</p>
-          <p className="text-lg font-bold text-brand-700">{formatCurrency(totalCommission)}</p>
+          <p className="text-xs font-semibold uppercase text-fg-subtle">Total a pagar</p>
+          <p className="text-lg font-semibold text-brand-700">{formatCurrency(totalCommission)}</p>
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-stone-400">
+        <p className="px-5 py-8 text-center text-sm text-fg-subtle">
           Sin citas completadas con empleado en este mes.
         </p>
       ) : (
         <div>
-          <div className="hidden grid-cols-[1.4fr_0.7fr_1fr_0.6fr_1fr] gap-3 bg-stone-50 px-5 py-2.5 text-xs font-bold uppercase text-stone-400 md:grid">
+          <div className="hidden grid-cols-[1.4fr_0.7fr_1fr_0.6fr_1fr] gap-3 bg-surface-muted px-5 py-2.5 text-xs font-semibold uppercase text-fg-subtle md:grid">
             <span>Empleado</span>
             <span className="text-right">Citas</span>
             <span className="text-right">Ingresos</span>
@@ -440,13 +440,13 @@ function CommissionsTable({ report }: { report: OperationalReportViewModel }) {
           {rows.map((row) => (
             <div
               key={row.employeeId}
-              className="grid grid-cols-2 gap-2 border-t border-stone-100 px-5 py-3 text-sm md:grid-cols-[1.4fr_0.7fr_1fr_0.6fr_1fr]"
+              className="grid grid-cols-2 gap-2 border-t border-border-subtle px-5 py-3 text-sm md:grid-cols-[1.4fr_0.7fr_1fr_0.6fr_1fr]"
             >
-              <span className="font-semibold text-stone-800">{row.name}</span>
-              <span className="text-right text-stone-500 md:tabular-nums">{row.appointments}</span>
-              <span className="text-right text-stone-600 tabular-nums">{formatCurrency(row.revenue)}</span>
-              <span className="text-right text-stone-500 tabular-nums">{row.commissionPct}%</span>
-              <span className="text-right font-bold text-brand-700 tabular-nums">
+              <span className="font-semibold text-fg-secondary">{row.name}</span>
+              <span className="text-right text-fg-subtle md:tabular-nums">{row.appointments}</span>
+              <span className="text-right text-fg-muted tabular-nums">{formatCurrency(row.revenue)}</span>
+              <span className="text-right text-fg-subtle tabular-nums">{row.commissionPct}%</span>
+              <span className="text-right font-semibold text-brand-700 tabular-nums">
                 {formatCurrency(row.commission)}
               </span>
             </div>
@@ -526,11 +526,11 @@ interface MetricCardData {
 }
 
 const TONES: Record<MetricTone, { icon: string; surface: string }> = {
-  positive: { icon: "text-emerald-700", surface: "bg-emerald-50" },
-  negative: { icon: "text-red-700", surface: "bg-red-50" },
+  positive: { icon: "text-success-fg", surface: "bg-success-subtle" },
+  negative: { icon: "text-danger-strong", surface: "bg-danger-subtle" },
   brand: { icon: "text-brand-700", surface: "bg-brand-50" },
-  blue: { icon: "text-sky-700", surface: "bg-sky-50" },
-  amber: { icon: "text-amber-700", surface: "bg-amber-50" },
+  blue: { icon: "text-info-fg", surface: "bg-info-subtle" },
+  amber: { icon: "text-warning-fg", surface: "bg-warning-subtle" },
 };
 
 // Acumulado del año seleccionado: se reinicia cada 1 de enero (el año nuevo
@@ -572,10 +572,10 @@ function YearlyTotalsStrip({
   return (
     <section
       aria-label={`Acumulado del año ${selectedYear}`}
-      className="rounded-xl border border-stone-200 bg-stone-50/70 px-5 py-4"
+      className="rounded-xl border border-border bg-surface-muted/70 px-5 py-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
+        <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
           Acumulado del año · reinicia cada 1 de enero
         </p>
         <Select
@@ -595,8 +595,8 @@ function YearlyTotalsStrip({
       <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {items.filter((item) => item.visible).map((item) => (
           <div key={item.label}>
-            <p className="text-xs font-medium text-stone-500">{item.label}</p>
-            <p className="mt-0.5 text-lg font-bold tabular-nums text-stone-800">{item.value}</p>
+            <p className="text-xs font-medium text-fg-subtle">{item.label}</p>
+            <p className="mt-0.5 text-lg font-semibold tabular-nums text-fg-secondary">{item.value}</p>
           </div>
         ))}
       </div>
@@ -611,12 +611,12 @@ function MetricGrid({ cards }: { cards: MetricCardData[] }) {
         const Icon = card.icon;
         const tone = TONES[card.tone];
         return (
-          <article key={card.label} className="rounded-xl border border-brand-100 bg-white p-5 shadow-sm">
+          <article key={card.label} className="rounded-xl border border-brand-100 bg-surface p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-stone-600">{card.label}</p>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-stone-950">{card.value}</p>
-                <p className="mt-1 text-xs text-stone-500">{card.detail}</p>
+                <p className="text-sm font-medium text-fg-muted">{card.label}</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums text-fg-strong">{card.value}</p>
+                <p className="mt-1 text-xs text-fg-subtle">{card.detail}</p>
               </div>
               <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", tone.surface)}>
                 <Icon className={cn("h-5 w-5", tone.icon)} />
@@ -635,17 +635,17 @@ function InventoryAlertsTable({
   alerts: OperationalReportViewModel["analytics"]["inventoryAlerts"];
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-brand-100 bg-white shadow-sm">
-      <div className="border-b border-stone-100 px-5 py-4">
-        <h2 className="text-base font-semibold text-stone-900">Alertas de inventario</h2>
-        <p className="mt-1 text-sm text-stone-500">Productos agotados o por debajo del mínimo configurado</p>
+    <section className="overflow-hidden rounded-xl border border-brand-100 bg-surface shadow-sm">
+      <div className="border-b border-border-subtle px-5 py-4">
+        <h2 className="text-base font-semibold text-fg">Alertas de inventario</h2>
+        <p className="mt-1 text-sm text-fg-subtle">Productos agotados o por debajo del mínimo configurado</p>
       </div>
       {alerts.length === 0 ? (
-        <p className="px-5 py-12 text-center text-sm text-stone-500">No hay alertas de stock.</p>
+        <p className="px-5 py-12 text-center text-sm text-fg-subtle">No hay alertas de stock.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-stone-50 text-xs font-semibold text-stone-500">
+            <thead className="bg-surface-muted text-xs font-semibold text-fg-subtle">
               <tr>
                 <th className="px-5 py-3">Producto</th>
                 <th className="px-4 py-3 text-right">Vitrina</th>
@@ -656,20 +656,20 @@ function InventoryAlertsTable({
                 <th className="px-5 py-3 text-right">Estado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody className="divide-y divide-border-subtle">
               {alerts.map((alert) => (
                 <tr key={alert.id}>
-                  <td className="px-5 py-4 font-medium text-stone-900">{alert.name}</td>
-                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.retail}</td>
-                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.internal}</td>
-                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.storage}</td>
-                  <td className="px-4 py-4 text-right font-semibold tabular-nums text-stone-900">{alert.total}</td>
-                  <td className="px-4 py-4 text-right tabular-nums text-stone-600">{alert.minimum}</td>
+                  <td className="px-5 py-4 font-medium text-fg">{alert.name}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-fg-muted">{alert.retail}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-fg-muted">{alert.internal}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-fg-muted">{alert.storage}</td>
+                  <td className="px-4 py-4 text-right font-semibold tabular-nums text-fg">{alert.total}</td>
+                  <td className="px-4 py-4 text-right tabular-nums text-fg-muted">{alert.minimum}</td>
                   <td className="px-5 py-4 text-right">
                     <span
                       className={cn(
                         "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
-                        alert.state === "agotado" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+                        alert.state === "agotado" ? "bg-danger-subtle text-danger-strong" : "bg-warning-subtle text-warning-fg"
                       )}
                     >
                       {alert.state === "agotado" ? "Agotado" : "Stock bajo"}
@@ -687,10 +687,10 @@ function InventoryAlertsTable({
 
 function UnavailableModule({ module, compact = false }: { module: string; compact?: boolean }) {
   return (
-    <section className={cn("rounded-xl border border-dashed border-stone-300 bg-white text-center", compact ? "p-8" : "p-16")}>
-      <PackageSearch className="mx-auto h-7 w-7 text-stone-400" />
-      <p className="mt-3 text-sm font-semibold text-stone-700">El módulo de {module} no está activo.</p>
-      <p className="mt-1 text-sm text-stone-500">Los reportes omiten esos datos automáticamente.</p>
+    <section className={cn("rounded-xl border border-dashed border-border-strong bg-surface text-center", compact ? "p-8" : "p-16")}>
+      <PackageSearch className="mx-auto h-7 w-7 text-fg-subtle" />
+      <p className="mt-3 text-sm font-semibold text-fg-secondary">El módulo de {module} no está activo.</p>
+      <p className="mt-1 text-sm text-fg-subtle">Los reportes omiten esos datos automáticamente.</p>
     </section>
   );
 }

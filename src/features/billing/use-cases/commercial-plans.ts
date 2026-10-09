@@ -1,27 +1,22 @@
+import { toPublicErrorMessage } from "@/lib/errors";
 import "server-only";
 
-import { z } from "zod";
+import { z } from "@/lib/validation/zod";
 
 import { err, ok, type Result } from "@/lib/result";
-import type {
-  CommercialPlan,
-  PlanLimitCountScope,
-  UsageCounterKey,
-} from "../domain/commercial-plan";
+import type { CommercialPlan } from "../domain/commercial-plan";
 import type { CommercialAddon } from "../domain/salon-extras";
 import {
   archiveCommercialPlan,
   deleteCommercialPlan,
   findPlanCatalog,
   saveCommercialPlan,
-  saveLimitMetric,
   savePlanLimit,
   savePlanModule,
-  savePlatformModule,
 } from "../data/commercial-plans.repo";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
 import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
-import { auditBilling, errorMessage, normalizeKey } from "./billing-shared";
+import { auditBilling, normalizeKey } from "./billing-shared";
 
 // Re-exports: las actions del dashboard y el shell consultan el plan efectivo
 // a traves de este modulo.
@@ -37,21 +32,9 @@ export type {
   CommercialLimitMetric,
   CommercialPlan,
   PlatformModule,
-  SalonPlanAssignment,
-  SalonPlanOverride,
 } from "../domain/commercial-plan";
 export type { CommercialAddon } from "../domain/salon-extras";
-
-const ModuleSchema = z.object({
-  key: z.string().trim().min(2).max(60),
-  name: z.string().trim().min(2, "Escribe el nombre del modulo.").max(80),
-  description: z.string().trim().max(300).default(""),
-  navHref: z.string().trim().max(120).default(""),
-  iconName: z.string().trim().max(80).default(""),
-  sortOrder: z.coerce.number().int().default(0),
-  isActive: z.boolean().default(true),
-  isArchived: z.boolean().default(false),
-});
+import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 const PlanSchema = z.object({
   id: z.string().uuid().optional(),
@@ -64,35 +47,6 @@ const PlanSchema = z.object({
   status: z.enum(["draft", "active", "archived"]).default("draft"),
   isPublic: z.boolean().default(false),
   sortOrder: z.coerce.number().int().default(0),
-});
-
-const MetricSchema = z.object({
-  key: z.string().trim().min(2).max(80),
-  moduleKey: z.string().trim().min(2).max(60),
-  name: z.string().trim().min(2, "Escribe el nombre del límite.").max(100),
-  description: z.string().trim().max(400).default(""),
-  unit: z.string().trim().max(40).default(""),
-  defaultCountScope: z.enum(["current", "monthly", "billing_cycle", "lifetime"]).default("current"),
-  counterKey: z.enum([
-    "appointments_total",
-    "customers_active",
-    "employees_active",
-    "login_users_total",
-    "services_active",
-    "retail_sales_total",
-    "inventory_products_active",
-    "inventory_movements_total",
-    "expenses_total",
-  ]),
-  sortOrder: z.coerce.number().int().default(0),
-  isActive: z.boolean().default(true),
-  isArchived: z.boolean().default(false),
-});
-
-const PlanModuleSchema = z.object({
-  planId: z.string().uuid("Selecciona un plan."),
-  moduleKey: z.string().trim().min(1, "Selecciona un modulo."),
-  enabled: z.boolean().default(false),
 });
 
 const PlanLimitSchema = z.object({
@@ -152,30 +106,12 @@ export async function getCommercialPlansPage(): Promise<CommercialPlansPageData>
   };
 }
 
-export async function savePlatformModuleConfig(
-  input: z.input<typeof ModuleSchema>,
-  actorUserId?: string | null
-): Promise<Result<void>> {
-  const parsed = ModuleSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
-  try {
-    await savePlatformModule({
-      ...parsed.data,
-      key: normalizeKey(parsed.data.key),
-    });
-    await auditBilling(actorUserId, "commercial_module_saved", parsed.data.key);
-    return ok(undefined);
-  } catch (error) {
-    return err(errorMessage("No se pudo guardar el modulo.", error));
-  }
-}
-
 export async function saveCommercialPlanConfig(
   input: z.input<typeof PlanSchema>,
   actorUserId?: string | null
 ): Promise<Result<string>> {
   const parsed = PlanSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
     const id = await saveCommercialPlan({
       ...parsed.data,
@@ -185,7 +121,7 @@ export async function saveCommercialPlanConfig(
     await auditBilling(actorUserId, "commercial_plan_saved", id);
     return ok(id);
   } catch (error) {
-    return err(errorMessage("No se pudo guardar el plan.", error));
+    return err(toPublicErrorMessage(error, "No se pudo guardar el plan."));
   }
 }
 
@@ -200,22 +136,7 @@ export async function removeCommercialPlanConfig(
     await auditBilling(actorUserId, hasAssignments ? "commercial_plan_archived" : "commercial_plan_deleted", plan.id);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudo eliminar el plan.", error));
-  }
-}
-
-export async function saveCommercialPlanModuleConfig(
-  input: z.input<typeof PlanModuleSchema>,
-  actorUserId?: string | null
-): Promise<Result<void>> {
-  const parsed = PlanModuleSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
-  try {
-    await savePlanModule(parsed.data);
-    await auditBilling(actorUserId, "commercial_plan_module_saved", parsed.data.planId);
-    return ok(undefined);
-  } catch (error) {
-    return err(errorMessage("No se pudo guardar el modulo del plan.", error));
+    return err(toPublicErrorMessage(error, "No se pudo eliminar el plan."));
   }
 }
 
@@ -230,7 +151,7 @@ export async function saveCommercialPlanModulesBatch(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   const parsed = PlanModulesBatchSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
   const enabled = new Set(parsed.data.enabledModuleKeys);
   try {
     await Promise.all(
@@ -241,43 +162,7 @@ export async function saveCommercialPlanModulesBatch(
     await auditBilling(actorUserId, "commercial_plan_module_saved", parsed.data.planId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudieron guardar los modulos del plan.", error));
-  }
-}
-
-export async function saveCommercialLimitMetricConfig(
-  input: z.input<typeof MetricSchema>,
-  actorUserId?: string | null
-): Promise<Result<void>> {
-  const parsed = MetricSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
-  try {
-    await saveLimitMetric({
-      ...parsed.data,
-      key: normalizeKey(parsed.data.key),
-      moduleKey: parsed.data.moduleKey,
-      defaultCountScope: parsed.data.defaultCountScope as PlanLimitCountScope,
-      counterKey: parsed.data.counterKey as UsageCounterKey,
-    });
-    await auditBilling(actorUserId, "commercial_limit_metric_saved", parsed.data.key);
-    return ok(undefined);
-  } catch (error) {
-    return err(errorMessage("No se pudo guardar el límite.", error));
-  }
-}
-
-export async function saveCommercialPlanLimitConfig(
-  input: z.input<typeof PlanLimitSchema>,
-  actorUserId?: string | null
-): Promise<Result<void>> {
-  const parsed = PlanLimitSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
-  try {
-    await savePlanLimit(parsed.data);
-    await auditBilling(actorUserId, "commercial_plan_limit_saved", parsed.data.planId);
-    return ok(undefined);
-  } catch (error) {
-    return err(errorMessage("No se pudo guardar el límite del plan.", error));
+    return err(toPublicErrorMessage(error, "No se pudieron guardar los modulos del plan."));
   }
 }
 
@@ -291,7 +176,7 @@ export async function saveCommercialPlanLimitsBatch(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   const parsed = PlanLimitsBatchSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
     await Promise.all(
       parsed.data.limits.map((limit) => savePlanLimit({ ...limit, planId: parsed.data.planId }))
@@ -299,6 +184,6 @@ export async function saveCommercialPlanLimitsBatch(
     await auditBilling(actorUserId, "commercial_plan_limit_saved", parsed.data.planId);
     return ok(undefined);
   } catch (error) {
-    return err(errorMessage("No se pudieron guardar los límites del plan.", error));
+    return err(toPublicErrorMessage(error, "No se pudieron guardar los límites del plan."));
   }
 }

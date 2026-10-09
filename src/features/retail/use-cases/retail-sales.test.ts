@@ -58,8 +58,8 @@ describe("retail sales use-cases", () => {
     });
   });
 
-  it("preserves database error messages when a retail sale fails", async () => {
-    mockedRecordSale.mockRejectedValue({ message: "Stock insuficiente para completar la venta." });
+  it("preserves our own RAISE messages (SQLSTATE P0001) when a retail sale fails", async () => {
+    mockedRecordSale.mockRejectedValue({ code: "P0001", message: "Stock insuficiente para completar la venta." });
 
     const result = await createRetailSale("salon-1", {
       customer_id: "",

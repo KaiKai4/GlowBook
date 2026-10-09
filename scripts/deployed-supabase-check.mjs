@@ -2,6 +2,7 @@ function normalizeUrl(value = "") {
   return value.replace(/\/+$/, "").toLowerCase();
 }
 
+/** @param {string} value */
 function hostFor(value) {
   try {
     return new URL(value).hostname;
@@ -10,9 +11,11 @@ function hostFor(value) {
   }
 }
 
+/** @param {string} url */
 async function fetchText(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
+  /** @type {Record<string, string>} */
   const headers = {};
 
   if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
@@ -31,19 +34,22 @@ async function fetchText(url) {
   }
 }
 
+/** @param {string} content */
 function collectSupabaseUrls(content) {
   return [...content.matchAll(/https:\/\/[a-z0-9]+\.supabase\.co/g)].map(
     (match) => match[0]
   );
 }
 
+/** @param {string} content */
 function collectScriptSources(content) {
   return [...content.matchAll(/<script[^>]+src=["']([^"']+)["']/g)].map(
     (match) => match[1]
   );
 }
 
-export async function findDeployedSupabaseUrls(baseUrl) {
+/** @param {string} baseUrl */
+async function findDeployedSupabaseUrls(baseUrl) {
   const origin = new URL(baseUrl).origin;
   const loginUrl = new URL("/login", origin).toString();
   const html = await fetchText(loginUrl);
@@ -65,6 +71,7 @@ export async function findDeployedSupabaseUrls(baseUrl) {
   return [...found];
 }
 
+/** @param {{ baseUrl: string, expectedUrl: string }} options */
 export async function assertDeployedSupabaseMatches({ baseUrl, expectedUrl }) {
   const deployedUrls = await findDeployedSupabaseUrls(baseUrl);
 

@@ -52,6 +52,10 @@ The currently authorized service-role data Adapters are:
 - `src/features/platform/data/platform-auth.repo.ts` for invited Owner Auth account creation, reuse and update.
 - `src/lib/auth/session.ts` for Platform admin detection.
 
+Authorized by layer (not by file):
+
+- `src/lib/security/` for the shared rate limit (ADR 0017). Its modules call only the `consume_rate_limit` RPC with the admin client. Modules in this directory must not import `src/features/**`, `src/app/**` or React (enforced by dependency-cruiser). The exception is declared in `scripts/check-architecture.mjs` as a directory, so a new module in the layer does not need an ADR update, but a new kind of privileged call does.
+
 Allowed use cases:
 
 1. Platform administration after `requirePlatformAdmin()` or equivalent verification:

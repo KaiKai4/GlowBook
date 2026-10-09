@@ -29,9 +29,9 @@ function JoinedBanner() {
   if (!message) return null;
 
   return (
-    <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-      <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
-      <p className="text-sm text-emerald-700">{message}</p>
+    <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-success-border-subtle bg-success-subtle px-4 py-3">
+      <CheckCircle className="h-4 w-4 shrink-0 text-success-fg" />
+      <p className="text-sm text-success-fg">{message}</p>
     </div>
   );
 }
@@ -108,10 +108,10 @@ export default function LoginPage() {
           <JoinedBanner />
         </Suspense>
 
-        <div className="rounded-2xl border border-brand-100 bg-white p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
+        <div className="rounded-2xl border border-brand-100 bg-surface p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold tracking-tight text-stone-950">Iniciar sesión</h2>
-            <p className="mt-1 text-sm text-stone-500">Accede al panel de tu salón.</p>
+            <h2 className="text-xl font-semibold tracking-tight text-fg-strong">Iniciar sesión</h2>
+            <p className="mt-1 text-sm text-fg-subtle">Accede al panel de tu salón.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -142,12 +142,12 @@ export default function LoginPage() {
             />
 
             <div className="flex items-center justify-between gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-600">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
                 <input
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+                  className="h-4 w-4 rounded border-border-strong text-brand-600 focus:ring-brand-500"
                 />
                 Mantener sesión iniciada
               </label>
@@ -160,7 +160,7 @@ export default function LoginPage() {
             </div>
 
             {formError && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              <div className="flex items-start gap-2 rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2.5 text-sm text-danger-strong">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>{formError}</p>
               </div>

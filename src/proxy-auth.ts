@@ -1,3 +1,5 @@
+import { CSP_REPORT_PATH } from "@/lib/security/csp";
+
 export type ProxyAuthDecision =
   | { type: "next" }
   | { type: "redirect"; location: "/login" | "/" };
@@ -22,6 +24,10 @@ export function getOptimisticAuthDecision({
   cookies,
   hasVerifiedSession,
 }: ProxyAuthInput): ProxyAuthDecision {
+  // Los informes CSP los envia el navegador sin cookies (tambien desde /login
+  // o desde paginas publicas): la ruta de reportes nunca redirige.
+  if (pathname === CSP_REPORT_PATH) return { type: "next" };
+
   const hasAuthCookie =
     hasVerifiedSession ?? hasSupabaseSessionCookie(cookies);
   const isLoginRoute = pathname.startsWith("/login");

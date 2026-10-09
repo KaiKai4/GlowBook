@@ -56,16 +56,16 @@ function computeRange(
 }
 
 const STATUS_CARD: Record<string, string> = {
-  scheduled: "bg-blue-50 border-blue-400 text-blue-900",
+  scheduled: "bg-info-subtle border-info text-info-strong",
   confirmed: "bg-brand-100 border-brand-500 text-brand-900",
-  completed: "bg-emerald-50 border-emerald-400 text-emerald-900",
-  no_show: "bg-amber-50 border-amber-400 text-amber-900",
+  completed: "bg-success-subtle border-success text-success-strong",
+  no_show: "bg-warning-subtle border-warning text-warning-strong",
 };
 const STATUS_DOT: Record<string, string> = {
-  scheduled: "bg-blue-500",
+  scheduled: "bg-info",
   confirmed: "bg-brand-600",
-  completed: "bg-emerald-500",
-  no_show: "bg-amber-400",
+  completed: "bg-success",
+  no_show: "bg-warning",
 };
 
 export type ApptCalItem = CalendarAppointment;
@@ -120,10 +120,10 @@ function DayColumn({
       }}
     >
       {Array.from({ length: totalHours + 1 }, (_, i) => (
-        <div key={i} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0 border-t border-stone-200" />
+        <div key={i} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0 border-t border-border" />
       ))}
       {Array.from({ length: totalHours }, (_, i) => (
-        <div key={`h${i}`} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }} className="absolute left-0 right-0 border-t border-dashed border-stone-100" />
+        <div key={`h${i}`} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }} className="absolute left-0 right-0 border-t border-dashed border-border-subtle" />
       ))}
 
       {items.map(({ appt, col, startMin, endMin }) => {
@@ -145,12 +145,12 @@ function DayColumn({
             className={cn(
               "absolute rounded-lg border-l-[3px] px-1.5 py-1 text-left transition-all",
               "hover:shadow-[0_3px_10px_rgba(0,0,0,0.18)] hover:-translate-y-px cursor-pointer",
-              STATUS_CARD[appt.status] ?? "bg-stone-50 border-stone-300 text-stone-800"
+              STATUS_CARD[appt.status] ?? "bg-surface-muted border-border-strong text-fg-secondary"
             )}
           >
             <div className="flex items-center gap-1 mb-0.5">
-              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_DOT[appt.status] ?? "bg-stone-400"}`} />
-              <p className={cn("font-bold truncate leading-tight", compact ? "text-[10px]" : "text-[11px]")}>
+              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_DOT[appt.status] ?? "bg-fg-subtle"}`} />
+              <p className={cn("font-semibold truncate leading-tight", compact ? "text-xs" : "text-xs")}>
                 {appt.customer?.first_name}{" "}
                 {compact
                   ? (appt.customer?.last_name?.charAt(0) ?? "") + "."
@@ -158,19 +158,19 @@ function DayColumn({
               </p>
             </div>
             {heightPx > 40 && !compact && (
-              <p className="text-[10px] truncate opacity-80 leading-snug">
+              <p className="text-xs truncate opacity-80 leading-snug">
                 {appt.items.map((it) => it.service?.name).filter(Boolean).join(", ")}
               </p>
             )}
             {heightPx > 52 && !compact && (
-              <p className="text-[10px] font-semibold opacity-90 mt-0.5">
+              <p className="text-xs font-semibold opacity-90 mt-0.5">
                 {appt.start_time && formatTimeTz(new Date(appt.start_time), tz)}
                 {" · "}
                 {formatCurrency(Number(appt.total_price ?? 0))}
               </p>
             )}
             {compact && heightPx > 36 && (
-              <p className="text-[10px] truncate opacity-80 leading-snug">
+              <p className="text-xs truncate opacity-80 leading-snug">
                 {appt.items[0]?.service?.name}
               </p>
             )}
@@ -180,14 +180,14 @@ function DayColumn({
 
       {visible.length === 0 && !compact && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <p className="text-sm text-stone-300">Sin citas programadas</p>
+          <p className="text-sm text-fg-subtle">Sin citas programadas</p>
         </div>
       )}
     </div>
   );
 }
 
-const TIME_GUTTER_CLASSES = "sticky left-0 z-20 w-14 shrink-0 border-r border-stone-200 bg-stone-50/95 shadow-[6px_0_12px_rgba(15,23,42,0.04)]";
+const TIME_GUTTER_CLASSES = "sticky left-0 z-20 w-14 shrink-0 border-r border-border bg-surface-muted/95 shadow-[6px_0_12px_rgba(15,23,42,0.04)]";
 
 function TimeGutter({
   calStart,
@@ -213,8 +213,8 @@ function TimeGutter({
           return (
             <div key={i} style={{ top: `${TIME_LABEL_TOP_SPACE + i * HOUR_HEIGHT}px` }} className="absolute left-0 right-0">
               <span className="absolute -top-2 right-1.5 text-right select-none leading-none">
-                <span className="text-xs font-bold text-stone-700 tabular-nums">{num}</span>
-                <span className="ml-0.5 text-[9px] font-medium text-stone-400">{period}</span>
+                <span className="text-xs font-semibold text-fg-secondary tabular-nums">{num}</span>
+                <span className="ml-0.5 text-xs font-medium text-fg-subtle">{period}</span>
               </span>
             </div>
           );
@@ -250,14 +250,14 @@ export function AppointmentsCalendar({
 
   if (mode === "semanal" && weekDates?.length === 0) {
     return (
-      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
-          <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
-          <span className="text-xs text-stone-500 font-medium">Sin días abiertos</span>
+      <div className="rounded-2xl border border-brand-100 bg-surface shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-to-r from-brand-50 to-surface">
+          <h2 className="text-sm font-semibold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
+          <span className="text-xs text-fg-subtle font-medium">Sin días abiertos</span>
         </div>
         <div className="px-5 py-12 text-center">
-          <p className="text-sm font-semibold text-stone-500">No hay días de atención abiertos esta semana.</p>
-          <p className="mt-1 text-xs text-stone-400">Puedes cambiarlo desde Configuración del salón.</p>
+          <p className="text-sm font-semibold text-fg-subtle">No hay días de atención abiertos esta semana.</p>
+          <p className="mt-1 text-xs text-fg-subtle">Puedes cambiarlo desde Configuración del salón.</p>
         </div>
       </div>
     );
@@ -274,16 +274,16 @@ export function AppointmentsCalendar({
     const visibleCount = weekDates.reduce((sum, d) => sum + (byDate[d]?.length ?? 0), 0);
 
     return (
-      <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
-          <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
-          <span className="text-xs text-stone-500 font-medium">{visibleCount} citas esta semana</span>
+      <div className="rounded-2xl border border-brand-100 bg-surface shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-to-r from-brand-50 to-surface">
+          <h2 className="text-sm font-semibold text-brand-700 uppercase tracking-wide">Vista semanal</h2>
+          <span className="text-xs text-fg-subtle font-medium">{visibleCount} citas esta semana</span>
         </div>
 
         <div className="overflow-x-auto lg:overflow-x-visible">
           {/* Day headers */}
-          <div className="flex min-w-[640px] border-b border-stone-200 bg-stone-50/50 lg:min-w-0">
-            <div className="sticky left-0 z-30 w-14 shrink-0 border-r border-stone-200 bg-stone-50/95 shadow-[6px_0_12px_rgba(15,23,42,0.04)]" />
+          <div className="flex min-w-[640px] border-b border-border bg-surface-muted/50 lg:min-w-0">
+            <div className="sticky left-0 z-30 w-14 shrink-0 border-r border-border bg-surface-muted/95 shadow-[6px_0_12px_rgba(15,23,42,0.04)]" />
             {weekDates.map((d) => {
               const dt = new Date(`${d}T12:00:00`);
               const dayName = dt.toLocaleDateString("es-PA", { weekday: "short" });
@@ -291,16 +291,16 @@ export function AppointmentsCalendar({
               const isToday = d === today;
               const count = byDate[d]?.length ?? 0;
               return (
-                <div key={d} className="flex-1 min-w-[80px] text-center py-2.5 border-l border-stone-200">
-                  <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">{dayName}</p>
+                <div key={d} className="flex-1 min-w-[80px] text-center py-2.5 border-l border-border">
+                  <p className="text-xs font-semibold text-fg-subtle uppercase tracking-wider">{dayName}</p>
                   <div className={cn(
-                    "mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold",
-                    isToday ? "bg-brand-600 text-white shadow-sm" : "text-stone-800"
+                    "mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold",
+                    isToday ? "bg-brand-600 text-surface shadow-sm" : "text-fg-secondary"
                   )}>
                     {dayNum}
                   </div>
                   {count > 0 && (
-                    <p className="text-[10px] text-brand-500 font-semibold mt-0.5">{count} cita{count > 1 ? "s" : ""}</p>
+                    <p className="text-xs text-brand-500 font-semibold mt-0.5">{count} cita{count > 1 ? "s" : ""}</p>
                   )}
                 </div>
               );
@@ -320,7 +320,7 @@ export function AppointmentsCalendar({
                 <div
                   key={d}
                   className={cn(
-                    "flex-1 min-w-[80px] border-l border-stone-200",
+                    "flex-1 min-w-[80px] border-l border-border",
                     isToday && "bg-brand-50/25"
                   )}
                 >
@@ -343,12 +343,12 @@ export function AppointmentsCalendar({
 
   // Day / trabajador view
   return (
-    <div className="rounded-2xl border border-brand-100 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-gradient-to-r from-brand-50 to-white">
-        <h2 className="text-sm font-bold text-brand-700 uppercase tracking-wide">
+    <div className="rounded-2xl border border-brand-100 bg-surface shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-to-r from-brand-50 to-surface">
+        <h2 className="text-sm font-semibold text-brand-700 uppercase tracking-wide">
           {title ?? "Vista del día"}
         </h2>
-        <span className="text-xs text-stone-500 font-medium">{visible.length} citas activas</span>
+        <span className="text-xs text-fg-subtle font-medium">{visible.length} citas activas</span>
       </div>
 
       <div className="flex">

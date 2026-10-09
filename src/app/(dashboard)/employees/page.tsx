@@ -10,7 +10,7 @@ export default async function EmployeesPage() {
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para gestionar colaboradores.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar colaboradores.</p>
       </div>
     );
   }

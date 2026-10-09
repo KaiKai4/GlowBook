@@ -18,6 +18,8 @@ import { requireActiveProfile } from "@/lib/auth/session";
 import { assertActionRateLimit } from "@/lib/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/lib/result";
+import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { parseUuid } from "@/lib/validation/route-id";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();
@@ -25,7 +27,7 @@ async function guard(): Promise<Result<{ salonId: string }>> {
     return { ok: false, error: "No tienes permiso para gestionar inventario." };
   }
 
-  const limited = assertActionRateLimit(profile.id, "inventory", { max: 60, windowMs: 60_000 });
+  const limited = await assertActionRateLimit(profile.id, "inventory", { max: 60, windowMs: 60_000 });
   if (!limited.ok) return limited;
   return { ok: true, value: { salonId: profile.salon_id } };
 }
@@ -51,7 +53,7 @@ export async function createInventoryProductAction(
     ...Object.fromEntries(formData),
     is_retail_enabled: formData.get("is_retail_enabled") === "true",
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await createInventoryProduct(guarded.value.salonId, parsed.data);
   if (result.ok) revalidateInventory();
@@ -65,19 +67,23 @@ export async function updateInventoryProductAction(
 ): Promise<Result<void>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  if (!parseUuid(productId)) return { ok: false, error: "Identificador inválido." };
 
+  // Un campo ausente en FormData llega como null; se pasa como undefined para que
+  // Zod aplique los defaults del schema en lugar de rechazar el null.
+  const field = (key: string) => formData.get(key) ?? undefined;
   const parsed = UpdateInventoryProductSchema.safeParse({
-    name: formData.get("name"),
-    category: formData.get("category"),
-    cost_price: formData.get("cost_price"),
-    sale_price: formData.get("sale_price"),
+    name: field("name"),
+    category: field("category"),
+    cost_price: field("cost_price"),
+    sale_price: field("sale_price"),
     is_retail_enabled: formData.get("is_retail_enabled") === "true",
     is_active: formData.get("is_active") === "true",
-    retail_minimum: formData.get("retail_minimum"),
-    internal_minimum: formData.get("internal_minimum"),
-    storage_minimum: formData.get("storage_minimum"),
+    retail_minimum: field("retail_minimum"),
+    internal_minimum: field("internal_minimum"),
+    storage_minimum: field("storage_minimum"),
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const result = await updateInventoryProductProfile(productId, guarded.value.salonId, parsed.data);
   if (result.ok) revalidateInventory();
@@ -99,7 +105,7 @@ export async function transferInventoryStockAction(
     ...Object.fromEntries(formData),
     from_location: "storage",
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
   const inventory = await getInventoryPage(guarded.value.salonId);
   const product = inventory.products.find((item) => item.id === parsed.data.product_id);
@@ -116,6 +122,7 @@ export async function transferInventoryStockAction(
 export async function deleteInventoryProductAction(productId: string): Promise<Result<string>> {
   const guarded = await guard();
   if (!guarded.ok) return guarded;
+  if (!parseUuid(productId)) return { ok: false, error: "Identificador inválido." };
 
   const result = await deleteInventoryProduct(productId, guarded.value.salonId);
   if (result.ok) revalidateInventory();
