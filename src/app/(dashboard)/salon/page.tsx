@@ -1,12 +1,7 @@
 import { requireProfile } from "@/lib/auth/session";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import {
-  getSalonSettings,
-  type SalonBusinessDay,
-} from "@/features/salon/use-cases/get-salon-settings";
+import { getSalonSettings } from "@/features/salon/use-cases/get-salon-settings";
 import { SalonSettings } from "./salon-settings";
-
-export type BusinessDay = SalonBusinessDay;
 
 export default async function SalonSettingsPage() {
   const profile = await requireProfile();

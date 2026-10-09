@@ -314,6 +314,40 @@ describe("SalonSettings", () => {
 
     expect(mounted.container.textContent).toContain("Fondo no disponible");
   });
+
+  it("muestra cada gama con sus tokens de marca, sin estilos ni colores literales", () => {
+    mounted = renderSettings();
+    const swatches = mounted.container.querySelectorAll<HTMLElement>("[data-theme-preview]");
+
+    expect([...swatches].map((el) => el.dataset.theme)).toEqual([
+      "violet",
+      "mocco",
+      "tiffany",
+      "viridian",
+      "yellow",
+      "rosewater",
+    ]);
+    for (const swatch of swatches) {
+      expect(swatch.querySelectorAll('span[class*="bg-brand-"]')).toHaveLength(4);
+      expect(swatch.querySelector("[style]")).toBeNull();
+      expect(swatch.innerHTML).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+    }
+  });
+
+  it("aplica el tema a la raíz del panel sin modificar las muestras de la gama", async () => {
+    vi.mocked(updateSalonThemeAction).mockResolvedValue({ ok: true, value: undefined });
+    const panel = document.createElement("div");
+    panel.setAttribute("data-theme", "violet");
+    document.body.appendChild(panel);
+    mounted = renderSettings({ theme: "violet" });
+
+    click(buttonWithText(mounted.container, "Rosewater"));
+    await flushAsync();
+
+    expect(panel.getAttribute("data-theme")).toBe("rosewater");
+    expect(mounted.container.querySelector('[data-theme-preview][data-theme="mocco"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-theme-preview][data-theme="violet"]')).not.toBeNull();
+  });
 });
 
 function missing(): never {
