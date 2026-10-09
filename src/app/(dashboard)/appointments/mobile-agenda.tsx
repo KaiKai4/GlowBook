@@ -49,7 +49,7 @@ export function MobileAgenda({
 
   if (visible.length === 0) {
     return (
-      <div className="rounded-2xl border border-brand-100 bg-surface py-12 text-center shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
+      <div className="rounded-2xl border border-brand-100 bg-surface py-12 text-center shadow-tile">
         <p className="text-sm text-fg-subtle">Sin citas programadas.</p>
       </div>
     );
@@ -64,7 +64,7 @@ export function MobileAgenda({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
+    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-tile">
       {[...byDay.entries()].map(([dateKey, dayAppointments]) => (
         <div key={dateKey}>
           <div className="border-b border-brand-100 bg-brand-50/60 px-4 py-2">
