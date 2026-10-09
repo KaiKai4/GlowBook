@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/quality/check-coverage.mjs --update",
-  "lines": 91.61,
-  "functions": 90.18,
-  "branches": 86.7,
-  "statements": 90.8
+  "lines": 95.72,
+  "functions": 95.8,
+  "branches": 91.87,
+  "statements": 94.78
 }
