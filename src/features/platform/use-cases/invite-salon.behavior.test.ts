@@ -27,7 +27,7 @@ vi.mock("@/lib/observability", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const mockedCreate = vi.mocked(createSalonInvitation);
@@ -45,7 +45,7 @@ beforeEach(() => {
   mockedIsAdmin.mockResolvedValue(true);
   mockedCreate.mockResolvedValue("token-1");
   mockedRegenerate.mockResolvedValue("token-2");
-  mockedAudit.mockResolvedValue(undefined);
+  mockedAudit.mockResolvedValue([]);
 });
 
 describe("inviteSalon authorization and validation", () => {

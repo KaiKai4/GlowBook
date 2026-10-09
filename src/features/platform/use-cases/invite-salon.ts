@@ -31,14 +31,14 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
 
   try {
     const token = await createSalonInvitation(parsed.data.email, parsed.data.planId);
-    await recordPlatformAction({
+    const warnings = await recordPlatformAction({
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "succeeded",
       targetResourceType: "salon_invitation",
       metadata: { emailDomain, planId: parsed.data.planId },
     });
-    return ok(token);
+    return ok(token, warnings);
   } catch (error) {
     captureError(error, {
       module: "platform",
@@ -70,14 +70,14 @@ export async function regenerateSalonInvitation(input: {
 
   try {
     const token = await regenerateSalonInvitationToken(input.invitationId);
-    await recordPlatformAction({
+    const warnings = await recordPlatformAction({
       actorUserId: input.actorUserId ?? null,
       action: "regenerate_salon_invitation",
       status: "succeeded",
       targetResourceType: "salon_invitation",
       targetResourceId: input.invitationId,
     });
-    return ok(token);
+    return ok(token, warnings);
   } catch (error) {
     captureError(error, {
       module: "platform",

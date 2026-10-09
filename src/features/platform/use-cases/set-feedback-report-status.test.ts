@@ -8,7 +8,7 @@ vi.mock("../data/feedback-moderation.repo", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const mockedSetFeedbackStatus = vi.mocked(setFeedbackStatus);

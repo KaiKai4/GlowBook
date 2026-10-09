@@ -69,8 +69,8 @@ export async function saveCommercialAddonConfig(
       status: parsed.data.status,
       sortOrder: parsed.data.sortOrder,
     });
-    await auditBilling(actorUserId, "commercial_addon_saved", id);
-    return ok(id);
+    const warnings = await auditBilling(actorUserId, "commercial_addon_saved", id);
+    return ok(id, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
   }
@@ -82,14 +82,15 @@ export async function removeCommercialAddonConfig(
 ): Promise<Result<void>> {
   try {
     const assignments = await countAddonAssignments(addonId);
+    let warnings: string[];
     if (assignments > 0) {
       await archiveCommercialAddon(addonId);
-      await auditBilling(actorUserId, "commercial_addon_archived", addonId);
+      warnings = await auditBilling(actorUserId, "commercial_addon_archived", addonId);
     } else {
       await deleteCommercialAddon(addonId);
-      await auditBilling(actorUserId, "commercial_addon_deleted", addonId);
+      warnings = await auditBilling(actorUserId, "commercial_addon_deleted", addonId);
     }
-    return ok(undefined);
+    return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo eliminar el extra."));
   }

@@ -21,7 +21,7 @@ vi.mock("../data/commercial-addons.repo", () => ({
   saveCommercialAddon: vi.fn(),
 }));
 vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const ADDON_ID = "00000000-0000-4000-8000-0000000000d1";

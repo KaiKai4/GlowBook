@@ -30,7 +30,7 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
 }));
 
 vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const saveCommercialPlanMock = vi.mocked(saveCommercialPlan);
@@ -58,7 +58,7 @@ const planFixture: CommercialPlan = {
 beforeEach(() => {
   vi.clearAllMocks();
   saveCommercialPlanMock.mockResolvedValue("plan-id-1");
-  auditMock.mockResolvedValue(undefined);
+  auditMock.mockResolvedValue([]);
 });
 
 describe("saveCommercialPlanConfig", () => {

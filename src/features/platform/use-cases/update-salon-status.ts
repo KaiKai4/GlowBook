@@ -1,6 +1,6 @@
 import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
 import { captureError } from "@/lib/observability";
-import type { Result } from "@/lib/result";
+import { ok, type Result } from "@/lib/result";
 import { recordPlatformAction } from "./platform-audit";
 
 export interface UpdateSalonStatusInput {
@@ -21,14 +21,14 @@ export async function updateSalonStatus({
 
   try {
     await setSalonActiveStatus(trimmedSalonId, isActive);
-    await recordPlatformAction({
+    const warnings = await recordPlatformAction({
       actorUserId: actorUserId ?? null,
       action: "set_salon_status",
       status: "succeeded",
       targetSalonId: trimmedSalonId,
       metadata: { isActive },
     });
-    return { ok: true, value: isActive };
+    return ok(isActive, warnings);
   } catch (error) {
     captureError(error, {
       module: "platform",

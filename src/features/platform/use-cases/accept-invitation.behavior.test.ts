@@ -38,7 +38,7 @@ vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/observability", () => ({
@@ -101,7 +101,7 @@ beforeEach(() => {
   mockedDeleteUser.mockResolvedValue({ data: undefined, error: null });
   mockedAcceptAsAdmin.mockResolvedValue(SALON_ID);
   mockedAutoAssign.mockResolvedValue({ ok: true, value: undefined });
-  mockedRecordAction.mockResolvedValue(undefined);
+  mockedRecordAction.mockResolvedValue([]);
 });
 
 describe("accept invitation input validation", () => {

@@ -6,7 +6,7 @@ import { auditBilling, dateOrNull, normalizeKey } from "./billing-shared";
 // opcionales, mensajes de error con prefijo y auditoría con actor opcional.
 
 vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const auditMock = vi.mocked(recordPlatformAction);

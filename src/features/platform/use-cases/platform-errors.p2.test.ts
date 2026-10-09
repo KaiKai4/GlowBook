@@ -10,7 +10,7 @@ import { recordPlatformAction } from "./platform-audit";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({ isPlatformAdmin: vi.fn() }));
-vi.mock("./platform-audit", () => ({ recordPlatformAction: vi.fn(async () => undefined) }));
+vi.mock("./platform-audit", () => ({ recordPlatformAction: vi.fn(async () => []) }));
 vi.mock("../data/invitations.repo", () => ({
   acceptSalonInvitationAsAdmin: vi.fn(),
   createSalonInvitation: vi.fn(),

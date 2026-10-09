@@ -8,7 +8,7 @@ vi.mock("../data/delete-salon.repo", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const mockedDeleteSalonCompletely = vi.mocked(deleteSalonCompletely);

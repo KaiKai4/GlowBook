@@ -107,13 +107,30 @@ describe("getPlatformAuditLog entries", () => {
     expect(entry.actorLabel).toBe("Admin eliminado");
   });
 
-  it("falls back to the raw action and status when they are not in the catalogue", async () => {
+  it("uses a generic action text and the raw status when they are not in the catalogue", async () => {
     mockedFind.mockResolvedValue([row({ action: "legacy_action", status: "queued" })]);
 
     const entry = firstOf((await getPlatformAuditLog()).entries);
 
-    expect(entry.actionLabel).toBe("legacy_action");
+    expect(entry.actionLabel).toBe("Acción no reconocida");
     expect(entry.statusLabel).toBe("queued");
+  });
+
+  it("derives the action text from the action key, so legacy text stored in metadata does not replace it", async () => {
+    mockedFind.mockResolvedValue([row({ action: "invite_salon", metadata: { message: "Texto antiguo" } })]);
+
+    const entry = firstOf((await getPlatformAuditLog()).entries);
+
+    expect(entry.actionLabel).toBe("Invitar Salon");
+    expect(entry.metadata).toEqual([{ key: "message", value: "Texto antiguo" }]);
+  });
+
+  it("does not treat prototype keys as known actions", async () => {
+    mockedFind.mockResolvedValue([row({ action: "toString" })]);
+
+    const entry = firstOf((await getPlatformAuditLog()).entries);
+
+    expect(entry.actionLabel).toBe("Acción no reconocida");
   });
 
   it("describes the target as the salon when one is set, even if a resource is also set", async () => {

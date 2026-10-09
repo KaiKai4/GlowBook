@@ -32,7 +32,7 @@ vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
 }));
 
 vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const mockedAcceptSalonInvitationAsAdmin = vi.mocked(acceptSalonInvitationAsAdmin);
@@ -63,7 +63,7 @@ describe("accept platform invitation", () => {
       plan_id: null,
     });
     mockedAutoAssignPlanOnAcceptance.mockResolvedValue({ ok: true, value: undefined });
-    mockedRecordPlatformAction.mockResolvedValue(undefined);
+    mockedRecordPlatformAction.mockResolvedValue([]);
     mockedCreatePlatformOwnerAuthUser.mockResolvedValue({
       data: { id: "user-1" } as never,
       error: null,

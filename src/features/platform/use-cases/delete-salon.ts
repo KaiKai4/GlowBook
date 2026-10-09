@@ -1,6 +1,6 @@
 import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
 import { captureError } from "@/lib/observability";
-import type { Result } from "@/lib/result";
+import { ok, type Result } from "@/lib/result";
 import { recordPlatformAction } from "./platform-audit";
 
 export interface DeleteSalonInput {
@@ -30,13 +30,13 @@ export async function deleteSalon({
 
   try {
     await deleteSalonCompletely(salonId);
-    await recordPlatformAction({
+    const warnings = await recordPlatformAction({
       actorUserId: actorUserId ?? null,
       action: "delete_salon",
       status: "succeeded",
       targetSalonId: salonId,
     });
-    return { ok: true, value: undefined };
+    return ok(undefined, warnings);
   } catch (error) {
     captureError(error, {
       module: "platform",

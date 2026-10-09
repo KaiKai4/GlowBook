@@ -40,7 +40,7 @@ vi.mock("../data/commercial-plans.repo", () => ({
 }));
 
 vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+  recordPlatformAction: vi.fn(async () => []),
 }));
 
 const findRowsMock = vi.mocked(findEffectivePlanRows);
