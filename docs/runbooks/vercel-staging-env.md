@@ -104,7 +104,7 @@ Para cerrar Fase 49 despues de corregir staging:
 1. Crear un batch de escala en staging con `npm run scale:seed-salons`.
 2. Ejecutar `npm run scale:measure-routes`.
 3. Revisar Vercel Logs para 5xx, timeouts, duration y secretos.
-4. Actualizar `docs/performance-review-2026-06-01.md`.
+4. Actualizar `docs/archive/readiness-snapshots/performance-review-2026-06-01.md`.
 5. Limpiar el batch con `npm run scale:cleanup-salons`.
 
 ## Criterio De Exito

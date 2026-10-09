@@ -54,7 +54,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] Gate principal ejecuta subgates de staging, observability, capacity, security y support.
 - [x] Gate bloquea `APP_URL`/`E2E_BASE_URL` locales para no aceptar evidencia falsa de staging.
 - [x] Etapas 5-10, 25-50 y 100+ salones documentadas.
-- [x] Decision go/no-go documentada en `docs/release-scale-readiness-2026-06-01.md`.
+- [x] Decision go/no-go documentada en `docs/archive/readiness-snapshots/release-scale-readiness-2026-06-01.md`.
 - [x] Existe `npm run baseline:readiness` para validar el baseline.
 - [ ] Go/no-go de lanzamiento amplio firmado con evidencia reciente.
 
@@ -84,7 +84,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 ## Fase 49 - Performance
 
-- [x] Existe plantilla `docs/performance-review-2026-06-01.md`.
+- [x] Existe plantilla `docs/archive/readiness-snapshots/performance-review-2026-06-01.md`.
 - [x] Existe medicion repetible `npm run scale:measure-routes`.
 - [x] Existe `npm run performance:readiness`.
 - [x] `npm run performance:readiness` paso en modo actual.

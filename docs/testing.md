@@ -108,7 +108,7 @@ Supabase local usa siempre el mismo `project_id` (`glowbook`), asi que dos check
 Reglas:
 
 - Hay un stack local por maquina. Para cambiar de checkout, parar el stack desde el checkout que lo arranco y volver a arrancarlo desde el nuevo.
-- `ensureLocalSupabase` (`scripts/quality/supabase-env.mjs`) comprueba que el stack que responde lo arranco este checkout: debe existir `supabase/.temp/start-secrets`. Si falta, falla con el mensaje: ejecutar `supabase stop` en el otro checkout y volver a arrancar desde este con `npm run db:start`.
+- `ensureLocalSupabase` (`scripts/quality/supabase-env.mjs`) comprueba que el stack que responde lo arranco este checkout: debe existir el archivo local `start-secrets` que genera la CLI en la carpeta local supabase/.temp. Si falta, falla con el mensaje: ejecutar `supabase stop` en el otro checkout y volver a arrancar desde este con `npm run db:start`.
 - El verificador limita el tiempo de cada paso (`timeoutMs` en `scripts/quality/steps.mjs`: 2 min en pasos estaticos y 10 min en los que usan base de datos, pruebas, build, e2e, lighthouse y cobertura). Si un paso expira, el runner termina el proceso y sus hijos y lo marca como `timeout`, sin esperar indefinidamente.
 
 ## Pruebas De Scripts

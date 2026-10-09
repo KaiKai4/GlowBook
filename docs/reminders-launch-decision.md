@@ -23,12 +23,10 @@ deuda tecnica.
 
 ## Si El Producto Promete Envio Real
 
-Antes de lanzamiento se debe crear:
+Antes de lanzamiento se debe crear (ninguno de estos ficheros existe hoy):
 
-- `src/features/reminders/use-cases/send-reminder.ts`
-- `src/features/reminders/use-cases/record-reminder-attempt.ts`
-- `src/features/reminders/use-cases/retry-reminder.ts`
-- `src/features/reminders/data/reminder-log.repo.ts`
+- `src/features/reminders/use-cases/` con casos de uso de envío, registro de intento y reintento (previstos, sin nombre definido)
+- `src/features/reminders/data/` con repositorio del registro de envíos (previsto)
 - Adapter del proveedor elegido
 - tests con proveedor mockeado
 - documentacion de variables del proveedor

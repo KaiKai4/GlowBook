@@ -217,7 +217,7 @@ Decision actual para MVP:
 - no introducir un Adapter propio hasta tener senales reales de abuso.
 
 Si aparece abuso antes del lanzamiento, crear un Adapter dedicado en
-`src/infra/rate-limit` y aplicarlo primero a login, invitaciones y operaciones
+`src/infra/security/rate-limit.ts` y aplicarlo primero a login, invitaciones y operaciones
 Platform destructivas.
 
 Decision para lanzamiento amplio:
@@ -225,7 +225,7 @@ Decision para lanzamiento amplio:
 - revisar rate limiting del hosting para `login`, `invite`, `join`, feedback y
   operaciones Platform;
 - revisar limites de Supabase Auth antes de campanas publicas;
-- mantener un Adapter propio en `src/infra/rate-limit` como Seam futura solo si
+- mantener un Adapter propio en `src/infra/security/rate-limit.ts` como Seam futura solo si
   los controles del proveedor no alcanzan;
 - registrar la decision en `docs/production-scale-readiness-checklist.md`.
 

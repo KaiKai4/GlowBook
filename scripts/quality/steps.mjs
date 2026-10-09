@@ -69,6 +69,14 @@ export const STEPS = [
     cmd: ["node", "scripts/quality/check-module-size.mjs"],
   },
   {
+    id: "docs-links",
+    timeoutMs: 120000,
+    tier: "fast",
+    jobs: ["static"],
+    description: "Enlaces Markdown y rutas citadas en la documentación vigente existen",
+    cmd: ["node", "scripts/quality/check-doc-links.mjs"],
+  },
+  {
     id: "ci-parity",
     timeoutMs: 120000,
     tier: "fast",
@@ -121,6 +129,7 @@ export const STEPS = [
       "scripts/lib/target-guard.test.mjs",
       "scripts/ops/synthetic-alert.test.mjs",
       "scripts/ops/synthetic-check.test.mjs",
+      "scripts/quality/check-doc-links.test.mjs",
       "scripts/quality/generate-db-types.test.mjs",
       "scripts/quality/lib-process.test.mjs",
       "scripts/quality/migration-rules.test.mjs",

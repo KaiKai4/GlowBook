@@ -122,7 +122,7 @@ todas estas condiciones:
 1. `GLOWBOOK_RELEASE_AUTOMATION=true` (lo define la automatizacion de release, no una
    persona en su terminal).
 2. `--confirm=<ref>` coincide con el project-ref de `NEXT_PUBLIC_SUPABASE_URL`.
-3. El proyecto enlazado por la CLI (`supabase/.temp/project-ref`) es el mismo ref.
+3. El proyecto enlazado por la CLI (archivo local `project-ref` que genera la CLI en la carpeta local supabase/.temp) es el mismo ref.
 
 Si no se cumple alguna, termina con codigo 1 sin tocar la base de datos.
 
