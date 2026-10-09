@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission } from "@/features/access";
-import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
 import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
 import { formatCurrency } from "@/infra/format/dates";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
@@ -22,12 +21,11 @@ vi.mock("@/features/access", async (importOriginal) => ({
   hasPermission: vi.fn(() => false),
 }));
 vi.mock("@/components/layout/nav-items", () => ({ getVisibleNavItems: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
-  getEffectiveDisabledSalonFeatures: vi.fn(async () => []),
+vi.mock("@/app/_composition/salon-readers", () => ({
+  getCachedDashboardShell: vi.fn(async () => ({ paymentStanding: null })),
 }));
 vi.mock("@/features/salon/use-cases/get-dashboard-shell", () => ({
   getOwnerPlanLimitWarnings: vi.fn(async () => []),
-  getSalonPaymentStanding: vi.fn(async () => null),
 }));
 vi.mock("@/features/dashboard/use-cases/get-dashboard-overview", () => ({ getDashboardOverview: vi.fn() }));
 vi.mock("@/features/dashboard/use-cases/get-onboarding-checklist", () => ({ getOnboardingChecklist: vi.fn() }));
@@ -94,7 +92,6 @@ describe("DashboardPage indicadores de dinero", () => {
     } as unknown as Profile);
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/"), navItem("/appointments")]);
     vi.mocked(hasPermission).mockReturnValue(true);
-    vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue([]);
     vi.mocked(getDashboardOverview).mockResolvedValue({
       metrics,
       topServices: [],
@@ -123,7 +120,12 @@ describe("DashboardPage indicadores de dinero", () => {
   });
 
   it("sin modulo retail el ingreso son las citas y la ganancia descuenta los gastos", async () => {
-    vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue(["retail"]);
+    vi.mocked(requireProfile).mockResolvedValue({
+      id: "owner-1",
+      salon_id: "salon-1",
+      is_owner: true,
+      salon: { disabled_features: ["retail"] },
+    } as unknown as Profile);
 
     const container = await renderPage();
 

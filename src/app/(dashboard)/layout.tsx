@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getProfile, isPlatformAdmin } from "@/app/_composition/request-context";
-import { getDashboardShell } from "@/features/salon/use-cases/get-dashboard-shell";
+import { getCachedDashboardShell } from "@/app/_composition/salon-readers";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
@@ -26,7 +26,7 @@ export default async function DashboardLayout({
 
   if (!profile.is_active) redirect("/login");
 
-  const shell = await getDashboardShell(profile);
+  const shell = await getCachedDashboardShell(profile);
   if (!shell) redirect("/login");
 
   const permissions = shell.permissions;

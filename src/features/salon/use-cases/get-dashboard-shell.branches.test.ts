@@ -8,11 +8,7 @@ import type {
 import { getEffectiveSalonPlan } from "@/features/billing/use-cases/commercial-plans";
 import { plan } from "@/test/billing-plan-fixtures";
 import { findDashboardShellSalon } from "../data/salon.repo";
-import {
-  getDashboardShell,
-  getOwnerPlanLimitWarnings,
-  getSalonPaymentStanding,
-} from "./get-dashboard-shell";
+import { getDashboardShell, getOwnerPlanLimitWarnings } from "./get-dashboard-shell";
 
 vi.mock("../data/salon.repo", () => ({
   findDashboardShellSalon: vi.fn(),
@@ -89,6 +85,11 @@ const shellSalon = {
   bg_style: "colored",
   disabled_features: ["reports"],
 };
+
+// El estado de pago sale del shell del dashboard (no tiene export propio).
+async function paymentStanding() {
+  return (await getDashboardShell(ownerProfile))?.paymentStanding;
+}
 
 describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
   beforeEach(() => {
@@ -183,7 +184,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
         effectivePlan({ assignmentStatus: "active", currentPeriodEnd: "2026-07-01" })
       );
 
-      expect(await getSalonPaymentStanding("salon-1")).toEqual({
+      expect(await paymentStanding()).toEqual({
         state: "ok",
         overdueSince: null,
         graceDaysLeft: 0,
@@ -195,7 +196,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
         effectivePlan({ assignmentStatus: "active", currentPeriodEnd: "2026-06-10" })
       );
 
-      expect(await getSalonPaymentStanding("salon-1")).toEqual({
+      expect(await paymentStanding()).toEqual({
         state: "grace",
         overdueSince: "2026-06-10",
         graceDaysLeft: 3,
@@ -207,7 +208,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
         effectivePlan({ assignmentStatus: "trialing", trialEndsAt: "2026-06-01", currentPeriodEnd: "2026-12-31" })
       );
 
-      expect(await getSalonPaymentStanding("salon-1")).toEqual({
+      expect(await paymentStanding()).toEqual({
         state: "suspended",
         overdueSince: "2026-06-01",
         graceDaysLeft: 0,
@@ -217,7 +218,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
     it("no evalua mora cuando no hay plan efectivo", async () => {
       mockedEffectivePlan.mockRejectedValue(new Error("caida"));
 
-      expect(await getSalonPaymentStanding("salon-1")).toEqual({
+      expect(await paymentStanding()).toEqual({
         state: "ok",
         overdueSince: null,
         graceDaysLeft: 0,
