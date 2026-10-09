@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  getServerSidebarCollapsed,
-  getSidebarCollapsed,
+  getServerDesktopViewport,
+  getServerSidebarPreference,
+  getSidebarPreference,
+  isDesktopViewport,
   setSidebarCollapsed,
   subscribeSidebarCollapsed,
 } from "./sidebar-store";
@@ -76,61 +78,62 @@ describe("sidebar-store", () => {
     return unsubscribe;
   }
 
-  it("sin matchMedia y sin preferencia se considera escritorio: expandido", () => {
-    expect(getSidebarCollapsed()).toBe(false);
-  });
-
-  it("sin preferencia guardada en móvil (< 768 px) arranca plegada", () => {
+  it("sin preferencia guardada el modo es automático, sin importar el ancho", () => {
+    expect(getSidebarPreference()).toBe("auto");
     stubViewport(false);
-
-    expect(getSidebarCollapsed()).toBe(true);
+    expect(getSidebarPreference()).toBe("auto");
   });
 
-  it("sin preferencia guardada en escritorio (>= 768 px) arranca desplegada", () => {
-    stubViewport(true);
-
-    expect(getSidebarCollapsed()).toBe(false);
-  });
-
-  it("una preferencia guardada se respeta en móvil y en escritorio", () => {
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
-    stubViewport(false);
-    expect(getSidebarCollapsed()).toBe(false);
-
+  it("una preferencia guardada se lee como plegada o desplegada", () => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "true");
-    restoreViewport();
-    stubViewport(true);
-    expect(getSidebarCollapsed()).toBe(true);
+    expect(getSidebarPreference()).toBe("collapsed");
+
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
+    expect(getSidebarPreference()).toBe("expanded");
   });
 
   it("un valor guardado no reconocido se trata como ausencia de preferencia", () => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "quizas");
-    stubViewport(false);
 
-    expect(getSidebarCollapsed()).toBe(true);
+    expect(getSidebarPreference()).toBe("auto");
   });
 
-  it("si localStorage no se puede leer, decide el ancho", () => {
+  it("si localStorage no se puede leer, el modo es automático", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("SecurityError");
     });
-    stubViewport(false);
 
-    expect(getSidebarCollapsed()).toBe(true);
+    expect(getSidebarPreference()).toBe("auto");
   });
 
-  it("el servidor renderiza como escritorio (desplegada)", () => {
-    expect(getServerSidebarCollapsed()).toBe(false);
+  it("el servidor siempre renderiza en modo automático, sin conocer localStorage", () => {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "true");
+
+    expect(getServerSidebarPreference()).toBe("auto");
+    expect(getServerDesktopViewport()).toBe(true);
+  });
+
+  it("sin matchMedia se asume escritorio", () => {
+    expect(isDesktopViewport()).toBe(true);
+  });
+
+  it("detecta el ancho con matchMedia", () => {
+    stubViewport(false);
+    expect(isDesktopViewport()).toBe(false);
+
+    restoreViewport();
+    stubViewport(true);
+    expect(isDesktopViewport()).toBe(true);
   });
 
   it("guarda el estado y lo lee de vuelta", () => {
     expect(setSidebarCollapsed(true)).toBe(true);
     expect(window.localStorage.getItem(SIDEBAR_STORAGE_KEY)).toBe("true");
-    expect(getSidebarCollapsed()).toBe(true);
+    expect(getSidebarPreference()).toBe("collapsed");
 
     setSidebarCollapsed(false);
     expect(window.localStorage.getItem(SIDEBAR_STORAGE_KEY)).toBe("false");
-    expect(getSidebarCollapsed()).toBe(false);
+    expect(getSidebarPreference()).toBe("expanded");
   });
 
   it("notifica a los suscriptores en cada cambio local", () => {
@@ -162,26 +165,15 @@ describe("sidebar-store", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  it("al cruzar el punto md sin preferencia avisa y recalcula el estado", () => {
+  it("avisa al cruzar el punto md para que el ancho efectivo se recalcule", () => {
     const viewport = stubViewport(true);
     const listener = vi.fn();
     subscribe(listener);
-    expect(getSidebarCollapsed()).toBe(false);
 
     viewport.setDesktop(false);
 
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(getSidebarCollapsed()).toBe(true);
-  });
-
-  it("al cruzar el punto md con preferencia guardada no cambia el estado", () => {
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
-    const viewport = stubViewport(true);
-    subscribe(vi.fn());
-
-    viewport.setDesktop(false);
-
-    expect(getSidebarCollapsed()).toBe(false);
+    expect(isDesktopViewport()).toBe(false);
   });
 
   it("al cancelar la suscripcion también deja de escuchar matchMedia", () => {
@@ -203,13 +195,5 @@ describe("sidebar-store", () => {
 
     expect(setSidebarCollapsed(true)).toBe(false);
     expect(listener).not.toHaveBeenCalled();
-  });
-
-  it("si localStorage falla al leer se considera expandido en escritorio", () => {
-    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-      throw new Error("SecurityError");
-    });
-
-    expect(getSidebarCollapsed()).toBe(false);
   });
 });

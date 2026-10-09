@@ -1,10 +1,14 @@
-// Estado del menu lateral colapsado: un store tipado y minimo que comparten
-// todas las instancias del Sidebar (y las pestañas, via el evento "storage").
-// Se lee con useSyncExternalStore; sustituye al CustomEvent global anterior.
+// Preferencia del menu lateral: un store tipado y minimo que comparten todas las
+// instancias del Sidebar (y las pestañas, via el evento "storage").
+// Se lee con useSyncExternalStore.
 //
-// Sin preferencia guardada, el estado depende del ancho: por debajo de md (768 px)
-// la barra empieza plegada; por encima, desplegada. Una preferencia guardada
-// por el usuario manda siempre.
+// Tres estados:
+// - "auto": sin preferencia guardada. El aspecto lo decide solo el CSS (plegada por
+//   debajo de md, desplegada desde md), asi el primer render del servidor ya es
+//   correcto y no hay salto de layout al hidratar.
+// - "collapsed" / "expanded": preferencia guardada por el usuario; manda en cualquier ancho.
+
+export type SidebarPreference = "auto" | "collapsed" | "expanded";
 
 const SIDEBAR_STORAGE_KEY = "glowbook-sidebar-collapsed";
 // Mismo punto que el breakpoint "md" de Tailwind (48rem = 768 px).
@@ -18,45 +22,37 @@ function notify() {
   listeners.forEach((listener) => listener());
 }
 
-/** Preferencia guardada por el usuario, o null si no hay ninguna (o no se puede leer). */
-function readSavedPreference(): boolean | null {
+/** Preferencia guardada por el usuario, o "auto" si no hay ninguna (o no se puede leer). */
+export function getSidebarPreference(): SidebarPreference {
   try {
     const raw = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    if (raw === "true") return true;
-    if (raw === "false") return false;
-    return null;
+    if (raw === "true") return "collapsed";
+    if (raw === "false") return "expanded";
+    return "auto";
   } catch {
-    return null;
+    return "auto";
   }
 }
 
+/** Valor del servidor (getServerSnapshot): sin preferencia conocida, decide el CSS. */
+export function getServerSidebarPreference(): SidebarPreference {
+  return "auto";
+}
+
 /** Sin matchMedia (entornos sin layout) se asume escritorio. */
-function isDesktopViewport(): boolean {
+export function isDesktopViewport(): boolean {
   if (typeof window.matchMedia !== "function") return true;
   return window.matchMedia(DESKTOP_MEDIA_QUERY).matches;
 }
 
-/**
- * Estado colapsado para el cliente: la preferencia guardada si existe; si no,
- * plegada en móvil y desplegada en escritorio.
- */
-export function getSidebarCollapsed(): boolean {
-  const saved = readSavedPreference();
-  if (saved !== null) return saved;
-  return !isDesktopViewport();
+/** Valor del servidor: no conoce el ancho, asi que asume escritorio hasta que el cliente mide. */
+export function getServerDesktopViewport(): boolean {
+  return true;
 }
 
 /**
- * Valor del servidor (getServerSnapshot): el servidor no conoce el ancho, así que
- * renderiza como escritorio y el cliente corrige tras la hidratación.
- */
-export function getServerSidebarCollapsed(): boolean {
-  return false;
-}
-
-/**
- * Persiste el estado colapsado y avisa a los suscriptores. Devuelve false si el
- * almacenamiento no esta disponible (en ese caso no se notifica ningun cambio).
+ * Persiste el estado plegado como preferencia y avisa a los suscriptores. Devuelve
+ * false si el almacenamiento no esta disponible (en ese caso no se notifica nada).
  */
 export function setSidebarCollapsed(collapsed: boolean): boolean {
   try {

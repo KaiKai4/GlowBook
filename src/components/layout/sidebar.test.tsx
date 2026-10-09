@@ -36,6 +36,10 @@ function sidebarElement(): HTMLElement {
   return requireElement<HTMLElement>(document, "aside#dashboard-sidebar");
 }
 
+function sidebarTokens(): string[] {
+  return sidebarElement().className.split(/\s+/).filter(Boolean);
+}
+
 function toggleButton(): HTMLButtonElement {
   return requireElement<HTMLButtonElement>(document, "button[aria-controls='dashboard-sidebar']");
 }
@@ -142,28 +146,32 @@ describe("Sidebar", () => {
 
   it("el botón de contraer alterna el ancho, lo guarda y actualiza su etiqueta", () => {
     mounted = renderSidebar([], true);
-    expect(sidebarElement().className).toContain("w-64");
+    expect(sidebarTokens()).toEqual(expect.arrayContaining(["w-20", "md:w-64"]));
     expect(toggleButton().getAttribute("aria-label")).toBe("Contraer menú lateral");
     expect(toggleButton().getAttribute("aria-expanded")).toBe("true");
 
     clickElement(toggleButton());
 
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe("true");
-    expect(sidebarElement().className).toContain("w-20");
+    expect(sidebarTokens()).toContain("w-20");
+    expect(sidebarTokens()).not.toContain("md:w-64");
     expect(toggleButton().getAttribute("aria-label")).toBe("Expandir menú lateral");
     expect(toggleButton().getAttribute("aria-expanded")).toBe("false");
 
     clickElement(toggleButton());
 
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe("false");
-    expect(sidebarElement().className).toContain("w-64");
+    expect(sidebarTokens()).toContain("w-64");
+    expect(sidebarTokens()).not.toContain("w-20");
+    expect(sidebarTokens()).not.toContain("md:w-64");
   });
 
   it("arranca contraída si así quedó guardado", () => {
     window.localStorage.setItem(STORAGE_KEY, "true");
     mounted = renderSidebar([], true);
 
-    expect(sidebarElement().className).toContain("w-20");
+    expect(sidebarTokens()).toContain("w-20");
+    expect(sidebarTokens()).not.toContain("md:w-64");
     expect(linkTo("Citas").getAttribute("aria-label")).toBe("Citas");
   });
 
@@ -175,16 +183,18 @@ describe("Sidebar", () => {
 
     clickElement(toggleButton());
 
-    expect(sidebarElement().className).toContain("w-64");
+    expect(sidebarTokens()).toContain("md:w-64");
+    expect(toggleButton().getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("si el almacenamiento falla al leer, arranca expandida", () => {
+  it("si el almacenamiento falla al leer, sigue el modo automático y arranca expandida en escritorio", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("almacenamiento bloqueado");
     });
     mounted = renderSidebar([], true);
 
-    expect(sidebarElement().className).toContain("w-64");
+    expect(sidebarTokens()).toContain("md:w-64");
+    expect(toggleButton().getAttribute("aria-expanded")).toBe("true");
   });
 
   it("contraída: los enlaces y el cierre de sesión quedan etiquetados para lectores de pantalla", () => {

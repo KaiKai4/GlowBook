@@ -12,11 +12,28 @@ import type { SalonFeatureKey } from "@/features/salon-features";
 
 import { getVisibleNavGroups } from "./nav-items";
 import {
-  getServerSidebarCollapsed,
-  getSidebarCollapsed,
+  ASIDE_WIDTH,
+  BRAND_MARK,
+  BRAND_TEXT,
+  GROUP_LABEL,
+  GROUP_SEPARATOR,
+  GROUP_STACK,
+  ITEM_LAYOUT,
+  LABEL_FADE,
+  NAV_PADDING,
+  NO_MODULES_HINT,
+  TOGGLE_POSITION,
+  resolveSidebarCollapsed,
+} from "./sidebar-layout";
+import {
+  getServerDesktopViewport,
+  getServerSidebarPreference,
+  getSidebarPreference,
+  isDesktopViewport,
   setSidebarCollapsed,
   subscribeSidebarCollapsed,
 } from "./sidebar-store";
+import type { SidebarPreference } from "./sidebar-store";
 import { useNavigationGuard } from "./unsaved-changes";
 
 interface SidebarProps {
@@ -24,6 +41,31 @@ interface SidebarProps {
   userPermissions: Permission[];
   isOwner: boolean;
   disabledFeatures: SalonFeatureKey[];
+}
+
+/**
+ * Icono del botón de plegar. En "auto" se pintan los dos y el CSS muestra el que
+ * corresponde a cada ancho, así el primer render ya es correcto.
+ */
+function ToggleIcon({
+  preference,
+  isCollapsed,
+}: {
+  preference: SidebarPreference;
+  isCollapsed: boolean;
+}) {
+  if (preference === "auto") {
+    return (
+      <>
+        <PanelLeftOpen className="h-4 w-4 md:hidden" aria-hidden="true" />
+        <PanelLeftClose className="hidden h-4 w-4 md:block" aria-hidden="true" />
+      </>
+    );
+  }
+  if (isCollapsed) {
+    return <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />;
+  }
+  return <PanelLeftClose className="h-4 w-4" aria-hidden="true" />;
 }
 
 export function Sidebar({
@@ -34,11 +76,18 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const confirmNavigate = useNavigationGuard();
-  const isCollapsed = useSyncExternalStore(
+  const preference = useSyncExternalStore(
     subscribeSidebarCollapsed,
-    getSidebarCollapsed,
-    getServerSidebarCollapsed,
+    getSidebarPreference,
+    getServerSidebarPreference,
   );
+  const desktop = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    isDesktopViewport,
+    getServerDesktopViewport,
+  );
+  // Estado efectivo: solo para atributos y etiquetas (no mueve el layout en "auto").
+  const isCollapsed = resolveSidebarCollapsed(preference, desktop);
 
   const groups = getVisibleNavGroups(
     userPermissions,
@@ -74,7 +123,7 @@ export function Sidebar({
       id="dashboard-sidebar"
       className={cn(
         "relative flex h-full shrink-0 flex-col border-r border-brand-100 bg-surface shadow-sidebar transition-[width] duration-200 ease-out motion-reduce:transition-none",
-        isCollapsed ? "w-20" : "w-64",
+        ASIDE_WIDTH[preference],
       )}
     >
       <button
@@ -88,23 +137,17 @@ export function Sidebar({
         title={isCollapsed ? "Expandir menú lateral" : "Contraer menú lateral"}
         className={cn(
           "absolute z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-surface text-fg-subtle shadow-sm transition-[border-color,color,box-shadow] duration-150 hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
-          isCollapsed
-            ? "left-1/2 top-[88px] -translate-x-1/2"
-            : "right-12 top-[88px]",
+          TOGGLE_POSITION[preference],
         )}
       >
-        {isCollapsed ? (
-          <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
-        ) : (
-          <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
-        )}
+        <ToggleIcon preference={preference} isCollapsed={isCollapsed} />
       </button>
 
       <div className="relative h-[138px] shrink-0 border-b border-brand-50">
         <div
           className={cn(
             "absolute inset-0 flex flex-col items-center gap-1.5 px-6 pb-3 pt-5 text-center transition-opacity duration-150 motion-reduce:transition-none",
-            isCollapsed ? "pointer-events-none opacity-0" : "opacity-100",
+            BRAND_TEXT[preference],
           )}
           aria-hidden={isCollapsed}
         >
@@ -119,7 +162,7 @@ export function Sidebar({
         <div
           className={cn(
             "absolute inset-0 flex justify-center pt-4 transition-opacity duration-150 motion-reduce:transition-none",
-            isCollapsed ? "opacity-100" : "pointer-events-none opacity-0",
+            BRAND_MARK[preference],
           )}
           aria-hidden={!isCollapsed}
         >
@@ -130,36 +173,35 @@ export function Sidebar({
       <nav
         className={cn(
           "flex-1 overflow-y-auto pb-4 pt-3 transition-[padding] duration-200 motion-reduce:transition-none",
-          isCollapsed ? "px-2" : "px-3",
+          NAV_PADDING[preference],
         )}
       >
         {!hasModules ? (
           <p
             className={cn(
               "px-3 py-4 text-xs leading-relaxed text-fg-subtle",
-              isCollapsed && "sr-only",
+              NO_MODULES_HINT[preference],
             )}
           >
             No tienes módulos asignados. Pide al administrador que configure tu
             rol.
           </p>
         ) : null}
-        <div
-          className={cn(
-            isCollapsed ? "space-y-3" : "space-y-5",
-          )}
-        >
+        <div className={cn(GROUP_STACK[preference])}>
           {groups.map((group, groupIndex) => (
               <div
                 key={group.label ?? `group-${groupIndex}`}
                 className={cn(
-                  isCollapsed &&
-                    groupIndex > 0 &&
-                    "border-t border-brand-50 pt-3",
+                  groupIndex > 0 && GROUP_SEPARATOR[preference],
                 )}
               >
-                {group.label && !isCollapsed ? (
-                  <p className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-fg-subtle">
+                {group.label && preference !== "collapsed" ? (
+                  <p
+                    className={cn(
+                      "mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-fg-subtle",
+                      GROUP_LABEL[preference],
+                    )}
+                  >
                     {group.label}
                   </p>
                 ) : null}
@@ -180,9 +222,7 @@ export function Sidebar({
                           aria-label={isCollapsed ? item.label : undefined}
                           className={cn(
                             "grid min-h-10 items-center rounded-lg py-2.5 text-sm font-medium transition-[background-color,color,grid-template-columns,gap,padding] duration-200 motion-reduce:transition-none",
-                            isCollapsed
-                              ? "grid-cols-[16px_0fr] justify-center gap-0 px-3"
-                              : "grid-cols-[16px_1fr] gap-3 px-3",
+                            ITEM_LAYOUT[preference],
                             isActive
                               ? "bg-brand-50 text-brand-700"
                               : "text-fg-subtle hover:bg-surface-muted hover:text-fg-secondary",
@@ -198,7 +238,7 @@ export function Sidebar({
                           <span
                             className={cn(
                               "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none",
-                              isCollapsed ? "opacity-0" : "opacity-100",
+                              LABEL_FADE[preference],
                             )}
                           >
                             {item.label}
@@ -221,9 +261,7 @@ export function Sidebar({
             aria-label={isCollapsed ? "Cerrar sesión" : undefined}
             className={cn(
               "grid min-h-10 w-full items-center rounded-lg py-2.5 text-sm font-medium text-fg-subtle transition-[background-color,color,grid-template-columns,gap,padding] duration-200 hover:bg-surface-muted hover:text-fg-secondary motion-reduce:transition-none",
-              isCollapsed
-                ? "grid-cols-[16px_0fr] justify-center gap-0 px-3"
-                : "grid-cols-[16px_1fr] gap-3 px-3",
+              ITEM_LAYOUT[preference],
             )}
           >
             <LogOut
@@ -233,7 +271,7 @@ export function Sidebar({
             <span
               className={cn(
                 "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none",
-                isCollapsed ? "opacity-0" : "opacity-100",
+                LABEL_FADE[preference],
               )}
             >
               Cerrar sesión
