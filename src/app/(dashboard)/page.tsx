@@ -17,18 +17,10 @@ import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboa
 import { OnboardingChecklistCard } from "./onboarding-checklist-card";
 import { formatCurrency, formatDate } from "@/lib/utils/dates";
 import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
-import { MetricCard, PendingConfirmations, TopServices } from "./dashboard-widgets";
-import {
-  AlertCircle,
-  CalendarCheck,
-  CalendarDays,
-  ChevronRight,
-  DollarSign,
-  PackageSearch,
-  ReceiptText,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { PendingConfirmations, TopServices } from "./dashboard-widgets";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { AlertCircle, CalendarDays, ChevronRight, Users } from "lucide-react";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
@@ -100,41 +92,31 @@ export default async function DashboardPage() {
       {paymentStanding ? <PaymentStandingBanner standing={paymentStanding} /> : null}
       <PlanLimitBanner warnings={planWarnings} />
 
-      <div>
-        <h1 className="text-2xl font-semibold text-fg">Bienvenido</h1>
-        <p className="mt-1 text-sm text-fg-subtle">{formatDate(new Date())}</p>
-      </div>
+      <PageHeader title="Bienvenido" description={formatDate(new Date())} />
 
       {onboarding ? <OnboardingChecklistCard checklist={onboarding} /> : null}
 
       {metrics && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {hasExpensesFeature && (
-            <MetricCard title="Gastos del mes" value={formatCurrency(metrics.monthExpenses)} icon={ReceiptText} color="red" />
+            <MetricCard label="Gastos del mes" value={formatCurrency(metrics.monthExpenses)} />
           )}
-          <MetricCard title="Ingresos del mes" value={formatCurrency(money.revenue)} icon={DollarSign} color="emerald" />
+          <MetricCard label="Ingresos del mes" value={formatCurrency(money.revenue)} />
           {showProfitMetric && (
             <MetricCard
-              title="Ganancias del mes"
+              label="Ganancias del mes"
               value={formatCurrency(money.profit)}
-              icon={TrendingUp}
-              color={money.profit >= 0 ? "emerald" : "red"}
+              tone={money.profit >= 0 ? "default" : "danger"}
             />
           )}
-          <MetricCard title="Citas hoy" value={String(metrics.todayAppointments)} icon={CalendarDays} color="blue" />
-          <MetricCard
-            title="Citas completadas (mes)"
-            value={String(metrics.completedThisMonth)}
-            icon={CalendarCheck}
-            color="emerald"
-          />
-          <MetricCard title="Clientes registrados" value={String(metrics.totalCustomers)} icon={Users} color="blue" />
+          <MetricCard label="Citas hoy" value={String(metrics.todayAppointments)} />
+          <MetricCard label="Citas completadas (mes)" value={String(metrics.completedThisMonth)} />
+          <MetricCard label="Clientes registrados" value={String(metrics.totalCustomers)} />
           {hasInventoryFeature && (
             <MetricCard
-              title="Productos con bajo stock"
+              label="Productos con bajo stock"
               value={String(metrics.lowStockProducts)}
-              icon={PackageSearch}
-              color={metrics.lowStockProducts > 0 ? "red" : "emerald"}
+              tone={metrics.lowStockProducts > 0 ? "danger" : "default"}
             />
           )}
         </div>

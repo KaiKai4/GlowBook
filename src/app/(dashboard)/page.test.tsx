@@ -131,4 +131,30 @@ describe("DashboardPage indicadores de dinero", () => {
     expect(container.textContent).toContain(formatCurrency(23.5));
     expect(container.textContent).not.toContain(formatCurrency(47.5));
   });
+
+  it("muestra la cabecera de bienvenida y las etiquetas de las tarjetas de métricas", async () => {
+    const container = await renderPage();
+
+    expect(container.querySelector("h1")?.textContent).toBe("Bienvenido");
+    for (const label of ["Ingresos del mes", "Citas hoy", "Clientes registrados", "Productos con bajo stock"]) {
+      expect(container.textContent).toContain(label);
+    }
+  });
+
+  it("marca en tono de peligro la ganancia negativa y el bajo stock, y no la ganancia positiva", async () => {
+    vi.mocked(getDashboardOverview).mockResolvedValue({
+      metrics: { ...metrics, estimatedProfit: -5, lowStockProducts: 2 },
+      topServices: [],
+      monthlyCompletedAppointments: [],
+      pending: [],
+    });
+
+    const container = await renderPage();
+    const valueOf = (label: string) =>
+      Array.from(container.querySelectorAll("p")).find((node) => node.textContent === label)?.nextElementSibling;
+
+    expect(valueOf("Ganancias del mes")?.className).toContain("text-danger");
+    expect(valueOf("Productos con bajo stock")?.className).toContain("text-danger");
+    expect(valueOf("Ingresos del mes")?.className).not.toContain("text-danger");
+  });
 });
