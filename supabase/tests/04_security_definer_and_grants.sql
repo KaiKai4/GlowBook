@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  29,
-  'authenticated tiene EXECUTE exactamente en 29 funciones de public (28 de la matriz de lectura y citas + confirm_appointment)'
+  31,
+  'authenticated tiene EXECUTE exactamente en 31 funciones de public (28 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores)'
 );
 
 select ok(
@@ -111,7 +111,9 @@ select ok(
       'public.report_busy_hours(date,date,text)',
       'public.report_expense_concepts(date,date,jsonb,boolean,integer)',
       'public.report_product_sales(text,text,text,jsonb,integer)',
-      'public.report_inventory_alerts(jsonb)'
+      'public.report_inventory_alerts(jsonb)',
+      'public.create_employee_with_assignments(jsonb)',
+      'public.update_employee_profile(jsonb)'
     ]) as sig
   ),
   'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita)'

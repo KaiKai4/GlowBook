@@ -20,6 +20,22 @@ export const WorkScheduleSchema = z.object({
   is_active: z.boolean().optional().default(true),
 });
 
+// Clave de idempotencia de las escrituras criticas (campo idempotency_key del FormData).
+export const EmployeeIdempotencySchema = z.object({
+  idempotency_key: z.string().uuid(),
+});
+
 export type CreateEmployeeInput = z.infer<typeof CreateEmployeeSchema>;
-export type UpdateEmployeeInput = Partial<CreateEmployeeInput> & { is_active?: boolean };
+
+// Edicion sin defaults: una clave ausente significa "no tocar" el campo guardado.
+export interface UpdateEmployeeInput {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  email?: string;
+  specialty?: string;
+  commission_percentage?: number;
+  service_ids?: string[];
+  category_ids?: string[];
+}
 export type WorkScheduleInput = z.infer<typeof WorkScheduleSchema>;

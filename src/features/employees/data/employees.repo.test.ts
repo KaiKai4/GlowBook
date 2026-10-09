@@ -15,11 +15,12 @@ import {
   findLatestEmployeeInvitation,
   deleteWorkSchedule,
   updateEmployee,
-  updateEmployeeCategories,
-  updateEmployeeServices,
+  updateEmployeeProfileRecord,
   upsertWorkSchedule,
   validateEmployeeAssignments,
 } from "./employees.repo";
+import { createEmployeeWithAssignmentsRpc } from "@/features/employees/data/rpc/create-employee-rpc";
+import { updateEmployeeProfileRpc } from "@/features/employees/data/rpc/update-employee-rpc";
 
 // Repositorio de colaboradores (cliente de servidor con RLS). Aun así, cada
 // consulta multi-tenant debe filtrar por salon_id explícitamente, y las
@@ -31,6 +32,15 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => serverHolder.current,
 }));
 
+vi.mock("@/features/employees/data/rpc/create-employee-rpc", () => ({
+  createEmployeeWithAssignmentsRpc: vi.fn(),
+}));
+
+vi.mock("@/features/employees/data/rpc/update-employee-rpc", () => ({
+  updateEmployeeProfileRpc: vi.fn(),
+}));
+
+const KEY = "00000000-0000-4000-8000-0000000000f1";
 const SALON_ID = "salon-1";
 const EMPLOYEE_ID = "employee-1";
 const CATEGORY_A = "cat-a";
@@ -285,7 +295,7 @@ describe("employees repo", () => {
     });
   });
 
-  describe("createEmployee", () => {
+  describe("createEmployee (RPC transaccional)", () => {
     const input = {
       first_name: "Ana",
       last_name: "Lopez",
@@ -296,140 +306,48 @@ describe("employees repo", () => {
       hire_date: null,
     };
 
-    it("inserta el colaborador con salon_id y luego sus servicios y categorías", async () => {
-      useTables({
-        employees: [{ data: { id: EMPLOYEE_ID, first_name: "Ana" } }],
-        employee_services: [{}],
-        employee_categories: [{}],
-      });
+    it("delega el alta y sus asignaciones en una sola RPC con la clave de idempotencia", async () => {
+      vi.mocked(createEmployeeWithAssignmentsRpc).mockResolvedValue({ employeeId: EMPLOYEE_ID });
 
-      await expect(
-        createEmployee(SALON_ID, input, [SERVICE_1, SERVICE_2], [CATEGORY_A])
-      ).resolves.toEqual({ id: EMPLOYEE_ID, first_name: "Ana" });
-
-      expect(db.argsOf("employees", "insert")).toEqual([{ ...input, salon_id: SALON_ID }]);
-      expect(db.argsOf("employee_services", "insert")).toEqual([
-        [
-          { employee_id: EMPLOYEE_ID, service_id: SERVICE_1, salon_id: SALON_ID },
-          { employee_id: EMPLOYEE_ID, service_id: SERVICE_2, salon_id: SALON_ID },
-        ],
-      ]);
-      expect(db.argsOf("employee_categories", "insert")).toEqual([
-        [{ employee_id: EMPLOYEE_ID, category_id: CATEGORY_A, salon_id: SALON_ID }],
-      ]);
-    });
-
-    it("no inserta relaciones cuando no hay servicios ni categorías", async () => {
-      useTables({ employees: [{ data: { id: EMPLOYEE_ID } }] });
-
-      await createEmployee(SALON_ID, input, [], []);
-
-      expect(db.callsFor("employee_services")).toHaveLength(0);
-      expect(db.callsFor("employee_categories")).toHaveLength(0);
-    });
-
-    it("propaga el error de inserción del colaborador", async () => {
-      useTables({ employees: [{ error: { message: "sin espacio" } }] });
-
-      await expect(createEmployee(SALON_ID, input, [], [])).rejects.toEqual({
-        message: "sin espacio",
-      });
-    });
-
-    // CONDUCTA ACTUAL (posible bug): employees.repo.ts (createEmployee) no revisa el
-    // error del insert de employee_services ni de employee_categories; el colaborador
-    // queda creado aunque sus asignaciones fallen en silencio.
-    it("CONDUCTA ACTUAL (posible bug): ignora el error al insertar servicios asignados", async () => {
-      useTables({
-        employees: [{ data: { id: EMPLOYEE_ID } }],
-        employee_services: [{ error: { message: "fk rota" } }],
-      });
-
-      await expect(createEmployee(SALON_ID, input, [SERVICE_1], [])).resolves.toEqual({
+      await expect(createEmployee(input, [SERVICE_1, SERVICE_2], [CATEGORY_A], KEY)).resolves.toEqual({
         id: EMPLOYEE_ID,
       });
+
+      expect(createEmployeeWithAssignmentsRpc).toHaveBeenCalledTimes(1);
+      expect(createEmployeeWithAssignmentsRpc).toHaveBeenCalledWith({
+        employee: input,
+        serviceIds: [SERVICE_1, SERVICE_2],
+        categoryIds: [CATEGORY_A],
+        idempotencyKey: KEY,
+      });
+    });
+
+    it("propaga el error de la RPC sin escribir tablas sueltas", async () => {
+      vi.mocked(createEmployeeWithAssignmentsRpc).mockRejectedValue({ message: "fk rota" });
+
+      await expect(createEmployee(input, [SERVICE_1], [], KEY)).rejects.toEqual({ message: "fk rota" });
     });
   });
 
-  describe("updateEmployeeServices and updateEmployeeCategories", () => {
-    it("reemplaza los servicios: borra los anteriores del colaborador y reinserta los nuevos", async () => {
-      useTables({ employee_services: [{}, {}] });
+  describe("updateEmployeeProfileRecord (RPC transaccional)", () => {
+    it("envia solo los campos presentes, las asignaciones indicadas y la clave", async () => {
+      vi.mocked(updateEmployeeProfileRpc).mockResolvedValue({ employeeId: EMPLOYEE_ID });
 
-      await updateEmployeeServices(EMPLOYEE_ID, SALON_ID, [SERVICE_1]);
-
-      expect(db.callsFor("employee_services").map((call) => call.method)).toEqual([
-        "delete",
-        "eq",
-        "eq",
-        "insert",
-      ]);
-      expect(eqCalls("employee_services")).toEqual([
-        ["employee_id", EMPLOYEE_ID],
-        ["salon_id", SALON_ID],
-      ]);
-      expect(db.argsOf("employee_services", "insert")).toEqual([
-        [{ employee_id: EMPLOYEE_ID, service_id: SERVICE_1, salon_id: SALON_ID }],
-      ]);
-    });
-
-    it("con lista vacía solo borra las asignaciones anteriores", async () => {
-      useTables({ employee_services: [{}] });
-
-      await updateEmployeeServices(EMPLOYEE_ID, SALON_ID, []);
-
-      expect(db.callsFor("employee_services").map((call) => call.method)).toEqual([
-        "delete",
-        "eq",
-        "eq",
-      ]);
-    });
-
-    // CONDUCTA ACTUAL (posible bug): employees.repo.ts:195-199 no revisa el error del
-    // delete de employee_services; si el borrado falla, se insertan los nuevos servicios
-    // sobre las asignaciones anteriores y el resultado no informa del fallo.
-    it("CONDUCTA ACTUAL (posible bug): ignora el error al borrar los servicios anteriores", async () => {
-      useTables({
-        employee_services: [{ error: { message: "borrado rechazado" } }, {}],
+      await updateEmployeeProfileRecord(EMPLOYEE_ID, {
+        fields: { first_name: "Ana Maria" },
+        unlinkProfile: false,
+        idempotencyKey: KEY,
       });
 
-      await expect(
-        updateEmployeeServices(EMPLOYEE_ID, SALON_ID, [SERVICE_1])
-      ).resolves.toBeUndefined();
-
-      expect(db.argsOf("employee_services", "insert")).toEqual([
-        [{ employee_id: EMPLOYEE_ID, service_id: SERVICE_1, salon_id: SALON_ID }],
-      ]);
-    });
-
-    it("reemplaza las categorías con el mismo patrón acotado por salón", async () => {
-      useTables({ employee_categories: [{}, {}] });
-
-      await updateEmployeeCategories(EMPLOYEE_ID, SALON_ID, [CATEGORY_A, CATEGORY_B]);
-
-      expect(eqCalls("employee_categories")).toEqual([
-        ["employee_id", EMPLOYEE_ID],
-        ["salon_id", SALON_ID],
-      ]);
-      expect(db.argsOf("employee_categories", "insert")).toEqual([
-        [
-          { employee_id: EMPLOYEE_ID, category_id: CATEGORY_A, salon_id: SALON_ID },
-          { employee_id: EMPLOYEE_ID, category_id: CATEGORY_B, salon_id: SALON_ID },
-        ],
-      ]);
-    });
-
-    it("con lista vacía de categorías no inserta nada", async () => {
-      useTables({ employee_categories: [{}] });
-
-      await updateEmployeeCategories(EMPLOYEE_ID, SALON_ID, []);
-
-      expect(db.callsFor("employee_categories").map((call) => call.method)).toEqual([
-        "delete",
-        "eq",
-        "eq",
-      ]);
+      expect(updateEmployeeProfileRpc).toHaveBeenCalledWith({
+        employeeId: EMPLOYEE_ID,
+        fields: { first_name: "Ana Maria" },
+        unlinkProfile: false,
+        idempotencyKey: KEY,
+      });
     });
   });
+
 
   describe("updateEmployee", () => {
     it("actualiza solo el colaborador del salón indicado y devuelve la fila", async () => {

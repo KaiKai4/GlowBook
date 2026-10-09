@@ -1,5 +1,13 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { assertServicesHaveAssignedCategories } from "@/features/employees/domain/collaborator-assignment";
+import {
+  createEmployeeWithAssignmentsRpc,
+  type CreateEmployeeRpcFields,
+} from "@/features/employees/data/rpc/create-employee-rpc";
+import {
+  updateEmployeeProfileRpc,
+  type UpdateEmployeeProfileRpcFields,
+} from "@/features/employees/data/rpc/update-employee-rpc";
 import type { Database } from "@/types/database.types";
 
 export interface EmployeeNameRow {
@@ -146,78 +154,34 @@ export async function validateEmployeeAssignments(
   assertServicesHaveAssignedCategories(services ?? [], [...categorySet]);
 }
 
+// Alta y edicion de perfil van por RPC transaccionales: colaborador, asignaciones
+// y email se escriben juntos o no se escribe nada (ver migracion 067).
 export async function createEmployee(
-  salonId: string,
-  input: Omit<Database["public"]["Tables"]["employees"]["Insert"], "salon_id">,
+  input: CreateEmployeeRpcFields,
   serviceIds: string[],
-  categoryIds: string[]
-) {
-  const supabase = await createSupabaseServerClient();
-
-  const { data: employee, error } = await supabase
-    .from("employees")
-    .insert({ ...input, salon_id: salonId })
-    .select()
-    .single();
-  if (error) throw error;
-
-  if (serviceIds.length > 0) {
-    await supabase.from("employee_services").insert(
-      serviceIds.map((service_id) => ({
-        employee_id: employee.id,
-        service_id,
-        salon_id: salonId,
-      }))
-    );
-  }
-
-  if (categoryIds.length > 0) {
-    await supabase.from("employee_categories").insert(
-      categoryIds.map((category_id) => ({
-        employee_id: employee.id,
-        category_id,
-        salon_id: salonId,
-      }))
-    );
-  }
-
-  return employee;
+  categoryIds: string[],
+  idempotencyKey: string
+): Promise<{ id: string }> {
+  const { employeeId } = await createEmployeeWithAssignmentsRpc({
+    employee: input,
+    serviceIds,
+    categoryIds,
+    idempotencyKey,
+  });
+  return { id: employeeId };
 }
 
-export async function updateEmployeeServices(
+export async function updateEmployeeProfileRecord(
   employeeId: string,
-  salonId: string,
-  serviceIds: string[]
-) {
-  const supabase = await createSupabaseServerClient();
-  await supabase
-    .from("employee_services")
-    .delete()
-    .eq("employee_id", employeeId)
-    .eq("salon_id", salonId);
-  if (serviceIds.length > 0) {
-    await supabase.from("employee_services").insert(
-      serviceIds.map((service_id) => ({ employee_id: employeeId, service_id, salon_id: salonId }))
-    );
+  input: {
+    fields: UpdateEmployeeProfileRpcFields;
+    serviceIds?: string[];
+    categoryIds?: string[];
+    unlinkProfile: boolean;
+    idempotencyKey: string;
   }
-}
-
-export async function updateEmployeeCategories(
-  employeeId: string,
-  salonId: string,
-  categoryIds: string[]
-) {
-  const supabase = await createSupabaseServerClient();
-  await supabase
-    .from("employee_categories")
-    .delete()
-    .eq("employee_id", employeeId)
-    .eq("salon_id", salonId);
-  if (categoryIds.length > 0) {
-    await supabase.from("employee_categories").insert(
-      categoryIds.map((category_id) => ({ employee_id: employeeId, category_id, salon_id: salonId }))
-    );
-  }
+): Promise<void> {
+  await updateEmployeeProfileRpc({ employeeId, ...input });
 }
 
 export async function updateEmployee(

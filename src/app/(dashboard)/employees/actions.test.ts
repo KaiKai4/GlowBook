@@ -64,6 +64,12 @@ const employeesManager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANA
 const permissionError = "No tienes permiso para gestionar colaboradores.";
 const rolesDisabledError = "Los roles estan deshabilitados para este salon.";
 const validEmployee = { first_name: "Marta", last_name: "Ruiz", phone: "61234567" };
+const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000f1";
+
+// Las escrituras criticas de colaboradores exigen idempotency_key en el FormData.
+function employeeForm(values: Record<string, string>): FormData {
+  return formDataOf({ idempotency_key: IDEMPOTENCY_KEY, ...values });
+}
 
 describe("employees actions", () => {
   beforeEach(() => {
@@ -96,14 +102,14 @@ describe("employees actions", () => {
   describe("createEmployeeAction", () => {
     it("propaga el rechazo del módulo de colaboradores y del límite de activos", async () => {
       vi.mocked(checkPlanModuleAccess).mockResolvedValue(err("Módulo no incluido en tu plan."));
-      expect(await createEmployeeAction(null, formDataOf(validEmployee))).toEqual({
+      expect(await createEmployeeAction(null, employeeForm(validEmployee))).toEqual({
         ok: false,
         error: "Módulo no incluido en tu plan.",
       });
 
       vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
       vi.mocked(checkPlanLimit).mockResolvedValue(err("Límite de colaboradores alcanzado."));
-      expect(await createEmployeeAction(null, formDataOf(validEmployee))).toEqual({
+      expect(await createEmployeeAction(null, employeeForm(validEmployee))).toEqual({
         ok: false,
         error: "Límite de colaboradores alcanzado.",
       });
@@ -117,7 +123,7 @@ describe("employees actions", () => {
 
       const result = await createEmployeeAction(
         null,
-        formDataOf({ ...validEmployee, role_id: RECORD_ID })
+        employeeForm({ ...validEmployee, role_id: RECORD_ID })
       );
 
       expect(result).toEqual({ ok: false, error: "Límite de usuarios con acceso alcanzado." });
@@ -129,7 +135,7 @@ describe("employees actions", () => {
     });
 
     it("devuelve el primer issue de Zod cuando falta el nombre", async () => {
-      expect(await createEmployeeAction(null, formDataOf({ ...validEmployee, first_name: "" }))).toEqual({
+      expect(await createEmployeeAction(null, employeeForm({ ...validEmployee, first_name: "" }))).toEqual({
         ok: false,
         error: "El nombre es obligatorio",
       });
@@ -139,12 +145,13 @@ describe("employees actions", () => {
     it("crea el colaborador con el rol cuando los roles están habilitados y revalida", async () => {
       vi.mocked(createEmployeeProfile).mockResolvedValue(ok({ id: "emp-1" }));
 
-      await createEmployeeAction(null, formDataOf({ ...validEmployee, role_id: RECORD_ID }));
+      await createEmployeeAction(null, employeeForm({ ...validEmployee, role_id: RECORD_ID }));
 
       expect(createEmployeeProfile).toHaveBeenCalledWith(
         SALON_ID,
         expect.objectContaining({ first_name: "Marta", last_name: "Ruiz" }),
-        RECORD_ID
+        RECORD_ID,
+        IDEMPOTENCY_KEY
       );
       expect(revalidatePath).toHaveBeenCalledWith("/employees");
     });
@@ -153,18 +160,18 @@ describe("employees actions", () => {
       vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
       vi.mocked(createEmployeeProfile).mockResolvedValue(ok({ id: "emp-2" }));
 
-      await createEmployeeAction(null, formDataOf({ ...validEmployee, role_id: RECORD_ID }));
+      await createEmployeeAction(null, employeeForm({ ...validEmployee, role_id: RECORD_ID }));
 
       expect(checkPlanLimit).not.toHaveBeenCalledWith(
         expect.objectContaining({ metricKey: "employees.login_users" })
       );
-      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null);
+      expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null, expect.any(String));
     });
   });
 
   describe("updateEmployeeAction", () => {
     it("devuelve el primer issue de Zod cuando el nombre queda vacío", async () => {
-      expect(await updateEmployeeAction(RECORD_ID, null, formDataOf({ first_name: "" }))).toEqual({
+      expect(await updateEmployeeAction(RECORD_ID, null, employeeForm({ first_name: "" }))).toEqual({
         ok: false,
         error: "El nombre es obligatorio",
       });
@@ -172,16 +179,17 @@ describe("employees actions", () => {
     });
 
     it("actualiza el perfil y revalida el listado y la ficha", async () => {
-      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok(undefined));
+      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok({}));
 
-      expect(await updateEmployeeAction(RECORD_ID, null, formDataOf({ specialty: "Color" }))).toEqual({
+      expect(await updateEmployeeAction(RECORD_ID, null, employeeForm({ specialty: "Color" }))).toEqual({
         ok: true,
-        value: undefined,
+        value: {},
       });
       expect(updateEmployeeProfile).toHaveBeenCalledWith(
         RECORD_ID,
         SALON_ID,
-        expect.objectContaining({ specialty: "Color" })
+        expect.objectContaining({ specialty: "Color" }),
+        IDEMPOTENCY_KEY
       );
       expect(revalidatePath).toHaveBeenCalledWith("/employees");
       expect(revalidatePath).toHaveBeenCalledWith(`/employees/${RECORD_ID}`);
@@ -240,7 +248,7 @@ describe("employees actions", () => {
     it("no persiste un horario con formato de hora inválido", async () => {
       const result = await addWorkScheduleAction(
         null,
-        formDataOf({
+        employeeForm({
           employee_id: RECORD_ID,
           day_of_week: "1",
           start_time: "9am",
@@ -257,7 +265,7 @@ describe("employees actions", () => {
 
       const result = await addWorkScheduleAction(
         null,
-        formDataOf({
+        employeeForm({
           employee_id: RECORD_ID,
           day_of_week: "1",
           start_time: "09:00",

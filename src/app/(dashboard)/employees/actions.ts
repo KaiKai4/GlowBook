@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CreateEmployeeSchema, WorkScheduleSchema } from "@/features/employees/schemas";
-import { EmployeePatchSchema } from "./employee-patch-schema";
+import { WorkScheduleSchema } from "@/features/employees/schemas";
+import { parseCreateEmployeeForm, parseUpdateEmployeeForm, readIdempotencyKey } from "./employee-form-input";
 import {
   changeEmployeeRole,
   createEmployeeInviteForExistingEmployee,
@@ -26,6 +26,7 @@ import {
   updateEmployeeProfile,
   type ArchivedEmployeeMatch,
   type CreateEmployeeResult,
+  type EmployeeWriteResult,
 } from "@/features/employees/use-cases/employee-profile";
 import {
   checkPlanLimit,
@@ -59,19 +60,12 @@ export async function createEmployeeAction(
     if (!loginLimit.ok) return { ok: false, error: loginLimit.error };
   }
 
-  const parsed = CreateEmployeeSchema.safeParse({
-    first_name: formData.get("first_name"),
-    last_name: formData.get("last_name"),
-    phone: formData.get("phone") ?? "",
-    email: formData.get("email") ?? "",
-    specialty: formData.get("specialty") ?? "",
-    commission_percentage: Number(formData.get("commission_percentage") ?? 0),
-    service_ids: formData.getAll("service_ids").map(String),
-    category_ids: formData.getAll("category_ids").map(String),
-  });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
+  const key = readIdempotencyKey(formData);
+  if (!key.ok) return key;
+  const parsed = parseCreateEmployeeForm(formData);
+  if (!parsed.ok) return parsed;
 
-  const result = await createEmployeeProfile(g.value.salonId, parsed.data, roleId);
+  const result = await createEmployeeProfile(g.value.salonId, parsed.value, roleId, key.value);
   if (result.ok) {
     revalidatePath("/employees");
   }
@@ -103,28 +97,19 @@ export async function reactivateEmployeeAction(employeeId: string): Promise<Resu
 
 export async function updateEmployeeAction(
   employeeId: string,
-  _prev: Result<void> | null,
+  _prev: Result<EmployeeWriteResult> | null,
   formData: FormData
-): Promise<Result<void>> {
+): Promise<Result<EmployeeWriteResult>> {
   const g = await guard();
   if (!g.ok) return g;
   if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
 
-  const parsed = EmployeePatchSchema.safeParse({
-    first_name: formData.get("first_name") ?? undefined,
-    last_name: formData.get("last_name") ?? undefined,
-    phone: formData.get("phone") ?? undefined,
-    email: formData.get("email") ?? undefined,
-    specialty: formData.get("specialty") ?? undefined,
-    commission_percentage: formData.get("commission_percentage")
-      ? Number(formData.get("commission_percentage"))
-      : undefined,
-    service_ids: formData.getAll("service_ids").map(String),
-    category_ids: formData.getAll("category_ids").map(String),
-  });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
+  const key = readIdempotencyKey(formData);
+  if (!key.ok) return key;
+  const parsed = parseUpdateEmployeeForm(formData);
+  if (!parsed.ok) return parsed;
 
-  const result = await updateEmployeeProfile(employeeId, g.value.salonId, parsed.data);
+  const result = await updateEmployeeProfile(employeeId, g.value.salonId, parsed.value, key.value);
   if (result.ok) {
     revalidatePath("/employees");
     revalidatePath(`/employees/${employeeId}`);
