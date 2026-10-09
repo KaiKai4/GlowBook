@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { redirect } from "next/navigation";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { requireProfile } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
+import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
+import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import { formatCurrency } from "@/lib/utils/dates";
+import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import DashboardPage from "./page";
 
 vi.mock("next/navigation", () => ({
@@ -59,5 +64,71 @@ describe("DashboardPage redireccion del unico modulo visible", () => {
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/appointments")]);
 
     await expect(DashboardPage()).rejects.toThrow("REDIRECT:/appointments");
+  });
+});
+
+describe("DashboardPage indicadores de dinero", () => {
+  let mounted: MountedComponent | null = null;
+
+  // Agregados tal como llegan de report_dashboard_metrics.
+  const metrics = {
+    todayAppointments: 3,
+    appointmentRevenue: 35.5,
+    retailRevenue: 12,
+    manualExpenses: 5,
+    inventoryPurchases: 7,
+    lowStockProducts: 0,
+    totalCustomers: 12,
+    completedThisMonth: 2,
+    monthRevenue: 47.5,
+    monthExpenses: 12,
+    estimatedProfit: 35.5,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireProfile).mockResolvedValue({
+      id: "owner-1",
+      salon_id: "salon-1",
+      is_owner: true,
+    } as unknown as Profile);
+    vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/"), navItem("/appointments")]);
+    vi.mocked(hasPermission).mockReturnValue(true);
+    vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue([]);
+    vi.mocked(getDashboardOverview).mockResolvedValue({
+      metrics,
+      topServices: [],
+      monthlyCompletedAppointments: [],
+      pending: [],
+    });
+  });
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    vi.mocked(hasPermission).mockReturnValue(false);
+  });
+
+  async function renderPage(): Promise<HTMLDivElement> {
+    mounted = mountComponent(await DashboardPage());
+    return mounted.container;
+  }
+
+  it("muestra ingresos, gastos y ganancias del mes tal como vienen de la base", async () => {
+    const container = await renderPage();
+
+    expect(container.textContent).toContain(formatCurrency(12));
+    expect(container.textContent).toContain(formatCurrency(47.5));
+    expect(container.textContent).toContain(formatCurrency(35.5));
+  });
+
+  it("sin modulo retail el ingreso son las citas y la ganancia descuenta los gastos", async () => {
+    vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue(["retail"]);
+
+    const container = await renderPage();
+
+    expect(container.textContent).toContain(formatCurrency(35.5));
+    expect(container.textContent).toContain(formatCurrency(23.5));
+    expect(container.textContent).not.toContain(formatCurrency(47.5));
   });
 });

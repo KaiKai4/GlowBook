@@ -11,7 +11,7 @@ export function OnboardingChecklistCard({ checklist }: { checklist: OnboardingCh
   const progressPct = (checklist.doneCount / checklist.steps.length) * 100;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-surface shadow-[0_2px_12px_rgba(124,58,237,0.08)]">
+    <div className="overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-surface shadow-brand-soft">
       <div className="px-5 pb-4 pt-5">
         <div className="flex items-center gap-2">
           <Rocket className="h-5 w-5 text-brand-600" />

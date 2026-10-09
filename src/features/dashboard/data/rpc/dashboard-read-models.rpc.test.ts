@@ -22,6 +22,8 @@ const VALID_METRICS = {
   totalCustomers: 12,
   completedThisMonth: 2,
   monthRevenue: 47.5,
+  monthExpenses: 12,
+  estimatedProfit: 35.5,
 };
 
 describe("dashboard read-model rpc adapters", () => {

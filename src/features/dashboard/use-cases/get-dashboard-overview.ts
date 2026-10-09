@@ -1,7 +1,6 @@
 import "server-only";
 
 import { formatLocalDateISO, getUtcDayBoundaries } from "@/lib/utils/dates";
-import { calculateOperationalMoneyTotals } from "@/features/finance/domain/operational-money";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { findPendingConfirmationRows, type DashboardPendingConfirmationRow } from "../data/dashboard.repo";
 import {
@@ -103,21 +102,15 @@ function getMonthSequence(monthStart: Date, timezone: string, count = 12) {
   });
 }
 
+// Los totales de dinero llegan ya calculados desde report_dashboard_metrics.
 function toDashboardMetrics(row: DashboardMetricsRow): DashboardMetrics {
-  const money = calculateOperationalMoneyTotals({
-    appointmentRevenue: row.appointmentRevenue,
-    retailRevenue: row.retailRevenue,
-    manualExpenses: row.manualExpenses,
-    inventoryPurchases: row.inventoryPurchases,
-  });
-
   return {
     todayAppointments: row.todayAppointments,
-    appointmentRevenue: money.appointmentRevenue,
-    retailRevenue: money.retailRevenue,
-    monthRevenue: money.grossRevenue,
-    monthExpenses: money.totalExpenses,
-    estimatedProfit: money.estimatedProfit,
+    appointmentRevenue: row.appointmentRevenue,
+    retailRevenue: row.retailRevenue,
+    monthRevenue: row.monthRevenue,
+    monthExpenses: row.monthExpenses,
+    estimatedProfit: row.estimatedProfit,
     lowStockProducts: row.lowStockProducts,
     totalCustomers: row.totalCustomers,
     completedThisMonth: row.completedThisMonth,

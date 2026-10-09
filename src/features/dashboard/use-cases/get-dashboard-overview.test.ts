@@ -56,6 +56,9 @@ describe("get dashboard overview", () => {
       lowStockProducts: 0,
       totalCustomers: 0,
       completedThisMonth: 0,
+      monthRevenue: 0,
+      monthExpenses: 0,
+      estimatedProfit: 0,
     });
     mockedFetchSeries.mockResolvedValue(monthlySeries(2019, 2, new Array<number>(12).fill(0)));
     mockedFetchTopServices.mockResolvedValue([]);
@@ -85,6 +88,9 @@ describe("get dashboard overview", () => {
       lowStockProducts: 0,
       totalCustomers: 12,
       completedThisMonth: 2,
+      monthRevenue: 47.5,
+      monthExpenses: 12,
+      estimatedProfit: 35.5,
     });
     mockedFetchTopServices.mockResolvedValue([
       { name: "Corte", count: 2, pct: 100 },
