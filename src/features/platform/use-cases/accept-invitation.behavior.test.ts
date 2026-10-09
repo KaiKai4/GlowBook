@@ -14,7 +14,7 @@ import {
 import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
 import { captureError } from "@/lib/observability";
 import { acceptInvitation, type AcceptInvitationInput } from "./accept-invitation";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 // Conducta de aceptacion de invitacion: cada rama de validacion, de cuenta
 // existente y de rollback debe dejar la base consistente. Se afirma el mensaje
@@ -37,8 +37,8 @@ vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/observability", () => ({
@@ -53,7 +53,7 @@ const mockedDeleteUser = vi.mocked(deletePlatformOwnerAuthUser);
 const mockedFindUserByEmail = vi.mocked(findPlatformOwnerAuthUserByEmail);
 const mockedUpdateUser = vi.mocked(updatePlatformOwnerAuthUser);
 const mockedAutoAssign = vi.mocked(autoAssignPlanOnAcceptance);
-const mockedRecordAction = vi.mocked(recordPlatformAction);
+const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const PLAN_ID = "00000000-0000-4000-8000-00000000000a";
@@ -101,7 +101,7 @@ beforeEach(() => {
   mockedDeleteUser.mockResolvedValue({ data: undefined, error: null });
   mockedAcceptAsAdmin.mockResolvedValue(SALON_ID);
   mockedAutoAssign.mockResolvedValue({ ok: true, value: undefined });
-  mockedRecordAction.mockResolvedValue([]);
+  mockedPublishAuditEvent.mockResolvedValue([]);
 });
 
 describe("accept invitation input validation", () => {
@@ -240,7 +240,7 @@ describe("accept invitation new owner account", () => {
       salonName: "Glow Salon",
       fullName: "Ana Owner",
     });
-    expect(mockedRecordAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("salon.invitation_accepted", {
       actorUserId: NEW_USER_ID,
       action: "invitation_accepted",
       status: "succeeded",
@@ -253,7 +253,8 @@ describe("accept invitation new owner account", () => {
   it("records a null plan in the audit metadata when the invitation carries none", async () => {
     await acceptInvitation(validInput);
 
-    expect(mockedRecordAction).toHaveBeenCalledWith(
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith(
+      "salon.invitation_accepted",
       expect.objectContaining({ metadata: { emailDomain: "example.com", planId: null } })
     );
     expect(mockedAutoAssign).not.toHaveBeenCalled();

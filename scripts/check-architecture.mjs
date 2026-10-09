@@ -11,7 +11,7 @@ const allowedAdminClientImporters = new Set([
   "src/features/platform/data/delete-salon.repo.ts",
   "src/features/platform/data/feedback-moderation.repo.ts",
   "src/features/platform/data/invitations.repo.ts",
-  "src/features/platform/data/platform-audit.repo.ts",
+  "src/features/platform/data/platform-audit.repo.ts", "src/features/audit/data/audit-log.repo.ts",
   "src/features/platform/data/salon-overviews.repo.ts",
   "src/features/platform/data/salons.repo.ts",
   "src/lib/auth/session.ts",

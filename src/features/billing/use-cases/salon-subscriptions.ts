@@ -8,7 +8,6 @@ import { getDisabledSalonFeatures } from "@/lib/auth/permissions";
 import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
 import { SALON_FEATURES } from "@/features/salon/domain/salon-features";
-import type { PlatformSalonOverviewItem } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import {
   calculateLimitState,
   checkLimitAction,
@@ -52,7 +51,8 @@ import {
   updateSalonPlanOverrideStatus,
 } from "../data/salon-subscriptions.repo";
 import { findPlanCatalog, findPlanWithChildren } from "../data/commercial-plans.repo";
-import { auditBilling, dateOrNull } from "./billing-shared";
+import { commercialPlanAudit, dateOrNull } from "./billing-shared";
+import { publishAuditEvent } from "@/features/audit";
 import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 const AssignmentSchema = z.object({
@@ -188,7 +188,7 @@ export async function resolveSalonPlanAlertConfig(
 ): Promise<Result<void>> {
   try {
     await resolvePlanAlert(alertId);
-    const warnings = await auditBilling(actorUserId, "commercial_plan_alert_resolved", salonId);
+    const warnings = await publishAuditEvent("billing.plan_alert_resolved", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_alert_resolved" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo resolver la alerta."));
@@ -254,7 +254,7 @@ export async function assignSalonCommercialPlanConfig(
       trialEndsAt: schedule.trialEndsAt,
       notes: parsed.data.notes,
     });
-    const warnings = await auditBilling(actorUserId, "commercial_plan_assigned", parsed.data.salonId);
+    const warnings = await publishAuditEvent("billing.plan_assigned", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_assigned" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo asignar el plan."));
@@ -292,7 +292,7 @@ export async function autoAssignPlanOnAcceptance(input: {
       trialEndsAt: schedule.trialEndsAt,
       notes: "Asignado automaticamente al aceptar la invitacion.",
     });
-    const warnings = await auditBilling(input.acceptedByUserId, "commercial_plan_assigned", input.salonId);
+    const warnings = await publishAuditEvent("billing.plan_assigned", { ...commercialPlanAudit(input.acceptedByUserId, input.salonId), action: "commercial_plan_assigned" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo asignar el plan de la invitacion."));
@@ -346,7 +346,7 @@ export async function registerSalonPlanPaymentConfig(
       periodStart: period.periodStart,
       periodEnd: period.periodEnd,
     });
-    const warnings = await auditBilling(actorUserId, "commercial_plan_payment_recorded", parsed.data.salonId);
+    const warnings = await publishAuditEvent("billing.payment_registered", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_payment_recorded" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo registrar el pago."));
@@ -383,7 +383,7 @@ export async function assignSalonAddonConfig(
       isGift: parsed.data.isGift,
       priceOverride: parsed.data.priceOverride,
     });
-    const warnings = await auditBilling(actorUserId, "commercial_plan_extra_assigned", parsed.data.salonId);
+    const warnings = await publishAuditEvent("billing.plan_extra_assigned", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_extra_assigned" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo asignar el extra."));
@@ -419,7 +419,7 @@ export async function saveSalonManualExtraConfig(
       isGift: parsed.data.isGift,
       priceOverride: null,
     });
-    const warnings = await auditBilling(actorUserId, "commercial_plan_override_saved", parsed.data.salonId);
+    const warnings = await publishAuditEvent("billing.plan_override_saved", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_override_saved" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
@@ -433,7 +433,7 @@ export async function cancelSalonExtraConfig(
 ): Promise<Result<void>> {
   try {
     await updateSalonPlanOverrideStatus(overrideId, "canceled");
-    const warnings = await auditBilling(actorUserId, "commercial_plan_extra_canceled", salonId);
+    const warnings = await publishAuditEvent("billing.plan_extra_canceled", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_extra_canceled" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo cancelar el extra."));
@@ -471,7 +471,7 @@ export interface SubscriptionsPageData {
 }
 
 export async function getSubscriptionsPage(
-  salons: PlatformSalonOverviewItem[]
+  salons: Array<{ id: string; name: string; is_active: boolean }>
 ): Promise<SubscriptionsPageData> {
   const [catalog, addons, subscription] = await Promise.all([
     findPlanCatalog(),

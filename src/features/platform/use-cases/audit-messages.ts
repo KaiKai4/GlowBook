@@ -1,4 +1,4 @@
-import type { PlatformAuditAction } from "@/features/platform/data/platform-audit.repo";
+import { PLATFORM_AUDIT_ACTIONS, type PlatformAuditAction } from "@/features/audit";
 
 // Texto visible de cada accion de auditoria. La presentacion deriva el texto de
 // la accion (clave tipada), nunca de la metadata: la metadata guarda solo datos
@@ -48,8 +48,5 @@ export function auditActionText(action: string): string {
 
 /** Opciones del filtro por accion, en el orden del catalogo. */
 export function auditActionOptions(): Array<{ value: PlatformAuditAction; label: string }> {
-  return Object.entries(AUDIT_ACTION_TEXT).map(([value, label]) => ({
-    value: value as PlatformAuditAction,
-    label,
-  }));
+  return PLATFORM_AUDIT_ACTIONS.map((value) => ({ value, label: AUDIT_ACTION_TEXT[value] }));
 }

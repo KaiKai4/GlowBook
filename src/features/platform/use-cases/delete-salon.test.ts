@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteSalonCompletely } from "../data/delete-salon.repo";
 import { deleteSalon } from "./delete-salon";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 vi.mock("../data/delete-salon.repo", () => ({
   deleteSalonCompletely: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedDeleteSalonCompletely = vi.mocked(deleteSalonCompletely);
-const mockedRecordPlatformAction = vi.mocked(recordPlatformAction);
+const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 
 describe("delete salon", () => {
@@ -39,7 +39,7 @@ describe("delete salon", () => {
       deleteSalon({ salonId: "salon-1", confirmation: "salon-1", actorUserId })
     ).resolves.toEqual({ ok: true, value: undefined });
     expect(mockedDeleteSalonCompletely).toHaveBeenCalledWith("salon-1");
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_deleted", {
       actorUserId,
       action: "delete_salon",
       status: "succeeded",
@@ -58,7 +58,7 @@ describe("delete salon", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain("Auth cleanup failed");
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_deleted", {
       actorUserId,
       action: "delete_salon",
       status: "failed",

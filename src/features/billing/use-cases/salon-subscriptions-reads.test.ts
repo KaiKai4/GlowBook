@@ -16,7 +16,6 @@ import type {
   SalonPlanAssignmentStatus,
   SalonPlanOverride,
 } from "../domain/commercial-plan";
-import type { PlatformSalonOverviewItem } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { legacyProfile, override, plan, rows } from "@/test/billing-plan-fixtures";
 import {
   getEffectiveDisabledSalonFeatures,
@@ -53,8 +52,8 @@ vi.mock("../data/commercial-plans.repo", () => ({
   findPlanCatalog: vi.fn(),
   findPlanWithChildren: vi.fn(),
 }));
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const findSubscriptionRowsMock = vi.mocked(findSubscriptionRows);
@@ -73,8 +72,8 @@ const SALON_4 = "salon-4";
 const SALON_5 = "salon-5";
 
 // Solo se leen id, name e is_active de cada salón del panel de plataforma.
-function platformSalon(id: string, name: string, isActive = true): PlatformSalonOverviewItem {
-  return { id, name, is_active: isActive } as PlatformSalonOverviewItem;
+function platformSalon(id: string, name: string, isActive = true): { id: string; name: string; is_active: boolean } {
+  return { id, name, is_active: isActive };
 }
 
 const basicPlan: CommercialPlan = plan({ id: "plan-basic", name: "Básico", monthlyPrice: 20, currency: "USD" });

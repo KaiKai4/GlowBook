@@ -1,11 +1,7 @@
 import "server-only";
 
-import {
-  findPlatformAuditLog,
-  type PlatformAuditAction,
-  type PlatformAuditRow,
-  type PlatformAuditStatus,
-} from "@/features/platform/data/platform-audit.repo";
+import type { PlatformAuditAction, PlatformAuditStatus } from "@/features/audit";
+import { findPlatformAuditLog, type PlatformAuditRow } from "@/features/platform/data/platform-audit.repo";
 import type { Json } from "@/types/database.types";
 import { auditActionOptions, auditActionText, isKnownAuditAction } from "./audit-messages";
 

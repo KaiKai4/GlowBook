@@ -13,7 +13,7 @@ import {
 import { findCommercialAddonById } from "../data/commercial-addons.repo";
 import { findPlanWithChildren } from "../data/commercial-plans.repo";
 import type { CommercialAddon } from "../domain/salon-extras";
-import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { plan } from "@/test/billing-plan-fixtures";
 import { err, ok } from "@/lib/result";
 import {
@@ -53,8 +53,8 @@ vi.mock("../data/commercial-plans.repo", () => ({
   findPlanCatalog: vi.fn(),
   findPlanWithChildren: vi.fn(),
 }));
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const SALON_ID = "00000000-0000-4000-8000-0000000000e1";
@@ -73,7 +73,7 @@ const recordPaymentMock = vi.mocked(recordSalonPlanPayment);
 const activatePeriodMock = vi.mocked(activatePaidPeriod);
 const resolveAlertMock = vi.mocked(resolvePlanAlert);
 const updateOverrideStatusMock = vi.mocked(updateSalonPlanOverrideStatus);
-const auditMock = vi.mocked(recordPlatformAction);
+const auditMock = vi.mocked(publishAuditEvent);
 const recordAlertMock = vi.mocked(recordPlanAlert);
 
 function addon(overrides: Partial<CommercialAddon> = {}): CommercialAddon {
@@ -121,7 +121,7 @@ describe("resolveSalonPlanAlertConfig", () => {
 
     expect(result).toEqual(ok(undefined));
     expect(resolveAlertMock).toHaveBeenCalledWith("alert-1");
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_alert_resolved", 
       expect.objectContaining({
         actorUserId: ACTOR_ID,
         action: "commercial_plan_alert_resolved",
@@ -175,7 +175,7 @@ describe("autoAssignPlanOnAcceptance", () => {
       trialEndsAt: "2026-10-23",
       notes: "Asignado automaticamente al aceptar la invitacion.",
     });
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_assigned", 
       expect.objectContaining({
         actorUserId: ACTOR_ID,
         action: "commercial_plan_assigned",
@@ -215,7 +215,7 @@ describe("cancelSalonExtraConfig", () => {
 
     expect(result).toEqual(ok(undefined));
     expect(updateOverrideStatusMock).toHaveBeenCalledWith("ov-1", "canceled");
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_extra_canceled", 
       expect.objectContaining({
         action: "commercial_plan_extra_canceled",
         targetResourceId: SALON_ID,
@@ -337,7 +337,7 @@ describe("registerSalonPlanPaymentConfig", () => {
       periodStart: "2026-10-09",
       periodEnd: "2026-11-09",
     });
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.payment_registered", 
       expect.objectContaining({ action: "commercial_plan_payment_recorded", targetResourceId: SALON_ID })
     );
   });
@@ -425,7 +425,7 @@ describe("assignSalonAddonConfig", () => {
       isGift: false,
       priceOverride: 5.5,
     });
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_extra_assigned", 
       expect.objectContaining({ action: "commercial_plan_extra_assigned", actorUserId: ACTOR_ID })
     );
   });
@@ -526,7 +526,7 @@ describe("saveSalonManualExtraConfig", () => {
     expect(saveOverrideMock).toHaveBeenCalledWith(
       expect.objectContaining({ moduleKey: "reports", moduleEnabled: true, isGift: true })
     );
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_override_saved", 
       expect.objectContaining({ action: "commercial_plan_override_saved", actorUserId: ACTOR_ID })
     );
   });

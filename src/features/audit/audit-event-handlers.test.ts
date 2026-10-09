@@ -1,17 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { recordPlatformAudit } from "@/features/platform/data/platform-audit.repo";
+import { recordAuditLogEntry } from "./data/audit-log.repo";
 import { AUDIT_EVENT_HANDLERS } from "./audit-event-handlers";
-import { AUDIT_EVENT_BY_ACTION, type AuditEventName, type AuditEventPayload } from "./audit-events";
-import { auditActionOptions } from "./audit-messages";
+import type { AuditEventName, AuditEventPayload } from "./events";
 
-vi.mock("@/features/platform/data/platform-audit.repo", () => ({
-  recordPlatformAudit: vi.fn(),
+vi.mock("./data/audit-log.repo", () => ({
+  recordAuditLogEntry: vi.fn(),
 }));
 
-const mockedRecordAudit = vi.mocked(recordPlatformAudit);
+const mockedRecordEntry = vi.mocked(recordAuditLogEntry);
 
-// Catalogo completo de eventos de auditoria. Si el tipo AuditEventName gana o
-// pierde un evento, este test debe cambiar a la vez.
+// Catalogo completo de eventos de auditoria. Si AuditEventName gana o pierde un
+// evento, este test debe cambiar a la vez.
 const ALL_EVENT_NAMES: AuditEventName[] = [
   "platform.salon_invited",
   "platform.salon_invitation_regenerated",
@@ -43,19 +42,8 @@ const ALL_EVENT_NAMES: AuditEventName[] = [
   "billing.plan_alert_resolved",
 ];
 
-describe("catalogo de eventos de auditoria", () => {
-  it("cada accion emite exactamente un evento del catalogo y no queda evento huerfano", () => {
-    const emitted = Object.values(AUDIT_EVENT_BY_ACTION);
-
-    expect(new Set(emitted).size).toBe(emitted.length);
-    expect([...emitted].sort()).toEqual([...ALL_EVENT_NAMES].sort());
-  });
-
-  it("todas las acciones tienen su texto de presentacion", () => {
-    expect(auditActionOptions().map((option) => option.value).sort()).toEqual(Object.keys(AUDIT_EVENT_BY_ACTION).sort());
-  });
-
-  it("cada evento del catalogo tiene un manejador registrado", () => {
+describe("catalogo de manejadores de auditoria", () => {
+  it("cada evento del catalogo tiene exactamente un manejador registrado", () => {
     expect(Object.keys(AUDIT_EVENT_HANDLERS).sort()).toEqual([...ALL_EVENT_NAMES].sort());
   });
 });
@@ -63,11 +51,11 @@ describe("catalogo de eventos de auditoria", () => {
 describe("manejador de auditoria", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedRecordAudit.mockResolvedValue(undefined);
+    mockedRecordEntry.mockResolvedValue(undefined);
   });
 
   it("persiste el payload del evento en platform_audit_log", async () => {
-    const payload: AuditEventPayload = {
+    const payload: AuditEventPayload<"commercial_plan_payment_recorded"> = {
       actorUserId: "admin-1",
       action: "commercial_plan_payment_recorded",
       status: "succeeded",
@@ -80,7 +68,7 @@ describe("manejador de auditoria", () => {
 
     await AUDIT_EVENT_HANDLERS["billing.payment_registered"](payload);
 
-    expect(mockedRecordAudit).toHaveBeenCalledWith({
+    expect(mockedRecordEntry).toHaveBeenCalledWith({
       actorUserId: "admin-1",
       action: "commercial_plan_payment_recorded",
       status: "succeeded",
@@ -92,8 +80,27 @@ describe("manejador de auditoria", () => {
     });
   });
 
+  it("normaliza los opcionales ausentes a null y {} antes de escribir", async () => {
+    await AUDIT_EVENT_HANDLERS["platform.salon_deleted"]({
+      actorUserId: null,
+      action: "delete_salon",
+      status: "failed",
+    });
+
+    expect(mockedRecordEntry).toHaveBeenCalledWith({
+      actorUserId: null,
+      action: "delete_salon",
+      status: "failed",
+      targetSalonId: null,
+      targetResourceType: null,
+      targetResourceId: null,
+      metadata: {},
+      errorMessage: null,
+    });
+  });
+
   it("propaga el fallo de escritura para que el bus lo convierta en aviso", async () => {
-    mockedRecordAudit.mockRejectedValue(new Error("db caida"));
+    mockedRecordEntry.mockRejectedValue(new Error("db caida"));
 
     await expect(
       AUDIT_EVENT_HANDLERS["platform.salon_deleted"]({

@@ -6,7 +6,7 @@ import { err, ok, type Result } from "@/lib/result";
 import { isPlatformAdmin } from "@/lib/auth/session";
 import { captureError } from "@/lib/observability";
 import { z } from "@/lib/validation/zod";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { firstIssueMessage } from "@/lib/validation/first-issue";
 
 // El plan es obligatorio: el salon debe nacer con su plan asignado para que
@@ -31,7 +31,7 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
 
   try {
     const token = await createSalonInvitation(parsed.data.email, parsed.data.planId);
-    const warnings = await recordPlatformAction({
+    const warnings = await publishAuditEvent("platform.salon_invited", {
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "succeeded",
@@ -45,7 +45,7 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
       action: "invite_salon",
       metadata: { emailDomain },
     });
-    await recordPlatformAction({
+    await publishAuditEvent("platform.salon_invited", {
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "failed",
@@ -70,7 +70,7 @@ export async function regenerateSalonInvitation(input: {
 
   try {
     const token = await regenerateSalonInvitationToken(input.invitationId);
-    const warnings = await recordPlatformAction({
+    const warnings = await publishAuditEvent("platform.salon_invitation_regenerated", {
       actorUserId: input.actorUserId ?? null,
       action: "regenerate_salon_invitation",
       status: "succeeded",
@@ -84,7 +84,7 @@ export async function regenerateSalonInvitation(input: {
       action: "regenerate_salon_invitation",
       metadata: { invitationId: input.invitationId },
     });
-    await recordPlatformAction({
+    await publishAuditEvent("platform.salon_invitation_regenerated", {
       actorUserId: input.actorUserId ?? null,
       action: "regenerate_salon_invitation",
       status: "failed",

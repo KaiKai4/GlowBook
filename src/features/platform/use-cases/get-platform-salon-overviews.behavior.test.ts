@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { findSalonOverviews } from "@/features/platform/data/salon-overviews.repo";
-import type { PlatformSalonOverviewItem } from "./get-platform-salon-overviews";
+type PlatformSalonOverviewItem = Awaited<ReturnType<typeof findSalonOverviews>>[number];
 import { getPlatformSalonOverviews } from "./get-platform-salon-overviews";
 
 // Metricas de salud de la plataforma: un salon activo sin citas en mas de 30

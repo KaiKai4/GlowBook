@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSalonInvitation } from "@/features/platform/data/invitations.repo";
 import { isPlatformAdmin } from "@/lib/auth/session";
 import { inviteSalon } from "./invite-salon";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 vi.mock("@/features/platform/data/invitations.repo", () => ({
   createSalonInvitation: vi.fn(),
@@ -12,13 +12,13 @@ vi.mock("@/lib/auth/session", () => ({
   isPlatformAdmin: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedCreateSalonInvitation = vi.mocked(createSalonInvitation);
 const mockedIsPlatformAdmin = vi.mocked(isPlatformAdmin);
-const mockedRecordPlatformAction = vi.mocked(recordPlatformAction);
+const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 const planId = "00000000-0000-4000-8000-00000000000a";
@@ -44,7 +44,7 @@ describe("invite salon", () => {
 
     expect(result).toEqual({ ok: true, value: "invite-token" });
     expect(mockedCreateSalonInvitation).toHaveBeenCalledWith("owner@example.com", planId);
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_invited", {
       actorUserId,
       action: "invite_salon",
       status: "succeeded",
@@ -65,7 +65,7 @@ describe("invite salon", () => {
 
     expect(result.ok).toBe(false);
     expect(mockedCreateSalonInvitation).not.toHaveBeenCalled();
-    expect(mockedRecordPlatformAction).not.toHaveBeenCalled();
+    expect(mockedPublishAuditEvent).not.toHaveBeenCalled();
   });
 
   it("records failed invitation attempts after adapter errors", async () => {
@@ -74,7 +74,7 @@ describe("invite salon", () => {
     const result = await inviteSalon({ email: "owner@example.com", planId, actorUserId });
 
     expect(result).toEqual({ ok: false, error: "Error al crear la invitacion." });
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_invited", {
       actorUserId,
       action: "invite_salon",
       status: "failed",

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
 import { captureError } from "@/lib/observability";
 import { updateSalonStatus } from "./update-salon-status";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 // Suspender o reactivar un salon: el id llega con espacios del formulario y
 // se normaliza antes de tocar la base; cada cambio queda auditado con el
@@ -16,12 +16,12 @@ vi.mock("@/lib/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedSetStatus = vi.mocked(setSalonActiveStatus);
-const mockedAudit = vi.mocked(recordPlatformAction);
+const mockedAudit = vi.mocked(publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const SALON_ID = "00000000-0000-4000-8000-000000000002";
@@ -38,7 +38,7 @@ describe("updateSalonStatus input handling", () => {
     await updateSalonStatus({ salonId: `  ${SALON_ID}\n`, isActive: false, actorUserId: ACTOR_ID });
 
     expect(mockedSetStatus).toHaveBeenCalledWith(SALON_ID, false);
-    expect(mockedAudit).toHaveBeenCalledWith(expect.objectContaining({ targetSalonId: SALON_ID }));
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_status_changed", expect.objectContaining({ targetSalonId: SALON_ID }));
   });
 
   it("rejects a whitespace-only id without calling the adapter or auditing", async () => {
@@ -60,7 +60,7 @@ describe("updateSalonStatus input handling", () => {
   it("audits with a null actor when none was supplied", async () => {
     await updateSalonStatus({ salonId: SALON_ID, isActive: true });
 
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_status_changed", {
       actorUserId: null,
       action: "set_salon_status",
       status: "succeeded",
@@ -86,7 +86,7 @@ describe("updateSalonStatus failures", () => {
       action: "set_salon_status",
       metadata: { salonId: SALON_ID, isActive: false },
     });
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_status_changed", {
       actorUserId: ACTOR_ID,
       action: "set_salon_status",
       status: "failed",
@@ -106,7 +106,7 @@ describe("updateSalonStatus failures", () => {
       error: "No se pudo actualizar el estado del salon. Detalle: Error desconocido",
     });
     expect(mockedAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
+      "platform.salon_status_changed", expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
     );
   });
 });

@@ -16,7 +16,8 @@ import {
 } from "../data/commercial-plans.repo";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
 import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
-import { auditBilling, normalizeKey } from "./billing-shared";
+import { commercialPlanAudit, normalizeKey } from "./billing-shared";
+import { publishAuditEvent } from "@/features/audit";
 
 // Re-exports: las actions del dashboard y el shell consultan el plan efectivo
 // a traves de este modulo.
@@ -118,7 +119,7 @@ export async function saveCommercialPlanConfig(
       code: normalizeKey(parsed.data.code || parsed.data.name),
       currency: parsed.data.currency.toUpperCase(),
     });
-    const warnings = await auditBilling(actorUserId, "commercial_plan_saved", id);
+    const warnings = await publishAuditEvent("billing.plan_saved", { ...commercialPlanAudit(actorUserId, id), action: "commercial_plan_saved" });
     return ok(id, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el plan."));
@@ -133,11 +134,9 @@ export async function removeCommercialPlanConfig(
   try {
     if (hasAssignments) await archiveCommercialPlan(plan.id);
     else await deleteCommercialPlan(plan.id);
-    const warnings = await auditBilling(
-      actorUserId,
-      hasAssignments ? "commercial_plan_archived" : "commercial_plan_deleted",
-      plan.id
-    );
+    const warnings = hasAssignments
+      ? await publishAuditEvent("billing.plan_archived", { ...commercialPlanAudit(actorUserId, plan.id), action: "commercial_plan_archived" })
+      : await publishAuditEvent("billing.plan_deleted", { ...commercialPlanAudit(actorUserId, plan.id), action: "commercial_plan_deleted" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo eliminar el plan."));
@@ -163,7 +162,7 @@ export async function saveCommercialPlanModulesBatch(
         savePlanModule({ planId: parsed.data.planId, moduleKey, enabled: enabled.has(moduleKey) })
       )
     );
-    const warnings = await auditBilling(actorUserId, "commercial_plan_module_saved", parsed.data.planId);
+    const warnings = await publishAuditEvent("billing.plan_module_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_module_saved" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudieron guardar los modulos del plan."));
@@ -185,7 +184,7 @@ export async function saveCommercialPlanLimitsBatch(
     await Promise.all(
       parsed.data.limits.map((limit) => savePlanLimit({ ...limit, planId: parsed.data.planId }))
     );
-    const warnings = await auditBilling(actorUserId, "commercial_plan_limit_saved", parsed.data.planId);
+    const warnings = await publishAuditEvent("billing.plan_limit_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_limit_saved" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudieron guardar los límites del plan."));

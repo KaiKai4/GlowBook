@@ -13,7 +13,7 @@ import {
   saveSalonPlanOverride,
   updateSalonPlanOverrideStatus,
 } from "../data/salon-subscriptions.repo";
-import { auditBilling } from "./billing-shared";
+import { publishAuditEvent } from "@/features/audit";
 import {
   assignSalonAddonConfig,
   assignSalonCommercialPlanConfig,
@@ -25,8 +25,14 @@ import {
 } from "./salon-subscriptions";
 
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/features/audit", () => ({ publishAuditEvent: vi.fn(async () => []) }));
 vi.mock("./billing-shared", () => ({
-  auditBilling: vi.fn(async () => []),
+  commercialPlanAudit: (actorUserId: string | null | undefined, targetResourceId: string) => ({
+    actorUserId: actorUserId ?? null,
+    status: "succeeded",
+    targetResourceType: "commercial_plan",
+    targetResourceId,
+  }),
   dateOrNull: (value?: string | null) => (value ? value : null),
   normalizeKey: (value: string) => value,
 }));
@@ -78,7 +84,7 @@ describe("alertas del plan", () => {
     const result = await resolveSalonPlanAlertConfig(ALERT, SALON, ACTOR);
 
     expect(result).toEqual({ ok: false, error: "La alerta ya no esta abierta." });
-    expect(auditBilling).not.toHaveBeenCalled();
+    expect(publishAuditEvent).not.toHaveBeenCalled();
   });
 
   it("un fallo interno al resolver usa el mensaje de respaldo y registra el error", async () => {
@@ -97,7 +103,7 @@ describe("alertas del plan", () => {
     const result = await resolveSalonPlanAlertConfig(ALERT, SALON, ACTOR);
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_plan_alert_resolved", SALON);
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_alert_resolved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_alert_resolved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: SALON }));
   });
 });
 
@@ -131,7 +137,7 @@ describe("asignar plan al salon", () => {
     expect(assignSalonPlan).toHaveBeenCalledWith(
       expect.objectContaining({ salonId: SALON, planId: PLAN, status: "active", notes: "alta", endsAt: null })
     );
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_plan_assigned", SALON);
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_assigned", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_assigned", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: SALON }));
   });
 
   it("si la escritura falla devuelve el mensaje de respaldo", async () => {
@@ -229,7 +235,7 @@ describe("extras del salon", () => {
       ok: true,
       value: undefined,
     });
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_plan_extra_assigned", SALON);
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_extra_assigned", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_extra_assigned", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: SALON }));
 
     vi.mocked(saveSalonPlanOverride).mockRejectedValueOnce(new PublicError("Ya tiene ese extra."));
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: ADDON }, ACTOR)).toEqual({
@@ -262,7 +268,7 @@ describe("extras del salon", () => {
     vi.mocked(updateSalonPlanOverrideStatus).mockResolvedValueOnce(undefined as never);
     expect(await cancelSalonExtraConfig(OVERRIDE, SALON, ACTOR)).toEqual({ ok: true, value: undefined });
     expect(updateSalonPlanOverrideStatus).toHaveBeenCalledWith(OVERRIDE, "canceled");
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_plan_extra_canceled", SALON);
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_extra_canceled", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_extra_canceled", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: SALON }));
 
     vi.mocked(updateSalonPlanOverrideStatus).mockRejectedValueOnce(new Error("timeout"));
     expect(await cancelSalonExtraConfig(OVERRIDE, SALON, ACTOR)).toEqual({

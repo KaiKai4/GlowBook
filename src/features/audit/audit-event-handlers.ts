@@ -1,22 +1,24 @@
-import { recordPlatformAudit } from "@/features/platform/data/platform-audit.repo";
-import type { AuditEventHandlerTable, AuditEventPayload } from "./audit-events";
+import { recordAuditLogEntry } from "./data/audit-log.repo";
+import type { AuditEventMap, AuditEventPayload } from "./events";
+import type { DomainEventHandlerTable } from "@/lib/events/domain-events";
 
 // Manejador unico de auditoria: persiste el evento en platform_audit_log.
-// Si la escritura falla, el bus lo convierte en un aviso del caso de uso.
+// Normaliza los opcionales a null/{} aqui, para que los casos de uso no
+// tengan que hacerlo. Si la escritura falla, el bus lo convierte en un aviso.
 async function writeAuditEvent(payload: AuditEventPayload): Promise<void> {
-  await recordPlatformAudit({
-    actorUserId: payload.actorUserId,
+  await recordAuditLogEntry({
+    actorUserId: payload.actorUserId ?? null,
     action: payload.action,
     status: payload.status,
-    targetSalonId: payload.targetSalonId,
-    targetResourceType: payload.targetResourceType,
-    targetResourceId: payload.targetResourceId,
-    metadata: payload.metadata,
-    errorMessage: payload.errorMessage,
+    targetSalonId: payload.targetSalonId ?? null,
+    targetResourceType: payload.targetResourceType ?? null,
+    targetResourceId: payload.targetResourceId ?? null,
+    metadata: payload.metadata ?? {},
+    errorMessage: payload.errorMessage ?? null,
   });
 }
 
-export const AUDIT_EVENT_HANDLERS: AuditEventHandlerTable = {
+export const AUDIT_EVENT_HANDLERS: DomainEventHandlerTable<AuditEventMap> = {
   "platform.salon_invited": writeAuditEvent,
   "platform.salon_invitation_regenerated": writeAuditEvent,
   "platform.salon_status_changed": writeAuditEvent,

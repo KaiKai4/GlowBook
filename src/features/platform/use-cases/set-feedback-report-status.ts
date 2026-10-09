@@ -1,7 +1,7 @@
 import { setFeedbackStatus } from "@/features/platform/data/feedback-moderation.repo";
 import { captureError } from "@/lib/observability";
 import { ok, type Result } from "@/lib/result";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 export interface SetFeedbackReportStatusInput {
   id: string;
@@ -18,7 +18,7 @@ export async function setFeedbackReportStatus({
 
   try {
     await setFeedbackStatus(id, status);
-    const warnings = await recordPlatformAction({
+    const warnings = await publishAuditEvent("platform.feedback_status_changed", {
       actorUserId: actorUserId ?? null,
       action: "set_feedback_status",
       status: "succeeded",
@@ -33,7 +33,7 @@ export async function setFeedbackReportStatus({
       action: "set_feedback_status",
       metadata: { reportId: id, feedbackStatus: status },
     });
-    await recordPlatformAction({
+    await publishAuditEvent("platform.feedback_status_changed", {
       actorUserId: actorUserId ?? null,
       action: "set_feedback_status",
       status: "failed",

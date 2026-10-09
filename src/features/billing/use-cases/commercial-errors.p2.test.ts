@@ -14,7 +14,7 @@ import {
   savePlanModule,
   saveCommercialPlan,
 } from "../data/commercial-plans.repo";
-import { auditBilling } from "./billing-shared";
+import { publishAuditEvent } from "@/features/audit";
 import { removeCommercialAddonConfig, saveCommercialAddonConfig } from "./commercial-addons";
 import {
   removeCommercialPlanConfig,
@@ -25,8 +25,14 @@ import {
 
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 vi.mock("server-only", () => ({}));
+vi.mock("@/features/audit", () => ({ publishAuditEvent: vi.fn(async () => []) }));
 vi.mock("./billing-shared", () => ({
-  auditBilling: vi.fn(async () => []),
+  commercialPlanAudit: (actorUserId: string | null | undefined, targetResourceId: string) => ({
+    actorUserId: actorUserId ?? null,
+    status: "succeeded",
+    targetResourceType: "commercial_plan",
+    targetResourceId,
+  }),
   normalizeKey: (value: string) => value.trim().toLowerCase().replace(/\s+/g, "_"),
 }));
 vi.mock("../data/commercial-addons.repo", () => ({
@@ -88,7 +94,7 @@ describe("commercial addons: validacion y errores publicos", () => {
     expect(saveCommercialAddon).toHaveBeenCalledWith(
       expect.objectContaining({ code: "turbo_cabello", currency: "USD", limitDelta: 10 })
     );
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_addon_saved", "addon-1");
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.addon_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: "addon-1" }));
   });
 
   it("un error de dominio de la base (RAISE seguro) se muestra tal cual", async () => {
@@ -116,12 +122,12 @@ describe("commercial addons: validacion y errores publicos", () => {
     vi.mocked(countAddonAssignments).mockResolvedValueOnce(2);
     expect(await removeCommercialAddonConfig(ADDON_ID, ACTOR)).toEqual({ ok: true, value: undefined });
     expect(archiveCommercialAddon).toHaveBeenCalledWith(ADDON_ID);
-    expect(auditBilling).toHaveBeenLastCalledWith(ACTOR, "commercial_addon_archived", ADDON_ID);
+    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.addon_archived", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_archived", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: ADDON_ID }));
 
     vi.mocked(countAddonAssignments).mockResolvedValueOnce(0);
     expect(await removeCommercialAddonConfig(ADDON_ID, ACTOR)).toEqual({ ok: true, value: undefined });
     expect(deleteCommercialAddon).toHaveBeenCalledWith(ADDON_ID);
-    expect(auditBilling).toHaveBeenLastCalledWith(ACTOR, "commercial_addon_deleted", ADDON_ID);
+    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.addon_deleted", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_deleted", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: ADDON_ID }));
   });
 
   it("si el borrado falla devuelve el mensaje de respaldo de eliminacion", async () => {
@@ -160,7 +166,7 @@ describe("commercial plans: validacion y errores publicos", () => {
     expect(saveCommercialPlan).toHaveBeenCalledWith(
       expect.objectContaining({ code: "plan_pro", currency: "EUR" })
     );
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_plan_saved", "plan-9");
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: "plan-9" }));
   });
 
   it("si la escritura falla devuelve el mensaje de respaldo del plan", async () => {
@@ -175,11 +181,11 @@ describe("commercial plans: validacion y errores publicos", () => {
   it("archiva el plan con asignaciones y lo elimina sin ellas", async () => {
     expect(await removeCommercialPlanConfig(PLAN, true, ACTOR)).toEqual({ ok: true, value: undefined });
     expect(archiveCommercialPlan).toHaveBeenCalledWith(PLAN_ID);
-    expect(auditBilling).toHaveBeenLastCalledWith(ACTOR, "commercial_plan_archived", PLAN_ID);
+    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_archived", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_archived", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
 
     expect(await removeCommercialPlanConfig(PLAN, false, ACTOR)).toEqual({ ok: true, value: undefined });
     expect(deleteCommercialPlan).toHaveBeenCalledWith(PLAN_ID);
-    expect(auditBilling).toHaveBeenLastCalledWith(ACTOR, "commercial_plan_deleted", PLAN_ID);
+    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_deleted", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_deleted", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
   it("un mensaje de dominio (PublicError) del borrado del plan llega al usuario tal cual", async () => {
@@ -214,7 +220,7 @@ describe("commercial plans: modulos y limites en lote", () => {
     expect(result).toEqual({ ok: true, value: undefined });
     expect(savePlanModule).toHaveBeenCalledWith({ planId: PLAN_ID, moduleKey: "inventory", enabled: false });
     expect(savePlanModule).toHaveBeenCalledWith({ planId: PLAN_ID, moduleKey: "retail", enabled: true });
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_plan_module_saved", PLAN_ID);
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_module_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_module_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
   it("si un modulo no se puede guardar devuelve el mensaje de respaldo del lote", async () => {
@@ -248,7 +254,7 @@ describe("commercial plans: modulos y limites en lote", () => {
 
     expect(result).toEqual({ ok: true, value: undefined });
     expect(savePlanLimit).toHaveBeenCalledWith(expect.objectContaining({ metricKey: "appointments", planId: PLAN_ID }));
-    expect(auditBilling).toHaveBeenCalledWith(ACTOR, "commercial_plan_limit_saved", PLAN_ID);
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_limit_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_limit_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
   it("si un limite no se puede guardar devuelve el mensaje de respaldo", async () => {

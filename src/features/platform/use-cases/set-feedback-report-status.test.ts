@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setFeedbackStatus } from "../data/feedback-moderation.repo";
 import { setFeedbackReportStatus } from "./set-feedback-report-status";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 vi.mock("../data/feedback-moderation.repo", () => ({
   setFeedbackStatus: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedSetFeedbackStatus = vi.mocked(setFeedbackStatus);
-const mockedRecordPlatformAction = vi.mocked(recordPlatformAction);
+const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 
 describe("set feedback report status", () => {
@@ -36,7 +36,7 @@ describe("set feedback report status", () => {
       setFeedbackReportStatus({ id: "report-1", status: "resolved", actorUserId })
     ).resolves.toEqual({ ok: true, value: undefined });
     expect(mockedSetFeedbackStatus).toHaveBeenCalledWith("report-1", "resolved");
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.feedback_status_changed", {
       actorUserId,
       action: "set_feedback_status",
       status: "succeeded",
@@ -55,7 +55,7 @@ describe("set feedback report status", () => {
       ok: false,
       error: "No se pudo actualizar el estado del reporte.",
     });
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.feedback_status_changed", {
       actorUserId,
       action: "set_feedback_status",
       status: "failed",

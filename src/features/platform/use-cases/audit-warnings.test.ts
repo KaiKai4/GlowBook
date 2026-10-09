@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { updateSalonStatus } from "./update-salon-status";
 
 // Si la escritura se confirma pero la auditoria falla, el caso de uso sigue
@@ -10,8 +10,8 @@ vi.mock("@/features/platform/data/salons.repo", () => ({
   setSalonActiveStatus: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(),
 }));
 
 vi.mock("@/lib/observability", () => ({
@@ -19,7 +19,7 @@ vi.mock("@/lib/observability", () => ({
 }));
 
 const mockedSetStatus = vi.mocked(setSalonActiveStatus);
-const mockedAudit = vi.mocked(recordPlatformAction);
+const mockedAudit = vi.mocked(publishAuditEvent);
 
 beforeEach(() => {
   vi.resetAllMocks();

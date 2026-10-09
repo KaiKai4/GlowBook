@@ -28,8 +28,8 @@ vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/observability", () => ({
