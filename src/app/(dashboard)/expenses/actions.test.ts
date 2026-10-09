@@ -127,6 +127,27 @@ describe("expenses actions", () => {
   });
 
   describe("createInventoryPurchaseExpenseAction", () => {
+    it("aplica el límite de peticiones antes de validar y no registra la compra", async () => {
+      vi.mocked(assertActionRateLimit).mockResolvedValue(err("Demasiados intentos."));
+
+      expect(await createInventoryPurchaseExpenseAction(null, formDataOf({ ...validPurchase, purchase_date: "" }))).toEqual({
+        ok: false,
+        error: "Demasiados intentos.",
+      });
+      expect(assertActionRateLimit).toHaveBeenCalledWith(fullManager.id, "expenses", { max: 40, windowMs: 60_000 });
+      expect(createInventoryPurchaseExpense).not.toHaveBeenCalled();
+    });
+
+    it("no revalida si el caso de uso de compra falla", async () => {
+      vi.mocked(createInventoryPurchaseExpense).mockResolvedValue(err("Stock no disponible."));
+
+      expect(await createInventoryPurchaseExpenseAction(null, formDataOf(validPurchase))).toEqual({
+        ok: false,
+        error: "Stock no disponible.",
+      });
+      expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
     it("exige además permiso de inventario para registrar compras", async () => {
       vi.mocked(requireActiveProfile).mockResolvedValue(expensesManager);
 

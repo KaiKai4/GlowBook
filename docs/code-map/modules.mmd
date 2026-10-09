@@ -22,15 +22,15 @@ flowchart LR
     features_customers["features/customers (9)"]
     features_dashboard["features/dashboard (7)"]
     features_employees["features/employees (22)"]
-    features_expenses["features/expenses (7)"]
+    features_expenses["features/expenses (9)"]
     features_feedback["features/feedback (4)"]
-    features_inventory["features/inventory (11)"]
+    features_inventory["features/inventory (13)"]
     features_notifications["features/notifications (7)"]
     features_payments["features/payments (2)"]
     features_platform["features/platform (19)"]
     features_reminders["features/reminders (4)"]
     features_reports["features/reports (9)"]
-    features_retail["features/retail (4)"]
+    features_retail["features/retail (5)"]
     features_salon["features/salon (17)"]
     features_salon_features["features/salon-features (2)"]
     features_services["features/services (13)"]
@@ -205,6 +205,7 @@ flowchart LR
   features_employees --> npm__supabase_supabase_js
   features_employees --> npm_server_only
   features_employees --> types
+  features_expenses --> features_billing
   features_expenses --> features_inventory
   features_expenses --> infra
   features_expenses --> infra_supabase
@@ -214,6 +215,7 @@ flowchart LR
   features_feedback --> infra_supabase
   features_feedback --> infra_validation
   features_feedback --> npm_server_only
+  features_inventory --> features_billing
   features_inventory --> infra
   features_inventory --> infra_supabase
   features_inventory --> infra_validation
@@ -248,6 +250,7 @@ flowchart LR
   features_reports --> infra_supabase
   features_reports --> infra_validation
   features_reports --> npm_server_only
+  features_retail --> features_billing
   features_retail --> features_customers
   features_retail --> features_inventory
   features_retail --> features_payments

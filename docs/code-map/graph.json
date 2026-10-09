@@ -88,7 +88,7 @@
     {
       "id": "features/expenses",
       "kind": "internal",
-      "files": 7
+      "files": 9
     },
     {
       "id": "features/feedback",
@@ -98,7 +98,7 @@
     {
       "id": "features/inventory",
       "kind": "internal",
-      "files": 11
+      "files": 13
     },
     {
       "id": "features/notifications",
@@ -128,7 +128,7 @@
     {
       "id": "features/retail",
       "kind": "internal",
-      "files": 4
+      "files": 5
     },
     {
       "id": "features/salon",
@@ -305,7 +305,7 @@
     {
       "from": "app/(dashboard)",
       "to": "app/_composition",
-      "count": 30
+      "count": 31
     },
     {
       "from": "app/(dashboard)",
@@ -340,7 +340,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/billing",
-      "count": 19
+      "count": 16
     },
     {
       "from": "app/(dashboard)",
@@ -360,7 +360,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/expenses",
-      "count": 9
+      "count": 10
     },
     {
       "from": "app/(dashboard)",
@@ -400,7 +400,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/salon",
-      "count": 16
+      "count": 15
     },
     {
       "from": "app/(dashboard)",
@@ -425,17 +425,17 @@
     {
       "from": "app/(dashboard)",
       "to": "infra/security",
-      "count": 11
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
       "to": "infra/validation",
-      "count": 21
+      "count": 18
     },
     {
       "from": "app/(dashboard)",
       "to": "npm/next",
-      "count": 44
+      "count": 42
     },
     {
       "from": "app/(dashboard)",
@@ -959,13 +959,18 @@
     },
     {
       "from": "features/expenses",
-      "to": "features/inventory",
+      "to": "features/billing",
       "count": 1
     },
     {
       "from": "features/expenses",
-      "to": "infra",
+      "to": "features/inventory",
       "count": 2
+    },
+    {
+      "from": "features/expenses",
+      "to": "infra",
+      "count": 3
     },
     {
       "from": "features/expenses",
@@ -1004,8 +1009,13 @@
     },
     {
       "from": "features/inventory",
+      "to": "features/billing",
+      "count": 1
+    },
+    {
+      "from": "features/inventory",
       "to": "infra",
-      "count": 3
+      "count": 4
     },
     {
       "from": "features/inventory",
@@ -1174,6 +1184,11 @@
     },
     {
       "from": "features/retail",
+      "to": "features/billing",
+      "count": 1
+    },
+    {
+      "from": "features/retail",
       "to": "features/customers",
       "count": 1
     },
@@ -1190,12 +1205,12 @@
     {
       "from": "features/retail",
       "to": "features/salon",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/retail",
       "to": "infra",
-      "count": 2
+      "count": 3
     },
     {
       "from": "features/retail",
