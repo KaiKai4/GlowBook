@@ -2,7 +2,7 @@ import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { normalizePaymentMethods } from "@/features/payments/domain/payment-methods";
+import { normalizePaymentMethods } from "@/features/payments";
 import { updateSalonPaymentMethods as updateSalonPaymentMethodsRepo } from "../data/salon.repo";
 import type { SalonPaymentMethodsInput } from "../schemas";
 

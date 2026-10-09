@@ -1,6 +1,6 @@
 import "server-only";
 
-import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from "@/features/feedback/schemas";
+import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from "@/features/feedback";
 import { findFeedbackReports } from "../data/feedback-moderation.repo";
 
 type PlatformFeedbackCategoryVariant = "danger" | "warning" | "info" | "default";

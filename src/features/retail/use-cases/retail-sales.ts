@@ -1,15 +1,9 @@
-import {
-  getActiveCustomerOptions,
-  type CustomerOptionView,
-} from "@/features/customers/use-cases/customer-options";
-import {
-  getRetailInventoryProducts,
-  type RetailInventoryProductView,
-} from "@/features/inventory/use-cases/retail-inventory-products";
+import { getActiveCustomerOptions, type CustomerOptionView } from "@/features/customers";
+import { getRetailInventoryProducts, type RetailInventoryProductView } from "@/features/inventory";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { ok, type Result } from "@/infra/result";
-import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
-import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
+import { getSalonPaymentMethods } from "@/features/salon";
+import type { PaymentMethodOption } from "@/features/payments";
 import type { RetailSaleInput } from "../schemas";
 import { findRecentRetailSales } from "../data/retail.repo";
 import { recordRetailSaleRpc } from "../data/rpc/record-retail-sale";

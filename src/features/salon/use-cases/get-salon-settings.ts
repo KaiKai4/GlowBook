@@ -6,7 +6,7 @@ import {
   paymentMethodOptionsFor,
   type PaymentMethod,
   type PaymentMethodOption,
-} from "@/features/payments/domain/payment-methods";
+} from "@/features/payments";
 
 export interface SalonBusinessDay {
   day_of_week: number;

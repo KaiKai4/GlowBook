@@ -1,6 +1,6 @@
 import { z } from "@/infra/validation/zod";
-import { InventoryLocationSchema } from "@/features/inventory/schemas";
-import { normalizePaymentMethod } from "@/features/payments/domain/payment-methods";
+import { InventoryLocationSchema } from "@/features/inventory";
+import { normalizePaymentMethod } from "@/features/payments";
 
 const PaymentMethodSchema = z
   .string()

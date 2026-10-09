@@ -1,7 +1,7 @@
 import "server-only";
 
-import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
-import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
+import { getAssignableRoleOptions } from "@/features/access";
+import { getCategoryServiceOptions } from "@/features/services";
 import { findEmployeeListRows } from "../data/employees.repo";
 
 type EmployeeCategoryRef = {

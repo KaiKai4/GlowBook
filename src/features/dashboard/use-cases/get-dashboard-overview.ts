@@ -1,7 +1,7 @@
 import "server-only";
 
 import { formatLocalDateISO, getUtcDayBoundaries } from "@/infra/format/dates";
-import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
+import { getSalonIdentity } from "@/features/salon";
 import { findPendingConfirmationRows, type DashboardPendingConfirmationRow } from "../data/dashboard.repo";
 import {
   fetchDashboardMetrics,

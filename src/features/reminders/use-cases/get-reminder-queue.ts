@@ -1,12 +1,9 @@
 import "server-only";
 
-import {
-  getRemindableAppointments,
-  type RemindableAppointment,
-} from "@/features/appointments/use-cases/remindable-appointments";
-import { getActiveEmployeeNameOptions } from "@/features/employees/use-cases/employee-name-options";
-import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
-import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
+import { getRemindableAppointments, type RemindableAppointment } from "@/features/appointments";
+import { getActiveEmployeeNameOptions } from "@/features/employees";
+import { getActiveMessageTemplate } from "@/features/notifications";
+import { getSalonIdentity } from "@/features/salon";
 import { addDaysToDateISO, formatLocalDateISO, utcBounds } from "@/infra/format/dates";
 import { findLatestReminderLogsByAppointmentIds } from "../data/reminder-log.repo";
 import type { ReminderAppointment, ReminderQueueViewModel } from "../view-models";

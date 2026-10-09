@@ -1,5 +1,5 @@
 import { z } from "@/infra/validation/zod";
-import { normalizePaymentMethod } from "@/features/payments/domain/payment-methods";
+import { normalizePaymentMethod } from "@/features/payments";
 
 const PaymentMethodSchema = z
   .string()

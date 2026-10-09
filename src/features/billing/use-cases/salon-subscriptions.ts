@@ -4,8 +4,7 @@ import { err, ok, type Result } from "@/infra/result";
 import { readEffectivePlanOrNull } from "./effective-plan-fallback";
 import { getDisabledSalonFeatures } from "@/features/access";
 import type { ProfileWithRole } from "@/types/app.types";
-import type { SalonFeatureKey } from "@/features/salon-features";
-import { SALON_FEATURES } from "@/features/salon-features";
+import { type SalonFeatureKey, SALON_FEATURES } from "@/features/salon-features";
 import { checkLimitAction, type EffectiveSalonPlan } from "../domain/commercial-plan";
 import {
   buildEffectiveLimits,

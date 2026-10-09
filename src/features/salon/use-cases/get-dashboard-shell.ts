@@ -1,7 +1,6 @@
 import "server-only";
 
-import { getDisabledSalonFeatures, getPermissions } from "@/features/access";
-import type { Permission } from "@/features/access";
+import { getDisabledSalonFeatures, getPermissions, type Permission } from "@/features/access";
 import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "@/features/salon-features";
 import { findDashboardShellSalon } from "../data/salon.repo";

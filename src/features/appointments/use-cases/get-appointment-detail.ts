@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
+import { getSalonIdentity } from "@/features/salon";
 import { findAppointmentById } from "../data/appointments.repo";
 
 type AppointmentStatusVariant =
