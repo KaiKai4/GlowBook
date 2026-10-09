@@ -19,7 +19,7 @@ export async function expectNoSeriousA11yViolations(page: Page): Promise<void> {
     .map((violation) => {
       const targets = violation.nodes
         .slice(0, 5)
-        .map((node) => node.target.join(" "))
+        .map((node) => `${node.target.join(" ")} ${node.html} (${node.failureSummary ?? ""})`)
         .join(" | ");
       return `[${violation.impact}] ${violation.id}: ${violation.help} -> ${targets}`;
     });

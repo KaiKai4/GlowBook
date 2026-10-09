@@ -91,7 +91,7 @@ export function CustomersList({ customers, mode }: { customers: Customer[]; mode
         ) : (
           <Button
             variant="ghost"
-            className="h-auto shrink-0 px-2 py-1 text-xs text-accent hover:underline"
+            className="h-auto shrink-0 px-2 py-1 text-xs text-accent-strong hover:underline"
             onClick={() => setEditing(customer)}
           >
             Editar
