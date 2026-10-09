@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InventoryProductView } from "@/features/inventory/use-cases/inventory-products";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
@@ -34,11 +35,14 @@ function handlers(overrides: { pendingForm?: string | null } = {}) {
   };
 }
 
-function stockBox(container: HTMLElement, label: string): HTMLElement {
-  const heading = Array.from(container.querySelectorAll<HTMLElement>("p")).find((node) => node.textContent === label);
-  const box = heading?.parentElement;
-  if (!box) throw new Error(`Falta la caja de stock ${label}`);
-  return box;
+/** Abre la ficha de edición del producto desde su fila de la tabla. */
+function openEditor(container: HTMLElement): void {
+  clickElement(findButtonByText(container, "Editar producto"));
+}
+
+/** Textos de cada línea de stock de la tabla (una por ubicación). */
+function stockLines(container: HTMLElement): string[] {
+  return Array.from(container.querySelectorAll("li")).map((line) => line.textContent ?? "");
 }
 
 describe("InventoryProductList (comportamiento)", () => {
@@ -84,13 +88,11 @@ describe("InventoryProductList (comportamiento)", () => {
     );
 
     expect(mounted.container.textContent).not.toContain("Venta");
-    // El formulario de edición sí lista todos los stocks; lo que debe faltar es la caja de vitrina.
-    const stockHeadings = Array.from(mounted.container.querySelectorAll("p")).map((node) => node.textContent);
-    expect(stockHeadings).not.toContain("Vitrina");
-    expect(mounted.container.textContent).toContain("Uso interno");
+    expect(stockLines(mounted.container).some((line) => line.startsWith("Vitrina"))).toBe(false);
+    expect(stockLines(mounted.container).some((line) => line.startsWith("Uso interno"))).toBe(true);
   });
 
-  it("marca en rojo el stock agotado y en ámbar el que llegó al mínimo", () => {
+  it("marca el stock agotado y el que llegó al mínimo con su texto de estado", () => {
     mounted = mountComponent(
       <InventoryProductList
         products={[
@@ -104,18 +106,27 @@ describe("InventoryProductList (comportamiento)", () => {
       />
     );
 
-    expect(stockBox(mounted.container, "Uso interno").querySelector("p.text-xl")?.className).toContain("text-danger");
-    expect(stockBox(mounted.container, "Bodega").querySelector("p.text-xl")?.className).toContain("text-warning-fg");
-    const retailValue = stockBox(mounted.container, "Vitrina").querySelector("p.text-xl")?.className ?? "";
-    expect(retailValue).toContain("text-fg");
-    expect(retailValue).not.toContain("text-danger");
-    expect(retailValue).not.toContain("text-warning-fg");
-    expect(stockBox(mounted.container, "Bodega").textContent).toContain("Min. 2");
+    const lines = stockLines(mounted.container);
+    expect(lines.find((line) => line.startsWith("Uso interno"))).toContain("Agotado");
+    expect(lines.find((line) => line.startsWith("Bodega"))).toContain("Stock bajo");
+    expect(lines.find((line) => line.startsWith("Bodega"))).toContain("Min. 2");
+    expect(lines.find((line) => line.startsWith("Vitrina"))).not.toMatch(/Agotado|Stock bajo/);
+  });
+
+  it("abre la ficha de edición con el nombre del producto y sin formulario hasta pulsar Editar", () => {
+    mounted = mountComponent(<InventoryProductList products={[product({ id: "prod-9" })]} {...handlers()} />);
+
+    expect(mounted.container.querySelector("form")).toBeNull();
+    openEditor(mounted.container);
+
+    expect(document.body.querySelector('[role="dialog"]')?.textContent).toContain("Shampoo");
+    expect(requireElement<HTMLFormElement>(mounted.container, "form")).toBeInstanceOf(HTMLFormElement);
   });
 
   it("el formulario de edición entrega el id del producto y los campos al guardar", async () => {
     const props = handlers();
     mounted = mountComponent(<InventoryProductList products={[product({ id: "prod-9" })]} {...props} />);
+    openEditor(mounted.container);
 
     await submitFormAsync(requireElement<HTMLFormElement>(mounted.container, "form"));
 
@@ -131,23 +142,39 @@ describe("InventoryProductList (comportamiento)", () => {
     mounted = mountComponent(
       <InventoryProductList products={[product({ id: "prod-9" })]} {...handlers({ pendingForm: "edit:prod-9" })} />
     );
+    openEditor(mounted.container);
 
     const save = findButtonByText(mounted.container, "Guardar producto");
     expect(save.disabled).toBe(true);
     expect(save.querySelector("svg.animate-spin")).not.toBeNull();
   });
 
-  it("no muestra carga en otros productos aunque haya un guardado en curso", () => {
+  it("no muestra carga en la ficha de otro producto aunque haya un guardado en curso", () => {
     mounted = mountComponent(
       <InventoryProductList products={[product({ id: "prod-9" })]} {...handlers({ pendingForm: "edit:otro" })} />
     );
+    openEditor(mounted.container);
 
     expect(findButtonByText(mounted.container, "Guardar producto").disabled).toBe(false);
+  });
+
+  it("Escape cierra la ficha de edición sin guardar nada", () => {
+    const props = handlers();
+    mounted = mountComponent(<InventoryProductList products={[product({ id: "prod-9" })]} {...props} />);
+    openEditor(mounted.container);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+
+    expect(mounted.container.querySelector('[role="dialog"]')).toBeNull();
+    expect(props.onSave).not.toHaveBeenCalled();
   });
 
   it("eliminar exige confirmación: Cancelar vuelve atrás sin borrar", () => {
     const props = handlers();
     mounted = mountComponent(<InventoryProductList products={[product({ id: "prod-9" })]} {...props} />);
+    openEditor(mounted.container);
 
     clickElement(findButtonByText(mounted.container, "Eliminar producto"));
     expect(mounted.container.textContent).toContain("Se ocultara de Inventario y Vitrina");
@@ -161,18 +188,20 @@ describe("InventoryProductList (comportamiento)", () => {
   it("confirmar eliminar llama a onDelete con el id del producto", () => {
     const props = handlers();
     mounted = mountComponent(<InventoryProductList products={[product({ id: "prod-9" })]} {...props} />);
+    openEditor(mounted.container);
 
     clickElement(findButtonByText(mounted.container, "Eliminar producto"));
     clickElement(findButtonByText(mounted.container, "Confirmar eliminar"));
 
     expect(props.onDelete).toHaveBeenCalledWith("prod-9");
-    expect(mounted.container.textContent).toContain("Eliminar producto");
+    expect(findButtonByText(mounted.container, "Eliminar producto")).toBeInstanceOf(HTMLButtonElement);
   });
 
   it("con eliminación en curso el botón de confirmar muestra la carga", () => {
     mounted = mountComponent(
       <InventoryProductList products={[product({ id: "prod-9" })]} {...handlers({ pendingForm: "delete:prod-9" })} />
     );
+    openEditor(mounted.container);
 
     clickElement(findButtonByText(mounted.container, "Eliminar producto"));
 
