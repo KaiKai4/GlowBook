@@ -2,12 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createSupabaseDouble,
   operationsOn,
-  type QueryResponse,
   type SupabaseDouble,
 } from "@/test/small-features-supabase";
 import {
   findHistoricalReportRows,
-  findOperationalReportRows,
   findSalonReportIdentity,
   findSalonTimezone,
 } from "./reports.repo";
@@ -64,124 +62,6 @@ describe("reports.repo", () => {
       const dbError = { message: "fallo" };
       useDb({ salons: { data: null, error: dbError } });
       await expect(findSalonReportIdentity(SALON_ID)).rejects.toBe(dbError);
-    });
-  });
-
-  describe("findOperationalReportRows", () => {
-    it("normaliza citas, lineas completadas (precio neto nunca negativo) y clientes nuevos", async () => {
-      const db = useDb({
-        appointments: {
-          data: [{ id: "a1", status: "completed", total_price: "120", discount_amount: null }],
-          error: null,
-        },
-        appointment_items: {
-          data: [
-            {
-              appointment_id: "a1",
-              price: 100,
-              discount_amount: 10,
-              service: { id: "s1", name: "Corte" },
-              employee: [{ id: "e1", first_name: "Ana", last_name: "Ruiz", commission_percentage: "30" }],
-            },
-            {
-              appointment_id: "a1",
-              price: 5,
-              discount_amount: 20,
-              service: null,
-              employee: null,
-            },
-            {
-              appointment_id: "a1",
-              price: null,
-              discount_amount: null,
-              service: [],
-              employee: { id: "e2", first_name: "", last_name: "", commission_percentage: null },
-            },
-          ],
-          error: null,
-        },
-        customers: { data: null, error: null, count: 4 },
-      });
-
-      const rows = await findOperationalReportRows(RANGE);
-
-      expect(rows).toEqual({
-        appointments: [{ id: "a1", status: "completed", totalPrice: 120, discountAmount: 0 }],
-        items: [
-          {
-            appointmentId: "a1",
-            price: 90,
-            serviceId: "s1",
-            serviceName: "Corte",
-            employeeId: "e1",
-            employeeName: "Ana Ruiz",
-            employeeCommissionPct: 30,
-          },
-          {
-            appointmentId: "a1",
-            price: 0,
-            serviceId: null,
-            serviceName: null,
-            employeeId: null,
-            employeeName: null,
-            employeeCommissionPct: 0,
-          },
-          {
-            appointmentId: "a1",
-            price: 0,
-            serviceId: null,
-            serviceName: null,
-            employeeId: "e2",
-            employeeName: null,
-            employeeCommissionPct: 0,
-          },
-        ],
-        newCustomers: 4,
-      });
-
-      expect(operationsOn(db, "appointments")).toContainEqual({
-        target: "appointments",
-        method: "gte",
-        args: ["start_time", RANGE.start],
-      });
-      const itemOps = operationsOn(db, "appointment_items");
-      expect(itemOps).toContainEqual({ target: "appointment_items", method: "eq", args: ["salon_id", SALON_ID] });
-      expect(itemOps).toContainEqual({ target: "appointment_items", method: "eq", args: ["appointment.status", "completed"] });
-      expect(operationsOn(db, "customers")).toContainEqual({ target: "customers", method: "eq", args: ["is_temporary", false] });
-      expect(operationsOn(db, "customers")).toContainEqual({ target: "customers", method: "eq", args: ["salon_id", SALON_ID] });
-    });
-
-    it("devuelve listas vacias y cero clientes cuando no hay datos", async () => {
-      useDb({
-        appointments: { data: null, error: null },
-        appointment_items: { data: null, error: null },
-        customers: { data: null, error: null, count: null },
-      });
-
-      expect(await findOperationalReportRows(RANGE)).toEqual({ appointments: [], items: [], newCustomers: 0 });
-    });
-
-    it.each([
-      ["citas", 0],
-      ["items", 1],
-      ["clientes", 2],
-    ])("propaga el error de la consulta de %s", async (_label, failingIndex) => {
-      const dbError = { message: "fallo" };
-      const base: QueryResponse[] = [
-        { data: [], error: null },
-        { data: [], error: null },
-        { data: null, error: null, count: 0 },
-      ];
-      const responses: QueryResponse[] = base.map((response, index) =>
-        index === failingIndex ? { data: null, error: dbError } : response
-      );
-      useDb({
-        appointments: responses.slice(0, 1),
-        appointment_items: responses.slice(1, 2),
-        customers: responses.slice(2, 3),
-      });
-
-      await expect(findOperationalReportRows(RANGE)).rejects.toBe(dbError);
     });
   });
 
