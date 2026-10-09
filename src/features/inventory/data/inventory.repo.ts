@@ -220,25 +220,6 @@ export async function insertInventoryMovement(
   if (error) throw error;
 }
 
-export async function sumInventoryPurchasesTotal(
-  salonId: string,
-  fromDate: string,
-  toDate: string
-): Promise<number> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("inventory_purchases")
-    .select("total_cost")
-    .eq("salon_id", salonId)
-    .gte("purchase_date", fromDate)
-    .lte("purchase_date", toDate);
-
-  if (error) throw error;
-  return ((data ?? []) as Array<{ total_cost: number | string }>).reduce((sum: number, row) => {
-    return sum + Number(row.total_cost ?? 0);
-  }, 0);
-}
-
 export async function findInventoryPurchaseHistory(
   salonId: string,
   limit = 80

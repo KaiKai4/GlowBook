@@ -117,22 +117,3 @@ export async function findLifetimeExpenseTotals(
     total: manual + inventoryPurchases,
   };
 }
-
-export async function sumExpensesTotal(
-  salonId: string,
-  fromDate: string,
-  toDate: string
-): Promise<number> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("expenses")
-    .select("amount")
-    .eq("salon_id", salonId)
-    .gte("expense_date", fromDate)
-    .lte("expense_date", toDate);
-
-  if (error) throw error;
-  return ((data ?? []) as Array<{ amount: number | string }>).reduce((sum: number, row) => {
-    return sum + Number(row.amount ?? 0);
-  }, 0);
-}

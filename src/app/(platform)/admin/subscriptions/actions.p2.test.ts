@@ -235,6 +235,18 @@ describe("registerPaymentAction", () => {
     const state = await registerPaymentAction(PLATFORM_PLAN_IDLE_STATE, new FormData());
     expect(state).toEqual({ ok: false, message: "Monto inválido." });
   });
+
+  it("devuelve los avisos del pago guardado cuando un efecto posterior falló", async () => {
+    vi.mocked(registerSalonPlanPaymentConfig).mockResolvedValueOnce(
+      ok(undefined, ["La auditoria no se registro."]) as never
+    );
+    const state = await registerPaymentAction(PLATFORM_PLAN_IDLE_STATE, formDataOf({ amount: "30" }));
+    expect(state).toMatchObject({
+      ok: true,
+      message: "Pago registrado. La suscripcion quedo activa con su mes de uso.",
+      warnings: ["La auditoria no se registro."],
+    });
+  });
 });
 
 describe("resolveAlertAction", () => {

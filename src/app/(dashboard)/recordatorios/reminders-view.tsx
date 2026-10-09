@@ -13,11 +13,8 @@ import { cn } from "@/lib/utils/cn";
 import { Select } from "@/components/ui/select";
 import { formatTimeTz } from "@/lib/utils/dates";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
-import type {
-  ReminderAppointment,
-  ReminderEmployee,
-} from "@/features/reminders/view-models";
-import { confirmReminderAppointmentAction, markReminderSentAction } from "./actions";
+import type { ReminderAppointment, ReminderEmployee } from "@/features/reminders/view-models";
+import { useReminderSubmissions } from "./use-reminder-submissions";
 
 type Period = "pendientes_hoy" | "manana" | "48h" | "7dias";
 
@@ -132,6 +129,7 @@ export function RemindersView({
   const [manualStatus, setManualStatus] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [manualSentAt, setManualSentAt] = useState<Record<string, string>>({});
+  const { markSent, confirm } = useReminderSubmissions();
 
   const today = todayStr(tz);
   const tomorrow = tomorrowStr(tz);
@@ -203,7 +201,7 @@ export function RemindersView({
     setSendingId(appt.id);
 
     startTransition(async () => {
-      const result = await markReminderSentAction(appt.id, templateId);
+      const result = await markSent(appt.id, templateId);
       setSendingId(null);
 
       if (!result.ok) {
@@ -221,7 +219,7 @@ export function RemindersView({
     setConfirmingId(appt.id);
 
     startTransition(async () => {
-      const result = await confirmReminderAppointmentAction(appt.id);
+      const result = await confirm(appt.id);
       setConfirmingId(null);
 
       if (!result.ok) {

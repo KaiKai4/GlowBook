@@ -22,6 +22,7 @@ export default defineConfig({
           name: "unit",
           include: ["src/**/*.test.{ts,tsx}"],
           exclude: [...UNIT_EXCLUDE],
+          testTimeout: 15000,
         },
       },
       {

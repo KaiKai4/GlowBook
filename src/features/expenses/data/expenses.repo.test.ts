@@ -8,7 +8,6 @@ import {
   findExpenses,
   findLifetimeExpenseTotals,
   insertExpense,
-  sumExpensesTotal,
 } from "./expenses.repo";
 
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
@@ -224,26 +223,4 @@ describe("expenses.repo", () => {
     });
   });
 
-  describe("sumExpensesTotal", () => {
-    it("suma los importes del rango de fechas del salon", async () => {
-      const db = useDb({ expenses: { data: [{ amount: 10 }, { amount: "2.5" }, { amount: null }], error: null } });
-
-      expect(await sumExpensesTotal(SALON_ID, "2026-06-01", "2026-06-30")).toBe(12.5);
-      expect(operationsOn(db, "expenses")).toEqual([
-        { target: "expenses", method: "select", args: ["amount"] },
-        { target: "expenses", method: "eq", args: ["salon_id", SALON_ID] },
-        { target: "expenses", method: "gte", args: ["expense_date", "2026-06-01"] },
-        { target: "expenses", method: "lte", args: ["expense_date", "2026-06-30"] },
-      ]);
-    });
-
-    it("devuelve cero sin filas y propaga errores", async () => {
-      useDb({ expenses: { data: null, error: null } });
-      expect(await sumExpensesTotal(SALON_ID, "2026-06-01", "2026-06-30")).toBe(0);
-
-      const dbError = { message: "fallo" };
-      useDb({ expenses: { data: null, error: dbError } });
-      await expect(sumExpensesTotal(SALON_ID, "2026-06-01", "2026-06-30")).rejects.toBe(dbError);
-    });
-  });
 });

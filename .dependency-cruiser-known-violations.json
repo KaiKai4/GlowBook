@@ -502,57 +502,6 @@
   },
   {
     "type": "dependency",
-    "from": "src/features/finance/use-cases/operational-money.ts",
-    "to": "src/features/expenses/use-cases/manual-expense-total.ts",
-    "unresolvedTo": "@/features/expenses/use-cases/manual-expense-total",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/finance/use-cases/operational-money.ts",
-    "to": "src/features/inventory/use-cases/inventory-purchase-total.ts",
-    "unresolvedTo": "@/features/inventory/use-cases/inventory-purchase-total",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/finance/use-cases/operational-money.ts",
-    "to": "src/features/retail/use-cases/retail-revenue.ts",
-    "unresolvedTo": "@/features/retail/use-cases/retail-revenue",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "src/features/platform/data/salon-overviews.repo.ts",
     "to": "src/features/salon/domain/salon-features.ts",
     "unresolvedTo": "@/features/salon/domain/salon-features",
@@ -714,58 +663,6 @@
       "aliased-tsconfig",
       "aliased-tsconfig-paths",
       "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/reports/use-cases/get-operational-report.ts",
-    "to": "src/features/finance/domain/operational-money.ts",
-    "unresolvedTo": "@/features/finance/domain/operational-money",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/reports/use-cases/get-operational-report.ts",
-    "to": "src/features/finance/use-cases/operational-money.ts",
-    "unresolvedTo": "@/features/finance/use-cases/operational-money",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/retail/data/retail.repo.ts",
-    "to": "src/features/inventory/domain/stock.ts",
-    "unresolvedTo": "@/features/inventory/domain/stock",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
       "import"
     ],
     "rule": {
@@ -1104,38 +1001,6 @@
         "dependencyTypes": [
           "local",
           "type-only",
-          "import"
-        ]
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "src/features/reports/domain/commissions.ts",
-    "to": "src/features/reports/domain/metrics.ts",
-    "unresolvedTo": "./metrics",
-    "dependencyTypes": [
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "no-circular"
-    },
-    "cycle": [
-      {
-        "name": "src/features/reports/domain/metrics.ts",
-        "dependencyTypes": [
-          "local",
-          "type-only",
-          "import"
-        ]
-      },
-      {
-        "name": "src/features/reports/domain/commissions.ts",
-        "dependencyTypes": [
-          "local",
           "import"
         ]
       }

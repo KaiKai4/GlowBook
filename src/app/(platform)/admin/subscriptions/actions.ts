@@ -109,7 +109,8 @@ export async function registerPaymentAction(
   }, actorUserId);
 
   if (!result.ok) return { ok: false, message: result.error };
-  return done("Pago registrado. La suscripcion quedo activa con su mes de uso.");
+  const state = done("Pago registrado. La suscripcion quedo activa con su mes de uso.");
+  return result.warnings && result.warnings.length > 0 ? { ...state, warnings: result.warnings } : state;
 }
 
 export async function resolveAlertAction(alertId: string, salonId: string): Promise<void> {

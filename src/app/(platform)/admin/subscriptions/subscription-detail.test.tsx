@@ -7,6 +7,12 @@ import { changeFieldValue, clickElement, flushAsync, getButtonByText, getFieldBy
 import { CATALOG_MODULES, makeAddon, makeDetail, makeLimit, makeMetric, makePlan } from "@/test/ui-admin-fixtures";
 import { SubscriptionDetail } from "./subscription-detail";
 import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
+import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
+
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }));
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 
 vi.mock("./actions", () => ({
   assignPlanAction: vi.fn(),
@@ -233,6 +239,31 @@ describe("SubscriptionDetail", () => {
     expect(mounted.container.textContent).toContain("USD 30.00");
     expect(mounted.container.textContent).toContain("Yappy");
     expect(mounted.container.textContent).toContain("Periodo vigente:");
+  });
+
+  it("avisa con el toast de advertencia cuando el pago se guardó pero un efecto posterior falló", async () => {
+    vi.mocked(registerPaymentAction).mockResolvedValueOnce({
+      ok: true,
+      message: "Pago registrado. La suscripcion quedo activa con su mes de uso.",
+      warnings: ["La auditoria no se registro."],
+    });
+    mounted = renderDetail();
+
+    clickElement(getButtonByText(mounted.container, "Registrar pago"));
+    await settleSubmission();
+
+    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
+  });
+
+  it("no muestra advertencias cuando el pago se registra sin incidencias", async () => {
+    toast.warning.mockClear();
+    vi.mocked(registerPaymentAction).mockResolvedValueOnce({ ok: true, message: "Pago registrado" });
+    mounted = renderDetail();
+
+    clickElement(getButtonByText(mounted.container, "Registrar pago"));
+    await settleSubmission();
+
+    expect(toast.warning).not.toHaveBeenCalled();
   });
 
   it("envía el pago con el monto editado a la acción de registro", async () => {

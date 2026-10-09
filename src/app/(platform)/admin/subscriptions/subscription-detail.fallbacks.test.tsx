@@ -4,6 +4,10 @@ import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { CATALOG_MODULES, makeAddon, makeDetail, makeMetric, makePlan } from "@/test/ui-admin-fixtures";
 import { SubscriptionDetail } from "./subscription-detail";
 
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }),
+}));
+
 vi.mock("./actions", () => ({
   assignPlanAction: vi.fn(),
   registerPaymentAction: vi.fn(),

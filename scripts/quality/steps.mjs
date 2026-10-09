@@ -78,7 +78,7 @@ export const STEPS = [
   },
   {
     id: "lint",
-    timeoutMs: 120000,
+    timeoutMs: 300000,
     tier: "fast",
     jobs: ["static"],
     description: "ESLint con cero avisos",

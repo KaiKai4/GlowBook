@@ -1,16 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/lib/observability";
 import { getAppointmentReminderTarget } from "@/features/appointments/use-cases/appointment-reminder-target";
-import { createManualReminderLog } from "../data/reminder-log.repo";
+import {
+  createManualReminderLog,
+  findManualReminderSentAt,
+  ReminderLogDuplicateError,
+} from "../data/reminder-log.repo";
 import { recordManualReminder } from "./record-manual-reminder";
 
 vi.mock("@/features/appointments/use-cases/appointment-reminder-target", () => ({
   getAppointmentReminderTarget: vi.fn(),
 }));
 
-vi.mock("../data/reminder-log.repo", () => ({
-  createManualReminderLog: vi.fn(),
-}));
+vi.mock("../data/reminder-log.repo", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../data/reminder-log.repo")>();
+  return {
+    ReminderLogDuplicateError: actual.ReminderLogDuplicateError,
+    createManualReminderLog: vi.fn(),
+    findManualReminderSentAt: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/observability", () => ({
   captureError: vi.fn(),
@@ -18,13 +27,16 @@ vi.mock("@/lib/observability", () => ({
 
 const mockedGetTarget = vi.mocked(getAppointmentReminderTarget);
 const mockedCreateLog = vi.mocked(createManualReminderLog);
+const mockedFindExisting = vi.mocked(findManualReminderSentAt);
 const mockedCaptureError = vi.mocked(captureError);
 
+const KEY = "5f1c2a3e-8b7d-4c6e-9a0b-1d2e3f4a5b6c";
 const input = {
   salonId: "salon-1",
   appointmentId: "appt-1",
   templateId: "template-1",
   userId: "user-1",
+  idempotencyKey: KEY,
 };
 
 describe("recordManualReminder", () => {
@@ -32,7 +44,7 @@ describe("recordManualReminder", () => {
     vi.clearAllMocks();
   });
 
-  it("registra el recordatorio con el telefono de la cita y devuelve la fecha de envio", async () => {
+  it("registra el recordatorio con el telefono de la cita, la clave y devuelve la fecha de envio", async () => {
     mockedGetTarget.mockResolvedValue({ salonId: "salon-1", customerPhone: "61234567" });
     mockedCreateLog.mockResolvedValue("2026-06-12T10:00:00.000Z");
 
@@ -47,6 +59,7 @@ describe("recordManualReminder", () => {
       templateId: "template-1",
       recipientPhone: "61234567",
       userId: "user-1",
+      idempotencyKey: KEY,
     });
   });
 
@@ -54,11 +67,32 @@ describe("recordManualReminder", () => {
     mockedGetTarget.mockResolvedValue({ salonId: "salon-1" });
     mockedCreateLog.mockResolvedValue("2026-06-12T10:00:00.000Z");
 
-    await recordManualReminder({ salonId: "salon-1", appointmentId: "appt-1", userId: "user-1" });
+    await recordManualReminder({ salonId: "salon-1", appointmentId: "appt-1", userId: "user-1", idempotencyKey: KEY });
 
     expect(mockedCreateLog).toHaveBeenCalledWith(
-      expect.objectContaining({ recipientPhone: undefined, templateId: undefined })
+      expect.objectContaining({ recipientPhone: undefined, templateId: undefined, idempotencyKey: KEY })
     );
+  });
+
+  it("un doble envío con la misma clave devuelve el registro existente sin duplicarlo", async () => {
+    mockedGetTarget.mockResolvedValue({ salonId: "salon-1", customerPhone: "61234567" });
+    mockedCreateLog.mockRejectedValue(new ReminderLogDuplicateError());
+    mockedFindExisting.mockResolvedValue("2026-06-12T09:59:00.000Z");
+
+    expect(await recordManualReminder(input)).toEqual({ ok: true, value: "2026-06-12T09:59:00.000Z" });
+    expect(mockedFindExisting).toHaveBeenCalledWith({ salonId: "salon-1", appointmentId: "appt-1", idempotencyKey: KEY });
+    expect(mockedCaptureError).not.toHaveBeenCalled();
+  });
+
+  it("si la clave duplicada no encuentra registro devuelve error generico", async () => {
+    mockedGetTarget.mockResolvedValue({ salonId: "salon-1", customerPhone: "61234567" });
+    mockedCreateLog.mockRejectedValue(new ReminderLogDuplicateError());
+    mockedFindExisting.mockResolvedValue(null);
+
+    expect(await recordManualReminder(input)).toEqual({
+      ok: false,
+      error: "No se pudo marcar el recordatorio como enviado.",
+    });
   });
 
   it("no encuentra la cita si no existe", async () => {

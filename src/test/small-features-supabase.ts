@@ -9,7 +9,7 @@ interface QueryError {
   code?: string;
 }
 
-export interface QueryResponse {
+interface QueryResponse {
   data?: unknown;
   error?: QueryError | null;
   count?: number | null;

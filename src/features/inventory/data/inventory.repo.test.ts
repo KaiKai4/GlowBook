@@ -12,7 +12,6 @@ import {
   insertInventoryProduct,
   insertStockLocations,
   softDeleteInventoryProduct,
-  sumInventoryPurchasesTotal,
   updateInventoryProduct,
   updateStockMinimums,
 } from "./inventory.repo";
@@ -318,29 +317,6 @@ describe("inventory.repo", () => {
           quantity_after: 1,
         })
       ).rejects.toBe(dbError);
-    });
-  });
-
-  describe("sumInventoryPurchasesTotal", () => {
-    it("suma el costo total de las compras del rango con filtro de salon", async () => {
-      const db = useDb({ inventory_purchases: { data: [{ total_cost: 10 }, { total_cost: "7.5" }, { total_cost: null }], error: null } });
-
-      expect(await sumInventoryPurchasesTotal(SALON_ID, "2026-06-01", "2026-06-30")).toBe(17.5);
-      expect(operationsOn(db, "inventory_purchases")).toEqual([
-        { target: "inventory_purchases", method: "select", args: ["total_cost"] },
-        { target: "inventory_purchases", method: "eq", args: ["salon_id", SALON_ID] },
-        { target: "inventory_purchases", method: "gte", args: ["purchase_date", "2026-06-01"] },
-        { target: "inventory_purchases", method: "lte", args: ["purchase_date", "2026-06-30"] },
-      ]);
-    });
-
-    it("devuelve cero sin filas y propaga errores", async () => {
-      useDb({ inventory_purchases: { data: null, error: null } });
-      expect(await sumInventoryPurchasesTotal(SALON_ID, "2026-06-01", "2026-06-30")).toBe(0);
-
-      const dbError = { message: "fallo" };
-      useDb({ inventory_purchases: { data: null, error: dbError } });
-      await expect(sumInventoryPurchasesTotal(SALON_ID, "2026-06-01", "2026-06-30")).rejects.toBe(dbError);
     });
   });
 

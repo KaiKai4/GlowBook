@@ -24,6 +24,10 @@ vi.mock("next/link", async () => {
       React.createElement("a", { href, className }, children),
   };
 });
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }),
+}));
+
 vi.mock("./actions", () => ({
   resolveAlertAction: vi.fn(),
   assignPlanAction: vi.fn(),

@@ -36,7 +36,7 @@ describe("EditEmployeeModal envío con intención idempotente", () => {
   it("envía idempotency_key y la mantiene al reintentar tras un error", async () => {
     vi.mocked(updateEmployeeAction)
       .mockResolvedValueOnce({ ok: false, error: "El email ya está en uso" })
-      .mockResolvedValueOnce({ ok: true, value: undefined });
+      .mockResolvedValueOnce({ ok: true, value: {} });
     mounted = renderModal();
     openModal(mounted.container);
 
@@ -75,7 +75,7 @@ describe("EditEmployeeModal envío con intención idempotente", () => {
     expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
 
     await act(async () => {
-      release({ ok: true, value: undefined });
+      release({ ok: true, value: {} });
     });
     await settleSubmission();
     expect(document.body.querySelector('[role="dialog"]')).toBeNull();
@@ -84,9 +84,9 @@ describe("EditEmployeeModal envío con intención idempotente", () => {
   it("avisa cuando los datos se guardaron pero un efecto posterior falló", async () => {
     vi.mocked(updateEmployeeAction).mockResolvedValueOnce({
       ok: true,
-      value: undefined,
+      value: {},
       warnings: ["Los servicios no se actualizaron."],
-    } as Awaited<ReturnType<typeof updateEmployeeAction>>);
+    });
     mounted = renderModal();
     openModal(mounted.container);
 

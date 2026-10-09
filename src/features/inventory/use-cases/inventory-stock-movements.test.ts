@@ -1,14 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { sumInventoryPurchasesTotal } from "../data/inventory.repo";
 import { recordInventoryPurchaseRpc } from "../data/rpc/record-inventory-purchase";
 import { recordInventoryTransferRpc } from "../data/rpc/record-inventory-transfer";
 import type { InventoryPurchaseInput, InventoryTransferInput } from "../schemas";
-import { getInventoryPurchaseTotal } from "./inventory-purchase-total";
 import { recordInventoryPurchase, transferInventoryStock } from "./inventory-movements";
-
-vi.mock("../data/inventory.repo", () => ({
-  sumInventoryPurchasesTotal: vi.fn(),
-}));
 
 vi.mock("../data/rpc/record-inventory-purchase", () => ({
   recordInventoryPurchaseRpc: vi.fn(),
@@ -19,7 +13,6 @@ vi.mock("../data/rpc/record-inventory-transfer", () => ({
 }));
 
 const mockedRecordPurchase = vi.mocked(recordInventoryPurchaseRpc);
-const mockedSumPurchases = vi.mocked(sumInventoryPurchasesTotal);
 const mockedTransfer = vi.mocked(recordInventoryTransferRpc);
 
 const SALON_ID = "salon-1";
@@ -112,12 +105,4 @@ describe("movimientos de inventario", () => {
     });
   });
 
-  describe("getInventoryPurchaseTotal", () => {
-    it("delega el total de compras del rango al repositorio del salon", async () => {
-      mockedSumPurchases.mockResolvedValue(123.5);
-
-      expect(await getInventoryPurchaseTotal(SALON_ID, "2026-06-01", "2026-06-30")).toBe(123.5);
-      expect(mockedSumPurchases).toHaveBeenCalledWith(SALON_ID, "2026-06-01", "2026-06-30");
-    });
-  });
 });

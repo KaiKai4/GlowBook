@@ -11,6 +11,14 @@ export interface ReminderLogSummary {
   channel: string;
 }
 
+/** La clave de idempotencia ya registró un recordatorio (índice único parcial, SQLSTATE 23505). */
+export class ReminderLogDuplicateError extends Error {
+  constructor() {
+    super("El recordatorio ya estaba registrado.");
+    this.name = "ReminderLogDuplicateError";
+  }
+}
+
 export async function findLatestReminderLogsByAppointmentIds(
   salonId: string,
   appointmentIds: string[]
@@ -43,6 +51,7 @@ export async function createManualReminderLog(input: {
   templateId?: string;
   recipientPhone?: string;
   userId: string;
+  idempotencyKey: string;
 }): Promise<string> {
   const supabase = await createSupabaseServerClient();
   const payload: ReminderLogInsert = {
@@ -52,6 +61,7 @@ export async function createManualReminderLog(input: {
     channel: "whatsapp",
     recipient_phone: input.recipientPhone || null,
     created_by: input.userId,
+    idempotency_key: input.idempotencyKey,
   };
 
   const { data, error } = await supabase
@@ -60,6 +70,28 @@ export async function createManualReminderLog(input: {
     .select("sent_at")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505") throw new ReminderLogDuplicateError();
+    throw error;
+  }
   return data.sent_at;
+}
+
+/** Fecha de envío del registro creado con esa clave para esa cita (null si no existe). */
+export async function findManualReminderSentAt(input: {
+  salonId: string;
+  appointmentId: string;
+  idempotencyKey: string;
+}): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("appointment_reminder_log")
+    .select("sent_at")
+    .eq("salon_id", input.salonId)
+    .eq("appointment_id", input.appointmentId)
+    .eq("idempotency_key", input.idempotencyKey)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.sent_at ?? null;
 }
