@@ -2,14 +2,13 @@
 
 import { Suspense, useState, useTransition } from "react";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { rememberSessionInBrowser } from "@/lib/supabase/session-persistence";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AlertCircle, CheckCircle } from "lucide-react";
+import { signInAction } from "./actions";
 
 const EMAIL_EXAMPLE = "ana@salonluna.com";
 
@@ -29,9 +28,9 @@ function JoinedBanner() {
   if (!message) return null;
 
   return (
-    <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-      <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
-      <p className="text-sm text-emerald-700">{message}</p>
+    <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-success-border-subtle bg-success-subtle px-4 py-3">
+      <CheckCircle className="h-4 w-4 shrink-0 text-success-fg" />
+      <p className="text-sm text-success-fg">{message}</p>
     </div>
   );
 }
@@ -76,16 +75,11 @@ export default function LoginPage() {
     if (nextErrors.email || nextErrors.password) return;
 
     startTransition(async () => {
-      // El marcador debe existir antes de que el sign-in escriba las cookies
-      // de auth, para que nazcan ya con la persistencia correcta.
-      rememberSessionInBrowser(remember);
-      const supabase = createSupabaseBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      // El servidor escribe el marcador "recordarme" antes de las cookies de auth,
+      // para que nazcan ya con la persistencia correcta.
+      const result = await signInAction({ email: email.trim(), password, remember });
 
-      if (authError) {
+      if (!result.ok) {
         setFormError("No pudimos iniciar sesión con esos datos.");
         setFieldErrors({
           email: "Revisa que el correo sea el mismo de tu cuenta.",
@@ -100,7 +94,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fbf8ff_0%,#ffffff_48%,#f8fafc_100%)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-auth-backdrop px-4 py-10">
       <div className="w-full max-w-[420px]">
         <GlowBookBrand markSize="lg" className="mb-7" />
 
@@ -108,10 +102,10 @@ export default function LoginPage() {
           <JoinedBanner />
         </Suspense>
 
-        <div className="rounded-2xl border border-brand-100 bg-white p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
+        <div className="rounded-2xl border border-brand-100 bg-surface p-7 shadow-auth-card">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold tracking-tight text-stone-950">Iniciar sesión</h2>
-            <p className="mt-1 text-sm text-stone-500">Accede al panel de tu salón.</p>
+            <h2 className="text-xl font-semibold tracking-tight text-fg-strong">Iniciar sesión</h2>
+            <p className="mt-1 text-sm text-fg-subtle">Accede al panel de tu salón.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -142,12 +136,12 @@ export default function LoginPage() {
             />
 
             <div className="flex items-center justify-between gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-600">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
                 <input
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+                  className="h-4 w-4 rounded border-border-strong text-brand-600 focus:ring-brand-500"
                 />
                 Mantener sesión iniciada
               </label>
@@ -160,7 +154,7 @@ export default function LoginPage() {
             </div>
 
             {formError && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              <div className="flex items-start gap-2 rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2.5 text-sm text-danger-strong">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>{formError}</p>
               </div>
@@ -170,7 +164,7 @@ export default function LoginPage() {
               type="submit"
               variant="primary"
               size="lg"
-              className="mt-2 w-full shadow-[0_10px_24px_rgba(124,58,237,0.28)]"
+              className="mt-2 w-full shadow-brand"
               loading={isPending}
             >
               Iniciar sesión

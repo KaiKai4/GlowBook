@@ -3,18 +3,19 @@ import {
   findSalonInvitationForAcceptance,
   profileExists,
 } from "@/features/platform/data/invitations.repo";
-import { err, ok, type Result } from "@/lib/result";
+import { err, ok, type Result } from "@/infra/result";
 import {
   createPlatformOwnerAuthUser,
   deletePlatformOwnerAuthUser,
   findPlatformOwnerAuthUserByEmail,
   updatePlatformOwnerAuthUser,
 } from "@/features/platform/data/platform-auth.repo";
-import { captureError } from "@/lib/observability";
-import { personNameField } from "@/lib/validation/name";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
-import { recordPlatformAction } from "./platform-audit";
-import { z } from "zod";
+import { captureError } from "@/infra/observability";
+import { personNameField } from "@/infra/validation/name";
+import { autoAssignPlanOnAcceptance } from "@/features/billing";
+import { publishAuditEvent } from "@/features/audit";
+import { z } from "@/infra/validation/zod";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const AcceptSchema = z.object({
   token: z.string().min(1, "Token inválido"),
@@ -55,7 +56,7 @@ async function rollbackCreatedOwner(userId: string): Promise<void> {
 // salon atomically using the privileged data adapter. No dependency on email confirmation.
 export async function acceptInvitation(input: AcceptInvitationInput): Promise<Result<void>> {
   const parsed = AcceptSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   const { token, email, password, salon_name, full_name } = parsed.data;
   const emailDomain = email.split("@").at(-1) ?? "unknown";
@@ -150,6 +151,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
   // El salon ya existe: asignar el plan elegido en la invitacion y dejar
   // rastro en auditoria. Si algo falla aqui no se revierte el onboarding;
   // la plataforma puede asignar el plan manualmente desde Suscripciones.
+  const warnings: string[] = [];
   if (invitation.plan_id) {
     const assigned = await autoAssignPlanOnAcceptance({
       salonId,
@@ -162,10 +164,12 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
         action: "accept_invitation_assign_plan",
         metadata: { salonId, planId: invitation.plan_id },
       });
+    } else {
+      warnings.push(...(assigned.warnings ?? []));
     }
   }
 
-  await recordPlatformAction({
+  const auditWarnings = await publishAuditEvent("salon.invitation_accepted", {
     actorUserId: userId,
     action: "invitation_accepted",
     status: "succeeded",
@@ -173,6 +177,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     targetResourceType: "salon_invitation",
     metadata: { emailDomain, planId: invitation.plan_id ?? null },
   });
+  warnings.push(...auditWarnings);
 
-  return ok(undefined);
+  return ok(undefined, warnings);
 }

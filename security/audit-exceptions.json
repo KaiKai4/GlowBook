@@ -1,0 +1,47 @@
+[
+  {
+    "advisory": "GHSA-c475-qrg2-pj4r",
+    "package": "basic-ftp",
+    "owner": "Allan Ordoñez (owner del repo)",
+    "reason": "basic-ftp 5.3.1 llega solo por get-uri -> pac-proxy-agent -> proxy-agent -> @lhci/cli (lighthouse 12.6.1 fija esta cadena). El arreglo (6.2.1) es un salto de major que get-uri (^5.0.2) no admite sin tocar @lhci/cli, que es el ultimo publicado.",
+    "mitigation": "Solo devDependency. Se ejecuta lhci autorun en CI contra localhost; no se empaqueta en producción ni procesa entrada no confiable.",
+    "created": "2026-10-09",
+    "expires": "2026-11-08"
+  },
+  {
+    "advisory": "GHSA-vfj7-8cjw-p6xm",
+    "package": "braces",
+    "owner": "Allan Ordoñez (owner del repo)",
+    "reason": "braces 3.0.3 es la ultima version publicada de la rama 3.x y no hay version parcheada; llega por micromatch 4.0.8 -> fast-glob 3.3.1 -> @next/eslint-plugin-next (eslint-config-next 16.4.0).",
+    "mitigation": "Solo devDependency de lint. Los patrones glob los escribe el propio repo, no usuarios; no se empaqueta en producción.",
+    "created": "2026-10-09",
+    "expires": "2026-11-08"
+  },
+  {
+    "advisory": "GHSA-jmr9-qjv8-65gv",
+    "package": "extract-zip",
+    "owner": "Allan Ordoñez (owner del repo)",
+    "reason": "extract-zip 2.0.1 es la ultima version publicada y llega por @puppeteer/browsers -> puppeteer-core -> lighthouse (cadena fijada por @lhci/cli 0.15.1).",
+    "mitigation": "Solo devDependency. Descomprime el Chrome que descarga Lighthouse en CI desde su origen oficial; no se usa en runtime ni en producción.",
+    "created": "2026-10-09",
+    "expires": "2026-11-08"
+  },
+  {
+    "advisory": "GHSA-7pqw-9j4j-h8q3",
+    "package": "extract-zip",
+    "owner": "Allan Ordoñez (owner del repo)",
+    "reason": "Mismo caso que GHSA-jmr9-qjv8-65gv: extract-zip 2.0.1 sin version corregida publicada, dentro de la cadena de @lhci/cli.",
+    "mitigation": "Solo devDependency de CI/local (lhci autorun contra localhost). No se empaqueta en producción.",
+    "created": "2026-10-09",
+    "expires": "2026-11-08"
+  },
+  {
+    "advisory": "GHSA-hp3w-g68c-fv3c",
+    "package": "sprintf-js",
+    "owner": "Allan Ordoñez (owner del repo)",
+    "reason": "sprintf-js 1.0.3 llega por argparse 1.x -> js-yaml 3.x -> @lhci/utils; la version corregida (1.1.4) no esta publicada y js-yaml 4 cambia la API que usa lhci.",
+    "mitigation": "Solo devDependency de CI/local. El DoS requiere especificadores de formato controlados por el atacante; lhci solo parsea su propia configuracion (lighthouserc.json). No se empaqueta en producción.",
+    "created": "2026-10-09",
+    "expires": "2026-11-08"
+  }
+]

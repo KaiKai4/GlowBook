@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   addDays,
-  addMonths,
   deriveAssignmentSchedule,
   derivePaymentPeriod,
   todayIso,
@@ -75,14 +74,14 @@ describe("derivePaymentPeriod", () => {
   });
 });
 
-describe("addMonths", () => {
+describe("derivePaymentPeriod month arithmetic", () => {
   it("clamps to the last day of shorter months", () => {
-    expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
-    expect(addMonths("2026-08-31", 1)).toBe("2026-09-30");
+    expect(derivePaymentPeriod({ paidAt: "2026-01-31", currentPeriodEnd: null }).periodEnd).toBe("2026-02-28");
+    expect(derivePaymentPeriod({ paidAt: "2026-08-31", currentPeriodEnd: null }).periodEnd).toBe("2026-09-30");
   });
 
   it("crosses year boundaries", () => {
-    expect(addMonths("2026-12-15", 1)).toBe("2027-01-15");
+    expect(derivePaymentPeriod({ paidAt: "2026-12-15", currentPeriodEnd: null }).periodEnd).toBe("2027-01-15");
   });
 });
 

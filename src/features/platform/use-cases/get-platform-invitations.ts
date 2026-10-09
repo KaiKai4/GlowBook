@@ -4,10 +4,10 @@ import {
   findPendingInvitations,
   findRecentAcceptedInvitations,
 } from "@/features/platform/data/invitations.repo";
-import { getPlanCatalogSummary } from "@/features/billing/use-cases/commercial-plans";
+import { getPlanCatalogSummary } from "@/features/billing";
 import { findSalonNamesByIds } from "@/features/platform/data/salons.repo";
 
-export interface PlatformInvitationViewModel {
+interface PlatformInvitationViewModel {
   id: string;
   email: string;
   planName: string | null;
@@ -16,7 +16,7 @@ export interface PlatformInvitationViewModel {
   expired: boolean;
 }
 
-export interface AcceptedInvitationViewModel {
+interface AcceptedInvitationViewModel {
   id: string;
   email: string;
   salonName: string;

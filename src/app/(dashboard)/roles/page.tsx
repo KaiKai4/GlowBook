@@ -1,5 +1,5 @@
-import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getRolesPage } from "@/features/access/use-cases/get-roles-page";
 import { RolesManager } from "./roles-manager";
 
@@ -9,7 +9,7 @@ export default async function RolesPage() {
   if (!hasPermission(profile, PERMISSIONS.ROLES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para gestionar roles.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar roles.</p>
       </div>
     );
   }

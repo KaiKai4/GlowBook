@@ -1,12 +1,51 @@
 # Architecture Decision Records
 
-Los ADR registran decisiones importantes del sistema. Sirven para que futuras auditorias, refactors y nuevas funciones no vuelvan a discutir decisiones que ya tienen una razon clara.
+Los ADR registran decisiones importantes del sistema. Sirven para que futuras auditorías, refactors y funciones no vuelvan a discutir decisiones que ya tienen una razón clara.
 
-Formato usado:
+## Cuándo Escribir Un ADR
 
-- **Estado**: si la decision esta aceptada, propuesta o reemplazada.
-- **Contexto**: que problema existia.
-- **Decision**: que vamos a hacer.
-- **Consecuencias**: beneficios, costos y cuidados.
+Escribe un ADR cuando el cambio:
 
-Para entender el vocabulario del dominio, leer primero `CONTEXT.md`.
+- fija un contrato de datos, de RLS, de RPC o de permisos;
+- añade o cambia una capa, una dependencia o una herramienta de calidad;
+- crea una excepción de seguridad, de auditoría o de tamaño de módulo;
+- toma una decisión que alguien podría revertir sin entender el motivo.
+
+Si la decisión es obvia o se deduce del código, no hace falta ADR.
+
+## Formato
+
+- **Estado**: `Aceptada`, `Propuesta` o `Superada por ADR NNNN`. Un ADR superado no se borra: se marca y se enlaza al que lo sustituye. Si solo una parte queda superada, el estado es `Aceptada, con partes superadas por ADR NNNN` y la sección afectada lo dice.
+- **Contexto**: qué problema existía.
+- **Decisión**: qué se hace.
+- **Consecuencias**: beneficios, costes y cuidados.
+
+Para el vocabulario del dominio, leer antes `CONTEXT.md`.
+
+## Índice
+
+Estado revisado a 2026-10-09: los 19 ADR están `Aceptada`. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas.
+
+| ADR | Título | Ámbito |
+|---|---|---|
+| [0001](0001-multi-tenant-rls.md) | Aislamiento multi-tenant con RLS | Datos y seguridad |
+| [0002](0002-appointment-items-source-of-truth.md) | Appointment items como fuente de verdad | Citas |
+| [0003](0003-dynamic-rbac-permissions.md) | RBAC dinámico basado en permisos | Acceso |
+| [0004](0004-archive-reactivate-customers-collaborators.md) | Archivar y reactivar clientes o colaboradores | Dominio |
+| [0005](0005-closed-onboarding-platform-invitations.md) | Onboarding cerrado por invitaciones de plataforma | Plataforma |
+| [0006](0006-delete-salon-through-transactional-rpc.md) | Eliminación completa de salón por RPC transaccional | Plataforma y datos |
+| [0007](0007-notification-templates-operational-messages.md) | Plantillas para mensajes operativos | Notificaciones |
+| [0008](0008-tests-as-safety-net.md) | Tests como red de seguridad del dominio | Pruebas |
+| [0009](0009-modular-monolith-feature-architecture.md) | Modular monolith feature architecture | Arquitectura |
+| [0010](0010-server-only-admin-adapter-exceptions.md) | Excepciones server-only del adaptador admin | Seguridad y arquitectura |
+| [0011](0011-verificador-local-igual-ci.md) | Verificador local igual que CI | Calidad |
+| [0012](0012-toolchain-de-calidad.md) | Toolchain de calidad | Calidad |
+| [0013](0013-trinquetes-de-deuda.md) | Trinquetes de deuda técnica | Calidad |
+| [0014](0014-bd-de-pruebas-supabase-local.md) | Base de datos de pruebas con Supabase local | Calidad y datos |
+| [0015](0015-politica-excepciones-auditoria.md) | Política de excepciones de auditoría de dependencias | Seguridad y calidad |
+| [0016](0016-migraciones-forward-only-expand-contract.md) | Migraciones forward-only con expand/contract | Datos |
+| [0017](0017-rate-limit-compartido-postgres.md) | Rate limit compartido en Postgres | Seguridad |
+| [0018](0018-errores-publicos-tipados.md) | Errores públicos tipados | Errores y seguridad |
+| [0019](0019-arquitectura-por-capas-verificada.md) | Arquitectura por capas verificada por herramienta | Arquitectura y calidad |
+
+Las guías que aplican estas decisiones son `docs/quality-guide.md`, `docs/database-contracts.md`, `docs/security.md` y `docs/testing.md`.

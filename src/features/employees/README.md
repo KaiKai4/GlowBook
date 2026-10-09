@@ -38,4 +38,4 @@ No debe vivir aqui:
 
 - operaciones Platform cross-tenant.
 - UI global de layout.
-- llamadas directas desde use-cases a `@/lib/supabase/auth-admin`.
+- llamadas directas desde use-cases a `@/infra/supabase/auth-admin`.

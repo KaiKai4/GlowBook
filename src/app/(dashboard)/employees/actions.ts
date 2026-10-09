@@ -1,266 +1,230 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { CreateEmployeeSchema, WorkScheduleSchema } from "@/features/employees/schemas";
-import {
-  changeEmployeeRole,
-  createEmployeeInviteForExistingEmployee,
-  resetEmployeeAccess,
-} from "@/features/employees/use-cases/employee-access";
+import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
+import { WorkScheduleSchema, type WorkScheduleInput } from "@/features/employees/schemas";
 import {
   archiveEmployee,
-  reactivateEmployee,
 } from "@/features/employees/use-cases/employee-lifecycle";
 import {
   addEmployeeWorkSchedule,
   removeEmployeeWorkSchedule,
 } from "@/features/employees/use-cases/employee-schedule";
+import { removeEmployeeScheduleException } from "@/features/employees/use-cases/employee-exceptions";
 import {
-  addEmployeeScheduleException,
-  removeEmployeeScheduleException,
-} from "@/features/employees/use-cases/employee-exceptions";
-import {
-  createEmployeeProfile,
   findArchivedEmployeeByEmail,
-  updateEmployeeProfile,
   type ArchivedEmployeeMatch,
   type CreateEmployeeResult,
+  type EmployeeWriteResult,
 } from "@/features/employees/use-cases/employee-profile";
 import {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  isEffectiveSalonModuleEnabled,
-} from "@/features/billing/use-cases/commercial-plans";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import type { Result } from "@/lib/result";
-import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
+  createEmployeeFlow,
+  updateEmployeeFlow,
+} from "@/features/employees/use-cases/employee-profile-flow";
+import {
+  changeEmployeeRoleFlow,
+  generateEmployeeInviteFlow,
+  resetEmployeeAccessFlow,
+  type RoleGate,
+} from "@/features/employees/use-cases/employee-role-flows";
+import {
+  addScheduleExceptionFlow,
+  reactivateEmployeeFlow,
+} from "@/features/employees/use-cases/employee-lifecycle-flows";
+import { err, ok, type Result } from "@/infra/result";
+import { parseUuid } from "@/infra/validation/route-id";
+import type { ProfileWithRole } from "@/types/app.types";
+import {
+  activeLimitCheck,
+  admissionChecks,
+  EMPLOYEE_GUARD,
+  loginLimitCheck,
+  rolesEnabledOf,
+} from "./employee-action-guard";
 
-async function guard(): Promise<Result<{ salonId: string; rolesEnabled: boolean }>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar colaboradores." };
-  }
+// Cada accion es una especificacion de defineAction (permiso, limite, validacion,
+// un caso de uso y revalidacion). La exportacion publica solo adapta la firma.
 
-  // Estas acciones crean cuentas Auth y enlaces de acceso: un límite por
-  // usuario evita generacion masiva automatizada.
-  const limited = assertActionRateLimit(profile.id, "employees", { max: 30, windowMs: 60_000 });
-  if (!limited.ok) return limited;
+const INVALID_ID = "Identificador inválido.";
 
-  return {
-    ok: true,
-    value: {
-      salonId: profile.salon_id,
-      rolesEnabled: await isEffectiveSalonModuleEnabled(profile, "roles"),
-    },
-  };
+/** Identificadores de la accion: un null (rol opcional) es valido, un UUID mal formado no. */
+function checkIds<T>(value: T, ids: (string | null)[]): Result<T> {
+  return ids.every((id) => id === null || parseUuid(id) !== null) ? ok(value) : err(INVALID_ID);
 }
+
+async function roleGateOf(session: { salonId: string; profile: ProfileWithRole }): Promise<RoleGate> {
+  return { salonId: session.salonId, rolesEnabled: await rolesEnabledOf(session.profile) };
+}
+
+type EmployeeInvite = { token: string; expiresAt: string };
+type EmployeeRoleRaw = { employeeId: string; roleId: string | null };
+type RoleChangeRaw = { profileId: string; roleId: string | null };
+type UpdateEmployeeRaw = { employeeId: string; formData: FormData };
+type ScheduleDeleteRaw = { scheduleId: string; employeeId: string };
+type ExceptionAddRaw = { employeeId: string; exceptionDate: string; reason: string };
+type ExceptionRemoveRaw = { employeeId: string; exceptionId: string };
+
+const createEmployeeFlowAction = defineAction<FormData, FormData, CreateEmployeeResult>({
+  ...EMPLOYEE_GUARD,
+  parse: (formData) => ok(formData),
+  run: async (formData, session) =>
+    createEmployeeFlow(
+      {
+        salonId: session.salonId,
+        rolesEnabled: await rolesEnabledOf(session.profile),
+        checks: admissionChecks(session.salonId),
+      },
+      formData
+    ),
+  revalidate: () => ["/employees"],
+});
+
+const findArchivedFlowAction = defineAction<string, string, ArchivedEmployeeMatch | null>({
+  ...EMPLOYEE_GUARD,
+  parse: (email) => ok(email),
+  run: async (email, session) => ok(await findArchivedEmployeeByEmail(session.salonId, email)),
+});
+
+const reactivateFlowAction = defineAction<string, string, void>({
+  ...EMPLOYEE_GUARD,
+  parse: (employeeId) => checkIds(employeeId, [employeeId]),
+  run: (employeeId, session) =>
+    reactivateEmployeeFlow(
+      { salonId: session.salonId, checkActiveLimit: activeLimitCheck(session.salonId) },
+      employeeId
+    ),
+  revalidate: (_out, employeeId) => ["/employees", `/employees/${employeeId}`, "/appointments/new"],
+});
+
+const updateEmployeeFlowAction = defineAction<UpdateEmployeeRaw, UpdateEmployeeRaw, EmployeeWriteResult>({
+  ...EMPLOYEE_GUARD,
+  parse: (raw) => checkIds(raw, [raw.employeeId]),
+  run: (raw, session) => updateEmployeeFlow(session.salonId, raw.employeeId, raw.formData),
+  revalidate: (_out, raw) => ["/employees", `/employees/${raw.employeeId}`],
+});
+
+const changeRoleFlowAction = defineAction<RoleChangeRaw, RoleChangeRaw, void>({
+  ...EMPLOYEE_GUARD,
+  parse: (raw) => checkIds(raw, [raw.profileId, raw.roleId]),
+  run: async (raw, session) => changeEmployeeRoleFlow(await roleGateOf(session), raw),
+  revalidate: () => ["/employees"],
+});
+
+const resetAccessFlowAction = defineAction<EmployeeRoleRaw, EmployeeRoleRaw, EmployeeInvite>({
+  ...EMPLOYEE_GUARD,
+  parse: (raw) => checkIds(raw, [raw.employeeId, raw.roleId]),
+  run: async (raw, session) => resetEmployeeAccessFlow(await roleGateOf(session), raw),
+  revalidate: (_out, raw) => ["/employees", `/employees/${raw.employeeId}`],
+});
+
+const addWorkScheduleFlowAction = defineAction<FormData, WorkScheduleInput, void>({
+  ...EMPLOYEE_GUARD,
+  parse: (formData) =>
+    parseWithSchema(WorkScheduleSchema)({
+      employee_id: formData.get("employee_id"),
+      day_of_week: Number(formData.get("day_of_week")),
+      start_time: formData.get("start_time"),
+      end_time: formData.get("end_time"),
+    }),
+  run: (input, session) => addEmployeeWorkSchedule(session.salonId, input),
+  revalidate: (_out, input) => [`/employees/${input.employee_id}`],
+});
+
+const deleteWorkScheduleFlowAction = defineAction<ScheduleDeleteRaw, ScheduleDeleteRaw, void>({
+  ...EMPLOYEE_GUARD,
+  parse: (raw) => checkIds(raw, [raw.scheduleId, raw.employeeId]),
+  run: (raw, session) => removeEmployeeWorkSchedule(session.salonId, raw.scheduleId),
+  revalidate: (_out, raw) => [`/employees/${raw.employeeId}`],
+});
+
+const generateInviteFlowAction = defineAction<EmployeeRoleRaw, EmployeeRoleRaw, EmployeeInvite>({
+  ...EMPLOYEE_GUARD,
+  parse: (raw) => checkIds(raw, [raw.employeeId, raw.roleId]),
+  run: async (raw, session) =>
+    generateEmployeeInviteFlow(
+      { ...(await roleGateOf(session)), checkLoginLimit: loginLimitCheck(session.salonId) },
+      raw
+    ),
+  revalidate: (_out, raw) => [`/employees/${raw.employeeId}`],
+});
+
+const archiveFlowAction = defineAction<string, string, { outcome: "deleted" | "archived"; message: string }>({
+  ...EMPLOYEE_GUARD,
+  parse: (employeeId) => checkIds(employeeId, [employeeId]),
+  run: (employeeId, session) => archiveEmployee(employeeId, session.salonId),
+  revalidate: (_out, employeeId) => ["/employees", `/employees/${employeeId}`, "/appointments/new"],
+});
+
+const addExceptionFlowAction = defineAction<ExceptionAddRaw, ExceptionAddRaw, void>({
+  ...EMPLOYEE_GUARD,
+  parse: (raw) => checkIds(raw, [raw.employeeId]),
+  run: (raw, session) => addScheduleExceptionFlow({ salonId: session.salonId }, raw),
+  revalidate: (_out, raw) => [`/employees/${raw.employeeId}`, "/appointments"],
+});
+
+const removeExceptionFlowAction = defineAction<ExceptionRemoveRaw, ExceptionRemoveRaw, void>({
+  ...EMPLOYEE_GUARD,
+  parse: (raw) => checkIds(raw, [raw.employeeId, raw.exceptionId]),
+  run: (raw, session) => removeEmployeeScheduleException(session.salonId, raw.employeeId, raw.exceptionId),
+  revalidate: (_out, raw) => [`/employees/${raw.employeeId}`, "/appointments"],
+});
 
 export async function createEmployeeAction(
   _prev: Result<CreateEmployeeResult> | null,
   formData: FormData
 ): Promise<Result<CreateEmployeeResult>> {
-  const g = await guard();
-  if (!g.ok) return g;
-  const moduleAccess = await checkPlanModuleAccess({ salonId: g.value.salonId, moduleKey: "employees" });
-  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
-  const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.active" });
-  if (!limit.ok) return { ok: false, error: limit.error };
-
-  const roleId = g.value.rolesEnabled
-    ? (formData.get("role_id") as string)?.trim() || null
-    : null;
-
-  // Con rol asignado se emite una invitacion de acceso propio: tambien
-  // consume el cupo de usuarios con login del plan.
-  if (roleId) {
-    const loginLimit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.login_users" });
-    if (!loginLimit.ok) return { ok: false, error: loginLimit.error };
-  }
-
-  const parsed = CreateEmployeeSchema.safeParse({
-    first_name: formData.get("first_name"),
-    last_name: formData.get("last_name"),
-    phone: formData.get("phone") ?? "",
-    email: formData.get("email") ?? "",
-    specialty: formData.get("specialty") ?? "",
-    commission_percentage: Number(formData.get("commission_percentage") ?? 0),
-    service_ids: formData.getAll("service_ids").map(String),
-    category_ids: formData.getAll("category_ids").map(String),
-  });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-
-  const result = await createEmployeeProfile(g.value.salonId, parsed.data, roleId);
-  if (result.ok) {
-    revalidatePath("/employees");
-  }
-  return result;
+  return createEmployeeFlowAction(formData);
 }
 
 export async function findArchivedEmployeeByEmailAction(email: string): Promise<ArchivedEmployeeMatch | null> {
-  const g = await guard();
-  if (!g.ok) return null;
-
-  return findArchivedEmployeeByEmail(g.value.salonId, email);
+  const result = await findArchivedFlowAction(email);
+  return result.ok ? result.value : null;
 }
 
 export async function reactivateEmployeeAction(employeeId: string): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
-  const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.active" });
-  if (!limit.ok) return { ok: false, error: limit.error };
-
-  const result = await reactivateEmployee(employeeId, g.value.salonId);
-  if (result.ok) {
-    revalidatePath("/employees");
-    revalidatePath(`/employees/${employeeId}`);
-    revalidatePath("/appointments/new");
-  }
-  return result;
+  return reactivateFlowAction(employeeId);
 }
 
 export async function updateEmployeeAction(
   employeeId: string,
-  _prev: Result<void> | null,
+  _prev: Result<EmployeeWriteResult> | null,
   formData: FormData
-): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
-
-  const parsed = CreateEmployeeSchema.partial().safeParse({
-    first_name: formData.get("first_name") ?? undefined,
-    last_name: formData.get("last_name") ?? undefined,
-    phone: formData.get("phone") ?? undefined,
-    email: formData.get("email") ?? undefined,
-    specialty: formData.get("specialty") ?? undefined,
-    commission_percentage: formData.get("commission_percentage")
-      ? Number(formData.get("commission_percentage"))
-      : undefined,
-    service_ids: formData.getAll("service_ids").map(String),
-    category_ids: formData.getAll("category_ids").map(String),
-  });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-
-  const result = await updateEmployeeProfile(employeeId, g.value.salonId, parsed.data);
-  if (result.ok) {
-    revalidatePath("/employees");
-    revalidatePath(`/employees/${employeeId}`);
-  }
-  return result;
+): Promise<Result<EmployeeWriteResult>> {
+  return updateEmployeeFlowAction({ employeeId, formData });
 }
 
-export async function changeEmployeeRoleAction(
-  profileId: string,
-  roleId: string | null
-): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
-  if (!g.value.rolesEnabled) {
-    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
-  }
-
-  const result = await changeEmployeeRole(g.value.salonId, profileId, roleId);
-  if (result.ok) {
-    revalidatePath("/employees");
-  }
-  return result;
+export async function changeEmployeeRoleAction(profileId: string, roleId: string | null): Promise<Result<void>> {
+  return changeRoleFlowAction({ profileId, roleId });
 }
 
 export async function resetEmployeeAccessAction(
   employeeId: string,
   roleId: string | null
-): Promise<Result<{ token: string; expiresAt: string }>> {
-  const g = await guard();
-  if (!g.ok) return g;
-  if (!g.value.rolesEnabled) {
-    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
-  }
-
-  const invite = await resetEmployeeAccess({
-    employeeId,
-    salonId: g.value.salonId,
-    roleId: roleId || null,
-  });
-  if (!invite.ok) return invite;
-
-  revalidatePath("/employees");
-  revalidatePath(`/employees/${employeeId}`);
-  return invite;
+): Promise<Result<EmployeeInvite>> {
+  return resetAccessFlowAction({ employeeId, roleId });
 }
 
 export async function addWorkScheduleAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
-
-  const parsed = WorkScheduleSchema.safeParse({
-    employee_id: formData.get("employee_id"),
-    day_of_week: Number(formData.get("day_of_week")),
-    start_time: formData.get("start_time"),
-    end_time: formData.get("end_time"),
-  });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-  const result = await addEmployeeWorkSchedule(g.value.salonId, parsed.data);
-  if (result.ok) {
-    revalidatePath(`/employees/${parsed.data.employee_id}`);
-  }
-  return result;
+  return addWorkScheduleFlowAction(formData);
 }
 
-export async function deleteWorkScheduleAction(
-  scheduleId: string,
-  employeeId: string
-): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
-
-  const result = await removeEmployeeWorkSchedule(g.value.salonId, scheduleId);
-  if (result.ok) {
-    revalidatePath(`/employees/${employeeId}`);
-  }
-  return result;
+export async function deleteWorkScheduleAction(scheduleId: string, employeeId: string): Promise<Result<void>> {
+  return deleteWorkScheduleFlowAction({ scheduleId, employeeId });
 }
 
 export async function generateEmployeeInviteAction(
   employeeId: string,
   roleId: string | null
-): Promise<Result<{ token: string; expiresAt: string }>> {
-  const g = await guard();
-  if (!g.ok) return g;
-  if (!g.value.rolesEnabled) {
-    return { ok: false, error: "Los roles estan deshabilitados para este salon." };
-  }
-  // Un acceso propio nuevo consume el cupo de usuarios con login del plan.
-  const limit = await checkPlanLimit({ salonId: g.value.salonId, metricKey: "employees.login_users" });
-  if (!limit.ok) return { ok: false, error: limit.error };
-
-  const invite = await createEmployeeInviteForExistingEmployee({
-    employeeId,
-    salonId: g.value.salonId,
-    roleId: roleId || null,
-  });
-  if (!invite.ok) return invite;
-
-  revalidatePath(`/employees/${employeeId}`);
-  return invite;
+): Promise<Result<EmployeeInvite>> {
+  return generateInviteFlowAction({ employeeId, roleId });
 }
 
 export async function deleteEmployeeAction(
   employeeId: string
 ): Promise<Result<{ outcome: "deleted" | "archived"; message: string }>> {
-  const g = await guard();
-  if (!g.ok) return g;
-
-  const result = await archiveEmployee(employeeId, g.value.salonId);
-  if (result.ok) {
-    revalidatePath("/employees");
-    revalidatePath(`/employees/${employeeId}`);
-    revalidatePath("/appointments/new");
-  }
-  return result;
+  return archiveFlowAction(employeeId);
 }
 
 export async function addScheduleExceptionAction(
@@ -268,39 +232,9 @@ export async function addScheduleExceptionAction(
   exceptionDate: string,
   reason: string
 ): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
-  const { salonConfig } = await getSalonSchedulingConfig(g.value.salonId);
-
-  const result = await addEmployeeScheduleException({
-    salonId: g.value.salonId,
-    employeeId,
-    exceptionDate,
-    reason,
-    timezone: salonConfig.timezone,
-  });
-  if (result.ok) {
-    revalidatePath(`/employees/${employeeId}`);
-    revalidatePath("/appointments");
-  }
-  return result;
+  return addExceptionFlowAction({ employeeId, exceptionDate, reason });
 }
 
-export async function removeScheduleExceptionAction(
-  employeeId: string,
-  exceptionId: string
-): Promise<Result<void>> {
-  const g = await guard();
-  if (!g.ok) return g;
-
-  const result = await removeEmployeeScheduleException(
-    g.value.salonId,
-    employeeId,
-    exceptionId
-  );
-  if (result.ok) {
-    revalidatePath(`/employees/${employeeId}`);
-    revalidatePath("/appointments");
-  }
-  return result;
+export async function removeScheduleExceptionAction(employeeId: string, exceptionId: string): Promise<Result<void>> {
+  return removeExceptionFlowAction({ employeeId, exceptionId });
 }

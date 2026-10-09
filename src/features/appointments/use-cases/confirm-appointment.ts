@@ -1,14 +1,14 @@
-import { err, ok, type Result } from "@/lib/result";
-import { captureError } from "@/lib/observability";
-import {
-  findAppointmentForCommand,
-  updateAppointmentStatus,
-} from "../data/appointment-commands.repo";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { err, ok, type Result } from "@/infra/result";
+import { captureError } from "@/infra/observability";
+import { findAppointmentForCommand } from "../data/appointment-commands.repo";
+import { confirmAppointmentRpc } from "../data/rpc/confirm-appointment";
 import { assertTransition } from "../domain/lifecycle";
 
 export async function confirmAppointment(
   appointmentId: string,
-  salonId: string
+  salonId: string,
+  idempotencyKey: string
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
   try {
@@ -23,14 +23,14 @@ export async function confirmAppointment(
   try {
     assertTransition(appointment.status, "confirmed");
   } catch (error) {
-    return err((error as Error).message);
+    return err(toPublicErrorMessage(error, "No se pudo confirmar la cita."));
   }
 
+  // La transicion se valida de nuevo en la base (FOR UPDATE): una cancelacion concurrente no se pisa.
   try {
-    await updateAppointmentStatus({ appointmentId, salonId, status: "confirmed" });
+    await confirmAppointmentRpc({ appointmentId, idempotencyKey });
   } catch (error) {
-    captureError(error, { module: "appointments", action: "confirm" });
-    return err("Error al confirmar la cita.");
+    return err(toPublicErrorMessage(error, "Error al confirmar la cita."));
   }
 
   return ok(undefined);

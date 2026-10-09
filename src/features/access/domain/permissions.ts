@@ -14,5 +14,3 @@ export const PERMISSION_CATALOG = [
   { key: "reports.view", description: "Ver dashboard y reportes" },
   { key: "reminders.send", description: "Enviar recordatorios" },
 ] as const;
-
-export type PermissionKey = (typeof PERMISSION_CATALOG)[number]["key"];

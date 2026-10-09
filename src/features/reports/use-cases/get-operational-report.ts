@@ -1,23 +1,26 @@
-import { utcBounds } from "@/lib/utils/dates";
-import { calculateOperationalMoneyTotals } from "@/features/finance/domain/operational-money";
-import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
+import { findSalonReportIdentity, findSalonTimezone } from "../data/reports.repo";
 import {
-  findHistoricalReportRows,
-  findOperationalReportRows,
-  findSalonReportIdentity,
-  findSalonTimezone,
-} from "../data/reports.repo";
+  fetchCommissionReport,
+  fetchOperationalBreakdown,
+  fetchPeriodTotals,
+  type PeriodTotals,
+} from "../data/rpc/reports-read-models.rpc";
 import {
-  calculateHistoricalReportAnalytics,
-  calculateLifetimeTotals,
+  fetchBusyHours,
+  fetchExpenseConcepts,
+  fetchInventoryAlerts,
+  fetchMonthlySeries,
+  fetchProductSales,
+  type MonthlySeriesRow,
+} from "../data/rpc/reports-history.rpc";
+import {
+  busyHourLabel,
   type HistoricalReportAnalytics,
   type LifetimeReportTotals,
   type ReportModuleAvailability,
+  type ReportMonthPoint,
 } from "../domain/analytics";
-import {
-  calculateOperationalReportMetrics,
-  type OperationalReportMetrics,
-} from "../domain/metrics";
+import type { OperationalReportMetrics } from "../domain/metrics";
 import {
   availableReportYears,
   getReportPresetRange,
@@ -28,8 +31,9 @@ import {
 import type { ReportFilters, SelectedReportPreset } from "../schemas";
 
 const DEFAULT_REPORT_TIMEZONE = "America/Panama";
+const TOP_LIMIT = 5;
 
-export interface OperationalReportPeriodViewModel extends OperationalReportMetrics {
+interface OperationalReportPeriodViewModel extends OperationalReportMetrics {
   from: string;
   to: string;
   preset: SelectedReportPreset;
@@ -56,9 +60,14 @@ export interface GetOperationalReportInput {
   now?: Date;
 }
 
-function getMonthSequence(now: Date, timezone: string, count = 12) {
+interface MonthLabel {
+  monthKey: string;
+  label: string;
+}
+
+function getMonthSequence(now: Date, timezone: string, count = 12): MonthLabel[] {
   const currentMonthKey = localDateString(now, timezone).slice(0, 7);
-  const [year, month] = currentMonthKey.split("-").map(Number);
+  const [year = NaN, month = NaN] = currentMonthKey.split("-").map(Number);
   const label = new Intl.DateTimeFormat("es-PA", { month: "short", timeZone: "UTC" });
 
   return Array.from({ length: count }, (_, index) => {
@@ -72,10 +81,24 @@ function getMonthSequence(now: Date, timezone: string, count = 12) {
   });
 }
 
-function lastDayOfMonth(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map(Number);
+export function lastDayOfMonth(monthKey: string): string {
+  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
   const day = new Date(Date.UTC(year, month, 0)).getUTCDate();
   return `${monthKey}-${String(day).padStart(2, "0")}`;
+}
+
+/** Totales de periodo (report_period_totals) con la forma del acumulado. */
+export function toLifetimeTotals(totals: PeriodTotals): LifetimeReportTotals {
+  return {
+    appointmentRevenue: totals.revenue,
+    retailRevenue: totals.retailRevenue,
+    grossRevenue: totals.grossRevenue,
+    operationalExpenses: totals.manualExpenses,
+    inventoryPurchases: totals.inventoryPurchases,
+    totalExpenses: totals.totalExpenses,
+    estimatedProfit: totals.estimatedProfit,
+    completedAppointments: totals.completedCount,
+  };
 }
 
 export async function getOperationalReport({
@@ -104,50 +127,37 @@ export async function getOperationalReport({
       now,
       timezone,
     }),
-    getHistoricalAnalytics({ salonId, modules, now, timezone }),
-    getYearTotals({ salonId, modules, timezone, year: selectedYear }),
+    getHistoricalAnalytics({ modules, now, timezone }),
+    getYearTotals({ modules, timezone, year: selectedYear }),
   ]);
 
   return { ...period, analytics, yearly, selectedYear, availableYears };
 }
-
-// Limites fijos lejanos: para alcances "histórico completo" hay salones con
-// movimientos anteriores a su creacion (historial importado, datos
-// retroactivos). La RPC agrega en SQL, asi que el rango amplio no trae filas
-// crudas. (Se mantiene para la exportacion del histórico completo.)
-export const LIFETIME_RANGE = {
-  start: "0001-01-01T00:00:00.000Z",
-  end: "9999-12-31T23:59:59.999Z",
-} as const;
 
 /**
  * Acumulado de un año calendario (1 de enero a 31 de diciembre, en la zona del
  * salon). Es lo que el dashboard muestra como "Acumulado del año": se reinicia
  * cada 1 de enero porque el año nuevo arranca sin movimientos, sin borrar nada.
  */
-export async function getYearTotals({
-  salonId,
+async function getYearTotals({
   modules,
   timezone,
   year,
 }: {
-  salonId: string;
   modules: ReportModuleAvailability;
   timezone: string;
   year: number;
 }): Promise<LifetimeReportTotals> {
   const range = getYearRange(year);
-  const { start, end } = utcBounds(range.from, range.to, timezone);
-  const rows = await findHistoricalReportRows({ salonId, start, end, timezone });
-
-  return calculateLifetimeTotals({ ...rows, modules });
+  const totals = await fetchPeriodTotals({ from: range.from, to: range.to, timezone, modules });
+  return toLifetimeTotals(totals);
 }
 
 interface GetOperationalReportPeriodInternalInput extends GetOperationalReportInput {
   timezone?: string;
 }
 
-export async function getOperationalReportPeriod({
+async function getOperationalReportPeriod({
   salonId,
   filters,
   modules = { inventory: true, retail: true, expenses: true },
@@ -159,67 +169,85 @@ export async function getOperationalReportPeriod({
   const range = hasCustomRange
     ? { from: filters.from as string, to: filters.to as string }
     : getReportPresetRange(filters.preset, timezone, now);
-  const { start, end } = utcBounds(range.from, range.to, timezone);
-  const [rows, externalMoney] = await Promise.all([
-    findOperationalReportRows({ salonId, start, end }),
-    getExternalOperationalMoney({
-      salonId,
-      fromIso: start,
-      toIso: end,
-      fromDate: range.from,
-      toDate: range.to,
-    }),
+  const [totals, breakdown, commissions] = await Promise.all([
+    fetchPeriodTotals({ from: range.from, to: range.to, timezone, modules }),
+    fetchOperationalBreakdown({ from: range.from, to: range.to, timezone }),
+    fetchCommissionReport({ from: range.from, to: range.to, timezone }),
   ]);
-  const metrics = calculateOperationalReportMetrics(rows.appointments, rows.items);
-  const money = calculateOperationalMoneyTotals({
-    appointmentRevenue: metrics.revenue,
-    retailRevenue: modules.retail ? externalMoney.retailRevenue : 0,
-    manualExpenses: modules.expenses ? externalMoney.manualExpenses : 0,
-    inventoryPurchases: modules.inventory ? externalMoney.inventoryPurchases : 0,
-  });
 
   return {
     ...range,
     preset: hasCustomRange ? "custom" : filters.preset,
-    ...metrics,
-    retailRevenue: money.retailRevenue,
-    grossRevenue: money.grossRevenue,
-    manualExpenses: money.manualExpenses,
-    inventoryPurchases: money.inventoryPurchases,
-    totalExpenses: money.totalExpenses,
-    estimatedProfit: money.estimatedProfit,
-    newCustomers: rows.newCustomers,
+    ...totals,
+    statusBreakdown: breakdown.statusBreakdown,
+    byEmployee: breakdown.byEmployee,
+    byService: breakdown.byService,
+    commissions,
     modules,
   };
 }
 
+/** Una fila de la serie por cada mes de la ventana, en el orden de la ventana. */
+function toMonthPoints(series: MonthlySeriesRow[], months: MonthLabel[]): ReportMonthPoint[] {
+  const rowsByMonth = new Map(series.map((row) => [row.monthKey, row]));
+  return months.map((month) => {
+    const row = rowsByMonth.get(month.monthKey);
+    if (!row) throw new Error("Invariante de reporte: la serie mensual no cubre el mes solicitado.");
+    return {
+      monthKey: month.monthKey,
+      label: month.label,
+      appointmentRevenue: row.appointmentRevenue,
+      retailRevenue: row.retailRevenue,
+      totalRevenue: row.grossRevenue,
+      operationalExpenses: row.operationalExpenses,
+      inventoryPurchases: row.inventoryPurchases,
+      totalExpenses: row.totalExpenses,
+      profit: row.profit,
+      marginPct: row.marginPct,
+      completedAppointments: row.completedAppointments,
+    };
+  });
+}
+
 async function getHistoricalAnalytics({
-  salonId,
   modules,
   now,
   timezone,
 }: {
-  salonId: string;
   modules: ReportModuleAvailability;
   now: Date;
   timezone: string;
 }): Promise<HistoricalReportAnalytics> {
   const months = getMonthSequence(now, timezone);
-  const historyBounds = utcBounds(
-    `${months[0].monthKey}-01`,
-    lastDayOfMonth(months.at(-1)!.monthKey),
-    timezone
-  );
-  const historicalRows = await findHistoricalReportRows({
-    salonId,
-    start: historyBounds.start,
-    end: historyBounds.end,
-    timezone,
-  });
+  const firstMonth = months[0];
+  const lastMonth = months.at(-1);
+  if (!firstMonth || !lastMonth) throw new Error("Invariante de reporte: sin meses para el historial.");
+  const from = `${firstMonth.monthKey}-01`;
+  const to = lastDayOfMonth(lastMonth.monthKey);
 
-  return calculateHistoricalReportAnalytics({
-    ...historicalRows,
-    months,
-    modules,
-  });
+  const [series, busyHours, topExpenses, productSales, inventoryAlerts] = await Promise.all([
+    fetchMonthlySeries({ firstMonth: firstMonth.monthKey, lastMonth: lastMonth.monthKey, timezone, modules }),
+    fetchBusyHours({ from, to, timezone }),
+    fetchExpenseConcepts({ from, to, modules, includeRestock: true, limit: TOP_LIMIT }),
+    fetchProductSales({
+      firstMonth: firstMonth.monthKey,
+      lastMonth: lastMonth.monthKey,
+      timezone,
+      modules,
+      limit: TOP_LIMIT,
+    }),
+    fetchInventoryAlerts(modules),
+  ]);
+
+  return {
+    months: toMonthPoints(series, months),
+    busyHours: busyHours.map((bucket) => ({
+      hour: bucket.hour,
+      label: busyHourLabel(bucket.hour),
+      total: bucket.total,
+    })),
+    productSales,
+    topExpenses,
+    inventoryAlerts,
+  };
 }

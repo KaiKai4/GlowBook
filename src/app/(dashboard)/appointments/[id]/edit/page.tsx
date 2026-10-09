@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appointment-detail";
 import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireProfile } from "@/app/_composition/request-context";
+import { PageHeader } from "@/components/ui/page-header";
+import { parseUuid } from "@/infra/validation/route-id";
 import { AppointmentEditForm } from "./appointment-edit-form";
 
 export default async function EditAppointmentPage({
@@ -14,11 +16,12 @@ export default async function EditAppointmentPage({
 }) {
   const profile = await requireProfile();
   const { id } = await params;
+  if (!parseUuid(id)) notFound();
 
   if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para editar citas.</p>
+        <p className="text-fg-subtle">No tienes permiso para editar citas.</p>
       </div>
     );
   }
@@ -37,20 +40,19 @@ export default async function EditAppointmentPage({
       <div>
         <Link
           href="/appointments"
-          className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900"
+          className="inline-flex items-center gap-1 text-sm text-fg-subtle hover:text-fg"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver a Agenda
         </Link>
         <div className="mt-2">
-          <h1 className="text-2xl font-bold text-neutral-900">Editar cita</h1>
-          <p className="text-sm text-neutral-500">{appointment.customerName}</p>
+          <PageHeader title="Editar cita" description={appointment.customerName} />
         </div>
       </div>
 
       {isClosed ? (
-        <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
-          Esta cita ya estÃ¡ cerrada y no se puede editar.
+        <div className="rounded-lg border border-border bg-surface p-6 text-sm text-fg-subtle">
+          Esta cita ya está cerrada y no se puede editar.
         </div>
       ) : (
         <AppointmentEditForm

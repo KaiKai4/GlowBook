@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import type { InventoryPageView } from "@/features/inventory/use-cases/inventory-products";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import {
   createInventoryProductAction,
   deleteInventoryProductAction,
@@ -23,6 +29,11 @@ export function InventoryManager({ inventory }: { inventory: InventoryPageView }
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const toast = useToast();
+  const { submit: submitTransfer } = useSubmissionIntent({
+    procedure: "inventory.transfer",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
 
   function run(kind: FormKind, action: () => Promise<{ ok: boolean; error?: string; value?: unknown }>) {
     setPendingForm(kind);
@@ -50,7 +61,11 @@ export function InventoryManager({ inventory }: { inventory: InventoryPageView }
   }
 
   function handleTransfer(formData: FormData) {
-    run("transfer", () => transferInventoryStockAction(null, formData));
+    run("transfer", () =>
+      submitTransfer(formDataEntries(formData), (idempotencyKey) =>
+        transferInventoryStockAction(null, withIdempotencyKey(formData, idempotencyKey))
+      )
+    );
   }
 
   function handleSaveProduct(productId: string, formData: FormData) {
@@ -76,8 +91,8 @@ export function InventoryManager({ inventory }: { inventory: InventoryPageView }
         <div
           className={
             error
-              ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-              : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+              ? "rounded-lg border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-strong"
+              : "rounded-lg border border-success-border bg-success-subtle px-4 py-3 text-sm text-success-fg"
           }
         >
           {error ?? message}

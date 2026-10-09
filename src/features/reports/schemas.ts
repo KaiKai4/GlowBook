@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from "@/infra/validation/zod";
 
-export const REPORT_PRESETS = [
+const REPORT_PRESETS = [
   "hoy",
   "semana",
   "mes",
@@ -12,11 +12,11 @@ export const REPORT_PRESETS = [
 export type ReportPreset = (typeof REPORT_PRESETS)[number];
 export type SelectedReportPreset = ReportPreset | "custom";
 
-export const DEFAULT_REPORT_PRESET: ReportPreset = "mes";
+const DEFAULT_REPORT_PRESET: ReportPreset = "mes";
 
 const ReportDateSchema = z.string().date();
 
-export const ReportQuerySchema = z.object({
+const ReportQuerySchema = z.object({
   preset: z.enum(REPORT_PRESETS).optional(),
   from: ReportDateSchema.optional(),
   to: ReportDateSchema.optional(),

@@ -1,53 +1,25 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { RetailSaleSchema } from "@/features/retail/schemas";
-import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
-import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import type { Result } from "@/lib/result";
+import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
+import { PERMISSIONS } from "@/features/access";
+import { RetailSaleSchema, type RetailSaleInput } from "@/features/retail/schemas";
+import { createRetailSaleWithPlanLimits } from "@/features/retail/use-cases/retail-sale-writes";
+import type { Result } from "@/infra/result";
 
-async function guard(): Promise<Result<{ salonId: string }>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar vitrina." };
-  }
+// Ventas de vitrina: afectan a inventario y reportes ademas de la propia vitrina.
+const RETAIL_PATHS = ["/retail", "/inventory", "/reports"] as const;
 
-  const limited = assertActionRateLimit(profile.id, "retail", { max: 60, windowMs: 60_000 });
-  if (!limited.ok) return limited;
-  return { ok: true, value: { salonId: profile.salon_id } };
-}
+const createSaleFlow = defineAction<FormData, RetailSaleInput, string>({
+  permission: { key: PERMISSIONS.RETAIL_MANAGE, deniedMessage: "No tienes permiso para gestionar vitrina." },
+  rateLimit: { scope: "retail", options: { max: 60, windowMs: 60_000 } },
+  parse: (formData) => parseWithSchema(RetailSaleSchema)(Object.fromEntries(formData)),
+  run: (input, session) => createRetailSaleWithPlanLimits(session.salonId, input, input.idempotency_key),
+  revalidate: () => RETAIL_PATHS,
+});
 
 export async function createRetailSaleAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "retail" });
-  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
-  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "retail.sales" });
-  if (!limit.ok) return { ok: false, error: limit.error };
-
-  const parsed = RetailSaleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-
-  const paymentEnabled = await assertSalonPaymentMethodEnabled(
-    guarded.value.salonId,
-    parsed.data.payment_method
-  );
-  if (!paymentEnabled) {
-    return { ok: false, error: "Ese metodo de pago no esta habilitado para este salon." };
-  }
-
-  const result = await createRetailSale(guarded.value.salonId, parsed.data);
-  if (result.ok) {
-    revalidatePath("/retail");
-    revalidatePath("/inventory");
-    revalidatePath("/reports");
-  }
-  return result;
+  return createSaleFlow(formData);
 }

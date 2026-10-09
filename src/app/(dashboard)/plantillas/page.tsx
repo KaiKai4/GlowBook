@@ -1,7 +1,8 @@
 import { MessageSquareText } from "lucide-react";
-import { requireProfile } from "@/lib/auth/session";
+import { PageHeader } from "@/components/ui/page-header";
+import { requireProfile } from "@/app/_composition/request-context";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getTemplateSettings } from "@/features/notifications/use-cases/get-template-settings";
 import { TemplatesManager } from "./templates-manager";
 
@@ -12,7 +13,7 @@ export default async function PlantillasPage() {
   if (!templatesEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para editar plantillas.</p>
+        <p className="text-fg-subtle">No tienes permiso para editar plantillas.</p>
       </div>
     );
   }
@@ -21,15 +22,15 @@ export default async function PlantillasPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-stone-900">
-          <MessageSquareText className="h-6 w-6 text-brand-500" />
-          Plantillas
-        </h1>
-        <p className="mt-0.5 text-sm text-stone-500">
-          Personaliza los mensajes de WhatsApp usados en recordatorios y cancelaciones.
-        </p>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <MessageSquareText className="h-6 w-6 text-brand-500" aria-hidden="true" />
+            Plantillas
+          </span>
+        }
+        description="Personaliza los mensajes de WhatsApp usados en recordatorios y cancelaciones."
+      />
 
       <TemplatesManager templates={templates} />
     </div>

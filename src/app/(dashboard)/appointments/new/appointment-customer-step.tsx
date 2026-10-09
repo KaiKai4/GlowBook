@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils/cn";
-import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
+import { cn } from "@/components/ui/cn";
+import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 import { UserPlus, Users } from "lucide-react";
 import type { CustomerOption } from "./appointment-wizard-types";
 
@@ -49,8 +49,8 @@ export function AppointmentCustomerStep({
           <Users className="h-4 w-4 text-brand-600" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-stone-800">Seleccionar cliente</h2>
-          <p className="text-xs text-stone-400">Cliente existente o registrar uno nuevo</p>
+          <h2 className="text-sm font-semibold text-fg-secondary">Seleccionar cliente</h2>
+          <p className="text-xs text-fg-subtle">Cliente existente o registrar uno nuevo</p>
         </div>
       </div>
 
@@ -67,7 +67,7 @@ export function AppointmentCustomerStep({
               "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all disabled:opacity-40",
               mode === "existing"
                 ? "border-brand-400 bg-brand-50 text-brand-700"
-                : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
+                : "border-border text-fg-subtle hover:border-border-strong hover:bg-surface-muted"
             )}
           >
             <Users className="h-4 w-4" /> Cliente existente
@@ -82,7 +82,7 @@ export function AppointmentCustomerStep({
               "flex items-center gap-2.5 rounded-xl border-2 p-4 text-sm font-medium transition-all",
               mode === "new"
                 ? "border-brand-400 bg-brand-50 text-brand-700"
-                : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50"
+                : "border-border text-fg-subtle hover:border-border-strong hover:bg-surface-muted"
             )}
           >
             <UserPlus className="h-4 w-4" /> Cliente nuevo
@@ -144,7 +144,7 @@ export function AppointmentCustomerStep({
         )}
 
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+          <div className="rounded-lg bg-danger-subtle border border-danger-border px-4 py-3 text-sm text-danger-strong">
             {error}
           </div>
         )}

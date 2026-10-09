@@ -1,8 +1,8 @@
 import { parseReportFilters } from "@/features/reports/schemas";
 import { getOperationalReport } from "@/features/reports/use-cases/get-operational-report";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireProfile } from "@/app/_composition/request-context";
 import { ReportsView } from "./reports-view";
 
 export default async function ReportsPage({
@@ -15,7 +15,7 @@ export default async function ReportsPage({
   if (!hasPermission(profile, PERMISSIONS.REPORTS_VIEW)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para ver reportes.</p>
+        <p className="text-fg-subtle">No tienes permiso para ver reportes.</p>
       </div>
     );
   }

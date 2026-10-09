@@ -1,68 +1,96 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { definePlatformAction } from "@/app/_composition/define-platform-action";
+import { parseUuidField } from "@/app/_composition/define-action";
+import { ok, type Result } from "@/infra/result";
+import { formText } from "@/infra/validation/form-fields";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
 import {
   inviteSalon,
   regenerateSalonInvitation,
 } from "@/features/platform/use-cases/invite-salon";
 import { updateSalonStatus } from "@/features/platform/use-cases/update-salon-status";
-import type { Result } from "@/lib/result";
 
 // Devuelve el token en claro: el enlace solo puede mostrarse en esta
 // respuesta porque la DB guarda unicamente el hash.
+const inviteSalonFlow = definePlatformAction<FormData, { email: string; planId: string }, string>({
+  rateLimit: { scope: "admin:inviteSalonAction" },
+  parse: (formData) =>
+    ok({ email: formText(formData.get("email")), planId: formText(formData.get("planId")) }),
+  run: (input, session) =>
+    inviteSalon({ ...input, actorUserId: session.userId, actorIsPlatformAdmin: true }),
+  revalidate: () => ["/admin", "/admin/invitations"],
+});
+
 export async function inviteSalonAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const actorUserId = await requirePlatformAdmin();
-  const result = await inviteSalon({
-    email: String(formData.get("email") ?? ""),
-    planId: String(formData.get("planId") ?? ""),
-    actorUserId,
-  });
-  if (result.ok) {
-    revalidatePath("/admin");
-    revalidatePath("/admin/invitations");
-  }
-  return result;
+  return inviteSalonFlow(formData);
 }
+
+const regenerateInvitationFlow = definePlatformAction<string, string, string>({
+  rateLimit: { scope: "admin:regenerateSalonInvitationAction" },
+  parse: parseUuidField,
+  run: (invitationId, session) =>
+    regenerateSalonInvitation({ invitationId, actorUserId: session.userId, actorIsPlatformAdmin: true }),
+  revalidate: () => ["/admin/invitations"],
+});
 
 export async function regenerateSalonInvitationAction(
   invitationId: string
 ): Promise<Result<string>> {
-  const actorUserId = await requirePlatformAdmin();
-  const result = await regenerateSalonInvitation({ invitationId, actorUserId });
-  if (result.ok) revalidatePath("/admin/invitations");
-  return result;
+  return regenerateInvitationFlow(invitationId);
 }
+
+interface SalonIdentity {
+  salonId: string;
+}
+
+const deleteSalonFlow = definePlatformAction<
+  SalonIdentity & { confirmation: string },
+  SalonIdentity & { confirmation: string },
+  void
+>({
+  rateLimit: { scope: "admin:deleteSalonAction" },
+  parse: (raw) => {
+    const salonId = parseUuidField(raw.salonId);
+    return salonId.ok ? ok(raw) : salonId;
+  },
+  run: async ({ salonId, confirmation }, session) => {
+    const result = await deleteSalon({ salonId, confirmation, actorUserId: session.userId });
+    return result.ok ? ok(undefined) : result;
+  },
+  revalidate: () => ["/admin", "/admin/salons"],
+});
 
 export async function deleteSalonAction(
   salonId: string,
   confirmation: string
 ): Promise<Result<void>> {
-  const actorUserId = await requirePlatformAdmin();
-
-  const result = await deleteSalon({ salonId, confirmation, actorUserId });
-  if (!result.ok) return result;
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/salons");
-  return { ok: true, value: undefined };
+  return deleteSalonFlow({ salonId, confirmation });
 }
+
+const updateSalonStatusFlow = definePlatformAction<
+  SalonIdentity & { isActive: boolean },
+  SalonIdentity & { isActive: boolean },
+  void
+>({
+  rateLimit: { scope: "admin:updateSalonStatusAction" },
+  parse: (raw) => {
+    const salonId = parseUuidField(raw.salonId);
+    return salonId.ok ? ok(raw) : salonId;
+  },
+  run: async ({ salonId, isActive }, session) => {
+    const result = await updateSalonStatus({ salonId, isActive, actorUserId: session.userId });
+    return result.ok ? ok(undefined) : result;
+  },
+  revalidate: () => ["/admin", "/admin/salons", "/admin/audit"],
+});
 
 export async function updateSalonStatusAction(
   salonId: string,
   isActive: boolean
 ): Promise<Result<void>> {
-  const actorUserId = await requirePlatformAdmin();
-
-  const result = await updateSalonStatus({ salonId, isActive, actorUserId });
-  if (!result.ok) return result;
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/salons");
-  revalidatePath("/admin/audit");
-  return { ok: true, value: undefined };
+  return updateSalonStatusFlow({ salonId, isActive });
 }

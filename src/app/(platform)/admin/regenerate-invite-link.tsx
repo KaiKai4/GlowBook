@@ -31,13 +31,13 @@ export function RegenerateInviteLink({ invitationId }: { invitationId: string })
         type="button"
         onClick={handleRegenerate}
         disabled={pending}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
+        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-accent transition-colors hover:bg-accent-subtle disabled:opacity-50"
         title="Genera un enlace nuevo e inválida el anterior"
       >
         <RefreshCw className={`h-3 w-3 ${pending ? "animate-spin" : ""}`} />
         Regenerar enlace
       </button>
-      {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
     </div>
   );
 }

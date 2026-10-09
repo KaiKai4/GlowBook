@@ -1,18 +1,29 @@
 import "server-only";
 
-import { utcBounds } from "@/lib/utils/dates";
-import { getYearRange, localDateString } from "../domain/period";
-import { findHistoricalReportRows, findSalonReportIdentity } from "../data/reports.repo";
+import { findSalonReportIdentity } from "../data/reports.repo";
+import { fetchPeriodTotals } from "../data/rpc/reports-read-models.rpc";
 import {
-  buildMonthlyExportRows,
-  calculateLifetimeTotals,
+  fetchExpenseConcepts,
+  fetchMonthlySeries,
+  fetchProductSales,
+  type MonthlySeriesRow,
+} from "../data/rpc/reports-history.rpc";
+import {
+  trimMonthlyRows,
   type LifetimeReportTotals,
   type MonthlyExportRow,
   type ReportModuleAvailability,
 } from "../domain/analytics";
-import { LIFETIME_RANGE } from "./get-operational-report";
+import { getYearRange, localDateString, localYear } from "../domain/period";
+import { lastDayOfMonth, toLifetimeTotals } from "./get-operational-report";
 
 const DEFAULT_REPORT_TIMEZONE = "America/Panama";
+// Historico completo: la base agrega en la ventana amplia y los meses sin movimientos
+// salen en cero; trimMonthlyRows recorta la serie al primer y ultimo mes con movimientos.
+const LIFETIME_FIRST_MONTH = "1970-01";
+const LIFETIME_FIRST_DAY = "1970-01-01";
+// Sin tope de productos en la exportacion: maximo entero de PostgreSQL (LIMIT).
+const ALL_PRODUCTS_LIMIT = 2147483647;
 
 /** Alcance del archivo: un mes puntual, un año calendario o toda la vida. */
 export type ReportExportScope =
@@ -35,8 +46,19 @@ export interface ReportExportData {
   productTotals: Array<{ name: string; quantity: number }>;
 }
 
+interface ExportBounds {
+  /** Dia local inicial y final (YYYY-MM-DD) del alcance. */
+  from: string;
+  to: string;
+  /** Meses (YYYY-MM) de la serie mensual que cubren el alcance. */
+  firstMonth: string;
+  lastMonth: string;
+  /** Mes hasta el que la serie se rellena: el del alcance o el mes en curso. */
+  currentMonthKey: string;
+}
+
 function monthLabel(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map(Number);
+  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
   const formatter = new Intl.DateTimeFormat("es-PA", {
     month: "long",
     year: "numeric",
@@ -45,23 +67,50 @@ function monthLabel(monthKey: string): string {
   return formatter.format(new Date(Date.UTC(year, month - 1, 15)));
 }
 
-function lastDayOfMonth(monthKey: string): string {
-  const [year, month] = monthKey.split("-").map(Number);
-  const day = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return `${monthKey}-${String(day).padStart(2, "0")}`;
-}
-
-function scopeBounds(scope: ReportExportScope, timezone: string): { start: string; end: string } {
+function exportBounds(scope: ReportExportScope, timezone: string, now: Date): ExportBounds {
   if (scope.type === "month") {
-    return utcBounds(`${scope.monthKey}-01`, lastDayOfMonth(scope.monthKey), timezone);
+    return {
+      from: `${scope.monthKey}-01`,
+      to: lastDayOfMonth(scope.monthKey),
+      firstMonth: scope.monthKey,
+      lastMonth: scope.monthKey,
+      currentMonthKey: scope.monthKey,
+    };
   }
   if (scope.type === "year") {
     const range = getYearRange(scope.year);
-    return utcBounds(range.from, range.to, timezone);
+    return {
+      from: range.from,
+      to: range.to,
+      firstMonth: `${scope.year}-01`,
+      lastMonth: `${scope.year}-12`,
+      currentMonthKey: `${scope.year}-12`,
+    };
   }
-  // Limites fijos lejanos: el histórico completo debe incluir movimientos
-  // anteriores a la creacion del salon (historial importado, datos retroactivos).
-  return { start: LIFETIME_RANGE.start, end: LIFETIME_RANGE.end };
+  // El ultimo año de la ventana queda un año por delante del actual: cubre movimientos
+  // con fecha futura sin consultar un limite que dependa de los datos.
+  const lastYear = localYear(now, timezone) + 1;
+  return {
+    from: LIFETIME_FIRST_DAY,
+    to: `${lastYear}-12-31`,
+    firstMonth: LIFETIME_FIRST_MONTH,
+    lastMonth: `${lastYear}-12`,
+    currentMonthKey: localDateString(now, timezone).slice(0, 7),
+  };
+}
+
+function toExportRow(row: MonthlySeriesRow): MonthlyExportRow {
+  return {
+    monthKey: row.monthKey,
+    completedAppointments: row.completedAppointments,
+    appointmentRevenue: row.appointmentRevenue,
+    retailRevenue: row.retailRevenue,
+    grossRevenue: row.grossRevenue,
+    operationalExpenses: row.operationalExpenses,
+    inventoryPurchases: row.inventoryPurchases,
+    totalExpenses: row.totalExpenses,
+    profit: row.profit,
+  };
 }
 
 // Un mes sin movimientos igual exporta su fila en cero: un archivo vacio
@@ -99,41 +148,20 @@ export async function getReportExportData(
 ): Promise<ReportExportData> {
   const identity = await findSalonReportIdentity(salonId);
   const timezone = identity?.timezone ?? DEFAULT_REPORT_TIMEZONE;
-  const bounds = scopeBounds(scope, timezone);
+  const bounds = exportBounds(scope, timezone, now);
 
-  const rows = await findHistoricalReportRows({
-    salonId,
-    start: bounds.start,
-    end: bounds.end,
-    timezone,
-  });
-
-  const input = { ...rows, modules };
-  // Tope hasta donde la serie mensual rellena meses en cero: el mes/año del
-  // alcance, o el mes en curso para el histórico.
-  const currentMonthKey =
-    scope.type === "month"
-      ? scope.monthKey
-      : scope.type === "year"
-        ? `${scope.year}-12`
-        : localDateString(now, timezone).slice(0, 7);
-
-  const expenseConcepts = new Map<string, number>();
-  if (modules.expenses) {
-    for (const group of rows.expenseGroups) {
-      expenseConcepts.set(group.label, (expenseConcepts.get(group.label) ?? 0) + group.amount);
-    }
-  }
-
-  const productTotals = new Map<string, number>();
-  if (modules.retail) {
-    for (const bucket of rows.productMonths) {
-      productTotals.set(
-        bucket.productName,
-        (productTotals.get(bucket.productName) ?? 0) + bucket.quantity
-      );
-    }
-  }
+  const [series, totals, expenseConcepts, productSales] = await Promise.all([
+    fetchMonthlySeries({ firstMonth: bounds.firstMonth, lastMonth: bounds.lastMonth, timezone, modules }),
+    fetchPeriodTotals({ from: bounds.from, to: bounds.to, timezone, modules }),
+    fetchExpenseConcepts({ from: bounds.from, to: bounds.to, modules, includeRestock: false }),
+    fetchProductSales({
+      firstMonth: bounds.firstMonth,
+      lastMonth: bounds.lastMonth,
+      timezone,
+      modules,
+      limit: ALL_PRODUCTS_LIMIT,
+    }),
+  ]);
 
   const scopeLabel =
     scope.type === "month"
@@ -141,6 +169,11 @@ export async function getReportExportData(
       : scope.type === "year"
         ? `año ${scope.year}`
         : "histórico completo";
+
+  const exportRows = withMonthFallback(
+    trimMonthlyRows(series.map(toExportRow), bounds.currentMonthKey),
+    scope
+  );
 
   return {
     salonName: identity?.name ?? "GlowBook",
@@ -153,16 +186,12 @@ export async function getReportExportData(
     modules,
     scopeLabel,
     totalsSuffix: scope.type === "lifetime" ? "(histórico)" : `(${scopeLabel})`,
-    months: withMonthFallback(buildMonthlyExportRows(input, currentMonthKey), scope).map((row) => ({
+    months: exportRows.map((row) => ({
       ...row,
       label: monthLabel(row.monthKey),
     })),
-    totals: calculateLifetimeTotals(input),
-    expenseConcepts: [...expenseConcepts.entries()]
-      .map(([label, amount]) => ({ label, amount }))
-      .sort((a, b) => b.amount - a.amount),
-    productTotals: [...productTotals.entries()]
-      .map(([name, quantity]) => ({ name, quantity }))
-      .sort((a, b) => b.quantity - a.quantity),
+    totals: toLifetimeTotals(totals),
+    expenseConcepts: expenseConcepts.map((concept) => ({ label: concept.label, amount: concept.amount })),
+    productTotals: productSales.map((product) => ({ name: product.name, quantity: product.total })),
   };
 }

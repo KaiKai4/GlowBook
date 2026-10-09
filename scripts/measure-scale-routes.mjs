@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -30,10 +31,7 @@ function loadEnvFileIfPresent() {
   }
 }
 
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+/** @param {string} value */
 function isLocalUrl(value) {
   try {
     const hostname = new URL(value).hostname.toLowerCase();
@@ -43,11 +41,13 @@ function isLocalUrl(value) {
   }
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[measure-scale-routes] ${message}`);
   process.exit(1);
 }
 
+/** @param {string} name */
 function requireEnv(name) {
   const value = process.env[name];
   if (!value) fail(`Set ${name}.`);
@@ -63,10 +63,12 @@ function vercelBypassHeaders() {
   };
 }
 
+/** @param {string} batchId @param {number} salonIndex */
 function ownerEmailFor(batchId, salonIndex) {
   return `glowbook.${batchId}.owner.${salonIndex}.0@example.com`;
 }
 
+/** @param {import("@playwright/test").Page} page @param {{ email: string, password: string }} credentials */
 async function login(page, credentials) {
   await page.goto("/login", { waitUntil: "networkidle" });
   await page.getByLabel("Email").fill(credentials.email);
@@ -86,6 +88,7 @@ async function login(page, credentials) {
   ]);
 }
 
+/** @param {import("@playwright/test").Page} page @param {string} route */
 async function measureRoute(page, route) {
   const startedAt = Date.now();
   const response = await page.goto(route, { waitUntil: "domcontentloaded" });
@@ -98,6 +101,7 @@ async function measureRoute(page, route) {
   };
 }
 
+/** @param {import("@supabase/supabase-js").SupabaseClient} admin @returns {Promise<{ email: string, password: string, userId: string, temporary: true }>} */
 async function createTemporaryPlatformAdmin(admin) {
   const email = `glowbook.scale-perf.platform.${Date.now()}.${randomUUID()}@example.com`;
   const password = "GlowBookScale123!";
@@ -121,6 +125,7 @@ async function createTemporaryPlatformAdmin(admin) {
   }
 }
 
+/** @param {import("@supabase/supabase-js").SupabaseClient} admin @param {{ email: string, password: string, temporary: false } | { email: string, password: string, temporary: true, userId: string } | null | undefined} credentials */
 async function cleanupTemporaryPlatformAdmin(admin, credentials) {
   if (!credentials?.temporary) return;
 
@@ -191,6 +196,7 @@ const ownerCredentials = {
   password: process.env.SCALE_MEASURE_OWNER_PASSWORD ?? "GlowBookScale123!",
 };
 
+/** @type {{ email: string, password: string, temporary: false } | { email: string, password: string, temporary: true, userId: string } | null} */
 let platformCredentials =
   process.env.E2E_PLATFORM_ADMIN_EMAIL && process.env.E2E_PLATFORM_ADMIN_PASSWORD
     ? {

@@ -1,12 +1,10 @@
 import "server-only";
 
 import { findAppointmentsBySalon } from "../data/appointments.repo";
-import { getEmployeeCalendarOptions } from "@/features/employees/use-cases/employee-calendar-options";
-import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
-import { getSalonBusinessHours } from "@/features/salon/use-cases/salon-business-hours";
-import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
-import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
-import { formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
+import { getEmployeeCalendarOptions } from "@/features/employees";
+import { getActiveMessageTemplate } from "@/features/notifications";
+import { getSalonBusinessHours, getSalonIdentity, getSalonPaymentMethods } from "@/features/salon";
+import { formatLocalDateISO, utcBounds } from "@/infra/format/dates";
 import {
   countActiveCalendarAppointments,
   formatCalendarDateLabel,
@@ -102,8 +100,11 @@ export async function getCalendarView({
 
   const weekDates = getWeekDates(selectedDate);
   const visibleWeekDates = getVisibleWeekDates(selectedDate, businessHours);
-  const startDate = view === "semanal" ? weekDates[0] : selectedDate;
-  const endDate = view === "semanal" ? weekDates[6] : selectedDate;
+  const weekStart = weekDates[0];
+  const weekEnd = weekDates[6];
+  if (!weekStart || !weekEnd) throw new Error("Invariante de calendario: la semana tiene 7 días.");
+  const startDate = view === "semanal" ? weekStart : selectedDate;
+  const endDate = view === "semanal" ? weekEnd : selectedDate;
   const { start, end } = utcBounds(startDate, endDate, timezone);
   const appointments = (await findAppointmentsBySalon(salonId, {
     startDate: start,

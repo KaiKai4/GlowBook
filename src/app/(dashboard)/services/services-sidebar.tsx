@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import type { Category } from "./services-types";
 
 function CategoryRow({
@@ -18,16 +18,16 @@ function CategoryRow({
         onClick={onClick}
         className={cn(
           "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
-          active ? "bg-rose-50 font-medium text-rose-700" : "text-neutral-600 hover:bg-neutral-50"
+          active ? "bg-accent-subtle font-medium text-accent-strong" : "text-fg-muted hover:bg-surface-muted"
         )}
       >
         <span className="flex items-center gap-2">
           <span
-            className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-rose-500" : "bg-neutral-300")}
+            className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-accent" : "bg-border-strong")}
           />
           {label}
         </span>
-        <span className="text-xs text-neutral-400">{count}</span>
+        <span className="text-xs text-fg-subtle">{count}</span>
       </button>
     </li>
   );
@@ -48,14 +48,14 @@ export function ServicesSidebar({
 }) {
   return (
     <aside>
-      <div className="rounded-xl border border-neutral-100 bg-white p-2">
+      <div className="rounded-xl border border-border-subtle bg-surface p-2">
         <div className="flex items-center justify-between px-2 py-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <span className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
             Categorías
           </span>
           <button
             onClick={onCreateCategory}
-            className="text-xs font-medium text-rose-600 hover:text-rose-700"
+            className="text-xs font-medium text-accent-strong hover:text-accent-strong"
           >
             + Nueva
           </button>

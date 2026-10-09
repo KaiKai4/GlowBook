@@ -1,6 +1,6 @@
 import { getCalendarView } from "@/features/appointments/use-cases/get-calendar-view";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireProfile } from "@/app/_composition/request-context";
 import { AppointmentsClient } from "./appointments-client";
 
 export default async function AppointmentsPage({
@@ -18,7 +18,7 @@ export default async function AppointmentsPage({
   if (!canView) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para ver las citas.</p>
+        <p className="text-fg-subtle">No tienes permiso para ver las citas.</p>
       </div>
     );
   }

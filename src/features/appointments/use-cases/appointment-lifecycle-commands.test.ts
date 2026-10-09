@@ -1,88 +1,75 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { promoteCustomer } from "@/features/customers/use-cases/customer-temporary";
-import {
-  findAppointmentForCommand,
-  findAppointmentItemsForPricing,
-  setAppointmentItemsCalendarBlocking,
-  updateAppointmentItemCharges,
-  updateAppointmentStatus,
-} from "../data/appointment-commands.repo";
+import { findAppointmentForCommand } from "../data/appointment-commands.repo";
+import { cancelAppointmentRpc } from "../data/rpc/cancel-appointment";
+import { completeAppointmentRpc } from "../data/rpc/complete-appointment";
+import { confirmAppointmentRpc } from "../data/rpc/confirm-appointment";
 import { cancelAppointment } from "./cancel-appointment";
 import { completeAppointment } from "./complete-appointment";
 import { confirmAppointment } from "./confirm-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentForCommand: vi.fn(),
-  findAppointmentItemsForPricing: vi.fn(),
-  setAppointmentItemsCalendarBlocking: vi.fn(),
-  updateAppointmentItemCharges: vi.fn(),
-  updateAppointmentStatus: vi.fn(),
 }));
 
-vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
-  promoteCustomer: vi.fn(),
+vi.mock("../data/rpc/confirm-appointment", () => ({
+  confirmAppointmentRpc: vi.fn(),
 }));
 
-const mockedFindAppointmentForCommand = vi.mocked(findAppointmentForCommand);
-const mockedFindAppointmentItemsForPricing = vi.mocked(findAppointmentItemsForPricing);
-const mockedSetAppointmentItemsCalendarBlocking = vi.mocked(setAppointmentItemsCalendarBlocking);
-const mockedUpdateAppointmentItemCharges = vi.mocked(updateAppointmentItemCharges);
-const mockedUpdateAppointmentStatus = vi.mocked(updateAppointmentStatus);
-const mockedPromoteCustomer = vi.mocked(promoteCustomer);
+vi.mock("../data/rpc/cancel-appointment", () => ({
+  cancelAppointmentRpc: vi.fn(),
+}));
+
+vi.mock("../data/rpc/complete-appointment", () => ({
+  completeAppointmentRpc: vi.fn(),
+}));
+
+const mockedFind = vi.mocked(findAppointmentForCommand);
+const mockedConfirmRpc = vi.mocked(confirmAppointmentRpc);
+const mockedCancelRpc = vi.mocked(cancelAppointmentRpc);
+const mockedCompleteRpc = vi.mocked(completeAppointmentRpc);
 
 const appointmentId = "appointment-1";
 const salonId = "salon-1";
+const idempotencyKey = "00000000-0000-4000-8000-0000000000d1";
+
+const SUMMARY = {
+  appointment_id: appointmentId,
+  status: "completed" as const,
+  subtotal: 56,
+  discount_amount: 4,
+  total_price: 56,
+};
 
 describe("appointment lifecycle commands", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedFindAppointmentForCommand.mockResolvedValue({
+    mockedFind.mockResolvedValue({
       id: appointmentId,
       salon_id: salonId,
       status: "scheduled",
       customer_id: "customer-1",
     });
-    mockedFindAppointmentItemsForPricing.mockResolvedValue([
-      { id: "item-fixed", price: 20, discount_amount: 0, pricing_mode: "fixed" },
-      { id: "item-variable", price: 30, discount_amount: 0, pricing_mode: "variable" },
-    ]);
-    mockedUpdateAppointmentItemCharges.mockResolvedValue(undefined);
-    mockedSetAppointmentItemsCalendarBlocking.mockResolvedValue(undefined);
-    mockedUpdateAppointmentStatus.mockResolvedValue(undefined);
-    mockedPromoteCustomer.mockResolvedValue({ ok: true, value: undefined });
+    mockedConfirmRpc.mockResolvedValue({ appointment_id: appointmentId, status: "confirmed" });
+    mockedCancelRpc.mockResolvedValue({ appointment_id: appointmentId, status: "cancelled" });
+    mockedCompleteRpc.mockResolvedValue(SUMMARY);
   });
 
-  it("confirms a scheduled appointment through the command adapter", async () => {
-    const result = await confirmAppointment(appointmentId, salonId);
+  it("confirms a scheduled appointment through the transactional RPC", async () => {
+    const result = await confirmAppointment(appointmentId, salonId, idempotencyKey);
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedUpdateAppointmentStatus).toHaveBeenCalledWith({
-      appointmentId,
-      salonId,
-      status: "confirmed",
-    });
+    expect(mockedConfirmRpc).toHaveBeenCalledWith({ appointmentId, idempotencyKey });
   });
 
-  it("releases calendar blocks before cancelling the appointment", async () => {
-    const result = await cancelAppointment(appointmentId, salonId);
+  it("cancels through a single RPC that also releases the calendar", async () => {
+    const result = await cancelAppointment(appointmentId, salonId, idempotencyKey);
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedSetAppointmentItemsCalendarBlocking).toHaveBeenCalledWith({
-      appointmentId,
-      salonId,
-      blocksCalendar: false,
-    });
-    expect(mockedUpdateAppointmentStatus).toHaveBeenCalledWith({
-      appointmentId,
-      salonId,
-      status: "cancelled",
-    });
-    expect(
-      mockedSetAppointmentItemsCalendarBlocking.mock.invocationCallOrder[0]
-    ).toBeLessThan(mockedUpdateAppointmentStatus.mock.invocationCallOrder[0]);
+    expect(mockedCancelRpc).toHaveBeenCalledTimes(1);
+    expect(mockedCancelRpc).toHaveBeenCalledWith({ appointmentId, idempotencyKey });
   });
 
-  it("completes with editable variable prices, item-level discounts, calendar release and customer promotion", async () => {
+  it("completes through one RPC with item charges, note and idempotency key", async () => {
     const result = await completeAppointment(
       appointmentId,
       salonId,
@@ -91,61 +78,49 @@ describe("appointment lifecycle commands", () => {
         { id: "item-fixed", price: 20, discountPercentage: 20 },
         { id: "item-variable", price: 40, discountPercentage: 0 },
       ],
-      "Diseno adicional"
+      "  Diseno adicional  ",
+      idempotencyKey
     );
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedUpdateAppointmentItemCharges).toHaveBeenCalledWith({
+    expect(mockedCompleteRpc).toHaveBeenCalledWith({
       appointmentId,
-      salonId,
-      charges: [
-        { id: "item-fixed", price: 20, discountAmount: 4 },
-        { id: "item-variable", price: 40, discountAmount: 0 },
-      ],
-    });
-    expect(mockedUpdateAppointmentStatus).toHaveBeenCalledWith({
-      appointmentId,
-      salonId,
-      status: "completed",
       paymentMethod: "cash",
-      discountAmount: 4,
-      totalPrice: 56,
       completionPriceNote: "Diseno adicional",
+      itemCharges: [
+        { id: "item-fixed", price: 20, discount_percentage: 20 },
+        { id: "item-variable", price: 40, discount_percentage: 0 },
+      ],
+      idempotencyKey,
     });
-    expect(mockedSetAppointmentItemsCalendarBlocking).toHaveBeenCalledWith({
-      appointmentId,
-      salonId,
-      blocksCalendar: false,
-    });
-    expect(mockedPromoteCustomer).toHaveBeenCalledWith("customer-1", salonId);
   });
 
-  it("blocks manual price changes for fixed-price services", async () => {
-    const result = await completeAppointment(appointmentId, salonId, "cash", [
-      { id: "item-fixed", price: 25 },
-      { id: "item-variable", price: 30 },
-    ]);
+  it("maps the database's domain rejection of fixed-price changes to the public message", async () => {
+    mockedCompleteRpc.mockRejectedValue({
+      code: "P0001",
+      message: "Solo puedes cambiar el precio de servicios con precio variable.",
+    });
+
+    const result = await completeAppointment(appointmentId, salonId, "cash", [{ id: "item-fixed", price: 25 }], "", idempotencyKey);
 
     expect(result).toEqual({
       ok: false,
       error: "Solo puedes cambiar el precio de servicios con precio variable.",
     });
-    expect(mockedUpdateAppointmentItemCharges).not.toHaveBeenCalled();
-    expect(mockedUpdateAppointmentStatus).not.toHaveBeenCalled();
   });
 
-  it("does not write when the lifecycle transition is invalid", async () => {
-    mockedFindAppointmentForCommand.mockResolvedValue({
+  it("does not call the RPC when the lifecycle transition is invalid", async () => {
+    mockedFind.mockResolvedValue({
       id: appointmentId,
       salon_id: salonId,
       status: "cancelled",
       customer_id: "customer-1",
     });
 
-    const result = await completeAppointment(appointmentId, salonId, "cash");
+    const result = await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey);
 
     expect(result.ok).toBe(false);
-    expect(mockedUpdateAppointmentStatus).not.toHaveBeenCalled();
-    expect(mockedSetAppointmentItemsCalendarBlocking).not.toHaveBeenCalled();
+    expect(mockedCompleteRpc).not.toHaveBeenCalled();
+    expect(mockedCancelRpc).not.toHaveBeenCalled();
   });
 });

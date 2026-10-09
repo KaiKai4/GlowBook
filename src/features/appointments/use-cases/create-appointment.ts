@@ -1,13 +1,16 @@
-import { err, ok, type Result } from "@/lib/result";
-import { captureError } from "@/lib/observability";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { err, ok, type Result } from "@/infra/result";
+import { captureError } from "@/infra/observability";
 import {
-  createAppointmentWithRpc,
   findAppointmentCreationResources,
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
-  type CreateAppointmentRpcPayload,
 } from "../data/appointment-commands.repo";
+import {
+  createAppointmentWithRpc,
+  type CreateAppointmentRpcPayload,
+} from "../data/rpc/create-appointment";
 import { evaluateTimeRange } from "../domain/availability";
 import { buildItemPayloads } from "../domain/scheduling";
 import type { SchedulingContext } from "../domain/scheduling";
@@ -17,11 +20,13 @@ import type { CreateAppointmentInput } from "../schemas";
 interface Deps {
   salonId: string;
   userId: string;
+  /** Clave de idempotencia del formulario (uuid). Un reenvio no crea una segunda cita. */
+  idempotencyKey: string;
 }
 
 export async function createAppointment(
   input: CreateAppointmentInput,
-  { salonId, userId }: Deps
+  { salonId, userId, idempotencyKey }: Deps
 ): Promise<Result<string>> {
   let resources: Awaited<ReturnType<typeof findAppointmentCreationResources>>;
 
@@ -63,6 +68,7 @@ export async function createAppointment(
         slotsCache.set(
           key,
           await findEmployeeOccupiedSlotsForCommand({
+            salonId,
             employeeId: employee.id,
             date: startTime,
             timezone: resources.salonConfig.timezone,
@@ -88,10 +94,12 @@ export async function createAppointment(
   try {
     payloads = buildItemPayloads(salonId, startTime, validAssignments, ctx);
   } catch (error) {
-    return err((error as Error).message);
+    return err(toPublicErrorMessage(error, "Error al crear la cita. Intenta de nuevo."));
   }
 
-  const totalEnd = payloads[payloads.length - 1].end_time;
+  const lastPayload = payloads[payloads.length - 1];
+  if (!lastPayload) throw new Error("Invariante de cita: sin items para calcular el fin.");
+  const totalEnd = lastPayload.end_time;
   const globalViolations = evaluateTimeRange({
     start: startTime,
     end: totalEnd,
@@ -101,8 +109,9 @@ export async function createAppointment(
     enforceMinDuration: true,
   });
 
-  if (globalViolations.length > 0) {
-    return err(globalViolations[0].message);
+  const [firstGlobalViolation] = globalViolations;
+  if (firstGlobalViolation) {
+    return err(firstGlobalViolation.message);
   }
 
   const rpcPayload: CreateAppointmentRpcPayload = {
@@ -125,7 +134,7 @@ export async function createAppointment(
 
   let created: Awaited<ReturnType<typeof createAppointmentWithRpc>>;
   try {
-    created = await createAppointmentWithRpc(rpcPayload);
+    created = await createAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "create" });
     return err("Error al crear la cita. Intenta de nuevo.");

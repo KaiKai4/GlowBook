@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import { Check, User } from "lucide-react";
 import type {
   AppointmentScheduleItem,
@@ -39,12 +39,12 @@ export function AppointmentSummaryStep({
   return (
     <Card>
       <div className="flex items-center gap-3 px-6 py-4 border-b border-brand-50">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
-          <Check className="h-4 w-4 text-emerald-600" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-subtle">
+          <Check className="h-4 w-4 text-success" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-stone-800">Confirmar cita</h2>
-          <p className="text-xs text-stone-400">Revisa los detalles antes de confirmar</p>
+          <h2 className="text-sm font-semibold text-fg-secondary">Confirmar cita</h2>
+          <p className="text-xs text-fg-subtle">Revisa los detalles antes de confirmar</p>
         </div>
       </div>
 
@@ -54,23 +54,23 @@ export function AppointmentSummaryStep({
             <User className="h-4 w-4 text-brand-600" />
           </div>
           <div>
-            <p className="text-xs text-brand-500 font-medium">Cliente</p>
-            <p className="text-sm font-semibold text-stone-800">{customerName}</p>
+            <p className="text-xs text-brand-600 font-medium">Cliente</p>
+            <p className="text-sm font-semibold text-fg-secondary">{customerName}</p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-stone-100 overflow-hidden">
+        <div className="rounded-xl border border-border-subtle overflow-hidden">
           {schedule.map((item, index) => (
             <div
               key={item.row.key}
               className={cn(
                 "flex items-center justify-between px-4 py-3.5 gap-3",
-                index < schedule.length - 1 && "border-b border-stone-100"
+                index < schedule.length - 1 && "border-b border-border-subtle"
               )}
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-stone-800">{item.service?.name}</p>
-                <p className="text-xs text-stone-400 mt-0.5">
+                <p className="text-sm font-semibold text-fg-secondary">{item.service?.name}</p>
+                <p className="text-xs text-fg-subtle mt-0.5">
                   <span className="text-brand-600 font-medium">
                     {item.start && formatTimeTz(item.start, timezone)}
                     {item.end && ` - ${formatTimeTz(item.end, timezone)}`}
@@ -79,7 +79,7 @@ export function AppointmentSummaryStep({
                   {employees.find((employee) => employee.id === item.row.employeeId)?.name}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-stone-700 shrink-0">
+              <span className="text-sm font-semibold text-fg-secondary shrink-0">
                 {formatCurrency(item.service?.price ?? 0)}
               </span>
             </div>
@@ -88,7 +88,7 @@ export function AppointmentSummaryStep({
 
         <div className="flex items-center justify-between rounded-xl bg-choco-50 border border-choco-100 px-4 py-3">
           <span className="text-sm font-semibold text-choco-700">Total</span>
-          <span className="text-lg font-bold text-choco-700">{formatCurrency(total)}</span>
+          <span className="text-lg font-semibold text-choco-700">{formatCurrency(total)}</span>
         </div>
 
         <Textarea
@@ -99,12 +99,12 @@ export function AppointmentSummaryStep({
         />
 
         {submitError && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+          <div className="rounded-lg bg-danger-subtle border border-danger-border px-4 py-3 text-sm text-danger-strong">
             {submitError}
           </div>
         )}
 
-        <div className="flex justify-between pt-2 border-t border-stone-100">
+        <div className="flex justify-between pt-2 border-t border-border-subtle">
           <Button variant="ghost" onClick={onBack}>
             Atras
           </Button>

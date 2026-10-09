@@ -5,7 +5,8 @@ import {
   getSubscriptionsPage,
 } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { PageHeader } from "@/components/ui/page-header";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { SalonSubscriptionList } from "../subscriptions/salon-list";
 import { SalonWorkspace } from "./salon-workspace";
 
@@ -28,38 +29,36 @@ export default async function PlatformSalonsPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-neutral-950">Salones</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-500">
-            Informacion global de cada salon: contacto, plan asignado, consumo de límites y acciones de plataforma.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Salones" value={view.metrics.totalSalons} />
-          <HeaderMetric
-            icon={<Users className="h-4 w-4" />}
-            label="Activos"
-            value={view.metrics.activeSalons}
-            accent="success"
-          />
-          <HeaderMetric icon={<CalendarDays className="h-4 w-4" />} label="Citas totales" value={view.metrics.totalAppointments} />
-          <HeaderMetric
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Alertas"
-            value={data.totals.openAlerts}
-            accent={data.totals.openAlerts > 0 ? "warning" : "default"}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Salones"
+        description="Informacion global de cada salon: contacto, plan asignado, consumo de límites y acciones de plataforma."
+        actions={
+          <>
+            <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Salones" value={view.metrics.totalSalons} />
+            <HeaderMetric
+              icon={<Users className="h-4 w-4" />}
+              label="Activos"
+              value={view.metrics.activeSalons}
+              accent="success"
+            />
+            <HeaderMetric icon={<CalendarDays className="h-4 w-4" />} label="Citas totales" value={view.metrics.totalAppointments} />
+            <HeaderMetric
+              icon={<AlertTriangle className="h-4 w-4" />}
+              label="Alertas"
+              value={data.totals.openAlerts}
+              accent={data.totals.openAlerts > 0 ? "warning" : "default"}
+            />
+          </>
+        }
+      />
 
-      <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+      <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-soft">
         <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[320px_1fr]">
-          <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-stone-50/60 lg:border-b-0 lg:border-r">
+          <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-surface-muted/60 lg:border-b-0 lg:border-r">
             <div className="flex items-center justify-between border-b border-brand-100 px-5 py-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Salones</p>
-                <p className="mt-1 text-sm text-stone-500">{view.salons.length} registrados</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Salones</p>
+                <p className="mt-1 text-sm text-fg-subtle">{view.salons.length} registrados</p>
               </div>
               <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
                 {view.metrics.activeSalons} activos
@@ -93,7 +92,7 @@ export default async function PlatformSalonsPage({
             />
           ) : (
             <div className="flex items-center justify-center p-8">
-              <p className="max-w-sm text-center text-sm leading-6 text-stone-500">
+              <p className="max-w-sm text-center text-sm leading-6 text-fg-subtle">
                 No hay salones registrados. Invita un salon desde Invitaciones para empezar.
               </p>
             </div>
@@ -126,12 +125,12 @@ function HeaderMetric({
   accent?: "default" | "success" | "warning";
 }) {
   return (
-    <div className="inline-flex h-11 items-center gap-3 rounded-xl border border-brand-100 bg-white px-4 shadow-sm">
-      <span className={accent === "success" ? "text-emerald-600" : accent === "warning" ? "text-amber-500" : "text-brand-600"}>
+    <div className="inline-flex h-11 items-center gap-3 rounded-xl border border-brand-100 bg-surface px-4 shadow-sm">
+      <span className={accent === "success" ? "text-success" : accent === "warning" ? "text-warning" : "text-brand-600"}>
         {icon}
       </span>
-      <span className="text-xl font-bold text-neutral-950">{value}</span>
-      <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">{label}</span>
+      <span className="text-xl font-semibold text-fg-strong">{value}</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">{label}</span>
     </div>
   );
 }

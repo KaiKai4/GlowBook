@@ -1,6 +1,6 @@
 import "server-only";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { deleteAuthUser } from "@/lib/supabase/auth-admin";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
+import { deleteAuthUser } from "@/infra/supabase/auth-admin";
 
 export async function deleteSalonCompletely(salonId: string): Promise<void> {
   const admin = createSupabaseAdminClient();

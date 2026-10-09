@@ -1,17 +1,17 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 const badgeVariants = cva(
   "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
   {
     variants: {
       variant: {
-        default: "bg-neutral-100 text-neutral-700",
-        success: "bg-emerald-100 text-emerald-700",
-        warning: "bg-amber-100 text-amber-700",
-        danger: "bg-red-100 text-red-700",
-        info: "bg-blue-100 text-blue-700",
-        primary: "bg-rose-100 text-rose-700",
+        default: "bg-surface-sunken text-fg-secondary",
+        success: "bg-success-subtle text-success-fg",
+        warning: "bg-warning-subtle text-warning-fg",
+        danger: "bg-danger-subtle text-danger-strong",
+        info: "bg-info-subtle text-info-fg",
+        primary: "bg-accent-subtle text-accent-strong",
       },
     },
     defaultVariants: { variant: "default" },

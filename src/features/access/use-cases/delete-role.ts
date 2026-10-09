@@ -1,6 +1,7 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import { toPublicErrorMessage } from "@/infra/errors";
+import type { Result } from "@/infra/result";
 import { deleteRole } from "../data/roles.repo";
 
 export async function deleteSalonRole(
@@ -13,7 +14,7 @@ export async function deleteSalonRole(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Error al eliminar el rol.",
+      error: toPublicErrorMessage(error, "Error al eliminar el rol."),
     };
   }
 }

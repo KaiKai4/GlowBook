@@ -1,8 +1,9 @@
+import { toPublicErrorMessage } from "@/infra/errors";
 import "server-only";
 
-import { z } from "zod";
+import { z } from "@/infra/validation/zod";
 
-import { err, ok, type Result } from "@/lib/result";
+import { err, ok, type Result } from "@/infra/result";
 import type { CommercialAddon } from "../domain/salon-extras";
 import {
   archiveCommercialAddon,
@@ -10,7 +11,9 @@ import {
   deleteCommercialAddon,
   saveCommercialAddon,
 } from "../data/commercial-addons.repo";
-import { auditBilling, errorMessage, normalizeKey } from "./billing-shared";
+import { commercialPlanAudit, normalizeKey } from "./billing-shared";
+import { publishAuditEvent } from "@/features/audit";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const AddonSchema = z
   .object({
@@ -50,7 +53,7 @@ export async function saveCommercialAddonConfig(
   actorUserId?: string | null
 ): Promise<Result<string>> {
   const parsed = AddonSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   try {
     const id = await saveCommercialAddon({
@@ -67,10 +70,10 @@ export async function saveCommercialAddonConfig(
       status: parsed.data.status,
       sortOrder: parsed.data.sortOrder,
     });
-    await auditBilling(actorUserId, "commercial_addon_saved", id);
-    return ok(id);
+    const warnings = await publishAuditEvent("billing.addon_saved", { ...commercialPlanAudit(actorUserId, id), action: "commercial_addon_saved" });
+    return ok(id, warnings);
   } catch (error) {
-    return err(errorMessage("No se pudo guardar el extra.", error));
+    return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
   }
 }
 
@@ -80,15 +83,16 @@ export async function removeCommercialAddonConfig(
 ): Promise<Result<void>> {
   try {
     const assignments = await countAddonAssignments(addonId);
+    let warnings: string[];
     if (assignments > 0) {
       await archiveCommercialAddon(addonId);
-      await auditBilling(actorUserId, "commercial_addon_archived", addonId);
+      warnings = await publishAuditEvent("billing.addon_archived", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_archived" });
     } else {
       await deleteCommercialAddon(addonId);
-      await auditBilling(actorUserId, "commercial_addon_deleted", addonId);
+      warnings = await publishAuditEvent("billing.addon_deleted", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_deleted" });
     }
-    return ok(undefined);
+    return ok(undefined, warnings);
   } catch (error) {
-    return err(errorMessage("No se pudo eliminar el extra.", error));
+    return err(toPublicErrorMessage(error, "No se pudo eliminar el extra."));
   }
 }

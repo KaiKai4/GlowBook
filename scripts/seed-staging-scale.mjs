@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTargetOrExit, readConfirmFlag } from "./lib/target-guard.mjs";
+import { assertNotProductionUrl, assertSeedEnvironment, dateAt, emailFor, insertRows, loadEnvFileIfPresent, readAppEnv } from "./seed-common.mjs";
 
 const DEFAULTS = {
   salons: 25,
@@ -12,30 +12,14 @@ const DEFAULTS = {
   appointmentsPerSalon: 120,
 };
 const MAX_SALONS = 250;
-const BATCH_SIZE = 100;
 
-function loadEnvFileIfPresent() {
-  const envPath = join(process.cwd(), ".env.local");
-  if (!existsSync(envPath)) return;
-
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
-
-    const [key, ...valueParts] = trimmed.split("=");
-    if (!process.env[key]) process.env[key] = valueParts.join("=");
-  }
-}
-
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[seed-staging-scale] ${message}`);
   process.exit(1);
 }
 
+/** @param {string} name @param {number} fallback */
 function integerEnv(name, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } = {}) {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -46,54 +30,16 @@ function integerEnv(name, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } =
   return value;
 }
 
+/** @param {string} batchId */
 function assertSafeBatchId(batchId) {
   if (!/^scale-[a-zA-Z0-9-]+$/.test(batchId)) {
     fail("SCALE_SEED_BATCH_ID must start with 'scale-' and contain only letters, numbers and hyphens.");
   }
 }
 
-function chunk(rows, size = BATCH_SIZE) {
-  const chunks = [];
-  for (let index = 0; index < rows.length; index += size) {
-    chunks.push(rows.slice(index, index + size));
-  }
-  return chunks;
-}
-
-async function insertRows(admin, table, rows, select = undefined) {
-  if (rows.length === 0) return [];
-
-  const inserted = [];
-  for (const group of chunk(rows)) {
-    let query = admin.from(table).insert(group);
-    if (select) query = query.select(select);
-    const { data, error } = await query;
-    if (error) throw error;
-    if (data) inserted.push(...data);
-  }
-
-  return inserted;
-}
-
-function dateAt(offsetDays, hour, minute = 0) {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + offsetDays);
-  date.setUTCHours(hour, minute, 0, 0);
-  return date;
-}
-
-function emailFor(batchId, entity, salonIndex, itemIndex = 0) {
-  return `glowbook.${batchId}.${entity}.${salonIndex}.${itemIndex}@example.com`;
-}
-
 loadEnvFileIfPresent();
 
-const appEnv = (
-  process.env.GLOWBOOK_ENV ??
-  process.env.APP_ENV ??
-  process.env.VERCEL_ENV ??
-  ""
-).toLowerCase();
+const appEnv = readAppEnv();
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const productionSupabaseUrl = process.env.PRODUCTION_SUPABASE_URL;
@@ -102,24 +48,18 @@ const batchId = process.env.SCALE_SEED_BATCH_ID ?? `scale-${Date.now()}`;
 
 assertSafeBatchId(batchId);
 
-if (appEnv !== "staging" && process.env.SCALE_SEED_ALLOW_LOCAL !== "true") {
-  fail("Set GLOWBOOK_ENV=staging, or SCALE_SEED_ALLOW_LOCAL=true for local-only experiments.");
-}
-
-if (appEnv === "production") {
-  fail("Refusing to seed a production environment.");
-}
+assertSeedEnvironment({
+  appEnv,
+  allowLocal: process.env.SCALE_SEED_ALLOW_LOCAL === "true",
+  allowLocalFlag: "SCALE_SEED_ALLOW_LOCAL",
+  fail,
+});
 
 if (!supabaseUrl || !serviceRoleKey) {
   fail("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
 }
 
-if (
-  productionSupabaseUrl &&
-  normalizeUrl(supabaseUrl) === normalizeUrl(productionSupabaseUrl)
-) {
-  fail("Refusing to seed PRODUCTION_SUPABASE_URL.");
-}
+assertNotProductionUrl({ supabaseUrl, productionSupabaseUrl, fail });
 
 if (confirm !== "seed-scale-salons") {
   fail("Set SCALE_SEED_CONFIRM=seed-scale-salons to acknowledge this creates persistent staging scale data.");
@@ -134,6 +74,12 @@ const config = {
   appointmentsPerSalon: integerEnv("SCALE_APPOINTMENTS_PER_SALON", DEFAULTS.appointmentsPerSalon),
 };
 
+assertSafeTargetOrExit("seed-staging-scale", {
+  url: supabaseUrl,
+  env: process.env.GLOWBOOK_ENV ?? process.env.APP_ENV ?? process.env.VERCEL_ENV,
+  confirmFlag: readConfirmFlag(process.argv),
+  productionUrl: process.env.PRODUCTION_SUPABASE_URL,
+});
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });

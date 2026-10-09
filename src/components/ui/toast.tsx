@@ -8,12 +8,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { CheckCircle2, Info, X, XCircle } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
+import { cn } from "@/components/ui/cn";
 
 // Feedback transitorio no bloqueante (guardado, estado actualizado). Para
 // confirmaciones o avisos que el usuario debe leer si o si, usar Dialog.
-type ToastKind = "success" | "error" | "info";
+type ToastKind = "success" | "error" | "info" | "warning";
 
 interface ToastItem {
   id: number;
@@ -25,6 +25,7 @@ export interface ToastApi {
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
+  warning: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -38,9 +39,10 @@ export function useToast(): ToastApi {
 const TOAST_DURATION_MS = 4000;
 
 const KIND_STYLES: Record<ToastKind, { container: string; icon: typeof CheckCircle2 }> = {
-  success: { container: "border-emerald-200 bg-emerald-50 text-emerald-800", icon: CheckCircle2 },
-  error: { container: "border-red-200 bg-red-50 text-red-700", icon: XCircle },
+  success: { container: "border-success-border bg-success-subtle text-success-strong", icon: CheckCircle2 },
+  error: { container: "border-danger-border bg-danger-subtle text-danger-strong", icon: XCircle },
   info: { container: "border-brand-200 bg-brand-50 text-brand-800", icon: Info },
+  warning: { container: "border-warning-border bg-warning-subtle text-warning-strong", icon: AlertTriangle },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -65,6 +67,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       success: (message) => push("success", message),
       error: (message) => push("error", message),
       info: (message) => push("info", message),
+      warning: (message) => push("warning", message),
     }),
     [push]
   );

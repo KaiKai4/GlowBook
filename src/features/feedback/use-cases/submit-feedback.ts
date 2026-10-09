@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { createFeedbackReport } from "../data/feedback.repo";
 import type { SubmitFeedbackInput } from "../schemas";
 

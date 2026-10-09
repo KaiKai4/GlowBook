@@ -1,8 +1,5 @@
-import { z } from "zod";
-import {
-  normalizePaymentMethod,
-  normalizePaymentMethods,
-} from "@/features/payments/domain/payment-methods";
+import { z } from "@/infra/validation/zod";
+import { normalizePaymentMethod, normalizePaymentMethods } from "@/features/payments";
 
 export const SALON_THEMES = ["violet", "mocco", "tiffany", "viridian", "yellow", "rosewater"] as const;
 export type SalonTheme = (typeof SALON_THEMES)[number];
@@ -34,7 +31,7 @@ const TimeString = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Hora inválida (usa formato HH:MM)");
 
-export const BusinessDaySchema = z
+const BusinessDaySchema = z
   .object({
     day_of_week: z.number().int().min(0).max(6),
     is_open: z.boolean(),

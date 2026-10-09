@@ -3,10 +3,10 @@ import { join } from "node:path";
 
 const REQUIRED_DOCS = [
   "docs/launch-support.md",
-  "docs/runbooks/incidents.md",
+  "docs/runbooks/incident.md",
   "docs/runbooks/deploy.md",
   "docs/runbooks/rollback.md",
-  "docs/runbooks/database-restore.md",
+  "docs/runbooks/restore.md",
   "docs/runbooks/platform-operations.md",
 ];
 
@@ -32,19 +32,23 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} path */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[support-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[support-readiness] OK ${message}`);
 }
 
+/** @param {string} name */
 function hasEnv(name) {
   return Boolean(process.env[name]?.trim());
 }
@@ -62,8 +66,8 @@ for (const doc of REQUIRED_DOCS) {
 const launchSupport = existsSync(join(process.cwd(), "docs/launch-support.md"))
   ? readDoc("docs/launch-support.md")
   : "";
-const incidents = existsSync(join(process.cwd(), "docs/runbooks/incidents.md"))
-  ? readDoc("docs/runbooks/incidents.md")
+const incidents = existsSync(join(process.cwd(), "docs/runbooks/incident.md"))
+  ? readDoc("docs/runbooks/incident.md")
   : "";
 
 if (/KaiKaira \/ project owner/i.test(launchSupport) || hasEnv("GLOWBOOK_SUPPORT_OWNER")) {

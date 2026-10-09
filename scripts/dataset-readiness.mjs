@@ -4,7 +4,7 @@ import { join } from "node:path";
 const REQUIRED_DOCS = [
   "docs/runbooks/load-scale-salons.md",
   "docs/production-scale-readiness-checklist.md",
-  "docs/performance-review-2026-06-01.md",
+  "docs/archive/readiness-snapshots/performance-review-2026-06-01.md",
 ];
 
 const REQUIRED_SCRIPTS = [
@@ -26,15 +26,18 @@ const REQUIRED_EVIDENCE = [
   "cleanup",
 ];
 
+/** @param {string} path @returns {string} */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} message @returns {void} */
 function fail(message) {
   console.error(`[dataset-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message @returns {void} */
 function pass(message) {
   console.log(`[dataset-readiness] OK ${message}`);
 }
@@ -58,8 +61,8 @@ for (const script of REQUIRED_SCRIPTS) {
 const checklist = existsSync(join(process.cwd(), "docs/production-scale-readiness-checklist.md"))
   ? readDoc("docs/production-scale-readiness-checklist.md")
   : "";
-const performance = existsSync(join(process.cwd(), "docs/performance-review-2026-06-01.md"))
-  ? readDoc("docs/performance-review-2026-06-01.md")
+const performance = existsSync(join(process.cwd(), "docs/archive/readiness-snapshots/performance-review-2026-06-01.md"))
+  ? readDoc("docs/archive/readiness-snapshots/performance-review-2026-06-01.md")
   : "";
 const combined = `${checklist}\n${performance}`;
 

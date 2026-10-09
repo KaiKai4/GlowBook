@@ -1,12 +1,7 @@
-import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import {
-  getSalonSettings,
-  type SalonBusinessDay,
-} from "@/features/salon/use-cases/get-salon-settings";
+import { requireProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { getSalonSettings } from "@/features/salon/use-cases/get-salon-settings";
 import { SalonSettings } from "./salon-settings";
-
-export type BusinessDay = SalonBusinessDay;
 
 export default async function SalonSettingsPage() {
   const profile = await requireProfile();
@@ -14,7 +9,7 @@ export default async function SalonSettingsPage() {
   if (!hasPermission(profile, PERMISSIONS.SALON_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-400">No tienes permiso para configurar el salon.</p>
+        <p className="text-fg-subtle">No tienes permiso para configurar el salon.</p>
       </div>
     );
   }

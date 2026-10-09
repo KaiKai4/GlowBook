@@ -54,7 +54,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 - [x] Gate principal ejecuta subgates de staging, observability, capacity, security y support.
 - [x] Gate bloquea `APP_URL`/`E2E_BASE_URL` locales para no aceptar evidencia falsa de staging.
 - [x] Etapas 5-10, 25-50 y 100+ salones documentadas.
-- [x] Decision go/no-go documentada en `docs/release-scale-readiness-2026-06-01.md`.
+- [x] Decision go/no-go documentada en `docs/archive/readiness-snapshots/release-scale-readiness-2026-06-01.md`.
 - [x] Existe `npm run baseline:readiness` para validar el baseline.
 - [ ] Go/no-go de lanzamiento amplio firmado con evidencia reciente.
 
@@ -84,7 +84,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 ## Fase 49 - Performance
 
-- [x] Existe plantilla `docs/performance-review-2026-06-01.md`.
+- [x] Existe plantilla `docs/archive/readiness-snapshots/performance-review-2026-06-01.md`.
 - [x] Existe medicion repetible `npm run scale:measure-routes`.
 - [x] Existe `npm run performance:readiness`.
 - [x] `npm run performance:readiness` paso en modo actual.
@@ -97,11 +97,11 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 ## Fase 50 - Observability
 
-- [x] `src/lib/observability` soporta consola y webhook/log drain.
+- [x] `src/infra/observability` soporta consola y webhook/log drain.
 - [x] El Adapter redacciona metadata, error message y stack con secretos conocidos.
 - [x] Existe `npm run observability:readiness`.
 - [x] `npm run observability:readiness` paso en modo actual.
-- [x] Test de redaccion `src/lib/observability/index.test.ts` paso con 3/3.
+- [x] Test de redaccion `src/infra/observability/index.test.ts` paso con 3/3.
 - [x] El gate puede exigir alertas minimas y retencion antes de lanzamiento amplio.
 - [ ] Proveedor/log drain elegido para lanzamiento amplio.
 - [ ] Alertas minimas configuradas.
@@ -142,7 +142,7 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 ## Fase 54 - Soporte E Incidentes
 
-- [x] Existe `docs/runbooks/incidents.md`.
+- [x] Existe `docs/runbooks/incident.md`.
 - [x] Owner inicial existe en `docs/launch-support.md`.
 - [x] Existe `npm run support:readiness`.
 - [x] `npm run support:readiness` paso en modo actual.

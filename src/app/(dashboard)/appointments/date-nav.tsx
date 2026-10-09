@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { DatePicker } from "@/components/ui/date-picker";
 import type { CalendarView } from "@/features/appointments/view-models";
 
@@ -49,7 +49,7 @@ export function DateNav({
         <button
           onClick={() => shift(-1)}
           disabled={loading}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-fg-muted hover:bg-surface-muted hover:text-fg transition-colors"
           aria-label={view === "semanal" ? "Semana anterior" : "Día anterior"}
         >
           <ChevronLeft className="h-4 w-4" />
@@ -66,7 +66,7 @@ export function DateNav({
         <button
           onClick={() => shift(1)}
           disabled={loading}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-fg-muted hover:bg-surface-muted hover:text-fg transition-colors"
           aria-label={view === "semanal" ? "Semana siguiente" : "Día siguiente"}
         >
           <ChevronRight className="h-4 w-4" />
@@ -74,7 +74,7 @@ export function DateNav({
       </div>
 
       {/* View toggle */}
-      <div className="flex items-center rounded-lg border border-stone-200 bg-stone-50 p-0.5">
+      <div className="flex items-center rounded-lg border border-border bg-surface-muted p-0.5">
         {views.map((v) => (
           <button
             key={v.id}
@@ -83,8 +83,8 @@ export function DateNav({
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-all whitespace-nowrap",
               view === v.id
-                ? "bg-white text-brand-700 shadow-sm border border-brand-100"
-                : "text-stone-500 hover:text-stone-800"
+                ? "bg-surface text-brand-700 shadow-sm border border-brand-100"
+                : "text-fg-subtle hover:text-fg-secondary"
             )}
           >
             {v.label}

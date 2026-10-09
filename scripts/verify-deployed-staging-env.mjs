@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { assertDeployedSupabaseMatches } from "./deployed-supabase-check.mjs";
@@ -24,15 +25,13 @@ function isLocalUrl(value = "") {
   }
 }
 
-function normalizeUrl(value = "") {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[verify-deployed-staging-env] ${message}`);
   process.exit(1);
 }
 
+/** @param {string} name @returns {string} */
 function requireEnv(name) {
   const value = process.env[name];
   if (!value) fail(`Set ${name}.`);

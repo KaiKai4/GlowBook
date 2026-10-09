@@ -1,8 +1,14 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { jsonNoStore, redirectNoStore } from "@/infra/http/responses";
+import { signOutCurrentSession } from "@/infra/auth/password-auth";
+import { isSameOriginRequest, requestOrigin } from "@/infra/security/same-origin";
 
-export async function POST() {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
-  redirect("/login");
+// Cierre de sesion desde formularios de la app. Solo acepta peticiones del
+// mismo origen: evita que una pagina ajena cierre la sesion del usuario (CSRF).
+export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return jsonNoStore({ error: "Origen no permitido." }, 403);
+  }
+
+  await signOutCurrentSession();
+  return redirectNoStore(new URL("/login", requestOrigin(request)));
 }

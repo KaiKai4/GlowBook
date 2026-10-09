@@ -1,5 +1,5 @@
-import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getCustomersPage } from "@/features/customers/use-cases/get-customers-page";
 import { CustomersClient } from "./customers-client";
 
@@ -13,7 +13,7 @@ export default async function CustomersPage({
   if (!hasPermission(profile, PERMISSIONS.CUSTOMERS_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para ver clientes.</p>
+        <p className="text-fg-subtle">No tienes permiso para ver clientes.</p>
       </div>
     );
   }

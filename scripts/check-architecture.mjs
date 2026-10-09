@@ -1,28 +1,12 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
+// Reglas propias que dependency-cruiser (.dependency-cruiser.cjs) no cubre.
+// Las reglas de capa por patron (domain puro, admin client, cross-module, etc.) viven alli.
+
 const root = process.cwd();
 const srcRoot = path.join(root, "src");
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx"]);
-
-const allowedAdminClientImporters = new Set([
-  "src/features/billing/data/billing-db.ts",
-  "src/features/employees/data/employee-access.repo.ts",
-  "src/features/platform/data/delete-salon.repo.ts",
-  "src/features/platform/data/feedback-moderation.repo.ts",
-  "src/features/platform/data/invitations.repo.ts",
-  "src/features/platform/data/platform-audit.repo.ts",
-  "src/features/platform/data/salon-overviews.repo.ts",
-  "src/features/platform/data/salons.repo.ts",
-  "src/lib/auth/session.ts",
-  "src/lib/supabase/auth-admin.ts",
-]);
-
-const allowedAuthAdminImporters = new Set([
-  "src/features/employees/data/employee-auth.repo.ts",
-  "src/features/platform/data/delete-salon.repo.ts",
-  "src/features/platform/data/platform-auth.repo.ts",
-]);
 
 const importPatterns = [
   /import\s+(?:type\s+)?[^'"]*?\s+from\s*["']([^"']+)["']/g,
@@ -30,14 +14,17 @@ const importPatterns = [
   /export\s+(?:type\s+)?[^'"]*?\s+from\s*["']([^"']+)["']/g,
 ];
 
+/** @param {string} filePath */
 function toProjectPath(filePath) {
   return path.relative(root, filePath).split(path.sep).join("/");
 }
 
+/** @param {string} projectPath @param {string} dir */
 function isInside(projectPath, dir) {
   return projectPath === dir || projectPath.startsWith(`${dir}/`);
 }
 
+/** @param {string} fromFile @param {string} specifier */
 function resolveImport(fromFile, specifier) {
   if (specifier.startsWith("@/")) {
     return toProjectPath(path.join(srcRoot, specifier.slice(2)));
@@ -50,6 +37,7 @@ function resolveImport(fromFile, specifier) {
   return null;
 }
 
+/** @param {string} dir @returns {string[]} */
 function collectSourceFiles(dir) {
   const entries = readdirSync(dir);
   const files = [];
@@ -71,6 +59,7 @@ function collectSourceFiles(dir) {
   return files;
 }
 
+/** @param {string} dir @returns {string[]} */
 function collectDirectories(dir) {
   const entries = readdirSync(dir);
   const directories = [];
@@ -88,6 +77,7 @@ function collectDirectories(dir) {
   return directories;
 }
 
+/** @param {string} source */
 function collectImports(source) {
   const imports = [];
 
@@ -102,55 +92,14 @@ function collectImports(source) {
   return imports;
 }
 
-function isFeatureDomain(projectPath) {
-  return /^src\/features\/[^/]+\/domain(\/|$)/.test(projectPath);
-}
-
-function isFeatureUseCase(projectPath) {
-  return /^src\/features\/[^/]+\/use-cases(\/|$)/.test(projectPath);
-}
-
+/** @param {string} projectPath */
 function isTestSource(projectPath) {
   return /\.(test|spec)\.[jt]sx?$/.test(projectPath);
 }
 
-function featureName(projectPath) {
-  const match = projectPath.match(/^src\/features\/([^/]+)\//);
-  return match?.[1] ?? null;
-}
-
-function isFeatureData(projectPath) {
-  return /^src\/features\/[^/]+\/data(\/|$)/.test(projectPath);
-}
-
-function isForbiddenDomainImport(specifier, resolvedPath) {
-  if (specifier === "react" || specifier.startsWith("react/")) return true;
-  if (specifier === "next" || specifier.startsWith("next/")) return true;
-  if (specifier === "server-only") return true;
-  if (specifier.startsWith("@supabase/")) return true;
-  if (specifier === "@/lib/supabase" || specifier.startsWith("@/lib/supabase/")) return true;
-  if (resolvedPath && isInside(resolvedPath, "src/lib/supabase")) return true;
-
-  return false;
-}
-
-function isSupabaseLibImport(specifier, resolvedPath) {
-  return (
-    specifier === "@/lib/supabase" ||
-    specifier.startsWith("@/lib/supabase/") ||
-    (resolvedPath && isInside(resolvedPath, "src/lib/supabase"))
-  );
-}
-
-function isSupabaseAdminImport(specifier, resolvedPath) {
-  return specifier === "@/lib/supabase/admin" || resolvedPath === "src/lib/supabase/admin";
-}
-
-function isSupabaseAuthAdminImport(specifier, resolvedPath) {
-  return (
-    specifier === "@/lib/supabase/auth-admin" ||
-    resolvedPath === "src/lib/supabase/auth-admin"
-  );
+/** @param {string} projectPath */
+function isFeatureUseCase(projectPath) {
+  return /^src\/features\/[^/]+\/use-cases(\/|$)/.test(projectPath);
 }
 
 const violations = [];
@@ -169,6 +118,8 @@ for (const directory of collectDirectories(path.join(srcRoot, "features"))) {
 
 for (const file of collectSourceFiles(srcRoot)) {
   const projectPath = toProjectPath(file);
+  // Los tests quedan fuera de las reglas de capas (importan modulos para mockearlos).
+  if (isTestSource(projectPath)) continue;
   const source = readFileSync(file, "utf8");
   const imports = collectImports(source);
 
@@ -188,44 +139,6 @@ for (const file of collectSourceFiles(srcRoot)) {
       });
     }
 
-    if (isFeatureDomain(projectPath) && isForbiddenDomainImport(specifier, resolvedPath)) {
-      violations.push({
-        file: projectPath,
-        import: specifier,
-        rule: "features/*/domain must stay pure: no Supabase, Next, React or server-only",
-      });
-    }
-
-    if (
-      isSupabaseAdminImport(specifier, resolvedPath) &&
-      !allowedAdminClientImporters.has(projectPath)
-    ) {
-      violations.push({
-        file: projectPath,
-        import: specifier,
-        rule: "createSupabaseAdminClient imports are limited to ADR 0010 Adapters",
-      });
-    }
-
-    if (
-      isSupabaseAuthAdminImport(specifier, resolvedPath) &&
-      !allowedAuthAdminImporters.has(projectPath)
-    ) {
-      violations.push({
-        file: projectPath,
-        import: specifier,
-        rule: "Supabase Auth Admin imports are limited to ADR 0010 feature data Adapters",
-      });
-    }
-
-    if (isInside(projectPath, "src/components") && isSupabaseLibImport(specifier, resolvedPath)) {
-      violations.push({
-        file: projectPath,
-        import: specifier,
-        rule: "components must not import Supabase Adapters; pass data/actions through app or layout Interfaces",
-      });
-    }
-
     if (
       isInside(projectPath, "src/app") &&
       resolvedPath &&
@@ -240,26 +153,12 @@ for (const file of collectSourceFiles(srcRoot)) {
 
     if (
       isFeatureUseCase(projectPath) &&
-      (specifier === "@/lib/supabase/server" || resolvedPath === "src/lib/supabase/server")
+      (specifier === "@/infra/supabase/server" || resolvedPath === "src/infra/supabase/server")
     ) {
       warnings.push({
         file: projectPath,
         import: specifier,
         rule: "features/*/use-cases should keep Supabase access behind data Adapters",
-      });
-    }
-
-    if (
-      !isTestSource(projectPath) &&
-      isFeatureUseCase(projectPath) &&
-      resolvedPath &&
-      isFeatureData(resolvedPath) &&
-      featureName(projectPath) !== featureName(resolvedPath)
-    ) {
-      warnings.push({
-        file: projectPath,
-        import: specifier,
-        rule: "cross-feature data imports reduce Locality; prefer a narrow read Module in the owning feature",
       });
     }
   }

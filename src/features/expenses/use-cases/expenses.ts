@@ -1,4 +1,5 @@
-import { err, ok, type Result } from "@/lib/result";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { err, ok, type Result } from "@/infra/result";
 import type { CreateExpenseInput } from "../schemas";
 import {
   findExpenses,
@@ -15,9 +16,11 @@ import {
   topCategory,
   type CategoryTotal,
 } from "../domain/category-totals";
-import { getInventoryPurchaseExpenseHistory } from "@/features/inventory/use-cases/inventory-purchase-expenses";
-import { recordInventoryPurchase } from "@/features/inventory/use-cases/inventory-movements";
-import type { InventoryPurchaseInput } from "@/features/inventory/schemas";
+import {
+  getInventoryPurchaseExpenseHistory,
+  recordInventoryPurchase,
+  type InventoryPurchaseInput,
+} from "@/features/inventory";
 
 export interface ExpensesPageView {
   history: ExpenseHistoryItem[];
@@ -130,24 +133,27 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
 
 export async function createExpense(
   salonId: string,
-  input: CreateExpenseInput
+  input: CreateExpenseInput,
+  idempotencyKey: string
 ): Promise<Result<string>> {
   try {
-    await insertExpense(salonId, input);
+    await insertExpense(salonId, input, idempotencyKey);
     return ok("Gasto registrado.");
   } catch (error) {
-    return err(error instanceof Error ? error.message : "No se pudo registrar el gasto.");
+    return err(toPublicErrorMessage(error, "No se pudo registrar el gasto."));
   }
 }
 
 export async function createInventoryPurchaseExpense(
   salonId: string,
-  input: InventoryPurchaseInput
+  input: InventoryPurchaseInput,
+  idempotencyKey: string
 ): Promise<Result<string>> {
-  const result = await recordInventoryPurchase(salonId, {
-    ...input,
-    location: "storage",
-  });
+  const result = await recordInventoryPurchase(
+    salonId,
+    { ...input, location: "storage" },
+    idempotencyKey
+  );
 
   return result.ok ? ok("Compra de inventario registrada.") : result;
 }

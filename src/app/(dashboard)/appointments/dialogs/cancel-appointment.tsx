@@ -4,11 +4,12 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
 import { cancelAppointmentAction } from "../actions";
 import { promoteCustomerAction, deleteTemporaryCustomerAction } from "../../customers/actions";
 import { MessageCircle, UserX, UserCheck } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import { formatTimeTz } from "@/lib/utils/dates";
+import { cn } from "@/components/ui/cn";
+import { formatTimeTz } from "@/infra/format/dates";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
 
 interface ApptForCancel {
@@ -45,10 +46,14 @@ export function CancelAppointmentDialog({
   template: string;
 }) {
   const router = useRouter();
+  const { submit } = useSubmissionIntent({ procedure: "appointments.cancel" });
   const isTemp = appt.customer?.is_temporary ?? false;
   const [saveChoice, setSaveChoice] = useState<SaveChoice>(isTemp ? "discard" : "save");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Set when the appointment is cancelled but the customer step failed: the dialog
+  // stays open so the user reads the warning instead of it being silently lost.
+  const [warning, setWarning] = useState<string | null>(null);
 
   const customerName = appt.customer
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
@@ -64,20 +69,33 @@ export function CancelAppointmentDialog({
     : "la fecha programada";
   const apptTime = appt.start_time ? formatTimeTz(new Date(appt.start_time), tz) : "la hora programada";
 
+  // Permanent customers are never changed here: only temporary ones get a disposition.
+  async function applyCustomerDisposition(): Promise<string | null> {
+    if (!appt.customer?.id || !isTemp) return null;
+
+    if (saveChoice === "save") {
+      const res = await promoteCustomerAction(appt.customer.id);
+      return res.ok ? null : `La cita se canceló, pero no pudimos guardar al cliente: ${res.error}`;
+    }
+
+    const res = await deleteTemporaryCustomerAction(appt.customer.id);
+    return res.ok
+      ? null
+      : `La cita se canceló, pero no pudimos descartar los datos temporales del cliente: ${res.error}`;
+  }
+
   function handleCancel(withWhatsApp: boolean) {
     setError(null);
     start(async () => {
-      const res = await cancelAppointmentAction(appt.id);
+      const res = await submit({ appointment_id: appt.id }, (idempotencyKey) => {
+        const fd = new FormData();
+        fd.set("idempotency_key", idempotencyKey);
+        fd.set("appointment_id", appt.id);
+        return cancelAppointmentAction(fd);
+      });
       if (!res.ok) { setError(res.error ?? "Error al cancelar."); return; }
 
-      if (appt.customer?.id) {
-        if (isTemp && saveChoice === "save") {
-          await promoteCustomerAction(appt.customer.id);
-        } else if (isTemp && saveChoice === "discard") {
-          await deleteTemporaryCustomerAction(appt.customer.id);
-        }
-        // Permanent customer: no changes to customer record
-      }
+      const customerWarning = await applyCustomerDisposition();
 
       if (withWhatsApp && appt.customer?.phone) {
         const services = appt.items?.map((it) => it.service?.name).filter(Boolean).join(", ") || "Servicios de belleza";
@@ -94,11 +112,15 @@ export function CancelAppointmentDialog({
           colaboradores: collaborators,
           salon: salonName,
         });
-        window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank");
+        window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank", "noopener,noreferrer");
       }
 
-      onClose();
       router.refresh();
+      if (customerWarning) {
+        setWarning(customerWarning);
+        return;
+      }
+      onClose();
     });
   }
 
@@ -109,15 +131,16 @@ export function CancelAppointmentDialog({
       title="Cancelar cita"
       description={`Confirma la cancelación de la cita de ${customerName}.`}
       className="max-w-md"
+      dismissible={!pending}
     >
       <div className="space-y-5">
         {/* Only show customer disposition when the customer was created just for this appointment */}
         {isTemp && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
-            <p className="text-sm font-semibold text-amber-800">
+          <div className="rounded-xl border border-warning-border bg-warning-subtle p-4 space-y-3">
+            <p className="text-sm font-semibold text-warning-strong">
               ¿Guardar los datos del cliente?
             </p>
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-warning-fg">
               Este cliente aún no está registrado. Puedes guardarlo o descartarlo.
             </p>
 
@@ -128,22 +151,22 @@ export function CancelAppointmentDialog({
                 className={cn(
                   "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
                   saveChoice === "save"
-                    ? "border-brand-400 bg-white"
-                    : "border-transparent bg-white/60 hover:bg-white"
+                    ? "border-brand-400 bg-surface"
+                    : "border-transparent bg-surface/60 hover:bg-surface"
                 )}
               >
                 <div className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                  saveChoice === "save" ? "border-brand-500 bg-brand-500" : "border-stone-300"
+                  saveChoice === "save" ? "border-brand-500 bg-brand-500" : "border-border-strong"
                 )}>
-                  {saveChoice === "save" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  {saveChoice === "save" && <div className="h-1.5 w-1.5 rounded-full bg-surface" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
                     <UserCheck className="h-3.5 w-3.5 text-brand-600" />
-                    <p className="text-sm font-semibold text-stone-800">Sí, guardar cliente</p>
+                    <p className="text-sm font-semibold text-fg-secondary">Sí, guardar cliente</p>
                   </div>
-                  <p className="text-xs text-stone-500 mt-0.5">
+                  <p className="text-xs text-fg-subtle mt-0.5">
                     Quedará registrado y podrá usarse en futuras citas.
                   </p>
                 </div>
@@ -155,22 +178,22 @@ export function CancelAppointmentDialog({
                 className={cn(
                   "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
                   saveChoice === "discard"
-                    ? "border-amber-400 bg-white"
-                    : "border-transparent bg-white/60 hover:bg-white"
+                    ? "border-warning bg-surface"
+                    : "border-transparent bg-surface/60 hover:bg-surface"
                 )}
               >
                 <div className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                  saveChoice === "discard" ? "border-amber-500 bg-amber-500" : "border-stone-300"
+                  saveChoice === "discard" ? "border-warning bg-warning" : "border-border-strong"
                 )}>
-                  {saveChoice === "discard" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  {saveChoice === "discard" && <div className="h-1.5 w-1.5 rounded-full bg-surface" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <UserX className="h-3.5 w-3.5 text-amber-600" />
-                    <p className="text-sm font-semibold text-stone-800">No, descartar datos</p>
+                    <UserX className="h-3.5 w-3.5 text-warning-fg" />
+                    <p className="text-sm font-semibold text-fg-secondary">No, descartar datos</p>
                   </div>
-                  <p className="text-xs text-stone-500 mt-0.5">
+                  <p className="text-xs text-fg-subtle mt-0.5">
                     No se guardará ningún registro del cliente.
                   </p>
                 </div>
@@ -180,16 +203,27 @@ export function CancelAppointmentDialog({
         )}
 
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+          <div className="rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
             {error}
           </div>
         )}
 
+        {warning && (
+          <div role="status" className="rounded-lg bg-warning-subtle border border-warning-border px-3 py-2 text-sm text-warning-strong">
+            {warning}
+          </div>
+        )}
+
+        {warning ? (
+          <Button variant="ghost" className="w-full" onClick={onClose}>
+            Cerrar
+          </Button>
+        ) : (
         <div className="flex flex-col gap-2">
           {appt.customer?.phone && (
             <Button
               variant="outline"
-              className="w-full border-green-200 text-green-700 hover:bg-green-50"
+              className="w-full border-success-border text-success-fg hover:bg-success-subtle"
               loading={pending}
               onClick={() => handleCancel(true)}
             >
@@ -206,6 +240,7 @@ export function CancelAppointmentDialog({
             </Button>
           </div>
         </div>
+        )}
       </div>
     </Dialog>
   );

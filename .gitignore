@@ -49,3 +49,12 @@ next-env.d.ts
 /skills-lock.json
 
 .vercel
+
+# calidad local (artefactos generados, no versionar)
+.quality/
+.lighthouseci/
+.lighthouseci-auth/
+reports/mutation/
+.stryker-tmp/
+# Worktrees de agentes de Claude Code (repositorios anidados locales)
+.claude/worktrees/

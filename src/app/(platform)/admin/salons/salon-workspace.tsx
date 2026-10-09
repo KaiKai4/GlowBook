@@ -10,13 +10,13 @@ import {
   Users,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type {
   SalonSubscriptionDetail,
   SalonSubscriptionRow,
   SubscriptionsPageData,
 } from "@/features/billing/use-cases/salon-subscriptions";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { MiniMetric, Panel } from "../plans/workspace-ui";
 import { UsagePanel } from "../subscriptions/usage-panel";
 import { DeleteSalonButton } from "./delete-salon-button";
@@ -67,16 +67,17 @@ export function SalonWorkspace({
   const warningCount = detail.limits.filter((limit) => limit.warningLevel !== "none").length;
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 px-5 py-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-xl font-bold text-stone-950">{salon.name}</h2>
-            <Badge variant={salon.isActive ? "success" : "danger"}>
-              {salon.isActive ? "Activo" : "Suspendido"}
-            </Badge>
+            <h2 className="truncate text-xl font-semibold text-fg-strong">{salon.name}</h2>
+            <StatusBadge
+              variant={salon.isActive ? "success" : "danger"}
+              label={salon.isActive ? "Activo" : "Suspendido"}
+            />
           </div>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 text-sm text-fg-subtle">
             {row?.planName
               ? `${row.planName} · ${STATUS_LABELS[row.status ?? ""] ?? "Sin estado"} · ${row.currency} ${row.monthlyTotal.toFixed(2)}/mes`
               : "Sin plan asignado"}
@@ -92,13 +93,13 @@ export function SalonWorkspace({
                 "inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition",
                 tab === item.key
                   ? "border-brand-300 bg-brand-50 text-brand-700"
-                  : "border-brand-100 bg-white text-stone-600 hover:border-brand-200 hover:text-brand-700"
+                  : "border-brand-100 bg-surface text-fg-muted hover:border-brand-200 hover:text-brand-700"
               )}
             >
               {item.icon}
               {item.label}
               {item.key === "usage" && warningCount > 0 ? (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-700">{warningCount}</span>
+                <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs text-warning-strong">{warningCount}</span>
               ) : null}
             </button>
           ))}
@@ -153,29 +154,29 @@ function SummaryTab({
         >
           <div className="space-y-3 text-sm">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Owners</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Owners</p>
               {salon.ownerNames.length > 0 ? (
                 <ul className="mt-1 space-y-0.5">
                   {salon.ownerNames.map((owner) => (
-                    <li key={owner} className="font-medium text-stone-800">{owner}</li>
+                    <li key={owner} className="font-medium text-fg-secondary">{owner}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-1 text-stone-400">Sin owner</p>
+                <p className="mt-1 text-fg-subtle">Sin owner</p>
               )}
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Plan</p>
-              <p className="mt-1 font-medium text-stone-800">
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Plan</p>
+              <p className="mt-1 font-medium text-fg-secondary">
                 {row?.planName ?? "Sin plan asignado"}
                 {row?.planName ? ` · ${row.currency} ${row.monthlyTotal.toFixed(2)}/mes` : ""}
               </p>
               {detail.assignment?.currentPeriodEnd ? (
-                <p className="mt-0.5 text-xs text-emerald-700">
+                <p className="mt-0.5 text-xs text-success-fg">
                   Pagado hasta {formatDate(detail.assignment.currentPeriodEnd)}
                 </p>
               ) : detail.assignment?.trialEndsAt ? (
-                <p className="mt-0.5 text-xs text-sky-700">
+                <p className="mt-0.5 text-xs text-info-fg">
                   Trial hasta {formatDate(detail.assignment.trialEndsAt)}
                 </p>
               ) : null}
@@ -263,8 +264,8 @@ function ActionsTab({ salon }: { salon: SalonWorkspaceSalon }) {
 function InfoRow({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <dt className="shrink-0 text-stone-400">{label}</dt>
-      <dd className={cn("min-w-0 truncate text-right font-medium text-stone-800", mono && "font-mono text-xs")}>
+      <dt className="shrink-0 text-fg-subtle">{label}</dt>
+      <dd className={cn("min-w-0 truncate text-right font-medium text-fg-secondary", mono && "font-mono text-xs")}>
         {value}
       </dd>
     </div>

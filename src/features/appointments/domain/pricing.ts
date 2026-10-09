@@ -1,6 +1,4 @@
-export const PRICING_MODES = ["fixed", "variable"] as const;
-
-export type PricingMode = (typeof PRICING_MODES)[number];
+export type PricingMode = "fixed" | "variable";
 
 export function isPricingMode(value: unknown): value is PricingMode {
   return value === "fixed" || value === "variable";

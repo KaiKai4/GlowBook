@@ -1,4 +1,4 @@
-export interface EmployeeBadge {
+interface EmployeeBadge {
   id: string;
   initials: string;
   name: string;

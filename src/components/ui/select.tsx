@@ -1,32 +1,22 @@
 "use client";
 
 import {
-  Children,
   forwardRef,
-  isValidElement,
   useCallback,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
-  type ReactElement,
-  type ReactNode,
   type ChangeEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { createPortal } from "react-dom";
 import { ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
+import { getOptions, type SelectOption } from "./select-options";
+import { SelectList, type SelectListPosition } from "./select-list";
 
-interface SelectOption {
-  value: string;
-  label: string;
-  disabled: boolean;
-  hidden: boolean;
-}
-
-export interface SelectProps
+interface SelectProps
   extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size" | "multiple"> {
   label?: string;
   error?: string;
@@ -64,13 +54,11 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
     );
     const [open, setOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
-    const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [position, setPosition] = useState<SelectListPosition>({ top: 0, left: 0, width: 0 });
     const selectedValue = controlled ? String(value) : internalValue;
     const selectedOption = options.find((option) => option.value === selectedValue);
-    const selectableOptions = useMemo(
-      () => options.filter((option) => !option.hidden && option.value !== selectedValue),
-      [options, selectedValue]
-    );
+    // La opción seleccionada se lista marcada (aria-selected): no se excluye.
+    const selectableOptions = useMemo(() => options.filter((option) => !option.hidden), [options]);
     const descriptionId = error ? `${selectId}-error` : undefined;
 
     const updatePosition = useCallback(() => {
@@ -183,7 +171,7 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={selectId} className="text-sm font-semibold text-stone-700">
+          <label htmlFor={selectId} className="text-sm font-semibold text-fg-secondary">
             {label}
           </label>
         )}
@@ -223,95 +211,41 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
           }}
           onKeyDown={handleTriggerKeyDown}
           className={cn(
-            "flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-3 text-left text-sm text-stone-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color]",
+            "flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-border-input bg-surface px-3 text-left text-sm text-fg shadow-hairline transition-[border-color,box-shadow,background-color]",
             "hover:border-brand-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500",
-            "disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-400",
+            "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle",
             open && "border-brand-500 ring-2 ring-brand-100",
-            error && "border-red-400 bg-red-50/30 focus:ring-red-500",
+            error && "border-danger bg-danger-subtle/30 focus:ring-danger",
             className
           )}
         >
-          <span className={cn("truncate", !selectedOption && "text-stone-500")}>
+          <span className={cn("truncate", !selectedOption && "text-fg-subtle")}>
             {selectedOption?.label ?? placeholder ?? "Selecciona una opcion"}
           </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-stone-400" />
+          <ChevronsUpDown className="h-4 w-4 shrink-0 text-fg-subtle" />
         </button>
         {error && (
-          <p id={descriptionId} className="text-xs text-red-600">
+          <p id={descriptionId} className="text-xs text-danger">
             {error}
           </p>
         )}
 
-        {open &&
-          createPortal(
-            <div
-              ref={listRef}
-              role="listbox"
-              aria-labelledby={selectId}
-              style={{ top: position.top, left: position.left, width: position.width }}
-              className="fixed z-[80] max-h-72 overflow-y-auto rounded-xl border border-stone-100 bg-white p-1.5 shadow-[0_18px_42px_rgba(15,23,42,0.18),0_2px_8px_rgba(15,23,42,0.08)]"
-            >
-              {selectableOptions.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-stone-400">Sin opciones</div>
-              ) : null}
-
-              {selectableOptions.map((option, index) => {
-                const active = index === activeIndex;
-
-                return (
-                  <button
-                    key={`${option.value}-${index}`}
-                    type="button"
-                    role="option"
-                    aria-selected={false}
-                    disabled={option.disabled}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => selectOption(option)}
-                    className={cn(
-                      "flex min-h-10 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-stone-700 transition-colors",
-                      active && "bg-stone-100 text-stone-950",
-                      option.disabled && "cursor-not-allowed text-stone-300 hover:bg-transparent"
-                    )}
-                  >
-                    <span className="min-w-0 truncate">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>,
-            document.body
-          )}
+        {open && (
+          <SelectList
+            listRef={listRef}
+            labelledBy={selectId}
+            position={position}
+            options={selectableOptions}
+            activeIndex={activeIndex}
+            selectedValue={selectedValue}
+            onHoverOption={setActiveIndex}
+            onSelectOption={selectOption}
+          />
+        )}
       </div>
     );
   }
 );
 Select.displayName = "Select";
-
-function getOptions(children: ReactNode): SelectOption[] {
-  return Children.toArray(children).flatMap((child) => {
-    if (!isValidElement(child)) return [];
-    if (child.type !== "option") return [];
-
-    const option = child as ReactElement<React.OptionHTMLAttributes<HTMLOptionElement>>;
-    const label = nodeToText(option.props.children);
-    const value =
-      option.props.value !== undefined ? String(option.props.value) : label;
-
-    return [
-      {
-        value,
-        label,
-        disabled: Boolean(option.props.disabled),
-        hidden: Boolean(option.props.hidden),
-      },
-    ];
-  });
-}
-
-function nodeToText(node: ReactNode): string {
-  if (typeof node === "string" || typeof node === "number") return String(node);
-  if (Array.isArray(node)) return node.map(nodeToText).join("");
-  if (isValidElement<{ children?: ReactNode }>(node)) return nodeToText(node.props.children);
-  return "";
-}
 
 export { Select };

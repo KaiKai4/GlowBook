@@ -14,9 +14,9 @@ import {
   ShoppingBag,
   ReceiptText,
 } from "lucide-react";
-import type { Permission } from "@/lib/auth/permissions";
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
-import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-features";
+import type { Permission } from "@/features/access";
+import type { SalonFeatureKey } from "@/features/salon-features";
+import { normalizeDisabledSalonFeatures } from "@/features/salon-features";
 
 export interface NavItem {
   label: string;
@@ -31,7 +31,7 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-export const NAV_GROUPS: NavGroup[] = [
+const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       { label: "Inicio", href: "/", icon: LayoutDashboard },
@@ -66,7 +66,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
+const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
 
 function canSee(
   item: NavItem,

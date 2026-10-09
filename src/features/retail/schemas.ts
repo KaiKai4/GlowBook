@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { InventoryLocationSchema } from "@/features/inventory/schemas";
-import { normalizePaymentMethod } from "@/features/payments/domain/payment-methods";
+import { z } from "@/infra/validation/zod";
+import { InventoryLocationSchema } from "@/features/inventory";
+import { normalizePaymentMethod } from "@/features/payments";
 
 const PaymentMethodSchema = z
   .string()
@@ -20,6 +20,7 @@ export const RetailSaleSchema = z.object({
   unit_price: z.coerce.number().min(0, "El precio no puede ser negativo."),
   payment_method: PaymentMethodSchema.default("cash"),
   note: z.string().trim().max(500).optional().default(""),
+  idempotency_key: z.string().uuid("La clave de idempotencia debe ser un uuid."),
 });
 
 export type RetailSaleInput = z.infer<typeof RetailSaleSchema>;

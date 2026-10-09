@@ -9,6 +9,10 @@ import {
   type SalonOwnerFixture,
   type TestSupabaseClient,
 } from "../src/test/supabase-integration-fixtures";
+import { expectNoSeriousA11yViolations } from "./support/a11y";
+import { isLocalTarget, skipUnlessReady } from "./support/env";
+import { readLocalFixtures } from "./support/local-fixtures";
+import { futureDate, selectCalendarDate } from "./support/calendar";
 
 let credentials: AuthCredentials | null =
   process.env.E2E_SALON_OWNER_EMAIL && process.env.E2E_SALON_OWNER_PASSWORD
@@ -34,49 +38,30 @@ async function login(page: Page) {
   await expect(page).not.toHaveURL(/\/login/);
 }
 
-function futureDate(daysAhead = 14): string {
-  const date = new Date();
-  date.setDate(date.getDate() + daysAhead);
-  return date.toISOString().slice(0, 10);
-}
-
-async function selectCalendarDate(page: Page, label: string, value: string) {
-  const target = new Date(`${value}T12:00:00`);
-  const current = new Date();
-  const monthDifference =
-    (target.getFullYear() - current.getFullYear()) * 12 +
-    target.getMonth() -
-    current.getMonth();
-
-  await page.getByLabel(label).click();
-
-  const direction = monthDifference < 0 ? /Mes anterior/i : /Mes siguiente/i;
-  for (let index = 0; index < Math.abs(monthDifference); index += 1) {
-    await page.getByRole("button", { name: direction }).click();
-  }
-
-  const fullDate = new Intl.DateTimeFormat("es-PA", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(target);
-
-  await page.getByRole("button", { name: fullDate, exact: true }).click();
-}
-
+// El Select del proyecto (src/components/ui/select.tsx) es un combobox: el disparador
+// es un botón etiquetado y las opciones son role="option" dentro de un listbox en portal.
 async function selectFirstRealOption(page: Page, label: string | RegExp) {
-  const select = page.getByLabel(label);
-  await expect(select).toBeEnabled();
-  const value = await select.locator("option").nth(1).getAttribute("value");
-  expect(value).toBeTruthy();
-  await select.selectOption(value!);
+  const trigger = page.getByLabel(label, { exact: typeof label === "string" });
+  await expect(trigger).toBeEnabled();
+  await trigger.click();
+  await page.getByRole("listbox").getByRole("option", { disabled: false }).first().click();
+  await expect(trigger).not.toHaveText(/^Selecciona/i);
 }
 
 test.describe("salon owner critical smoke", () => {
   test.describe.configure({ mode: "serial" });
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({}, workerInfo) => {
+    // En local el owner lo crea global-setup; su fixture completo viaja por env.
+    // El proyecto "mobile" usa un salón propio: no comparte los datos que muta el de escritorio.
+    if (isLocalTarget) {
+      const owners = readLocalFixtures();
+      fixture = workerInfo.project.name === "mobile" ? owners.salonOwnerMobile : owners.salonOwnerA;
+      credentials = { email: fixture.email, password: fixture.password };
+      admin = createIntegrationAdminClient(getSupabaseIntegrationEnv());
+      return;
+    }
+
     if (credentials) return;
 
     const env = getSupabaseIntegrationEnv();
@@ -88,11 +73,12 @@ test.describe("salon owner critical smoke", () => {
   });
 
   test.afterAll(async () => {
-    if (admin) await cleanupSalonOwnerFixture(admin, fixture);
+    // En local la limpieza del owner A la hace el teardown global.
+    if (admin && !isLocalTarget) await cleanupSalonOwnerFixture(admin, fixture);
   });
 
   test.beforeEach(async ({ page }) => {
-    test.skip(
+    skipUnlessReady(
       !credentials,
       "Requires E2E_SALON_OWNER_* credentials or Supabase service role fixture env."
     );
@@ -115,30 +101,44 @@ test.describe("salon owner critical smoke", () => {
 
     for (const feature of modules) {
       const link = page.getByRole("link", { name: new RegExp(feature.label, "i") });
-      if ((await link.count()) === 0) continue;
+      if ((await link.count()) === 0) {
+        if (isLocalTarget) {
+          throw new Error(`Módulo "${feature.label}" no visible para el owner en modo local.`);
+        }
+        continue;
+      }
 
       await link.first().click();
       await expect(page).toHaveURL(new RegExp(feature.path));
       await expect(page.locator("h1, h2").first()).toBeVisible();
+      await expectNoSeriousA11yViolations(page);
     }
   });
 
   test("reaches the appointment creation entry point when appointments are enabled", async ({ page }) => {
     const appointmentsLink = page.getByRole("link", { name: /Citas/i });
-    test.skip((await appointmentsLink.count()) === 0, "Appointments Module is not visible for this user.");
+    skipUnlessReady(
+      (await appointmentsLink.count()) === 0,
+      "Appointments Module is not visible for this user."
+    );
 
     await appointmentsLink.first().click();
     await page.goto("/appointments/new");
     await expect(page).toHaveURL(/\/appointments\/new/);
     await expect(page.locator("h1, h2").first()).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 
   test("creates a valid appointment from the browser flow", async ({ page }) => {
     const appointmentsLink = page.getByRole("link", { name: /Citas/i });
-    test.skip((await appointmentsLink.count()) === 0, "Appointments Module is not visible for this user.");
+    skipUnlessReady(
+      (await appointmentsLink.count()) === 0,
+      "Appointments Module is not visible for this user."
+    );
 
     await page.goto("/appointments/new");
     await expect(page.getByRole("heading", { name: /Seleccionar cliente/i })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
 
     await selectFirstRealOption(page, "Cliente");
     await page.getByRole("button", { name: /Continuar/i }).click();
@@ -171,10 +171,11 @@ test.describe("salon owner critical smoke", () => {
 
     await expect(page).toHaveURL(/\/appointments$/);
     await expect(page.getByRole("heading", { name: /Agenda/i })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 
   test("completes an appointment from the agenda with success feedback", async ({ page }) => {
-    test.skip(!admin || !fixture, "Requires Supabase service role fixture env.");
+    skipUnlessReady(!admin || !fixture, "Requires Supabase service role fixture env.");
     const activeAdmin = admin!;
     const activeFixture = fixture!;
 
@@ -194,6 +195,7 @@ test.describe("salon owner critical smoke", () => {
 
     const completeDialog = page.getByRole("dialog", { name: "Completar cita" });
     await expect(completeDialog).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
     await completeDialog
       .getByRole("button", { name: /Cobrar y completar/i })
       .click();
@@ -205,43 +207,40 @@ test.describe("salon owner critical smoke", () => {
     await expect(completeDialog).toBeHidden();
   });
 
-  test("archives and reactivates a customer from the customer screens", async ({ page }) => {
-    test.skip(!fixture, "Requires Supabase service role fixture env.");
+  // La reactivación no se cubre: customers/page.tsx fija status "active", así que la
+  // vista de archivados no es alcanzable desde la UI (ver informe de la ronda 2).
+  test("archives a customer from the customer screens", async ({ page }) => {
+    skipUnlessReady(!fixture, "Requires Supabase service role fixture env.");
 
     await page.goto("/customers");
     await expect(page.getByRole("heading", { name: /Clientes/i })).toBeVisible();
     await expect(page.getByText("E2E Cliente")).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
 
     await page.getByRole("button", { name: /^Editar$/i }).first().click();
     await expect(page.getByRole("heading", { name: /Editar cliente/i })).toBeVisible();
-
-    const dialogs: string[] = [];
-    page.on("dialog", async (dialog) => {
-      dialogs.push(dialog.type());
-      await dialog.accept();
-    });
+    await expectNoSeriousA11yViolations(page);
 
     await page.getByRole("button", { name: /^Eliminar$/i }).click();
+    // Archivar pide confirmación en un diálogo propio de la app, no en un diálogo nativo.
+    const archiveDialog = page.getByRole("dialog", { name: /Archivar cliente/i });
+    await expect(archiveDialog).toBeVisible();
+    await archiveDialog.getByRole("button", { name: /^Archivar$/i }).click();
     await expect(page.getByRole("heading", { name: /Editar cliente/i })).toBeHidden();
 
-    await page.goto("/customers?status=archived");
-    await expect(page.getByText("E2E Cliente")).toBeVisible();
-    await page.getByRole("button", { name: /^Reactivar$/i }).first().click();
-    await expect(page.getByText("E2E Cliente")).toBeHidden();
-
     await page.goto("/customers");
-    await expect(page.getByText("E2E Cliente")).toBeVisible();
-    expect(dialogs).toContain("confirm");
-    expect(dialogs).toContain("alert");
+    await expect(page.getByText("E2E Cliente")).toHaveCount(0);
+    await expectNoSeriousA11yViolations(page);
   });
 
   test("generates an employee invitation link from the employee detail screen", async ({ page }) => {
-    test.skip(!fixture, "Requires Supabase service role fixture env.");
+    skipUnlessReady(!fixture, "Requires Supabase service role fixture env.");
     const activeFixture = fixture!;
 
     await page.goto(`/employees/${activeFixture.employeeId}`);
     await expect(page.getByRole("heading", { name: /E2E Colaborador/i })).toBeVisible();
     await expect(page.getByText(/Acceso al sistema/i)).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
 
     const generateButton = page.getByRole("button", { name: /Generar enlace de acceso/i });
     if ((await generateButton.count()) > 0) {
@@ -253,6 +252,7 @@ test.describe("salon owner critical smoke", () => {
     await expect(page.getByText(/Enlace generado/i)).toBeVisible();
     const inviteUrl = await page.locator("input[readonly]").last().inputValue();
     expect(inviteUrl).toContain("/join/");
+    await expectNoSeriousA11yViolations(page);
   });
 
   test("signs out and returns to login", async ({ page }) => {
@@ -260,5 +260,6 @@ test.describe("salon owner critical smoke", () => {
 
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByRole("heading", { name: /Iniciar/i })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 });

@@ -82,10 +82,10 @@ describe("appointment scheduling", () => {
         ordering: 2,
       },
     ]);
-    expect(items[0].start_time.toISOString()).toBe("2026-05-25T14:00:00.000Z");
-    expect(items[0].end_time.toISOString()).toBe("2026-05-25T14:30:00.000Z");
-    expect(items[1].start_time.toISOString()).toBe("2026-05-25T14:30:00.000Z");
-    expect(items[1].end_time.toISOString()).toBe("2026-05-25T15:15:00.000Z");
+    expect(items[0]?.start_time.toISOString()).toBe("2026-05-25T14:00:00.000Z");
+    expect(items[0]?.end_time.toISOString()).toBe("2026-05-25T14:30:00.000Z");
+    expect(items[1]?.start_time.toISOString()).toBe("2026-05-25T14:30:00.000Z");
+    expect(items[1]?.end_time.toISOString()).toBe("2026-05-25T15:15:00.000Z");
   });
 
   it("rejects a collaborator that does not perform the selected service", () => {

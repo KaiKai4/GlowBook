@@ -1,4 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import "server-only";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { Database } from "@/types/database.types";
 
 type CustomerRow = Database["public"]["Tables"]["customers"]["Row"];
@@ -32,17 +33,6 @@ export async function findCustomers(
   const { data, count, error } = await query;
   if (error) throw error;
   return { data: data ?? [], total: count ?? 0 };
-}
-
-export async function findCustomerById(id: string, salonId: string): Promise<CustomerRow | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("id", id)
-    .eq("salon_id", salonId)
-    .single();
-  return data;
 }
 
 export async function createCustomer(

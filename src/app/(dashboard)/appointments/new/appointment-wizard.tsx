@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { isValidOptionalPhone, phoneValidationMessage } from "@/lib/utils/phone";
-import { createAppointmentAction, getOccupiedSlotsForDate } from "../actions";
-import { checkCustomerPhoneAction, findOrCreateCustomerAction } from "../../customers/actions";
+import { isValidOptionalPhone, phoneValidationMessage } from "@/infra/format/phone";
+import { getOccupiedSlotsForDate } from "../actions";
+import { checkCustomerPhoneAction } from "../../customers/actions";
+import { useCreateAppointment } from "./use-create-appointment";
 import { AppointmentCustomerStep } from "./appointment-customer-step";
 import { AppointmentServicesStep } from "./appointment-services-step";
 import { AppointmentStepper } from "./appointment-stepper";
@@ -34,7 +34,6 @@ export function AppointmentWizard({
   salonConfig,
   businessHours,
 }: AppointmentWizardProps) {
-  const router = useRouter();
   const [step, setStep] = useState(1);
 
   const [mode, setMode] = useState<"existing" | "new">(customers.length ? "existing" : "new");
@@ -54,8 +53,7 @@ export function AppointmentWizard({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const [notes, setNotes] = useState("");
-  const [submitting, startSubmit] = useTransition();
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { confirm, submitting, submitError } = useCreateAppointment();
 
   const serviceMap = useMemo(
     () => new Map(services.map((service) => [service.id, service])),
@@ -68,8 +66,8 @@ export function AppointmentWizard({
   );
 
   const schedule = useMemo(
-    () => buildSequentialSchedule({ rows, date, time, serviceMap }),
-    [rows, date, time, serviceMap]
+    () => buildSequentialSchedule({ rows, date, time, timeZone: salonConfig.timezone, serviceMap }),
+    [rows, date, time, salonConfig.timezone, serviceMap]
   );
 
   const isClosedDay = !!date && selectedWindow === null;
@@ -175,59 +173,19 @@ export function AppointmentWizard({
 
   function reorder(from: number, to: number) {
     if (from === to) return;
-
     setRows((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
+      if (moved === undefined) return prev;
       next.splice(to, 0, moved);
       return next;
     });
   }
 
   function handleConfirm() {
-    setSubmitError(null);
-
-    startSubmit(async () => {
-      let finalCustomerId = customerId;
-
-      if (mode === "new") {
-        const customerResult = await findOrCreateCustomerAction(
-          newFirst,
-          newLast,
-          newPhone || undefined
-        );
-
-        if (!customerResult.ok) {
-          setSubmitError(customerResult.error);
-          return;
-        }
-
-        finalCustomerId = customerResult.value;
-      }
-
-      const base = new Date(`${date}T${time}:00`);
-      const formData = new FormData();
-      formData.set("customer_id", finalCustomerId);
-      formData.set("start_time", base.toISOString());
-      formData.set("notes", notes);
-      formData.set(
-        "assignments",
-        JSON.stringify(
-          rows.map((row) => ({
-            service_id: row.serviceId,
-            employee_id: row.employeeId,
-          }))
-        )
-      );
-
-      const result = await createAppointmentAction(null, formData);
-      if (!result.ok) {
-        setSubmitError(result.error);
-        return;
-      }
-
-      router.push("/appointments");
-      router.refresh();
+    confirm({
+      mode, customerId, newFirst, newLast, newPhone, date, time,
+      timezone: salonConfig.timezone, rows, notes,
     });
   }
 

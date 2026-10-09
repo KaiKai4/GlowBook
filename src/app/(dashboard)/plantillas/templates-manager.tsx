@@ -11,7 +11,7 @@ import {
   renderMessageTemplate,
   type MessageTemplate,
 } from "@/features/notifications/domain/templates";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { updateNotificationTemplateAction } from "./actions";
 
 const LABELS: Record<MessageTemplate["event"], { title: string; description: string }> = {
@@ -57,9 +57,9 @@ function TemplateCard({ template }: { template: MessageTemplate }) {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="border-b border-stone-100 bg-gradient-to-br from-brand-50 to-white">
+      <CardHeader className="border-b border-border-subtle bg-gradient-to-br from-brand-50 to-surface">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-white p-2 text-brand-600 shadow-sm">
+          <div className="rounded-xl bg-surface p-2 text-brand-600 shadow-sm">
             <MessageSquareText className="h-5 w-5" />
           </div>
           <div>
@@ -80,30 +80,30 @@ function TemplateCard({ template }: { template: MessageTemplate }) {
             className="min-h-[190px] leading-relaxed"
           />
 
-          <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
+          <label className="flex items-center gap-2 text-sm font-medium text-fg-secondary">
             <input
               type="checkbox"
               name="is_active"
               checked={isActive}
               onChange={(event) => setIsActive(event.target.checked)}
-              className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+              className="h-4 w-4 rounded border-border-strong text-brand-600 focus:ring-brand-500"
             />
             Usar esta plantilla personalizada
           </label>
           {!isActive && (
-            <p className="-mt-2 text-xs text-stone-400">
+            <p className="-mt-2 text-xs text-fg-subtle">
               Si la desactivas, el sistema usará el mensaje base por defecto para este flujo.
             </p>
           )}
 
-          <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
+          <div className="rounded-xl border border-border bg-surface-muted p-3">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
               <Sparkles className="h-3.5 w-3.5" />
               Variables disponibles
             </p>
             <div className="flex flex-wrap gap-1.5">
               {TEMPLATE_PLACEHOLDERS.map((placeholder) => (
-                <code key={placeholder} className="rounded-full bg-white px-2 py-1 text-xs text-brand-700">
+                <code key={placeholder} className="rounded-full bg-surface px-2 py-1 text-xs text-brand-700">
                   {placeholder}
                 </code>
               ))}
@@ -114,16 +114,16 @@ function TemplateCard({ template }: { template: MessageTemplate }) {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-700">
               Vista previa
             </p>
-            <p className="whitespace-pre-line text-sm text-stone-700">{preview}</p>
+            <p className="whitespace-pre-line text-sm text-fg-secondary">{preview}</p>
           </div>
 
           {state && !state.ok && (
-            <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <p className="rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
               {state.error}
             </p>
           )}
           {state?.ok && (
-            <p className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            <p className="rounded-lg border border-success-border-subtle bg-success-subtle px-3 py-2 text-sm text-success-fg">
               Plantilla guardada.
             </p>
           )}

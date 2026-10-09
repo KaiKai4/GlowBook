@@ -1,22 +1,8 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 type RelatedOne<T> = T | T[] | null;
-
-export interface DashboardMonthAppointmentRow {
-  total_price: number | null;
-  status: string;
-}
-
-export interface DashboardMonthlyCompletedAppointmentRow {
-  start_time: string | null;
-}
-
-export interface DashboardBookedServiceRow {
-  service: RelatedOne<{ name: string }>;
-  appointment: RelatedOne<{ status: string }>;
-}
 
 export interface DashboardPendingConfirmationRow {
   id: string;
@@ -26,78 +12,6 @@ export interface DashboardPendingConfirmationRow {
     last_name: string;
     phone: string | null;
   }>;
-}
-
-export interface DashboardReportRows {
-  todayAppointments: number;
-  monthAppointments: DashboardMonthAppointmentRow[];
-  monthlyCompletedAppointments: DashboardMonthlyCompletedAppointmentRow[];
-  totalCustomers: number;
-  bookedServices: DashboardBookedServiceRow[];
-}
-
-export interface DashboardReportRowsQuery {
-  salonId: string;
-  todayStart: string;
-  todayEnd: string;
-  monthStart: string;
-  chartStart: string;
-}
-
-export async function findDashboardReportRows({
-  salonId,
-  todayStart,
-  todayEnd,
-  monthStart,
-  chartStart,
-}: DashboardReportRowsQuery): Promise<DashboardReportRows> {
-  const supabase = await createSupabaseServerClient();
-
-  const [todayAppointments, monthAppointments, monthlyCompletedAppointments, totalCustomers, bookedServices] =
-    await Promise.all([
-      supabase
-        .from("appointments")
-        .select("id, status", { count: "exact" })
-        .eq("salon_id", salonId)
-        .gte("start_time", todayStart)
-        .lte("start_time", todayEnd),
-      supabase
-        .from("appointments")
-        .select("total_price, status")
-        .eq("salon_id", salonId)
-        .eq("status", "completed")
-        .gte("start_time", monthStart),
-      supabase
-        .from("appointments")
-        .select("start_time")
-        .eq("salon_id", salonId)
-        .eq("status", "completed")
-        .gte("start_time", chartStart),
-      supabase
-        .from("customers")
-        .select("id", { count: "exact" })
-        .eq("salon_id", salonId)
-        .eq("is_active", true),
-      supabase
-        .from("appointment_items")
-        .select("service:services(name), appointment:appointments(status)")
-        .eq("salon_id", salonId)
-        .gte("start_time", monthStart),
-    ]);
-
-  if (todayAppointments.error) throw todayAppointments.error;
-  if (monthAppointments.error) throw monthAppointments.error;
-  if (monthlyCompletedAppointments.error) throw monthlyCompletedAppointments.error;
-  if (totalCustomers.error) throw totalCustomers.error;
-  if (bookedServices.error) throw bookedServices.error;
-
-  return {
-    todayAppointments: todayAppointments.count ?? 0,
-    monthAppointments: (monthAppointments.data ?? []) as DashboardMonthAppointmentRow[],
-    monthlyCompletedAppointments: (monthlyCompletedAppointments.data ?? []) as DashboardMonthlyCompletedAppointmentRow[],
-    totalCustomers: totalCustomers.count ?? 0,
-    bookedServices: (bookedServices.data ?? []) as unknown as DashboardBookedServiceRow[],
-  };
 }
 
 export async function findPendingConfirmationRows(

@@ -1,0 +1,309 @@
+name: GlowBook Release
+
+# Única vía que promueve código a producción. Se dispara cuando el workflow de CI
+# termina en success sobre un push a main, o manualmente con un SHA de main ya verificado.
+#
+# Etapas (en orden):
+#   gate -> migrations (production, aprobación) -> deploy-staged -> smoke-staged
+#        -> discard-staged (solo si el smoke staged falla)
+#        -> promote (production, aprobación) -> smoke producción
+#        -> rollback del frontend + alerta (solo si falla tras promover)
+#   notify-failure: alerta si falla alguna etapa anterior a promote.
+#
+# Configuración del repositorio (secretos, environment production con revisores):
+# ver docs/runbooks/deploy.md. Ningún paso de esta release es de calidad: los
+# controles viven en el CI (ci.yml) y el gate solo verifica que estén en success.
+
+on:
+  workflow_run:
+    workflows: ["GlowBook CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "SHA completo de main a publicar (debe tener CI en success)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: glowbook-release-production
+  cancel-in-progress: false
+
+env:
+  TARGET_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.sha || github.event.workflow_run.head_sha }}
+  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  gate:
+    name: Release gate
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      # Secretos requeridos, SHA en main, y todos los check-runs del commit en success.
+      # Si falta cualquiera, el gate falla: nunca se salta.
+      - name: Verificar gate de release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+          PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
+          SYNTHETIC_BASE_URL: ${{ secrets.SYNTHETIC_BASE_URL }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: node scripts/release/gate.mjs
+
+  migrations:
+    name: Migrations (production)
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+      PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Listado informativo de pendientes. Si falla (hay pendientes o error de red),
+      # se aplica la etapa siguiente; la comprobación final es estricta.
+      - name: Listar migraciones pendientes
+        id: list
+        continue-on-error: true
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+        run: node scripts/production-migration-gate.mjs --target=production
+
+      - name: Aplicar migraciones pendientes
+        if: steps.list.outcome == 'failure'
+        env:
+          GLOWBOOK_RELEASE_AUTOMATION: "true"
+        run: node scripts/release/apply-migrations.mjs --confirm="$PRODUCTION_PROJECT_REF"
+
+      - name: Comprobar que no quedan migraciones pendientes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+        run: node scripts/production-migration-gate.mjs --target=production
+
+  deploy-staged:
+    name: Deploy staged
+    needs: migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Descargar entorno de production de Vercel
+        run: npx --yes vercel@60.0.0 pull --yes --environment=production
+
+      - name: Build prebuilt de production
+        run: npx --yes vercel@60.0.0 build --prod
+
+      # --skip-domain: el despliegue no recibe el dominio de producción hasta promote.
+      - name: Desplegar sin asignar dominio
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT_FILE="$RUNNER_TEMP/vercel-deploy.txt"
+          npx --yes vercel@60.0.0 deploy --prebuilt --prod --skip-domain | tee "$OUTPUT_FILE"
+          DEPLOY_URL="$(node scripts/release/deployment-url.mjs "$OUTPUT_FILE")"
+          echo "url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+
+  smoke-staged:
+    name: Smoke staged
+    needs: deploy-staged
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      STAGED_URL: ${{ needs.deploy-staged.outputs.url }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Smoke contra el despliegue staged
+        run: node scripts/release/smoke.mjs --url="$STAGED_URL" --label=staged
+
+  discard-staged:
+    name: Discard staged
+    needs: [deploy-staged, smoke-staged]
+    if: always() && needs.deploy-staged.result == 'success' && needs.smoke-staged.result != 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      STAGED_URL: ${{ needs.deploy-staged.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Eliminar el despliegue staged fallido
+        run: npx --yes vercel@60.0.0 remove "$STAGED_URL" --yes
+
+  promote:
+    name: Promote production
+    needs: [deploy-staged, smoke-staged]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      STAGED_URL: ${{ needs.deploy-staged.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Promover despliegue staged a producción
+        id: promote
+        run: npx --yes vercel@60.0.0 promote "$STAGED_URL"
+
+      - name: Smoke contra el dominio de producción
+        id: smoke_production
+        env:
+          SYNTHETIC_BASE_URL: ${{ secrets.SYNTHETIC_BASE_URL }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: node scripts/release/smoke.mjs --label=produccion
+
+      # Solo frontend: la BD no se revierte. Se revierte solo si esta release promovió.
+      - name: Rollback del frontend
+        id: rollback
+        if: failure() && steps.promote.outcome == 'success'
+        run: npx --yes vercel@60.0.0 rollback --yes
+
+      - name: Alerta de fallo tras promover
+        if: failure()
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          STAGE: ${{ steps.smoke_production.outcome == 'failure' && 'smoke-production' || 'promote' }}
+          ROLLBACK_ATTEMPTED: ${{ steps.rollback.outcome != 'skipped' && 'true' || 'false' }}
+        run: >-
+          node scripts/release/alert.mjs
+          --stage="$STAGE"
+          --sha="$TARGET_SHA"
+          --url="$STAGED_URL"
+          --run-url="$RUN_URL"
+          --rollback="$ROLLBACK_ATTEMPTED"
+
+  notify-failure:
+    name: Notify release failure
+    needs: [gate, migrations, deploy-staged, smoke-staged, discard-staged]
+    if: >-
+      always() && (
+        needs.gate.result == 'failure' ||
+        needs.migrations.result == 'failure' ||
+        needs.deploy-staged.result == 'failure' ||
+        needs.smoke-staged.result == 'failure' ||
+        needs.discard-staged.result == 'failure'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+      STAGE: ${{ needs.gate.result == 'failure' && 'gate' || needs.migrations.result == 'failure' && 'migrations' || needs.deploy-staged.result == 'failure' && 'deploy-staged' || 'smoke-staged' }}
+      STAGED_URL: ${{ needs.deploy-staged.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enviar alerta de fallo
+        run: >-
+          node scripts/release/alert.mjs
+          --stage="$STAGE"
+          --sha="$TARGET_SHA"
+          --url="$STAGED_URL"
+          --run-url="$RUN_URL"
+          --rollback=false

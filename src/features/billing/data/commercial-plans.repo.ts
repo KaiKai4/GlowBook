@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 import type {
   CommercialLimitMetric,
   CommercialPlan,
@@ -102,12 +102,6 @@ export async function findActiveMetrics(): Promise<CommercialLimitMetric[]> {
   return rows.map(mapMetric).filter((metric) => metric.isActive && !metric.isArchived);
 }
 
-export async function findActiveModules(): Promise<PlatformModule[]> {
-  const supabase = billingDb();
-  const rows = await selectRows<ModuleRow>(supabase, "platform_modules", MODULE_COLUMNS, "sort_order");
-  return rows.map(mapModule).filter((module) => module.isActive && !module.isArchived);
-}
-
 export async function findPlanWithChildren(planId: string): Promise<CommercialPlan | null> {
   const supabase = billingDb();
   const { data, error } = await supabase
@@ -124,31 +118,6 @@ export async function findPlanWithChildren(planId: string): Promise<CommercialPl
   ]);
 
   return mapPlan(data, modules, limits);
-}
-
-export async function savePlatformModule(values: {
-  key: string;
-  name: string;
-  description: string;
-  navHref: string;
-  iconName: string;
-  sortOrder: number;
-  isActive: boolean;
-  isArchived: boolean;
-}) {
-  const supabase = billingDb();
-  await assertOk(
-    supabase.from("platform_modules").upsert({
-      key: values.key,
-      name: values.name,
-      description: values.description,
-      nav_href: values.navHref,
-      icon_name: values.iconName,
-      sort_order: values.sortOrder,
-      is_active: values.isActive,
-      is_archived: values.isArchived,
-    }, { onConflict: "key" })
-  );
 }
 
 export async function saveCommercialPlan(values: {
@@ -213,35 +182,6 @@ export async function savePlanModule(values: {
       module_key: values.moduleKey,
       enabled: values.enabled,
     }, { onConflict: "plan_id,module_key" })
-  );
-}
-
-export async function saveLimitMetric(values: {
-  key: string;
-  moduleKey: string;
-  name: string;
-  description: string;
-  unit: string;
-  counterKey: UsageCounterKey;
-  defaultCountScope: PlanLimitCountScope;
-  sortOrder: number;
-  isActive: boolean;
-  isArchived: boolean;
-}) {
-  const supabase = billingDb();
-  await assertOk(
-    supabase.from("commercial_limit_metrics").upsert({
-      key: values.key,
-      module_key: values.moduleKey,
-      name: values.name,
-      description: values.description,
-      unit: values.unit,
-      counter_key: values.counterKey,
-      default_count_scope: values.defaultCountScope,
-      sort_order: values.sortOrder,
-      is_active: values.isActive,
-      is_archived: values.isArchived,
-    }, { onConflict: "key" })
   );
 }
 

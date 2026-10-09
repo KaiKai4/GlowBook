@@ -1,71 +1,53 @@
 import "server-only";
 
-import { getErrorMessage } from "@/lib/errors";
-import type { Result } from "@/lib/result";
-import {
-  recordInventoryPurchaseAtomically,
-  transferInventoryStockAtomically,
-} from "../data/inventory.repo";
-import type {
-  InventoryMovementInput,
-  InventoryPurchaseInput,
-  InventoryTransferInput,
-} from "../schemas";
-import { adjustInventoryStock } from "./stock-commands";
+import { toPublicErrorMessage } from "@/infra/errors";
+import type { Result } from "@/infra/result";
+import { recordInventoryPurchaseRpc } from "../data/rpc/record-inventory-purchase";
+import { recordInventoryTransferRpc } from "../data/rpc/record-inventory-transfer";
+import type { InventoryPurchaseInput, InventoryTransferInput } from "../schemas";
 
-export async function recordInventoryMovement(
-  salonId: string,
-  input: InventoryMovementInput
-): Promise<Result<void>> {
-  const delta =
-    input.movement_kind === "entry"
-      ? input.quantity
-      : -input.quantity;
-  const movementType =
-    input.movement_kind === "entry"
-      ? "adjustment"
-      : "internal_use";
-
-  const result = await adjustInventoryStock({
-    salonId,
-    productId: input.product_id,
-    location: input.location,
-    delta,
-    movementType,
-    note: input.note,
-  });
-
-  return result.ok ? { ok: true, value: undefined } : result;
-}
-
+/** Mueve stock. idempotencyKey evita aplicar dos veces un reenvio del mismo formulario. */
 export async function transferInventoryStock(
   salonId: string,
-  input: InventoryTransferInput
+  input: InventoryTransferInput,
+  idempotencyKey: string
 ): Promise<Result<void>> {
   try {
-    await transferInventoryStockAtomically(salonId, input);
+    await recordInventoryTransferRpc({
+      salonId,
+      productId: input.product_id,
+      fromLocation: input.from_location,
+      toLocation: input.to_location,
+      quantity: input.quantity,
+      note: input.note || null,
+      idempotencyKey,
+    });
     return { ok: true, value: undefined };
   } catch (error) {
-    return { ok: false, error: getErrorMessage(error, "Error al transferir stock.") };
+    return { ok: false, error: toPublicErrorMessage(error, "Error al transferir stock.") };
   }
 }
 
+/** Registra una reposicion. idempotencyKey evita duplicar la compra si el formulario se reenvia. */
 export async function recordInventoryPurchase(
   salonId: string,
-  input: InventoryPurchaseInput
+  input: InventoryPurchaseInput,
+  idempotencyKey: string
 ): Promise<Result<void>> {
   try {
-    await recordInventoryPurchaseAtomically(salonId, {
-      supplier_name: input.supplier_name,
-      purchase_date: input.purchase_date,
-      product_id: input.product_id,
+    await recordInventoryPurchaseRpc({
+      salonId,
+      supplierName: input.supplier_name || null,
+      purchaseDate: input.purchase_date,
+      productId: input.product_id,
       quantity: input.quantity,
-      unit_cost: input.unit_cost,
-      note: input.note,
+      unitCost: input.unit_cost,
+      note: input.note || null,
+      idempotencyKey,
     });
 
     return { ok: true, value: undefined };
   } catch (error) {
-    return { ok: false, error: getErrorMessage(error, "Error al registrar la reposicion.") };
+    return { ok: false, error: toPublicErrorMessage(error, "Error al registrar la reposicion.") };
   }
 }

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const REQUIRED_DOCS = [
-  "docs/runbooks/database-restore.md",
+  "docs/runbooks/restore.md",
   "docs/production-scale-readiness-checklist.md",
 ];
 
@@ -25,15 +25,18 @@ const REQUIRED_RESTORE_EVIDENCE = [
   "100 auth users eliminados",
 ];
 
+/** @param {string} path @returns {string} */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} message @returns {void} */
 function fail(message) {
   console.error(`[restore-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message @returns {void} */
 function pass(message) {
   console.log(`[restore-readiness] OK ${message}`);
 }
@@ -46,8 +49,8 @@ for (const doc of REQUIRED_DOCS) {
   }
 }
 
-const restoreDoc = existsSync(join(process.cwd(), "docs/runbooks/database-restore.md"))
-  ? readDoc("docs/runbooks/database-restore.md")
+const restoreDoc = existsSync(join(process.cwd(), "docs/runbooks/restore.md"))
+  ? readDoc("docs/runbooks/restore.md")
   : "";
 
 for (const text of REQUIRED_RESTORE_EVIDENCE) {

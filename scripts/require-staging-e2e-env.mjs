@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -16,10 +17,7 @@ function loadEnvFileIfPresent() {
   }
 }
 
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+/** @param {string} value @returns {boolean} */
 function isLocalUrl(value) {
   try {
     const hostname = new URL(value).hostname.toLowerCase();
@@ -29,6 +27,7 @@ function isLocalUrl(value) {
   }
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[staging-e2e] ${message}`);
   process.exit(1);

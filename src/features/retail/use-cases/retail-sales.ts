@@ -1,17 +1,12 @@
-import {
-  getActiveCustomerOptions,
-  type CustomerOptionView,
-} from "@/features/customers/use-cases/customer-options";
-import {
-  getRetailInventoryProducts,
-  type RetailInventoryProductView,
-} from "@/features/inventory/use-cases/retail-inventory-products";
-import { getErrorMessage } from "@/lib/errors";
-import { ok, type Result } from "@/lib/result";
-import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
-import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
+import { getActiveCustomerOptions, type CustomerOptionView } from "@/features/customers";
+import { getRetailInventoryProducts, type RetailInventoryProductView } from "@/features/inventory";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { ok, type Result } from "@/infra/result";
+import { getSalonPaymentMethods } from "@/features/salon";
+import type { PaymentMethodOption } from "@/features/payments";
 import type { RetailSaleInput } from "../schemas";
-import { findRecentRetailSales, recordRetailSaleAtomically } from "../data/retail.repo";
+import { findRecentRetailSales } from "../data/retail.repo";
+import { recordRetailSaleRpc } from "../data/rpc/record-retail-sale";
 
 export interface RetailPageView {
   products: RetailInventoryProductView[];
@@ -36,23 +31,27 @@ export async function getRetailPage(salonId: string): Promise<RetailPageView> {
   };
 }
 
+/** Registra la venta. idempotencyKey evita duplicar la venta si el formulario se reenvia. */
 export async function createRetailSale(
   salonId: string,
-  input: RetailSaleInput
+  input: RetailSaleInput,
+  idempotencyKey: string
 ): Promise<Result<string>> {
   try {
-    await recordRetailSaleAtomically(salonId, {
-      customer_id: input.customer_id || null,
-      product_id: input.product_id,
+    await recordRetailSaleRpc({
+      salonId,
+      customerId: input.customer_id || null,
+      productId: input.product_id,
       location: input.location,
       quantity: input.quantity,
-      unit_price: input.unit_price,
-      payment_method: input.payment_method,
-      note: input.note,
+      unitPrice: input.unit_price,
+      paymentMethod: input.payment_method,
+      note: input.note || null,
+      idempotencyKey,
     });
 
     return ok("Venta registrada.");
   } catch (error) {
-    return { ok: false, error: getErrorMessage(error, "No se pudo registrar la venta.") };
+    return { ok: false, error: toPublicErrorMessage(error, "No se pudo registrar la venta.") };
   }
 }

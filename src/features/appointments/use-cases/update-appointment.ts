@@ -1,14 +1,17 @@
-import { err, ok, type Result } from "@/lib/result";
-import { captureError } from "@/lib/observability";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { err, ok, type Result } from "@/infra/result";
+import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
+} from "../data/appointment-commands.repo";
+import {
   updateAppointmentWithRpc,
   type UpdateAppointmentRpcPayload,
-} from "../data/appointment-commands.repo";
+} from "../data/rpc/update-appointment";
 import { evaluateTimeRange } from "../domain/availability";
 import { buildItemPayloads, type SchedulingContext } from "../domain/scheduling";
 import type { BusinessHour, OccupiedSlot, ServiceAssignment, WorkSchedule } from "../domain/types";
@@ -16,13 +19,15 @@ import type { UpdateAppointmentScheduleInput } from "../schemas";
 
 interface Deps {
   salonId: string;
+  /** Clave de idempotencia del formulario (uuid). Un reenvio no reemplaza los items dos veces. */
+  idempotencyKey: string;
 }
 
 const CLOSED_STATUSES = new Set(["completed", "cancelled", "no_show"]);
 
 export async function updateAppointmentSchedule(
   input: UpdateAppointmentScheduleInput,
-  { salonId }: Deps
+  { salonId, idempotencyKey }: Deps
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
 
@@ -33,11 +38,11 @@ export async function updateAppointmentSchedule(
     return err("No se pudo cargar la cita.");
   }
 
-  if (!appointment) return err("Cita no encontrada en este salÃ³n.");
+  if (!appointment) return err("Cita no encontrada en este salón.");
   if (CLOSED_STATUSES.has(appointment.status)) {
-    return err("Esta cita ya estÃ¡ cerrada y no se puede editar.");
+    return err("Esta cita ya está cerrada y no se puede editar.");
   }
-  if (!appointment.customer_id) return err("La cita no tiene un cliente vÃ¡lido.");
+  if (!appointment.customer_id) return err("La cita no tiene un cliente válido.");
 
   let resources: Awaited<ReturnType<typeof findAppointmentCreationResources>>;
 
@@ -49,14 +54,14 @@ export async function updateAppointmentSchedule(
     });
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
-    return err("Datos invÃ¡lidos.");
+    return err("Datos inválidos.");
   }
 
-  if (!resources.customerExists) return err("Cliente no encontrado en este salÃ³n.");
-  if (!resources.salonConfig) return err("SalÃ³n no encontrado.");
+  if (!resources.customerExists) return err("Cliente no encontrado en este salón.");
+  if (!resources.salonConfig) return err("Salón no encontrado.");
 
   if (resources.assignments.some((assignment) => !assignment.service || !assignment.employee)) {
-    return err("Servicio o profesional no encontrado en el salÃ³n.");
+    return err("Servicio o profesional no encontrado en el salón.");
   }
 
   const validAssignments = resources.assignments as ServiceAssignment[];
@@ -79,6 +84,7 @@ export async function updateAppointmentSchedule(
         slotsCache.set(
           key,
           await findEmployeeOccupiedSlotsForCommand({
+            salonId,
             employeeId: employee.id,
             date: startTime,
             timezone: resources.salonConfig.timezone,
@@ -106,10 +112,12 @@ export async function updateAppointmentSchedule(
   try {
     payloads = buildItemPayloads(salonId, startTime, validAssignments, ctx);
   } catch (error) {
-    return err((error as Error).message);
+    return err(toPublicErrorMessage(error, "Error al actualizar la cita. Intenta de nuevo."));
   }
 
-  const totalEnd = payloads[payloads.length - 1].end_time;
+  const lastPayload = payloads[payloads.length - 1];
+  if (!lastPayload) throw new Error("Invariante de cita: sin items para calcular el fin.");
+  const totalEnd = lastPayload.end_time;
   const globalViolations = evaluateTimeRange({
     start: startTime,
     end: totalEnd,
@@ -119,8 +127,9 @@ export async function updateAppointmentSchedule(
     enforceMinDuration: true,
   });
 
-  if (globalViolations.length > 0) {
-    return err(globalViolations[0].message);
+  const [firstGlobalViolation] = globalViolations;
+  if (firstGlobalViolation) {
+    return err(firstGlobalViolation.message);
   }
 
   const rpcPayload: UpdateAppointmentRpcPayload = {
@@ -141,7 +150,7 @@ export async function updateAppointmentSchedule(
 
   let updated: Awaited<ReturnType<typeof updateAppointmentWithRpc>>;
   try {
-    updated = await updateAppointmentWithRpc(rpcPayload);
+    updated = await updateAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
     return err("Error al actualizar la cita. Intenta de nuevo.");

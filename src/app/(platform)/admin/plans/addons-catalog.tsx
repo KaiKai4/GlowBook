@@ -12,7 +12,7 @@ import type {
   CommercialLimitMetric,
   PlatformModule,
 } from "@/features/billing/use-cases/commercial-plans";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { removeAddonAction, saveAddonAction } from "./actions";
 import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";
 import { InlineState, Panel, StatusPill, SubmitButton } from "./workspace-ui";
@@ -29,13 +29,13 @@ export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
   const selected = isCreateMode ? null : data.addons.find((addon) => addon.id === selectedId) ?? null;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-soft">
       <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[300px_1fr]">
-        <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-stone-50/60 lg:border-b-0 lg:border-r">
+        <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-surface-muted/60 lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between border-b border-brand-100 px-5 py-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Extras</p>
-              <p className="mt-1 text-sm text-stone-500">{data.addons.length} en catalogo</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Extras</p>
+              <p className="mt-1 text-sm text-fg-subtle">{data.addons.length} en catalogo</p>
             </div>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
               {data.addons.filter((addon) => addon.status === "active").length} activos
@@ -50,7 +50,7 @@ export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
                 "mb-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition",
                 isCreateMode
                   ? "border-brand-300 bg-brand-50 text-brand-700"
-                  : "border-brand-100 bg-white text-stone-700 hover:border-brand-300 hover:text-brand-700"
+                  : "border-brand-100 bg-surface text-fg-secondary hover:border-brand-300 hover:text-brand-700"
               )}
             >
               <Plus className="h-4 w-4" />
@@ -58,7 +58,7 @@ export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
             </button>
 
             {data.addons.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-brand-200 bg-white px-4 py-8 text-center text-sm text-stone-400">
+              <div className="rounded-xl border border-dashed border-brand-200 bg-surface px-4 py-8 text-center text-sm text-fg-subtle">
                 Crea el primer extra para venderlo o regalarlo a salones.
               </div>
             ) : (
@@ -71,20 +71,20 @@ export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
                     "flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition",
                     selected?.id === addon.id
                       ? "border-brand-300 bg-brand-50 shadow-[inset_3px_0_0_var(--color-brand-600)]"
-                      : "border-transparent hover:border-brand-100 hover:bg-white"
+                      : "border-transparent hover:border-brand-100 hover:bg-surface"
                   )}
                 >
                   <span className={cn(
                     "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
                     selected?.id === addon.id
-                      ? "border-brand-200 bg-white text-brand-700"
-                      : "border-stone-200 bg-white text-stone-400"
+                      ? "border-brand-200 bg-surface text-brand-700"
+                      : "border-border bg-surface text-fg-subtle"
                   )}>
                     {addon.kind === "module" ? <Package className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-stone-950">{addon.name}</span>
-                    <span className="mt-0.5 block truncate text-xs text-stone-400">
+                    <span className="block truncate text-sm font-semibold text-fg-strong">{addon.name}</span>
+                    <span className="mt-0.5 block truncate text-xs text-fg-muted">
                       {addon.currency} {addon.monthlyPrice.toFixed(2)}/mes · {kindLabel(addon.kind)}
                     </span>
                   </span>
@@ -95,20 +95,20 @@ export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
           </div>
         </aside>
 
-        <section className="flex min-h-0 min-w-0 flex-col bg-white">
+        <section className="flex min-h-0 min-w-0 flex-col bg-surface">
           {selected ? (
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-100 px-5 py-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-bold text-stone-950">{selected.name}</h2>
-                  <span className="rounded-lg bg-stone-100 px-2 py-1 font-mono text-xs text-stone-500">{selected.code}</span>
+                  <h2 className="truncate text-xl font-semibold text-fg-strong">{selected.name}</h2>
+                  <span className="rounded-lg bg-surface-sunken px-2 py-1 font-mono text-xs text-fg-muted">{selected.code}</span>
                 </div>
-                <p className="mt-1 text-sm text-stone-500">
+                <p className="mt-1 text-sm text-fg-subtle">
                   {selected.description || "Extra vendible o regalable por salon."}
                 </p>
               </div>
               <form action={removeAddonAction.bind(null, selected.id)}>
-                <Button type="submit" variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+                <Button type="submit" variant="outline" className="border-danger-border text-danger-strong hover:bg-danger-subtle">
                   <Trash2 className="h-4 w-4" />
                   Eliminar
                 </Button>

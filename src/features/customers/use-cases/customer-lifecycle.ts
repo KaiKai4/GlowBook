@@ -1,6 +1,6 @@
 import { updateCustomer } from "@/features/customers/data/customers.repo";
-import type { Result } from "@/lib/result";
-import { captureError } from "@/lib/observability";
+import type { Result } from "@/infra/result";
+import { captureError } from "@/infra/observability";
 
 export async function reactivateCustomer(
   customerId: string,

@@ -1,4 +1,4 @@
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { ToastProvider } from "@/components/ui/toast";
 
 import { PlatformAdminSidebar } from "./platform-admin-sidebar";
@@ -12,9 +12,9 @@ export default async function PlatformAdminLayout({
 
   return (
     <ToastProvider>
-      <div className="flex h-screen overflow-hidden bg-white">
+      <div className="flex h-screen overflow-hidden bg-surface">
         <PlatformAdminSidebar />
-        <main className="flex-1 overflow-y-auto bg-neutral-50">
+        <main tabIndex={0} className="flex-1 overflow-y-auto bg-surface-muted">
           <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:px-8">{children}</div>
         </main>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 export function AppointmentStepper({
   steps,
@@ -20,26 +20,34 @@ export function AppointmentStepper({
         return (
           <div
             key={label}
+            aria-current={active ? "step" : undefined}
             className={cn("flex items-center", index < steps.length - 1 && "flex-1")}
           >
             <div className="flex items-center gap-2.5 shrink-0">
               <div
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all",
+                  "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all",
                   done
-                    ? "bg-emerald-500 text-white shadow-sm"
+                    ? "bg-success text-surface shadow-sm"
                     : active
-                      ? "bg-brand-600 text-white shadow-[0_0_0_4px_rgba(124,58,237,0.15)]"
-                      : "bg-stone-100 text-stone-400"
+                      ? "bg-brand-600 text-surface shadow-focus-lg"
+                      : "bg-surface-sunken text-fg-muted"
                 )}
               >
-                {done ? <Check className="h-4 w-4" /> : stepNumber}
+                {done ? (
+                  <>
+                    <Check className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only">Completado</span>
+                  </>
+                ) : (
+                  stepNumber
+                )}
               </div>
               <div>
                 <p
                   className={cn(
                     "text-xs font-medium leading-none",
-                    active ? "text-brand-600" : done ? "text-emerald-600" : "text-stone-400"
+                    active ? "text-brand-600" : done ? "text-success-fg" : "text-fg-subtle"
                   )}
                 >
                   Paso {stepNumber}
@@ -47,7 +55,7 @@ export function AppointmentStepper({
                 <p
                   className={cn(
                     "text-sm font-semibold",
-                    active ? "text-stone-900" : done ? "text-stone-500" : "text-stone-300"
+                    active ? "text-fg" : "text-fg-subtle"
                   )}
                 >
                   {label}
@@ -58,7 +66,7 @@ export function AppointmentStepper({
               <div
                 className={cn(
                   "flex-1 mx-4 h-0.5 rounded-full",
-                  done ? "bg-emerald-400" : "bg-stone-200"
+                  done ? "bg-success" : "bg-border"
                 )}
               />
             )}

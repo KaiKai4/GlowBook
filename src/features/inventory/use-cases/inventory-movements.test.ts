@@ -1,64 +1,72 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  recordInventoryMovement,
   recordInventoryPurchase,
   transferInventoryStock,
 } from "./inventory-movements";
-import {
-  recordInventoryPurchaseAtomically,
-  transferInventoryStockAtomically,
-} from "../data/inventory.repo";
-import { adjustInventoryStock } from "./stock-commands";
+import { recordInventoryPurchaseRpc } from "../data/rpc/record-inventory-purchase";
+import { recordInventoryTransferRpc } from "../data/rpc/record-inventory-transfer";
 
-vi.mock("../data/inventory.repo", () => ({
-  recordInventoryPurchaseAtomically: vi.fn(),
-  transferInventoryStockAtomically: vi.fn(),
+vi.mock("../data/rpc/record-inventory-purchase", () => ({
+  recordInventoryPurchaseRpc: vi.fn(),
 }));
 
-vi.mock("./stock-commands", () => ({
-  adjustInventoryStock: vi.fn(),
+vi.mock("../data/rpc/record-inventory-transfer", () => ({
+  recordInventoryTransferRpc: vi.fn(),
 }));
 
-const mockedTransfer = vi.mocked(transferInventoryStockAtomically);
-const mockedPurchase = vi.mocked(recordInventoryPurchaseAtomically);
-const mockedAdjustStock = vi.mocked(adjustInventoryStock);
+const KEY = "00000000-0000-4000-8000-0000000000c1";
+
+const mockedTransfer = vi.mocked(recordInventoryTransferRpc);
+const mockedPurchase = vi.mocked(recordInventoryPurchaseRpc);
 
 describe("inventory movement use-cases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("registers transfers through the atomic inventory transfer adapter", async () => {
+  it("registra la transferencia con el adaptador RPC y reenvia la clave", async () => {
     mockedTransfer.mockResolvedValue(undefined);
 
-    const result = await transferInventoryStock("salon-1", {
-      product_id: "product-1",
-      from_location: "storage",
-      to_location: "internal",
-      quantity: 3,
-      note: "Reposicion interna",
-    });
+    const result = await transferInventoryStock(
+      "salon-1",
+      {
+        product_id: "product-1",
+        from_location: "storage",
+        to_location: "internal",
+        quantity: 3,
+        note: "Reposicion interna",
+        idempotency_key: KEY,
+      },
+      KEY
+    );
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedTransfer).toHaveBeenCalledWith("salon-1", {
-      product_id: "product-1",
-      from_location: "storage",
-      to_location: "internal",
+    expect(mockedTransfer).toHaveBeenCalledWith({
+      salonId: "salon-1",
+      productId: "product-1",
+      fromLocation: "storage",
+      toLocation: "internal",
       quantity: 3,
       note: "Reposicion interna",
+      idempotencyKey: KEY,
     });
   });
 
-  it("preserves database error messages when an atomic transfer fails", async () => {
-    mockedTransfer.mockRejectedValue({ message: "Stock insuficiente para completar la transferencia." });
+  it("preserves our own RAISE messages (SQLSTATE P0001) when an atomic transfer fails", async () => {
+    mockedTransfer.mockRejectedValue({ code: "P0001", message: "Stock insuficiente para completar la transferencia." });
 
-    const result = await transferInventoryStock("salon-1", {
-      product_id: "product-1",
-      from_location: "storage",
-      to_location: "internal",
-      quantity: 99,
-      note: "",
-    });
+    const result = await transferInventoryStock(
+      "salon-1",
+      {
+        product_id: "product-1",
+        from_location: "storage",
+        to_location: "internal",
+        quantity: 99,
+        note: "",
+        idempotency_key: KEY,
+      },
+      KEY
+    );
 
     expect(result).toEqual({
       ok: false,
@@ -66,49 +74,53 @@ describe("inventory movement use-cases", () => {
     });
   });
 
-  it("registers inventory purchases through the atomic purchase adapter", async () => {
-    mockedPurchase.mockResolvedValue({ id: "purchase-1" });
+  it("registra la compra con el adaptador RPC y reenvia la clave", async () => {
+    mockedPurchase.mockResolvedValue("purchase-1");
 
-    const result = await recordInventoryPurchase("salon-1", {
-      supplier_name: "Panafoto",
-      purchase_date: "2026-06-03",
-      product_id: "product-1",
-      location: "storage",
-      quantity: 5,
-      unit_cost: 4,
-      note: "Compra de prueba",
-    });
+    const result = await recordInventoryPurchase(
+      "salon-1",
+      {
+        supplier_name: "Panafoto",
+        purchase_date: "2026-06-03",
+        product_id: "product-1",
+        location: "storage",
+        quantity: 5,
+        unit_cost: 4,
+        note: "Compra de prueba",
+        idempotency_key: KEY,
+      },
+      KEY
+    );
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedPurchase).toHaveBeenCalledWith("salon-1", {
-      supplier_name: "Panafoto",
-      purchase_date: "2026-06-03",
-      product_id: "product-1",
+    expect(mockedPurchase).toHaveBeenCalledWith({
+      salonId: "salon-1",
+      supplierName: "Panafoto",
+      purchaseDate: "2026-06-03",
+      productId: "product-1",
       quantity: 5,
-      unit_cost: 4,
+      unitCost: 4,
       note: "Compra de prueba",
+      idempotencyKey: KEY,
     });
   });
 
-  it("keeps one-step manual movements behind the stock delta adapter", async () => {
-    mockedAdjustStock.mockResolvedValue({ ok: true, value: { quantityAfter: 8 } });
-
-    const result = await recordInventoryMovement("salon-1", {
+  it("envia la misma clave en un reenvio del formulario de compra", async () => {
+    mockedPurchase.mockResolvedValue("purchase-1");
+    const input = {
+      supplier_name: "",
+      purchase_date: "2026-06-03",
       product_id: "product-1",
-      location: "internal",
-      movement_kind: "internal_use",
-      quantity: 2,
-      note: "Uso en servicio",
-    });
+      location: "storage" as const,
+      quantity: 5,
+      unit_cost: 4,
+      note: "",
+      idempotency_key: KEY,
+    };
 
-    expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedAdjustStock).toHaveBeenCalledWith({
-      salonId: "salon-1",
-      productId: "product-1",
-      location: "internal",
-      delta: -2,
-      movementType: "internal_use",
-      note: "Uso en servicio",
-    });
+    await recordInventoryPurchase("salon-1", input, KEY);
+    await recordInventoryPurchase("salon-1", input, KEY);
+
+    expect(mockedPurchase.mock.calls.map(([call]) => call.idempotencyKey)).toEqual([KEY, KEY]);
   });
 });

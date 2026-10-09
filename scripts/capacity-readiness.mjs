@@ -1,11 +1,12 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const REQUIRED_DOCS = [
   "docs/capacity-plan.md",
-  "docs/performance-review-2026-06-01.md",
+  "docs/archive/readiness-snapshots/performance-review-2026-06-01.md",
   "docs/production-scale-readiness-checklist.md",
-  "docs/runbooks/database-restore.md",
+  "docs/runbooks/restore.md",
 ];
 
 const REQUIRED_CAPACITY_TEXT = [
@@ -43,23 +44,23 @@ function loadEnvFileIfPresent() {
   }
 }
 
-function normalizeUrl(value = "") {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+/** @param {string} message */
 function fail(message) {
   console.error(`[capacity-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[capacity-readiness] OK ${message}`);
 }
 
+/** @param {string} path */
 function readDoc(path) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
+/** @param {string} name */
 function hasEnv(name) {
   return Boolean(process.env[name]?.trim());
 }

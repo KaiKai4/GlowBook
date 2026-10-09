@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { normalizePaymentMethod } from "@/features/payments/domain/payment-methods";
+import { z } from "@/infra/validation/zod";
+import { normalizePaymentMethod } from "@/features/payments";
 
 const PaymentMethodSchema = z
   .string()
@@ -8,10 +8,12 @@ const PaymentMethodSchema = z
   .max(64, "El metodo de pago no puede superar 64 caracteres.")
   .transform(normalizePaymentMethod);
 
-export const AssignmentSchema = z.object({
+const AssignmentSchema = z.object({
   service_id: z.string().uuid("ID de servicio inválido"),
   employee_id: z.string().uuid("ID de profesional inválido"),
 });
+
+const IdempotencyKeySchema = z.string().uuid("La clave de idempotencia debe ser un uuid.");
 
 export const CreateAppointmentSchema = z.object({
   customer_id: z.string().uuid("ID de cliente inválido"),
@@ -20,27 +22,28 @@ export const CreateAppointmentSchema = z.object({
   assignments: z
     .array(AssignmentSchema)
     .min(1, "Selecciona al menos un servicio"),
+  idempotency_key: IdempotencyKeySchema,
 });
 
 export const UpdateAppointmentScheduleSchema = z.object({
-  appointment_id: z.string().uuid("ID de cita invÃ¡lido"),
-  start_time: z.string().datetime("Fecha/hora invÃ¡lida"),
+  appointment_id: z.string().uuid("ID de cita inválido"),
+  start_time: z.string().datetime("Fecha/hora inválida"),
   notes: z.string().max(1000).optional().default(""),
   assignments: z
     .array(AssignmentSchema)
     .min(1, "Selecciona al menos un servicio"),
+  idempotency_key: IdempotencyKeySchema,
 });
 
-export const UpdateAppointmentStatusSchema = z.object({
-  appointment_id: z.string().uuid(),
-  status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]),
-  payment_method: z
-    .union([z.literal(""), PaymentMethodSchema])
-    .optional(),
+/** Cancelar o confirmar: FormData con el id de la cita y la clave de idempotencia. */
+export const AppointmentLifecycleSchema = z.object({
+  appointment_id: z.string().uuid("ID de cita inválido"),
+  idempotency_key: IdempotencyKeySchema,
 });
 
 export const CompleteAppointmentSchema = z.object({
   appointment_id: z.string().uuid("ID de cita inválido"),
+  idempotency_key: IdempotencyKeySchema,
   payment_method: PaymentMethodSchema,
   completion_price_note: z.string().max(500).optional().default(""),
   item_charges: z
@@ -61,5 +64,4 @@ export const CompleteAppointmentSchema = z.object({
 
 export type CreateAppointmentInput = z.infer<typeof CreateAppointmentSchema>;
 export type UpdateAppointmentScheduleInput = z.infer<typeof UpdateAppointmentScheduleSchema>;
-export type UpdateAppointmentStatusInput = z.infer<typeof UpdateAppointmentStatusSchema>;
 export type CompleteAppointmentInput = z.infer<typeof CompleteAppointmentSchema>;

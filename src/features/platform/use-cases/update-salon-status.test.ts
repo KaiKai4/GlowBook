@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
 import { updateSalonStatus } from "./update-salon-status";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 vi.mock("@/features/platform/data/salons.repo", () => ({
   setSalonActiveStatus: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedSetSalonActiveStatus = vi.mocked(setSalonActiveStatus);
-const mockedRecordPlatformAction = vi.mocked(recordPlatformAction);
+const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 
 describe("update salon status", () => {
@@ -31,7 +31,7 @@ describe("update salon status", () => {
     ).resolves.toEqual({ ok: true, value: false });
 
     expect(mockedSetSalonActiveStatus).toHaveBeenCalledWith("salon-1", false);
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_status_changed", {
       actorUserId,
       action: "set_salon_status",
       status: "succeeded",
@@ -49,7 +49,7 @@ describe("update salon status", () => {
 
     expect(result).toEqual({ ok: false, error: "Salon inválido." });
     expect(mockedSetSalonActiveStatus).not.toHaveBeenCalled();
-    expect(mockedRecordPlatformAction).not.toHaveBeenCalled();
+    expect(mockedPublishAuditEvent).not.toHaveBeenCalled();
   });
 
   it("records failed status changes with a stable platform error", async () => {
@@ -63,7 +63,7 @@ describe("update salon status", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain("database down");
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith({
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_status_changed", {
       actorUserId,
       action: "set_salon_status",
       status: "failed",

@@ -1,4 +1,4 @@
-import { addMinutes, getZonedTimeParts } from "@/lib/utils/dates";
+import { addMinutes, getZonedTimeParts, zonedWallTimeToUtc } from "@/infra/format/dates";
 import { evaluateTimeRange } from "./availability";
 import type {
   BusinessHour,
@@ -76,20 +76,23 @@ export function buildSequentialSchedule<TService extends WizardServiceOption>({
   rows,
   date,
   time,
+  timeZone,
   serviceMap,
 }: {
   rows: AppointmentServiceRow[];
   date: string;
   time: string;
+  timeZone: string;
   serviceMap: Map<string, TService>;
 }): AppointmentScheduleItem<TService>[] {
   if (!date) return [];
 
-  const base = new Date(`${date}T${time}:00`);
+  const base = zonedWallTimeToUtc(date, time, timeZone);
 
   return rows.reduce<AppointmentScheduleItem<TService>[]>((schedule, row) => {
     const service = serviceMap.get(row.serviceId);
-    const start = schedule.length ? schedule[schedule.length - 1].end : base;
+    const previous = schedule.at(-1);
+    const start = previous ? previous.end : base;
     const end = service && start ? addMinutes(start, service.duration_minutes) : start;
     return [...schedule, { row, service, start, end }];
   }, []);

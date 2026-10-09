@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { ServiceCategoryRef } from "./collaborator-assignment";
 import {
-  assertServicesHaveAssignedCategories,
-  findServicesMissingAssignedCategory,
+  assertCollaboratorAssignments,
 } from "./collaborator-assignment";
 
 const services = [
@@ -9,17 +9,20 @@ const services = [
   { id: "manicure", category_id: "nails" },
 ];
 
+function assertServicesHaveAssignedCategories(services: ServiceCategoryRef[], categoryIds: string[]): void {
+  assertCollaboratorAssignments({
+    requestedServiceIds: services.map((service) => service.id),
+    requestedCategoryIds: categoryIds,
+    activeCategoryIds: categoryIds,
+    services,
+  });
+}
+
 describe("collaborator assignment", () => {
   it("allows services when their categories are assigned", () => {
     expect(() =>
       assertServicesHaveAssignedCategories(services, ["hair", "nails"])
     ).not.toThrow();
-  });
-
-  it("detects services whose category is not assigned to the collaborator", () => {
-    expect(findServicesMissingAssignedCategory(services, ["hair"])).toEqual([
-      { id: "manicure", category_id: "nails" },
-    ]);
   });
 
   it("rejects assigning a service without assigning its category", () => {

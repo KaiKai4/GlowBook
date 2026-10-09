@@ -10,7 +10,7 @@ export function ServiceDurationFields({
 
   return (
     <fieldset className="min-w-0">
-      <legend className="mb-1.5 text-sm font-semibold text-stone-700">Duración</legend>
+      <legend className="mb-1.5 text-sm font-semibold text-fg-secondary">Duración</legend>
       <div className="grid grid-cols-2 gap-2">
         <Input
           name="duration_hours"
@@ -34,7 +34,7 @@ export function ServiceDurationFields({
           required
         />
       </div>
-      <p className="mt-1.5 text-xs text-stone-500">
+      <p className="mt-1.5 text-xs text-fg-subtle">
         Usa minutos entre 0 y 59. Ejemplo: 1 hora y 50 minutos.
       </p>
     </fieldset>

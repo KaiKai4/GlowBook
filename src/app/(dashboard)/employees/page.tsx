@@ -1,6 +1,6 @@
-import { requireProfile } from "@/lib/auth/session";
+import { requireProfile } from "@/app/_composition/request-context";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getEmployeesPage } from "@/features/employees/use-cases/get-employees-page";
 import { EmployeesManager } from "./employees-manager";
 
@@ -10,7 +10,7 @@ export default async function EmployeesPage() {
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para gestionar colaboradores.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar colaboradores.</p>
       </div>
     );
   }

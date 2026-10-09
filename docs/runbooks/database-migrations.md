@@ -2,20 +2,52 @@
 
 ## Objetivo
 
-Aplicar cambios SQL/RLS/RPC sin romper el contrato TypeScript ni aislamientos
-multi-tenant.
+Aplicar cambios SQL/RLS/RPC sin romper el contrato TypeScript, los aislamientos
+multi-tenant ni la version anterior de la app que sigue en ejecucion durante un
+despliegue.
+
+Decision de fondo: [ADR 0016](../adr/0016-migraciones-forward-only-expand-contract.md).
+
+## Politica Forward-Only
+
+- Las migraciones aplicadas en produccion son inmutables. Un error se corrige con una
+  migracion nueva.
+- Un cambio incompatible se hace en tres despliegues: **expand**, migracion de datos y
+  codigo, y **contract**.
+- Prohibido en cualquier migracion: `RENAME COLUMN`, `RENAME TO`, `TRUNCATE`,
+  `DELETE FROM` sin `WHERE`.
+- `DROP COLUMN`, `DROP TABLE`, `ALTER COLUMN ... TYPE` y `SET NOT NULL` solo en una
+  migracion **contract**:
+  - el nombre del archivo contiene `_contract_`;
+  - la primera cabecera del archivo es `-- contract-of: <id>`, con el id de la
+    migracion expand que la precede y que ya existe.
+- `DROP FUNCTION` solo si la misma migracion recrea la funcion.
+
+La regla se evalua con `analyzeMigration` en `scripts/quality/migration-rules.mjs`
+(funcion pura, con tests en `scripts/quality/migration-rules.test.mjs`).
+
+### Ejemplo de renombrado seguro
+
+1. `expand_...sql`: añadir la columna nueva (nullable) y un indice.
+2. Desplegar la app que escribe en ambas columnas y lee la nueva. Backfill por lotes.
+3. Desplegar la app que solo usa la nueva.
+4. `..._contract_drop_legacy_column.sql` con `-- contract-of: <id del expand>`:
+   `ALTER TABLE ... DROP COLUMN ...`.
 
 ## Checklist Antes De Escribir SQL
 
 1. Identificar Module propietario.
-2. Revisar ADR relacionado.
+2. Revisar ADR relacionado (0016 para cualquier cambio destructivo o de contrato).
 3. Decidir autoridad: SQL, TypeScript o duplicacion permitida para UX.
-4. Definir rollback o mitigacion.
-5. Si toca datos reales, confirmar backup.
+4. Confirmar que la migracion es compatible con la version anterior de la app.
+5. Definir rollback o mitigacion.
+6. Si toca datos reales, confirmar backup.
 
 ## Flujo
 
-1. Crear migracion en `supabase/migrations`.
+1. Crear migracion en `supabase/migrations` con un nombre `YYYYMMDDHHMMSS_<descripcion>.sql`.
+   Si es contract, incluir `_contract_` en el nombre y `-- contract-of: <id>` como
+   primera linea.
 2. Revisar SQL manualmente.
 3. Verificar si staging tiene migraciones pendientes:
 
@@ -29,28 +61,70 @@ Si el comando bloquea, aplicar migraciones en staging:
 npm run db:migrate
 ```
 
+Ese comando se apoyara en `scripts/db-push-guarded.mjs` (ver seccion siguiente).
+
 4. Regenerar tipos:
 
 ```text
 npm run db:types
 ```
 
-5. Correr:
+5. Añadir o actualizar pgTAP para RLS, RPC y constraints tocados.
+6. Correr:
 
 ```text
 npm run type-check
 npm run test
-npm run architecture:health
+npm run verify:full
 ```
 
-6. Actualizar `docs/database-contracts.md`.
-7. Antes de production, verificar migraciones pendientes:
+7. Actualizar `docs/database-contracts.md`.
+8. Antes de production, verificar migraciones pendientes:
 
 ```text
 npm run release:migrations
 ```
 
-8. Aplicar en production solo despues de staging verde y con aprobacion explicita.
+9. Aplicar en production solo despues de staging verde, con aprobacion explicita y
+   mediante la automatizacion de release. Nunca editar produccion a mano.
+
+## Guardia De Destino
+
+Todo script que escribe en una base de datos (`seed-*`, `cleanup-*`,
+`bootstrap-platform-admin`) llama a `assertSafeTargetOrExit` de
+`scripts/lib/target-guard.mjs` antes de crear el cliente. Reglas:
+
+- **Produccion nunca**: se rechaza si `GLOWBOOK_ENV=production` o si la URL es igual a
+  `PRODUCTION_SUPABASE_URL` (o tiene el mismo project-ref).
+- **Local** (`localhost`, `127.0.0.1`, `[::1]`, `*.localhost`): permitido sin
+  confirmacion.
+- **Remoto** (`https://<ref>.supabase.co`): exige `--confirm=<ref>` con el mismo ref.
+
+Ejemplo para staging (el ref es el de la URL de staging, no de produccion):
+
+```text
+node --env-file=.env.local scripts/seed-staging-smoke.mjs --confirm=<ref-staging>
+```
+
+Si falta el flag, el script termina con codigo 1 y muestra el ref que debe pasarse.
+
+`bootstrap-platform-admin` acepta el mismo flag despues de email y password:
+
+```text
+node --env-file=.env.local scripts/bootstrap-platform-admin.mjs <email> <password> --confirm=<ref>
+```
+
+## Aplicar Migraciones Remotas (db-push-guarded)
+
+`scripts/db-push-guarded.mjs` envuelve `supabase db push`. Solo se ejecuta si se cumplen
+todas estas condiciones:
+
+1. `GLOWBOOK_RELEASE_AUTOMATION=true` (lo define la automatizacion de release, no una
+   persona en su terminal).
+2. `--confirm=<ref>` coincide con el project-ref de `NEXT_PUBLIC_SUPABASE_URL`.
+3. El proyecto enlazado por la CLI (archivo local `project-ref` que genera la CLI en la carpeta local supabase/.temp) es el mismo ref.
+
+Si no se cumple alguna, termina con codigo 1 sin tocar la base de datos.
 
 ## Gate De Migraciones
 
@@ -91,13 +165,24 @@ El resultado esperado es:
 [OK] Remote database has all local migration versions.
 ```
 
+## Lint De Migraciones
+
+`scripts/quality/lint-migrations.mjs` (squawk) bloquea solo las migraciones posteriores
+al corte. Las reglas forward-only de la seccion de politica (`analyzeMigration`) se
+integraran en ese mismo lint para las migraciones posteriores al corte; mientras tanto
+se verifican en revision de PR con la plantilla de `.github/pull_request_template.md`. Una migracion que viola la
+politica no se corrige editandola: se crea una migracion nueva que compensa el cambio,
+o se reabre la decision con el ADR.
+
 ## RLS/RPC
 
 Para RLS/RPC, agregar o actualizar tests cuando sea viable. Si no hay test
-automatico, documentar smoke manual y evidencia.
+automatico, documentar smoke manual y evidencia en el PR.
 
 ## Rollback
 
-- Migracion aditiva: normalmente rollback de app basta.
-- Constraint o RLS restrictiva: preparar SQL de mitigacion.
-- Migracion destructiva: requiere backup/restore probado.
+- Migracion aditiva (expand): normalmente rollback de app basta.
+- Constraint o RLS restrictiva: preparar SQL de mitigacion como nueva migracion.
+- Contract (drop, tipo, not null): no tiene rollback de SQL. Requiere backup/restore
+  probado, por eso el contract se despliega solo cuando ninguna version viva usa lo
+  antiguo.

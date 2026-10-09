@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/infra/validation/zod";
 
 export const CreateEmployeeSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio").max(100),
@@ -12,10 +12,6 @@ export const CreateEmployeeSchema = z.object({
   category_ids: z.array(z.string().uuid()).optional().default([]),
 });
 
-export const UpdateEmployeeSchema = CreateEmployeeSchema.partial().extend({
-  is_active: z.boolean().optional(),
-});
-
 export const WorkScheduleSchema = z.object({
   employee_id: z.string().uuid(),
   day_of_week: z.number().int().min(0).max(6),
@@ -24,6 +20,36 @@ export const WorkScheduleSchema = z.object({
   is_active: z.boolean().optional().default(true),
 });
 
+// Clave de idempotencia de las escrituras criticas (campo idempotency_key del FormData).
+export const EmployeeIdempotencySchema = z.object({
+  idempotency_key: z.string().uuid(),
+});
+
+// Parche de edicion: sin .default() (heredado de CreateEmployeeSchema.partial()).
+// Un campo que no llega al formulario queda fuera del UPDATE en vez de rellenarse
+// con "" o 0 y pisar el valor guardado.
+export const EmployeePatchSchema = z.object({
+  first_name: CreateEmployeeSchema.shape.first_name.optional(),
+  last_name: CreateEmployeeSchema.shape.last_name.optional(),
+  phone: z.string().max(30).optional(),
+  email: z.union([z.literal(""), z.string().email("Email inválido").max(255)]).optional(),
+  specialty: z.string().max(100).optional(),
+  commission_percentage: z.number().min(0).max(100).optional(),
+  service_ids: z.array(z.string().uuid()).optional(),
+  category_ids: z.array(z.string().uuid()).optional(),
+});
+
 export type CreateEmployeeInput = z.infer<typeof CreateEmployeeSchema>;
-export type UpdateEmployeeInput = z.infer<typeof UpdateEmployeeSchema>;
+
+// Edicion sin defaults: una clave ausente significa "no tocar" el campo guardado.
+export interface UpdateEmployeeInput {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  email?: string;
+  specialty?: string;
+  commission_percentage?: number;
+  service_ids?: string[];
+  category_ids?: string[];
+}
 export type WorkScheduleInput = z.infer<typeof WorkScheduleSchema>;

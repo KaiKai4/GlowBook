@@ -1,0 +1,6 @@
+[
+  {
+    "path": "src/types/database.types.ts",
+    "reason": "Generado por supabase gen types a partir del esquema de la base de datos; no se edita a mano y su tamaño depende del esquema."
+  }
+]

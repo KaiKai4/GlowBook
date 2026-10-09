@@ -137,14 +137,15 @@ describe("appointment wizard availability", () => {
       rows: rows.reverse(),
       date: "2026-05-28",
       time: "10:00",
+      timeZone: "America/Panama",
       serviceMap,
     });
 
-    expect(schedule[0].service?.id).toBe(manicureService.id);
-    expect(schedule[0].start?.toISOString()).toBe("2026-05-28T15:00:00.000Z");
-    expect(schedule[0].end?.toISOString()).toBe("2026-05-28T15:40:00.000Z");
-    expect(schedule[1].service?.id).toBe(cutService.id);
-    expect(schedule[1].start?.toISOString()).toBe("2026-05-28T15:40:00.000Z");
-    expect(schedule[1].end?.toISOString()).toBe("2026-05-28T16:10:00.000Z");
+    expect(schedule[0]?.service?.id).toBe(manicureService.id);
+    expect(schedule[0]?.start?.toISOString()).toBe("2026-05-28T15:00:00.000Z");
+    expect(schedule[0]?.end?.toISOString()).toBe("2026-05-28T15:40:00.000Z");
+    expect(schedule[1]?.service?.id).toBe(cutService.id);
+    expect(schedule[1]?.start?.toISOString()).toBe("2026-05-28T15:40:00.000Z");
+    expect(schedule[1]?.end?.toISOString()).toBe("2026-05-28T16:10:00.000Z");
   });
 });

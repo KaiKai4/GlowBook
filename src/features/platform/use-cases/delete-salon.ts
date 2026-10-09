@@ -1,7 +1,7 @@
 import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
-import { captureError } from "@/lib/observability";
-import type { Result } from "@/lib/result";
-import { recordPlatformAction } from "./platform-audit";
+import { captureError } from "@/infra/observability";
+import { ok, type Result } from "@/infra/result";
+import { publishAuditEvent } from "@/features/audit";
 
 export interface DeleteSalonInput {
   salonId: string;
@@ -15,7 +15,7 @@ export async function deleteSalon({
   actorUserId,
 }: DeleteSalonInput): Promise<Result<void>> {
   if (confirmation !== salonId) {
-    await recordPlatformAction({
+    await publishAuditEvent("platform.salon_deleted", {
       actorUserId: actorUserId ?? null,
       action: "delete_salon",
       status: "failed",
@@ -30,13 +30,13 @@ export async function deleteSalon({
 
   try {
     await deleteSalonCompletely(salonId);
-    await recordPlatformAction({
+    const warnings = await publishAuditEvent("platform.salon_deleted", {
       actorUserId: actorUserId ?? null,
       action: "delete_salon",
       status: "succeeded",
       targetSalonId: salonId,
     });
-    return { ok: true, value: undefined };
+    return ok(undefined, warnings);
   } catch (error) {
     captureError(error, {
       module: "platform",
@@ -44,7 +44,7 @@ export async function deleteSalon({
       metadata: { salonId },
     });
     const message = error instanceof Error ? error.message : "Error desconocido";
-    await recordPlatformAction({
+    await publishAuditEvent("platform.salon_deleted", {
       actorUserId: actorUserId ?? null,
       action: "delete_salon",
       status: "failed",

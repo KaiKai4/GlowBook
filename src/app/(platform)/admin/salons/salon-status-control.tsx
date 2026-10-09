@@ -40,7 +40,7 @@ export function SalonStatusControl({ salonId, salonName, isActive }: Props) {
         {isActive ? <Power className="h-3.5 w-3.5" /> : <RotateCcw className="h-3.5 w-3.5" />}
         {isActive ? "Suspender" : "Reactivar"}
       </Button>
-      {message ? <p className="max-w-[160px] text-right text-[11px] text-neutral-500">{message}</p> : null}
+      {message ? <p className="max-w-[160px] text-right text-xs text-fg-subtle">{message}</p> : null}
     </div>
   );
 }

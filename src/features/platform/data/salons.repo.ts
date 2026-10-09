@@ -1,7 +1,7 @@
 import "server-only";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import type { Database } from "@/types/database.types";
-import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-features";
+import { normalizeDisabledSalonFeatures } from "@/features/salon-features";
 import { findAcceptedInvitationEmailBySalon } from "./invitations.repo";
 
 export async function findAllSalons() {

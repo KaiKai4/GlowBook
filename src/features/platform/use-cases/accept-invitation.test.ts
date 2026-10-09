@@ -12,7 +12,7 @@ import {
 } from "../data/platform-auth.repo";
 import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
 import { acceptInvitation } from "./accept-invitation";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 vi.mock("../data/invitations.repo", () => ({
   acceptSalonInvitationAsAdmin: vi.fn(),
@@ -31,8 +31,8 @@ vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedAcceptSalonInvitationAsAdmin = vi.mocked(acceptSalonInvitationAsAdmin);
@@ -43,7 +43,7 @@ const mockedDeletePlatformOwnerAuthUser = vi.mocked(deletePlatformOwnerAuthUser)
 const mockedFindPlatformOwnerAuthUserByEmail = vi.mocked(findPlatformOwnerAuthUserByEmail);
 const mockedUpdatePlatformOwnerAuthUser = vi.mocked(updatePlatformOwnerAuthUser);
 const mockedAutoAssignPlanOnAcceptance = vi.mocked(autoAssignPlanOnAcceptance);
-const mockedRecordPlatformAction = vi.mocked(recordPlatformAction);
+const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 
 const validInput = {
   token: "token-1",
@@ -63,7 +63,7 @@ describe("accept platform invitation", () => {
       plan_id: null,
     });
     mockedAutoAssignPlanOnAcceptance.mockResolvedValue({ ok: true, value: undefined });
-    mockedRecordPlatformAction.mockResolvedValue(undefined);
+    mockedPublishAuditEvent.mockResolvedValue([]);
     mockedCreatePlatformOwnerAuthUser.mockResolvedValue({
       data: { id: "user-1" } as never,
       error: null,
@@ -115,7 +115,7 @@ describe("accept platform invitation", () => {
       planId: "plan-1",
       acceptedByUserId: "user-1",
     });
-    expect(mockedRecordPlatformAction).toHaveBeenCalledWith(
+    expect(mockedPublishAuditEvent).toHaveBeenCalledWith("salon.invitation_accepted", 
       expect.objectContaining({ action: "invitation_accepted", targetSalonId: "salon-1" })
     );
   });

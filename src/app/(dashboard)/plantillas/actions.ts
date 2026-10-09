@@ -1,13 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { NotificationTemplateSchema } from "@/features/notifications/schemas";
-import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import type { Result } from "@/lib/result";
+import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
+import { parseNotificationTemplateInput } from "@/features/notifications/use-cases/template-input";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireActiveProfile } from "@/app/_composition/request-context";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import type { Result } from "@/infra/result";
 
+// Se conserva el guard a mano: el modulo de plantillas del plan se comprueba
+// antes del limite de peticiones (y defineAction solo sabe de permisos por clave).
+// La validacion de la plantilla vive en features/notifications/use-cases.
 export async function updateNotificationTemplateAction(
   _prev: Result<void> | null,
   formData: FormData
@@ -18,14 +22,17 @@ export async function updateNotificationTemplateAction(
     return { ok: false, error: "No tienes permiso para editar plantillas." };
   }
 
-  const parsed = NotificationTemplateSchema.safeParse({
+  const limited = await assertActionRateLimit(profile.id, "plantillas", { max: 30, windowMs: 60_000 });
+  if (!limited.ok) return limited;
+
+  const parsed = parseNotificationTemplateInput({
     event: formData.get("event"),
     body_text: formData.get("body_text"),
     is_active: formData.get("is_active") === "on",
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.ok) return parsed;
 
-  const result = await updateMessageTemplate(profile.salon_id, parsed.data);
+  const result = await updateMessageTemplate(profile.salon_id, parsed.value);
   if (result.ok) {
     revalidatePath("/plantillas");
     revalidatePath("/recordatorios");

@@ -1,33 +1,43 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
-import { getExternalOperationalMoney } from "@/features/finance/use-cases/operational-money";
-import { getLowStockSummary } from "@/features/inventory/use-cases/low-stock-summary";
+import { findPendingConfirmationRows } from "../data/dashboard.repo";
 import {
-  findDashboardReportRows,
-  findPendingConfirmationRows,
-} from "../data/dashboard.repo";
+  fetchDashboardMetrics,
+  fetchMonthlyAppointmentSeries,
+  fetchTopServices,
+  type MonthlyAppointmentSeriesRow,
+} from "../data/rpc/dashboard-read-models.rpc";
 import { getDashboardOverview } from "./get-dashboard-overview";
 
 vi.mock("@/features/salon/use-cases/salon-identity", () => ({
   getSalonIdentity: vi.fn(),
 }));
-vi.mock("@/features/finance/use-cases/operational-money", () => ({
-  getExternalOperationalMoney: vi.fn(),
-}));
-vi.mock("@/features/inventory/use-cases/low-stock-summary", () => ({
-  getLowStockSummary: vi.fn(),
-}));
-
 vi.mock("../data/dashboard.repo", () => ({
-  findDashboardReportRows: vi.fn(),
   findPendingConfirmationRows: vi.fn(),
+}));
+vi.mock("../data/rpc/dashboard-read-models.rpc", () => ({
+  fetchDashboardMetrics: vi.fn(),
+  fetchMonthlyAppointmentSeries: vi.fn(),
+  fetchTopServices: vi.fn(),
 }));
 
 const mockedGetSalonIdentity = vi.mocked(getSalonIdentity);
-const mockedExternalMoney = vi.mocked(getExternalOperationalMoney);
-const mockedGetLowStockSummary = vi.mocked(getLowStockSummary);
-const mockedFindDashboardReportRows = vi.mocked(findDashboardReportRows);
 const mockedFindPendingConfirmationRows = vi.mocked(findPendingConfirmationRows);
+const mockedFetchMetrics = vi.mocked(fetchDashboardMetrics);
+const mockedFetchSeries = vi.mocked(fetchMonthlyAppointmentSeries);
+const mockedFetchTopServices = vi.mocked(fetchTopServices);
+
+// Serie de 12 meses (orden cronologico) con la misma definicion que report_dashboard_monthly_appointments.
+function monthlySeries(firstYear: number, firstMonth: number, totals: number[]): MonthlyAppointmentSeriesRow[] {
+  return totals.map((total, index) => {
+    const absolute = firstYear * 12 + (firstMonth - 1) + index;
+    const monthKey = `${Math.floor(absolute / 12)}-${String((absolute % 12) + 1).padStart(2, "0")}`;
+    const previous = index > 0 ? (totals[index - 1] ?? total) : total;
+    const delta = total - previous;
+    const trend: "up" | "down" | "flat" = delta > 0 ? "up" : delta < 0 ? "down" : "flat";
+    return { monthKey, total, delta, trend };
+  });
+}
 
 describe("get dashboard overview", () => {
   beforeEach(() => {
@@ -37,20 +47,22 @@ describe("get dashboard overview", () => {
       timezone: "UTC",
       payment_methods: ["cash", "card"],
     });
-    mockedFindDashboardReportRows.mockResolvedValue({
+    mockedFetchMetrics.mockResolvedValue({
       todayAppointments: 0,
-      monthAppointments: [],
-      monthlyCompletedAppointments: [],
-      totalCustomers: 0,
-      bookedServices: [],
-    });
-    mockedFindPendingConfirmationRows.mockResolvedValue([]);
-    mockedExternalMoney.mockResolvedValue({
+      appointmentRevenue: 0,
       retailRevenue: 0,
       manualExpenses: 0,
       inventoryPurchases: 0,
+      lowStockProducts: 0,
+      totalCustomers: 0,
+      completedThisMonth: 0,
+      monthRevenue: 0,
+      monthExpenses: 0,
+      estimatedProfit: 0,
     });
-    mockedGetLowStockSummary.mockResolvedValue({ productCount: 0 });
+    mockedFetchSeries.mockResolvedValue(monthlySeries(2019, 2, new Array<number>(12).fill(0)));
+    mockedFetchTopServices.mockResolvedValue([]);
+    mockedFindPendingConfirmationRows.mockResolvedValue([]);
   });
 
   it("returns an empty overview without touching data adapters when all sections are disabled", async () => {
@@ -62,36 +74,29 @@ describe("get dashboard overview", () => {
 
     expect(view).toEqual({ metrics: null, topServices: [], monthlyCompletedAppointments: [], pending: [] });
     expect(mockedGetSalonIdentity).not.toHaveBeenCalled();
-    expect(mockedFindDashboardReportRows).not.toHaveBeenCalled();
+    expect(mockedFetchMetrics).not.toHaveBeenCalled();
     expect(mockedFindPendingConfirmationRows).not.toHaveBeenCalled();
   });
 
-  it("maps report metrics, ignores cancelled booked services and keeps top-service percentages relative", async () => {
-    mockedExternalMoney.mockResolvedValue({
+  it("maps aggregated report metrics, top services and the monthly series with the previous view model", async () => {
+    mockedFetchMetrics.mockResolvedValue({
+      todayAppointments: 3,
+      appointmentRevenue: 35.5,
       retailRevenue: 12,
       manualExpenses: 5,
       inventoryPurchases: 7,
-    });
-    mockedFindDashboardReportRows.mockResolvedValue({
-      todayAppointments: 3,
-      monthAppointments: [
-        { total_price: 10, status: "completed" },
-        { total_price: 25.5, status: "completed" },
-      ],
-      monthlyCompletedAppointments: [
-        { start_time: "2029-12-20T14:00:00.000Z" },
-        { start_time: "2030-01-10T14:00:00.000Z" },
-        { start_time: "2030-01-12T14:00:00.000Z" },
-      ],
+      lowStockProducts: 0,
       totalCustomers: 12,
-      bookedServices: [
-        { service: { name: "Corte" }, appointment: { status: "completed" } },
-        { service: { name: "Corte" }, appointment: { status: "scheduled" } },
-        { service: { name: "Color" }, appointment: { status: "completed" } },
-        { service: { name: "Color" }, appointment: { status: "cancelled" } },
-        { service: null, appointment: { status: "completed" } },
-      ],
+      completedThisMonth: 2,
+      monthRevenue: 47.5,
+      monthExpenses: 12,
+      estimatedProfit: 35.5,
     });
+    mockedFetchTopServices.mockResolvedValue([
+      { name: "Corte", count: 2, pct: 100 },
+      { name: "Color", count: 1, pct: 50 },
+    ]);
+    mockedFetchSeries.mockResolvedValue(monthlySeries(2029, 2, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2]));
 
     const view = await getDashboardOverview({
       salonId: "salon-1",
@@ -116,11 +121,7 @@ describe("get dashboard overview", () => {
       { name: "Color", count: 1, pct: 50 },
     ]);
     expect(view.monthlyCompletedAppointments).toHaveLength(12);
-    expect(view.monthlyCompletedAppointments.at(-2)).toMatchObject({
-      monthKey: "2029-12",
-      total: 1,
-      trend: "up",
-    });
+    expect(view.monthlyCompletedAppointments.at(-2)).toMatchObject({ monthKey: "2029-12", total: 1, trend: "up" });
     expect(view.monthlyCompletedAppointments.at(-1)).toMatchObject({
       monthKey: "2030-01",
       total: 2,
@@ -159,19 +160,9 @@ describe("get dashboard overview", () => {
     expect(view.topServices).toEqual([]);
     expect(view.monthlyCompletedAppointments).toEqual([]);
     expect(view.pending).toEqual([
-      {
-        id: "appointment-1",
-        customerName: "Ana Vega",
-        phone: "60000000",
-        when: expect.any(String),
-      },
-      {
-        id: "appointment-2",
-        customerName: "Cliente",
-        phone: null,
-        when: "",
-      },
+      { id: "appointment-1", customerName: "Ana Vega", phone: "60000000", when: expect.any(String) },
+      { id: "appointment-2", customerName: "Cliente", phone: null, when: "" },
     ]);
-    expect(mockedFindDashboardReportRows).not.toHaveBeenCalled();
+    expect(mockedFetchMetrics).not.toHaveBeenCalled();
   });
 });

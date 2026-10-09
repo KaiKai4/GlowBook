@@ -5,7 +5,7 @@ export interface PaymentMethodOption {
   label: string;
 }
 
-export const DEFAULT_PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
+const DEFAULT_PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
   { value: "cash", label: "Efectivo" },
   { value: "card", label: "Tarjeta" },
   { value: "transfer", label: "Transferencia" },
@@ -13,7 +13,7 @@ export const DEFAULT_PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
   { value: "other", label: "Otro" },
 ];
 
-export const DEFAULT_PAYMENT_METHODS = DEFAULT_PAYMENT_METHOD_OPTIONS.map((option) => option.value);
+const DEFAULT_PAYMENT_METHODS = DEFAULT_PAYMENT_METHOD_OPTIONS.map((option) => option.value);
 const DEFAULT_PAYMENT_METHOD_LABELS = new Map(
   DEFAULT_PAYMENT_METHOD_OPTIONS.map((option) => [option.value, option.label])
 );
@@ -42,8 +42,10 @@ export function paymentMethodsOrDefaults(values: readonly string[] | null | unde
   return normalized.length > 0 ? normalized : DEFAULT_PAYMENT_METHODS;
 }
 
+// Misma comparación sin distinguir mayúsculas que isPaymentMethodEnabled y la
+// deduplicación: "Cash" se traduce como "cash".
 export function paymentMethodLabel(value: string): string {
-  return DEFAULT_PAYMENT_METHOD_LABELS.get(value) ?? value;
+  return DEFAULT_PAYMENT_METHOD_LABELS.get(normalizePaymentMethod(value).toLocaleLowerCase()) ?? value;
 }
 
 export function paymentMethodOptionsFor(values: readonly string[] | null | undefined): PaymentMethodOption[] {

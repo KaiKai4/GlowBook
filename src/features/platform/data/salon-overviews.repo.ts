@@ -1,7 +1,6 @@
 import "server-only";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-features";
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
+import { normalizeDisabledSalonFeatures, type SalonFeatureKey } from "@/features/salon-features";
 import type { Database } from "@/types/database.types";
 
 type GeneratedSalonOverviewRow =
@@ -32,7 +31,7 @@ export interface SalonOverview {
   last_appointment_at: string | null;
 }
 
-export function mapSalonOverviewRow(row: SalonOverviewRow): SalonOverview {
+function mapSalonOverviewRow(row: SalonOverviewRow): SalonOverview {
   return {
     id: row.id,
     name: row.name,

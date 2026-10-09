@@ -2,7 +2,7 @@
 // lleva semanas sin agendar es riesgo de churn y merece contacto antes de que
 // cancele. La referencia es la ultima cita; si nunca agendo, su creacion.
 
-export const DORMANT_AFTER_DAYS = 30;
+const DORMANT_AFTER_DAYS = 30;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

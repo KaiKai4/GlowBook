@@ -1,4 +1,4 @@
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   findAssignableEmployeeRole,
   findEmployeeInvitationForJoin,
@@ -11,7 +11,7 @@ import {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,
 } from "@/features/employees/data/employee-auth.repo";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 export type EmployeeInvitationJoinView =
   | { status: "not_found" }

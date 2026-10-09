@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { updateCategory } from "../data/services.repo";
 import type { UpdateCategoryInput } from "../schemas";
 import { isUniqueConstraintError } from "./errors";

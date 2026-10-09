@@ -3,6 +3,12 @@
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import { inviteSalonAction } from "../actions";
 import { InviteLinkReveal } from "../invite-link-reveal";
 
@@ -11,13 +17,24 @@ interface InviteSalonFormProps {
 }
 
 export function InviteSalonForm({ plans }: InviteSalonFormProps) {
-  const [state, action, pending] = useActionState(inviteSalonAction, null);
+  const toast = useToast();
+  const { submit } = useSubmissionIntent({
+    procedure: "platform.invite-salon",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
+  const [state, action, pending] = useActionState(
+    (_prev: Awaited<ReturnType<typeof inviteSalonAction>> | null, formData: FormData) =>
+      submit(formDataEntries(formData), (idempotencyKey) =>
+        inviteSalonAction(null, withIdempotencyKey(formData, idempotencyKey))
+      ),
+    null
+  );
 
   return (
     <div className="space-y-3">
       <form action={action} className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <label className="mb-1.5 block text-sm font-semibold text-stone-700" htmlFor="invite-email">
+          <label className="mb-1.5 block text-sm font-semibold text-fg-secondary" htmlFor="invite-email">
             Correo del owner
           </label>
           <input
@@ -26,7 +43,7 @@ export function InviteSalonForm({ plans }: InviteSalonFormProps) {
             name="email"
             placeholder="owner@salon.com"
             required
-            className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
         <div className="sm:w-72">
@@ -45,14 +62,14 @@ export function InviteSalonForm({ plans }: InviteSalonFormProps) {
       </form>
 
       {state && !state.ok ? (
-        <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
           {state.error}
         </p>
       ) : null}
 
       {state?.ok ? <InviteLinkReveal token={state.value} /> : null}
 
-      <p className="text-xs text-stone-400">
+      <p className="text-xs text-fg-subtle">
         Al aceptar la invitacion, el salon nace con este plan: trial, modulos y límites quedan activos
         antes del primer inicio de sesion.
       </p>

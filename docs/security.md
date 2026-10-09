@@ -11,7 +11,56 @@ Fecha: 2026-05-30
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy` bloqueando camara, microfono, geolocalizacion y browsing topics
 - `Cross-Origin-Opener-Policy: same-origin`
+- `Cross-Origin-Resource-Policy: same-origin` (Fase 2)
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains` (Fase 2)
 - `poweredByHeader: false`
+- Content-Security-Policy con nonce por request, aplicada en `src/proxy.ts` a
+  todas las respuestas, incluidas las redirecciones (Fase 2). Incluye
+  `report-uri /api/csp-report` y `report-to csp-endpoint`, y la cabecera
+  `Reporting-Endpoints` correspondiente.
+
+## Informes CSP (Fase 2)
+
+`POST /api/csp-report` recibe informes de violacion en `application/csp-report`
+(report-uri) y `application/reports+json` (Reporting API). Reglas:
+
+- sin sesion y fuera de la redireccion de auth (`src/proxy-auth.ts`);
+- cuerpo limitado a 16 KB, leido en streaming (`src/infra/http/bounded-body.ts`);
+- limite anonimo de 30 informes por minuto y IP;
+- se valida con Zod y se registra solo directiva, origen bloqueado (sin ruta
+  ni query) y ruta del documento (sin query ni fragmento);
+- responde 204 sin cuerpo, o 4xx con `no-store`.
+
+## Request Id (Fase 2)
+
+`src/proxy.ts` asigna `x-request-id` a cada request: reutiliza el UUID entrante
+si es valido o genera uno nuevo. La cabecera va en la request y en todas las
+respuestas. `captureError` incluye el `requestId` cuando hay contexto de request
+(`src/infra/observability/request-context.ts`).
+
+Redaccion en observabilidad: ademas de claves sensibles y valores secretos del
+entorno, se enmascaran emails (`[email]`) y telefonos de 9 a 15 digitos
+(`[telefono]`) dentro de textos. Las fechas (8 digitos) se conservan.
+
+Envio al webhook: timeout de 3 s con `AbortSignal`, programado con `after()` de
+`next/server` dentro de una request, sin reintentos. Un fallo se registra en
+consola de forma minima (solo el tipo de error, nunca la URL ni el cuerpo).
+
+## Errores Publicos (Fase 2)
+
+Los mensajes que ve el usuario se resuelven con `toPublicErrorMessage` o con
+`PublicError` (`src/infra/errors.ts`, ADR 0018). Nunca se muestra SQL, nombres de
+tabla, restricciones ni trazas: los SQLSTATE conocidos tienen mensajes fijos y
+el resto cae en un mensaje generico registrado con `captureError`.
+
+Los features deben migrar: lanzar `PublicError` para reglas de negocio y usar
+`toPublicErrorMessage(error, fallback)` en lugar de `error.message`.
+
+## Validacion Zod (Fase 2)
+
+Todo `src` importa Zod solo desde `@/infra/validation/zod`, adaptador con
+`jitless: true` (sin evaluacion dinamica de codigo). La regla
+`no-restricted-imports` de `eslint.config.mjs` lo exige.
 
 CSP queda como decision posterior porque GlowBook todavia necesita validar
 scripts, estilos, fonts, Supabase Auth y assets del hosting real. Antes de
@@ -74,7 +123,7 @@ Reglas:
 
 Decision 2026-05-31:
 
-El Adapter inicial de observability es `src/lib/observability`. Emite eventos y
+El Adapter inicial de observability es `src/infra/observability`. Emite eventos y
 errores como JSON estructurado a consola, sanitizando claves sensibles. Para el
 primer deploy, la estrategia operativa es usar logs del hosting o un log drain
 configurado sobre stdout/stderr.
@@ -102,7 +151,7 @@ Reglas:
 
 - Modules de negocio no deben importar SDKs de proveedores de observability.
 - Si se adopta Sentry u otro proveedor, el cambio debe quedar dentro de
-  `src/lib/observability`.
+  `src/infra/observability`.
 - Si se usa webhook/log drain, el token queda server-only y nunca debe llevar
   prefijo `NEXT_PUBLIC_`.
 - Antes de produccion, confirmar acceso a Vercel Logs o al log drain elegido.
@@ -118,7 +167,7 @@ npm run observability:readiness
 El Adapter redacciona metadata sensible y tambien secretos conocidos dentro de
 `error.message`, `error.stack` y valores de metadata con claves no sensibles.
 El comando paso en modo actual sin webhook obligatorio y
-`src/lib/observability/index.test.ts` paso con 3/3 tests.
+`src/infra/observability/index.test.ts` paso con 3/3 tests.
 Para lanzamiento amplio, configurar un proveedor/webhook y activar:
 
 ```text
@@ -144,6 +193,23 @@ obligan a importar SDKs externos desde los Modules de negocio.
 
 ## Rate Limiting
 
+Implementado en Fase 2 (ADR 0017): contador compartido en Postgres
+(`rate_limit_buckets` + RPC `consume_rate_limit`, solo `service_role`), accedido
+solo desde `src/infra/security/rate-limit.ts`. Fallo del almacen: fail-open con
+`captureError`. La firma es asincrona:
+
+```ts
+await assertActionRateLimit(userId, scope, { max, windowMs });
+await assertAnonymousRateLimit(scope, { max, windowMs });
+```
+
+Llamadores que deben migrar (`src/app/**`, fuera de esta fase): anadir `await`
+a cada `assertActionRateLimit(...)` (actions.ts de appointments, customers,
+employees, expenses, feedback, inventory, retail, salon, services). Sin `await`,
+`result.ok` no existe y TypeScript lo rechaza.
+
+El texto siguiente es la decision original del MVP, conservada como historia:
+
 Decision actual para MVP:
 
 - usar controles del hosting para rutas publicas si hay abuso;
@@ -151,7 +217,7 @@ Decision actual para MVP:
 - no introducir un Adapter propio hasta tener senales reales de abuso.
 
 Si aparece abuso antes del lanzamiento, crear un Adapter dedicado en
-`src/lib/rate-limit` y aplicarlo primero a login, invitaciones y operaciones
+`src/infra/security/rate-limit.ts` y aplicarlo primero a login, invitaciones y operaciones
 Platform destructivas.
 
 Decision para lanzamiento amplio:
@@ -159,7 +225,7 @@ Decision para lanzamiento amplio:
 - revisar rate limiting del hosting para `login`, `invite`, `join`, feedback y
   operaciones Platform;
 - revisar limites de Supabase Auth antes de campanas publicas;
-- mantener un Adapter propio en `src/lib/rate-limit` como Seam futura solo si
+- mantener un Adapter propio en `src/infra/security/rate-limit.ts` como Seam futura solo si
   los controles del proveedor no alcanzan;
 - registrar la decision en `docs/production-scale-readiness-checklist.md`.
 
@@ -222,3 +288,40 @@ Decision conservadora 2026-06-01:
 - Antes de campanas publicas masivas, se debe activar o confirmar rate limits,
   probar CSP report-only y revisar/rotar secrets si fueron compartidos o
   expuestos.
+
+## Auditoria De Dependencias Y Secretos
+
+Decision de la fase 1 del plan de calidad. Politica completa en
+`docs/adr/0015-politica-excepciones-auditoria.md`.
+
+Controles que corren en `npm run verify:full` (y en CI, job `static`):
+
+| Paso | Que comprueba |
+|---|---|
+| `secrets` | secretlint sobre archivos de git rastreados y no ignorados. Corre tambien en el hook `pre-commit`. |
+| `audit-prod` | `npm audit --omit=dev`. Cualquier aviso falla el gate. Produccion no admite excepciones. |
+| `audit-all` | `npm audit` completo. Solo acepta avisos cubiertos por una excepcion vigente. |
+| `sbom` | SBOM CycloneDX de produccion en `.quality/sbom.json` (job `sbom` de CI). |
+
+Excepciones de auditoria:
+
+- Viven en `security/audit-exceptions.json`, un array de objetos con los campos
+  `advisory`, `package`, `owner`, `reason`, `mitigation`, `created` y `expires`.
+  Todos son obligatorios y no pueden estar vacios.
+- Solo se admiten para paquetes que no estan en el arbol de produccion.
+- Duracion maxima de 30 dias. Una excepcion expirada o que ya no corresponde a
+  ningun aviso falla el gate.
+- Una excepcion no se amplia: si el aviso sigue abierto al expirar, se resuelve
+  la causa o se abre un registro nuevo con su propia justificacion.
+
+Secretos:
+
+- `SUPABASE_SERVICE_ROLE_KEY`, tokens y claves de terceros no se escriben en el
+  repositorio. secretlint (preset recommend) revisa patrones conocidos antes de
+  commit y en CI; no sustituye la revision humana ni la rotacion de claves
+  expuestas.
+- Las pruebas de integracion usan Supabase local y no leen `.env.local`
+  (`docs/adr/0014-bd-de-pruebas-supabase-local.md`).
+- Si secretlint reporta un falso positivo, se corrige el origen (por ejemplo,
+  mover el valor a una variable de entorno de prueba generada). No se anade una
+  exclusion a la configuracion de secretlint sin revision.

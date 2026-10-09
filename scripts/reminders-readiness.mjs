@@ -20,6 +20,7 @@ const REQUIRED_DECISION_TEXT = [
   "appointment_reminder_log",
 ];
 
+/** @param {string} root @returns {string[]} */
 function walkFiles(root) {
   if (!existsSync(root)) return [];
 
@@ -37,11 +38,13 @@ function walkFiles(root) {
   return files;
 }
 
+/** @param {string} message */
 function fail(message) {
   console.error(`[reminders-readiness] ${message}`);
   process.exitCode = 1;
 }
 
+/** @param {string} message */
 function pass(message) {
   console.log(`[reminders-readiness] OK ${message}`);
 }
@@ -75,8 +78,8 @@ for (const path of FORBIDDEN_AUTOMATIC_SEND_FILES) {
 }
 
 const reminderFiles = walkFiles(join(process.cwd(), "src/features/reminders"))
-  .filter((path) => /\.(ts|tsx)$/.test(path));
-const combined = reminderFiles.map((path) => readFileSync(path, "utf8")).join("\n");
+  .filter((/** @type {string} */ path) => /\.(ts|tsx)$/.test(path));
+const combined = reminderFiles.map((/** @type {string} */ path) => readFileSync(path, "utf8")).join("\n");
 
 if (/\bfetch\s*\(|\.send\s*\(|sendReminder|retryReminder|recordReminderAttempt/.test(combined)) {
   fail("src/features/reminders contains possible automatic sending code while decision is manual");

@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { getOptimisticAuthDecision } from "./proxy-auth";
 
 describe("getOptimisticAuthDecision", () => {
+  it("never redirects the CSP report endpoint, even without a session", () => {
+    expect(
+      getOptimisticAuthDecision({
+        pathname: "/api/csp-report",
+        cookies: [],
+      })
+    ).toEqual({ type: "next" });
+  });
+
   it("redirects protected routes to login when no Supabase auth cookie is present", () => {
     expect(
       getOptimisticAuthDecision({

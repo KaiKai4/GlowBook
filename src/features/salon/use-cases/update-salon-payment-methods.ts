@@ -1,39 +1,14 @@
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import "server-only";
 
-import type { Result } from "@/lib/result";
-import { normalizePaymentMethods } from "@/features/payments/domain/payment-methods";
+import type { Result } from "@/infra/result";
+import { normalizePaymentMethods } from "@/features/payments";
 import { updateSalonPaymentMethods as updateSalonPaymentMethodsRepo } from "../data/salon.repo";
 import type { SalonPaymentMethodsInput } from "../schemas";
 
-function errorMessage(error: unknown): string {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "42703" &&
-    "message" in error &&
-    typeof error.message === "string" &&
-    error.message.includes("payment_methods")
-  ) {
-    return "falta aplicar la migracion 20240101000044_salon_payment_methods.sql en Supabase.";
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-
-  return "Error desconocido.";
-}
+// Mensaje fijo para el usuario. El detalle tecnico (p. ej. una migracion
+// pendiente) no sale a la interfaz: se registra con captureError.
+const SAVE_FAILED_MESSAGE = "No se pudieron guardar los metodos de pago.";
 
 export async function updateSalonPaymentMethods(
   salonId: string,
@@ -44,9 +19,6 @@ export async function updateSalonPaymentMethods(
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "salon", action: "update-payment-methods" });
-    return {
-      ok: false,
-      error: `Error al guardar los metodos de pago: ${errorMessage(error)}`,
-    };
+    return { ok: false, error: SAVE_FAILED_MESSAGE };
   }
 }

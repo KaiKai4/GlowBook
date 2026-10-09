@@ -1,3 +1,4 @@
+import { PublicError } from "@/infra/public-error";
 export type AppointmentStatus =
   | "scheduled"
   | "confirmed"
@@ -17,7 +18,7 @@ const ALLOWED_TRANSITIONS: Transition[] = [
   { from: ["scheduled", "confirmed"], to: "no_show" },
 ];
 
-export function canTransition(
+function canTransition(
   from: AppointmentStatus,
   to: AppointmentStatus
 ): boolean {
@@ -31,7 +32,7 @@ export function assertTransition(
   to: AppointmentStatus
 ): void {
   if (!canTransition(from, to)) {
-    throw new Error(
+    throw new PublicError(
       `No se puede cambiar el estado de "${from}" a "${to}".`
     );
   }

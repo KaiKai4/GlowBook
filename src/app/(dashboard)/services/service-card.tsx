@@ -1,7 +1,7 @@
 import { Clock, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/dates";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatCurrency } from "@/infra/format/dates";
 import type { ServiceItem } from "./services-types";
 
 export function ServiceCard({
@@ -14,12 +14,12 @@ export function ServiceCard({
   onEdit: () => void;
 }) {
   return (
-    <div className="group rounded-xl border border-neutral-100 bg-white p-4 transition-all hover:border-neutral-200 hover:shadow-sm">
+    <div className="group rounded-xl border border-border-subtle bg-surface p-4 transition-all hover:border-border hover:shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium text-neutral-900">{service.name}</p>
+          <p className="font-medium text-fg">{service.name}</p>
           {service.description && (
-            <p className="mt-1 line-clamp-2 text-xs text-neutral-500">{service.description}</p>
+            <p className="mt-1 line-clamp-2 text-xs text-fg-subtle">{service.description}</p>
           )}
         </div>
         <Button
@@ -35,27 +35,18 @@ export function ServiceCard({
         </Button>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">
+        <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-xs text-fg-muted">
           <Clock className="h-3 w-3" />
           {service.duration_minutes} min
         </span>
-        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
+        <span className="rounded-full bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent-strong">
           {formatCurrency(service.price)}
         </span>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs",
-            service.is_active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"
-          )}
-        >
-          <span
-            className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              service.is_active ? "bg-emerald-500" : "bg-neutral-400"
-            )}
-          />
-          {service.is_active ? "Activo" : "Inactivo"}
-        </span>
+        {service.is_active ? (
+          <StatusBadge variant="success" label="Activo" />
+        ) : (
+          <StatusBadge variant="neutral" label="Inactivo" />
+        )}
         {pricingMode === "variable" && (
           <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
             Variable al cobrar
@@ -68,13 +59,13 @@ export function ServiceCard({
             <span
               key={employee.id}
               title={employee.name}
-              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-brand-100 text-[10px] font-semibold text-brand-700"
+              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-brand-100 text-xs font-semibold text-brand-700"
             >
               {employee.initials}
             </span>
           ))}
           {service.employees.length > 5 && (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-neutral-100 text-[10px] font-semibold text-neutral-500">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-surface-sunken text-xs font-semibold text-fg-muted">
               +{service.employees.length - 5}
             </span>
           )}

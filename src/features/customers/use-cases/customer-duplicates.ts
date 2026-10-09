@@ -3,8 +3,8 @@ import {
   findCustomerByPhone,
 } from "@/features/customers/data/customers.repo";
 import type { CreateCustomerInput } from "@/features/customers/schemas";
-import type { Result } from "@/lib/result";
-import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
+import type { Result } from "@/infra/result";
+import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 
 export interface ArchivedCustomerMatch {
   id: string;

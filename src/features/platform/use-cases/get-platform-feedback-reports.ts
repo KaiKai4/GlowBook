@@ -1,10 +1,10 @@
 import "server-only";
 
-import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from "@/features/feedback/schemas";
+import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from "@/features/feedback";
 import { findFeedbackReports } from "../data/feedback-moderation.repo";
 
-export type PlatformFeedbackCategoryVariant = "danger" | "warning" | "info" | "default";
-export type PlatformFeedbackStatus = "new" | "resolved";
+type PlatformFeedbackCategoryVariant = "danger" | "warning" | "info" | "default";
+type PlatformFeedbackStatus = "new" | "resolved";
 
 const CATEGORY_VARIANT: Record<string, PlatformFeedbackCategoryVariant> = {
   bug: "danger",
@@ -13,7 +13,7 @@ const CATEGORY_VARIANT: Record<string, PlatformFeedbackCategoryVariant> = {
   other: "default",
 };
 
-export interface PlatformFeedbackReportViewModel {
+interface PlatformFeedbackReportViewModel {
   id: string;
   category: string;
   categoryLabel: string;
@@ -34,8 +34,15 @@ export interface PlatformFeedbackReportsViewModel {
   showResolved: boolean;
 }
 
+// Object.hasOwn: claves heredadas del prototipo ("toString") no son etiquetas válidas.
 function categoryLabel(category: string): string {
-  return FEEDBACK_CATEGORY_LABELS[category as FeedbackCategory] ?? category;
+  return Object.hasOwn(FEEDBACK_CATEGORY_LABELS, category)
+    ? FEEDBACK_CATEGORY_LABELS[category as FeedbackCategory]
+    : category;
+}
+
+function categoryVariant(category: string): PlatformFeedbackReportViewModel["categoryVariant"] {
+  return Object.hasOwn(CATEGORY_VARIANT, category) ? (CATEGORY_VARIANT[category] ?? "default") : "default";
 }
 
 function formatCreatedAt(value: string): string {
@@ -57,7 +64,7 @@ function toReportViewModel(
     id: report.id,
     category: report.category,
     categoryLabel: categoryLabel(report.category),
-    categoryVariant: CATEGORY_VARIANT[report.category] ?? "default",
+    categoryVariant: categoryVariant(report.category),
     message: report.message,
     status: report.status,
     resolved,

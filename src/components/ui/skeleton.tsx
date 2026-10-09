@@ -1,10 +1,10 @@
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={cn("animate-pulse rounded-lg bg-stone-200/70", className)}
+      className={cn("animate-pulse rounded-lg bg-border/70", className)}
     />
   );
 }

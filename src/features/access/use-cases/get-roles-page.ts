@@ -2,7 +2,7 @@ import "server-only";
 
 import { findAllPermissions, findRolesWithPermissions } from "../data/roles.repo";
 
-export interface RoleListItem {
+interface RoleListItem {
   id: string;
   name: string;
   is_system: boolean;

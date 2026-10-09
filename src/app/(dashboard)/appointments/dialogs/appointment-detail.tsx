@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
+import { useTransition, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
+import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import {
   CheckCheck,
   CheckCircle2,
@@ -41,22 +43,20 @@ interface ApptForDetail {
   items: ApptItem[];
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-  confirmed: "bg-brand-50 text-brand-700 border-brand-200",
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  cancelled: "bg-stone-50 text-stone-500 border-stone-200",
-  no_show: "bg-amber-50 text-amber-700 border-amber-200",
-};
-const STATUS_LABEL: Record<string, string> = {
-  scheduled: "Agendada", confirmed: "Confirmada", completed: "Completada",
-  cancelled: "Cancelada", no_show: "No asistió",
+type StatusBadgeProps = ComponentProps<typeof StatusBadge>;
+
+const STATUS_BADGES: Record<string, { variant: StatusBadgeProps["variant"]; label: string }> = {
+  scheduled: { variant: "info", label: "Agendada" },
+  confirmed: { variant: "accent", label: "Confirmada" },
+  completed: { variant: "success", label: "Completada" },
+  cancelled: { variant: "neutral", label: "Cancelada" },
+  no_show: { variant: "warning", label: "No asistió" },
 };
 const ITEM_ACCENT: Record<string, string> = {
-  scheduled: "border-l-blue-400",
+  scheduled: "border-l-info",
   confirmed: "border-l-brand-500",
-  completed: "border-l-emerald-400",
-  no_show: "border-l-amber-400",
+  completed: "border-l-success",
+  no_show: "border-l-warning",
 };
 
 export function AppointmentDetailDialog({
@@ -75,12 +75,14 @@ export function AppointmentDetailDialog({
   const router = useRouter();
   const toast = useToast();
   const [confirming, startConfirm] = useTransition();
+  const { submit } = useSubmissionIntent({ procedure: "appointments.confirm" });
 
   const customerName = appt.customer
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
     : "Cliente desconocido";
 
-  const accentClass = ITEM_ACCENT[appt.status] ?? "border-l-stone-300";
+  const statusBadge = STATUS_BADGES[appt.status];
+  const accentClass = ITEM_ACCENT[appt.status] ?? "border-l-border-strong";
   const canEdit = canManage && !["completed", "cancelled", "no_show"].includes(appt.status);
   const subtotal = appt.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
   const discountAmount = Number(appt.discount_amount ?? 0);
@@ -88,7 +90,12 @@ export function AppointmentDetailDialog({
 
   function handleConfirm() {
     startConfirm(async () => {
-      const res = await confirmAppointmentAction(appt.id);
+      const res = await submit({ appointment_id: appt.id }, (idempotencyKey) => {
+        const fd = new FormData();
+        fd.set("idempotency_key", idempotencyKey);
+        fd.set("appointment_id", appt.id);
+        return confirmAppointmentAction(fd);
+      });
       if (res.ok) {
         toast.success("Cita confirmada.");
         router.refresh();
@@ -100,12 +107,16 @@ export function AppointmentDetailDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Detalles de la cita" className="max-w-md">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Detalles de la cita"
+      className="max-w-md"
+      dismissible={!confirming}
+    >
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appt.status] ?? ""}`}>
-            {STATUS_LABEL[appt.status]}
-          </span>
+          {statusBadge && <StatusBadge variant={statusBadge.variant} label={statusBadge.label} />}
           {canEdit && (
             <Link
               href={`/appointments/${appt.id}/edit`}
@@ -122,17 +133,17 @@ export function AppointmentDetailDialog({
         </div>
 
         {/* Cliente */}
-        <div className="flex items-start gap-3 rounded-xl bg-brand-50 border border-brand-200 p-3 shadow-[0_1px_4px_rgba(109,40,217,0.08)]">
+        <div className="flex items-start gap-3 rounded-xl bg-brand-50 border border-brand-200 p-3 shadow-brand-soft">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 shrink-0">
             <User className="h-4 w-4 text-brand-600" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-brand-500 font-semibold">Cliente</p>
-            <p className="text-sm font-bold text-stone-800">{customerName}</p>
+            <p className="text-sm font-semibold text-fg-secondary">{customerName}</p>
             {appt.customer?.phone && (
               <div className="flex items-center gap-1 mt-0.5">
-                <Phone className="h-3 w-3 text-stone-400" />
-                <p className="text-xs text-stone-600">{appt.customer.phone}</p>
+                <Phone className="h-3 w-3 text-fg-subtle" />
+                <p className="text-xs text-fg-muted">{appt.customer.phone}</p>
               </div>
             )}
           </div>
@@ -142,7 +153,7 @@ export function AppointmentDetailDialog({
               target="_blank"
               rel="noopener noreferrer"
               title="Contactar por WhatsApp"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors hover:bg-emerald-200"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-subtle text-success-fg transition-colors hover:bg-success-border"
             >
               <MessageCircle className="h-4 w-4" />
             </a>
@@ -154,13 +165,13 @@ export function AppointmentDetailDialog({
           {appt.items.map((item) => (
             <div
               key={item.id}
-              className={`flex items-center justify-between rounded-xl bg-white border border-stone-200 border-l-4 ${accentClass} px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.10)] transition-shadow`}
+              className={`flex items-center justify-between rounded-xl bg-surface border border-border border-l-4 ${accentClass} px-4 py-3 shadow-soft hover:shadow-hover transition-shadow`}
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-stone-800 truncate">{item.service?.name}</p>
-                <p className="text-xs text-stone-500 mt-0.5 flex items-center gap-1.5">
+                <p className="text-sm font-semibold text-fg-secondary truncate">{item.service?.name}</p>
+                <p className="text-xs text-fg-subtle mt-0.5 flex items-center gap-1.5">
                   <span>{item.employee?.first_name} {item.employee?.last_name}</span>
-                  <span className="text-stone-300">·</span>
+                  <span className="text-fg-disabled">·</span>
                   <span className="text-brand-600 font-medium tabular-nums">
                     {formatTimeTz(new Date(item.start_time), tz)}–{formatTimeTz(new Date(item.end_time), tz)}
                   </span>
@@ -168,16 +179,16 @@ export function AppointmentDetailDialog({
               </div>
               <div className="flex flex-col items-end gap-0.5 shrink-0 ml-3">
                 {Number(item.discount_amount ?? 0) > 0 && (
-                  <span className="text-[10px] font-semibold text-emerald-700">
+                  <span className="text-xs font-semibold text-success-fg">
                     -{formatCurrency(Number(item.discount_amount ?? 0))}
                   </span>
                 )}
-                <span className="text-sm font-bold text-stone-700">
+                <span className="text-sm font-semibold text-fg-secondary">
                   {formatCurrency(
                     Math.max(0, Number(item.price) - Number(item.discount_amount ?? 0))
                   )}
                 </span>
-                <span className="flex items-center gap-0.5 text-[10px] text-stone-400 font-medium">
+                <span className="flex items-center gap-0.5 text-xs text-fg-subtle font-medium">
                   <Timer className="h-3 w-3" />
                   {item.service?.duration_minutes} min
                 </span>
@@ -187,48 +198,48 @@ export function AppointmentDetailDialog({
         </div>
 
         {/* Total */}
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-[0_2px_6px_rgba(16,185,129,0.08)]">
+        <div className="rounded-xl border border-success-border bg-success-subtle px-4 py-3 shadow-success-soft">
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-sm text-emerald-900/70">
+            <div className="flex items-center justify-between text-sm text-success-strong/70">
               <span>Subtotal servicios</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             {discountAmount > 0 && (
-              <div className="flex items-center justify-between text-sm text-emerald-700">
+              <div className="flex items-center justify-between text-sm text-success-fg">
                 <span>Descuento</span>
                 <span>-{formatCurrency(discountAmount)}</span>
               </div>
             )}
-            <div className="flex items-center justify-between border-t border-emerald-200 pt-2">
+            <div className="flex items-center justify-between border-t border-success-border pt-2">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-emerald-700" />
-                <span className="text-sm font-bold text-emerald-900">Total cobrado</span>
+                <CreditCard className="h-4 w-4 text-success-fg" />
+                <span className="text-sm font-semibold text-success-strong">Total cobrado</span>
               </div>
-              <span className="text-lg font-bold text-emerald-900">
+              <span className="text-lg font-semibold text-success-strong">
                 {formatCurrency(Number(appt.total_price ?? 0))}
               </span>
             </div>
           </div>
           {appt.completion_price_note && (
-            <div className="mt-3 rounded-lg bg-white/70 px-3 py-2">
-              <p className="text-xs font-semibold text-emerald-700">Nota de cobro</p>
-              <p className="mt-1 text-sm text-emerald-900">{appt.completion_price_note}</p>
+            <div className="mt-3 rounded-lg bg-surface/70 px-3 py-2">
+              <p className="text-xs font-semibold text-success-fg">Nota de cobro</p>
+              <p className="mt-1 text-sm text-success-strong">{appt.completion_price_note}</p>
             </div>
           )}
         </div>
 
         {/* Notas */}
         {appt.notes && (
-          <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-3">
-            <p className="text-xs font-semibold text-stone-500 mb-1">Notas</p>
-            <p className="text-sm text-stone-700">{appt.notes}</p>
+          <div className="rounded-xl bg-surface-muted border border-border px-4 py-3">
+            <p className="text-xs font-semibold text-fg-subtle mb-1">Notas</p>
+            <p className="text-sm text-fg-secondary">{appt.notes}</p>
           </div>
         )}
 
         {/* Acciones rápidas: el camino corto desde el calendario sin pasar
             por el resumen ni por la edición completa. */}
         {canEdit && (
-          <div className="flex flex-wrap gap-2 border-t border-stone-100 pt-4">
+          <div className="flex flex-wrap gap-2 border-t border-border-subtle pt-4">
             {appt.status === "scheduled" && (
               <Button
                 variant="outline"
@@ -245,7 +256,7 @@ export function AppointmentDetailDialog({
               <Button
                 variant="primary"
                 size="sm"
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                className="flex-1 bg-success-solid hover:bg-success-solid"
                 disabled={confirming}
                 onClick={onComplete}
               >
@@ -257,7 +268,7 @@ export function AppointmentDetailDialog({
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex-1 text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="flex-1 text-danger-strong hover:bg-danger-subtle hover:text-danger-strong"
                 disabled={confirming}
                 onClick={onCancel}
               >

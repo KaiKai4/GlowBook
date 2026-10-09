@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { forwardRef } from "react";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -16,7 +16,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-semibold text-stone-700">
+          <label htmlFor={inputId} className="text-sm font-semibold text-fg-secondary">
             {label}
           </label>
         )}
@@ -25,11 +25,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           type={type}
           className={cn(
-            "h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-            "placeholder:text-stone-400",
+            "h-11 w-full rounded-lg border border-border-input bg-surface px-3 text-sm text-fg shadow-hairline",
+            "placeholder:text-fg-subtle",
             "focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-[border-color,box-shadow,background-color]",
-            "disabled:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400",
-            error && "border-red-400 bg-red-50/30 focus:ring-red-500",
+            "disabled:bg-surface-muted disabled:cursor-not-allowed disabled:text-fg-subtle",
+            error && "border-danger bg-danger-subtle/30 focus:ring-danger",
             className
           )}
           aria-invalid={Boolean(error)}
@@ -61,12 +61,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {error && (
-          <p id={descriptionId} className="text-xs font-medium text-red-600">
+          <p id={descriptionId} className="text-xs font-medium text-danger">
             {error}
           </p>
         )}
         {hint && !error && (
-          <p id={descriptionId} className="text-xs text-stone-400">
+          <p id={descriptionId} className="text-xs text-fg-subtle">
             {hint}
           </p>
         )}

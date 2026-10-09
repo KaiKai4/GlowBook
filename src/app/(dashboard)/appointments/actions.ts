@@ -1,211 +1,142 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
+import { PERMISSIONS } from "@/features/access";
 import {
   getOccupiedSlotsForSalonDate,
   type OccupiedByEmployee,
 } from "@/features/appointments/use-cases/appointment-availability";
 import { cancelAppointment } from "@/features/appointments/use-cases/cancel-appointment";
-import { completeAppointment } from "@/features/appointments/use-cases/complete-appointment";
+import { completeAppointmentGuarded } from "@/features/appointments/use-cases/complete-appointment-guarded";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
-import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
-import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
-import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { createAppointmentGuarded } from "@/features/appointments/use-cases/create-appointment-guarded";
 import {
-  CompleteAppointmentSchema,
-  CreateAppointmentSchema,
-  UpdateAppointmentScheduleSchema,
+  parseCompleteAppointmentForm,
+  parseCreateAppointmentForm,
+  parseUpdateAppointmentScheduleForm,
+} from "@/features/appointments/use-cases/appointment-form-parsing";
+import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
+import {
+  AppointmentLifecycleSchema,
+  type CompleteAppointmentInput,
+  type CreateAppointmentInput,
+  type UpdateAppointmentScheduleInput,
 } from "@/features/appointments/schemas";
-import type { Result } from "@/lib/result";
+import type { z } from "@/infra/validation/zod";
+import { err, ok, type Result } from "@/infra/result";
+import { parseUuid } from "@/infra/validation/route-id";
 
-function canManageAppointments(
-  profile: Awaited<ReturnType<typeof requireActiveProfile>>
-): Result<void> {
-  if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar citas." };
-  }
+// Las acciones solo orquestan: contexto, permiso por clave, rate limit, validacion
+// y UNA llamada a un caso de uso (defineAction). Las reglas viven en los casos de uso.
 
-  // Generoso para el uso real del wizard, pero frena martilleo automatizado.
-  return assertActionRateLimit(profile.id, "appointments", { max: 120, windowMs: 60_000 });
-}
+// Generoso para el uso real del wizard, pero frena martilleo automatizado.
+const APPOINTMENTS_RATE_LIMIT = { scope: "appointments", options: { max: 120, windowMs: 60_000 } };
+const APPOINTMENT_PATHS = ["/appointments"] as const;
+const COMPLETE_PATHS = ["/appointments", "/customers"] as const;
+const INVALID_ID_MESSAGE = "Identificador inválido.";
 
-function revalidateAppointmentFlows(): void {
-  revalidatePath("/appointments");
-}
+type AppointmentLifecycleInput = z.infer<typeof AppointmentLifecycleSchema>;
+type LifecycleCommand = (appointmentId: string, salonId: string, idempotencyKey: string) => Promise<Result<void>>;
 
 // Returns blocking appointment slots for the salon on a given date, grouped by employee.
 // `date` is a YYYY-MM-DD string representing a calendar day in the salon's local timezone.
 // Used by the wizard to compute real availability before booking.
-export async function getOccupiedSlotsForDate(date: string): Promise<OccupiedByEmployee> {
-  const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return {};
+const occupiedSlotsForDateFlow = defineAction<string, string, OccupiedByEmployee>({
+  permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para consultar la agenda." },
+  rateLimit: APPOINTMENTS_RATE_LIMIT,
+  parse: (date) => ok(date),
+  run: async (date, session) => ok(await getOccupiedSlotsForSalonDate(session.salonId, date)),
+});
 
-  return getOccupiedSlotsForSalonDate(profile.salon_id, date);
+const occupiedSlotsForEditFlow = defineAction<
+  { date: string; appointmentId: string },
+  { date: string; appointmentId: string },
+  OccupiedByEmployee
+>({
+  permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para consultar la agenda." },
+  rateLimit: APPOINTMENTS_RATE_LIMIT,
+  parse: (raw) => (parseUuid(raw.appointmentId) ? ok(raw) : err(INVALID_ID_MESSAGE)),
+  run: async ({ date, appointmentId }, session) =>
+    ok(await getOccupiedSlotsForSalonDate(session.salonId, date, appointmentId)),
+});
+
+const createAppointmentFlow = defineAction<FormData, CreateAppointmentInput, string>({
+  permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para crear citas." },
+  rateLimit: APPOINTMENTS_RATE_LIMIT,
+  parse: (formData) => parseCreateAppointmentForm(Object.fromEntries(formData)),
+  run: (input, session) => createAppointmentGuarded(input, { salonId: session.salonId, userId: session.userId }),
+  revalidate: () => APPOINTMENT_PATHS,
+});
+
+const updateAppointmentScheduleFlow = defineAction<FormData, UpdateAppointmentScheduleInput, void>({
+  permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para editar citas." },
+  rateLimit: APPOINTMENTS_RATE_LIMIT,
+  parse: (formData) => parseUpdateAppointmentScheduleForm(Object.fromEntries(formData)),
+  run: (input, session) =>
+    updateAppointmentSchedule(input, { salonId: session.salonId, idempotencyKey: input.idempotency_key }),
+  revalidate: () => APPOINTMENT_PATHS,
+});
+
+function lifecycleFlow(deniedMessage: string, command: LifecycleCommand) {
+  const parseLifecycle = parseWithSchema(AppointmentLifecycleSchema);
+  return defineAction<FormData, AppointmentLifecycleInput, void>({
+    permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage },
+    rateLimit: APPOINTMENTS_RATE_LIMIT,
+    parse: (formData) => parseLifecycle(Object.fromEntries(formData)),
+    run: (input, session) => command(input.appointment_id, session.salonId, input.idempotency_key),
+    revalidate: () => APPOINTMENT_PATHS,
+  });
+}
+
+const cancelAppointmentFlow = lifecycleFlow("No tienes permiso para cancelar citas.", cancelAppointment);
+const confirmAppointmentFlow = lifecycleFlow("No tienes permiso para confirmar citas.", confirmAppointment);
+
+const completeAppointmentFlow = defineAction<FormData, CompleteAppointmentInput, void>({
+  permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para completar citas." },
+  rateLimit: APPOINTMENTS_RATE_LIMIT,
+  parse: (formData) => parseCompleteAppointmentForm(formData),
+  run: (input, session) => completeAppointmentGuarded(input, session.salonId),
+  revalidate: () => COMPLETE_PATHS,
+});
+
+export async function getOccupiedSlotsForDate(date: string): Promise<OccupiedByEmployee> {
+  const result = await occupiedSlotsForDateFlow(date);
+  return result.ok ? result.value : {};
 }
 
 export async function getOccupiedSlotsForEditDate(
   date: string,
   appointmentId: string
 ): Promise<OccupiedByEmployee> {
-  const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return {};
-
-  return getOccupiedSlotsForSalonDate(profile.salon_id, date, appointmentId);
+  const result = await occupiedSlotsForEditFlow({ date, appointmentId });
+  return result.ok ? result.value : {};
 }
 
 export async function createAppointmentAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para crear citas." };
-  const moduleAccess = await checkPlanModuleAccess({
-    salonId: profile.salon_id,
-    moduleKey: "appointments",
-  });
-  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
-  const limit = await checkPlanLimit({
-    salonId: profile.salon_id,
-    metricKey: "appointments.total",
-  });
-  if (!limit.ok) return { ok: false, error: limit.error };
-
-  const raw = Object.fromEntries(formData);
-  let assignments: unknown;
-  try {
-    assignments = JSON.parse(raw.assignments as string);
-  } catch {
-    return { ok: false, error: "Datos de servicios invalidos." };
-  }
-
-  const parsed = CreateAppointmentSchema.safeParse({
-    ...raw,
-    assignments,
-  });
-
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0].message };
-  }
-
-  const result = await createAppointment(parsed.data, {
-    salonId: profile.salon_id,
-    userId: profile.id,
-  });
-
-  if (result.ok) revalidateAppointmentFlows();
-  return result;
+  return createAppointmentFlow(formData);
 }
 
 export async function updateAppointmentScheduleAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para editar citas." };
-
-  const raw = Object.fromEntries(formData);
-  let assignments: unknown;
-  try {
-    assignments = JSON.parse(raw.assignments as string);
-  } catch {
-    return { ok: false, error: "Datos de servicios invalidos." };
-  }
-
-  const parsed = UpdateAppointmentScheduleSchema.safeParse({
-    ...raw,
-    assignments,
-  });
-
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0].message };
-  }
-
-  const result = await updateAppointmentSchedule(parsed.data, {
-    salonId: profile.salon_id,
-  });
-
-  if (result.ok) revalidateAppointmentFlows();
-  return result;
+  return updateAppointmentScheduleFlow(formData);
 }
 
-export async function cancelAppointmentAction(
-  appointmentId: string
-): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para cancelar citas." };
-
-  const result = await cancelAppointment(appointmentId, profile.salon_id);
-  if (result.ok) revalidateAppointmentFlows();
-  return result;
+export async function cancelAppointmentAction(formData: FormData): Promise<Result<void>> {
+  return cancelAppointmentFlow(formData);
 }
 
-export async function confirmAppointmentAction(
-  appointmentId: string
-): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para confirmar citas." };
-
-  const result = await confirmAppointment(appointmentId, profile.salon_id);
-  if (result.ok) revalidateAppointmentFlows();
-  return result;
+export async function confirmAppointmentAction(formData: FormData): Promise<Result<void>> {
+  return confirmAppointmentFlow(formData);
 }
 
 export async function completeAppointmentAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  const permission = canManageAppointments(profile);
-  if (!permission.ok) return { ok: false, error: "No tienes permiso para completar citas." };
-
-  let itemCharges: unknown;
-  try {
-    itemCharges = JSON.parse(String(formData.get("item_charges") ?? "[]"));
-  } catch {
-    return { ok: false, error: "Cobros de servicios invalidos." };
-  }
-
-  const parsed = CompleteAppointmentSchema.safeParse({
-    appointment_id: formData.get("appointment_id"),
-    payment_method: formData.get("payment_method"),
-    completion_price_note: formData.get("completion_price_note") ?? "",
-    item_charges: itemCharges,
-  });
-
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0].message };
-  }
-
-  const paymentEnabled = await assertSalonPaymentMethodEnabled(
-    profile.salon_id,
-    parsed.data.payment_method
-  );
-  if (!paymentEnabled) {
-    return { ok: false, error: "Ese metodo de pago no esta habilitado para este salon." };
-  }
-
-  const result = await completeAppointment(
-    parsed.data.appointment_id,
-    profile.salon_id,
-    parsed.data.payment_method,
-    parsed.data.item_charges,
-    parsed.data.completion_price_note
-  );
-
-  if (result.ok) {
-    revalidateAppointmentFlows();
-    revalidatePath("/customers");
-  }
-
-  return result;
+  return completeAppointmentFlow(formData);
 }

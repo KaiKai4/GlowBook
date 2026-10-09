@@ -29,7 +29,7 @@ export interface OccupiedSlot {
   end_time: string;
 }
 
-export type ValidationCode =
+type ValidationCode =
   | "min_duration"
   | "employee_day_off"
   | "employee_exception"

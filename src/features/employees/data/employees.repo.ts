@@ -1,29 +1,15 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { assertServicesHaveAssignedCategories } from "@/features/employees/domain/collaborator-assignment";
+import "server-only";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
+import type { ServiceCategoryRef } from "@/features/employees/domain/collaborator-assignment";
+import {
+  createEmployeeWithAssignmentsRpc,
+  type CreateEmployeeRpcFields,
+} from "@/features/employees/data/rpc/create-employee-rpc";
+import {
+  updateEmployeeProfileRpc,
+  type UpdateEmployeeProfileRpcFields,
+} from "@/features/employees/data/rpc/update-employee-rpc";
 import type { Database } from "@/types/database.types";
-
-export interface EmployeeWithDetails {
-  id: string;
-  salon_id: string;
-  profile_id: string | null;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  email: string;
-  specialty: string;
-  commission_percentage: number;
-  hire_date: string | null;
-  is_active: boolean;
-  services: Array<{ id: string; name: string; duration_minutes: number; price: number }>;
-  categories: Array<{ id: string; name: string }>;
-  work_schedules: Array<{
-    id: string;
-    day_of_week: number;
-    start_time: string;
-    end_time: string;
-    is_active: boolean;
-  }>;
-}
 
 export interface EmployeeNameRow {
   id: string;
@@ -128,119 +114,75 @@ export async function findEmployeeByEmail(email: string, salonId: string) {
   return data;
 }
 
-export async function validateEmployeeAssignments(
+/**
+ * Lectura de las categorias activas y de los servicios activos del salon que
+ * coinciden con los ids pedidos. Solo consulta: las reglas de asignacion viven en
+ * el caso de uso (employee-assignments.ts).
+ */
+export async function findActiveAssignmentReferences(
   salonId: string,
   serviceIds: string[],
   categoryIds: string[]
-): Promise<void> {
+): Promise<{ activeCategoryIds: string[]; services: ServiceCategoryRef[] }> {
   const supabase = await createSupabaseServerClient();
-  const uniqueServiceIds = [...new Set(serviceIds)];
-  const uniqueCategoryIds = [...new Set(categoryIds)];
-  const categorySet = new Set(uniqueCategoryIds);
 
-  if (uniqueCategoryIds.length > 0) {
-    const { data: categories, error } = await supabase
+  let activeCategoryIds: string[] = [];
+  if (categoryIds.length > 0) {
+    const { data, error } = await supabase
       .from("service_categories")
       .select("id")
       .eq("salon_id", salonId)
       .eq("is_active", true)
-      .in("id", uniqueCategoryIds);
+      .in("id", categoryIds);
 
     if (error) throw error;
-    if ((categories ?? []).length !== uniqueCategoryIds.length) {
-      throw new Error("Una o mas categorías no pertenecen al salon o estan inactivas.");
-    }
+    activeCategoryIds = (data ?? []).map((row) => row.id);
   }
 
-  if (uniqueServiceIds.length === 0) return;
+  let services: ServiceCategoryRef[] = [];
+  if (serviceIds.length > 0) {
+    const { data, error } = await supabase
+      .from("services")
+      .select("id, category_id")
+      .eq("salon_id", salonId)
+      .eq("is_active", true)
+      .in("id", serviceIds);
 
-  const { data: services, error } = await supabase
-    .from("services")
-    .select("id, category_id")
-    .eq("salon_id", salonId)
-    .eq("is_active", true)
-    .in("id", uniqueServiceIds);
-
-  if (error) throw error;
-  if ((services ?? []).length !== uniqueServiceIds.length) {
-    throw new Error("Uno o mas servicios no pertenecen al salon o estan inactivos.");
+    if (error) throw error;
+    services = data ?? [];
   }
 
-  assertServicesHaveAssignedCategories(services ?? [], [...categorySet]);
+  return { activeCategoryIds, services };
 }
 
+// Alta y edicion de perfil van por RPC transaccionales: colaborador, asignaciones
+// y email se escriben juntos o no se escribe nada (ver migracion 067).
 export async function createEmployee(
-  salonId: string,
-  input: Omit<Database["public"]["Tables"]["employees"]["Insert"], "salon_id">,
+  input: CreateEmployeeRpcFields,
   serviceIds: string[],
-  categoryIds: string[]
-) {
-  const supabase = await createSupabaseServerClient();
-
-  const { data: employee, error } = await supabase
-    .from("employees")
-    .insert({ ...input, salon_id: salonId })
-    .select()
-    .single();
-  if (error) throw error;
-
-  if (serviceIds.length > 0) {
-    await supabase.from("employee_services").insert(
-      serviceIds.map((service_id) => ({
-        employee_id: employee.id,
-        service_id,
-        salon_id: salonId,
-      }))
-    );
-  }
-
-  if (categoryIds.length > 0) {
-    await supabase.from("employee_categories").insert(
-      categoryIds.map((category_id) => ({
-        employee_id: employee.id,
-        category_id,
-        salon_id: salonId,
-      }))
-    );
-  }
-
-  return employee;
+  categoryIds: string[],
+  idempotencyKey: string
+): Promise<{ id: string }> {
+  const { employeeId } = await createEmployeeWithAssignmentsRpc({
+    employee: input,
+    serviceIds,
+    categoryIds,
+    idempotencyKey,
+  });
+  return { id: employeeId };
 }
 
-export async function updateEmployeeServices(
+export async function updateEmployeeProfileRecord(
   employeeId: string,
-  salonId: string,
-  serviceIds: string[]
-) {
-  const supabase = await createSupabaseServerClient();
-  await supabase
-    .from("employee_services")
-    .delete()
-    .eq("employee_id", employeeId)
-    .eq("salon_id", salonId);
-  if (serviceIds.length > 0) {
-    await supabase.from("employee_services").insert(
-      serviceIds.map((service_id) => ({ employee_id: employeeId, service_id, salon_id: salonId }))
-    );
+  input: {
+    fields: UpdateEmployeeProfileRpcFields;
+    serviceIds?: string[];
+    categoryIds?: string[];
+    unlinkProfile: boolean;
+    idempotencyKey: string;
   }
-}
-
-export async function updateEmployeeCategories(
-  employeeId: string,
-  salonId: string,
-  categoryIds: string[]
-) {
-  const supabase = await createSupabaseServerClient();
-  await supabase
-    .from("employee_categories")
-    .delete()
-    .eq("employee_id", employeeId)
-    .eq("salon_id", salonId);
-  if (categoryIds.length > 0) {
-    await supabase.from("employee_categories").insert(
-      categoryIds.map((category_id) => ({ employee_id: employeeId, category_id, salon_id: salonId }))
-    );
-  }
+): Promise<void> {
+  await updateEmployeeProfileRpc({ employeeId, ...input });
 }
 
 export async function updateEmployee(

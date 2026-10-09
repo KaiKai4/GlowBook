@@ -2,11 +2,11 @@ import {
   createSalonInvitation,
   regenerateSalonInvitationToken,
 } from "@/features/platform/data/invitations.repo";
-import { err, ok, type Result } from "@/lib/result";
-import { isPlatformAdmin } from "@/lib/auth/session";
-import { captureError } from "@/lib/observability";
-import { z } from "zod";
-import { recordPlatformAction } from "./platform-audit";
+import { err, ok, type Result } from "@/infra/result";
+import { captureError } from "@/infra/observability";
+import { z } from "@/infra/validation/zod";
+import { publishAuditEvent } from "@/features/audit";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 // El plan es obligatorio: el salon debe nacer con su plan asignado para que
 // el owner nunca vea funcionalidades fuera de lo contratado.
@@ -17,34 +17,35 @@ const InviteSchema = z.object({
 
 export interface InviteSalonInput extends z.input<typeof InviteSchema> {
   actorUserId?: string | null;
+  /** Resuelto por el llamador desde la sesion (requirePlatformAdmin). */
+  actorIsPlatformAdmin: boolean;
 }
 
 export async function inviteSalon(input: InviteSalonInput): Promise<Result<string>> {
-  const isAdmin = await isPlatformAdmin();
-  if (!isAdmin) return err("No autorizado.");
+  if (!input.actorIsPlatformAdmin) return err("No autorizado.");
 
   const parsed = InviteSchema.safeParse(input);
-  if (!parsed.success) return err(parsed.error.issues[0].message);
+  if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   const emailDomain = parsed.data.email.split("@").at(-1) ?? "unknown";
 
   try {
     const token = await createSalonInvitation(parsed.data.email, parsed.data.planId);
-    await recordPlatformAction({
+    const warnings = await publishAuditEvent("platform.salon_invited", {
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "succeeded",
       targetResourceType: "salon_invitation",
       metadata: { emailDomain, planId: parsed.data.planId },
     });
-    return ok(token);
+    return ok(token, warnings);
   } catch (error) {
     captureError(error, {
       module: "platform",
       action: "invite_salon",
       metadata: { emailDomain },
     });
-    await recordPlatformAction({
+    await publishAuditEvent("platform.salon_invited", {
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "failed",
@@ -63,27 +64,27 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
 export async function regenerateSalonInvitation(input: {
   invitationId: string;
   actorUserId?: string | null;
+  actorIsPlatformAdmin: boolean;
 }): Promise<Result<string>> {
-  const isAdmin = await isPlatformAdmin();
-  if (!isAdmin) return err("No autorizado.");
+  if (!input.actorIsPlatformAdmin) return err("No autorizado.");
 
   try {
     const token = await regenerateSalonInvitationToken(input.invitationId);
-    await recordPlatformAction({
+    const warnings = await publishAuditEvent("platform.salon_invitation_regenerated", {
       actorUserId: input.actorUserId ?? null,
       action: "regenerate_salon_invitation",
       status: "succeeded",
       targetResourceType: "salon_invitation",
       targetResourceId: input.invitationId,
     });
-    return ok(token);
+    return ok(token, warnings);
   } catch (error) {
     captureError(error, {
       module: "platform",
       action: "regenerate_salon_invitation",
       metadata: { invitationId: input.invitationId },
     });
-    await recordPlatformAction({
+    await publishAuditEvent("platform.salon_invitation_regenerated", {
       actorUserId: input.actorUserId ?? null,
       action: "regenerate_salon_invitation",
       status: "failed",

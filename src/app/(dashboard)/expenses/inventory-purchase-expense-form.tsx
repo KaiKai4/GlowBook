@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { InventoryProductOption } from "@/features/inventory/use-cases/inventory-product-options";
-import { formatCurrency } from "@/lib/utils/dates";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
+import { formatCurrency } from "@/infra/format/dates";
 import { createInventoryPurchaseExpenseAction } from "./actions";
 
 export function InventoryPurchaseExpenseForm({
@@ -25,11 +31,18 @@ export function InventoryPurchaseExpenseForm({
   const [purchaseQuantity, setPurchaseQuantity] = useState("");
   const [purchaseUnitCost, setPurchaseUnitCost] = useState("");
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const { submit } = useSubmissionIntent({
+    procedure: "expenses.inventory-purchase",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
   const purchasePreview = Number(purchaseQuantity || 0) * Number(purchaseUnitCost || 0);
 
   function handleCreateInventoryPurchase(formData: FormData) {
     startTransition(async () => {
-      const result = await createInventoryPurchaseExpenseAction(null, formData);
+      const result = await submit(formDataEntries(formData), (idempotencyKey) =>
+        createInventoryPurchaseExpenseAction(null, withIdempotencyKey(formData, idempotencyKey))
+      );
       onResult({
         ok: result.ok,
         message: result.ok ? result.value : result.error,
@@ -44,7 +57,7 @@ export function InventoryPurchaseExpenseForm({
       </CardHeader>
       <CardContent>
         {!canManageInventory ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="rounded-xl border border-warning-border bg-warning-subtle px-4 py-3 text-sm text-warning-strong">
             Necesitas permiso de inventario para registrar compras de productos.
           </p>
         ) : (
@@ -77,10 +90,10 @@ export function InventoryPurchaseExpenseForm({
               required
             />
             <div className="lg:col-span-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase text-brand-500">Destino automatico</p>
-              <p className="text-sm font-semibold text-stone-900">Bodega</p>
-              <p className="mt-1 text-sm text-stone-500">
-                Total de la compra: <span className="font-bold">{formatCurrency(purchasePreview)}</span>
+              <p className="text-xs font-semibold uppercase text-brand-600">Destino automatico</p>
+              <p className="text-sm font-semibold text-fg">Bodega</p>
+              <p className="mt-1 text-sm text-fg-secondary">
+                Total de la compra: <span className="font-semibold">{formatCurrency(purchasePreview)}</span>
               </p>
             </div>
             <div className="lg:col-span-2">
@@ -97,7 +110,7 @@ export function InventoryPurchaseExpenseForm({
               </Button>
             </div>
             {inventoryProducts.length === 0 && (
-              <p className="lg:col-span-2 text-sm text-stone-400">
+              <p className="lg:col-span-2 text-sm text-fg-secondary">
                 Crea un producto en Inventario antes de registrar una compra.
               </p>
             )}

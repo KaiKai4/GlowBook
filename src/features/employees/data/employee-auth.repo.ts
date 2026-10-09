@@ -5,7 +5,7 @@ import {
   deleteAuthUser,
   type AuthAdminResponse,
   type CreateAuthUserInput,
-} from "@/lib/supabase/auth-admin";
+} from "@/infra/supabase/auth-admin";
 import type { User } from "@supabase/supabase-js";
 
 export function createEmployeeAuthUser(

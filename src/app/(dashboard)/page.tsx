@@ -1,61 +1,43 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireProfile } from "@/lib/auth/session";
-import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
-import { getPermissions, hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireProfile } from "@/app/_composition/request-context";
+import { getCachedDashboardShell } from "@/app/_composition/salon-readers";
+import { getDisabledSalonFeatures, getPermissions, hasPermission, PERMISSIONS } from "@/features/access";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
-import { isSalonFeatureDisabled } from "@/features/salon/domain/salon-features";
-import {
-  getDashboardOverview,
-  type PendingAppointmentConfirmation,
-  type TopService,
-} from "@/features/dashboard/use-cases/get-dashboard-overview";
-import {
-  getOwnerPlanLimitWarnings,
-  getSalonPaymentStanding,
-} from "@/features/salon/use-cases/get-dashboard-shell";
+import { isSalonFeatureDisabled } from "@/features/salon-features";
+import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import { selectDashboardMoney } from "@/features/dashboard/domain/dashboard-money";
+import { getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
 import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
 import { PaymentStandingBanner } from "@/components/layout/payment-standing-banner";
 import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
 import { OnboardingChecklistCard } from "./onboarding-checklist-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency, formatDate } from "@/lib/utils/dates";
+import { formatCurrency, formatDate } from "@/infra/format/dates";
 import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
-import {
-  AlertCircle,
-  BellRing,
-  CalendarCheck,
-  CalendarDays,
-  ChevronRight,
-  Clock,
-  DollarSign,
-  PackageSearch,
-  ReceiptText,
-  Scissors,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { PendingConfirmations, TopServices } from "./dashboard-widgets";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { AlertCircle, CalendarDays, ChevronRight, Users } from "lucide-react";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const disabledFeatures = await getEffectiveDisabledSalonFeatures(profile);
+  // El perfil ya lleva los modulos efectivos del plan (los resuelve request-context).
+  const disabledFeatures = getDisabledSalonFeatures(profile);
   const visibleNav = getVisibleNavItems(
     getPermissions(profile),
     profile.is_owner,
     disabledFeatures
   );
 
-  if (!profile.is_owner && visibleNav.length === 1) {
-    redirect(visibleNav[0].href);
-  }
+  const [onlyNavItem] = visibleNav;
+  if (!profile.is_owner && visibleNav.length === 1 && onlyNavItem && onlyNavItem.href !== "/") redirect(onlyNavItem.href);
 
   // Los avisos del plan (límites y pago vencido) y la guia de arranque solo
   // viven aqui: el owner los ve al entrar, sin perseguirlo por los modulos.
   const [planWarnings, paymentStanding, onboarding] = profile.is_owner
     ? await Promise.all([
         getOwnerPlanLimitWarnings(profile.salon_id),
-        getSalonPaymentStanding(profile.salon_id),
+        getCachedDashboardShell(profile).then((shell) => shell?.paymentStanding ?? null),
         getOnboardingChecklist(profile.salon_id),
       ])
     : [[], null, null];
@@ -98,10 +80,9 @@ export default async function DashboardPage() {
   }[];
 
   const hasAnyAccess = visibleNav.length > 0;
-  const profitMetric = metrics
-    ? metrics.appointmentRevenue + (hasRetailFeature ? metrics.retailRevenue : 0) - (hasExpensesFeature ? metrics.monthExpenses : 0)
-    : 0;
-  const monthRevenueMetric = metrics ? metrics.appointmentRevenue + (hasRetailFeature ? metrics.retailRevenue : 0) : 0;
+  const money = metrics
+    ? selectDashboardMoney(metrics, { includeRetail: hasRetailFeature, includeExpenses: hasExpensesFeature })
+    : { revenue: 0, profit: 0 };
   const showProfitMetric = Boolean(metrics && (hasRetailFeature || hasExpensesFeature));
 
   return (
@@ -109,41 +90,31 @@ export default async function DashboardPage() {
       {paymentStanding ? <PaymentStandingBanner standing={paymentStanding} /> : null}
       <PlanLimitBanner warnings={planWarnings} />
 
-      <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Bienvenido</h1>
-        <p className="mt-1 text-sm text-neutral-500">{formatDate(new Date())}</p>
-      </div>
+      <PageHeader title="Bienvenido" description={formatDate(new Date())} />
 
       {onboarding ? <OnboardingChecklistCard checklist={onboarding} /> : null}
 
       {metrics && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {hasExpensesFeature && (
-            <MetricCard title="Gastos del mes" value={formatCurrency(metrics.monthExpenses)} icon={ReceiptText} color="red" />
+            <MetricCard label="Gastos del mes" value={formatCurrency(metrics.monthExpenses)} />
           )}
-          <MetricCard title="Ingresos del mes" value={formatCurrency(monthRevenueMetric)} icon={DollarSign} color="emerald" />
+          <MetricCard label="Ingresos del mes" value={formatCurrency(money.revenue)} />
           {showProfitMetric && (
             <MetricCard
-              title="Ganancias del mes"
-              value={formatCurrency(profitMetric)}
-              icon={TrendingUp}
-              color={profitMetric >= 0 ? "emerald" : "red"}
+              label="Ganancias del mes"
+              value={formatCurrency(money.profit)}
+              tone={money.profit >= 0 ? "default" : "danger"}
             />
           )}
-          <MetricCard title="Citas hoy" value={String(metrics.todayAppointments)} icon={CalendarDays} color="blue" />
-          <MetricCard
-            title="Citas completadas (mes)"
-            value={String(metrics.completedThisMonth)}
-            icon={CalendarCheck}
-            color="emerald"
-          />
-          <MetricCard title="Clientes registrados" value={String(metrics.totalCustomers)} icon={Users} color="blue" />
+          <MetricCard label="Citas hoy" value={String(metrics.todayAppointments)} />
+          <MetricCard label="Citas completadas (mes)" value={String(metrics.completedThisMonth)} />
+          <MetricCard label="Clientes registrados" value={String(metrics.totalCustomers)} />
           {hasInventoryFeature && (
             <MetricCard
-              title="Productos con bajo stock"
+              label="Productos con bajo stock"
               value={String(metrics.lowStockProducts)}
-              icon={PackageSearch}
-              color={metrics.lowStockProducts > 0 ? "red" : "emerald"}
+              tone={metrics.lowStockProducts > 0 ? "danger" : "default"}
             />
           )}
         </div>
@@ -167,159 +138,30 @@ export default async function DashboardPage() {
             <Link
               key={link.href}
               href={link.href}
-              className="group flex items-center gap-4 rounded-xl border border-brand-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              className="group flex items-center gap-4 rounded-xl border border-brand-100 bg-surface p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50">
                 <link.icon className="h-5 w-5 text-brand-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-stone-900">{link.label}</p>
-                <p className="truncate text-xs text-stone-400">{link.description}</p>
+                <p className="font-semibold text-fg">{link.label}</p>
+                <p className="truncate text-xs text-fg-subtle">{link.description}</p>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-fg-disabled transition-transform group-hover:translate-x-0.5" />
             </Link>
           ))}
         </div>
       )}
 
       {!hasAnyAccess && (
-        <div className="flex max-w-md items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p className="text-sm text-amber-800">
+        <div className="flex max-w-md items-start gap-3 rounded-xl border border-warning-border bg-warning-subtle px-4 py-3.5">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning-fg" />
+          <p className="text-sm text-warning-strong">
             No tienes módulos asignados. Pide al administrador del salón que configure tu rol en la sección{" "}
             <strong>Colaboradores</strong>.
           </p>
         </div>
       )}
     </div>
-  );
-}
-
-function MetricCard({
-  title,
-  value,
-  icon: Icon,
-  color,
-}: {
-  title: string;
-  value: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: "blue" | "emerald" | "red";
-}) {
-  const colors = {
-    blue: "bg-blue-50 text-blue-600",
-    emerald: "bg-emerald-50 text-emerald-600",
-    red: "bg-red-50 text-red-600",
-  };
-
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-neutral-500">{title}</p>
-            <p className="mt-1 text-2xl font-bold text-neutral-900">{value}</p>
-          </div>
-          <div className={cn("rounded-lg p-2", colors[color])}>
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function PendingConfirmations({ pending }: { pending: PendingAppointmentConfirmation[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BellRing className="h-4 w-4 text-amber-500" />
-          Citas por confirmar
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {pending.length === 0 ? (
-          <p className="py-6 text-center text-sm text-stone-400">No hay citas pendientes de confirmar.</p>
-        ) : (
-          <>
-            <p className="mb-3 text-xs text-stone-400">Recuérdale a estos clientes que confirmen su cita:</p>
-            <ul className="space-y-2.5">
-              {pending.map((appointment) => (
-                <li
-                  key={appointment.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-stone-100 px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-stone-800">{appointment.customerName}</p>
-                    <p className="flex items-center gap-1 text-xs text-stone-400">
-                      <Clock className="h-3 w-3" /> {appointment.when}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/recordatorios"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline"
-            >
-              Ir a recordatorios <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function TopServices({ services }: { services: TopService[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Scissors className="h-4 w-4 text-brand-500" />
-          Servicios más solicitados
-          <span className="ml-auto text-xs font-normal text-stone-400">Este mes</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {services.length === 0 ? (
-          <p className="py-6 text-center text-sm text-stone-400">Aún no hay datos suficientes este mes.</p>
-        ) : (
-          <div
-            className="relative h-[264px] min-w-0"
-            role="img"
-            aria-label="Servicios más solicitados este mes"
-          >
-            <div
-              aria-hidden="true"
-              className="absolute inset-x-2 top-4 bottom-14 flex flex-col justify-between"
-            >
-              {Array.from({ length: 4 }, (_, index) => (
-                <span key={index} className="border-t border-dashed border-brand-100" />
-              ))}
-            </div>
-            <div className="relative flex h-full items-end gap-3 px-2 pt-4">
-              {services.map((service) => (
-                <div key={service.name} className="group flex h-full min-w-0 flex-1 flex-col justify-end gap-3">
-                  <div className="relative flex h-[198px] w-full items-end justify-center">
-                    <div className="pointer-events-none absolute -top-2 z-10 rounded-md bg-stone-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                      {service.count}
-                    </div>
-                    <div
-                      className="w-full max-w-10 rounded-t-md bg-brand-600 transition-[height,opacity,transform] duration-150 group-hover:-translate-y-1 group-hover:opacity-90"
-                      style={{ height: `${Math.max(service.pct, 12)}%` }}
-                    />
-                  </div>
-                  <span className="line-clamp-2 min-h-8 text-center text-[10px] font-medium uppercase leading-tight text-stone-400">
-                    {service.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }

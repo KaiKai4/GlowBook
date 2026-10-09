@@ -6,11 +6,34 @@ import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
 import { GlowBookBrand, GlowBookMark } from "@/components/brand/glowbook-logo";
-import type { Permission } from "@/lib/auth/permissions";
-import { cn } from "@/lib/utils/cn";
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { Permission } from "@/features/access";
+import { cn } from "@/components/ui/cn";
+import type { SalonFeatureKey } from "@/features/salon-features";
 
 import { getVisibleNavGroups } from "./nav-items";
+import {
+  ASIDE_WIDTH,
+  BRAND_MARK,
+  BRAND_TEXT,
+  GROUP_LABEL,
+  GROUP_SEPARATOR,
+  GROUP_STACK,
+  ITEM_LAYOUT,
+  LABEL_FADE,
+  NAV_PADDING,
+  NO_MODULES_HINT,
+  TOGGLE_POSITION,
+  resolveSidebarCollapsed,
+} from "./sidebar-layout";
+import {
+  getServerDesktopViewport,
+  getServerSidebarPreference,
+  getSidebarPreference,
+  isDesktopViewport,
+  setSidebarCollapsed,
+  subscribeSidebarCollapsed,
+} from "./sidebar-store";
+import type { SidebarPreference } from "./sidebar-store";
 import { useNavigationGuard } from "./unsaved-changes";
 
 interface SidebarProps {
@@ -20,25 +43,29 @@ interface SidebarProps {
   disabledFeatures: SalonFeatureKey[];
 }
 
-const SIDEBAR_STORAGE_KEY = "glowbook-sidebar-collapsed";
-const SIDEBAR_CHANGE_EVENT = "glowbook-sidebar-change";
-
-function getSidebarSnapshot() {
-  try {
-    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
-  } catch {
-    return false;
+/**
+ * Icono del botón de plegar. En "auto" se pintan los dos y el CSS muestra el que
+ * corresponde a cada ancho, así el primer render ya es correcto.
+ */
+function ToggleIcon({
+  preference,
+  isCollapsed,
+}: {
+  preference: SidebarPreference;
+  isCollapsed: boolean;
+}) {
+  if (preference === "auto") {
+    return (
+      <>
+        <PanelLeftOpen className="h-4 w-4 md:hidden" aria-hidden="true" />
+        <PanelLeftClose className="hidden h-4 w-4 md:block" aria-hidden="true" />
+      </>
+    );
   }
-}
-
-function subscribeToSidebarState(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(SIDEBAR_CHANGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(SIDEBAR_CHANGE_EVENT, onStoreChange);
-  };
+  if (isCollapsed) {
+    return <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />;
+  }
+  return <PanelLeftClose className="h-4 w-4" aria-hidden="true" />;
 }
 
 export function Sidebar({
@@ -49,28 +76,31 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const confirmNavigate = useNavigationGuard();
-  const isCollapsed = useSyncExternalStore(
-    subscribeToSidebarState,
-    getSidebarSnapshot,
-    () => false,
+  const preference = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    getSidebarPreference,
+    getServerSidebarPreference,
   );
+  const desktop = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    isDesktopViewport,
+    getServerDesktopViewport,
+  );
+  // Estado efectivo: solo para atributos y etiquetas (no mueve el layout en "auto").
+  const isCollapsed = resolveSidebarCollapsed(preference, desktop);
 
   const groups = getVisibleNavGroups(
     userPermissions,
     isOwner,
     disabledFeatures,
   );
+  // "Inicio" no exige permisos: el aviso se basa en los módulos reales, no en los grupos.
+  const hasModules = groups.some((group) =>
+    group.items.some((item) => item.href !== "/"),
+  );
 
   function toggleSidebar() {
-    const next = !isCollapsed;
-
-    try {
-      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
-    } catch {
-      return;
-    }
-
-    window.dispatchEvent(new Event(SIDEBAR_CHANGE_EVENT));
+    setSidebarCollapsed(!isCollapsed);
   }
 
   function handleNav(event: React.MouseEvent, href: string) {
@@ -92,8 +122,8 @@ export function Sidebar({
     <aside
       id="dashboard-sidebar"
       className={cn(
-        "relative flex h-full shrink-0 flex-col border-r border-brand-100 bg-white shadow-[1px_0_8px_rgba(0,0,0,0.04)] transition-[width] duration-200 ease-out motion-reduce:transition-none",
-        isCollapsed ? "w-20" : "w-64",
+        "relative flex h-full shrink-0 flex-col border-r border-brand-100 bg-surface shadow-sidebar transition-[width] duration-200 ease-out motion-reduce:transition-none",
+        ASIDE_WIDTH[preference],
       )}
     >
       <button
@@ -106,30 +136,24 @@ export function Sidebar({
         }
         title={isCollapsed ? "Expandir menú lateral" : "Contraer menú lateral"}
         className={cn(
-          "absolute z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-white text-stone-500 shadow-sm transition-[border-color,color,box-shadow] duration-150 hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
-          isCollapsed
-            ? "left-1/2 top-[88px] -translate-x-1/2"
-            : "right-12 top-[88px]",
+          "absolute z-20 flex h-7 w-7 items-center justify-center rounded-full border border-brand-100 bg-surface text-fg-subtle shadow-sm transition-[border-color,color,box-shadow] duration-150 hover:border-brand-400 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+          TOGGLE_POSITION[preference],
         )}
       >
-        {isCollapsed ? (
-          <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
-        ) : (
-          <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
-        )}
+        <ToggleIcon preference={preference} isCollapsed={isCollapsed} />
       </button>
 
       <div className="relative h-[138px] shrink-0 border-b border-brand-50">
         <div
           className={cn(
             "absolute inset-0 flex flex-col items-center gap-1.5 px-6 pb-3 pt-5 text-center transition-opacity duration-150 motion-reduce:transition-none",
-            isCollapsed ? "pointer-events-none opacity-0" : "opacity-100",
+            BRAND_TEXT[preference],
           )}
           aria-hidden={isCollapsed}
         >
           <GlowBookBrand markSize="sm" align="center" />
           <div className="min-w-0 max-w-full">
-            <p className="break-words text-sm font-semibold leading-tight text-stone-900">
+            <p className="break-words text-sm font-semibold leading-tight text-fg">
               {salonName}
             </p>
           </div>
@@ -138,7 +162,7 @@ export function Sidebar({
         <div
           className={cn(
             "absolute inset-0 flex justify-center pt-4 transition-opacity duration-150 motion-reduce:transition-none",
-            isCollapsed ? "opacity-100" : "pointer-events-none opacity-0",
+            BRAND_MARK[preference],
           )}
           aria-hidden={!isCollapsed}
         >
@@ -149,36 +173,35 @@ export function Sidebar({
       <nav
         className={cn(
           "flex-1 overflow-y-auto pb-4 pt-3 transition-[padding] duration-200 motion-reduce:transition-none",
-          isCollapsed ? "px-2" : "px-3",
+          NAV_PADDING[preference],
         )}
       >
-        {groups.length === 0 ? (
+        {!hasModules ? (
           <p
             className={cn(
-              "px-3 py-4 text-xs leading-relaxed text-stone-400",
-              isCollapsed && "sr-only",
+              "px-3 py-4 text-xs leading-relaxed text-fg-subtle",
+              NO_MODULES_HINT[preference],
             )}
           >
             No tienes módulos asignados. Pide al administrador que configure tu
             rol.
           </p>
-        ) : (
-          <div
-            className={cn(
-              isCollapsed ? "space-y-3" : "space-y-5",
-            )}
-          >
-            {groups.map((group, groupIndex) => (
+        ) : null}
+        <div className={cn(GROUP_STACK[preference])}>
+          {groups.map((group, groupIndex) => (
               <div
                 key={group.label ?? `group-${groupIndex}`}
                 className={cn(
-                  isCollapsed &&
-                    groupIndex > 0 &&
-                    "border-t border-brand-50 pt-3",
+                  groupIndex > 0 && GROUP_SEPARATOR[preference],
                 )}
               >
-                {group.label && !isCollapsed ? (
-                  <p className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                {group.label && preference !== "collapsed" ? (
+                  <p
+                    className={cn(
+                      "mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-fg-subtle",
+                      GROUP_LABEL[preference],
+                    )}
+                  >
                     {group.label}
                   </p>
                 ) : null}
@@ -199,25 +222,23 @@ export function Sidebar({
                           aria-label={isCollapsed ? item.label : undefined}
                           className={cn(
                             "grid min-h-10 items-center rounded-lg py-2.5 text-sm font-medium transition-[background-color,color,grid-template-columns,gap,padding] duration-200 motion-reduce:transition-none",
-                            isCollapsed
-                              ? "grid-cols-[16px_0fr] justify-center gap-0 px-3"
-                              : "grid-cols-[16px_1fr] gap-3 px-3",
+                            ITEM_LAYOUT[preference],
                             isActive
                               ? "bg-brand-50 text-brand-700"
-                              : "text-stone-500 hover:bg-stone-50 hover:text-stone-800",
+                              : "text-fg-subtle hover:bg-surface-muted hover:text-fg-secondary",
                           )}
                         >
                           <item.icon
                             className={cn(
                               "h-4 w-4 shrink-0",
-                              isActive ? "text-brand-600" : "text-stone-400",
+                              isActive ? "text-brand-600" : "text-fg-subtle",
                             )}
                             aria-hidden="true"
                           />
                           <span
                             className={cn(
                               "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none",
-                              isCollapsed ? "opacity-0" : "opacity-100",
+                              LABEL_FADE[preference],
                             )}
                           >
                             {item.label}
@@ -228,9 +249,8 @@ export function Sidebar({
                   })}
                 </ul>
               </div>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </nav>
 
       <div className="border-t border-brand-50 p-3">
@@ -240,20 +260,18 @@ export function Sidebar({
             title={isCollapsed ? "Cerrar sesión" : undefined}
             aria-label={isCollapsed ? "Cerrar sesión" : undefined}
             className={cn(
-              "grid min-h-10 w-full items-center rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-[background-color,color,grid-template-columns,gap,padding] duration-200 hover:bg-stone-50 hover:text-stone-800 motion-reduce:transition-none",
-              isCollapsed
-                ? "grid-cols-[16px_0fr] justify-center gap-0 px-3"
-                : "grid-cols-[16px_1fr] gap-3 px-3",
+              "grid min-h-10 w-full items-center rounded-lg py-2.5 text-sm font-medium text-fg-subtle transition-[background-color,color,grid-template-columns,gap,padding] duration-200 hover:bg-surface-muted hover:text-fg-secondary motion-reduce:transition-none",
+              ITEM_LAYOUT[preference],
             )}
           >
             <LogOut
-              className="h-4 w-4 shrink-0 text-stone-400"
+              className="h-4 w-4 shrink-0 text-fg-subtle"
               aria-hidden="true"
             />
             <span
               className={cn(
                 "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none",
-                isCollapsed ? "opacity-0" : "opacity-100",
+                LABEL_FADE[preference],
               )}
             >
               Cerrar sesión

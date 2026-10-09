@@ -1,10 +1,10 @@
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   deleteEmployeeException,
   insertEmployeeException,
 } from "@/features/employees/data/employee-exceptions.repo";
-import type { Result } from "@/lib/result";
-import { formatLocalDateISO } from "@/lib/utils/dates";
+import type { Result } from "@/infra/result";
+import { formatLocalDateISO } from "@/infra/format/dates";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

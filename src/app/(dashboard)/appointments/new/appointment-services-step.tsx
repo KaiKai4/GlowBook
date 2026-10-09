@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select } from "@/components/ui/select";
 import { TimePicker } from "@/components/ui/time-picker";
-import { formatTimeTz } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatTimeTz } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import { GripVertical, Plus, Scissors, Trash2 } from "lucide-react";
 import type {
   AppointmentScheduleItem,
@@ -77,13 +77,13 @@ export function AppointmentServicesStep({
           <Scissors className="h-4 w-4 text-choco-600" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-stone-800">Servicios y horario</h2>
-          <p className="text-xs text-stone-400">Define fecha, hora y servicios a realizar</p>
+          <h2 className="text-sm font-semibold text-fg-secondary">Servicios y horario</h2>
+          <p className="text-xs text-fg-subtle">Define fecha, hora y servicios a realizar</p>
         </div>
       </div>
 
       <CardContent className="space-y-6 pt-5">
-        <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-stone-50 border border-stone-100">
+        <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-surface-muted border border-border-subtle">
           <DatePicker
             label="Fecha"
             value={date}
@@ -104,28 +104,28 @@ export function AppointmentServicesStep({
         </div>
 
         {!date ? (
-          <div className="rounded-xl border border-dashed border-stone-200 py-8 text-center">
-            <p className="text-sm text-stone-400">Elige una fecha para ver disponibilidad.</p>
+          <div className="rounded-xl border border-dashed border-border py-8 text-center">
+            <p className="text-sm text-fg-subtle">Elige una fecha para ver disponibilidad.</p>
           </div>
         ) : isClosedDay ? (
-          <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50 py-8 text-center">
-            <p className="text-sm font-medium text-amber-700">El salon esta cerrado ese día.</p>
-            <p className="text-xs text-amber-600 mt-0.5">
+          <div className="rounded-xl border border-dashed border-warning-border bg-warning-subtle py-8 text-center">
+            <p className="text-sm font-medium text-warning-fg">El salon esta cerrado ese día.</p>
+            <p className="text-xs text-warning-fg mt-0.5">
               Elige otra fecha o ajusta los horarios en Configuración del salon.
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Servicios</p>
+              <p className="text-xs font-medium text-fg-subtle uppercase tracking-wide">Servicios</p>
               {loadingAvailability && (
-                <span className="text-xs text-brand-500 animate-pulse">
+                <span className="text-xs text-brand-600 animate-pulse">
                   Cargando disponibilidad...
                 </span>
               )}
             </div>
 
-            <p className="text-xs text-stone-400 flex items-center gap-1">
+            <p className="text-xs text-fg-subtle flex items-center gap-1">
               <GripVertical className="h-3 w-3" />
               Arrastra para cambiar el orden de los servicios
             </p>
@@ -152,18 +152,18 @@ export function AppointmentServicesStep({
                     setDragIndex(null);
                   }}
                   className={cn(
-                    "rounded-xl border bg-white p-4 transition-all",
+                    "rounded-xl border bg-surface p-4 transition-all",
                     dragIndex === index
-                      ? "border-brand-400 shadow-[0_0_0_2px_rgba(124,58,237,0.15)]"
-                      : "border-brand-100 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
+                      ? "border-brand-400 shadow-focus"
+                      : "border-brand-100 shadow-hairline"
                   )}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="cursor-grab text-stone-300 hover:text-stone-400 transition-colors">
+                      <div className="cursor-grab text-fg-disabled hover:text-fg-subtle transition-colors">
                         <GripVertical className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-semibold text-stone-700">
+                      <span className="text-sm font-semibold text-fg-secondary">
                         Servicio {index + 1}
                       </span>
                       {item.start && (
@@ -177,7 +177,7 @@ export function AppointmentServicesStep({
                       <button
                         type="button"
                         onClick={() => removeRow(item.row.key)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-subtle hover:bg-danger-subtle hover:text-danger transition-colors"
                         aria-label="Quitar servicio"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -197,7 +197,7 @@ export function AppointmentServicesStep({
                         })
                       }
                     >
-                      <option value="">Selecciona categoria...</option>
+                      <option value="" disabled hidden>Selecciona categoria...</option>
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -216,7 +216,7 @@ export function AppointmentServicesStep({
                       }
                       disabled={!item.row.categoryId}
                     >
-                      <option value="">
+                      <option value="" disabled hidden>
                         {!item.row.categoryId
                           ? "Elige categoria primero"
                           : filteredServices.length
@@ -239,7 +239,7 @@ export function AppointmentServicesStep({
                       disabled={!item.row.serviceId}
                       error={!selectedStillEligible ? "Ya no disponible" : undefined}
                     >
-                      <option value="">
+                      <option value="" disabled hidden>
                         {!item.row.serviceId
                           ? "Elige servicio primero"
                           : eligibleEmployees.length
@@ -263,7 +263,7 @@ export function AppointmentServicesStep({
           </div>
         )}
 
-        <div className="flex justify-between pt-2 border-t border-stone-100">
+        <div className="flex justify-between pt-2 border-t border-border-subtle">
           <Button variant="ghost" onClick={onBack}>
             Atras
           </Button>

@@ -1,6 +1,8 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTargetOrExit, readConfirmFlag } from "./lib/target-guard.mjs";
 
 function loadEnvFileIfPresent() {
   const envPath = join(process.cwd(), ".env.local");
@@ -14,15 +16,13 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} message @returns {never} */
 function fail(message) {
   console.error(`[cleanup-pricing-study] ${message}`);
   process.exit(1);
 }
 
-function normalizeUrl(value) {
-  return value.replace(/\/+$/, "").toLowerCase();
-}
-
+/** @param {string} batchId */
 function assertSafeBatchId(batchId) {
   if (!/^pricing-[a-zA-Z0-9-]+$/.test(batchId)) {
     fail("PRICING_STUDY_BATCH_ID must start with 'pricing-' and contain only letters, numbers and hyphens.");
@@ -58,6 +58,12 @@ if (confirm !== `delete-${batchId}`) {
   fail(`Set PRICING_STUDY_CLEANUP_CONFIRM=delete-${batchId} to delete this staging batch.`);
 }
 
+assertSafeTargetOrExit("cleanup-staging-pricing-study", {
+  url: supabaseUrl,
+  env: process.env.GLOWBOOK_ENV ?? process.env.APP_ENV ?? process.env.VERCEL_ENV,
+  confirmFlag: readConfirmFlag(process.argv),
+  productionUrl: process.env.PRODUCTION_SUPABASE_URL,
+});
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });

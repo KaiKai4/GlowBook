@@ -18,6 +18,7 @@ function loadEnvFileIfPresent() {
   }
 }
 
+/** @param {string} name */
 function getArgValue(name) {
   const prefix = `--${name}=`;
   const match = process.argv.slice(2).find((arg) => arg.startsWith(prefix));
@@ -33,6 +34,7 @@ function getTarget() {
   return value;
 }
 
+/** @param {string} target */
 function getDatabaseUrl(target) {
   const explicit = process.env.SUPABASE_DB_URL;
   if (explicit) return explicit;
@@ -41,6 +43,7 @@ function getDatabaseUrl(target) {
   return process.env.STAGING_DATABASE_URL;
 }
 
+/** @param {string} databaseUrl */
 function getSessionPoolerUrl(databaseUrl) {
   try {
     const url = new URL(databaseUrl);
@@ -64,6 +67,7 @@ function getLocalVersions() {
     .sort();
 }
 
+/** @param {string} databaseUrl */
 function runSupabaseMigrationList(databaseUrl) {
   if (process.platform === "win32") {
     return spawnSync(
@@ -85,6 +89,7 @@ function runSupabaseMigrationList(databaseUrl) {
   });
 }
 
+/** @param {string} output */
 function parseRemoteVersions(output) {
   const versions = new Set();
 
@@ -92,7 +97,7 @@ function parseRemoteVersions(output) {
     const line = rawLine.replaceAll("│", "|");
     if (!line.includes("|")) continue;
 
-    const parts = line.split("|").map((part) => part.trim());
+    const parts = line.split("|").map((/** @type {string} */ part) => part.trim());
     if (parts.length < 2) continue;
 
     const remoteColumn = parts[1];

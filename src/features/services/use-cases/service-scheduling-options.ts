@@ -2,15 +2,15 @@ import "server-only";
 
 import { findCategoriesWithServices } from "../data/services.repo";
 
-export type SchedulingPricingMode = "fixed" | "variable";
+type SchedulingPricingMode = "fixed" | "variable";
 
-export interface SchedulingCategoryOption {
+interface SchedulingCategoryOption {
   id: string;
   name: string;
   pricing_mode?: SchedulingPricingMode;
 }
 
-export interface SchedulingServiceOption {
+interface SchedulingServiceOption {
   id: string;
   name: string;
   category_id: string;

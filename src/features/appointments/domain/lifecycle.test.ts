@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { assertTransition, canTransition, shouldBlockCalendar } from "./lifecycle";
+import { assertTransition, shouldBlockCalendar } from "./lifecycle";
 
 describe("appointment lifecycle", () => {
   it("allows only valid status transitions", () => {
-    expect(canTransition("scheduled", "confirmed")).toBe(true);
-    expect(canTransition("confirmed", "completed")).toBe(true);
-    expect(canTransition("completed", "cancelled")).toBe(false);
-    expect(canTransition("cancelled", "confirmed")).toBe(false);
+    expect(() => assertTransition("scheduled", "confirmed")).not.toThrow();
+    expect(() => assertTransition("confirmed", "completed")).not.toThrow();
+    expect(() => assertTransition("completed", "cancelled")).toThrow();
+    expect(() => assertTransition("cancelled", "confirmed")).toThrow();
   });
 
   it("throws when an invalid transition is requested", () => {

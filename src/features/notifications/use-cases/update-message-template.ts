@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { upsertMessageTemplate } from "../data/notification-templates.repo";
 import type { NotificationTemplateInput } from "../schemas";
 import { templateNameForEvent } from "../schemas";

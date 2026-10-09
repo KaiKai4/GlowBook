@@ -8,6 +8,12 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABELS,
@@ -22,12 +28,19 @@ export function ExpenseGeneralForm({
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const [pending, startTransition] = useTransition();
   const [category, setCategory] = useState<string>("rent");
+  const toast = useToast();
+  const { submit } = useSubmissionIntent({
+    procedure: "expenses.create",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
 
   const isOther = category === "other";
 
   function handleCreateExpense(formData: FormData) {
     startTransition(async () => {
-      const result = await createExpenseAction(null, formData);
+      const result = await submit(formDataEntries(formData), (idempotencyKey) =>
+        createExpenseAction(null, withIdempotencyKey(formData, idempotencyKey))
+      );
       onResult({
         ok: result.ok,
         message: result.ok ? result.value : result.error,

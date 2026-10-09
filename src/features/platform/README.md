@@ -13,7 +13,7 @@ Interface principal:
 - `use-cases/get-platform-invitations.ts`
 - `use-cases/get-platform-salon-overviews.ts`
 - `use-cases/get-platform-feedback-reports.ts`
-- `use-cases/platform-audit.ts`
+- Las acciones de auditoria se emiten con `publishAuditEvent` desde `src/features/audit` (tras el commit).
 - `use-cases/update-salon-status.ts`
 - Los modulos comerciales se gestionan desde `src/features/billing/use-cases/commercial-plans.ts`.
 - `use-cases/delete-salon.ts`
@@ -31,7 +31,7 @@ Adapters externos:
 - `data/invitations.repo.ts`
 - `data/salons.repo.ts`
 - `data/salon-overviews.repo.ts`
-- `data/platform-audit.repo.ts`
+- `data/platform-audit.repo.ts` (solo lectura de la bitacora; la escritura vive en `src/features/audit`).
 - `data/feedback-moderation.repo.ts`
 - `data/delete-salon.repo.ts`
 - `data/platform-auth.repo.ts`

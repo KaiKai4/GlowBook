@@ -1,23 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  assignRoleToProfile,
   createRole,
   deleteRole,
   setRolePermissions,
 } from "../data/roles.repo";
-import { assignRole } from "./assign-role";
 import { createRoleWithPermissions } from "./create-role";
 import { deleteSalonRole } from "./delete-role";
 import { updateRolePermissions } from "./update-role-permissions";
 
 vi.mock("../data/roles.repo", () => ({
-  assignRoleToProfile: vi.fn(),
   createRole: vi.fn(),
   deleteRole: vi.fn(),
   setRolePermissions: vi.fn(),
 }));
 
-const mockedAssignRoleToProfile = vi.mocked(assignRoleToProfile);
 const mockedCreateRole = vi.mocked(createRole);
 const mockedDeleteRole = vi.mocked(deleteRole);
 const mockedSetRolePermissions = vi.mocked(setRolePermissions);
@@ -71,26 +67,13 @@ describe("role use-cases", () => {
     });
   });
 
-  it("assigns and deletes roles through the roles adapter", async () => {
-    mockedAssignRoleToProfile.mockResolvedValue(undefined);
+  it("deletes roles through the roles adapter", async () => {
     mockedDeleteRole.mockResolvedValue(undefined);
 
-    await expect(
-      assignRole("salon-1", {
-        profile_id: "00000000-0000-0000-0000-000000000002",
-        role_id: "00000000-0000-0000-0000-000000000001",
-      })
-    ).resolves.toEqual({ ok: true, value: undefined });
     await expect(deleteSalonRole("salon-1", "role-1")).resolves.toEqual({
       ok: true,
       value: undefined,
     });
-
-    expect(mockedAssignRoleToProfile).toHaveBeenCalledWith(
-      "00000000-0000-0000-0000-000000000002",
-      "00000000-0000-0000-0000-000000000001",
-      "salon-1"
-    );
     expect(mockedDeleteRole).toHaveBeenCalledWith("role-1", "salon-1");
   });
 });

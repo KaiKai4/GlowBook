@@ -7,7 +7,7 @@ import {
   paymentMethodOptionsFor,
   type PaymentMethod,
   type PaymentMethodOption,
-} from "@/features/payments/domain/payment-methods";
+} from "@/features/payments";
 
 export interface SalonPaymentMethodsView {
   enabled: PaymentMethod[];

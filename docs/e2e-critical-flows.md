@@ -1,6 +1,6 @@
 # E2E Para Flujos Criticos
 
-Fuente: Fase 24 de `docs/architecture-audit-phases-2026-05-30.md`.
+Fuente: Fase 24 de `docs/archive/architecture-history/architecture-audit-phases-2026-05-30.md`.
 
 ## Estado
 

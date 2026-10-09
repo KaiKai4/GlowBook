@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import Image from "next/image";
 
 type LogoSize = "sm" | "md" | "lg";
@@ -54,7 +54,7 @@ export function GlowBookBrand({ markSize = "md", align = "center", dark = false,
         className={cn(
           "font-semibold tracking-tight leading-none",
           nameSizes[markSize],
-          dark ? "text-white" : "text-stone-950",
+          dark ? "text-surface" : "text-fg-strong",
           "mt-1"
         )}
       >

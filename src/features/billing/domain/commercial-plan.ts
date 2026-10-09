@@ -1,10 +1,10 @@
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 
 export type CommercialPlanStatus = "draft" | "active" | "archived";
 export type SalonPlanAssignmentStatus = "trialing" | "active" | "past_due" | "paused" | "canceled";
 export type PlanEnforcementMode = "none" | "warn" | "block";
 export type PlanLimitCountScope = "current" | "monthly" | "billing_cycle" | "lifetime";
-export type PlanWarningLevel = "none" | "near_limit" | "over_limit" | "blocked";
+type PlanWarningLevel = "none" | "near_limit" | "over_limit" | "blocked";
 
 export interface PlatformModule {
   key: SalonFeatureKey;
@@ -58,19 +58,6 @@ export interface CommercialPlanLimit {
   countScope: PlanLimitCountScope;
 }
 
-export interface SalonPlanAssignment {
-  id: string;
-  salonId: string;
-  salonName: string;
-  planId: string;
-  planName: string;
-  status: SalonPlanAssignmentStatus;
-  startsAt: string | null;
-  endsAt: string | null;
-  trialEndsAt: string | null;
-  notes: string;
-}
-
 export interface SalonPlanOverride {
   id: string;
   salonId: string;
@@ -103,7 +90,6 @@ export type UsageCounterKey =
   | "inventory_movements_total"
   | "expenses_total";
 
-export type SalonPlanUsage = Record<UsageCounterKey, number>;
 export type SalonPlanUsageByMetric = Record<string, number>;
 
 export interface EffectivePlanLimit {

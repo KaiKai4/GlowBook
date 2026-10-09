@@ -1,5 +1,5 @@
-import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getServiceCatalog } from "@/features/services/use-cases/get-service-catalog";
 import { ServicesManager } from "./services-manager";
 
@@ -9,7 +9,7 @@ export default async function ServicesPage() {
   if (!hasPermission(profile, PERMISSIONS.SERVICES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-400">No tienes permiso para gestionar servicios.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar servicios.</p>
       </div>
     );
   }

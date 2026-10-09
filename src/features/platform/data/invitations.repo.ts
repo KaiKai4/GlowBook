@@ -1,10 +1,11 @@
 import "server-only";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PublicError } from "@/infra/public-error";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import {
   generateInvitationToken,
   hashInvitationToken,
-} from "@/lib/auth/invitation-tokens";
+} from "@/infra/auth/invitation-tokens";
 
 // Sin token: la DB solo guarda el hash. El enlace se muestra una vez al
 // crear o regenerar la invitacion.
@@ -75,7 +76,7 @@ export async function regenerateSalonInvitationToken(invitationId: string): Prom
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) throw new Error("La invitacion no existe o ya no esta pendiente.");
+  if (!data) throw new PublicError("La invitacion no existe o ya no esta pendiente.");
   return token;
 }
 

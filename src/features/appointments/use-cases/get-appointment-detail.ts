@@ -1,9 +1,9 @@
 import "server-only";
 
-import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
+import { getSalonIdentity } from "@/features/salon";
 import { findAppointmentById } from "../data/appointments.repo";
 
-export type AppointmentStatusVariant =
+type AppointmentStatusVariant =
   | "default"
   | "info"
   | "success"
@@ -27,7 +27,7 @@ const STATUS_VARIANT: Record<string, AppointmentStatusVariant> = {
   no_show: "warning",
 };
 
-export interface AppointmentDetailItemViewModel {
+interface AppointmentDetailItemViewModel {
   id: string;
   serviceId: string;
   employeeId: string;
@@ -71,7 +71,7 @@ export async function getAppointmentDetail({
   appointmentId,
   salonId,
 }: GetAppointmentDetailInput): Promise<AppointmentDetailViewModel | null> {
-  const appointment = await findAppointmentById(appointmentId);
+  const appointment = await findAppointmentById(appointmentId, salonId);
   if (!appointment || appointment.salon_id !== salonId) return null;
 
   const salon = await getSalonIdentity(salonId);

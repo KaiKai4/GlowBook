@@ -44,21 +44,11 @@ export function TransferStockForm({ products, pending, onTransfer }: TransferSto
             <ProductSelect products={products} value={productId} onChange={changeProduct} />
           </div>
           <input type="hidden" name="from_location" value="storage" />
-          <div className="rounded-xl border border-stone-100 bg-stone-50 px-4 py-3">
-            <p className="text-xs font-semibold uppercase text-stone-400">Desde</p>
-            <p className="mt-1 text-sm font-semibold text-stone-900">Bodega</p>
+          <div className="rounded-xl border border-border-subtle bg-surface-muted px-4 py-3">
+            <p className="text-xs font-semibold uppercase text-fg-subtle">Desde</p>
+            <p className="mt-1 text-sm font-semibold text-fg">Bodega</p>
           </div>
-          {destinations.length === 1 ? (
-            <>
-              <input type="hidden" name="to_location" value={destinations[0]} />
-              <div className="rounded-xl border border-stone-100 bg-stone-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase text-stone-400">Hacia</p>
-                <p className="mt-1 text-sm font-semibold text-stone-900">
-                  {INVENTORY_LOCATION_LABELS[destinations[0]]}
-                </p>
-              </div>
-            </>
-          ) : (
+          {selectedProduct?.isRetailEnabled ? (
             <Select
               name="to_location"
               label="Hacia"
@@ -71,6 +61,14 @@ export function TransferStockForm({ products, pending, onTransfer }: TransferSto
                 </option>
               ))}
             </Select>
+          ) : (
+            <>
+              <input type="hidden" name="to_location" value="internal" />
+              <div className="rounded-xl border border-border-subtle bg-surface-muted px-4 py-3">
+                <p className="text-xs font-semibold uppercase text-fg-subtle">Hacia</p>
+                <p className="mt-1 text-sm font-semibold text-fg">{INVENTORY_LOCATION_LABELS.internal}</p>
+              </div>
+            </>
           )}
           <Input
             name="quantity"

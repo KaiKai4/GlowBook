@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 import type {
   CommercialAddon,
   CommercialAddonKind,
@@ -26,7 +26,7 @@ interface AddonRow {
   sort_order: number;
 }
 
-export function mapAddon(row: AddonRow): CommercialAddon {
+function mapAddon(row: AddonRow): CommercialAddon {
   return {
     id: row.id,
     code: row.code,

@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { SalonPlanOverride } from "./commercial-plan";
 import {
-  buildSalonExtras,
   extraMonthlyPrice,
-  monthlyExtrasTotal,
   resolveOverrideMax,
   type CommercialAddon,
 } from "./salon-extras";
@@ -63,16 +61,6 @@ describe("extraMonthlyPrice", () => {
 
   it("costs nothing for manual extras without addon", () => {
     expect(extraMonthlyPrice(override({ addonId: null }), null)).toBe(0);
-  });
-});
-
-describe("monthlyExtrasTotal", () => {
-  it("sums only active extras", () => {
-    const extras = buildSalonExtras(
-      [override({ id: "a" }), override({ id: "b", status: "canceled" })],
-      [addon]
-    );
-    expect(monthlyExtrasTotal(extras)).toBe(8);
   });
 });
 

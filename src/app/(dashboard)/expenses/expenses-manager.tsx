@@ -55,8 +55,8 @@ export function ExpensesManager({
         <div
           className={
             error
-              ? "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-              : "rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+              ? "rounded-lg border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-strong"
+              : "rounded-lg border border-success-border bg-success-subtle px-4 py-3 text-sm text-success-fg"
           }
         >
           {error ?? message}

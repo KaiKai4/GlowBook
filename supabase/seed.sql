@@ -1,0 +1,2 @@
+-- Datos de desarrollo local. Intencionadamente vacío: las pruebas crean sus propios fixtures.
+-- Nunca añadir aquí datos reales ni credenciales.

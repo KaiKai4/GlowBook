@@ -23,6 +23,7 @@ export function EmployeeCreateDialog({
   roles,
 }: EmployeeCreateDialogProps) {
   const [inviteResult, setInviteResult] = useState<CreateEmployeeResult | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const inviteUrl = inviteResult?.inviteToken
     ? (typeof window !== "undefined" ? `${window.location.origin}/join/${inviteResult.inviteToken}` : "")
@@ -40,14 +41,15 @@ export function EmployeeCreateDialog({
       title={inviteResult ? "Colaborador creado" : "Nuevo colaborador"}
       description={inviteResult ? undefined : "Elige las categorías y los servicios que realiza."}
       className="max-w-lg"
+      dismissible={!busy}
     >
       {inviteResult ? (
         <div className="space-y-5">
           <div className="flex flex-col items-center gap-3 pt-2 pb-1 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
-              <CheckCircle className="h-7 w-7 text-emerald-500" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success-subtle">
+              <CheckCircle className="h-7 w-7 text-success" />
             </div>
-            <p className="text-sm text-stone-600">
+            <p className="text-sm text-fg-muted">
               El colaborador fue registrado. Copia el enlace de acceso y envialo por WhatsApp o correo.
             </p>
           </div>
@@ -68,6 +70,7 @@ export function EmployeeCreateDialog({
           roles={roles}
           onCreated={closeDialog}
           onCreatedWithInvite={setInviteResult}
+          onBusyChange={setBusy}
         />
       )}
     </Dialog>

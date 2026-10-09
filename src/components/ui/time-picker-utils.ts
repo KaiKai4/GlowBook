@@ -65,5 +65,6 @@ export function resolvePeriodForRange(
     )
   );
 
-  return validPeriods.length === 1 ? validPeriods[0] : parts.period;
+  const [onlyPeriod] = validPeriods;
+  return validPeriods.length === 1 && onlyPeriod ? onlyPeriod : parts.period;
 }

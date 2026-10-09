@@ -8,32 +8,24 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  CalendarDays,
-} from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import {
   format,
   getMonth,
   getYear,
-  isSameDay,
-  isSameMonth,
-  isToday,
   setMonth,
   setYear,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import {
-  getCalendarDays,
-  getYearBlock,
   parseDateValue,
   shiftCalendarView,
   toDateValue,
   type DatePickerMode,
 } from "./date-picker-utils";
+import { CalendarHeader } from "./date-picker-header";
+import { DaysView, MonthsView, YearsView } from "./date-picker-views";
 
 interface DatePickerProps {
   value?: string;
@@ -54,11 +46,6 @@ interface DatePickerProps {
   granularity?: "day" | "month";
 }
 
-const WEEKDAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
-const MONTHS = Array.from({ length: 12 }, (_, month) =>
-  format(new Date(2026, month, 1), "MMM", { locale: es }).replace(".", "")
-);
-
 function parsePickerValue(
   value: string | undefined,
   granularity: "day" | "month"
@@ -66,7 +53,7 @@ function parsePickerValue(
   if (granularity === "day") return parseDateValue(value);
   if (!value || !/^\d{4}-\d{2}$/.test(value)) return null;
 
-  const [year, month] = value.split("-").map(Number);
+  const [year = NaN, month = NaN] = value.split("-").map(Number);
   const date = new Date(year, month - 1, 1);
   return getYear(date) === year && getMonth(date) === month - 1 ? date : null;
 }
@@ -187,7 +174,7 @@ export function DatePicker({
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       {label && (
-        <label htmlFor={triggerId} className="text-sm font-semibold text-stone-700">
+        <label htmlFor={triggerId} className="text-sm font-semibold text-fg-secondary">
           {label}
           {required && (
             <span className="ml-0.5 text-brand-600" aria-hidden="true">
@@ -210,15 +197,15 @@ export function DatePicker({
         aria-describedby={descriptionId}
         onClick={openCalendar}
         className={cn(
-          "flex w-full items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 text-left text-sm text-stone-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color]",
+          "flex w-full items-center justify-between gap-3 rounded-lg border border-border-input bg-surface px-3 text-left text-sm text-fg shadow-hairline transition-[border-color,box-shadow,background-color]",
           "hover:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent",
-          "disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-400",
+          "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle",
           compact ? "h-9 min-w-36" : "h-11",
-          error && "border-red-400 bg-red-50/30 focus:ring-red-500",
+          error && "border-danger bg-danger-subtle/30 focus:ring-danger",
           triggerClassName
         )}
       >
-        <span className={cn("truncate", !selectedDate && "text-stone-500")}>
+        <span className={cn("truncate", !selectedDate && "text-fg-subtle")}>
           {selectedDate
             ? format(
                 selectedDate,
@@ -236,12 +223,12 @@ export function DatePicker({
         <CalendarDays className="h-4 w-4 shrink-0 text-brand-500" />
       </button>
       {error && (
-        <p id={descriptionId} className="text-xs font-medium text-red-600">
+        <p id={descriptionId} className="text-xs font-medium text-danger">
           {error}
         </p>
       )}
       {hint && !error && (
-        <p id={descriptionId} className="text-xs text-stone-500">
+        <p id={descriptionId} className="text-xs text-fg-subtle">
           {hint}
         </p>
       )}
@@ -253,7 +240,7 @@ export function DatePicker({
             role="dialog"
             aria-label={granularity === "month" ? "Seleccionar mes" : "Seleccionar fecha"}
             style={{ top: position.top, left: position.left }}
-            className="fixed z-[70] w-[304px] rounded-xl border border-brand-100 bg-white p-3 shadow-[0_8px_24px_rgba(28,25,23,0.16)]"
+            className="fixed z-[70] w-[304px] rounded-xl border border-brand-100 bg-surface p-3 shadow-popover"
           >
             <CalendarHeader
               date={focusedDate}
@@ -303,223 +290,6 @@ export function DatePicker({
           </div>,
           document.body
         )}
-    </div>
-  );
-}
-
-function CalendarHeader({
-  date,
-  mode,
-  onModeChange,
-  granularity,
-  onShift,
-}: {
-  date: Date;
-  mode: DatePickerMode;
-  onModeChange: (mode: DatePickerMode) => void;
-  granularity: "day" | "month";
-  onShift: (direction: -1 | 1) => void;
-}) {
-  const years = getYearBlock(getYear(date));
-  const label =
-    mode === "days"
-      ? format(date, "MMMM yyyy", { locale: es })
-      : mode === "months"
-        ? String(getYear(date))
-        : `${years[0]} - ${years.at(-1)}`;
-
-  return (
-    <div className="mb-3 flex items-center justify-between gap-2">
-      <button
-        type="button"
-        onClick={() =>
-          onModeChange(
-            granularity === "month"
-              ? mode === "years"
-                ? "months"
-                : "years"
-              : mode === "days"
-                ? "months"
-                : mode === "months"
-                  ? "years"
-                  : "days"
-          )
-        }
-        className="inline-flex h-9 min-w-0 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold capitalize text-stone-900 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        aria-label="Cambiar vista del calendario"
-      >
-        <span className="truncate">{label}</span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-      </button>
-      <div className="flex items-center gap-1">
-        <CalendarArrow
-          label={mode === "days" ? "Mes anterior" : mode === "months" ? "Año anterior" : "Años anteriores"}
-          onClick={() => onShift(-1)}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </CalendarArrow>
-        <CalendarArrow
-          label={mode === "days" ? "Mes siguiente" : mode === "months" ? "Año siguiente" : "Años siguientes"}
-          onClick={() => onShift(1)}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </CalendarArrow>
-      </div>
-    </div>
-  );
-}
-
-function CalendarArrow({
-  label,
-  onClick,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-    >
-      {children}
-    </button>
-  );
-}
-
-function DaysView({
-  month,
-  selectedDate,
-  isUnavailable,
-  onSelect,
-}: {
-  month: Date;
-  selectedDate: Date | null;
-  isUnavailable: (date: Date) => boolean;
-  onSelect: (date: Date) => void;
-}) {
-  const days = getCalendarDays(month);
-
-  return (
-    <>
-      <div className="grid grid-cols-7 pb-1">
-        {WEEKDAYS.map((weekday, index) => (
-          <span
-            key={weekday}
-            className={cn(
-              "flex h-8 items-center justify-center text-[11px] font-semibold text-stone-500",
-              index > 4 && "text-brand-500"
-            )}
-          >
-            {weekday}
-          </span>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-y-0.5">
-        {days.map((day) => {
-          const selected = selectedDate ? isSameDay(day, selectedDate) : false;
-          const outside = !isSameMonth(day, month);
-          const unavailable = isUnavailable(day);
-
-          return (
-            <button
-              key={toDateValue(day)}
-              type="button"
-              disabled={unavailable}
-              onClick={() => onSelect(day)}
-              className={cn(
-                "relative flex h-9 items-center justify-center rounded-lg text-sm font-medium text-stone-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500",
-                "hover:bg-brand-50 hover:text-brand-700",
-                outside && "text-stone-300",
-                selected && "bg-brand-600 text-white hover:bg-brand-700 hover:text-white",
-                unavailable && "cursor-not-allowed text-stone-200 hover:bg-transparent hover:text-stone-200"
-              )}
-              aria-current={isToday(day) ? "date" : undefined}
-              aria-pressed={selected}
-              aria-label={format(day, "EEEE, d 'de' MMMM 'de' yyyy", {
-                locale: es,
-              })}
-            >
-              {format(day, "d")}
-              {isToday(day) && !selected && (
-                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-brand-600" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
-function MonthsView({
-  date,
-  selectedDate,
-  onSelect,
-}: {
-  date: Date;
-  selectedDate: Date | null;
-  onSelect: (month: number) => void;
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-2 py-2">
-      {MONTHS.map((month, index) => {
-        const selected =
-          selectedDate &&
-          getYear(selectedDate) === getYear(date) &&
-          getMonth(selectedDate) === index;
-
-        return (
-          <button
-            key={month}
-            type="button"
-            onClick={() => onSelect(index)}
-            className={cn(
-              "h-12 rounded-lg text-sm font-semibold capitalize text-stone-700 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500",
-              selected && "bg-brand-600 text-white hover:bg-brand-700 hover:text-white"
-            )}
-          >
-            {month}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function YearsView({
-  date,
-  selectedDate,
-  onSelect,
-}: {
-  date: Date;
-  selectedDate: Date | null;
-  onSelect: (year: number) => void;
-}) {
-  const years = getYearBlock(getYear(date));
-
-  return (
-    <div className="grid grid-cols-3 gap-2 py-2">
-      {years.map((year) => {
-        const selected = selectedDate && getYear(selectedDate) === year;
-
-        return (
-          <button
-            key={year}
-            type="button"
-            onClick={() => onSelect(year)}
-            className={cn(
-              "h-12 rounded-lg text-sm font-semibold text-stone-700 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500",
-              selected && "bg-brand-600 text-white hover:bg-brand-700 hover:text-white"
-            )}
-          >
-            {year}
-          </button>
-        );
-      })}
     </div>
   );
 }

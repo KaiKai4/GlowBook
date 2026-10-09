@@ -1,4 +1,4 @@
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 import type { PlanEnforcementMode, SalonPlanOverride } from "./commercial-plan";
 
 export type CommercialAddonKind = "module" | "limit_boost";
@@ -43,14 +43,6 @@ export function buildSalonExtras(
     const addon = override.addonId ? addonById.get(override.addonId) ?? null : null;
     return { override, addon, monthlyPrice: extraMonthlyPrice(override, addon) };
   });
-}
-
-export function monthlyExtrasTotal(extras: SalonExtra[]): number {
-  return roundMoney(
-    extras
-      .filter((extra) => extra.override.status === "active")
-      .reduce((total, extra) => total + extra.monthlyPrice, 0)
-  );
 }
 
 export function resolveOverrideMax(

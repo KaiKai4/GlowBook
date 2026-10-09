@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { isValidOptionalPhone, phoneValidationMessage } from "@/lib/utils/phone";
+import { z } from "@/infra/validation/zod";
+import { isValidOptionalPhone, phoneValidationMessage } from "@/infra/format/phone";
 
 const OptionalPhoneSchema = z
   .string()
@@ -18,17 +18,17 @@ export const CreateCustomerSchema = z.object({
   is_temporary: z.boolean().optional().default(false),
 });
 
-export const UpdateCustomerSchema = CreateCustomerSchema.partial().extend({
-  is_active: z.boolean().optional(),
-});
-
-export const SearchCustomersSchema = z.object({
-  q: z.string().max(100).optional().default(""),
-  page: z.coerce.number().int().min(1).default(1),
-  per_page: z.coerce.number().int().min(1).max(100).default(20),
+// Sin .default(): un campo ausente no debe pisar notes ni is_temporary guardados.
+export const UpdateCustomerSchema = z.object({
+  first_name: CreateCustomerSchema.shape.first_name.optional(),
+  last_name: CreateCustomerSchema.shape.last_name.optional(),
+  phone: CreateCustomerSchema.shape.phone,
+  email: CreateCustomerSchema.shape.email,
+  birth_date: CreateCustomerSchema.shape.birth_date,
+  notes: z.string().max(2000).optional(),
+  is_temporary: z.boolean().optional(),
   is_active: z.boolean().optional(),
 });
 
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
-export type SearchCustomersInput = z.infer<typeof SearchCustomersSchema>;

@@ -3,7 +3,7 @@ import "server-only";
 import type { InventoryLocation } from "../domain/stock";
 import { findInventoryProducts } from "../data/inventory.repo";
 
-export interface RetailInventoryStockView {
+interface RetailInventoryStockView {
   location: InventoryLocation;
   quantity: number;
 }

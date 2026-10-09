@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada.
+Aceptada, con partes superadas por ADR 0019 (reglas de capas y verificación: ahora por `dependency-cruiser` por patrón, con índices públicos y composition root obligatorios).
 
 ## Contexto
 
@@ -28,7 +28,7 @@ The main source layout is:
 src/app
 src/features/<domain>
 src/components
-src/lib
+src/infra
 src/types
 src/test
 supabase/migrations
@@ -62,13 +62,13 @@ supabase/migrations
 
 `data/` may import Supabase server Adapters and generated database types. It should keep SQL shape knowledge close to persistence.
 
-`use-cases/` may import `domain`, `data`, `schemas`, `@/lib/result` and narrow infrastructure Adapters. Server Actions should call use-cases instead of repositories when there is meaningful business behavior.
+`use-cases/` may import `domain`, `data`, `schemas`, `@/infra/result` and narrow infrastructure Adapters. Server Actions should call use-cases instead of repositories when there is meaningful business behavior.
 
 `src/components/ui` is domain-free UI. It must not import `src/app` or `src/features`.
 
 `src/components/layout` may import shared UI, permission types and layout helpers, but must not import route files from `src/app`.
 
-`src/lib` contains cross-cutting infrastructure:
+`src/infra` contains cross-cutting infrastructure:
 
 - Supabase Adapters
 - auth/session helpers
