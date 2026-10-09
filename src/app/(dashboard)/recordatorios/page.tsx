@@ -1,5 +1,6 @@
 import { getReminderQueue } from "@/features/reminders/use-cases/get-reminder-queue";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { PageHeader } from "@/components/ui/page-header";
 import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { requireProfile } from "@/infra/auth/session";
 import { Bell } from "lucide-react";
@@ -21,15 +22,15 @@ export default async function RecordatoriosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-fg flex items-center gap-2">
-          <Bell className="h-6 w-6 text-brand-500" />
-          Recordatorios
-        </h1>
-        <p className="text-sm text-fg-subtle mt-0.5">
-          Envia recordatorios de citas de los próximos 7 días.
-        </p>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Bell className="h-6 w-6 text-brand-500" aria-hidden="true" />
+            Recordatorios
+          </span>
+        }
+        description="Envia recordatorios de citas de los próximos 7 días."
+      />
 
       <RemindersView
         appointments={reminderQueue.appointments}
