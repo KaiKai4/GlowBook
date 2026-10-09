@@ -2,6 +2,7 @@ import { getInventoryPage } from "@/features/inventory/use-cases/inventory-produ
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
+import { PageHeader } from "@/components/ui/page-header";
 import { Package } from "lucide-react";
 import { InventoryManager } from "./inventory-manager";
 
@@ -21,15 +22,15 @@ export default async function InventoryPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
-          <Package className="h-6 w-6 text-brand-500" />
-          Inventario
-        </h1>
-        <p className="mt-0.5 text-sm text-fg-subtle">
-          Controla vitrina, uso interno y bodega por producto.
-        </p>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Package className="h-6 w-6 text-brand-500" />
+            Inventario
+          </span>
+        }
+        description="Controla vitrina, uso interno y bodega por producto."
+      />
       <InventoryManager inventory={inventory} />
     </div>
   );
