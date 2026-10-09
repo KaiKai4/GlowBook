@@ -5,6 +5,7 @@ import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appo
 import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
+import { PageHeader } from "@/components/ui/page-header";
 import { parseUuid } from "@/lib/validation/route-id";
 import { AppointmentEditForm } from "./appointment-edit-form";
 
@@ -45,8 +46,7 @@ export default async function EditAppointmentPage({
           Volver a Agenda
         </Link>
         <div className="mt-2">
-          <h1 className="text-2xl font-semibold text-fg">Editar cita</h1>
-          <p className="text-sm text-fg-subtle">{appointment.customerName}</p>
+          <PageHeader title="Editar cita" description={appointment.customerName} />
         </div>
       </div>
 
