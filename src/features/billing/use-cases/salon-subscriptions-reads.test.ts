@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  type AssignmentRow,
-  type PlanAlert,
   findEffectivePlanRows,
   findOpenSalonAlerts,
   findSalonPayments,
   findSubscriptionRows,
 } from "../data/salon-subscriptions.repo";
+import type { AssignmentRow, PlanAlert } from "../data/salon-subscriptions.rows";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
 import { findPlanCatalog } from "../data/commercial-plans.repo";
 import type { CommercialAddon } from "../domain/salon-extras";

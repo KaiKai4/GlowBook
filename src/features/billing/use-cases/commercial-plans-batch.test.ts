@@ -5,7 +5,8 @@ import {
   savePlanLimit,
   savePlanModule,
 } from "../data/commercial-plans.repo";
-import { findSubscriptionRows, type AssignmentRow } from "../data/salon-subscriptions.repo";
+import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
+import type { AssignmentRow } from "../data/salon-subscriptions.rows";
 import { publishAuditEvent } from "@/features/audit";
 import type { CommercialPlan } from "../domain/commercial-plan";
 import { err, ok } from "@/lib/result";
