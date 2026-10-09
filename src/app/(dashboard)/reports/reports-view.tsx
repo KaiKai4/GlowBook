@@ -45,9 +45,7 @@ function selectedMonth(from: string): string {
 }
 
 function monthRange(month: string) {
-  const [yearText, monthText] = month.split("-");
-  const year = Number(yearText);
-  const monthNumber = Number(monthText);
+  const [year = NaN, monthNumber = NaN] = month.split("-").map(Number);
   const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
   return {
     from: `${month}-01`,
@@ -56,9 +54,7 @@ function monthRange(month: string) {
 }
 
 function monthLabel(month: string): string {
-  const [yearText, monthText] = month.split("-");
-  const year = Number(yearText);
-  const monthNumber = Number(monthText);
+  const [year = NaN, monthNumber = NaN] = month.split("-").map(Number);
   return new Intl.DateTimeFormat("es-PA", { month: "long", year: "numeric" }).format(
     new Date(Date.UTC(year, monthNumber - 1, 15))
   );
