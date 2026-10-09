@@ -103,7 +103,7 @@
     {
       "id": "features/notifications",
       "kind": "internal",
-      "files": 7
+      "files": 8
     },
     {
       "id": "features/payments",
@@ -118,7 +118,7 @@
     {
       "id": "features/reminders",
       "kind": "internal",
-      "files": 4
+      "files": 5
     },
     {
       "id": "features/reports",
@@ -133,7 +133,7 @@
     {
       "id": "features/salon",
       "kind": "internal",
-      "files": 17
+      "files": 18
     },
     {
       "id": "features/salon-features",
@@ -143,7 +143,7 @@
     {
       "id": "features/services",
       "kind": "internal",
-      "files": 13
+      "files": 15
     },
     {
       "id": "infra",
@@ -305,7 +305,7 @@
     {
       "from": "app/(dashboard)",
       "to": "app/_composition",
-      "count": 30
+      "count": 31
     },
     {
       "from": "app/(dashboard)",
@@ -385,7 +385,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/reminders",
-      "count": 11
+      "count": 12
     },
     {
       "from": "app/(dashboard)",
@@ -400,7 +400,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/salon",
-      "count": 16
+      "count": 17
     },
     {
       "from": "app/(dashboard)",
@@ -410,7 +410,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/services",
-      "count": 9
+      "count": 10
     },
     {
       "from": "app/(dashboard)",
@@ -425,17 +425,17 @@
     {
       "from": "app/(dashboard)",
       "to": "infra/security",
-      "count": 11
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
       "to": "infra/validation",
-      "count": 21
+      "count": 16
     },
     {
       "from": "app/(dashboard)",
       "to": "npm/next",
-      "count": 44
+      "count": 43
     },
     {
       "from": "app/(dashboard)",
@@ -1025,7 +1025,7 @@
     {
       "from": "features/notifications",
       "to": "infra",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/notifications",
@@ -1035,7 +1035,7 @@
     {
       "from": "features/notifications",
       "to": "infra/validation",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/notifications",
@@ -1130,7 +1130,7 @@
     {
       "from": "features/reminders",
       "to": "infra",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/reminders",
@@ -1145,6 +1145,11 @@
     {
       "from": "features/reminders",
       "to": "infra/supabase",
+      "count": 1
+    },
+    {
+      "from": "features/reminders",
+      "to": "infra/validation",
       "count": 1
     },
     {
@@ -1235,7 +1240,7 @@
     {
       "from": "features/salon",
       "to": "infra",
-      "count": 5
+      "count": 6
     },
     {
       "from": "features/salon",
@@ -1250,7 +1255,7 @@
     {
       "from": "features/salon",
       "to": "infra/validation",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/salon",
@@ -1265,7 +1270,7 @@
     {
       "from": "features/services",
       "to": "infra",
-      "count": 5
+      "count": 7
     },
     {
       "from": "features/services",
@@ -1275,12 +1280,12 @@
     {
       "from": "features/services",
       "to": "infra/validation",
-      "count": 1
+      "count": 4
     },
     {
       "from": "features/services",
       "to": "npm/server-only",
-      "count": 10
+      "count": 11
     },
     {
       "from": "features/services",

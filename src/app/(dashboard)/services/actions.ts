@@ -1,133 +1,145 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { defineAction } from "@/app/_composition/define-action";
+import { PERMISSIONS } from "@/features/access";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import { archiveServiceCategory } from "@/features/services/use-cases/archive-category";
 import { createServiceCategory } from "@/features/services/use-cases/create-category";
-import { createCatalogService } from "@/features/services/use-cases/create-service";
+import {
+  createServiceWithPlan,
+  type ServicePlanGate,
+} from "@/features/services/use-cases/create-service-with-plan";
 import { updateServiceCategory } from "@/features/services/use-cases/update-category";
 import { updateCatalogService } from "@/features/services/use-cases/update-service";
 import {
-  combineServiceDuration,
-  isValidServiceDurationParts,
-  type ServiceDurationParts,
-} from "@/features/services/domain/duration";
-import {
-  CreateCategorySchema,
-  CreateServiceSchema,
-  UpdateCategorySchema,
-  UpdateServiceSchema,
-} from "@/features/services/schemas";
-import { hasPermission, PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import type { Result } from "@/infra/result";
-import { firstIssueMessage } from "@/infra/validation/first-issue";
-import { parseUuid } from "@/infra/validation/route-id";
+  parseCategoryPricingInput,
+  parseCreateCategoryInput,
+  parseIdentifier,
+  parseUpdateServiceInput,
+  type CreateCategoryFields,
+  type CreateCategoryRaw,
+  type CreateServiceRaw,
+  type PricingMode,
+  type UpdateServiceRaw,
+} from "@/features/services/use-cases/service-input";
+import type { ServiceDurationParts } from "@/features/services/domain/duration";
+import type { UpdateCategoryInput, UpdateServiceInput } from "@/features/services/schemas";
+import { ok, type Result } from "@/infra/result";
 
-async function guard(): Promise<Result<{ salonId: string }>> {
-  const profile = await requireActiveProfile();
-  if (!hasPermission(profile, PERMISSIONS.SERVICES_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para gestionar servicios." };
-  }
+// Las acciones solo adaptan el formulario y pasan por el pipeline de defineAction.
+// La validacion y las reglas viven en src/features/services/use-cases.
 
-  const limited = await assertActionRateLimit(profile.id, "services", { max: 60, windowMs: 60_000 });
-  if (!limited.ok) return limited;
+const PERMISSION = {
+  key: PERMISSIONS.SERVICES_MANAGE,
+  deniedMessage: "No tienes permiso para gestionar servicios.",
+};
+const RATE_LIMIT = { scope: "services", options: { max: 60, windowMs: 60_000 } };
+const revalidateServices = (): readonly string[] => ["/services"];
 
-  return { ok: true, value: { salonId: profile.salon_id } };
-}
+const servicePlanGate: ServicePlanGate = {
+  checkModuleAccess: (salonId) => checkPlanModuleAccess({ salonId, moduleKey: "services" }),
+  checkServiceLimit: (salonId) => checkPlanLimit({ salonId, metricKey: "services.active" }),
+};
+
+const createCategoryFlow = defineAction<CreateCategoryRaw, CreateCategoryFields, string>({
+  permission: PERMISSION,
+  rateLimit: RATE_LIMIT,
+  parse: parseCreateCategoryInput,
+  run: (input, session) => createServiceCategory(session.salonId, input),
+  revalidate: revalidateServices,
+});
+
+const updateCategoryPricingFlow = defineAction<
+  { categoryId: string; pricingMode: PricingMode },
+  { categoryId: string; data: UpdateCategoryInput },
+  void
+>({
+  permission: PERMISSION,
+  rateLimit: RATE_LIMIT,
+  parse: ({ categoryId, pricingMode }) => parseCategoryPricingInput(categoryId, pricingMode),
+  run: ({ categoryId, data }, session) => updateServiceCategory(categoryId, session.salonId, data),
+  revalidate: revalidateServices,
+});
+
+const archiveCategoryFlow = defineAction<string, string, void>({
+  permission: PERMISSION,
+  rateLimit: RATE_LIMIT,
+  parse: parseIdentifier,
+  run: (categoryId, session) => archiveServiceCategory(categoryId, session.salonId),
+  revalidate: revalidateServices,
+});
+
+const createServiceFlow = defineAction<CreateServiceRaw, CreateServiceRaw, string>({
+  permission: PERMISSION,
+  rateLimit: RATE_LIMIT,
+  parse: (raw) => ok(raw),
+  run: (raw, session) => createServiceWithPlan(session.salonId, raw, servicePlanGate),
+  revalidate: revalidateServices,
+});
+
+const updateServiceFlow = defineAction<
+  { serviceId: string; fields: UpdateServiceRaw },
+  { serviceId: string; data: UpdateServiceInput },
+  void
+>({
+  permission: PERMISSION,
+  rateLimit: RATE_LIMIT,
+  parse: ({ serviceId, fields }) => parseUpdateServiceInput(serviceId, fields),
+  run: ({ serviceId, data }, session) => updateCatalogService(serviceId, session.salonId, data),
+  revalidate: revalidateServices,
+});
 
 function readNumber(value: FormDataEntryValue | null): number {
   return typeof value === "string" && value.trim() !== "" ? Number(value) : 0;
 }
 
-function readServiceDuration(formData: FormData): Result<number> {
-  const parts: ServiceDurationParts = {
+function readDurationParts(formData: FormData): ServiceDurationParts {
+  return {
     hours: readNumber(formData.get("duration_hours")),
     minutes: readNumber(formData.get("duration_minutes_part")),
   };
+}
 
-  if (!isValidServiceDurationParts(parts)) {
-    return {
-      ok: false,
-      error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
-    };
-  }
-
-  return { ok: true, value: combineServiceDuration(parts) };
+function readActiveFlag(formData: FormData): boolean | undefined {
+  if (formData.get("is_active") === "true") return true;
+  if (formData.get("is_active") === "false") return false;
+  return undefined;
 }
 
 export async function createCategoryAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-
-  const parsed = CreateCategorySchema.safeParse({
+  return createCategoryFlow({
     name: formData.get("name"),
     description: formData.get("description") ?? "",
     ordering: Number(formData.get("ordering") ?? 0),
     pricing_mode: formData.get("pricing_mode") === "variable" ? "variable" : "fixed",
   });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
-
-  const result = await createServiceCategory(guarded.value.salonId, parsed.data);
-  if (result.ok) revalidatePath("/services");
-  return result;
 }
 
 export async function updateCategoryPricingModeAction(
   categoryId: string,
   pricingMode: "fixed" | "variable"
 ): Promise<Result<void>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  if (!parseUuid(categoryId)) return { ok: false, error: "Identificador inválido." };
-
-  const parsed = UpdateCategorySchema.safeParse({ pricing_mode: pricingMode });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
-
-  const result = await updateServiceCategory(categoryId, guarded.value.salonId, parsed.data);
-  if (result.ok) revalidatePath("/services");
-  return result;
+  return updateCategoryPricingFlow({ categoryId, pricingMode });
 }
 
 export async function archiveCategoryAction(categoryId: string): Promise<Result<void>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  if (!parseUuid(categoryId)) return { ok: false, error: "Identificador inválido." };
-
-  const result = await archiveServiceCategory(categoryId, guarded.value.salonId);
-  if (result.ok) revalidatePath("/services");
-  return result;
+  return archiveCategoryFlow(categoryId);
 }
 
 export async function createServiceAction(
   _prev: Result<string> | null,
   formData: FormData
 ): Promise<Result<string>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  const moduleAccess = await checkPlanModuleAccess({ salonId: guarded.value.salonId, moduleKey: "services" });
-  if (!moduleAccess.ok) return { ok: false, error: moduleAccess.error };
-  const limit = await checkPlanLimit({ salonId: guarded.value.salonId, metricKey: "services.active" });
-  if (!limit.ok) return { ok: false, error: limit.error };
-  const duration = readServiceDuration(formData);
-  if (!duration.ok) return duration;
-
-  const parsed = CreateServiceSchema.safeParse({
+  return createServiceFlow({
     category_id: formData.get("category_id"),
     name: formData.get("name"),
     description: formData.get("description") ?? "",
-    duration_minutes: duration.value,
+    duration: readDurationParts(formData),
     price: Number(formData.get("price")),
   });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
-
-  const result = await createCatalogService(guarded.value.salonId, parsed.data);
-  if (result.ok) revalidatePath("/services");
-  return result;
 }
 
 export async function updateServiceAction(
@@ -135,27 +147,14 @@ export async function updateServiceAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const guarded = await guard();
-  if (!guarded.ok) return guarded;
-  if (!parseUuid(serviceId)) return { ok: false, error: "Identificador inválido." };
-  const duration = readServiceDuration(formData);
-  if (!duration.ok) return duration;
-
-  const parsed = UpdateServiceSchema.safeParse({
-    name: formData.get("name") ?? undefined,
-    description: formData.get("description") ?? undefined,
-    duration_minutes: duration.value,
-    price: formData.get("price") ? Number(formData.get("price")) : undefined,
-    is_active:
-      formData.get("is_active") === "true"
-        ? true
-        : formData.get("is_active") === "false"
-          ? false
-          : undefined,
+  return updateServiceFlow({
+    serviceId,
+    fields: {
+      name: formData.get("name") ?? undefined,
+      description: formData.get("description") ?? undefined,
+      duration: readDurationParts(formData),
+      price: formData.get("price") ? Number(formData.get("price")) : undefined,
+      is_active: readActiveFlag(formData),
+    },
   });
-  if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
-
-  const result = await updateCatalogService(serviceId, guarded.value.salonId, parsed.data);
-  if (result.ok) revalidatePath("/services");
-  return result;
 }

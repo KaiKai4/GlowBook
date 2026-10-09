@@ -25,15 +25,15 @@ flowchart LR
     features_expenses["features/expenses (7)"]
     features_feedback["features/feedback (4)"]
     features_inventory["features/inventory (11)"]
-    features_notifications["features/notifications (7)"]
+    features_notifications["features/notifications (8)"]
     features_payments["features/payments (2)"]
     features_platform["features/platform (19)"]
-    features_reminders["features/reminders (4)"]
+    features_reminders["features/reminders (5)"]
     features_reports["features/reports (9)"]
     features_retail["features/retail (4)"]
-    features_salon["features/salon (17)"]
+    features_salon["features/salon (18)"]
     features_salon_features["features/salon-features (2)"]
-    features_services["features/services (13)"]
+    features_services["features/services (15)"]
   end
   subgraph g_infra["infra"]
     infra["infra (3)"]
@@ -243,6 +243,7 @@ flowchart LR
   features_reminders --> infra_format
   features_reminders --> infra_observability
   features_reminders --> infra_supabase
+  features_reminders --> infra_validation
   features_reminders --> npm_server_only
   features_reminders --> types
   features_reports --> infra_supabase
