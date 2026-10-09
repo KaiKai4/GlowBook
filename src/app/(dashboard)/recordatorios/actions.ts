@@ -2,16 +2,34 @@
 
 import { revalidatePath } from "next/cache";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { defineAction } from "@/app/_composition/define-action";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { parseUuid } from "@/infra/validation/route-id";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
+import {
+  parseConfirmReminderInput,
+  parseManualReminderInput,
+  type ConfirmReminderFields,
+  type ManualReminderFields,
+} from "@/features/reminders/use-cases/reminder-input";
 import type { Result } from "@/infra/result";
 
-const INVALID_ID = "Identificador inválido.";
-const INVALID_KEY = "Solicitud inválida. Recarga la página e inténtalo de nuevo.";
+// markReminderSentAction conserva su guard a mano: el modulo de recordatorios del
+// plan se comprueba antes del limite de peticiones, y defineAction solo sabe de
+// permisos por clave. La validacion y el caso de uso viven en features/reminders.
+
+const CONFIRM_FLOW = defineAction<ConfirmReminderFields, ConfirmReminderFields, void>({
+  permission: {
+    key: PERMISSIONS.APPOINTMENTS_MANAGE,
+    deniedMessage: "No tienes permiso para confirmar citas.",
+  },
+  rateLimit: { scope: "recordatorios-confirmar", options: { max: 60, windowMs: 60_000 } },
+  parse: parseConfirmReminderInput,
+  run: (input, session) => confirmAppointment(input.appointmentId, session.salonId, input.idempotencyKey),
+  revalidate: () => ["/recordatorios", "/appointments"],
+});
 
 // FormData: appointment_id, template_id (opcional) e idempotency_key (uuid).
 export async function markReminderSentAction(formData: FormData): Promise<Result<string>> {
@@ -25,20 +43,13 @@ export async function markReminderSentAction(formData: FormData): Promise<Result
   const limited = await assertActionRateLimit(profile.id, "recordatorios-envio", { max: 60, windowMs: 60_000 });
   if (!limited.ok) return limited;
 
-  const appointmentId = readField(formData, "appointment_id");
-  const templateId = readField(formData, "template_id") || undefined;
-  const idempotencyKey = readField(formData, "idempotency_key");
-
-  if (!parseUuid(appointmentId)) return { ok: false, error: INVALID_ID };
-  if (templateId !== undefined && !parseUuid(templateId)) return { ok: false, error: INVALID_ID };
-  if (!parseUuid(idempotencyKey)) return { ok: false, error: INVALID_KEY };
+  const input = parseManualReminderInput(readManualReminderFields(formData));
+  if (!input.ok) return input;
 
   const result = await recordManualReminder({
     salonId: profile.salon_id,
-    appointmentId,
-    templateId,
     userId: profile.id,
-    idempotencyKey,
+    ...input.value,
   });
 
   if (result.ok) revalidatePath("/recordatorios");
@@ -47,29 +58,18 @@ export async function markReminderSentAction(formData: FormData): Promise<Result
 
 // FormData: appointment_id e idempotency_key (uuid).
 export async function confirmReminderAppointmentAction(formData: FormData): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
+  return CONFIRM_FLOW({
+    appointmentId: readField(formData, "appointment_id"),
+    idempotencyKey: readField(formData, "idempotency_key"),
+  });
+}
 
-  if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
-    return { ok: false, error: "No tienes permiso para confirmar citas." };
-  }
-
-  const limited = await assertActionRateLimit(profile.id, "recordatorios-confirmar", { max: 60, windowMs: 60_000 });
-  if (!limited.ok) return limited;
-
-  const appointmentId = readField(formData, "appointment_id");
-  const idempotencyKey = readField(formData, "idempotency_key");
-
-  if (!parseUuid(appointmentId)) return { ok: false, error: INVALID_ID };
-  if (!parseUuid(idempotencyKey)) return { ok: false, error: INVALID_KEY };
-
-  const result = await confirmAppointment(appointmentId, profile.salon_id, idempotencyKey);
-
-  if (result.ok) {
-    revalidatePath("/recordatorios");
-    revalidatePath("/appointments");
-  }
-
-  return result;
+function readManualReminderFields(formData: FormData): ManualReminderFields {
+  return {
+    appointmentId: readField(formData, "appointment_id"),
+    templateId: readField(formData, "template_id"),
+    idempotencyKey: readField(formData, "idempotency_key"),
+  };
 }
 
 function readField(formData: FormData, name: string): string {
