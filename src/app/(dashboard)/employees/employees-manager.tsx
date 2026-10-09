@@ -48,7 +48,7 @@ export function EmployeesManager({
         <div>
           <h1 className="text-2xl font-semibold text-fg">Colaboradores</h1>
           <p className="mt-0.5 text-sm text-fg-subtle">
-            {filteredEmployees.length} de {employees.length} colaboradores activos
+            {filteredEmployees.length} de {employees.length} colaboradores {isArchived ? "archivados" : "activos"}
           </p>
         </div>
         <Button variant="primary" onClick={() => setCreateOpen(true)}>

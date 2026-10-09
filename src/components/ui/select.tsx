@@ -67,10 +67,8 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
     const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
     const selectedValue = controlled ? String(value) : internalValue;
     const selectedOption = options.find((option) => option.value === selectedValue);
-    const selectableOptions = useMemo(
-      () => options.filter((option) => !option.hidden && option.value !== selectedValue),
-      [options, selectedValue]
-    );
+    // La opción seleccionada se lista marcada (aria-selected): no se excluye.
+    const selectableOptions = useMemo(() => options.filter((option) => !option.hidden), [options]);
     const descriptionId = error ? `${selectId}-error` : undefined;
 
     const updatePosition = useCallback(() => {
@@ -263,7 +261,7 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
                     key={`${option.value}-${index}`}
                     type="button"
                     role="option"
-                    aria-selected={false}
+                    aria-selected={option.value === selectedValue}
                     disabled={option.disabled}
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => selectOption(option)}

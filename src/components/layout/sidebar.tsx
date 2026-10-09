@@ -60,6 +60,10 @@ export function Sidebar({
     isOwner,
     disabledFeatures,
   );
+  // "Inicio" no exige permisos: el aviso se basa en los módulos reales, no en los grupos.
+  const hasModules = groups.some((group) =>
+    group.items.some((item) => item.href !== "/"),
+  );
 
   function toggleSidebar() {
     const next = !isCollapsed;
@@ -152,7 +156,7 @@ export function Sidebar({
           isCollapsed ? "px-2" : "px-3",
         )}
       >
-        {groups.length === 0 ? (
+        {!hasModules ? (
           <p
             className={cn(
               "px-3 py-4 text-xs leading-relaxed text-fg-subtle",
@@ -162,13 +166,13 @@ export function Sidebar({
             No tienes módulos asignados. Pide al administrador que configure tu
             rol.
           </p>
-        ) : (
-          <div
-            className={cn(
-              isCollapsed ? "space-y-3" : "space-y-5",
-            )}
-          >
-            {groups.map((group, groupIndex) => (
+        ) : null}
+        <div
+          className={cn(
+            isCollapsed ? "space-y-3" : "space-y-5",
+          )}
+        >
+          {groups.map((group, groupIndex) => (
               <div
                 key={group.label ?? `group-${groupIndex}`}
                 className={cn(
@@ -228,9 +232,8 @@ export function Sidebar({
                   })}
                 </ul>
               </div>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </nav>
 
       <div className="border-t border-brand-50 p-3">

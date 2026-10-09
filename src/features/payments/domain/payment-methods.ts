@@ -42,8 +42,10 @@ export function paymentMethodsOrDefaults(values: readonly string[] | null | unde
   return normalized.length > 0 ? normalized : DEFAULT_PAYMENT_METHODS;
 }
 
+// Misma comparación sin distinguir mayúsculas que isPaymentMethodEnabled y la
+// deduplicación: "Cash" se traduce como "cash".
 export function paymentMethodLabel(value: string): string {
-  return DEFAULT_PAYMENT_METHOD_LABELS.get(value) ?? value;
+  return DEFAULT_PAYMENT_METHOD_LABELS.get(normalizePaymentMethod(value).toLocaleLowerCase()) ?? value;
 }
 
 export function paymentMethodOptionsFor(values: readonly string[] | null | undefined): PaymentMethodOption[] {

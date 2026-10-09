@@ -53,8 +53,8 @@ describe("assertAnonymousRateLimit", () => {
     });
   });
 
-  it("falls back to the first forwarded IP, trimmed", async () => {
-    headersMock.mockResolvedValue(requestHeaders({ "x-forwarded-for": "  10.0.0.1 , 10.0.0.2" }));
+  it("falls back to the last forwarded IP (the one the nearest proxy appends), trimmed", async () => {
+    headersMock.mockResolvedValue(requestHeaders({ "x-forwarded-for": "203.0.113.9, 10.0.0.1 , 10.0.0.2 " }));
     fakeStore(2);
     const options = { max: 2, windowMs: 60_000 };
 
@@ -65,7 +65,7 @@ describe("assertAnonymousRateLimit", () => {
       error: RATE_LIMIT_MESSAGE,
     });
     expect(rpcMock).toHaveBeenCalledWith("consume_rate_limit", expect.objectContaining({
-      p_key: "ip:10.0.0.1:invite",
+      p_key: "ip:10.0.0.2:invite",
     }));
   });
 

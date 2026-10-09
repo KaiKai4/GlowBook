@@ -46,6 +46,14 @@ export function WorkScheduleEditor({
     });
   }
 
+  function handleDelete(scheduleId: string) {
+    setError(null);
+    startDelete(async () => {
+      const res = await deleteWorkScheduleAction(scheduleId, employeeId);
+      if (!res.ok) setError(res.error);
+    });
+  }
+
   const sorted = [...schedules].sort((a, b) =>
     a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time)
   );
@@ -113,7 +121,7 @@ export function WorkScheduleEditor({
                 {s.start_time.slice(0, 5)} – {s.end_time.slice(0, 5)}
               </span>
               <button
-                onClick={() => startDelete(() => { void deleteWorkScheduleAction(s.id, employeeId); })}
+                onClick={() => handleDelete(s.id)}
                 disabled={isDeleting}
                 className="text-fg-subtle hover:text-danger disabled:opacity-50"
                 aria-label="Eliminar"

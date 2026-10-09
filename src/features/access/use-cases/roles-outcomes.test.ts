@@ -113,8 +113,7 @@ describe("deleteSalonRole outcomes", () => {
     vi.resetAllMocks();
   });
 
-  // CONDUCTA ACTUAL (posible bug): delete-role.ts:14 devuelve error.message crudo
-  // al cliente; si el fallo viene de la BD, ese texto llega a la UI sin filtrar.
+  // delete-role.ts usa toPublicErrorMessage: solo PublicError llega a la UI.
   it("devuelve error con el mensaje del fallo del adaptador", async () => {
     mockedDeleteRole.mockRejectedValue(new PublicError("Los roles de sistema no se pueden eliminar."));
 

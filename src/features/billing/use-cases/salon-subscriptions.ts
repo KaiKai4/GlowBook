@@ -70,9 +70,10 @@ const AddonExtraSchema = z.object({
   addonId: z.string().uuid("Selecciona un extra del catalogo."),
   quantity: z.coerce.number().int().min(1, "La cantidad minima es 1.").max(999).default(1),
   isGift: z.boolean().default(false),
+  // "" se evalúa antes que coerce: un campo vacío es "sin precio especial"
+  // (null => precio de catálogo), nunca 0 (extra gratis).
   priceOverride: z
-    .union([z.coerce.number().min(0), z.literal("")])
-    .transform((value) => (value === "" ? null : value))
+    .union([z.literal("").transform(() => null), z.coerce.number().min(0)])
     .nullable()
     .default(null),
   reason: z.string().trim().max(400).default(""),
@@ -85,14 +86,13 @@ const ManualExtraSchema = z.object({
   moduleKey: z.string().trim().optional(),
   metricKey: z.string().trim().optional(),
   moduleEnabled: z.boolean().nullable().default(null),
+  // "" evaluado antes que coerce: vacío = sin tope (null), nunca 0.
   maxDelta: z
-    .union([z.coerce.number().int().min(0), z.literal("")])
-    .transform((value) => (value === "" ? null : value))
+    .union([z.literal("").transform(() => null), z.coerce.number().int().min(0)])
     .nullable()
     .default(null),
   maxOverride: z
-    .union([z.coerce.number().int().min(0), z.literal("")])
-    .transform((value) => (value === "" ? null : value))
+    .union([z.literal("").transform(() => null), z.coerce.number().int().min(0)])
     .nullable()
     .default(null),
   isGift: z.boolean().default(true),
@@ -103,13 +103,14 @@ const ManualExtraSchema = z.object({
 
 // cache(): el plan efectivo se consulta desde el perfil, el shell y las
 // paginas dentro del mismo request; una sola lectura alimenta a todos.
+/** Estados en los que el plan de la asignación está vigente (se factura y da módulos). */
+function isPlanAssignmentActive(status: SalonPlanAssignmentStatus | null | undefined): boolean {
+  return status === "trialing" || status === "active" || status === "past_due";
+}
+
 export const getEffectiveSalonPlan = cache(async (salonId: string): Promise<EffectiveSalonPlan> => {
   const rows = await findEffectivePlanRows(salonId);
-  const activeAssignment =
-    rows.assignment?.status === "trialing" ||
-    rows.assignment?.status === "active" ||
-    rows.assignment?.status === "past_due";
-  const plan = activeAssignment ? rows.plan : null;
+  const plan = isPlanAssignmentActive(rows.assignment?.status) ? rows.plan : null;
   const enabled = resolveEnabledModules(plan, rows.overrides);
 
   const disabledModules = SALON_FEATURES
@@ -595,7 +596,9 @@ export async function getSalonSubscriptionDetail(salonId: string): Promise<Salon
     findOpenSalonAlerts(salonId),
   ]);
 
-  const enabled = resolveEnabledModules(rows.plan, rows.overrides);
+  // Mismo criterio que getEffectiveSalonPlan: un plan pausado/cancelado no da módulos ni límites.
+  const plan = isPlanAssignmentActive(rows.assignment?.status) ? rows.plan : null;
+  const enabled = resolveEnabledModules(plan, rows.overrides);
   const extras = buildSalonExtras(rows.overrides, addons);
   const moduleByKey = new Map(modules.map((module) => [module.key, module.name]));
   const metricByKey = new Map(rows.metrics.map((metric) => [metric.key, metric]));
@@ -611,11 +614,7 @@ export async function getSalonSubscriptionDetail(salonId: string): Promise<Salon
     reason: override.reason,
   }));
 
-  const billable =
-    rows.assignment?.status === "active" ||
-    rows.assignment?.status === "trialing" ||
-    rows.assignment?.status === "past_due";
-  const planPrice = billable && rows.plan ? rows.plan.monthlyPrice : 0;
+  const planPrice = plan ? plan.monthlyPrice : 0;
   const extrasPrice = round2(extrasViews.reduce((total, extra) => total + extra.monthlyPrice, 0));
 
   return {
@@ -632,9 +631,9 @@ export async function getSalonSubscriptionDetail(salonId: string): Promise<Salon
           notes: rows.assignment.notes,
         }
       : null,
-    plan: rows.plan,
+    plan,
     enabledModules: Array.from(enabled),
-    limits: buildEffectiveLimits(rows.plan, rows.metrics, rows.overrides, rows.usage, enabled),
+    limits: buildEffectiveLimits(plan, rows.metrics, rows.overrides, rows.usage, enabled),
     extras: extrasViews,
     payments: payments.map((payment) => ({
       id: payment.id,

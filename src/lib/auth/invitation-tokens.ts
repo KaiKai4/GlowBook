@@ -10,6 +10,8 @@ export interface InvitationToken {
 }
 
 export function hashInvitationToken(token: string): string {
+  // Un token vacio no es un token: nunca debe convertirse en un hash buscable.
+  if (token.length === 0) throw new Error("El token de invitación no puede estar vacío.");
   return createHash("sha256").update(token).digest("hex");
 }
 

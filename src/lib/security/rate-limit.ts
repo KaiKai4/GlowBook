@@ -81,16 +81,17 @@ export function assertActionRateLimit(
 }
 
 /**
- * IP del cliente. En Vercel la plataforma reescribe x-forwarded-for, por eso se
- * prefiere x-real-ip y, despues, el primer valor de x-forwarded-for. Sin IP, la
- * clave es el bucket compartido "ip:unknown".
+ * IP del cliente. En Vercel la plataforma fija x-real-ip, por eso se prefiere.
+ * Como respaldo se usa el ÚLTIMO valor de x-forwarded-for: es el que añade el
+ * proxy más cercano; el primero lo escribe el cliente y es falseable fuera de
+ * Vercel. Sin IP, la clave es el bucket compartido "ip:unknown".
  */
 async function clientIp(): Promise<string> {
   const headerList = await headers();
   const realIp = headerList.get("x-real-ip")?.trim();
   if (realIp) return realIp;
 
-  const forwardedFor = headerList.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const forwardedFor = headerList.get("x-forwarded-for")?.split(",").at(-1)?.trim();
   return forwardedFor || "unknown";
 }
 

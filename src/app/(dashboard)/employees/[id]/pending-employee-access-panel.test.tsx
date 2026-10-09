@@ -132,7 +132,7 @@ describe("PendingEmployeeAccessPanel", () => {
     expect(generateEmployeeInviteAction).toHaveBeenCalledWith("emp-2", "role-recepcion");
   });
 
-  it("CONDUCTA ACTUAL (posible bug): una invitación sin rol previo se regenera con el primer rol del salón", async () => {
+  it("una invitación sin rol previo se regenera sin rol, no con el primer rol del salón", async () => {
     vi.mocked(generateEmployeeInviteAction).mockResolvedValue({
       ok: true,
       value: { token: "tok-3", expiresAt: "2026-10-23T12:00:00.000Z" },
@@ -144,8 +144,7 @@ describe("PendingEmployeeAccessPanel", () => {
     click(buttonWithText(mounted.container, "Regenerar enlace"));
     await flushAsync();
 
-    // Expresión en pending-employee-access-panel.tsx: `initialInvitation?.roleId ?? roles[0]?.id ?? ""`.
-    expect(generateEmployeeInviteAction).toHaveBeenCalledWith("emp-2", "role-estilista");
+    expect(generateEmployeeInviteAction).toHaveBeenCalledWith("emp-2", null);
   });
 
   it("sin email registrado no permite generar el enlace y avisa al usuario", () => {

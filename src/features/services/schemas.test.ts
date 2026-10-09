@@ -46,15 +46,9 @@ describe("services schemas", () => {
       expect(UpdateCategorySchema.safeParse({ is_active: true }).success).toBe(true);
     });
 
-    // CONDUCTA ACTUAL (posible bug): la version parcial conserva los defaults de
-    // CreateCategorySchema (services/schemas.ts:7-9). Cambiar solo el modo de
-    // precio (services/actions.ts:86) reescribe description = "" y ordering = 0.
-    it("CONDUCTA ACTUAL (posible bug): una actualizacion parcial rellena description, ordering y pricing_mode", () => {
-      expect(UpdateCategorySchema.parse({ pricing_mode: "variable" })).toEqual({
-        description: "",
-        ordering: 0,
-        pricing_mode: "variable",
-      });
+    // Regresión: cambiar solo el modo de precio no debe reescribir description ni ordering.
+    it("una actualizacion parcial solo contiene los campos enviados", () => {
+      expect(UpdateCategorySchema.parse({ pricing_mode: "variable" })).toEqual({ pricing_mode: "variable" });
     });
   });
 
@@ -96,11 +90,9 @@ describe("services schemas", () => {
       expect(UpdateServiceSchema.parse({ is_active: true })).toMatchObject({ is_active: true });
     });
 
-    // CONDUCTA ACTUAL (posible bug): la version parcial de servicios conserva el
-    // default de description (services/schemas.ts:19); una edicion de precio
-    // sobrescribe la descripcion con cadena vacia.
-    it("CONDUCTA ACTUAL (posible bug): una actualizacion parcial rellena description", () => {
-      expect(UpdateServiceSchema.parse({ price: 20 })).toEqual({ price: 20, description: "" });
+    // Regresión: una edición de precio no debe sobrescribir la descripción.
+    it("una actualizacion parcial no rellena description", () => {
+      expect(UpdateServiceSchema.parse({ price: 20 })).toEqual({ price: 20 });
     });
   });
 });

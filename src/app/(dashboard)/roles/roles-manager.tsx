@@ -6,16 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Shield, Lock, Trash2, Plus,
+  Shield, Lock, Plus,
   CalendarCheck, Users, Bell, BarChart3, Settings,
   ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
+import { RoleDeleteButton } from "./delete-role-dialog";
 import {
   createRoleAction,
   updateRolePermissionsAction,
-  deleteRoleAction,
 } from "./actions";
 
 interface Permission { id: string; key: string; description: string }
@@ -209,7 +209,6 @@ export function RolesManager({
 function RoleCard({ role }: { role: Role }) {
   const [selected, setSelected] = useState<string[]>(role.permissionKeys);
   const [saving, startSave] = useTransition();
-  const [isDeleting, startDelete] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -250,14 +249,7 @@ function RoleCard({ role }: { role: Role }) {
           {role.is_system ? (
             <Lock className="h-3.5 w-3.5 text-fg-disabled ml-auto" />
           ) : (
-            <button
-              onClick={() => startDelete(() => { void deleteRoleAction(role.id); })}
-              disabled={isDeleting}
-              className="ml-auto text-fg-disabled hover:text-danger disabled:opacity-40 transition-colors"
-              aria-label="Eliminar rol"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <RoleDeleteButton roleId={role.id} roleName={role.name} />
           )}
         </div>
       </CardHeader>

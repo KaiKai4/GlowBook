@@ -140,15 +140,28 @@ describe("RolesManager", () => {
     expect(card.textContent).toContain("No tienes permiso para editar roles");
   });
 
-  // CONDUCTA ACTUAL (posible bug): roles-manager.tsx (líneas 253-260) elimina sin confirmación y descarta
-  // el resultado de deleteRoleAction ("void"), así que un fallo no deja ningún aviso en la tarjeta.
-  it("eliminar un rol personalizado llama a la acción con su id", () => {
+  it("eliminar un rol personalizado pide confirmación y luego llama a la acción con su id", async () => {
     deleteMock.mockResolvedValue({ ok: true, value: undefined });
     mounted = mountComponent(<RolesManager roles={ROLES} allPermissions={ALL_PERMISSIONS} />);
 
     clickElement(requireElement<HTMLButtonElement>(stylistCard(mounted.container), 'button[aria-label="Eliminar rol"]'));
+    expect(deleteMock).not.toHaveBeenCalled();
+
+    clickElement(findButtonByText(document.body, "Eliminar"));
+    await flushAsync();
 
     expect(deleteMock).toHaveBeenCalledWith("role-stylist");
+  });
+
+  it("si eliminar el rol falla muestra el error y no lo da por eliminado", async () => {
+    deleteMock.mockResolvedValue({ ok: false, error: "El rol tiene colaboradores activos" });
+    mounted = mountComponent(<RolesManager roles={ROLES} allPermissions={ALL_PERMISSIONS} />);
+
+    clickElement(requireElement<HTMLButtonElement>(stylistCard(mounted.container), 'button[aria-label="Eliminar rol"]'));
+    clickElement(findButtonByText(document.body, "Eliminar"));
+    await flushAsync();
+
+    expect(document.body.textContent).toContain("El rol tiene colaboradores activos");
   });
 
   it("Nuevo rol abre el diálogo y Cancelar lo cierra sin crear nada", () => {

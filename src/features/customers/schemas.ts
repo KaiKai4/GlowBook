@@ -18,7 +18,15 @@ export const CreateCustomerSchema = z.object({
   is_temporary: z.boolean().optional().default(false),
 });
 
-export const UpdateCustomerSchema = CreateCustomerSchema.partial().extend({
+// Sin .default(): un campo ausente no debe pisar notes ni is_temporary guardados.
+export const UpdateCustomerSchema = z.object({
+  first_name: CreateCustomerSchema.shape.first_name.optional(),
+  last_name: CreateCustomerSchema.shape.last_name.optional(),
+  phone: CreateCustomerSchema.shape.phone,
+  email: CreateCustomerSchema.shape.email,
+  birth_date: CreateCustomerSchema.shape.birth_date,
+  notes: z.string().max(2000).optional(),
+  is_temporary: z.boolean().optional(),
   is_active: z.boolean().optional(),
 });
 

@@ -148,8 +148,8 @@ describe("assertAnonymousRateLimit", () => {
     });
   });
 
-  it("CONDUCTA ACTUAL (posible bug): si x-real-ip esta vacia usa el primer valor de x-forwarded-for, que el cliente puede falsear fuera de Vercel", async () => {
-    setRequestHeaders({ "x-real-ip": "   ", "x-forwarded-for": " 198.51.100.9 , 10.0.0.2" });
+  it("si x-real-ip esta vacia usa el ultimo valor de x-forwarded-for (el que añade el proxy), no el primero falseable", async () => {
+    setRequestHeaders({ "x-real-ip": "   ", "x-forwarded-for": "203.0.113.66, 198.51.100.9" });
 
     await assertAnonymousRateLimit("csp-report");
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   archiveCategoryAction,
   createCategoryAction,
@@ -10,6 +9,7 @@ import {
   updateServiceAction,
 } from "./actions";
 import { ArchiveCategoryDialog } from "./archive-category-dialog";
+import { CategoriesPagination } from "./categories-pagination";
 import { CategoryDialog } from "./category-dialog";
 import { EditServiceDialog } from "./edit-service-dialog";
 import { EmptyServicesState } from "./empty-services-state";
@@ -45,6 +45,7 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
   const [serviceError, setServiceError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [pricingError, setPricingError] = useState<string | null>(null);
 
   const totals = useMemo(() => {
     const allServices = categories.flatMap((category) => category.services);
@@ -148,10 +149,12 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
 
   function handleToggleCategoryPricingMode(category: Category) {
     setPricingCategoryId(category.id);
+    setPricingError(null);
     const nextMode = category.pricing_mode === "variable" ? "fixed" : "variable";
 
     startPricing(async () => {
-      await updateCategoryPricingModeAction(category.id, nextMode);
+      const result = await updateCategoryPricingModeAction(category.id, nextMode);
+      if (!result.ok) setPricingError(result.error);
       setPricingCategoryId(null);
     });
   }
@@ -213,6 +216,12 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
             onStatusFilterChange={updateStatusFilter}
           />
 
+          {pricingError ? (
+            <p role="alert" className="rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
+              {pricingError}
+            </p>
+          ) : null}
+
           {categories.length === 0 ? (
             <EmptyServicesState onCreateCategory={() => setCategoryDialogOpen(true)} />
           ) : (
@@ -234,40 +243,13 @@ export function ServicesManager({ categories }: { categories: Category[] }) {
                 ))}
               </div>
               {visibleCategories.length > CATEGORIES_PER_PAGE && (
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
-                  <div>
-                    <p className="text-sm font-medium text-fg-secondary">
-                      {Math.min((currentCategoryPage - 1) * CATEGORIES_PER_PAGE + 1, visibleCategories.length)}
-                      -
-                      {Math.min(currentCategoryPage * CATEGORIES_PER_PAGE, visibleCategories.length)}
-                      {" de "}
-                      {visibleCategories.length}
-                    </p>
-                    <p className="text-xs text-fg-subtle">
-                      Pagina {currentCategoryPage} de {totalCategoryPages}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setCategoryPage((page) => Math.max(1, page - 1))}
-                      disabled={currentCategoryPage === 1}
-                      className="flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-fg-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
-                    >
-                      <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                      Anterior
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCategoryPage((page) => Math.min(totalCategoryPages, page + 1))}
-                      disabled={currentCategoryPage === totalCategoryPages}
-                      className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
-                    >
-                      Siguiente
-                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </div>
-                </div>
+                <CategoriesPagination
+                  page={currentCategoryPage}
+                  totalPages={totalCategoryPages}
+                  pageSize={CATEGORIES_PER_PAGE}
+                  total={visibleCategories.length}
+                  onPageChange={setCategoryPage}
+                />
               )}
             </>
           )}

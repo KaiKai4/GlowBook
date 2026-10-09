@@ -9,7 +9,13 @@ export const CreateCategorySchema = z.object({
   pricing_mode: PricingModeSchema.optional().default("fixed"),
 });
 
-export const UpdateCategorySchema = CreateCategorySchema.partial().extend({
+// Los schemas de actualización NO heredan .default(): un campo ausente debe quedar
+// fuera del UPDATE (si no, se pisaría el valor guardado con su default).
+export const UpdateCategorySchema = z.object({
+  name: CreateCategorySchema.shape.name.optional(),
+  description: z.string().max(500).optional(),
+  ordering: z.number().int().min(0).optional(),
+  pricing_mode: PricingModeSchema.optional(),
   is_active: z.boolean().optional(),
 });
 
@@ -21,7 +27,12 @@ export const CreateServiceSchema = z.object({
   price: z.number().min(0, "El precio no puede ser negativo"),
 });
 
-export const UpdateServiceSchema = CreateServiceSchema.partial().extend({
+export const UpdateServiceSchema = z.object({
+  category_id: CreateServiceSchema.shape.category_id.optional(),
+  name: CreateServiceSchema.shape.name.optional(),
+  description: z.string().max(500).optional(),
+  duration_minutes: CreateServiceSchema.shape.duration_minutes.optional(),
+  price: CreateServiceSchema.shape.price.optional(),
   is_active: z.boolean().optional(),
 });
 

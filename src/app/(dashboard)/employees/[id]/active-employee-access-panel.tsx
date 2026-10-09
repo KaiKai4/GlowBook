@@ -46,7 +46,8 @@ export function ActiveEmployeeAccessPanel({
   function handleResetAccess() {
     setRoleError(null);
     startReset(async () => {
-      const res = await resetEmployeeAccessAction(employeeId, roleId || currentRoleId || null);
+      // "Sin rol" debe enviarse como null: no reutilizar el rol anterior (conservaría permisos).
+      const res = await resetEmployeeAccessAction(employeeId, roleId || null);
       if (res.ok) {
         setResetLink({
           url: `${window.location.origin}/join/${res.value.token}`,

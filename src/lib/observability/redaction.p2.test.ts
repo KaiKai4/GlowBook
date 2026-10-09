@@ -60,16 +60,40 @@ describe("sanitizeMetadata", () => {
     });
   });
 
-  it("CONDUCTA ACTUAL (posible bug): a Bearer authorization value keeps its token visible", () => {
-    // El patron de texto corta tras la primera palabra del valor ("Bearer"), asi
-    // que el token que sigue no se redacta. Se fija el comportamiento actual.
+  it("a Bearer authorization value keeps the scheme and hides the token", () => {
     expect(sanitizeMetadata({ detail: "Authorization: Bearer abc123def" })).toEqual({
-      detail: "Authorization: [redacted] abc123def",
+      detail: "Authorization: Bearer [redacted]",
     });
   });
 
-  it("CONDUCTA ACTUAL (posible bug): the closing parenthesis after a secret is removed", () => {
-    expect(sanitizeMetadata({ detail: "(token=zzz)" })).toEqual({ detail: "(token=[redacted]" });
+  it("hides a Bearer token that appears without its header keyword", () => {
+    expect(sanitizeMetadata({ detail: "invalid Bearer abc123def456 en la cola" })).toEqual({
+      detail: "invalid Bearer [redacted] en la cola",
+    });
+  });
+
+  it("hides a Basic authorization value", () => {
+    expect(sanitizeMetadata({ detail: "Authorization: Basic dXNlcjpwYXNz" })).toEqual({
+      detail: "Authorization: Basic [redacted]",
+    });
+  });
+
+  it("hides a JWT even when it is not preceded by a keyword", () => {
+    const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl";
+
+    expect(sanitizeMetadata({ detail: `llamada con ${jwt} fallida` })).toEqual({
+      detail: "llamada con [redacted] fallida",
+    });
+  });
+
+  it("keeps the closing parenthesis after a secret", () => {
+    expect(sanitizeMetadata({ detail: "(token=zzz)" })).toEqual({ detail: "(token=[redacted])" });
+  });
+
+  it("stops a cookie value at the semicolon separator", () => {
+    expect(sanitizeMetadata({ detail: "cookie: sb=abc; ok=1" })).toEqual({
+      detail: "cookie: [redacted]; ok=1",
+    });
   });
 
   it("ignores environment secrets shorter than eight characters", () => {

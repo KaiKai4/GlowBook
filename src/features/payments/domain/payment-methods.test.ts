@@ -91,10 +91,8 @@ describe("paymentMethodLabel", () => {
     expect(paymentMethodLabel("Nequi")).toBe("Nequi");
   });
 
-  it("is case sensitive for default keys (CONDUCTA ACTUAL: 'Cash' no se traduce)", () => {
-    // CONDUCTA ACTUAL (posible bug): la etiqueta solo resuelve la clave exacta
-    // en minusculas; una variante en mayusculas se muestra tal cual.
-    expect(paymentMethodLabel("Cash")).toBe("Cash");
+  it("resolves default keys regardless of case, like the enabled-method check", () => {
+    expect(paymentMethodLabel("Cash")).toBe("Efectivo");
     expect(paymentMethodLabel("cash")).toBe("Efectivo");
   });
 });

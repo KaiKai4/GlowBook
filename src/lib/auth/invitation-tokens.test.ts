@@ -19,12 +19,8 @@ describe("hashInvitationToken", () => {
     expect(hashInvitationToken("abc")).not.toBe(hashInvitationToken("abd"));
   });
 
-  it("hashes the empty string without throwing (CONDUCTA ACTUAL: no valida entrada)", () => {
-    // CONDUCTA ACTUAL (posible bug): el hash no rechaza tokens vacios; la
-    // validacion de formato debe vivir en el caso de uso que consume el token.
-    expect(hashInvitationToken("")).toBe(
-      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    );
+  it("rechaza el token vacio en lugar de devolver el hash de la cadena vacia", () => {
+    expect(() => hashInvitationToken("")).toThrow("no puede estar vacío");
   });
 });
 
@@ -50,7 +46,7 @@ describe("generateInvitationToken", () => {
 
   it("property: any token hashes to a 64 char hex digest, stable across calls", () => {
     fc.assert(
-      fc.property(fc.string(), (token) => {
+      fc.property(fc.string({ minLength: 1 }), (token) => {
         const digest = hashInvitationToken(token);
         expect(digest).toMatch(/^[0-9a-f]{64}$/);
         expect(hashInvitationToken(token)).toBe(digest);

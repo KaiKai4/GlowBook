@@ -17,8 +17,10 @@ const PASSTHROUGH_SQLSTATES: ReadonlySet<string> = new Set(["P0001", "22023", "4
 
 // Un mensaje que delata la base (tablas, politicas, SQL, restricciones) nunca
 // se muestra: se sustituye por el fallback y se registra el error original.
+// Solo construcciones tecnicas: palabras sueltas como "tabla", "columna" o
+// "funcion" aparecen en mensajes de negocio en espanol y deben seguir visibles.
 const INTERNAL_DETAIL_PATTERN =
-  /\b(select|insert|update|delete|relation|table|column|function|policy|permission denied|violates|constraint|syntax|stack)\b|\b(public|auth)\./i;
+  /\b(?:syntax error|permission denied for|violates|row-level security|stack (?:trace|overflow)|function \w+\(|relation "[^"]*"|relation [\w.]+ does not exist|column "[^"]*"|column [\w.]+ does not exist|insert into|delete from|update \w+ set)|\b(?:public|auth)\.\w|\bselect\b[^.]*\bfrom\b/i;
 
 const MAX_PUBLIC_MESSAGE_LENGTH = 300;
 

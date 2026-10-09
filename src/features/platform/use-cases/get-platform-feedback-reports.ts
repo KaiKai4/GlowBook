@@ -34,8 +34,15 @@ export interface PlatformFeedbackReportsViewModel {
   showResolved: boolean;
 }
 
+// Object.hasOwn: claves heredadas del prototipo ("toString") no son etiquetas válidas.
 function categoryLabel(category: string): string {
-  return FEEDBACK_CATEGORY_LABELS[category as FeedbackCategory] ?? category;
+  return Object.hasOwn(FEEDBACK_CATEGORY_LABELS, category)
+    ? FEEDBACK_CATEGORY_LABELS[category as FeedbackCategory]
+    : category;
+}
+
+function categoryVariant(category: string): PlatformFeedbackReportViewModel["categoryVariant"] {
+  return Object.hasOwn(CATEGORY_VARIANT, category) ? (CATEGORY_VARIANT[category] ?? "default") : "default";
 }
 
 function formatCreatedAt(value: string): string {
@@ -57,7 +64,7 @@ function toReportViewModel(
     id: report.id,
     category: report.category,
     categoryLabel: categoryLabel(report.category),
-    categoryVariant: CATEGORY_VARIANT[report.category] ?? "default",
+    categoryVariant: categoryVariant(report.category),
     message: report.message,
     status: report.status,
     resolved,

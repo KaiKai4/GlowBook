@@ -176,10 +176,10 @@ describe("EmployeesManager", () => {
     expect(buttonWithText(mounted.container, "Reactivar").textContent).toBe("Reactivar");
   });
 
-  it("CONDUCTA ACTUAL (posible bug): la cabecera de la vista archivada sigue diciendo colaboradores activos", () => {
-    // Texto fijo en employees-manager.tsx (cabecera): no distingue el modo archivado.
+  it("la cabecera de la vista archivada dice colaboradores archivados", () => {
     mounted = renderManager("archived", EMPLOYEES.slice(0, 1));
 
-    expect(mounted.container.textContent).toContain("1 de 1 colaboradores activos");
+    expect(mounted.container.textContent).toContain("1 de 1 colaboradores archivados");
+    expect(mounted.container.textContent).not.toContain("colaboradores activos");
   });
 });

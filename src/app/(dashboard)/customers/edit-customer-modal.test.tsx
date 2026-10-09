@@ -150,8 +150,7 @@ describe("EditCustomerModal", () => {
   });
 
   it("muestra el error de archivado y mantiene la confirmación abierta", async () => {
-    // CONDUCTA ACTUAL (posible bug): el error se guarda en el estado del diálogo de edición, que queda
-    // debajo del diálogo de confirmación; el usuario solo ve la confirmación sin el motivo del fallo.
+    // El error se muestra dentro del diálogo de confirmación (el de edición queda debajo).
     vi.mocked(deleteCustomerAction).mockResolvedValue({ ok: false, error: "El cliente tiene citas pendientes" });
     const onClose = vi.fn();
     mounted = mountComponent(<EditCustomerModal customer={CUSTOMER} open onClose={onClose} />);

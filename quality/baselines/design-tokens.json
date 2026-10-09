@@ -161,12 +161,6 @@
     "fontSize": 0,
     "fontWeight": 0
   },
-  "src/app/(dashboard)/services/services-manager.tsx": {
-    "rawPalette": 2,
-    "hex": 0,
-    "fontSize": 0,
-    "fontWeight": 0
-  },
   "src/app/(platform)/admin/plans/addons-catalog.tsx": {
     "rawPalette": 0,
     "hex": 1,

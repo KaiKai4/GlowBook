@@ -65,16 +65,9 @@ describe("customers schemas", () => {
       expect(UpdateCustomerSchema.parse({ is_active: false })).toMatchObject({ is_active: false });
     });
 
-    // CONDUCTA ACTUAL (posible bug): los defaults de CreateCustomerSchema se
-    // conservan en la version parcial (customers/schemas.ts:17-18). Una edicion
-    // parcial reescribe notes = "" e is_temporary = false aunque no se envien;
-    // la action customers/actions.ts:144 persiste parsed.data tal cual.
-    it("CONDUCTA ACTUAL (posible bug): una actualizacion parcial rellena notes e is_temporary por defecto", () => {
-      expect(UpdateCustomerSchema.parse({ is_active: false })).toEqual({
-        is_active: false,
-        notes: "",
-        is_temporary: false,
-      });
+    // Regresión: una edición parcial no debe reescribir notes ni is_temporary.
+    it("una actualizacion parcial no rellena notes ni is_temporary", () => {
+      expect(UpdateCustomerSchema.parse({ is_active: false })).toEqual({ is_active: false });
     });
 
     it("sigue validando los campos que se envian", () => {

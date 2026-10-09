@@ -7,12 +7,20 @@ import { Check, Copy, Link2 } from "lucide-react";
 // copiarlo: la base de datos solo guarda el hash del token.
 export function InviteLinkReveal({ token }: { token: string }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const url = `${window.location.origin}/invite/${token}`;
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyFailed(false);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // El portapapeles puede estar bloqueado (permisos, contexto no seguro).
+      setCopied(false);
+      setCopyFailed(true);
+    }
   }
 
   return (
@@ -34,6 +42,11 @@ export function InviteLinkReveal({ token }: { token: string }) {
           {copied ? "Copiado" : "Copiar"}
         </button>
       </div>
+      {copyFailed ? (
+        <p role="alert" className="text-xs text-danger">
+          No se pudo copiar. Selecciona el enlace y cópialo manualmente.
+        </p>
+      ) : null}
     </div>
   );
 }

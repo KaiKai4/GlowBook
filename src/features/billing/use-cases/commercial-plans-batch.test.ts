@@ -233,12 +233,10 @@ describe("saveCommercialPlanLimitsBatch", () => {
     expect(savePlanLimitMock).not.toHaveBeenCalled();
   });
 
-  it("CONDUCTA ACTUAL (posible bug): un máximo vacío se guarda como 0 y no como sin límite", async () => {
-    // PlanLimitSchema.maxValue: coerce.number() antes que literal(""), así que "" => 0
-    // (src/features/billing/use-cases/commercial-plans.ts, PlanLimitSchema.maxValue).
+  it("un máximo vacío se guarda como null (sin límite), no como 0", async () => {
     await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [{ metricKey: "employees_active", maxValue: "" }] });
 
-    expect(savePlanLimitMock).toHaveBeenCalledWith(expect.objectContaining({ maxValue: 0 }));
+    expect(savePlanLimitMock).toHaveBeenCalledWith(expect.objectContaining({ maxValue: null }));
   });
 
   it("devuelve el prefijo propio si algún límite no se puede guardar, sin auditar", async () => {

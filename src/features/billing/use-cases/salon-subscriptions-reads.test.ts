@@ -457,16 +457,16 @@ describe("getSalonSubscriptionDetail", () => {
     expect(detail.monthlyTotal).toBe(0);
   });
 
-  it("CONDUCTA ACTUAL (posible bug): el detalle sigue usando los módulos del plan con asignación pausada", async () => {
-    // getEffectiveSalonPlan descarta el plan en estado pausado; el detalle del
-    // panel no lo hace, así que muestra módulos y límites aunque no se cobre plan.
+  it("el detalle con asignación pausada es coherente con el plan efectivo: sin módulos, límites ni precio de plan", async () => {
+    // getEffectiveSalonPlan descarta el plan en estado pausado; el detalle debe hacer lo mismo.
     findEffectivePlanRowsMock.mockResolvedValue(rows({ status: "paused", plan: basicPlan, overrides: [] }));
 
     const detail = await getSalonSubscriptionDetail(SALON_1);
 
     expect(detail.planPrice).toBe(0);
-    expect(detail.enabledModules).toEqual(["appointments", "employees"]);
-    expect(detail.limits.length).toBeGreaterThan(0);
+    expect(detail.plan).toBeNull();
+    expect(detail.enabledModules).toEqual([]);
+    expect(detail.limits).toEqual([]);
   });
 });
 
