@@ -3,6 +3,7 @@ import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-
 import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { requireProfile } from "@/infra/auth/session";
 import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { AppointmentWizard } from "./appointment-wizard";
 
 export default async function NewAppointmentPage() {
@@ -25,8 +26,9 @@ export default async function NewAppointmentPage() {
           <ArrowLeft className="h-4 w-4" />
           Agenda
         </Link>
-        <h1 className="text-2xl font-semibold text-fg mt-2">Nueva cita</h1>
-        <p className="text-sm text-fg-subtle mt-0.5">Completa los pasos para agendar una cita.</p>
+        <div className="mt-2">
+          <PageHeader title="Nueva cita" description="Completa los pasos para agendar una cita." />
+        </div>
       </div>
 
       {!wizardData.ready ? (

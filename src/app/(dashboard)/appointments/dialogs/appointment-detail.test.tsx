@@ -106,6 +106,22 @@ describe("AppointmentDetailDialog", () => {
     expect(container.textContent).toContain("+507 6123-4567");
   });
 
+  it.each([
+    ["scheduled", "Agendada"],
+    ["confirmed", "Confirmada"],
+    ["completed", "Completada"],
+    ["cancelled", "Cancelada"],
+    ["no_show", "No asistió"],
+  ])("muestra el estado %s como insignia con su texto", (status, label) => {
+    const { container } = render({ appt: buildDetail({ status }) });
+
+    const badge = Array.from(container.querySelectorAll("span")).find(
+      (span) => span.textContent === label,
+    );
+    expect(badge).toBeDefined();
+    expect(badge?.querySelector("svg")).not.toBeNull();
+  });
+
   it("enlaza el WhatsApp del cliente solo con dígitos y en una pestaña nueva", () => {
     const { container } = render();
 

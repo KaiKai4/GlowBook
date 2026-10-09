@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
+import { useTransition, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import {
   CheckCheck,
@@ -42,16 +43,14 @@ interface ApptForDetail {
   items: ApptItem[];
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  scheduled: "bg-info-subtle text-info-fg border-info-border",
-  confirmed: "bg-brand-50 text-brand-700 border-brand-200",
-  completed: "bg-success-subtle text-success-fg border-success-border",
-  cancelled: "bg-surface-muted text-fg-subtle border-border",
-  no_show: "bg-warning-subtle text-warning-fg border-warning-border",
-};
-const STATUS_LABEL: Record<string, string> = {
-  scheduled: "Agendada", confirmed: "Confirmada", completed: "Completada",
-  cancelled: "Cancelada", no_show: "No asistió",
+type StatusBadgeProps = ComponentProps<typeof StatusBadge>;
+
+const STATUS_BADGES: Record<string, { variant: StatusBadgeProps["variant"]; label: string }> = {
+  scheduled: { variant: "info", label: "Agendada" },
+  confirmed: { variant: "accent", label: "Confirmada" },
+  completed: { variant: "success", label: "Completada" },
+  cancelled: { variant: "neutral", label: "Cancelada" },
+  no_show: { variant: "warning", label: "No asistió" },
 };
 const ITEM_ACCENT: Record<string, string> = {
   scheduled: "border-l-info",
@@ -82,6 +81,7 @@ export function AppointmentDetailDialog({
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
     : "Cliente desconocido";
 
+  const statusBadge = STATUS_BADGES[appt.status];
   const accentClass = ITEM_ACCENT[appt.status] ?? "border-l-border-strong";
   const canEdit = canManage && !["completed", "cancelled", "no_show"].includes(appt.status);
   const subtotal = appt.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
@@ -116,9 +116,7 @@ export function AppointmentDetailDialog({
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appt.status] ?? ""}`}>
-            {STATUS_LABEL[appt.status]}
-          </span>
+          {statusBadge && <StatusBadge variant={statusBadge.variant} label={statusBadge.label} />}
           {canEdit && (
             <Link
               href={`/appointments/${appt.id}/edit`}

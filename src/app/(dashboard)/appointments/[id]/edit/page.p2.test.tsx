@@ -91,7 +91,7 @@ describe("EditAppointmentPage", () => {
     mounted = mountComponent(await EditAppointmentPage({ params: Promise.resolve({ id: APPOINTMENT_ID }) }));
 
     const text = mounted.container.textContent ?? "";
-    expect(text).toContain("Editar cita");
+    expect(mounted.container.querySelector("h1")?.textContent).toBe("Editar cita");
     expect(text).toContain("Laura Gómez");
     expect(text).toContain("Formulario de Laura Gómez con 2 servicios");
     expect(text).not.toContain("ya está cerrada");
