@@ -68,7 +68,7 @@
     {
       "id": "features/billing",
       "kind": "internal",
-      "files": 25
+      "files": 27
     },
     {
       "id": "features/customers",
@@ -113,7 +113,7 @@
     {
       "id": "features/platform",
       "kind": "internal",
-      "files": 19
+      "files": 20
     },
     {
       "id": "features/reminders",
@@ -198,7 +198,7 @@
     {
       "id": "infra/validation",
       "kind": "internal",
-      "files": 4
+      "files": 5
     },
     {
       "id": "npm/@supabase/ssr",
@@ -445,7 +445,7 @@
     {
       "from": "app/(platform)",
       "to": "app/_composition",
-      "count": 12
+      "count": 15
     },
     {
       "from": "app/(platform)",
@@ -465,32 +465,27 @@
     {
       "from": "app/(platform)",
       "to": "features/billing",
-      "count": 23
+      "count": 24
     },
     {
       "from": "app/(platform)",
       "to": "features/platform",
-      "count": 13
+      "count": 14
     },
     {
       "from": "app/(platform)",
       "to": "infra",
-      "count": 1
-    },
-    {
-      "from": "app/(platform)",
-      "to": "infra/security",
-      "count": 4
+      "count": 5
     },
     {
       "from": "app/(platform)",
       "to": "infra/validation",
-      "count": 4
+      "count": 2
     },
     {
       "from": "app/(platform)",
       "to": "npm/next",
-      "count": 14
+      "count": 10
     },
     {
       "from": "app/(platform)",
@@ -520,7 +515,7 @@
     {
       "from": "app/_composition",
       "to": "infra",
-      "count": 1
+      "count": 2
     },
     {
       "from": "app/_composition",
@@ -540,7 +535,7 @@
     {
       "from": "app/_composition",
       "to": "infra/validation",
-      "count": 2
+      "count": 3
     },
     {
       "from": "app/_composition",
@@ -830,7 +825,7 @@
     {
       "from": "features/billing",
       "to": "infra/validation",
-      "count": 8
+      "count": 10
     },
     {
       "from": "features/billing",
@@ -1095,7 +1090,7 @@
     {
       "from": "features/platform",
       "to": "infra/validation",
-      "count": 5
+      "count": 6
     },
     {
       "from": "features/platform",

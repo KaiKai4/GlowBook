@@ -1,10 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { parseUuid } from "@/infra/validation/route-id";
+import { definePlatformAction } from "@/app/_composition/define-platform-action";
+import { parseUuidField } from "@/app/_composition/define-action";
+import { ok } from "@/infra/result";
 import {
   assignSalonAddonConfig,
   assignSalonCommercialPlanConfig,
@@ -13,124 +11,139 @@ import {
   resolveSalonPlanAlertConfig,
   saveSalonManualExtraConfig,
 } from "@/features/billing/use-cases/salon-subscriptions";
-import type { PlatformPlanActionState } from "../plans/action-state";
+import {
+  readAssignPlanInput,
+  readGiveAddonInput,
+  readManualExtraInput,
+  readRegisterPaymentInput,
+  type AssignPlanInput,
+  type GiveAddonInput,
+  type ManualExtraInput,
+  type RegisterPaymentInput,
+} from "@/features/billing/use-cases/salon-subscriptions-form";
+import { toPlanActionState, type PlatformPlanActionState } from "../plans/action-state";
 
-function bool(formData: FormData, key: string): boolean {
-  return formData.get(key) === "on" || formData.get(key) === "true";
-}
+const SUBSCRIPTION_PATHS = ["/admin/subscriptions", "/admin/plans", "/admin/salons", "/"];
 
-function done(message: string): PlatformPlanActionState {
-  revalidatePath("/admin/subscriptions");
-  revalidatePath("/admin/plans");
-  revalidatePath("/admin/salons");
-  revalidatePath("/");
-  return { ok: true, message };
-}
+const assignPlanFlow = definePlatformAction<FormData, AssignPlanInput, string>({
+  rateLimit: { scope: "admin:assignPlanAction" },
+  parse: (formData) => ok(readAssignPlanInput(formData)),
+  run: async (input, session) => {
+    const result = await assignSalonCommercialPlanConfig(input, session.userId);
+    return result.ok ? ok("Plan asignado.") : result;
+  },
+  revalidate: () => SUBSCRIPTION_PATHS,
+});
 
 export async function assignPlanAction(
   _state: PlatformPlanActionState,
   formData: FormData
 ): Promise<PlatformPlanActionState> {
-  const actorUserId = await requirePlatformAdmin();
-  const limited = await assertActionRateLimit(actorUserId, "admin:assignPlanAction");
-  if (!limited.ok) return { ok: false, message: limited.error };
-  const result = await assignSalonCommercialPlanConfig({
-    salonId: String(formData.get("salonId") ?? ""),
-    planId: String(formData.get("planId") ?? ""),
-    status: String(formData.get("status") ?? "trialing") as "trialing" | "active" | "past_due" | "paused" | "canceled",
-    endsAt: String(formData.get("endsAt") ?? ""),
-    notes: String(formData.get("notes") ?? ""),
-  }, actorUserId);
-
-  if (!result.ok) return { ok: false, message: result.error };
-  return done("Plan asignado.");
+  return toPlanActionState(await assignPlanFlow(formData));
 }
+
+const giveAddonFlow = definePlatformAction<FormData, GiveAddonInput, string>({
+  rateLimit: { scope: "admin:giveAddonAction" },
+  parse: (formData) => ok(readGiveAddonInput(formData)),
+  run: async (input, session) => {
+    const result = await assignSalonAddonConfig(input, session.userId);
+    return result.ok
+      ? ok(input.isGift ? "Extra regalado al salon." : "Extra asignado al salon.")
+      : result;
+  },
+  revalidate: () => SUBSCRIPTION_PATHS,
+});
 
 export async function giveAddonAction(
   _state: PlatformPlanActionState,
   formData: FormData
 ): Promise<PlatformPlanActionState> {
-  const actorUserId = await requirePlatformAdmin();
-  const limited = await assertActionRateLimit(actorUserId, "admin:giveAddonAction");
-  if (!limited.ok) return { ok: false, message: limited.error };
-  const isGift = bool(formData, "isGift");
-  const result = await assignSalonAddonConfig({
-    salonId: String(formData.get("salonId") ?? ""),
-    addonId: String(formData.get("addonId") ?? ""),
-    quantity: String(formData.get("quantity") ?? "1"),
-    isGift,
-    priceOverride: isGift ? "" : String(formData.get("priceOverride") ?? ""),
-    reason: String(formData.get("reason") ?? ""),
-    startsAt: String(formData.get("startsAt") ?? ""),
-    endsAt: String(formData.get("endsAt") ?? ""),
-  }, actorUserId);
-
-  if (!result.ok) return { ok: false, message: result.error };
-  return done(isGift ? "Extra regalado al salon." : "Extra asignado al salon.");
+  return toPlanActionState(await giveAddonFlow(formData));
 }
+
+const giveManualExtraFlow = definePlatformAction<FormData, ManualExtraInput, string>({
+  rateLimit: { scope: "admin:giveManualExtraAction" },
+  parse: (formData) => ok(readManualExtraInput(formData)),
+  run: async (input, session) => {
+    const result = await saveSalonManualExtraConfig(input, session.userId);
+    return result.ok ? ok("Cortesia guardada.") : result;
+  },
+  revalidate: () => SUBSCRIPTION_PATHS,
+});
 
 export async function giveManualExtraAction(
   _state: PlatformPlanActionState,
   formData: FormData
 ): Promise<PlatformPlanActionState> {
-  const actorUserId = await requirePlatformAdmin();
-  const limited = await assertActionRateLimit(actorUserId, "admin:giveManualExtraAction");
-  if (!limited.ok) return { ok: false, message: limited.error };
-  const targetType = String(formData.get("targetType") ?? "metric");
-  const result = await saveSalonManualExtraConfig({
-    salonId: String(formData.get("salonId") ?? ""),
-    moduleKey: targetType === "module" ? String(formData.get("moduleKey") ?? "") : "",
-    metricKey: targetType === "metric" ? String(formData.get("metricKey") ?? "") : "",
-    moduleEnabled: targetType === "module" ? true : null,
-    maxDelta: targetType === "metric" ? String(formData.get("maxDelta") ?? "") : "",
-    maxOverride: "",
-    isGift: true,
-    reason: String(formData.get("reason") ?? ""),
-    startsAt: String(formData.get("startsAt") ?? ""),
-    endsAt: String(formData.get("endsAt") ?? ""),
-  }, actorUserId);
-
-  if (!result.ok) return { ok: false, message: result.error };
-  return done("Cortesia guardada.");
+  return toPlanActionState(await giveManualExtraFlow(formData));
 }
+
+const registerPaymentFlow = definePlatformAction<FormData, RegisterPaymentInput, string>({
+  rateLimit: { scope: "admin:registerPaymentAction" },
+  parse: (formData) => ok(readRegisterPaymentInput(formData)),
+  run: async (input, session) => {
+    const result = await registerSalonPlanPaymentConfig(input, session.userId);
+    return result.ok
+      ? ok("Pago registrado. La suscripcion quedo activa con su mes de uso.", result.warnings)
+      : result;
+  },
+  revalidate: () => SUBSCRIPTION_PATHS,
+});
 
 export async function registerPaymentAction(
   _state: PlatformPlanActionState,
   formData: FormData
 ): Promise<PlatformPlanActionState> {
-  const actorUserId = await requirePlatformAdmin();
-  const limited = await assertActionRateLimit(actorUserId, "admin:registerPaymentAction");
-  if (!limited.ok) return { ok: false, message: limited.error };
-  const result = await registerSalonPlanPaymentConfig({
-    salonId: String(formData.get("salonId") ?? ""),
-    amount: String(formData.get("amount") ?? "0"),
-    paidAt: String(formData.get("paidAt") ?? "") || undefined,
-    notes: String(formData.get("notes") ?? ""),
-  }, actorUserId);
-
-  if (!result.ok) return { ok: false, message: result.error };
-  const state = done("Pago registrado. La suscripcion quedo activa con su mes de uso.");
-  return result.warnings && result.warnings.length > 0 ? { ...state, warnings: result.warnings } : state;
+  return toPlanActionState(await registerPaymentFlow(formData));
 }
 
+interface AlertRaw {
+  alertId: string;
+  salonId: string;
+}
+
+const resolveAlertFlow = definePlatformAction<AlertRaw, AlertRaw, void>({
+  rateLimit: { scope: "admin:resolveAlertAction" },
+  parse: (raw) => {
+    const alertId = parseUuidField(raw.alertId);
+    if (!alertId.ok) return alertId;
+    const salonId = parseUuidField(raw.salonId);
+    return salonId.ok ? ok(raw) : salonId;
+  },
+  run: async ({ alertId, salonId }, session) => {
+    const result = await resolveSalonPlanAlertConfig(alertId, salonId, session.userId);
+    return result.ok ? ok(undefined) : result;
+  },
+  revalidate: () => SUBSCRIPTION_PATHS,
+});
+
+/** Las acciones de borrado y resolucion lanzan para que el cliente muestre el error. */
 export async function resolveAlertAction(alertId: string, salonId: string): Promise<void> {
-  const actorUserId = await requirePlatformAdmin();
-  const limited = await assertActionRateLimit(actorUserId, "admin:resolveAlertAction");
-  if (!limited.ok) throw new Error(limited.error);
-  if (!parseUuid(alertId)) throw new Error("Identificador inválido.");
-  if (!parseUuid(salonId)) throw new Error("Identificador inválido.");
-  const result = await resolveSalonPlanAlertConfig(alertId, salonId, actorUserId);
+  const result = await resolveAlertFlow({ alertId, salonId });
   if (!result.ok) throw new Error(result.error);
-  done("Alerta resuelta.");
 }
+
+interface ExtraRaw {
+  overrideId: string;
+  salonId: string;
+}
+
+const cancelExtraFlow = definePlatformAction<ExtraRaw, ExtraRaw, void>({
+  rateLimit: { scope: "admin:cancelExtraAction" },
+  parse: (raw) => {
+    const overrideId = parseUuidField(raw.overrideId);
+    if (!overrideId.ok) return overrideId;
+    const salonId = parseUuidField(raw.salonId);
+    return salonId.ok ? ok(raw) : salonId;
+  },
+  run: async ({ overrideId, salonId }, session) => {
+    const result = await cancelSalonExtraConfig(overrideId, salonId, session.userId);
+    return result.ok ? ok(undefined) : result;
+  },
+  revalidate: () => SUBSCRIPTION_PATHS,
+});
 
 export async function cancelExtraAction(overrideId: string, salonId: string): Promise<void> {
-  const actorUserId = await requirePlatformAdmin();
-  const limited = await assertActionRateLimit(actorUserId, "admin:cancelExtraAction");
-  if (!limited.ok) throw new Error(limited.error);
-  if (!parseUuid(overrideId)) throw new Error("Identificador inválido.");
-  if (!parseUuid(salonId)) throw new Error("Identificador inválido.");
-  const result = await cancelSalonExtraConfig(overrideId, salonId, actorUserId);
+  const result = await cancelExtraFlow({ overrideId, salonId });
   if (!result.ok) throw new Error(result.error);
-  done("Extra cancelado.");
 }
