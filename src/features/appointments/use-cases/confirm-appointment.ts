@@ -8,7 +8,7 @@ import { assertTransition } from "../domain/lifecycle";
 export async function confirmAppointment(
   appointmentId: string,
   salonId: string,
-  idempotencyKey?: string
+  idempotencyKey: string
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
   try {

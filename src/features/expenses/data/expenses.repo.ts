@@ -2,30 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { ExpenseCategory } from "../schemas";
-
-type AnySupabase = {
-  from: (table: string) => QueryBuilder;
-};
-
-type QueryResult = {
-  data: unknown;
-  error: Error | null;
-  count?: number | null;
-};
-
-type QueryBuilder = PromiseLike<QueryResult> & {
-  select: (...args: unknown[]) => QueryBuilder;
-  insert: (...args: unknown[]) => QueryBuilder;
-  eq: (...args: unknown[]) => QueryBuilder;
-  gte: (...args: unknown[]) => QueryBuilder;
-  lte: (...args: unknown[]) => QueryBuilder;
-  order: (...args: unknown[]) => QueryBuilder;
-  limit: (...args: unknown[]) => QueryBuilder;
-};
-
-function db(client: unknown): AnySupabase {
-  return client as AnySupabase;
-}
+import { reportMonthlyHistoryRpc } from "./rpc/report-monthly-history";
 
 export interface ExpenseRow {
   id: string;
@@ -43,17 +20,18 @@ export interface ExpenseRow {
 const EXPENSE_COLUMNS =
   "id, expense_date, amount, category, custom_category, concept, vendor_name, receipt_url, note, created_at";
 
-interface HistoricalExpensePayload {
-  expenseGroups?: Array<{ amount: number }> | null;
-  purchaseMonths?: Array<{ amount: number }> | null;
-}
-
 export interface LifetimeExpenseTotals {
   manual: number;
   inventoryPurchases: number;
   total: number;
 }
 
+const UNIQUE_VIOLATION = "23505";
+
+/**
+ * Inserta el gasto usando idempotencyKey como id de la fila: un reenvio con la misma
+ * clave no duplica el gasto. Si la fila ya existe en este salon se trata como exito.
+ */
 export async function insertExpense(
   salonId: string,
   input: {
@@ -64,14 +42,16 @@ export async function insertExpense(
     vendor_name?: string;
     receipt_url?: string;
     note?: string;
-  }
+  },
+  idempotencyKey: string
 ): Promise<void> {
-  const supabase = db(await createSupabaseServerClient());
+  const supabase = await createSupabaseServerClient();
   // custom_category solo guarda el texto libre del caso "other"; para las demas
   // categorias la etiqueta sale del catalogo, no de un texto guardado.
   const customCategory = input.category === "other" ? input.concept?.trim() || null : null;
 
   const { error } = await supabase.from("expenses").insert({
+    id: idempotencyKey,
     salon_id: salonId,
     expense_date: input.expense_date,
     amount: input.amount,
@@ -83,11 +63,23 @@ export async function insertExpense(
     note: input.note || null,
   });
 
-  if (error) throw error;
+  if (!error) return;
+  if (error.code !== UNIQUE_VIOLATION) throw error;
+
+  // Reenvio: la fila ya existe. Solo cuenta como replay si pertenece a este salon.
+  const { data, error: readError } = await supabase
+    .from("expenses")
+    .select("id")
+    .eq("id", idempotencyKey)
+    .eq("salon_id", salonId)
+    .maybeSingle();
+
+  if (readError) throw readError;
+  if (!data) throw error;
 }
 
 export async function findExpenses(salonId: string, limit = 40): Promise<ExpenseRow[]> {
-  const supabase = db(await createSupabaseServerClient());
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("expenses")
     .select(EXPENSE_COLUMNS)
@@ -103,17 +95,13 @@ export async function findExpenses(salonId: string, limit = 40): Promise<Expense
 export async function findLifetimeExpenseTotals(
   salonId: string
 ): Promise<LifetimeExpenseTotals> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("report_monthly_history", {
-    p_salon_id: salonId,
-    p_start: "0001-01-01T00:00:00.000Z",
-    p_end: "9999-12-31T23:59:59.999Z",
-    p_timezone: "UTC",
+  const history = await reportMonthlyHistoryRpc({
+    salonId,
+    start: "0001-01-01T00:00:00.000Z",
+    end: "9999-12-31T23:59:59.999Z",
+    timezone: "UTC",
   });
 
-  if (error) throw error;
-
-  const history = (data ?? {}) as HistoricalExpensePayload;
   const manual = (history.expenseGroups ?? []).reduce(
     (sum, group) => sum + Number(group.amount ?? 0),
     0
@@ -135,7 +123,7 @@ export async function sumExpensesTotal(
   fromDate: string,
   toDate: string
 ): Promise<number> {
-  const supabase = db(await createSupabaseServerClient());
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("expenses")
     .select("amount")

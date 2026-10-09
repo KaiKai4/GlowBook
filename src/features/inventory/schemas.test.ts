@@ -7,6 +7,7 @@ import {
 } from "./schemas";
 
 const PRODUCT_ID = "00000000-0000-4000-8000-000000000033";
+const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000c1";
 
 describe("inventory schemas", () => {
   describe("CreateInventoryProductSchema", () => {
@@ -54,10 +55,21 @@ describe("inventory schemas", () => {
   });
 
   describe("InventoryTransferSchema", () => {
-    const base = { product_id: PRODUCT_ID, from_location: "storage", to_location: "retail", quantity: "2" };
+    const base = {
+      product_id: PRODUCT_ID,
+      from_location: "storage",
+      to_location: "retail",
+      quantity: "2",
+      idempotency_key: IDEMPOTENCY_KEY,
+    };
 
     it("acepta una transferencia entre ubicaciones distintas con cantidad positiva", () => {
       expect(InventoryTransferSchema.parse(base)).toEqual({ ...base, quantity: 2, note: "" });
+    });
+
+    it("exige una clave de idempotencia uuid", () => {
+      expect(InventoryTransferSchema.safeParse({ ...base, idempotency_key: undefined }).success).toBe(false);
+      expect(InventoryTransferSchema.safeParse({ ...base, idempotency_key: "x" }).success).toBe(false);
     });
 
     it("rechaza transferir a la misma ubicacion de origen", () => {
@@ -85,6 +97,7 @@ describe("inventory schemas", () => {
       product_id: PRODUCT_ID,
       location: "storage",
       quantity: "3",
+      idempotency_key: IDEMPOTENCY_KEY,
     };
 
     it("aplica defaults de proveedor, costo unitario y nota", () => {

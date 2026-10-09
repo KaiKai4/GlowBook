@@ -1,22 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/lib/observability";
 import {
-  createAppointmentWithRpc,
   findAppointmentCreationResources,
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
   type AppointmentCreationResources,
 } from "../data/appointment-commands.repo";
+import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
 import type { CreateAppointmentInput } from "../schemas";
 import { createAppointment } from "./create-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
-  createAppointmentWithRpc: vi.fn(),
   findAppointmentCreationResources: vi.fn(),
   findEmployeeExceptionDatesForCommand: vi.fn(),
   findEmployeeOccupiedSlotsForCommand: vi.fn(),
   findEmployeeWorkSchedulesForCommand: vi.fn(),
+}));
+vi.mock("../data/rpc/create-appointment", () => ({
+  createAppointmentWithRpc: vi.fn(),
 }));
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 
@@ -86,11 +88,13 @@ function input(overrides: Partial<CreateAppointmentInput> = {}): CreateAppointme
     start_time: startIso,
     notes: "",
     assignments: [{ service_id: serviceA, employee_id: employeeA }],
+    idempotency_key: "00000000-0000-4000-8000-0000000000c1",
     ...overrides,
   };
 }
 
-const deps = { salonId, userId };
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
+const deps = { salonId, userId, idempotencyKey };
 
 describe("createAppointment: payload del RPC", () => {
   beforeEach(() => {
@@ -104,6 +108,12 @@ describe("createAppointment: payload del RPC", () => {
     mockedRpc.mockResolvedValue({ ok: true, appointmentId: "appointment-1" });
   });
 
+  it("reenvía la clave de idempotencia del formulario al adaptador RPC", async () => {
+    await createAppointment(input(), deps);
+
+    expect(mockedRpc.mock.calls[0]?.[0].idempotencyKey).toBe(idempotencyKey);
+  });
+
   it("envía el salón, el usuario que crea y los ítems con bloqueo de agenda", async () => {
     const result = await createAppointment(input({ notes: "Sin azúcar" }), deps);
 
@@ -113,7 +123,7 @@ describe("createAppointment: payload del RPC", () => {
       customerId,
       assignments: [{ service_id: serviceA, employee_id: employeeA }],
     });
-    expect(mockedRpc).toHaveBeenCalledWith({
+    expect(mockedRpc.mock.calls[0]?.[0].payload).toEqual({
       salon_id: salonId,
       customer_id: customerId,
       created_by: userId,
@@ -165,7 +175,7 @@ describe("createAppointment: payload del RPC", () => {
     expect(result.ok).toBe(true);
     expect(mockedSchedules).toHaveBeenCalledTimes(1);
     expect(mockedOccupied).toHaveBeenCalledTimes(1);
-    const items = mockedRpc.mock.calls[0]?.[0].items ?? [];
+    const items = mockedRpc.mock.calls[0]?.[0].payload.items ?? [];
     expect(items.map((item) => [item.service_id, item.ordering, item.start_time, item.end_time])).toEqual([
       [serviceA, 1, startIso, "2030-01-01T14:30:00.000Z"],
       [serviceB, 2, "2030-01-01T14:30:00.000Z", "2030-01-01T15:15:00.000Z"],

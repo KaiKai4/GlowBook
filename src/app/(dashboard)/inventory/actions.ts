@@ -114,7 +114,11 @@ export async function transferInventoryStockAction(
     return { ok: false, error: "Este producto solo puede transferirse de Bodega a Uso interno." };
   }
 
-  const result = await transferInventoryStock(guarded.value.salonId, parsed.data);
+  const result = await transferInventoryStock(
+    guarded.value.salonId,
+    parsed.data,
+    parsed.data.idempotency_key
+  );
   if (result.ok) revalidateInventory();
   return result.ok ? { ok: true, value: "Transferencia registrada." } : result;
 }

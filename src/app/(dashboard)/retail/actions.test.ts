@@ -23,11 +23,13 @@ vi.mock("@/features/salon/use-cases/salon-payment-methods", () => ({
 }));
 
 const retailManager = buildProfile({ permissions: [PERMISSIONS.RETAIL_MANAGE] });
+const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000c1";
 const validSale = {
   product_id: RECORD_ID,
   quantity: "2",
   unit_price: "150",
   payment_method: "card",
+  idempotency_key: IDEMPOTENCY_KEY,
 };
 
 describe("createRetailSaleAction", () => {
@@ -101,11 +103,19 @@ describe("createRetailSaleAction", () => {
     expect(result).toEqual({ ok: true, value: "sale-1" });
     expect(createRetailSale).toHaveBeenCalledWith(
       SALON_ID,
-      expect.objectContaining({ product_id: RECORD_ID, quantity: 2, payment_method: "card" })
+      expect.objectContaining({ product_id: RECORD_ID, quantity: 2, payment_method: "card" }),
+      IDEMPOTENCY_KEY
     );
     for (const path of ["/retail", "/inventory", "/reports"]) {
       expect(revalidatePath).toHaveBeenCalledWith(path);
     }
+  });
+
+  it("exige una clave de idempotencia uuid antes de registrar la venta", async () => {
+    const withoutKey = await createRetailSaleAction(null, formDataOf({ ...validSale, idempotency_key: "" }));
+
+    expect(withoutKey).toEqual({ ok: false, error: "La clave de idempotencia debe ser un uuid." });
+    expect(createRetailSale).not.toHaveBeenCalled();
   });
 
   it("no revalida si la venta falla", async () => {

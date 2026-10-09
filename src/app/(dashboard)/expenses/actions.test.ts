@@ -25,11 +25,13 @@ const expensesManager = buildProfile({ permissions: [PERMISSIONS.EXPENSES_MANAGE
 const fullManager = buildProfile({
   permissions: [PERMISSIONS.EXPENSES_MANAGE, PERMISSIONS.INVENTORY_MANAGE],
 });
+const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000c1";
 const validExpense = {
   expense_date: "2026-10-01",
   amount: "120.5",
   category: "rent",
   vendor_name: "Casero",
+  idempotency_key: IDEMPOTENCY_KEY,
 };
 const validPurchase = {
   purchase_date: "2026-10-01",
@@ -37,6 +39,7 @@ const validPurchase = {
   quantity: "2",
   unit_cost: "10",
   commerce_name: "Proveedor X",
+  idempotency_key: IDEMPOTENCY_KEY,
 };
 
 describe("expenses actions", () => {
@@ -104,7 +107,8 @@ describe("expenses actions", () => {
       expect(result).toEqual({ ok: true, value: "exp-1" });
       expect(createExpense).toHaveBeenCalledWith(
         SALON_ID,
-        expect.objectContaining({ amount: 120.5, category: "rent", vendor_name: "Casero" })
+        expect.objectContaining({ amount: 120.5, category: "rent", vendor_name: "Casero" }),
+        IDEMPOTENCY_KEY
       );
       for (const path of ["/", "/expenses", "/inventory", "/reports", "/retail"]) {
         expect(revalidatePath).toHaveBeenCalledWith(path);
@@ -158,7 +162,8 @@ describe("expenses actions", () => {
       expect(result).toEqual({ ok: true, value: "exp-2" });
       expect(createInventoryPurchaseExpense).toHaveBeenCalledWith(
         SALON_ID,
-        expect.objectContaining({ supplier_name: "Proveedor X", location: "storage", quantity: 2 })
+        expect.objectContaining({ supplier_name: "Proveedor X", location: "storage", quantity: 2 }),
+        IDEMPOTENCY_KEY
       );
       expect(revalidatePath).toHaveBeenCalledWith("/inventory");
     });
@@ -173,8 +178,19 @@ describe("expenses actions", () => {
 
       expect(createInventoryPurchaseExpense).toHaveBeenCalledWith(
         SALON_ID,
-        expect.objectContaining({ supplier_name: "Distribuidora Sol" })
+        expect.objectContaining({ supplier_name: "Distribuidora Sol" }),
+        IDEMPOTENCY_KEY
       );
+    });
+
+    it("exige una clave de idempotencia uuid antes de registrar la compra", async () => {
+      const result = await createInventoryPurchaseExpenseAction(
+        null,
+        formDataOf({ ...validPurchase, idempotency_key: "" })
+      );
+
+      expect(result).toEqual({ ok: false, error: "La clave de idempotencia debe ser un uuid." });
+      expect(createInventoryPurchaseExpense).not.toHaveBeenCalled();
     });
 
     it("propaga el límite de movimientos del plan sin persistir", async () => {

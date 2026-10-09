@@ -1,20 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/lib/observability";
 import {
-  createAppointmentWithRpc,
   findAppointmentCreationResources,
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
 } from "../data/appointment-commands.repo";
+import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
 import { createAppointment } from "./create-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
-  createAppointmentWithRpc: vi.fn(),
   findAppointmentCreationResources: vi.fn(),
   findEmployeeOccupiedSlotsForCommand: vi.fn(),
   findEmployeeExceptionDatesForCommand: vi.fn(),
   findEmployeeWorkSchedulesForCommand: vi.fn(),
+}));
+vi.mock("../data/rpc/create-appointment", () => ({
+  createAppointmentWithRpc: vi.fn(),
 }));
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 
@@ -32,11 +34,13 @@ const serviceId = "00000000-0000-0000-0000-000000000004";
 const employeeId = "00000000-0000-0000-0000-000000000005";
 // 2030-01-01 es martes: día 1 de la semana (0 = lunes).
 const startTime = "2030-01-01T10:00:00.000Z";
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 const input = {
   customer_id: customerId,
   start_time: startTime,
   notes: "",
   assignments: [{ service_id: serviceId, employee_id: employeeId }],
+  idempotency_key: idempotencyKey,
 };
 
 const openAllWeek: DayHours[] = Array.from({ length: 7 }, (_, day) => ({
@@ -104,7 +108,7 @@ describe("createAppointment: guardas del caso de uso", () => {
       customerExists: false,
     });
 
-    expect(await createAppointment(input, { salonId, userId })).toEqual({
+    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Cliente no encontrado en este salón.",
     });
@@ -117,7 +121,7 @@ describe("createAppointment: guardas del caso de uso", () => {
       salonConfig: null,
     });
 
-    expect(await createAppointment(input, { salonId, userId })).toEqual({
+    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Salón no encontrado.",
     });
@@ -129,7 +133,7 @@ describe("createAppointment: guardas del caso de uso", () => {
       assignments: [{ ...validAssignment(), employee: null }],
     });
 
-    expect(await createAppointment(input, { salonId, userId })).toEqual({
+    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Servicio o profesional no encontrado en el salón.",
     });
@@ -139,7 +143,7 @@ describe("createAppointment: guardas del caso de uso", () => {
     const failure = new Error("db down");
     vi.mocked(findAppointmentCreationResources).mockRejectedValue(failure);
 
-    expect(await createAppointment(input, { salonId, userId })).toEqual({
+    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Datos inválidos.",
     });
@@ -150,7 +154,7 @@ describe("createAppointment: guardas del caso de uso", () => {
     const failure = new Error("timeout");
     vi.mocked(findEmployeeWorkSchedulesForCommand).mockRejectedValue(failure);
 
-    expect(await createAppointment(input, { salonId, userId })).toEqual({
+    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "No se pudo validar la disponibilidad del profesional.",
     });
@@ -166,7 +170,7 @@ describe("createAppointment: guardas del caso de uso", () => {
       validResources({ businessHours: closedTuesday })
     );
 
-    expect(await createAppointment(input, { salonId, userId })).toEqual({
+    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "El salon esta cerrado ese día.",
     });
@@ -178,7 +182,7 @@ describe("createAppointment: guardas del caso de uso", () => {
     // y el dominio lo rechaza antes de calcular el fin.
     vi.mocked(findAppointmentCreationResources).mockResolvedValue({ ...validResources(), assignments: [] });
 
-    expect(await createAppointment({ ...input, assignments: [] }, { salonId, userId })).toEqual({
+    expect(await createAppointment({ ...input, assignments: [] }, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Selecciona al menos un servicio.",
     });

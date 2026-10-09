@@ -18,6 +18,7 @@ vi.mock("../data/rpc/complete-appointment", () => ({
 
 const mockedFind = vi.mocked(findAppointmentForCommand);
 const mockedRpc = vi.mocked(completeAppointmentRpc);
+const idempotencyKey = "00000000-0000-4000-8000-0000000000e1";
 const mockedCapture = vi.mocked(captureError);
 
 const appointmentId = "appointment-1";
@@ -42,9 +43,7 @@ describe("completeAppointment: transición y datos enviados a la RPC", () => {
   });
 
   it("busca la cita dentro del salón y envía todo en una única RPC", async () => {
-    const result = await completeAppointment(appointmentId, salonId, "card", [
-      { id: "item-1", price: 15 },
-    ]);
+    const result = await completeAppointment(appointmentId, salonId, "card", [{ id: "item-1", price: 15 }], "", idempotencyKey);
 
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedFind).toHaveBeenCalledWith(appointmentId, salonId);
@@ -54,18 +53,18 @@ describe("completeAppointment: transición y datos enviados a la RPC", () => {
       paymentMethod: "card",
       completionPriceNote: "",
       itemCharges: [{ id: "item-1", price: 15, discount_percentage: undefined }],
-      idempotencyKey: undefined,
+      idempotencyKey,
     });
   });
 
   it("sin cobros enviados la RPC conserva precios (lista vacía)", async () => {
-    await completeAppointment(appointmentId, salonId, "cash");
+    await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey);
 
     expect(mockedRpc).toHaveBeenCalledWith(expect.objectContaining({ itemCharges: [] }));
   });
 
   it("recorta la nota de cierre: quita espacios y limita a 500 caracteres", async () => {
-    await completeAppointment(appointmentId, salonId, "cash", [], `  ${"n".repeat(600)}  `);
+    await completeAppointment(appointmentId, salonId, "cash", [], `  ${"n".repeat(600)}  `, idempotencyKey);
 
     const [input] = mockedRpc.mock.calls[0] ?? [];
     expect(input?.completionPriceNote).toBe("n".repeat(500));
@@ -88,7 +87,7 @@ describe("completeAppointment: errores", () => {
   it("devuelve 'Cita no encontrada.' cuando la cita no existe en el salón", async () => {
     mockedFind.mockResolvedValue(null);
 
-    expect(await completeAppointment(appointmentId, salonId, "cash")).toEqual({
+    expect(await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey)).toEqual({
       ok: false,
       error: "Cita no encontrada.",
     });
@@ -99,7 +98,7 @@ describe("completeAppointment: errores", () => {
     const failure = new Error("db down");
     mockedFind.mockRejectedValue(failure);
 
-    expect(await completeAppointment(appointmentId, salonId, "cash")).toEqual({
+    expect(await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey)).toEqual({
       ok: false,
       error: "Cita no encontrada.",
     });
@@ -114,7 +113,7 @@ describe("completeAppointment: errores", () => {
       customer_id: "customer-1",
     });
 
-    expect(await completeAppointment(appointmentId, salonId, "cash")).toEqual({
+    expect(await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey)).toEqual({
       ok: false,
       error: 'No se puede cambiar el estado de "cancelled" a "completed".',
     });
@@ -133,7 +132,7 @@ describe("completeAppointment: errores", () => {
       message: "Ese metodo de pago no esta habilitado para este salon.",
     });
 
-    expect(await completeAppointment(appointmentId, salonId, "bitcoin")).toEqual({
+    expect(await completeAppointment(appointmentId, salonId, "bitcoin", [], "", idempotencyKey)).toEqual({
       ok: false,
       error: "Ese metodo de pago no esta habilitado para este salon.",
     });
@@ -148,7 +147,7 @@ describe("completeAppointment: errores", () => {
     });
     mockedRpc.mockRejectedValue(new Error('relation "appointments" does not exist'));
 
-    expect(await completeAppointment(appointmentId, salonId, "cash")).toEqual({
+    expect(await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey)).toEqual({
       ok: false,
       error: "Error al completar la cita.",
     });

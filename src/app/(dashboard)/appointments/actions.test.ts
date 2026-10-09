@@ -50,13 +50,16 @@ const START = "2026-10-01T10:00:00.000Z";
 const assignments = JSON.stringify([{ service_id: SERVICE_ID, employee_id: EMPLOYEE_ID }]);
 const manager = buildProfile({ permissions: [PERMISSIONS.APPOINTMENTS_MANAGE] });
 
-const validCreate = { customer_id: RECORD_ID, start_time: START, assignments };
-const validUpdate = { appointment_id: RECORD_ID, start_time: START, assignments };
+const KEY = "00000000-0000-4000-8000-0000000000c1";
+const validCreate = { customer_id: RECORD_ID, start_time: START, assignments, idempotency_key: KEY };
+const validUpdate = { appointment_id: RECORD_ID, start_time: START, assignments, idempotency_key: KEY };
 const validComplete = {
   appointment_id: RECORD_ID,
   payment_method: "cash",
   item_charges: JSON.stringify([{ id: SERVICE_ID, price: 150 }]),
+  idempotency_key: KEY,
 };
+const lifecycleForm = () => formDataOf({ appointment_id: RECORD_ID, idempotency_key: KEY });
 
 describe("appointments actions", () => {
   beforeEach(() => {
@@ -156,7 +159,7 @@ describe("appointments actions", () => {
           customer_id: RECORD_ID,
           assignments: [{ service_id: SERVICE_ID, employee_id: EMPLOYEE_ID }],
         }),
-        { salonId: SALON_ID, userId: USER_ID }
+        { salonId: SALON_ID, userId: USER_ID, idempotencyKey: KEY }
       );
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
     });
@@ -208,7 +211,7 @@ describe("appointments actions", () => {
       });
       expect(updateAppointmentSchedule).toHaveBeenCalledWith(
         expect.objectContaining({ appointment_id: RECORD_ID }),
-        { salonId: SALON_ID }
+        { salonId: SALON_ID, idempotencyKey: KEY }
       );
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
 
@@ -227,7 +230,7 @@ describe("appointments actions", () => {
   describe("cancelar y confirmar", () => {
     it("cancelAppointmentAction rechaza sin permiso, y cancela y revalida con permiso", async () => {
       vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-      expect(await cancelAppointmentAction(RECORD_ID)).toEqual({
+      expect(await cancelAppointmentAction(lifecycleForm())).toEqual({
         ok: false,
         error: "No tienes permiso para cancelar citas.",
       });
@@ -235,14 +238,14 @@ describe("appointments actions", () => {
 
       vi.mocked(requireActiveProfile).mockResolvedValue(manager);
       vi.mocked(cancelAppointment).mockResolvedValue(ok(undefined));
-      expect(await cancelAppointmentAction(RECORD_ID)).toEqual({ ok: true, value: undefined });
-      expect(cancelAppointment).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
+      expect(await cancelAppointmentAction(lifecycleForm())).toEqual({ ok: true, value: undefined });
+      expect(cancelAppointment).toHaveBeenCalledWith(RECORD_ID, SALON_ID, KEY);
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
     });
 
     it("confirmAppointmentAction rechaza sin permiso, y confirma y revalida con permiso", async () => {
       vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-      expect(await confirmAppointmentAction(RECORD_ID)).toEqual({
+      expect(await confirmAppointmentAction(lifecycleForm())).toEqual({
         ok: false,
         error: "No tienes permiso para confirmar citas.",
       });
@@ -250,7 +253,7 @@ describe("appointments actions", () => {
 
       vi.mocked(requireActiveProfile).mockResolvedValue(manager);
       vi.mocked(confirmAppointment).mockResolvedValue(err("La cita ya está cancelada."));
-      expect(await confirmAppointmentAction(RECORD_ID)).toEqual({
+      expect(await confirmAppointmentAction(lifecycleForm())).toEqual({
         ok: false,
         error: "La cita ya está cancelada.",
       });
@@ -307,7 +310,8 @@ describe("appointments actions", () => {
         SALON_ID,
         "cash",
         [{ id: SERVICE_ID, price: 150, discountPercentage: 0 }],
-        ""
+        "",
+        KEY
       );
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
       expect(revalidatePath).toHaveBeenCalledWith("/customers");

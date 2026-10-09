@@ -3,11 +3,13 @@ import { RetailSaleSchema } from "./schemas";
 
 const PRODUCT_ID = "00000000-0000-4000-8000-000000000033";
 const CUSTOMER_ID = "00000000-0000-4000-8000-000000000044";
+const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000c1";
 
 const validSale = {
   product_id: PRODUCT_ID,
   quantity: "2",
   unit_price: "12.5",
+  idempotency_key: IDEMPOTENCY_KEY,
 };
 
 describe("RetailSaleSchema", () => {
@@ -20,7 +22,13 @@ describe("RetailSaleSchema", () => {
       unit_price: 12.5,
       payment_method: "cash",
       note: "",
+      idempotency_key: IDEMPOTENCY_KEY,
     });
+  });
+
+  it("exige una clave de idempotencia uuid", () => {
+    expect(RetailSaleSchema.safeParse({ ...validSale, idempotency_key: undefined }).success).toBe(false);
+    expect(RetailSaleSchema.safeParse({ ...validSale, idempotency_key: "no-uuid" }).success).toBe(false);
   });
 
   it("acepta cliente opcional con uuid o cadena vacia y rechaza otros textos", () => {

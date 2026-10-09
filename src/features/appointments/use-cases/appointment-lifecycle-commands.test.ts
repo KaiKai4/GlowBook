@@ -101,9 +101,7 @@ describe("appointment lifecycle commands", () => {
       message: "Solo puedes cambiar el precio de servicios con precio variable.",
     });
 
-    const result = await completeAppointment(appointmentId, salonId, "cash", [
-      { id: "item-fixed", price: 25 },
-    ]);
+    const result = await completeAppointment(appointmentId, salonId, "cash", [{ id: "item-fixed", price: 25 }], "", idempotencyKey);
 
     expect(result).toEqual({
       ok: false,
@@ -119,7 +117,7 @@ describe("appointment lifecycle commands", () => {
       customer_id: "customer-1",
     });
 
-    const result = await completeAppointment(appointmentId, salonId, "cash");
+    const result = await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey);
 
     expect(result.ok).toBe(false);
     expect(mockedCompleteRpc).not.toHaveBeenCalled();

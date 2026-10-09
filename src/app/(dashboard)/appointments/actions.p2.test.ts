@@ -6,7 +6,7 @@ import { getOccupiedSlotsForSalonDate } from "@/features/appointments/use-cases/
 import { cancelAppointment } from "@/features/appointments/use-cases/cancel-appointment";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { err, ok } from "@/lib/result";
-import { buildProfile, RECORD_ID } from "@/test/action-fixtures";
+import { buildProfile, formDataOf, RECORD_ID } from "@/test/action-fixtures";
 import {
   cancelAppointmentAction,
   confirmAppointmentAction,
@@ -34,8 +34,13 @@ vi.mock("@/features/appointments/use-cases/update-appointment", () => ({
   updateAppointmentSchedule: vi.fn(),
 }));
 
-const INVALID = { ok: false, error: "Identificador inválido." } as const;
+const KEY = "00000000-0000-4000-8000-0000000000c1";
+const INVALID_ID = { ok: false, error: "ID de cita inválido" } as const;
 const manager = buildProfile({ permissions: [PERMISSIONS.APPOINTMENTS_MANAGE] });
+
+function lifecycleForm(appointmentId: string, idempotencyKey = KEY): FormData {
+  return formDataOf({ appointment_id: appointmentId, idempotency_key: idempotencyKey });
+}
 
 describe("appointments actions: identificadores inválidos", () => {
   beforeEach(() => {
@@ -50,25 +55,43 @@ describe("appointments actions: identificadores inválidos", () => {
   });
 
   it("cancelAppointmentAction rechaza un identificador inválido sin cancelar", async () => {
-    expect(await cancelAppointmentAction("cita-1")).toEqual(INVALID);
+    expect(await cancelAppointmentAction(lifecycleForm("cita-1"))).toEqual(INVALID_ID);
+    expect(cancelAppointment).not.toHaveBeenCalled();
+  });
+
+  it("cancelAppointmentAction exige la clave de idempotencia sin cancelar", async () => {
+    expect(await cancelAppointmentAction(lifecycleForm(RECORD_ID, "no-uuid"))).toEqual({
+      ok: false,
+      error: "La clave de idempotencia debe ser un uuid.",
+    });
     expect(cancelAppointment).not.toHaveBeenCalled();
   });
 
   it("cancelAppointmentAction devuelve el error del caso de uso sin revalidar", async () => {
     vi.mocked(cancelAppointment).mockResolvedValue(err("La cita ya fue completada."));
 
-    expect(await cancelAppointmentAction(RECORD_ID)).toEqual({ ok: false, error: "La cita ya fue completada." });
+    expect(await cancelAppointmentAction(lifecycleForm(RECORD_ID))).toEqual({
+      ok: false,
+      error: "La cita ya fue completada.",
+    });
+  });
+
+  it("cancelAppointmentAction reenvía el id de la cita y la clave al caso de uso", async () => {
+    vi.mocked(cancelAppointment).mockResolvedValue(ok(undefined));
+
+    expect(await cancelAppointmentAction(lifecycleForm(RECORD_ID))).toEqual(ok(undefined));
+    expect(cancelAppointment).toHaveBeenCalledWith(RECORD_ID, manager.salon_id, KEY);
   });
 
   it("confirmAppointmentAction rechaza un identificador inválido sin confirmar", async () => {
-    expect(await confirmAppointmentAction("cita-1")).toEqual(INVALID);
+    expect(await confirmAppointmentAction(lifecycleForm("cita-1"))).toEqual(INVALID_ID);
     expect(confirmAppointment).not.toHaveBeenCalled();
   });
 
-  it("confirmAppointmentAction confirma con el identificador del salón", async () => {
+  it("confirmAppointmentAction confirma con el identificador del salón y la clave", async () => {
     vi.mocked(confirmAppointment).mockResolvedValue(ok(undefined));
 
-    expect(await confirmAppointmentAction(RECORD_ID)).toEqual(ok(undefined));
-    expect(confirmAppointment).toHaveBeenCalledWith(RECORD_ID, manager.salon_id);
+    expect(await confirmAppointmentAction(lifecycleForm(RECORD_ID))).toEqual(ok(undefined));
+    expect(confirmAppointment).toHaveBeenCalledWith(RECORD_ID, manager.salon_id, KEY);
   });
 });

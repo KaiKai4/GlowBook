@@ -6,8 +6,8 @@ import {
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
-  updateAppointmentWithRpc,
 } from "../data/appointment-commands.repo";
+import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
 import type { AppointmentCommandState } from "../data/appointment-commands.repo";
 
@@ -17,6 +17,8 @@ vi.mock("../data/appointment-commands.repo", () => ({
   findEmployeeExceptionDatesForCommand: vi.fn(),
   findEmployeeOccupiedSlotsForCommand: vi.fn(),
   findEmployeeWorkSchedulesForCommand: vi.fn(),
+}));
+vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
 }));
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
@@ -35,11 +37,13 @@ const serviceId = "00000000-0000-0000-0000-000000000004";
 const employeeId = "00000000-0000-0000-0000-000000000005";
 // 2030-01-01 es martes: día 1 de la semana (0 = lunes).
 const startTime = "2030-01-01T10:00:00.000Z";
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 const input = {
   appointment_id: appointmentId,
   start_time: startTime,
   notes: "",
   assignments: [{ service_id: serviceId, employee_id: employeeId }],
+  idempotency_key: idempotencyKey,
 };
 
 const openAllWeek: DayHours[] = Array.from({ length: 7 }, (_, day) => ({
@@ -112,7 +116,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
   it("no carga ni modifica la cita si no existe en el salón", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue(null);
 
-    const result = await updateAppointmentSchedule(input, { salonId });
+    const result = await updateAppointmentSchedule(input, { salonId, idempotencyKey });
 
     expect(result.ok).toBe(false);
     expect(result.ok ? "" : result.error).toMatch(/Cita no encontrada/);
@@ -123,7 +127,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
     const failure = new Error("network");
     vi.mocked(findAppointmentForCommand).mockRejectedValue(failure);
 
-    expect(await updateAppointmentSchedule(input, { salonId })).toEqual({
+    expect(await updateAppointmentSchedule(input, { salonId, idempotencyKey })).toEqual({
       ok: false,
       error: "No se pudo cargar la cita.",
     });
@@ -135,7 +139,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
     async (status) => {
       vi.mocked(findAppointmentForCommand).mockResolvedValue({ ...scheduledAppointment, status });
 
-      const result = await updateAppointmentSchedule(input, { salonId });
+      const result = await updateAppointmentSchedule(input, { salonId, idempotencyKey });
 
       expect(result.ok).toBe(false);
       expect(result.ok ? "" : result.error).toMatch(/cerrada/);
@@ -146,7 +150,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
   it("rechaza una cita sin cliente válido", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue({ ...scheduledAppointment, customer_id: null });
 
-    const result = await updateAppointmentSchedule(input, { salonId });
+    const result = await updateAppointmentSchedule(input, { salonId, idempotencyKey });
 
     expect(result.ok).toBe(false);
     expect(result.ok ? "" : result.error).toMatch(/cliente/);
@@ -157,7 +161,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
     const failure = new Error("rpc");
     vi.mocked(findAppointmentCreationResources).mockRejectedValue(failure);
 
-    const result = await updateAppointmentSchedule(input, { salonId });
+    const result = await updateAppointmentSchedule(input, { salonId, idempotencyKey });
 
     expect(result.ok).toBe(false);
     expect(result.ok ? "" : result.error).toMatch(/Datos inv/);
@@ -170,7 +174,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
     );
     vi.mocked(findAppointmentCreationResources).mockResolvedValue(validResources(closedTuesday));
 
-    expect(await updateAppointmentSchedule(input, { salonId })).toEqual({
+    expect(await updateAppointmentSchedule(input, { salonId, idempotencyKey })).toEqual({
       ok: false,
       error: "El salon esta cerrado ese día.",
     });
@@ -180,7 +184,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
   it("devuelve el error del dominio si la cita se reprograma sin servicios", async () => {
     vi.mocked(findAppointmentCreationResources).mockResolvedValue({ ...validResources(), assignments: [] });
 
-    expect(await updateAppointmentSchedule({ ...input, assignments: [] }, { salonId })).toEqual({
+    expect(await updateAppointmentSchedule({ ...input, assignments: [] }, { salonId, idempotencyKey })).toEqual({
       ok: false,
       error: "Selecciona al menos un servicio.",
     });

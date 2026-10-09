@@ -1,20 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  createAppointmentWithRpc,
   findAppointmentCreationResources,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeExceptionDatesForCommand,
   findEmployeeWorkSchedulesForCommand,
 } from "../data/appointment-commands.repo";
+import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
 import { createAppointment } from "./create-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
-  createAppointmentWithRpc: vi.fn(),
   findAppointmentCreationResources: vi.fn(),
   findEmployeeOccupiedSlotsForCommand: vi.fn(),
   findEmployeeExceptionDatesForCommand: vi.fn(),
   findEmployeeWorkSchedulesForCommand: vi.fn(),
 }));
+vi.mock("../data/rpc/create-appointment", () => ({
+  createAppointmentWithRpc: vi.fn(),
+}));
+
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
 const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
 const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findEmployeeWorkSchedulesForCommand);
@@ -96,8 +100,9 @@ describe("create appointment command", () => {
         start_time: startTime,
         notes: "Primera visita",
         assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
       },
-      { salonId, userId }
+      { salonId, userId, idempotencyKey }
     );
 
     expect(result).toEqual({ ok: true, value: "appointment-1" });
@@ -107,6 +112,8 @@ describe("create appointment command", () => {
       assignments: [{ service_id: serviceId, employee_id: employeeId }],
     });
     expect(mockedCreateAppointmentWithRpc).toHaveBeenCalledWith({
+      idempotencyKey,
+      payload: {
       salon_id: salonId,
       customer_id: customerId,
       created_by: userId,
@@ -124,6 +131,7 @@ describe("create appointment command", () => {
           blocks_calendar: true,
         },
       ],
+      },
     });
   });
 
@@ -141,8 +149,9 @@ describe("create appointment command", () => {
         start_time: startTime,
         notes: "",
         assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
       },
-      { salonId, userId }
+      { salonId, userId, idempotencyKey }
     );
 
     expect(result).toEqual({
@@ -164,8 +173,9 @@ describe("create appointment command", () => {
         start_time: startTime,
         notes: "",
         assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
       },
-      { salonId, userId }
+      { salonId, userId, idempotencyKey }
     );
 
     expect(result).toEqual({

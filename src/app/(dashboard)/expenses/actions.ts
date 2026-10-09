@@ -46,7 +46,11 @@ export async function createExpenseAction(
   const parsed = CreateExpenseSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
-  const result = await createExpense(guarded.value.salonId, parsed.data);
+  const result = await createExpense(
+    guarded.value.salonId,
+    parsed.data,
+    parsed.data.idempotency_key
+  );
   if (result.ok) revalidateExpenses();
   return result;
 }
@@ -69,7 +73,11 @@ export async function createInventoryPurchaseExpenseAction(
   });
   if (!parsed.success) return { ok: false, error: firstIssueMessage(parsed.error) };
 
-  const result = await createInventoryPurchaseExpense(guarded.value.salonId, parsed.data);
+  const result = await createInventoryPurchaseExpense(
+    guarded.value.salonId,
+    parsed.data,
+    parsed.data.idempotency_key
+  );
   if (result.ok) revalidateExpenses();
   return result;
 }

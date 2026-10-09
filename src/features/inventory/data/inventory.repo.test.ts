@@ -11,10 +11,8 @@ import {
   insertInventoryMovement,
   insertInventoryProduct,
   insertStockLocations,
-  recordInventoryPurchaseAtomically,
   softDeleteInventoryProduct,
   sumInventoryPurchasesTotal,
-  transferInventoryStockAtomically,
   updateInventoryProduct,
   updateStockMinimums,
 } from "./inventory.repo";
@@ -318,93 +316,6 @@ describe("inventory.repo", () => {
           movement_type: "adjust",
           quantity_delta: 1,
           quantity_after: 1,
-        })
-      ).rejects.toBe(dbError);
-    });
-  });
-
-  describe("transferInventoryStockAtomically / recordInventoryPurchaseAtomically", () => {
-    it("invoca la RPC de transferencia con el salon y nota nula si viene vacia", async () => {
-      const db = useDb({ record_inventory_transfer: { data: null, error: null } });
-
-      await transferInventoryStockAtomically(SALON_ID, {
-        product_id: PRODUCT_ID,
-        from_location: "storage",
-        to_location: "retail",
-        quantity: 2,
-        note: "",
-      });
-
-      expect(db.operations).toContainEqual({
-        target: "record_inventory_transfer",
-        method: "rpc",
-        args: [
-          {
-            p_salon_id: SALON_ID,
-            p_product_id: PRODUCT_ID,
-            p_from_location: "storage",
-            p_to_location: "retail",
-            p_quantity: 2,
-            p_note: null,
-          },
-        ],
-      });
-    });
-
-    it("propaga el error de la RPC de transferencia", async () => {
-      const dbError = { message: "stock insuficiente" };
-      useDb({ record_inventory_transfer: { data: null, error: dbError } });
-
-      await expect(
-        transferInventoryStockAtomically(SALON_ID, {
-          product_id: PRODUCT_ID,
-          from_location: "storage",
-          to_location: "retail",
-          quantity: 99,
-        })
-      ).rejects.toBe(dbError);
-    });
-
-    it("registra la compra con la RPC y devuelve su id como texto", async () => {
-      const db = useDb({ record_inventory_purchase: { data: 42, error: null } });
-
-      expect(
-        await recordInventoryPurchaseAtomically(SALON_ID, {
-          supplier_name: "",
-          purchase_date: "2026-06-10",
-          product_id: PRODUCT_ID,
-          quantity: 3,
-          unit_cost: 5,
-          note: "lote",
-        })
-      ).toEqual({ id: "42" });
-      expect(db.operations).toContainEqual({
-        target: "record_inventory_purchase",
-        method: "rpc",
-        args: [
-          {
-            p_salon_id: SALON_ID,
-            p_supplier_name: null,
-            p_purchase_date: "2026-06-10",
-            p_product_id: PRODUCT_ID,
-            p_quantity: 3,
-            p_unit_cost: 5,
-            p_note: "lote",
-          },
-        ],
-      });
-    });
-
-    it("propaga el error de la RPC de compra", async () => {
-      const dbError = { message: "fallo" };
-      useDb({ record_inventory_purchase: { data: null, error: dbError } });
-
-      await expect(
-        recordInventoryPurchaseAtomically(SALON_ID, {
-          purchase_date: "2026-06-10",
-          product_id: PRODUCT_ID,
-          quantity: 1,
-          unit_cost: 1,
         })
       ).rejects.toBe(dbError);
     });

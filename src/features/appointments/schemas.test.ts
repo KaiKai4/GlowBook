@@ -11,6 +11,7 @@ const appointmentId = "00000000-0000-4000-8000-000000000002";
 const serviceId = "00000000-0000-4000-8000-000000000003";
 const employeeId = "00000000-0000-4000-8000-000000000004";
 
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 const validAssignment = { service_id: serviceId, employee_id: employeeId };
 
 function createInput(overrides: Record<string, unknown> = {}) {
@@ -18,6 +19,7 @@ function createInput(overrides: Record<string, unknown> = {}) {
     customer_id: customerId,
     start_time: "2030-01-01T14:00:00.000Z",
     assignments: [validAssignment],
+    idempotency_key: idempotencyKey,
     ...overrides,
   };
 }
@@ -25,6 +27,7 @@ function createInput(overrides: Record<string, unknown> = {}) {
 function completeInput(overrides: Record<string, unknown> = {}) {
   return {
     appointment_id: appointmentId,
+    idempotency_key: idempotencyKey,
     payment_method: "cash",
     item_charges: [{ id: serviceId, price: 25 }],
     ...overrides,
@@ -41,6 +44,11 @@ describe("CreateAppointmentSchema", () => {
 
     expect(parsed.notes).toBe("");
     expect(parsed.assignments).toEqual([validAssignment]);
+  });
+
+  it("exige una clave de idempotencia uuid", () => {
+    expect(CreateAppointmentSchema.safeParse(createInput({ idempotency_key: undefined })).success).toBe(false);
+    expect(CreateAppointmentSchema.safeParse(createInput({ idempotency_key: "" })).success).toBe(false);
   });
 
   it("rechaza ids que no son UUID en cliente, servicio o profesional", () => {
@@ -96,13 +104,19 @@ describe("UpdateAppointmentScheduleSchema", () => {
     appointment_id: appointmentId,
     start_time: "2030-01-01T14:00:00.000Z",
     assignments: [validAssignment],
+    idempotency_key: idempotencyKey,
     ...overrides,
   });
 
   it("acepta una reprogramación válida y completa las notas", () => {
     const parsed = UpdateAppointmentScheduleSchema.parse(updateInput());
 
-    expect(parsed).toMatchObject({ appointment_id: appointmentId, notes: "" });
+    expect(parsed).toMatchObject({ appointment_id: appointmentId, notes: "", idempotency_key: idempotencyKey });
+  });
+
+  it("exige una clave de idempotencia uuid", () => {
+    expect(UpdateAppointmentScheduleSchema.safeParse(updateInput({ idempotency_key: undefined })).success).toBe(false);
+    expect(UpdateAppointmentScheduleSchema.safeParse(updateInput({ idempotency_key: "clave" })).success).toBe(false);
   });
 
   it("rechaza un id de cita que no es UUID", () => {
@@ -133,6 +147,11 @@ describe("CompleteAppointmentSchema", () => {
 
     expect(parsed.completion_price_note).toBe("");
     expect(parsed.item_charges).toEqual([{ id: serviceId, price: 25, discountPercentage: 0 }]);
+  });
+
+  it("exige una clave de idempotencia uuid", () => {
+    expect(CompleteAppointmentSchema.safeParse(completeInput({ idempotency_key: undefined })).success).toBe(false);
+    expect(CompleteAppointmentSchema.safeParse(completeInput({ idempotency_key: "x" })).success).toBe(false);
   });
 
   it("normaliza el método de pago: quita espacios sobrantes y colapsa los internos", () => {

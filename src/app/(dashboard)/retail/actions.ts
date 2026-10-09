@@ -44,7 +44,11 @@ export async function createRetailSaleAction(
     return { ok: false, error: "Ese metodo de pago no esta habilitado para este salon." };
   }
 
-  const result = await createRetailSale(guarded.value.salonId, parsed.data);
+  const result = await createRetailSale(
+    guarded.value.salonId,
+    parsed.data,
+    parsed.data.idempotency_key
+  );
   if (result.ok) {
     revalidatePath("/retail");
     revalidatePath("/inventory");

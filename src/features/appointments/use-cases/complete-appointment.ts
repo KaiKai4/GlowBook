@@ -25,7 +25,7 @@ export async function completeAppointment(
   paymentMethod: AppointmentPaymentMethod,
   itemPrices: CompleteAppointmentPriceInput[] = [],
   completionPriceNote = "",
-  idempotencyKey?: string
+  idempotencyKey: string
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
   try {

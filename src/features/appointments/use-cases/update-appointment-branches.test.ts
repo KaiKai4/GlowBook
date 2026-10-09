@@ -6,10 +6,10 @@ import {
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
-  updateAppointmentWithRpc,
   type AppointmentCommandState,
   type AppointmentCreationResources,
 } from "../data/appointment-commands.repo";
+import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
 import type { UpdateAppointmentScheduleInput } from "../schemas";
 import { updateAppointmentSchedule } from "./update-appointment";
 
@@ -19,6 +19,8 @@ vi.mock("../data/appointment-commands.repo", () => ({
   findEmployeeExceptionDatesForCommand: vi.fn(),
   findEmployeeOccupiedSlotsForCommand: vi.fn(),
   findEmployeeWorkSchedulesForCommand: vi.fn(),
+}));
+vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
 }));
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
@@ -91,11 +93,13 @@ function input(overrides: Partial<UpdateAppointmentScheduleInput> = {}): UpdateA
     start_time: startIso,
     notes: "Reprogramada por el cliente",
     assignments: [{ service_id: serviceId, employee_id: employeeId }],
+    idempotency_key: idempotencyKey,
     ...overrides,
   };
 }
 
-const deps = { salonId };
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
+const deps = { salonId, idempotencyKey };
 
 describe("updateAppointmentSchedule: estado de la cita", () => {
   beforeEach(() => {
@@ -128,6 +132,8 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
       excludeAppointmentId: appointmentId,
     });
     expect(mockedRpc).toHaveBeenCalledWith({
+      idempotencyKey,
+      payload: {
       appointment_id: appointmentId,
       notes: "Reprogramada por el cliente",
       items: [
@@ -143,6 +149,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
           blocks_calendar: true,
         },
       ],
+      },
     });
   });
 

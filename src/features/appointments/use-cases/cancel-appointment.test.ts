@@ -43,14 +43,14 @@ describe("cancelAppointment: estado y agenda", () => {
   it("confirmed también puede cancelarse", async () => {
     mockedFind.mockResolvedValue(appointmentIn("confirmed"));
 
-    expect(await cancelAppointment(appointmentId, salonId)).toEqual({ ok: true, value: undefined });
-    expect(mockedRpc).toHaveBeenCalledWith({ appointmentId, idempotencyKey: undefined });
+    expect(await cancelAppointment(appointmentId, salonId, idempotencyKey)).toEqual({ ok: true, value: undefined });
+    expect(mockedRpc).toHaveBeenCalledWith({ appointmentId, idempotencyKey });
   });
 
   it("no llama a la RPC si la cita no existe en el salón", async () => {
     mockedFind.mockResolvedValue(null);
 
-    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+    expect(await cancelAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: "Cita no encontrada.",
     });
@@ -61,7 +61,7 @@ describe("cancelAppointment: estado y agenda", () => {
     const failure = new Error("connection lost");
     mockedFind.mockRejectedValue(failure);
 
-    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+    expect(await cancelAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: "Cita no encontrada.",
     });
@@ -77,7 +77,7 @@ describe("cancelAppointment: estado y agenda", () => {
     async (status) => {
       mockedFind.mockResolvedValue(appointmentIn(status));
 
-      expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+      expect(await cancelAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
         ok: false,
         error: `No se puede cambiar el estado de "${status}" a "cancelled".`,
       });
@@ -96,7 +96,7 @@ describe("cancelAppointment: fallos de la RPC", () => {
     const failure = new Error("write failed");
     mockedRpc.mockRejectedValue(failure);
 
-    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+    expect(await cancelAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: "Error al cancelar la cita.",
     });
@@ -112,7 +112,7 @@ describe("cancelAppointment: fallos de la RPC", () => {
       message: 'No se puede cambiar el estado de "completed" a "cancelled".',
     });
 
-    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+    expect(await cancelAppointment(appointmentId, salonId, idempotencyKey)).toEqual({
       ok: false,
       error: 'No se puede cambiar el estado de "completed" a "cancelled".',
     });

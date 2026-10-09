@@ -16,7 +16,6 @@ import { updateAppointmentSchedule } from "./update-appointment";
 
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 vi.mock("../data/appointment-commands.repo", () => ({
-  createAppointmentWithRpc: vi.fn(),
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
   findEmployeeExceptionDatesForCommand: vi.fn(),
@@ -24,13 +23,15 @@ vi.mock("../data/appointment-commands.repo", () => ({
   findEmployeeWorkSchedulesForCommand: vi.fn(),
   setAppointmentItemsCalendarBlocking: vi.fn(),
   updateAppointmentStatus: vi.fn(),
-  updateAppointmentWithRpc: vi.fn(),
 }));
+vi.mock("../data/rpc/create-appointment", () => ({ createAppointmentWithRpc: vi.fn() }));
+vi.mock("../data/rpc/update-appointment", () => ({ updateAppointmentWithRpc: vi.fn() }));
 
 const SALON = "00000000-0000-4000-8000-000000000001";
 const OTHER_SALON = "00000000-0000-4000-8000-0000000000ff";
 const APPOINTMENT = "00000000-0000-4000-8000-0000000000a1";
 const USER = "00000000-0000-4000-8000-0000000000ad";
+const KEY = "00000000-0000-4000-8000-0000000000c1";
 
 // Recurso de creacion con un servicio que pertenece a OTRO salon: buildItemPayloads debe rechazarlo.
 function foreignServiceResources() {
@@ -77,7 +78,7 @@ describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
   it("cancelar una cita completada devuelve el motivo de dominio, sin capturar error", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue({ status: "completed" } as never);
 
-    const result = await cancelAppointment(APPOINTMENT, SALON);
+    const result = await cancelAppointment(APPOINTMENT, SALON, KEY);
 
     expect(result).toEqual(err('No se puede cambiar el estado de "completed" a "cancelled".'));
     expect(captureError).not.toHaveBeenCalled();
@@ -86,7 +87,7 @@ describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
   it("completar una cita cancelada devuelve el motivo de dominio", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue({ status: "cancelled" } as never);
 
-    const result = await completeAppointment(APPOINTMENT, SALON, "cash");
+    const result = await completeAppointment(APPOINTMENT, SALON, "cash", [], "", KEY);
 
     expect(result).toEqual(err('No se puede cambiar el estado de "cancelled" a "completed".'));
   });
@@ -94,7 +95,7 @@ describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
   it("confirmar una cita completada devuelve el motivo de dominio", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue({ status: "completed" } as never);
 
-    const result = await confirmAppointment(APPOINTMENT, SALON);
+    const result = await confirmAppointment(APPOINTMENT, SALON, KEY);
 
     expect(result).toEqual(err('No se puede cambiar el estado de "completed" a "confirmed".'));
   });
@@ -103,7 +104,7 @@ describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
     const failure = new Error("timeout");
     vi.mocked(findAppointmentForCommand).mockRejectedValue(failure);
 
-    const result = await cancelAppointment(APPOINTMENT, SALON);
+    const result = await cancelAppointment(APPOINTMENT, SALON, KEY);
 
     expect(result).toEqual(err("Cita no encontrada."));
     expect(captureError).toHaveBeenCalledWith(failure, { module: "appointments", action: "cancel" });
@@ -112,7 +113,7 @@ describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
   it("una cita inexistente no se confirma", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue(null as never);
 
-    const result = await confirmAppointment(APPOINTMENT, SALON);
+    const result = await confirmAppointment(APPOINTMENT, SALON, KEY);
 
     expect(result).toEqual(err("Cita no encontrada."));
   });
@@ -128,7 +129,7 @@ describe("crear cita: validacion de dominio de los servicios", () => {
         start_time: "2026-06-01T15:00:00.000Z",
         assignments: [{ service_id: "service-1", employee_id: "emp-1" }],
       } as never,
-      { salonId: SALON, userId: USER }
+      { salonId: SALON, userId: USER, idempotencyKey: KEY }
     );
 
     expect(result).toEqual(err("El servicio no pertenece al salón."));
@@ -141,7 +142,7 @@ describe("crear cita: validacion de dominio de los servicios", () => {
 
     const result = await createAppointment(
       { customer_id: "c", start_time: "2026-06-01T15:00:00.000Z", assignments: [] } as never,
-      { salonId: SALON, userId: USER }
+      { salonId: SALON, userId: USER, idempotencyKey: KEY }
     );
 
     expect(result).toEqual(err("Datos inválidos."));
@@ -155,7 +156,7 @@ describe("editar horario de cita: validacion de dominio de los servicios", () =>
 
     const result = await updateAppointmentSchedule(
       { appointment_id: APPOINTMENT, start_time: "2026-06-01T15:00:00.000Z", assignments: [] } as never,
-      { salonId: SALON }
+      { salonId: SALON, idempotencyKey: KEY }
     );
 
     expect(result).toEqual(err("Esta cita ya está cerrada y no se puede editar."));
@@ -171,7 +172,7 @@ describe("editar horario de cita: validacion de dominio de los servicios", () =>
         start_time: "2026-06-01T15:00:00.000Z",
         assignments: [{ service_id: "service-1", employee_id: "emp-1" }],
       } as never,
-      { salonId: SALON }
+      { salonId: SALON, idempotencyKey: KEY }
     );
 
     expect(result).toEqual(err("El servicio no pertenece al salón."));
