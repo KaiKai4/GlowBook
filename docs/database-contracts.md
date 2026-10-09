@@ -18,8 +18,8 @@ When TypeScript duplicates a SQL rule, the duplication is for UX or early feedba
 | Contract | SQL source | TypeScript owner | Purpose |
 |---|---|---|---|
 | `public.salon_id()` | `supabase/migrations/20240101000001_rls_and_functions.sql` | `src/infra/auth`, all tenant repos | Reads Salon tenant id from auth claims. |
-| `public.is_owner()` | `supabase/migrations/20240101000001_rls_and_functions.sql` | `src/infra/auth/permissions.ts` | Owner shortcut for permission checks. |
-| `public.has_permission(perm text)` | `supabase/migrations/20240101000001_rls_and_functions.sql` | `src/infra/auth/permissions.ts`, `src/features/access` | Dynamic RBAC check in SQL. |
+| `public.is_owner()` | `supabase/migrations/20240101000001_rls_and_functions.sql` | `src/features/access/domain/permission-checks.ts` | Owner shortcut for permission checks. |
+| `public.has_permission(perm text)` | `supabase/migrations/20240101000001_rls_and_functions.sql` | `src/features/access/domain/permission-checks.ts`, `src/features/access` | Dynamic RBAC check in SQL. |
 | `public.is_platform_admin()` | `supabase/migrations/20240101000001_rls_and_functions.sql` | `src/infra/auth/session.ts`, `src/features/platform` | Identifies Platform superadmin accounts. |
 | `public.custom_access_token_hook(event jsonb)` | `supabase/migrations/20240101000004_auth_hook.sql` | `src/infra/auth/session.ts` | Adds stable claims used by RLS helpers. |
 
@@ -30,7 +30,7 @@ RLS is enabled for tenant and platform tables in `supabase/migrations/2024010100
 | Area | SQL source | TypeScript owner | Contract |
 |---|---|---|---|
 | Salon data isolation | `20240101000001_rls_and_functions.sql` | all `src/features/*/data` repos | Tenant data must be isolated by Salon. Code should still filter by `salon_id` for clarity and performance. |
-| Salon feature availability | `20240101000023_salon_disabled_features.sql`, `20240101000024_salon_disabled_features_constraint.sql` | `src/features/salon/domain/salon-features.ts`, `src/infra/auth/permissions.ts`, `src/features/platform/data/salons.repo.ts` | Platform stores disabled operational modules in `salons.disabled_features`. SQL rejects unknown feature keys; UI navigation and Server Actions must enforce the same contract. |
+| Salon feature availability | `20240101000023_salon_disabled_features.sql`, `20240101000024_salon_disabled_features_constraint.sql` | `src/features/salon-features/domain/salon-features.ts`, `src/features/access/domain/permission-checks.ts`, `src/features/platform/data/salons.repo.ts` | Platform stores disabled operational modules in `salons.disabled_features`. SQL rejects unknown feature keys; UI navigation and Server Actions must enforce the same contract. |
 | Appointment read/write | `20240101000001_rls_and_functions.sql`, `20240101000008_fix_appt_rls_for_all.sql`, `20240101000009_appointments_view_permission.sql` | `src/features/appointments` | Appointment access follows `appointments.view`, `appointments.view_all` and `appointments.manage`. |
 | Employee invitations | `20240101000007_employee_invitations.sql` | `src/features/employees/data/employee-access.repo.ts`, `src/features/employees/use-cases/employee-access.ts`, `src/features/employees/use-cases/employee-invitations.ts` | Only authorized server flows should manage employee invitations. Use-cases orchestrate; the privileged data Adapter owns direct admin reads/writes. |
 | Feedback reports | `20240101000012_feedback_reports.sql` | `src/features/feedback`, `src/features/platform` | Salon users can submit feedback; Platform can review it with admin access. |
