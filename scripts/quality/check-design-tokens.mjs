@@ -6,9 +6,11 @@
 //   - hex:        literales hex/rgb/hsl en clases arbitrarias [#...] o en className
 //   - fontSize:   tamaños fuera de la escala corta (text-3xl+ y text-[12px])
 //   - fontWeight: pesos fuera de normal/medium/semibold (font-bold, font-light, ...)
+//   - invalid:    clases que empiezan por "undefined", "null" o "NaN" (ver design-token-classes.mjs)
 //
 // La baseline (quality/baselines/design-tokens.json) congela el recuento actual por
 // archivo: ninguna cifra puede subir. Archivos nuevos deben tener 0 en todas.
+// Una baseline sin la categoría "invalid" la trata como 0.
 //
 // Uso:
 //   node scripts/quality/check-design-tokens.mjs
@@ -18,6 +20,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CLASS_NAME_ATTRIBUTE, countInvalidClassTokens } from "./design-token-classes.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SCAN_DIR = "src";
@@ -25,12 +28,12 @@ const SCAN_EXTENSIONS = [".ts", ".tsx", ".css"];
 const TEST_FILE = /\.(test|spec)\.(ts|tsx|js|mjs)$|^src\/test\//;
 const BASELINE_FILE_NAME = "design-tokens.json";
 /**
- * @typedef {{ rawPalette: number, hex: number, fontSize: number, fontWeight: number }} TokenCounts
+ * @typedef {{ rawPalette: number, hex: number, fontSize: number, fontWeight: number, invalid: number }} TokenCounts
  * @typedef {Record<string, TokenCounts>} Baseline
  */
 
 /** @type {(keyof TokenCounts)[]} */
-const CATEGORIES = ["rawPalette", "hex", "fontSize", "fontWeight"];
+const CATEGORIES = ["rawPalette", "hex", "fontSize", "fontWeight", "invalid"];
 
 // Paleta cruda: prefijo de utilidad + color de paleta Tailwind + tono opcional + opacidad opcional.
 const RAW_PALETTE =
@@ -40,8 +43,6 @@ const ARBITRARY_COLOR = /\[(?:#[0-9a-fA-F]{3,8}|(?:rgba?|hsla?)\()/g;
 // Literales de color sueltos dentro de className (sin corchete, que ya cuenta ARBITRARY_COLOR).
 const LOOSE_HEX = /(?<!\[)#[0-9a-fA-F]{3,8}(?![0-9a-zA-Z_-])/g;
 const LOOSE_FUNCTION = /(?<!\[)(?:rgba?|hsla?)\(/g;
-// Atributo className con valor entre comillas o entre llaves (aproximación: no lee template literals anidadas).
-const CLASS_NAME_ATTRIBUTE = /className\s*=\s*(?:"([^"]*)"|'([^']*)'|\{([^}]*)\})/g;
 // Tamaños fuera de la escala corta: text-3xl..text-9xl y text-[<n>px|rem|em].
 const FONT_SIZE = /(?<![\w-])text-(?:[3-9]xl|\[\d*\.?\d+(?:px|rem|em)\])(?![\w-])/g;
 // Pesos fuera de normal/medium/semibold.
@@ -103,12 +104,13 @@ function countHexInClassNames(content) {
 }
 
 /** @param {string} content @returns {TokenCounts} */
-function countTokens(content) {
+export function countTokens(content) {
   return {
     rawPalette: countMatches(content, RAW_PALETTE),
     hex: countMatches(content, ARBITRARY_COLOR) + countHexInClassNames(content),
     fontSize: countMatches(content, FONT_SIZE),
     fontWeight: countMatches(content, FONT_WEIGHT),
+    invalid: countInvalidClassTokens(content),
   };
 }
 
@@ -122,13 +124,19 @@ function readBaseline(filePath) {
   if (!existsSync(filePath)) {
     return null;
   }
+  /** @type {Record<string, Partial<TokenCounts>>} */
+  const raw = JSON.parse(readFileSync(filePath, "utf8"));
   /** @type {Baseline} */
-  const data = JSON.parse(readFileSync(filePath, "utf8"));
-  for (const [file, counts] of Object.entries(data)) {
+  const data = {};
+  for (const [file, counts] of Object.entries(raw)) {
+    data[file] = { rawPalette: 0, hex: 0, fontSize: 0, fontWeight: 0, invalid: 0 };
     for (const category of CATEGORIES) {
-      if (!Number.isInteger(counts?.[category]) || counts[category] < 0) {
+      // Una baseline anterior puede no conocer una categoría nueva: cuenta como 0.
+      const value = counts?.[category] ?? 0;
+      if (!Number.isInteger(value) || value < 0) {
         throw new Error(`Baseline inválida en ${file}: ${category} debe ser un entero >= 0`);
       }
+      data[file][category] = value;
     }
   }
   return data;
@@ -280,9 +288,12 @@ function main() {
   reportAndExit(failures, notes);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 2;
+// Solo como CLI: importar el módulo (tests) no escanea ni escribe nada.
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 2;
+  }
 }

@@ -124,6 +124,7 @@ export const STEPS = [
       "scripts/quality/generate-db-types.test.mjs",
       "scripts/quality/lib-process.test.mjs",
       "scripts/quality/migration-rules.test.mjs",
+      "scripts/quality/check-design-tokens.test.mjs",
       "scripts/quality/scripts-tests-list.test.mjs",
       "scripts/release/alert.test.mjs",
       "scripts/release/gate-logic.test.mjs",
