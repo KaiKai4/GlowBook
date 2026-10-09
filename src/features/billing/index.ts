@@ -5,6 +5,8 @@
 import "server-only";
 
 export {
+  checkPlanLimit,
+  checkPlanModuleAccess,
   getEffectiveDisabledSalonFeatures,
   getEffectiveSalonPlan,
   getPlanCatalogSummary,

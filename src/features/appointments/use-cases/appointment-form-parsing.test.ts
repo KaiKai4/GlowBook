@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { err, ok } from "@/infra/result";
 import {
   parseCompleteAppointmentForm,
@@ -112,53 +112,32 @@ describe("parseUpdateAppointmentScheduleForm", () => {
 });
 
 describe("parseCompleteAppointmentForm", () => {
-  it("parsea el cobro y comprueba que el metodo de pago este habilitado", async () => {
-    const isEnabled = vi.fn().mockResolvedValue(true);
+  it("parsea el cobro y el formulario sin consultar el salon", () => {
+    const result = parseCompleteAppointmentForm(completeForm());
 
-    const result = await parseCompleteAppointmentForm(completeForm(), isEnabled);
-
-    expect(isEnabled).toHaveBeenCalledWith("cash");
     expect(result.ok).toBe(true);
   });
 
-  it("si los cobros no son JSON devuelve su mensaje sin comprobar el metodo de pago", async () => {
-    const isEnabled = vi.fn();
-
-    const result = await parseCompleteAppointmentForm(completeForm({ item_charges: "{" }), isEnabled);
+  it("si los cobros no son JSON devuelve su mensaje", () => {
+    const result = parseCompleteAppointmentForm(completeForm({ item_charges: "{" }));
 
     expect(result).toEqual(err("Cobros de servicios invalidos."));
-    expect(isEnabled).not.toHaveBeenCalled();
   });
 
-  it("sin cobros enviados el schema exige al menos un servicio", async () => {
-    const isEnabled = vi.fn();
-
-    const result = await parseCompleteAppointmentForm(completeForm({ item_charges: null }), isEnabled);
+  it("sin cobros enviados el schema exige al menos un servicio", () => {
+    const result = parseCompleteAppointmentForm(completeForm({ item_charges: null }));
 
     expect(result).toEqual(err("La cita debe tener al menos un servicio"));
-    expect(isEnabled).not.toHaveBeenCalled();
   });
 
-  it("un metodo de pago vacio se rechaza por el schema, sin consultar el salon", async () => {
-    const isEnabled = vi.fn();
-
-    const result = await parseCompleteAppointmentForm(completeForm({ payment_method: "   " }), isEnabled);
+  it("un metodo de pago vacio se rechaza por el schema", () => {
+    const result = parseCompleteAppointmentForm(completeForm({ payment_method: "   " }));
 
     expect(result.ok).toBe(false);
-    expect(isEnabled).not.toHaveBeenCalled();
   });
 
-  it("un metodo de pago deshabilitado en el salon devuelve su mensaje", async () => {
-    const result = await parseCompleteAppointmentForm(completeForm(), vi.fn().mockResolvedValue(false));
-
-    expect(result).toEqual(err("Ese metodo de pago no esta habilitado para este salon."));
-  });
-
-  it("devuelve el contrato ok con los datos del formulario", async () => {
-    const result = await parseCompleteAppointmentForm(
-      completeForm({ completion_price_note: "Propina incluida" }),
-      vi.fn().mockResolvedValue(true)
-    );
+  it("devuelve el contrato ok con los datos del formulario", () => {
+    const result = parseCompleteAppointmentForm(completeForm({ completion_price_note: "Propina incluida" }));
 
     expect(result).toEqual(
       ok(expect.objectContaining({ appointment_id: APPOINTMENT_ID, completion_price_note: "Propina incluida" }))
