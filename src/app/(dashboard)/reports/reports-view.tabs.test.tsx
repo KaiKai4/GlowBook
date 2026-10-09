@@ -158,4 +158,71 @@ describe("ReportsView (pestañas, inventario y módulos)", () => {
     clickElement(findButtonByText(mounted.container, "Gastos"));
     expect(mounted.container.textContent).toContain("El módulo de Gastos e inventario no está activo.");
   });
+
+  it("la pestaña Finanzas oculta vitrina y gastos cuando sus módulos están inactivos", () => {
+    mounted = mountComponent(
+      <ReportsView {...buildReport({ modules: { inventory: false, retail: false, expenses: false } })} />
+    );
+
+    clickElement(findButtonByText(mounted.container, "Finanzas"));
+
+    expect(mounted.container.textContent).toContain("Ingresos por citas");
+    expect(mounted.container.textContent).toContain("Margen de ganancia");
+    expect(mounted.container.textContent).toContain("Ganancias por mes");
+    expect(mounted.container.textContent).not.toContain("Ingresos por vitrina");
+    expect(mounted.container.textContent).not.toContain("Gastos operativos");
+  });
+
+  it("la pestaña Citas muestra la liquidación de comisiones por empleado", () => {
+    mounted = mountComponent(
+      <ReportsView
+        {...buildReport({
+          commissions: {
+            rows: [{ employeeId: "e1", name: "Ana", appointments: 4, revenue: 400, commissionPct: 10, commission: 40 }],
+            totalRevenue: 400,
+            totalCommission: 40,
+          },
+        })}
+      />
+    );
+
+    clickElement(findButtonByText(mounted.container, "Citas"));
+
+    expect(mounted.container.textContent).toContain("Citas agendadas");
+    expect(mounted.container.textContent).toContain("Citas canceladas");
+    expect(mounted.container.textContent).toContain("Total a pagar");
+    expect(mounted.container.textContent).toContain("Ana");
+    expect(mounted.container.textContent).toContain("10%");
+  });
+
+  it("la pestaña Citas indica cuando no hay comisiones que liquidar", () => {
+    mounted = mountComponent(<ReportsView {...buildReport()} />);
+
+    clickElement(findButtonByText(mounted.container, "Citas"));
+
+    expect(mounted.container.textContent).toContain("Sin citas completadas con empleado en este mes.");
+  });
+
+  it("la pestaña Gastos resume los egresos y el ranking de gastos principales", () => {
+    const base = buildReport();
+    mounted = mountComponent(
+      <ReportsView {...base} analytics={{ ...base.analytics, topExpenses: [{ label: "Alquiler", amount: 500 }] }} />
+    );
+
+    clickElement(findButtonByText(mounted.container, "Gastos"));
+
+    expect(mounted.container.textContent).toContain("Gastos totales");
+    expect(mounted.container.textContent).toContain("Gastos de restock");
+    expect(mounted.container.textContent).toContain("Gastos y reposiciones");
+    expect(mounted.container.textContent).toContain("Top 5 gastos");
+    expect(mounted.container.textContent).toContain("Alquiler");
+  });
+
+  it("la pestaña Gastos avisa cuando aún no hay gastos para comparar", () => {
+    mounted = mountComponent(<ReportsView {...buildReport()} />);
+
+    clickElement(findButtonByText(mounted.container, "Gastos"));
+
+    expect(mounted.container.textContent).toContain("Aún no hay gastos para comparar.");
+  });
 });
