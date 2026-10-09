@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveCommercialAddon } from "../data/commercial-addons.repo";
 import { savePlanLimit, savePlanModule } from "../data/commercial-plans.repo";
-import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { err, ok } from "@/infra/result";
 import { saveCommercialAddonConfig } from "./commercial-addons";
 import { saveCommercialPlanLimitsBatch, saveCommercialPlanModulesBatch } from "./commercial-plans";
@@ -29,8 +29,8 @@ vi.mock("../data/commercial-plans.repo", () => ({
 vi.mock("../data/salon-subscriptions.repo", () => ({
   findSubscriptionRows: vi.fn(),
 }));
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const PLAN_ID = "00000000-0000-4000-8000-0000000000a1";
@@ -88,7 +88,7 @@ describe("saveCommercialAddonConfig: validación", () => {
     expect(saveCommercialAddon).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Reportes Pro", code: "reportes-pro", monthlyPrice: 10 })
     );
-    expect(recordPlatformAction).toHaveBeenCalled();
+    expect(publishAuditEvent).toHaveBeenCalled();
   });
 });
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
 import { captureError } from "@/infra/observability";
 import { deleteSalon } from "./delete-salon";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 // Borrado destructivo: la confirmacion debe coincidir exactamente con el id
 // del salon y, aunque se rechace, el intento queda auditado. Solo un borrado
@@ -16,12 +16,12 @@ vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedDeleteCompletely = vi.mocked(deleteSalonCompletely);
-const mockedAudit = vi.mocked(recordPlatformAction);
+const mockedAudit = vi.mocked(publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const SALON_ID = "00000000-0000-4000-8000-000000000002";
@@ -47,7 +47,7 @@ describe("deleteSalon confirmation", () => {
   it("audits the rejected confirmation as a failed delete for that salon", async () => {
     await deleteSalon({ salonId: SALON_ID, confirmation: "otro-id", actorUserId: ACTOR_ID });
 
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_deleted", {
       actorUserId: ACTOR_ID,
       action: "delete_salon",
       status: "failed",
@@ -59,7 +59,7 @@ describe("deleteSalon confirmation", () => {
   it("audits a mismatched confirmation with a null actor when none is supplied", async () => {
     await deleteSalon({ salonId: SALON_ID, confirmation: "" });
 
-    expect(mockedAudit).toHaveBeenCalledWith(expect.objectContaining({ actorUserId: null }));
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_deleted", expect.objectContaining({ actorUserId: null }));
     expect(mockedDeleteCompletely).not.toHaveBeenCalled();
   });
 });
@@ -70,7 +70,7 @@ describe("deleteSalon execution", () => {
 
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedDeleteCompletely).toHaveBeenCalledWith(SALON_ID);
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_deleted", {
       actorUserId: ACTOR_ID,
       action: "delete_salon",
       status: "succeeded",
@@ -93,7 +93,7 @@ describe("deleteSalon execution", () => {
       action: "delete_salon",
       metadata: { salonId: SALON_ID },
     });
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_deleted", {
       actorUserId: ACTOR_ID,
       action: "delete_salon",
       status: "failed",
@@ -112,7 +112,7 @@ describe("deleteSalon execution", () => {
       error: "No se pudo eliminar el salon y sus datos. Detalle: Error desconocido",
     });
     expect(mockedAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
+      "platform.salon_deleted", expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
     );
   });
 });

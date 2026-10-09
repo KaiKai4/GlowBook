@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setFeedbackStatus } from "@/features/platform/data/feedback-moderation.repo";
 import { captureError } from "@/infra/observability";
 import { setFeedbackReportStatus } from "./set-feedback-report-status";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 // Moderacion de reportes: resolver o reabrir un reporte deja rastro de quien
 // lo hizo; un id vacio no llega a la base y un fallo devuelve un mensaje
@@ -16,12 +16,12 @@ vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedSetStatus = vi.mocked(setFeedbackStatus);
-const mockedAudit = vi.mocked(recordPlatformAction);
+const mockedAudit = vi.mocked(publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const REPORT_ID = "00000000-0000-4000-8000-0000000000cc";
@@ -47,7 +47,7 @@ describe("setFeedbackReportStatus", () => {
 
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedSetStatus).toHaveBeenCalledWith(REPORT_ID, "resolved");
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.feedback_status_changed", {
       actorUserId: ACTOR_ID,
       action: "set_feedback_status",
       status: "succeeded",
@@ -62,7 +62,7 @@ describe("setFeedbackReportStatus", () => {
 
     expect(mockedSetStatus).toHaveBeenCalledWith(REPORT_ID, "new");
     expect(mockedAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ actorUserId: null, metadata: { feedbackStatus: "new" } })
+      "platform.feedback_status_changed", expect.objectContaining({ actorUserId: null, metadata: { feedbackStatus: "new" } })
     );
   });
 
@@ -78,7 +78,7 @@ describe("setFeedbackReportStatus", () => {
       action: "set_feedback_status",
       metadata: { reportId: REPORT_ID, feedbackStatus: "resolved" },
     });
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.feedback_status_changed", {
       actorUserId: ACTOR_ID,
       action: "set_feedback_status",
       status: "failed",
@@ -95,7 +95,7 @@ describe("setFeedbackReportStatus", () => {
     await setFeedbackReportStatus({ id: REPORT_ID, status: "new" });
 
     expect(mockedAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
+      "platform.feedback_status_changed", expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
     );
   });
 });

@@ -10,7 +10,7 @@ import {
 import { findCommercialAddonById } from "../data/commercial-addons.repo";
 import { findPlanWithChildren } from "../data/commercial-plans.repo";
 import type { CommercialAddon } from "../domain/salon-extras";
-import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { plan } from "@/test/billing-plan-fixtures";
 import { err, ok } from "@/infra/result";
 import {
@@ -47,8 +47,8 @@ vi.mock("../data/commercial-plans.repo", () => ({
   findPlanCatalog: vi.fn(),
   findPlanWithChildren: vi.fn(),
 }));
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const SALON_ID = "00000000-0000-4000-8000-0000000000c1";
@@ -107,7 +107,7 @@ describe("asignar plan al salón", () => {
         endsAt: null,
       })
     );
-    expect(recordPlatformAction).toHaveBeenCalled();
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_assigned", expect.objectContaining({ actorUserId: "actor-1", action: "commercial_plan_assigned", targetResourceId: SALON_ID }));
   });
 });
 
@@ -149,7 +149,7 @@ describe("registrar pago de mensualidad", () => {
     expect(activatePaidPeriod).toHaveBeenCalledWith(
       expect.objectContaining({ salonId: SALON_ID, periodStart: expect.any(String), periodEnd: expect.any(String) })
     );
-    expect(recordPlatformAction).toHaveBeenCalled();
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.payment_registered", expect.objectContaining({ action: "commercial_plan_payment_recorded", targetResourceId: SALON_ID }));
   });
 });
 
@@ -189,7 +189,7 @@ describe("extras comerciales del salón", () => {
         status: "active",
       })
     );
-    expect(recordPlatformAction).toHaveBeenCalled();
+    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_extra_assigned", expect.objectContaining({ action: "commercial_plan_extra_assigned", targetResourceId: SALON_ID }));
   });
 
   it("asigna un extra de límite con la cantidad solicitada", async () => {

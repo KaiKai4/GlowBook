@@ -1,7 +1,7 @@
 import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
 import { captureError } from "@/infra/observability";
 import { ok, type Result } from "@/infra/result";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 export interface UpdateSalonStatusInput {
   salonId: string;
@@ -21,7 +21,7 @@ export async function updateSalonStatus({
 
   try {
     await setSalonActiveStatus(trimmedSalonId, isActive);
-    const warnings = await recordPlatformAction({
+    const warnings = await publishAuditEvent("platform.salon_status_changed", {
       actorUserId: actorUserId ?? null,
       action: "set_salon_status",
       status: "succeeded",
@@ -36,7 +36,7 @@ export async function updateSalonStatus({
       metadata: { salonId: trimmedSalonId, isActive },
     });
     const message = error instanceof Error ? error.message : "Error desconocido";
-    await recordPlatformAction({
+    await publishAuditEvent("platform.salon_status_changed", {
       actorUserId: actorUserId ?? null,
       action: "set_salon_status",
       status: "failed",

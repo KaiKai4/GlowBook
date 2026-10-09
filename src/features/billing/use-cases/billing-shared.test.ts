@@ -1,39 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
-import { auditBilling, dateOrNull, normalizeKey } from "./billing-shared";
+import { describe, expect, it } from "vitest";
+import { commercialPlanAudit, dateOrNull, normalizeKey } from "./billing-shared";
 
-// Utilidades de los casos de uso de billing: claves normalizadas, fechas
-// opcionales, mensajes de error con prefijo y auditoría con actor opcional.
+// Utilidades de los casos de uso de billing: payload comun de auditoria de
+// planes, claves normalizadas y fechas opcionales. El evento concreto de cada
+// caso de uso se prueba en sus propios tests.
 
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
-}));
-
-const auditMock = vi.mocked(recordPlatformAction);
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  auditMock.mockReset();
-});
-
-describe("auditBilling", () => {
-  it("registra la acción de billing sobre el recurso comercial con el actor indicado", async () => {
-    await auditBilling("actor-1", "commercial_plan_saved", "plan-1");
-
-    expect(auditMock).toHaveBeenCalledWith({
+describe("commercialPlanAudit", () => {
+  it("arma el payload del recurso comercial con el actor indicado", () => {
+    expect(commercialPlanAudit("actor-1", "plan-1")).toEqual({
       actorUserId: "actor-1",
-      action: "commercial_plan_saved",
       status: "succeeded",
       targetResourceType: "commercial_plan",
       targetResourceId: "plan-1",
     });
   });
 
-  it("registra actor nulo cuando no hay usuario, tanto si es undefined como null", async () => {
-    await auditBilling(undefined, "commercial_plan_archived", "plan-2");
-    await auditBilling(null, "commercial_plan_deleted", "plan-3");
-
-    expect(auditMock.mock.calls.map(([input]) => input.actorUserId)).toEqual([null, null]);
+  it("usa actor nulo cuando no hay usuario, tanto si es undefined como null", () => {
+    expect(commercialPlanAudit(undefined, "plan-2").actorUserId).toBeNull();
+    expect(commercialPlanAudit(null, "plan-3").actorUserId).toBeNull();
   });
 });
 
@@ -67,4 +51,3 @@ describe("dateOrNull", () => {
     expect(dateOrNull("   ")).toBeNull();
   });
 });
-

@@ -11,7 +11,8 @@ import {
   deleteCommercialAddon,
   saveCommercialAddon,
 } from "../data/commercial-addons.repo";
-import { auditBilling, normalizeKey } from "./billing-shared";
+import { commercialPlanAudit, normalizeKey } from "./billing-shared";
+import { publishAuditEvent } from "@/features/audit";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const AddonSchema = z
@@ -69,7 +70,7 @@ export async function saveCommercialAddonConfig(
       status: parsed.data.status,
       sortOrder: parsed.data.sortOrder,
     });
-    const warnings = await auditBilling(actorUserId, "commercial_addon_saved", id);
+    const warnings = await publishAuditEvent("billing.addon_saved", { ...commercialPlanAudit(actorUserId, id), action: "commercial_addon_saved" });
     return ok(id, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
@@ -85,10 +86,10 @@ export async function removeCommercialAddonConfig(
     let warnings: string[];
     if (assignments > 0) {
       await archiveCommercialAddon(addonId);
-      warnings = await auditBilling(actorUserId, "commercial_addon_archived", addonId);
+      warnings = await publishAuditEvent("billing.addon_archived", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_archived" });
     } else {
       await deleteCommercialAddon(addonId);
-      warnings = await auditBilling(actorUserId, "commercial_addon_deleted", addonId);
+      warnings = await publishAuditEvent("billing.addon_deleted", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_deleted" });
     }
     return ok(undefined, warnings);
   } catch (error) {

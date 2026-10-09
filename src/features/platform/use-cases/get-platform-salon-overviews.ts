@@ -3,7 +3,7 @@ import "server-only";
 import { findSalonOverviews } from "../data/salon-overviews.repo";
 import { isDormantSalon } from "../domain/salon-health";
 
-export type PlatformSalonOverviewItem =
+type PlatformSalonOverviewItem =
   Awaited<ReturnType<typeof findSalonOverviews>>[number];
 
 export interface PlatformSalonOverviewsViewModel {

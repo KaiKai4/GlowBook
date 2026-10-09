@@ -5,7 +5,7 @@ import {
   deleteCommercialAddon,
   saveCommercialAddon,
 } from "../data/commercial-addons.repo";
-import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { err, ok } from "@/infra/result";
 import { removeCommercialAddonConfig, saveCommercialAddonConfig } from "./commercial-addons";
 
@@ -20,8 +20,8 @@ vi.mock("../data/commercial-addons.repo", () => ({
   findCommercialAddons: vi.fn(),
   saveCommercialAddon: vi.fn(),
 }));
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const ADDON_ID = "00000000-0000-4000-8000-0000000000d1";
@@ -31,7 +31,7 @@ const saveMock = vi.mocked(saveCommercialAddon);
 const archiveMock = vi.mocked(archiveCommercialAddon);
 const deleteMock = vi.mocked(deleteCommercialAddon);
 const countMock = vi.mocked(countAddonAssignments);
-const auditMock = vi.mocked(recordPlatformAction);
+const auditMock = vi.mocked(publishAuditEvent);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -72,7 +72,7 @@ describe("saveCommercialAddonConfig", () => {
       status: "active",
       sortOrder: 0,
     });
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.addon_saved", 
       expect.objectContaining({ actorUserId: ACTOR_ID, action: "commercial_addon_saved", targetResourceId: ADDON_ID })
     );
   });
@@ -155,7 +155,7 @@ describe("removeCommercialAddonConfig", () => {
     expect(result).toEqual(ok(undefined));
     expect(archiveMock).toHaveBeenCalledWith(ADDON_ID);
     expect(deleteMock).not.toHaveBeenCalled();
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.addon_archived", 
       expect.objectContaining({ action: "commercial_addon_archived", actorUserId: ACTOR_ID, targetResourceId: ADDON_ID })
     );
   });
@@ -166,7 +166,7 @@ describe("removeCommercialAddonConfig", () => {
     expect(result).toEqual(ok(undefined));
     expect(deleteMock).toHaveBeenCalledWith(ADDON_ID);
     expect(archiveMock).not.toHaveBeenCalled();
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.addon_deleted", 
       expect.objectContaining({ action: "commercial_addon_deleted", actorUserId: null, targetResourceId: ADDON_ID })
     );
   });

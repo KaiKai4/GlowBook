@@ -5,12 +5,12 @@ import { isPlatformAdmin } from "@/infra/auth/session";
 import { createSalonInvitation, findSalonInvitationForAcceptance } from "../data/invitations.repo";
 import { acceptInvitation } from "./accept-invitation";
 import { inviteSalon } from "./invite-salon";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/infra/auth/session", () => ({ isPlatformAdmin: vi.fn() }));
-vi.mock("./platform-audit", () => ({ recordPlatformAction: vi.fn(async () => []) }));
+vi.mock("@/features/audit", () => ({ publishAuditEvent: vi.fn(async () => []) }));
 vi.mock("../data/invitations.repo", () => ({
   acceptSalonInvitationAsAdmin: vi.fn(),
   createSalonInvitation: vi.fn(),
@@ -74,8 +74,7 @@ describe("invitar salon: validaciones y errores", () => {
 
     expect(result).toEqual({ ok: true, value: "token-en-claro" });
     expect(createSalonInvitation).toHaveBeenCalledWith("dueno@salon.com", PLAN);
-    expect(recordPlatformAction).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "invite_salon", status: "succeeded", actorUserId: ADMIN })
+    expect(publishAuditEvent).toHaveBeenCalledWith("platform.salon_invited", expect.objectContaining({ action: "invite_salon", status: "succeeded", actorUserId: ADMIN })
     );
   });
 
@@ -91,8 +90,7 @@ describe("invitar salon: validaciones y errores", () => {
       action: "invite_salon",
       metadata: { emailDomain: "salon.com" },
     });
-    expect(recordPlatformAction).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "invite_salon", status: "failed" })
+    expect(publishAuditEvent).toHaveBeenCalledWith("platform.salon_invited", expect.objectContaining({ action: "invite_salon", status: "failed" })
     );
   });
 });

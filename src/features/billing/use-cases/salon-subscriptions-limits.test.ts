@@ -39,8 +39,8 @@ vi.mock("../data/commercial-plans.repo", () => ({
   findPlanWithChildren: vi.fn(),
 }));
 
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const findRowsMock = vi.mocked(findEffectivePlanRows);

@@ -13,7 +13,7 @@ import {
 import { captureError } from "@/infra/observability";
 import { personNameField } from "@/infra/validation/name";
 import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { z } from "@/infra/validation/zod";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
@@ -169,7 +169,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     }
   }
 
-  const auditWarnings = await recordPlatformAction({
+  const auditWarnings = await publishAuditEvent("salon.invitation_accepted", {
     actorUserId: userId,
     action: "invitation_accepted",
     status: "succeeded",

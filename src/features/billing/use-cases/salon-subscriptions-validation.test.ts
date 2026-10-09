@@ -30,8 +30,8 @@ vi.mock("../data/commercial-plans.repo", () => ({
   findPlanCatalog: vi.fn(),
   findPlanWithChildren: vi.fn(),
 }));
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const SALON_ID = "00000000-0000-4000-8000-0000000000b1";

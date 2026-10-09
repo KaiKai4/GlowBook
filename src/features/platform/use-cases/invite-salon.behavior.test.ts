@@ -6,7 +6,7 @@ import {
 import { isPlatformAdmin } from "@/infra/auth/session";
 import { captureError } from "@/infra/observability";
 import { inviteSalon, regenerateSalonInvitation } from "./invite-salon";
-import { recordPlatformAction } from "./platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import { firstOf } from "@/test/platform-feedback-notifications-helpers";
 
 // Conducta de invitaciones emitidas por la plataforma: solo el admin emite,
@@ -26,14 +26,14 @@ vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("./platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const mockedCreate = vi.mocked(createSalonInvitation);
 const mockedRegenerate = vi.mocked(regenerateSalonInvitationToken);
 const mockedIsAdmin = vi.mocked(isPlatformAdmin);
-const mockedAudit = vi.mocked(recordPlatformAction);
+const mockedAudit = vi.mocked(publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const ACTOR_ID = "00000000-0000-4000-8000-000000000001";
@@ -84,27 +84,27 @@ describe("inviteSalon authorization and validation", () => {
   it("records the invitation with the actor but no target salon yet", async () => {
     await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
 
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_invited", {
       actorUserId: ACTOR_ID,
       action: "invite_salon",
       status: "succeeded",
       targetResourceType: "salon_invitation",
       metadata: { emailDomain: "example.com", planId: PLAN_ID },
     });
-    expect(firstOf(mockedAudit.mock.calls)).not.toHaveProperty("targetSalonId");
+    expect(firstOf(mockedAudit.mock.calls)[1]).not.toHaveProperty("targetSalonId");
   });
 
   it("audits with a null actor when the caller did not provide one", async () => {
     const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID });
 
     expect(result).toEqual({ ok: true, value: "token-1" });
-    expect(mockedAudit).toHaveBeenCalledWith(expect.objectContaining({ actorUserId: null }));
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_invited", expect.objectContaining({ actorUserId: null }));
   });
 
   it("only exposes the domain of the invited email in the audit trail", async () => {
     await inviteSalon({ email: "ana.privada@salon-glow.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
 
-    const auditInput = firstOf(firstOf(mockedAudit.mock.calls));
+    const auditInput = firstOf(mockedAudit.mock.calls)[1];
     expect(JSON.stringify(auditInput)).not.toContain("ana.privada");
     expect(auditInput.metadata).toEqual({ emailDomain: "salon-glow.com", planId: PLAN_ID });
   });
@@ -124,7 +124,7 @@ describe("inviteSalon failures", () => {
       metadata: { emailDomain: "example.com" },
     });
     expect(mockedAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "failed", errorMessage: "rpc down" })
+      "platform.salon_invited", expect.objectContaining({ status: "failed", errorMessage: "rpc down" })
     );
   });
 
@@ -134,7 +134,7 @@ describe("inviteSalon failures", () => {
     await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID });
 
     expect(mockedAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
+      "platform.salon_invited", expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
     );
   });
 });
@@ -154,7 +154,7 @@ describe("regenerateSalonInvitation", () => {
 
     expect(result).toEqual({ ok: true, value: "token-2" });
     expect(mockedRegenerate).toHaveBeenCalledWith(INVITATION_ID);
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_invitation_regenerated", {
       actorUserId: ACTOR_ID,
       action: "regenerate_salon_invitation",
       status: "succeeded",
@@ -175,7 +175,7 @@ describe("regenerateSalonInvitation", () => {
       action: "regenerate_salon_invitation",
       metadata: { invitationId: INVITATION_ID },
     });
-    expect(mockedAudit).toHaveBeenCalledWith({
+    expect(mockedAudit).toHaveBeenCalledWith("platform.salon_invitation_regenerated", {
       actorUserId: null,
       action: "regenerate_salon_invitation",
       status: "failed",
@@ -191,7 +191,7 @@ describe("regenerateSalonInvitation", () => {
     await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorUserId: ACTOR_ID });
 
     expect(mockedAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ errorMessage: "Error desconocido" })
+      "platform.salon_invitation_regenerated", expect.objectContaining({ errorMessage: "Error desconocido" })
     );
   });
 });

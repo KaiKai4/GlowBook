@@ -4,7 +4,7 @@ import {
   deleteCommercialPlan,
   saveCommercialPlan,
 } from "../data/commercial-plans.repo";
-import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
+import { publishAuditEvent } from "@/features/audit";
 import type { CommercialPlan } from "../domain/commercial-plan";
 import {
   removeCommercialPlanConfig,
@@ -29,14 +29,14 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
   findSubscriptionRows: vi.fn(),
 }));
 
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const saveCommercialPlanMock = vi.mocked(saveCommercialPlan);
 const archiveMock = vi.mocked(archiveCommercialPlan);
 const deleteMock = vi.mocked(deleteCommercialPlan);
-const auditMock = vi.mocked(recordPlatformAction);
+const auditMock = vi.mocked(publishAuditEvent);
 
 const PLAN_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -120,7 +120,7 @@ describe("saveCommercialPlanConfig", () => {
   it("audits the save with the actor and returns the saved id", async () => {
     await saveCommercialPlanConfig({ name: "Pro", monthlyPrice: 1 }, "actor-7");
 
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_saved", 
       expect.objectContaining({
         actorUserId: "actor-7",
         action: "commercial_plan_saved",
@@ -131,7 +131,7 @@ describe("saveCommercialPlanConfig", () => {
   it("stores a null actor when none is provided", async () => {
     await saveCommercialPlanConfig({ name: "Pro", monthlyPrice: 1 });
 
-    expect(auditMock).toHaveBeenCalledWith(expect.objectContaining({ actorUserId: null }));
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_saved", expect.objectContaining({ actorUserId: null }));
   });
 
   it("maps repo errors to the bare prefix, without the raw cause", async () => {
@@ -158,7 +158,7 @@ describe("removeCommercialPlanConfig", () => {
     expect(result.ok).toBe(true);
     expect(archiveMock).toHaveBeenCalledWith(PLAN_ID);
     expect(deleteMock).not.toHaveBeenCalled();
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_archived", 
       expect.objectContaining({ action: "commercial_plan_archived" })
     );
   });
@@ -169,7 +169,7 @@ describe("removeCommercialPlanConfig", () => {
     expect(result.ok).toBe(true);
     expect(deleteMock).toHaveBeenCalledWith(PLAN_ID);
     expect(archiveMock).not.toHaveBeenCalled();
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_deleted", 
       expect.objectContaining({ action: "commercial_plan_deleted" })
     );
   });

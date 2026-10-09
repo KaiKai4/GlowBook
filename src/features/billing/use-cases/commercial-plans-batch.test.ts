@@ -5,8 +5,9 @@ import {
   savePlanLimit,
   savePlanModule,
 } from "../data/commercial-plans.repo";
-import { findSubscriptionRows, type AssignmentRow } from "../data/salon-subscriptions.repo";
-import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
+import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
+import type { AssignmentRow } from "../data/salon-subscriptions.rows";
+import { publishAuditEvent } from "@/features/audit";
 import type { CommercialPlan } from "../domain/commercial-plan";
 import { err, ok } from "@/infra/result";
 import { plan } from "@/test/billing-plan-fixtures";
@@ -34,8 +35,8 @@ vi.mock("../data/commercial-addons.repo", () => ({
 vi.mock("../data/salon-subscriptions.repo", () => ({
   findSubscriptionRows: vi.fn(),
 }));
-vi.mock("@/features/platform/use-cases/platform-audit", () => ({
-  recordPlatformAction: vi.fn(async () => []),
+vi.mock("@/features/audit", () => ({
+  publishAuditEvent: vi.fn(async () => []),
 }));
 
 const PLAN_ID = "00000000-0000-4000-8000-0000000000f1";
@@ -61,7 +62,7 @@ const findAddonsMock = vi.mocked(findCommercialAddons);
 const findSubscriptionsMock = vi.mocked(findSubscriptionRows);
 const savePlanModuleMock = vi.mocked(savePlanModule);
 const savePlanLimitMock = vi.mocked(savePlanLimit);
-const auditMock = vi.mocked(recordPlatformAction);
+const auditMock = vi.mocked(publishAuditEvent);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -148,7 +149,7 @@ describe("saveCommercialPlanModulesBatch", () => {
       [{ planId: PLAN_ID, moduleKey: "reports", enabled: true }],
       [{ planId: PLAN_ID, moduleKey: "employees", enabled: false }],
     ]);
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_module_saved", 
       expect.objectContaining({
         actorUserId: ACTOR_ID,
         action: "commercial_plan_module_saved",
@@ -205,7 +206,7 @@ describe("saveCommercialPlanLimitsBatch", () => {
       countScope: "monthly",
       planId: PLAN_ID,
     });
-    expect(auditMock).toHaveBeenCalledWith(
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_limit_saved", 
       expect.objectContaining({ actorUserId: ACTOR_ID, action: "commercial_plan_limit_saved", targetResourceId: PLAN_ID })
     );
   });
