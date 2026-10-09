@@ -103,6 +103,9 @@ const eslintConfig = defineConfig([
     // Salidas generadas de cobertura y de mutación: no son fuente.
     "coverage/**",
     ".stryker-tmp/**",
+    // Configuración local de Claude Code (incluye worktrees de agentes) y artefactos locales de calidad.
+    ".claude/**",
+    ".quality/**",
   ]),
 ]);
 

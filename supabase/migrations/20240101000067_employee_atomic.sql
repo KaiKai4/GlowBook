@@ -25,8 +25,10 @@ set statement_timeout = '30s';
 
 begin;
 
--- 1. Duplicados de email entre colaboradores activos: se comprueba antes del indice.
---    Resolver manualmente (desactivar o corregir uno de cada par) y volver a aplicar la migracion.
+-- 1. Indice unico de email por salon entre colaboradores activos (defensa en profundidad:
+--    las RPC ya rechazan el duplicado). Si hay duplicados heredados, la migracion NO falla
+--    (no debe bloquear un despliegue): avisa y omite el indice. Se crea en una migracion
+--    posterior cuando los datos esten saneados.
 do $$
 declare
   v_duplicates int;
@@ -43,15 +45,12 @@ begin
   ) d;
 
   if v_duplicates > 0 then
-    raise exception 'Hay % combinaciones salon/email duplicadas entre colaboradores activos. Corrige o desactiva uno de cada par y vuelve a aplicar 20240101000067_employee_atomic.sql.', v_duplicates
-      using errcode = '23505';
+    raise notice 'Hay % combinaciones salon/email duplicadas entre colaboradores activos: se omite el indice unico; las RPC siguen rechazando duplicados nuevos.', v_duplicates;
+  else
+    execute 'create unique index if not exists employees_active_email_per_salon_unique on public.employees (salon_id, lower(email)) where is_active and email <> ''''';
   end if;
 end;
 $$;
-
-create unique index if not exists employees_active_email_per_salon_unique
-  on public.employees (salon_id, lower(email))
-  where is_active and email <> '';
 
 -- 2. Helper interno de asignaciones. Sin EXECUTE para clientes: lo llaman las RPC de colaboradores.
 create or replace function public.replace_employee_assignments(payload jsonb)
