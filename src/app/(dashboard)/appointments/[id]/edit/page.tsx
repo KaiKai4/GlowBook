@@ -20,7 +20,7 @@ export default async function EditAppointmentPage({
   if (!hasPermission(profile, PERMISSIONS.APPOINTMENTS_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-stone-500">No tienes permiso para editar citas.</p>
+        <p className="text-fg-subtle">No tienes permiso para editar citas.</p>
       </div>
     );
   }
@@ -39,19 +39,19 @@ export default async function EditAppointmentPage({
       <div>
         <Link
           href="/appointments"
-          className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900"
+          className="inline-flex items-center gap-1 text-sm text-fg-subtle hover:text-fg"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver a Agenda
         </Link>
         <div className="mt-2">
-          <h1 className="text-2xl font-bold text-neutral-900">Editar cita</h1>
-          <p className="text-sm text-neutral-500">{appointment.customerName}</p>
+          <h1 className="text-2xl font-semibold text-fg">Editar cita</h1>
+          <p className="text-sm text-fg-subtle">{appointment.customerName}</p>
         </div>
       </div>
 
       {isClosed ? (
-        <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
+        <div className="rounded-lg border border-border bg-surface p-6 text-sm text-fg-subtle">
           Esta cita ya está cerrada y no se puede editar.
         </div>
       ) : (

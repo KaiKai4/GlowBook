@@ -326,6 +326,41 @@ describe("AppointmentEditForm", () => {
     expect(updateAppointmentScheduleAction).not.toHaveBeenCalled();
   });
 
+  it("reordena los servicios al soltar una fila sobre otra", async () => {
+    const container = render(buildAppointment({
+      items: [
+        ...buildAppointment().items,
+        {
+          id: "item-2",
+          serviceId: "svc-tinte",
+          employeeId: "emp-1",
+          serviceName: "Tinte",
+          serviceCategoryName: "Cabello",
+          pricingMode: "fixed",
+          employeeName: "Lucía Gómez",
+          start_time: `${TEST_DATE}T15:00:00-05:00`,
+          end_time: `${TEST_DATE}T16:30:00-05:00`,
+          price: 40,
+          discountAmount: 0,
+        },
+      ],
+    }));
+    await act(async () => undefined);
+    const [first, second] = Array.from(container.querySelectorAll<HTMLElement>('[draggable="true"]'));
+    if (!first || !second) throw new Error("Faltan filas de servicio");
+    expect(selectedLabelOf(first, "Servicio")).toBe("Corte (60 min)");
+
+    act(() => {
+      first.dispatchEvent(new Event("dragstart", { bubbles: true }));
+    });
+    act(() => {
+      second.dispatchEvent(new Event("drop", { bubbles: true }));
+    });
+
+    const [reordered] = Array.from(container.querySelectorAll<HTMLElement>('[draggable="true"]'));
+    expect(reordered ? selectedLabelOf(reordered, "Servicio") : "").toBe("Tinte (90 min)");
+  });
+
   it("actualiza la nota interna de la cita", async () => {
     const container = render();
     await act(async () => undefined);

@@ -135,7 +135,7 @@ export function AppointmentDetailDialog({
         </div>
 
         {/* Cliente */}
-        <div className="flex items-start gap-3 rounded-xl bg-brand-50 border border-brand-200 p-3 shadow-[0_1px_4px_rgba(109,40,217,0.08)]">
+        <div className="flex items-start gap-3 rounded-xl bg-brand-50 border border-brand-200 p-3 shadow-brand-soft">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 shrink-0">
             <User className="h-4 w-4 text-brand-600" />
           </div>
@@ -167,7 +167,7 @@ export function AppointmentDetailDialog({
           {appt.items.map((item) => (
             <div
               key={item.id}
-              className={`flex items-center justify-between rounded-xl bg-surface border border-border border-l-4 ${accentClass} px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.10)] transition-shadow`}
+              className={`flex items-center justify-between rounded-xl bg-surface border border-border border-l-4 ${accentClass} px-4 py-3 shadow-soft hover:shadow-hover transition-shadow`}
             >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-fg-secondary truncate">{item.service?.name}</p>
@@ -200,7 +200,7 @@ export function AppointmentDetailDialog({
         </div>
 
         {/* Total */}
-        <div className="rounded-xl border border-success-border bg-success-subtle px-4 py-3 shadow-[0_2px_6px_rgba(16,185,129,0.08)]">
+        <div className="rounded-xl border border-success-border bg-success-subtle px-4 py-3 shadow-success-soft">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-sm text-success-strong/70">
               <span>Subtotal servicios</span>
