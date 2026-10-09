@@ -55,7 +55,7 @@ export function ServicesSidebar({
           </span>
           <button
             onClick={onCreateCategory}
-            className="text-xs font-medium text-accent hover:text-accent-strong"
+            className="text-xs font-medium text-accent-strong hover:text-accent-strong"
           >
             + Nueva
           </button>

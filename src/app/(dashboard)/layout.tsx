@@ -96,7 +96,7 @@ export default async function DashboardLayout({
             </button>
           </form>
         </header>
-        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
+        <main tabIndex={0} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="mx-auto w-full max-w-6xl px-6 py-8">{children}</div>
         </main>
         <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />
@@ -119,7 +119,7 @@ export default async function DashboardLayout({
           isOwner={profile.is_owner}
           disabledFeatures={disabledFeatures}
         />
-        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
+        <main tabIndex={0} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="w-full px-6 py-8">{children}</div>
         </main>
         <FeedbackBubble submitFeedbackAction={submitFeedbackAction} />

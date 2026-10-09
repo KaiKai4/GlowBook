@@ -17,8 +17,8 @@ describe("ExpensesTabs", () => {
 
     const labels = Array.from(mounted.container.querySelectorAll("button")).map((button) => button.textContent);
     expect(labels).toEqual(["Historial", "Nuevo gasto", "Compra de inventario"]);
-    expect(findButtonByText(mounted.container, "Nuevo gasto").className).toContain("bg-brand-600");
-    expect(findButtonByText(mounted.container, "Historial").className).not.toContain("bg-brand-600");
+    expect(findButtonByText(mounted.container, "Nuevo gasto").className).toContain("bg-accent-subtle");
+    expect(findButtonByText(mounted.container, "Historial").className).not.toContain("bg-accent-subtle");
   });
 
   it("al pulsar una pestaña notifica su valor, incluso si ya estaba activa", () => {

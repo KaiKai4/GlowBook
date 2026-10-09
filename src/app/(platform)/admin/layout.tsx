@@ -14,7 +14,7 @@ export default async function PlatformAdminLayout({
     <ToastProvider>
       <div className="flex h-screen overflow-hidden bg-surface">
         <PlatformAdminSidebar />
-        <main className="flex-1 overflow-y-auto bg-surface-muted">
+        <main tabIndex={0} className="flex-1 overflow-y-auto bg-surface-muted">
           <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:px-8">{children}</div>
         </main>
       </div>

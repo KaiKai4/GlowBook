@@ -92,7 +92,7 @@ export function InventoryPurchaseExpenseForm({
             <div className="lg:col-span-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
               <p className="text-xs font-semibold uppercase text-brand-600">Destino automatico</p>
               <p className="text-sm font-semibold text-fg">Bodega</p>
-              <p className="mt-1 text-sm text-fg-subtle">
+              <p className="mt-1 text-sm text-fg-secondary">
                 Total de la compra: <span className="font-semibold">{formatCurrency(purchasePreview)}</span>
               </p>
             </div>
@@ -110,7 +110,7 @@ export function InventoryPurchaseExpenseForm({
               </Button>
             </div>
             {inventoryProducts.length === 0 && (
-              <p className="lg:col-span-2 text-sm text-fg-subtle">
+              <p className="lg:col-span-2 text-sm text-fg-secondary">
                 Crea un producto en Inventario antes de registrar una compra.
               </p>
             )}
