@@ -96,7 +96,7 @@ export function Sidebar({
     <aside
       id="dashboard-sidebar"
       className={cn(
-        "relative flex h-full shrink-0 flex-col border-r border-brand-100 bg-surface shadow-[1px_0_8px_rgba(0,0,0,0.04)] transition-[width] duration-200 ease-out motion-reduce:transition-none",
+        "relative flex h-full shrink-0 flex-col border-r border-brand-100 bg-surface shadow-sidebar transition-[width] duration-200 ease-out motion-reduce:transition-none",
         isCollapsed ? "w-20" : "w-64",
       )}
     >

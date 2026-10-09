@@ -29,7 +29,7 @@ export function FeedbackPanel({
   return (
     <div
       style={position ?? { bottom: 96, right: 24 }}
-      className="fixed z-50 w-[min(92vw,22rem)] rounded-2xl border border-border bg-surface shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
+      className="fixed z-50 w-[min(92vw,22rem)] rounded-2xl border border-border bg-surface shadow-floating"
     >
       <div className="flex items-center justify-between rounded-t-2xl bg-brand-600 px-4 py-3">
         <div>

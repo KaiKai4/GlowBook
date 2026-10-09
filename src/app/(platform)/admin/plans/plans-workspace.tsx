@@ -45,7 +45,7 @@ export function PlansWorkspace({
   const visibleLimitsCount = selectedPlan ? countVisibleLimits(selectedPlan, data.metrics) : 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-soft">
       <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[300px_1fr]">
         <aside className="flex min-h-0 flex-col border-b border-brand-100 bg-surface-muted/60 lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between border-b border-brand-100 px-5 py-4">

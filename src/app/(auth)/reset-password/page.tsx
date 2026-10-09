@@ -155,10 +155,10 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fbf8ff_0%,#ffffff_48%,#f8fafc_100%)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-auth-backdrop px-4 py-10">
       <div className="w-full max-w-[420px]">
         <GlowBookBrand markSize="lg" className="mb-7" />
-        <div className="rounded-2xl border border-brand-100 bg-surface p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
+        <div className="rounded-2xl border border-brand-100 bg-surface p-7 shadow-auth-card">
           <Suspense fallback={null}>
             <ResetPasswordForm />
           </Suspense>

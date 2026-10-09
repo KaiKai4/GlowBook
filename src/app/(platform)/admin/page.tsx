@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowRight,
   BadgeDollarSign,
   Building2,
   CreditCard,
@@ -18,8 +17,9 @@ import { getSubscriptionsPage, type SalonSubscriptionRow } from "@/features/bill
 import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/infra/auth/session";
+import { buildAttentionList } from "./home-attention";
+import { AdminShortcut, HomeMetric } from "./home-widgets";
 import { RegenerateInviteLink } from "./regenerate-invite-link";
-
 export default async function PlatformAdminPage() {
   await requirePlatformAdmin();
 
@@ -218,62 +218,6 @@ export default async function PlatformAdminPage() {
   );
 }
 
-interface AttentionItem {
-  salonId: string;
-  salonName: string;
-  reason: string;
-  detail: string;
-  severity: "warning" | "danger";
-}
-
-function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[] {
-  const soon = new Date();
-  soon.setDate(soon.getDate() + 3);
-  const soonIso = soon.toISOString().slice(0, 10);
-  const items: AttentionItem[] = [];
-
-  for (const row of rows) {
-    if (row.openAlertCount > 0) {
-      items.push({
-        salonId: row.salonId,
-        salonName: row.salonName,
-        reason: "Límites",
-        detail: `${row.openAlertCount} alerta${row.openAlertCount === 1 ? "" : "s"} de límite abierta${row.openAlertCount === 1 ? "" : "s"}.`,
-        severity: "danger",
-      });
-    }
-    if (row.status === "past_due") {
-      items.push({
-        salonId: row.salonId,
-        salonName: row.salonName,
-        reason: "Moroso",
-        detail: "Pago vencido: registra el pago o pausa la suscripcion.",
-        severity: "danger",
-      });
-    }
-    if (row.status === "trialing" && row.trialEndsAt && row.trialEndsAt <= soonIso) {
-      items.push({
-        salonId: row.salonId,
-        salonName: row.salonName,
-        reason: "Trial por vencer",
-        detail: `El trial termina el ${formatDate(row.trialEndsAt)}. Contacta al salon para cerrar la venta.`,
-        severity: "warning",
-      });
-    }
-    if (row.planId === null && row.salonIsActive) {
-      items.push({
-        salonId: row.salonId,
-        salonName: row.salonName,
-        reason: "Sin plan",
-        detail: "Salon activo sin plan: ve todo sin límites.",
-        severity: "warning",
-      });
-    }
-  }
-
-  return items.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "danger" ? -1 : 1));
-}
-
 function statusLabel(status: SalonSubscriptionRow["status"]): string {
   if (status === "trialing") return "Trial";
   if (status === "active") return "Activo";
@@ -288,66 +232,4 @@ function statusBadge(status: SalonSubscriptionRow["status"]): "success" | "warni
   if (status === "trialing") return "warning";
   if (status === "past_due" || status === "canceled") return "danger";
   return "default";
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("es-PA", { day: "numeric", month: "short" }).format(
-    new Date(`${value}T00:00:00`)
-  );
-}
-
-function HomeMetric({
-  icon,
-  label,
-  value,
-  highlight = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-fg-subtle">{label}</p>
-            <p className={`mt-1 text-2xl font-semibold ${highlight ? "text-warning-fg" : "text-fg-strong"}`}>
-              {value}
-            </p>
-          </div>
-          <div className="rounded-xl bg-surface-muted p-2">{icon}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function AdminShortcut({
-  href,
-  icon,
-  title,
-  detail,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface-muted px-3 py-3 transition-colors hover:border-brand-200 hover:bg-surface"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="rounded-xl bg-surface p-2 shadow-sm">{icon}</div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-fg-strong">{title}</p>
-          <p className="truncate text-xs text-fg-subtle">{detail}</p>
-        </div>
-      </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-fg-subtle" />
-    </Link>
-  );
 }
