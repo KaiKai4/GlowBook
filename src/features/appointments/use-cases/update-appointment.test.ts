@@ -109,6 +109,7 @@ describe("update appointment schedule", () => {
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedFindAppointmentForCommand).toHaveBeenCalledWith(appointmentId, salonId);
     expect(mockedFindEmployeeOccupiedSlotsForCommand).toHaveBeenCalledWith({
+      salonId,
       employeeId,
       date: new Date(startTime),
       timezone: "UTC",

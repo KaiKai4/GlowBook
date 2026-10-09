@@ -1,16 +1,14 @@
 import { toPublicErrorMessage } from "@/lib/errors";
 import { err, ok, type Result } from "@/lib/result";
 import { captureError } from "@/lib/observability";
-import {
-  findAppointmentForCommand,
-  setAppointmentItemsCalendarBlocking,
-  updateAppointmentStatus,
-} from "../data/appointment-commands.repo";
+import { findAppointmentForCommand } from "../data/appointment-commands.repo";
+import { cancelAppointmentRpc } from "../data/rpc/cancel-appointment";
 import { assertTransition } from "../domain/lifecycle";
 
 export async function cancelAppointment(
   appointmentId: string,
-  salonId: string
+  salonId: string,
+  idempotencyKey?: string
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
   try {
@@ -28,22 +26,11 @@ export async function cancelAppointment(
     return err(toPublicErrorMessage(error, "No se pudo cancelar la cita."));
   }
 
+  // Cierre y liberacion de la agenda en una sola transaccion en la base.
   try {
-    await setAppointmentItemsCalendarBlocking({
-      appointmentId,
-      salonId,
-      blocksCalendar: false,
-    });
+    await cancelAppointmentRpc({ appointmentId, idempotencyKey });
   } catch (error) {
-    captureError(error, { module: "appointments", action: "cancel" });
-    return err("Error al liberar la agenda.");
-  }
-
-  try {
-    await updateAppointmentStatus({ appointmentId, salonId, status: "cancelled" });
-  } catch (error) {
-    captureError(error, { module: "appointments", action: "cancel" });
-    return err("Error al cancelar la cita.");
+    return err(toPublicErrorMessage(error, "Error al cancelar la cita."));
   }
 
   return ok(undefined);

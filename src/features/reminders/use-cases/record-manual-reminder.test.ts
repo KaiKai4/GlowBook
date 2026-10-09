@@ -40,7 +40,7 @@ describe("recordManualReminder", () => {
       ok: true,
       value: "2026-06-12T10:00:00.000Z",
     });
-    expect(mockedGetTarget).toHaveBeenCalledWith("appt-1");
+    expect(mockedGetTarget).toHaveBeenCalledWith("appt-1", "salon-1");
     expect(mockedCreateLog).toHaveBeenCalledWith({
       salonId: "salon-1",
       appointmentId: "appt-1",

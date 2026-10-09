@@ -1,25 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/lib/observability";
-import {
-  findAppointmentForCommand,
-  setAppointmentItemsCalendarBlocking,
-  updateAppointmentStatus,
-} from "../data/appointment-commands.repo";
+import { findAppointmentForCommand } from "../data/appointment-commands.repo";
+import { cancelAppointmentRpc } from "../data/rpc/cancel-appointment";
 import { cancelAppointment } from "./cancel-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentForCommand: vi.fn(),
-  setAppointmentItemsCalendarBlocking: vi.fn(),
-  updateAppointmentStatus: vi.fn(),
+}));
+vi.mock("../data/rpc/cancel-appointment", () => ({
+  cancelAppointmentRpc: vi.fn(),
 }));
 vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
 
 const appointmentId = "00000000-0000-4000-8000-0000000000a1";
 const salonId = "00000000-0000-4000-8000-0000000000b1";
+const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
 const mockedFind = vi.mocked(findAppointmentForCommand);
-const mockedRelease = vi.mocked(setAppointmentItemsCalendarBlocking);
-const mockedUpdateStatus = vi.mocked(updateAppointmentStatus);
+const mockedRpc = vi.mocked(cancelAppointmentRpc);
 const mockedCaptureError = vi.mocked(captureError);
 
 function appointmentIn(status: "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show") {
@@ -30,119 +28,93 @@ describe("cancelAppointment: estado y agenda", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedFind.mockResolvedValue(appointmentIn("scheduled"));
-    mockedRelease.mockResolvedValue(undefined);
-    mockedUpdateStatus.mockResolvedValue(undefined);
+    mockedRpc.mockResolvedValue({ appointment_id: appointmentId, status: "cancelled" });
   });
 
-  it("libera la agenda antes de marcar la cita como cancelada, siempre dentro del salón", async () => {
-    const order: string[] = [];
-    mockedRelease.mockImplementation(async () => {
-      order.push("release");
-    });
-    mockedUpdateStatus.mockImplementation(async () => {
-      order.push("status");
-    });
-
-    const result = await cancelAppointment(appointmentId, salonId);
+  it("cierra la cita y libera la agenda en una única RPC, dentro del salón", async () => {
+    const result = await cancelAppointment(appointmentId, salonId, idempotencyKey);
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(order).toEqual(["release", "status"]);
     expect(mockedFind).toHaveBeenCalledWith(appointmentId, salonId);
-    expect(mockedRelease).toHaveBeenCalledWith({
-      appointmentId,
-      salonId,
-      blocksCalendar: false,
-    });
-    expect(mockedUpdateStatus).toHaveBeenCalledWith({
-      appointmentId,
-      salonId,
-      status: "cancelled",
-    });
+    expect(mockedRpc).toHaveBeenCalledTimes(1);
+    expect(mockedRpc).toHaveBeenCalledWith({ appointmentId, idempotencyKey });
   });
 
   it("confirmed también puede cancelarse", async () => {
     mockedFind.mockResolvedValue(appointmentIn("confirmed"));
 
     expect(await cancelAppointment(appointmentId, salonId)).toEqual({ ok: true, value: undefined });
-    expect(mockedUpdateStatus).toHaveBeenCalledWith(expect.objectContaining({ status: "cancelled" }));
+    expect(mockedRpc).toHaveBeenCalledWith({ appointmentId, idempotencyKey: undefined });
   });
 
-  it("no toca la agenda ni el estado si la cita no existe en el salón", async () => {
+  it("no llama a la RPC si la cita no existe en el salón", async () => {
     mockedFind.mockResolvedValue(null);
 
-    const result = await cancelAppointment(appointmentId, salonId);
-
-    expect(result).toEqual({ ok: false, error: "Cita no encontrada." });
-    expect(mockedRelease).not.toHaveBeenCalled();
-    expect(mockedUpdateStatus).not.toHaveBeenCalled();
+    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+      ok: false,
+      error: "Cita no encontrada.",
+    });
+    expect(mockedRpc).not.toHaveBeenCalled();
   });
 
   it("trata un fallo al buscar la cita como no encontrada y registra el error", async () => {
     const failure = new Error("connection lost");
     mockedFind.mockRejectedValue(failure);
 
-    const result = await cancelAppointment(appointmentId, salonId);
-
-    expect(result).toEqual({ ok: false, error: "Cita no encontrada." });
+    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+      ok: false,
+      error: "Cita no encontrada.",
+    });
     expect(mockedCaptureError).toHaveBeenCalledWith(failure, {
       module: "appointments",
       action: "cancel",
     });
-    expect(mockedRelease).not.toHaveBeenCalled();
+    expect(mockedRpc).not.toHaveBeenCalled();
   });
 
   it.each(["completed", "cancelled", "no_show"] as const)(
-    "rechaza cancelar una cita en estado %s sin escribir nada",
+    "rechaza cancelar una cita en estado %s sin llamar a la RPC",
     async (status) => {
       mockedFind.mockResolvedValue(appointmentIn(status));
 
-      const result = await cancelAppointment(appointmentId, salonId);
-
-      expect(result).toEqual({
+      expect(await cancelAppointment(appointmentId, salonId)).toEqual({
         ok: false,
         error: `No se puede cambiar el estado de "${status}" a "cancelled".`,
       });
-      expect(mockedRelease).not.toHaveBeenCalled();
-      expect(mockedUpdateStatus).not.toHaveBeenCalled();
+      expect(mockedRpc).not.toHaveBeenCalled();
     }
   );
 });
 
-describe("cancelAppointment: fallos de escritura", () => {
+describe("cancelAppointment: fallos de la RPC", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedFind.mockResolvedValue(appointmentIn("scheduled"));
-    mockedRelease.mockResolvedValue(undefined);
-    mockedUpdateStatus.mockResolvedValue(undefined);
   });
 
-  it("si falla liberar la agenda no cambia el estado y devuelve error", async () => {
+  it("un fallo interno devuelve el mensaje genérico y registra el error", async () => {
     const failure = new Error("write failed");
-    mockedRelease.mockRejectedValue(failure);
+    mockedRpc.mockRejectedValue(failure);
 
-    const result = await cancelAppointment(appointmentId, salonId);
-
-    expect(result).toEqual({ ok: false, error: "Error al liberar la agenda." });
-    expect(mockedUpdateStatus).not.toHaveBeenCalled();
+    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+      ok: false,
+      error: "Error al cancelar la cita.",
+    });
     expect(mockedCaptureError).toHaveBeenCalledWith(failure, {
-      module: "appointments",
-      action: "cancel",
+      module: "errors",
+      action: "public-message",
     });
   });
 
-  it("si falla el cambio de estado devuelve error aunque la agenda ya se liberó", async () => {
-    // CONDUCTA ACTUAL (posible bug): cancel-appointment.ts libera la agenda antes de
-    // cambiar el estado; si esa segunda escritura falla, la cita queda agendada sin bloqueo.
-    const failure = new Error("status write failed");
-    mockedUpdateStatus.mockRejectedValue(failure);
+  it("muestra el motivo de dominio si la base rechaza la transición (carrera con completar)", async () => {
+    mockedRpc.mockRejectedValue({
+      code: "P0001",
+      message: 'No se puede cambiar el estado de "completed" a "cancelled".',
+    });
 
-    const result = await cancelAppointment(appointmentId, salonId);
-
-    expect(result).toEqual({ ok: false, error: "Error al cancelar la cita." });
-    expect(mockedRelease).toHaveBeenCalledTimes(1);
-    expect(mockedCaptureError).toHaveBeenCalledWith(failure, {
-      module: "appointments",
-      action: "cancel",
+    expect(await cancelAppointment(appointmentId, salonId)).toEqual({
+      ok: false,
+      error: 'No se puede cambiar el estado de "completed" a "cancelled".',
     });
   });
 });

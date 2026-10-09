@@ -32,7 +32,10 @@ export interface AppointmentWithDetails extends AppointmentRow {
   }>;
 }
 
-export async function findAppointmentById(id: string): Promise<AppointmentWithDetails | null> {
+export async function findAppointmentById(
+  id: string,
+  salonId: string
+): Promise<AppointmentWithDetails | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("appointments")
@@ -50,6 +53,7 @@ export async function findAppointmentById(id: string): Promise<AppointmentWithDe
       )
     `)
     .eq("id", id)
+    .eq("salon_id", salonId)
     .single();
 
   if (error) return null;

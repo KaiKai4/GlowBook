@@ -64,6 +64,7 @@ export async function createAppointment(
         slotsCache.set(
           key,
           await findEmployeeOccupiedSlotsForCommand({
+            salonId,
             employeeId: employee.id,
             date: startTime,
             timezone: resources.salonConfig.timezone,

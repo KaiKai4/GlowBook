@@ -6,6 +6,7 @@ import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "../domain/salon-features";
 import { findDashboardShellSalon } from "../data/salon.repo";
 import { getEffectiveSalonPlan } from "@/features/billing/use-cases/commercial-plans";
+import { readEffectivePlanOrNull } from "@/features/billing/use-cases/effective-plan-fallback";
 import { isActionableLimitWarning } from "@/features/billing/domain/commercial-plan";
 import {
   evaluatePaymentStanding,
@@ -29,7 +30,7 @@ export interface DashboardShellViewModel {
 
 /** Estado de pago del salon, evaluado al acceder (sin cron). */
 export async function getSalonPaymentStanding(salonId: string): Promise<PaymentStanding> {
-  const effectivePlan = await getEffectiveSalonPlan(salonId).catch(() => null);
+  const effectivePlan = await readEffectivePlanOrNull(salonId, "dashboard-shell", getEffectiveSalonPlan);
   return evaluatePaymentStanding({
     status: effectivePlan?.assignmentStatus ?? null,
     currentPeriodEnd: effectivePlan?.currentPeriodEnd ?? null,
@@ -43,7 +44,7 @@ export async function getSalonPaymentStanding(salonId: string): Promise<PaymentS
  * cada modulo). Capacidades al tope no alertan; ver isActionableLimitWarning.
  */
 export async function getOwnerPlanLimitWarnings(salonId: string): Promise<PlanLimitWarning[]> {
-  const effectivePlan = await getEffectiveSalonPlan(salonId).catch(() => null);
+  const effectivePlan = await readEffectivePlanOrNull(salonId, "dashboard-shell", getEffectiveSalonPlan);
   return (effectivePlan?.limits ?? [])
     .filter(isActionableLimitWarning)
     .map((limit) => ({
@@ -63,7 +64,7 @@ export async function getDashboardShell(
     salon: { disabled_features: salon.disabled_features },
   };
 
-  const effectivePlan = await getEffectiveSalonPlan(profile.salon_id).catch(() => null);
+  const effectivePlan = await readEffectivePlanOrNull(profile.salon_id, "dashboard-shell", getEffectiveSalonPlan);
   const disabledFeatures = effectivePlan?.plan
     ? effectivePlan.disabledModules
     : getDisabledSalonFeatures(profileWithSalonFeatures);

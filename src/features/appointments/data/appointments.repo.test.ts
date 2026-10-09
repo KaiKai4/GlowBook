@@ -30,7 +30,7 @@ describe("findAppointmentById", () => {
     const double = createAppointmentsSupabaseDouble({ appointments: { data: row, error: null } });
     useDouble(double);
 
-    const result = await findAppointmentById(appointmentId);
+    const result = await findAppointmentById(appointmentId, salonId);
 
     expect(result).toEqual(row);
     const calls = double.callsFor("appointments");
@@ -50,17 +50,20 @@ describe("findAppointmentById", () => {
       })
     );
 
-    expect(await findAppointmentById(appointmentId)).toBeNull();
+    expect(await findAppointmentById(appointmentId, salonId)).toBeNull();
   });
 
-  it("CONDUCTA ACTUAL (posible bug): la búsqueda por id no filtra por salon_id; el caso de uso debe verificar el salón", async () => {
+  it("filtra explícitamente por salon_id además del id de la cita", async () => {
     const double = createAppointmentsSupabaseDouble({ appointments: { data: { id: appointmentId }, error: null } });
     useDouble(double);
 
-    await findAppointmentById(appointmentId);
+    await findAppointmentById(appointmentId, salonId);
 
     const eqCalls = double.callsFor("appointments").filter((call) => call.method === "eq");
-    expect(eqCalls).toEqual([{ method: "eq", args: ["id", appointmentId] }]);
+    expect(eqCalls).toEqual([
+      { method: "eq", args: ["id", appointmentId] },
+      { method: "eq", args: ["salon_id", salonId] },
+    ]);
   });
 });
 
