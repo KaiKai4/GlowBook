@@ -24,6 +24,7 @@ describe("ServicesStats", () => {
     );
 
     expect(mounted.container.querySelector("h1")?.textContent).toBe("Servicios");
+    expect(mounted.container.textContent).toContain("Catalogo del salon por categorías");
     expect(mounted.container.textContent).toContain("categorías");
     expect(mounted.container.textContent).toContain("servicios");
     expect(mounted.container.textContent).toContain("2 inact.");

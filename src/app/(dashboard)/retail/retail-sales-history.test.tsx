@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
+import { formatCurrency } from "@/lib/utils/dates";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { RetailSalesHistory } from "./retail-sales-history";
 
@@ -46,6 +47,20 @@ describe("RetailSalesHistory", () => {
 
     mounted = mountComponent(<RetailSalesHistory sales={[sale({ customer: [customer] as Sale["customer"] })]} />);
     expect(mounted.container.textContent).toContain("Ana Pérez");
+  });
+
+  it("presenta las ventas en una tabla con cabeceras de venta, pago y total dentro de su sección", () => {
+    mounted = mountComponent(<RetailSalesHistory sales={[sale({ total_amount: 30 })]} />);
+
+    expect(mounted.container.querySelector("h2")?.textContent).toBe("Ventas recientes");
+    expect(mounted.container.querySelector('table[aria-label="Ventas recientes"]')).not.toBeNull();
+    expect(Array.from(mounted.container.querySelectorAll("th")).map((th) => th.textContent)).toEqual([
+      "Venta",
+      "Pago",
+      "Total",
+    ]);
+    expect(mounted.container.querySelectorAll("tbody tr")).toHaveLength(1);
+    expect(mounted.container.textContent).toContain(formatCurrency(30));
   });
 
   it("muestra la nota real de la venta", () => {

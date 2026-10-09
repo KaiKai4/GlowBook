@@ -39,6 +39,21 @@ describe("RetailProductList", () => {
     expect(mounted.container.textContent).not.toContain("Sin categoria");
   });
 
+  it("comunica el estado de stock de vitrina con texto: agotado, bajo o disponible", () => {
+    mounted = mountComponent(
+      <RetailProductList
+        products={[
+          product({ id: "out", stock: [{ location: "retail", quantity: 0 }] }),
+          product({ id: "low", stock: [{ location: "retail", quantity: 2 }] }),
+          product({ id: "ok", stock: [{ location: "retail", quantity: 9 }] }),
+        ]}
+      />
+    );
+
+    const badges = Array.from(mounted.container.querySelectorAll<HTMLSpanElement>("span.rounded-full"));
+    expect(badges.map((badge) => badge.textContent)).toEqual(["Agotado", "Bajo", "Disponible"]);
+  });
+
   it("usa 'Sin categoria' cuando el producto no tiene categoría", () => {
     mounted = mountComponent(<RetailProductList products={[product({ category: "" })]} />);
 
