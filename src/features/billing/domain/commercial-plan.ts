@@ -1,4 +1,4 @@
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 
 export type CommercialPlanStatus = "draft" | "active" | "archived";
 export type SalonPlanAssignmentStatus = "trialing" | "active" | "past_due" | "paused" | "canceled";

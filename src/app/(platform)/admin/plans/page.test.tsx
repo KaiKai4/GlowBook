@@ -2,12 +2,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { getCommercialPlansPage } from "@/features/billing/use-cases/commercial-plans";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { makeCommercialPlansData } from "@/test/ui-admin-page-fixtures";
 import PlatformPlansPage from "./page";
 
-vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   getCommercialPlansPage: vi.fn(),
 }));

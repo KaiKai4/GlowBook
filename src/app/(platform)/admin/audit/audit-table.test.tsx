@@ -11,7 +11,7 @@ import {
 import { clickElement, requireElement } from "@/test/ui-shared-dom";
 import PlatformAuditPage from "./page";
 
-vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/platform/use-cases/get-platform-audit-log", () => ({
   getPlatformAuditLog: vi.fn(),
 }));

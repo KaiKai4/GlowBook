@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
 import { PublicError } from "@/infra/public-error";
-import { isPlatformAdmin } from "@/infra/auth/session";
 import { createSalonInvitation, findSalonInvitationForAcceptance } from "../data/invitations.repo";
 import { acceptInvitation } from "./accept-invitation";
 import { inviteSalon } from "./invite-salon";
@@ -9,7 +8,6 @@ import { publishAuditEvent } from "@/features/audit";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/infra/auth/session", () => ({ isPlatformAdmin: vi.fn() }));
 vi.mock("@/features/audit", () => ({ publishAuditEvent: vi.fn(async () => []) }));
 vi.mock("../data/invitations.repo", () => ({
   acceptSalonInvitationAsAdmin: vi.fn(),
@@ -38,30 +36,32 @@ const VALID_ACCEPT = {
   full_name: "Dueña Ejemplo",
 };
 
+let isAdmin = true;
+
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(isPlatformAdmin).mockResolvedValue(true);
+  isAdmin = true;
 });
 
 describe("invitar salon: validaciones y errores", () => {
   it("un usuario que no es administrador de plataforma no puede invitar", async () => {
-    vi.mocked(isPlatformAdmin).mockResolvedValue(false);
+    isAdmin = false;
 
-    const result = await inviteSalon(VALID_INVITE);
+    const result = await inviteSalon({ ...VALID_INVITE, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "No autorizado." });
     expect(createSalonInvitation).not.toHaveBeenCalled();
   });
 
   it("un email invalido devuelve el primer mensaje de validacion", async () => {
-    const result = await inviteSalon({ ...VALID_INVITE, email: "no-es-email" });
+    const result = await inviteSalon({ ...VALID_INVITE, email: "no-es-email", actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "Email inválido" });
     expect(createSalonInvitation).not.toHaveBeenCalled();
   });
 
   it("sin plan valido no se crea la invitacion", async () => {
-    const result = await inviteSalon({ ...VALID_INVITE, planId: "plan" });
+    const result = await inviteSalon({ ...VALID_INVITE, planId: "plan", actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "Selecciona el plan que tendra el salon." });
     expect(createSalonInvitation).not.toHaveBeenCalled();
@@ -70,7 +70,7 @@ describe("invitar salon: validaciones y errores", () => {
   it("crea la invitacion, audita y devuelve el token en claro", async () => {
     vi.mocked(createSalonInvitation).mockResolvedValue("token-en-claro");
 
-    const result = await inviteSalon(VALID_INVITE);
+    const result = await inviteSalon({ ...VALID_INVITE, actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: true, value: "token-en-claro" });
     expect(createSalonInvitation).toHaveBeenCalledWith("dueno@salon.com", PLAN);
@@ -82,7 +82,7 @@ describe("invitar salon: validaciones y errores", () => {
     const failure = new PublicError("Ya existe una invitación pendiente.");
     vi.mocked(createSalonInvitation).mockRejectedValue(failure);
 
-    const result = await inviteSalon(VALID_INVITE);
+    const result = await inviteSalon({ ...VALID_INVITE, actorIsPlatformAdmin: isAdmin });
 
     expect(result.ok).toBe(false);
     expect(captureError).toHaveBeenCalledWith(failure, {

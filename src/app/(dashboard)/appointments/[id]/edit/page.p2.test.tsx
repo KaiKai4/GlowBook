@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { notFound } from "next/navigation";
 import { getAppointmentDetail, type AppointmentDetailViewModel } from "@/features/appointments/use-cases/get-appointment-detail";
 import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
-import { PERMISSIONS } from "@/infra/auth/permissions";
-import { requireProfile } from "@/infra/auth/session";
+import { PERMISSIONS } from "@/features/access";
+import { requireProfile } from "@/app/_composition/request-context";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EditAppointmentPage from "./page";
@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   }),
 }));
-vi.mock("@/infra/auth/session", () => ({ requireProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requireProfile: vi.fn() }));
 vi.mock("@/features/appointments/use-cases/get-appointment-detail", () => ({
   getAppointmentDetail: vi.fn(),
 }));

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { parseUuid } from "@/infra/validation/route-id";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";

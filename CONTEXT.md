@@ -40,7 +40,7 @@ El sistema tiene tres niveles:
 
 **Salon** es la raiz del tenant. Vive en `salons` y contiene datos del negocio, estado activo, zona horaria, colores y reglas de agenda.
 
-**Funcion del salon** es un modulo operativo que la Plataforma puede habilitar o deshabilitar para un salon, por ejemplo `plantillas`, `roles`, `reports` o `appointments`. La fuente de verdad vive en `salons.disabled_features`; la logica TypeScript vive en `src/features/salon/domain/salon-features.ts`.
+**Funcion del salon** es un modulo operativo que la Plataforma puede habilitar o deshabilitar para un salon, por ejemplo `plantillas`, `roles`, `reports` o `appointments`. La fuente de verdad vive en `salons.disabled_features`; la logica TypeScript vive en `src/features/salon-features/domain/salon-features.ts`.
 
 **Horario del salon** vive en `salon_business_hours`. Define cuando el negocio atiende. Si no hay configuracion, la logica de disponibilidad usa horario por defecto.
 

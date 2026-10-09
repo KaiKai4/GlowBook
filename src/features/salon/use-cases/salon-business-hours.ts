@@ -1,9 +1,16 @@
 import "server-only";
 
-import type { BusinessHour } from "@/features/appointments/domain/types";
 import { findBusinessHours } from "../data/salon.repo";
 
-export async function getSalonBusinessHours(salonId: string): Promise<BusinessHour[]> {
+/** Horario de apertura del salon por dia (0=Lunes ... 6=Domingo). */
+export interface SalonBusinessHour {
+  day_of_week: number;
+  is_open: boolean;
+  open_time: string | null;
+  close_time: string | null;
+}
+
+export async function getSalonBusinessHours(salonId: string): Promise<SalonBusinessHour[]> {
   const businessHours = await findBusinessHours(salonId);
 
   return businessHours.map((hours) => ({

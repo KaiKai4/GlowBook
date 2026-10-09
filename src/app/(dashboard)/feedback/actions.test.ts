@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { submitFeedback } from "@/features/feedback/use-cases/submit-feedback";
 import { err, ok } from "@/infra/result";
 import { buildProfile, SALON_ID, USER_ID } from "@/test/action-fixtures";
 import { submitFeedbackAction } from "./actions";
 
-vi.mock("@/infra/auth/session", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/feedback/use-cases/submit-feedback", () => ({ submitFeedback: vi.fn() }));
 

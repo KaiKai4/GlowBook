@@ -1,11 +1,12 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { cache } from "react";
 import type { Database } from "@/types/database.types";
 import { SESSION_ONLY_COOKIE, setSupabaseServerCookies } from "./cookies";
 
-export const createSupabaseServerClient = cache(async () => {
+// Sin cache(): la memoizacion por request vive en el composition root
+// (src/app/_composition/request-context.ts), no en infraestructura.
+export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   const sessionOnly = cookieStore.get(SESSION_ONLY_COOKIE)?.value === "1";
   return createServerClient<Database>(
@@ -22,4 +23,4 @@ export const createSupabaseServerClient = cache(async () => {
       },
     }
   );
-});
+}

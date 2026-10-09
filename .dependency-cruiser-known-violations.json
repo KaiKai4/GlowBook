@@ -206,95 +206,6 @@
   },
   {
     "type": "dependency",
-    "from": "src/features/billing/data/commercial-addons.repo.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/billing/data/commercial-plans.repo.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/billing/domain/commercial-plan.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/billing/domain/salon-extras.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/billing/use-cases/salon-subscriptions.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "src/features/dashboard/use-cases/get-dashboard-overview.ts",
     "to": "src/features/salon/use-cases/salon-identity.ts",
     "unresolvedTo": "@/features/salon/use-cases/salon-identity",
@@ -418,40 +329,6 @@
     "from": "src/features/expenses/use-cases/expenses.ts",
     "to": "src/features/inventory/use-cases/inventory-purchase-expenses.ts",
     "unresolvedTo": "@/features/inventory/use-cases/inventory-purchase-expenses",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/platform/data/salon-overviews.repo.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/platform/data/salons.repo.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -739,24 +616,6 @@
   },
   {
     "type": "dependency",
-    "from": "src/features/salon/use-cases/salon-business-hours.ts",
-    "to": "src/features/appointments/domain/types.ts",
-    "unresolvedTo": "@/features/appointments/domain/types",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "src/features/salon/use-cases/salon-payment-methods.ts",
     "to": "src/features/payments/domain/payment-methods.ts",
     "unresolvedTo": "@/features/payments/domain/payment-methods",
@@ -765,24 +624,6 @@
       "aliased-tsconfig",
       "aliased-tsconfig-paths",
       "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/salon/use-cases/salon-scheduling-config.ts",
-    "to": "src/features/appointments/domain/types.ts",
-    "unresolvedTo": "@/features/appointments/domain/types",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
       "import"
     ],
     "rule": {
@@ -805,68 +646,6 @@
     "rule": {
       "severity": "error",
       "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/infra/auth/permissions.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "infra-no-upward"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/infra/auth/session.ts",
-    "to": "node_modules/react/index.js",
-    "unresolvedTo": "react",
-    "dependencyTypes": [
-      "npm",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "infra-no-upward"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/infra/auth/session.ts",
-    "to": "src/features/billing/use-cases/commercial-plans.ts",
-    "unresolvedTo": "@/features/billing/use-cases/commercial-plans",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "infra-no-upward"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/infra/supabase/server.ts",
-    "to": "node_modules/react/index.js",
-    "unresolvedTo": "react",
-    "dependencyTypes": [
-      "npm",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "infra-no-upward"
     }
   },
   {
@@ -986,34 +765,6 @@
     "rule": {
       "severity": "error",
       "name": "presentation-no-runtime-db"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/billing/use-cases/salon-subscriptions.ts",
-    "to": "node_modules/react/index.js",
-    "unresolvedTo": "react",
-    "dependencyTypes": [
-      "npm",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "use-cases-no-ui"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/salon/use-cases/salon-identity.ts",
-    "to": "node_modules/react/index.js",
-    "unresolvedTo": "react",
-    "dependencyTypes": [
-      "npm",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "use-cases-no-ui"
     }
   }
 ]

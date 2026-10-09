@@ -16,7 +16,7 @@ Versiones soportadas: solo la rama `main`, desplegada en producción por la rele
 | Área | Control | Dónde se comprueba |
 |---|---|---|
 | Aislamiento entre salones | RLS en Postgres como autoridad final (ADR 0001) y `public.salon_id()` desde el claim del JWT. | Pruebas pgTAP `supabase/tests/01_tenant_isolation.sql` (paso `db-tests`) y E2E `e2e/multi-tenant-isolation.spec.ts` (paso `e2e`). |
-| Permisos | Permisos globales y roles por salón (ADR 0003). Se comprueba `has_permission`, nunca el nombre del rol. | `supabase/tests/02_permissions_and_hook.sql`, `src/infra/auth/permissions.test.ts`. |
+| Permisos | Permisos globales y roles por salón (ADR 0003). Se comprueba `has_permission`, nunca el nombre del rol. | `supabase/tests/02_permissions_and_hook.sql`, `src/features/access/domain/permission-checks.test.ts`. |
 | Plataforma | Área `/admin` protegida por `is_platform_admin()`. Alta de salones solo por invitación (ADR 0005). | Pruebas de integración y E2E `e2e/platform-admin.spec.ts`. |
 | Cliente `service_role` | Solo en servidor, tras verificar superadmin, y solo en las listas permitidas de `scripts/check-architecture.mjs` y en `src/infra/security/` (ADR 0010, ADR 0017). Nunca en navegador ni en variables `NEXT_PUBLIC_*`. | Paso `architecture`. |
 | Secretos | Ningún secreto en el repositorio. Escaneo sobre archivos rastreados por git. | Paso `secrets` (secretlint), también en `pre-commit`. |

@@ -13,8 +13,8 @@ import {
   updateInventoryProductProfile,
 } from "@/features/inventory/use-cases/inventory-products";
 import { transferInventoryStock } from "@/features/inventory/use-cases/inventory-movements";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import type { Result } from "@/infra/result";

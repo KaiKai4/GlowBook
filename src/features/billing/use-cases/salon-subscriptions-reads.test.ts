@@ -22,7 +22,7 @@ import {
   getSubscriptionsPage,
   isEffectiveSalonModuleEnabled,
 } from "./salon-subscriptions";
-import { SALON_FEATURES } from "@/features/salon/domain/salon-features";
+import { SALON_FEATURES } from "@/features/salon-features";
 
 // Lecturas de suscripciones: el panel de plataforma (todas las filas de salones),
 // el detalle de un salón y el acceso efectivo a módulos con fallback legacy.

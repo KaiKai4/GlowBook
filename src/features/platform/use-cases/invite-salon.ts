@@ -3,7 +3,6 @@ import {
   regenerateSalonInvitationToken,
 } from "@/features/platform/data/invitations.repo";
 import { err, ok, type Result } from "@/infra/result";
-import { isPlatformAdmin } from "@/infra/auth/session";
 import { captureError } from "@/infra/observability";
 import { z } from "@/infra/validation/zod";
 import { publishAuditEvent } from "@/features/audit";
@@ -18,11 +17,12 @@ const InviteSchema = z.object({
 
 export interface InviteSalonInput extends z.input<typeof InviteSchema> {
   actorUserId?: string | null;
+  /** Resuelto por el llamador desde la sesion (requirePlatformAdmin). */
+  actorIsPlatformAdmin: boolean;
 }
 
 export async function inviteSalon(input: InviteSalonInput): Promise<Result<string>> {
-  const isAdmin = await isPlatformAdmin();
-  if (!isAdmin) return err("No autorizado.");
+  if (!input.actorIsPlatformAdmin) return err("No autorizado.");
 
   const parsed = InviteSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
@@ -64,9 +64,9 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
 export async function regenerateSalonInvitation(input: {
   invitationId: string;
   actorUserId?: string | null;
+  actorIsPlatformAdmin: boolean;
 }): Promise<Result<string>> {
-  const isAdmin = await isPlatformAdmin();
-  if (!isAdmin) return err("No autorizado.");
+  if (!input.actorIsPlatformAdmin) return err("No autorizado.");
 
   try {
     const token = await regenerateSalonInvitationToken(input.invitationId);

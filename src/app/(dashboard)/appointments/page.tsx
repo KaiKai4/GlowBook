@@ -1,6 +1,6 @@
 import { getCalendarView } from "@/features/appointments/use-cases/get-calendar-view";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
-import { requireProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireProfile } from "@/app/_composition/request-context";
 import { AppointmentsClient } from "./appointments-client";
 
 export default async function AppointmentsPage({

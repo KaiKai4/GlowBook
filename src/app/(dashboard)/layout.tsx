@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getProfile, isPlatformAdmin } from "@/infra/auth/session";
+import { getProfile, isPlatformAdmin } from "@/app/_composition/request-context";
 import { getDashboardShell } from "@/features/salon/use-cases/get-dashboard-shell";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getVisibleNavItems } from "@/components/layout/nav-items";

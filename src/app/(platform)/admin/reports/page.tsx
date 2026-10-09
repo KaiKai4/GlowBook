@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Building2, Check, Clock, MessageSquareWarning, RotateCcw, User } from "lucide-react";
 import { getPlatformFeedbackReports } from "@/features/platform/use-cases/get-platform-feedback-reports";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { setFeedbackStatusAction } from "./actions";

@@ -13,7 +13,7 @@ import type {
   SalonSubscriptionDetail,
   SalonSubscriptionRow,
 } from "@/features/billing/use-cases/salon-subscriptions";
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
 
 export function makePlan(overrides: Partial<CommercialPlan> = {}): CommercialPlan {
   return {

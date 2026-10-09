@@ -1,6 +1,6 @@
-import { requireProfile } from "@/infra/auth/session";
+import { requireProfile } from "@/app/_composition/request-context";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getEmployeesPage } from "@/features/employees/use-cases/get-employees-page";
 import { EmployeesManager } from "./employees-manager";
 

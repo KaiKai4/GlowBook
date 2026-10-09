@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type ReactElement, type ReactNode } from "react";
-import { PERMISSIONS } from "@/infra/auth/permissions";
+import { PERMISSIONS } from "@/features/access";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
 import { buildCalendarAppointment } from "@/test/ui-appointments-fixtures";
@@ -12,7 +12,7 @@ import { AppointmentsClient } from "./appointments-client";
 const session = vi.hoisted(() => ({ requireProfile: vi.fn() }));
 const calendarUseCase = vi.hoisted(() => ({ getCalendarView: vi.fn() }));
 
-vi.mock("@/infra/auth/session", () => session);
+vi.mock("@/app/_composition/request-context", () => session);
 vi.mock("@/features/appointments/use-cases/get-calendar-view", () => calendarUseCase);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("next/link", () => ({

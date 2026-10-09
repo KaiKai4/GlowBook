@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/infra/auth/session";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { CreateCustomerSchema, UpdateCustomerSchema } from "@/features/customers/schemas";
 import {

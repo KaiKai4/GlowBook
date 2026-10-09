@@ -6,8 +6,8 @@ import {
   deleteInventoryProduct,
   updateInventoryProductProfile,
 } from "@/features/inventory/use-cases/inventory-products";
-import { PERMISSIONS } from "@/infra/auth/permissions";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { PERMISSIONS } from "@/features/access";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID } from "@/test/action-fixtures";
@@ -18,7 +18,7 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/infra/auth/session", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   checkPlanLimit: vi.fn(),

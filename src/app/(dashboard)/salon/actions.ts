@@ -11,8 +11,8 @@ import {
   SalonInfoSchema,
   SalonPaymentMethodsSchema,
 } from "@/features/salon/schemas";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/features/access";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import type { Result } from "@/infra/result";
 import { firstIssueMessage } from "@/infra/validation/first-issue";

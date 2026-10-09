@@ -1,4 +1,4 @@
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { ToastProvider } from "@/components/ui/toast";
 
 import { PlatformAdminSidebar } from "./platform-admin-sidebar";

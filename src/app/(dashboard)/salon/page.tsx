@@ -1,5 +1,5 @@
-import { requireProfile } from "@/infra/auth/session";
-import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/app/_composition/request-context";
+import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getSalonSettings } from "@/features/salon/use-cases/get-salon-settings";
 import { SalonSettings } from "./salon-settings";
 

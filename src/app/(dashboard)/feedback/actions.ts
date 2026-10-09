@@ -2,7 +2,7 @@
 
 import { submitFeedback } from "@/features/feedback/use-cases/submit-feedback";
 import { SubmitFeedbackSchema, type SubmitFeedbackInput } from "@/features/feedback/schemas";
-import { requireActiveProfile } from "@/infra/auth/session";
+import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import type { Result } from "@/infra/result";
 import { firstIssueMessage } from "@/infra/validation/first-issue";

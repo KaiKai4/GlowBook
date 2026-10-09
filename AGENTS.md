@@ -56,9 +56,9 @@ Reglas (las que cubre `scripts/check-architecture.mjs` y `.dependency-cruiser.cj
 
 - Los permisos son un catálogo global fijo, en la base de datos y en `src/features/access/domain/permissions.ts` (ADR 0003).
 - Los roles son por salón. El owner asigna permisos desde `/roles`.
-- La autorización pregunta `public.has_permission('clave')` (BD) o el equivalente de `src/infra/auth/permissions.ts`. Nunca se compara por nombre de rol.
+- La autorización pregunta `public.has_permission('clave')` (BD) o el equivalente de `src/features/access/domain/permission-checks.ts`. Nunca se compara por nombre de rol.
 - `is_owner = true` es cortocircuito (super-admin del salón).
-- Control: pruebas de permisos en `supabase/tests/02_permissions_and_hook.sql` (paso `db-tests`) y `src/infra/auth/permissions.test.ts` (paso `unit`).
+- Control: pruebas de permisos en `supabase/tests/02_permissions_and_hook.sql` (paso `db-tests`) y `src/features/access/domain/permission-checks.test.ts` (paso `unit`).
 
 ## 5. Onboarding cerrado
 

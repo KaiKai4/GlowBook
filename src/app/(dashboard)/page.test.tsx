@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { redirect } from "next/navigation";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
-import { requireProfile } from "@/infra/auth/session";
-import { hasPermission } from "@/infra/auth/permissions";
+import { requireProfile } from "@/app/_composition/request-context";
+import { hasPermission } from "@/features/access";
 import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
 import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
 import { formatCurrency } from "@/infra/format/dates";
@@ -15,9 +15,9 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT:${url}`);
   }),
 }));
-vi.mock("@/infra/auth/session", () => ({ requireProfile: vi.fn() }));
-vi.mock("@/infra/auth/permissions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/infra/auth/permissions")>()),
+vi.mock("@/app/_composition/request-context", () => ({ requireProfile: vi.fn() }));
+vi.mock("@/features/access", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/access")>()),
   getPermissions: vi.fn(() => []),
   hasPermission: vi.fn(() => false),
 }));

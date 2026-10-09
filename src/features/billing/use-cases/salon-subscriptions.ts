@@ -1,12 +1,11 @@
 import { toPublicErrorMessage } from "@/infra/errors";
 import "server-only";
-import { cache } from "react";
 import { err, ok, type Result } from "@/infra/result";
 import { readEffectivePlanOrNull } from "./effective-plan-fallback";
-import { getDisabledSalonFeatures } from "@/infra/auth/permissions";
+import { getDisabledSalonFeatures } from "@/features/access";
 import type { ProfileWithRole } from "@/types/app.types";
-import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
-import { SALON_FEATURES } from "@/features/salon/domain/salon-features";
+import type { SalonFeatureKey } from "@/features/salon-features";
+import { SALON_FEATURES } from "@/features/salon-features";
 import { checkLimitAction, type EffectiveSalonPlan } from "../domain/commercial-plan";
 import {
   buildEffectiveLimits,
@@ -42,9 +41,7 @@ export {
 } from "./salon-subscription-detail";
 export type { SalonSubscriptionRow } from "../domain/salon-subscription-rows";
 
-// cache(): el plan efectivo se consulta desde el perfil, el shell y las
-// paginas dentro del mismo request; una sola lectura alimenta a todos.
-export const getEffectiveSalonPlan = cache(async (salonId: string): Promise<EffectiveSalonPlan> => {
+export async function getEffectiveSalonPlan(salonId: string): Promise<EffectiveSalonPlan> {
   const rows = await findEffectivePlanRows(salonId);
   const plan = isPlanAssignmentActive(rows.assignment?.status) ? rows.plan : null;
   const enabled = resolveEnabledModules(plan, rows.overrides);
@@ -64,7 +61,7 @@ export const getEffectiveSalonPlan = cache(async (salonId: string): Promise<Effe
     limits: buildEffectiveLimits(plan, rows.metrics, rows.overrides, rows.usage, enabled),
     usage: rows.usage,
   };
-});
+}
 
 export async function checkPlanLimit(input: {
   salonId: string;

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { requirePlatformAdmin } from "@/infra/auth/session";
+import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { getPlatformInvitations } from "@/features/platform/use-cases/get-platform-invitations";
 import type { PlatformInvitationsViewModel } from "@/features/platform/use-cases/get-platform-invitations";
 import { RegenerateInviteLink } from "../regenerate-invite-link";

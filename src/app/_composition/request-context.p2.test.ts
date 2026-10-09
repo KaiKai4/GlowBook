@@ -9,7 +9,7 @@ import {
   requireActiveProfile,
   requirePlatformAdmin,
   requireProfile,
-} from "./session";
+} from "./request-context";
 
 const navigationMock = vi.hoisted(() => ({
   redirect: vi.fn((target: string) => {
