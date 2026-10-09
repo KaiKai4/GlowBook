@@ -83,8 +83,8 @@ describe("buildAlertPayload", () => {
       elapsedMs: null,
     };
     const serialized = JSON.stringify(buildAlertPayload({ ...base, result: leaky }));
-    assert.equal(serialized.includes("secret.example.com"), false);
-    assert.equal(serialized.includes("token=abc"), false);
+    assert.doesNotMatch(serialized, /secret\.example\.com/);
+    assert.doesNotMatch(serialized, /token=abc/);
     assert.ok(serialized.includes("[url]"));
   });
 

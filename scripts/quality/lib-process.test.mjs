@@ -9,6 +9,7 @@ import { join } from "node:path";
 import {
   classifyRunResult,
   killProcessTree,
+  quoteForShell,
   runArgvWithTimeout,
   taskkillArgs,
 } from "./lib-process.mjs";
@@ -118,5 +119,27 @@ describe("runArgvWithTimeout", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("quoteForShell", () => {
+  it("deja intacto un token sin caracteres especiales, incluidas rutas con barras", () => {
+    assert.equal(quoteForShell("eslint"), "eslint");
+    assert.equal(quoteForShell("C:\\dir\\bin"), "C:\\dir\\bin");
+  });
+
+  it("cita espacios y vacíos", () => {
+    assert.equal(quoteForShell("a b"), '"a b"');
+    assert.equal(quoteForShell(""), '""');
+  });
+
+  it("escapa comillas y duplica las barras invertidas que las preceden", () => {
+    assert.equal(quoteForShell('say "hi"'), '"say \\"hi\\""');
+    // a\"b c  ->  "a\\\"b c"  (la barra antes de la comilla se duplica y la comilla se escapa)
+    assert.equal(quoteForShell('a\\"b c'), '"a\\\\\\"b c"');
+  });
+
+  it("duplica las barras invertidas finales para no escapar la comilla de cierre", () => {
+    assert.equal(quoteForShell("C:\\dir con espacio\\"), '"C:\\dir con espacio\\\\"');
   });
 });

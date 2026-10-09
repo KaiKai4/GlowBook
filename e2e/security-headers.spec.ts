@@ -71,7 +71,7 @@ test.describe("cabeceras de seguridad", () => {
     expect(firstNonce).not.toBe(secondNonce);
 
     const html = await first.text();
-    const scriptTags = html.match(/<script\b[^>]*>/g) ?? [];
+    const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
     expect(scriptTags.length).toBeGreaterThan(0);
     for (const tag of scriptTags.filter((value) => value.includes("src="))) {
       expect(tag).toContain(`nonce="${firstNonce}"`);

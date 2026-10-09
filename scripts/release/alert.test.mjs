@@ -39,8 +39,9 @@ describe("buildAlertPayload", () => {
       sha: SHA,
       deploymentUrl: "https://app.example.com/?x-vercel-protection-bypass=SECRETO",
     });
-    assert.equal(JSON.stringify(payload).includes("SECRETO"), false);
-    assert.equal(JSON.stringify(payload).includes(WEBHOOK), false);
+    const serialized = JSON.stringify(payload);
+    assert.doesNotMatch(serialized, /SECRETO/);
+    assert.doesNotMatch(serialized, /hooks\.example\.com/);
   });
 
   it("rechaza etapas desconocidas y SHA no válidos", () => {

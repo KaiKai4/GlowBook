@@ -11,13 +11,17 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const IS_WINDOWS = process.platform === "win32";
 
 /**
- * Cita un token para una línea de comandos de shell.
+ * Cita un token para una línea de comandos de shell de Windows. Sigue las reglas
+ * de CommandLineToArgvW: las barras invertidas solo son especiales antes de una
+ * comilla (o del cierre), y ahí se duplican para que lleguen literales.
  * @param {string} token
  * @returns {string}
  */
-function quoteForShell(token) {
+export function quoteForShell(token) {
   if (token === "") return '""';
-  return /[\s"&|<>^()]/.test(token) ? `"${token.replace(/"/g, '\\"')}"` : token;
+  if (!/[\s"&|<>^()]/.test(token)) return token;
+  const escaped = token.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, "$1$1");
+  return `"${escaped}"`;
 }
 
 /**

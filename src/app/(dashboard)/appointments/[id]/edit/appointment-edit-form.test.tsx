@@ -199,6 +199,8 @@ describe("AppointmentEditForm", () => {
     click(buttonWithText(container, "Guardar cambios"));
 
     await clickAndSettle(buttonWithText(container, "Guardar"));
+    // El envío calcula la clave de idempotencia de forma asíncrona (lento en CI).
+    await vi.waitFor(() => expect(updateAppointmentScheduleAction).toHaveBeenCalledTimes(1));
 
     expect(updateAppointmentScheduleAction).toHaveBeenCalledTimes(1);
     const [prevState, formData] = vi.mocked(updateAppointmentScheduleAction).mock.calls[0] ?? [];

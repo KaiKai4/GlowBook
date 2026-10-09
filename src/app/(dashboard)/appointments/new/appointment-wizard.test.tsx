@@ -227,6 +227,9 @@ describe("AppointmentWizard", () => {
       setFieldValue(fieldWithLabel(container, "Notas (opcional)"), "Sin lácteos");
 
       await clickAndSettle(buttonWithText(container, "Confirmar cita"));
+      // El envío calcula la clave de idempotencia de forma asíncrona: se espera a
+      // que termine en lugar de suponer un número fijo de microtareas (lento en CI).
+      await vi.waitFor(() => expect(router.push).toHaveBeenCalledWith("/appointments"));
 
       expect(createAppointmentAction).toHaveBeenCalledTimes(1);
       const [prevState, formData] = vi.mocked(createAppointmentAction).mock.calls[0] ?? [];
@@ -250,7 +253,7 @@ describe("AppointmentWizard", () => {
 
       await clickAndSettle(buttonWithText(container, "Confirmar cita"));
 
-      expect(container.textContent).toContain("Ese horario ya no está disponible.");
+      await vi.waitFor(() => expect(container.textContent).toContain("Ese horario ya no está disponible."));
       expect(router.push).not.toHaveBeenCalled();
       expect(router.refresh).not.toHaveBeenCalled();
     });
@@ -265,6 +268,7 @@ describe("AppointmentWizard", () => {
       click(buttonWithText(container, "Continuar"));
 
       await clickAndSettle(buttonWithText(container, "Confirmar cita"));
+      await vi.waitFor(() => expect(createAppointmentAction).toHaveBeenCalledTimes(1));
 
       expect(findOrCreateCustomerAction).toHaveBeenCalledWith("Luis", "Soto", undefined);
       expect(vi.mocked(createAppointmentAction).mock.calls[0]?.[1]?.get("customer_id")).toBe("cust-temp");
@@ -282,7 +286,7 @@ describe("AppointmentWizard", () => {
 
       await clickAndSettle(buttonWithText(container, "Confirmar cita"));
 
-      expect(container.textContent).toContain("No tienes permiso para crear clientes.");
+      await vi.waitFor(() => expect(container.textContent).toContain("No tienes permiso para crear clientes."));
       expect(createAppointmentAction).not.toHaveBeenCalled();
       expect(router.push).not.toHaveBeenCalled();
     });
