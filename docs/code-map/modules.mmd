@@ -5,7 +5,7 @@ flowchart LR
     app__auth_["app/(auth) (12)"]
     app__dashboard_["app/(dashboard) (168)"]
     app__platform_["app/(platform) (32)"]
-    app__composition["app/_composition (2)"]
+    app__composition["app/_composition (3)"]
     app_api["app/api (4)"]
   end
   subgraph g_components["components"]
@@ -116,6 +116,7 @@ flowchart LR
   app__platform_ --> npm_react_dom
   app__composition --> features_access
   app__composition --> features_billing
+  app__composition --> features_salon
   app__composition --> infra
   app__composition --> infra_auth
   app__composition --> infra_observability

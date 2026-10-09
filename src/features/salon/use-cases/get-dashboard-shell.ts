@@ -28,7 +28,7 @@ export interface DashboardShellViewModel {
 }
 
 /** Estado de pago del salon, evaluado al acceder (sin cron). */
-export async function getSalonPaymentStanding(salonId: string): Promise<PaymentStanding> {
+async function getSalonPaymentStanding(salonId: string): Promise<PaymentStanding> {
   const effectivePlan = await readEffectivePlanOrNull(salonId, "dashboard-shell", getEffectiveSalonPlan);
   return evaluatePaymentStanding({
     status: effectivePlan?.assignmentStatus ?? null,

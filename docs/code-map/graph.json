@@ -23,7 +23,7 @@
     {
       "id": "app/_composition",
       "kind": "internal",
-      "files": 2
+      "files": 3
     },
     {
       "id": "app/api",
@@ -305,7 +305,7 @@
     {
       "from": "app/(dashboard)",
       "to": "app/_composition",
-      "count": 30
+      "count": 32
     },
     {
       "from": "app/(dashboard)",
@@ -340,7 +340,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/billing",
-      "count": 19
+      "count": 18
     },
     {
       "from": "app/(dashboard)",
@@ -400,7 +400,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/salon",
-      "count": 16
+      "count": 15
     },
     {
       "from": "app/(dashboard)",
@@ -514,6 +514,11 @@
     },
     {
       "from": "app/_composition",
+      "to": "features/salon",
+      "count": 1
+    },
+    {
+      "from": "app/_composition",
       "to": "infra",
       "count": 1
     },
@@ -545,17 +550,17 @@
     {
       "from": "app/_composition",
       "to": "npm/react",
-      "count": 1
+      "count": 2
     },
     {
       "from": "app/_composition",
       "to": "npm/server-only",
-      "count": 2
+      "count": 3
     },
     {
       "from": "app/_composition",
       "to": "types",
-      "count": 2
+      "count": 3
     },
     {
       "from": "app/api",

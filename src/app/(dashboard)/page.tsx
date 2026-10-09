@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/app/_composition/request-context";
-import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
-import { getPermissions, hasPermission, PERMISSIONS } from "@/features/access";
+import { getCachedDashboardShell } from "@/app/_composition/salon-readers";
+import { getDisabledSalonFeatures, getPermissions, hasPermission, PERMISSIONS } from "@/features/access";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { isSalonFeatureDisabled } from "@/features/salon-features";
 import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
 import { selectDashboardMoney } from "@/features/dashboard/domain/dashboard-money";
-import {
-  getOwnerPlanLimitWarnings,
-  getSalonPaymentStanding,
-} from "@/features/salon/use-cases/get-dashboard-shell";
+import { getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
 import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
 import { PaymentStandingBanner } from "@/components/layout/payment-standing-banner";
 import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
@@ -24,7 +21,8 @@ import { AlertCircle, CalendarDays, ChevronRight, Users } from "lucide-react";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const disabledFeatures = await getEffectiveDisabledSalonFeatures(profile);
+  // El perfil ya lleva los modulos efectivos del plan (los resuelve request-context).
+  const disabledFeatures = getDisabledSalonFeatures(profile);
   const visibleNav = getVisibleNavItems(
     getPermissions(profile),
     profile.is_owner,
@@ -39,7 +37,7 @@ export default async function DashboardPage() {
   const [planWarnings, paymentStanding, onboarding] = profile.is_owner
     ? await Promise.all([
         getOwnerPlanLimitWarnings(profile.salon_id),
-        getSalonPaymentStanding(profile.salon_id),
+        getCachedDashboardShell(profile).then((shell) => shell?.paymentStanding ?? null),
         getOnboardingChecklist(profile.salon_id),
       ])
     : [[], null, null];
