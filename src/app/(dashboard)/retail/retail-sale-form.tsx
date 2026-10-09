@@ -12,6 +12,12 @@ import {
   type InventoryLocation,
 } from "@/features/inventory/domain/stock";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import { formatCurrency } from "@/lib/utils/dates";
 import { createRetailSaleAction } from "./actions";
 
@@ -28,6 +34,11 @@ export function RetailSaleForm({
   const [quantity, setQuantity] = useState(1);
   const defaultPaymentMethod = retail.paymentMethodOptions[0]?.value ?? "cash";
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const { submit } = useSubmissionIntent({
+    procedure: "retail.sale",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
 
   const selectedProduct = useMemo(
     () => retail.products.find((product) => product.id === selectedProductId),
@@ -45,7 +56,9 @@ export function RetailSaleForm({
 
   function handleSale(formData: FormData) {
     startTransition(async () => {
-      const result = await createRetailSaleAction(null, formData);
+      const result = await submit(formDataEntries(formData), (idempotencyKey) =>
+        createRetailSaleAction(null, withIdempotencyKey(formData, idempotencyKey))
+      );
       onResult({
         ok: result.ok,
         message: result.ok ? result.value : result.error,

@@ -115,8 +115,8 @@ export function utcBounds(from: string, to: string, tz: string): { start: string
 // a salon in `timeZone` into the real UTC instant. Never uses the browser or server
 // local zone: `new Date("YYYY-MM-DDTHH:mm")` would silently shift the appointment.
 export function zonedWallTimeToUtc(date: string, time: string, timeZone: string): Date {
-  const [year, month, day] = date.split("-").map(Number);
-  const [hour, minute] = time.split(":").map(Number);
+  const [year = NaN, month = NaN, day = NaN] = date.split("-").map(Number);
+  const [hour = NaN, minute = NaN] = time.split(":").map(Number);
   const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute);
 
   const firstOffset = zoneOffsetMs(wallAsUtc, timeZone);

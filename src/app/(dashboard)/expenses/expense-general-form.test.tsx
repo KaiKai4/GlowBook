@@ -1,9 +1,67 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, flushAsync, requireElement, setFieldValue, submitFormAsync } from "@/test/ui-shared-dom";
 import { createExpenseAction } from "./actions";
 import { ExpenseGeneralForm } from "./expense-general-form";
+import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
+import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
+
+describe("ExpenseGeneralForm envío con intención idempotente", () => {
+  let mounted: MountedComponent | null = null;
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.innerHTML = "";
+  });
+
+  it("envía idempotency_key en el FormData y la mantiene al reintentar tras un error", async () => {
+    createExpenseMock.mockReset();
+    createExpenseMock
+      .mockResolvedValueOnce({ ok: false, error: "Comercio no válido" })
+      .mockResolvedValueOnce({ ok: true, value: "Gasto registrado." });
+    mounted = mountComponent(<ExpenseGeneralForm onResult={vi.fn()} />);
+    const formElement = form(mounted.container);
+
+    await submitFormAsync(formElement);
+    await settleSubmission();
+    await submitFormAsync(formElement);
+    await settleSubmission();
+
+    expect(createExpenseMock).toHaveBeenCalledTimes(2);
+    const firstKey = idempotencyKeyOf(createExpenseMock.mock.calls[0]?.[1]);
+    expect(firstKey).toMatch(UUID_PATTERN);
+    expect(idempotencyKeyOf(createExpenseMock.mock.calls[1]?.[1])).toBe(firstKey);
+  });
+
+  it("avisa cuando el gasto se guardó pero un efecto posterior falló", async () => {
+    createExpenseMock.mockReset();
+    createExpenseMock.mockResolvedValueOnce({
+      ok: true,
+      value: "Gasto registrado.",
+      warnings: ["El comprobante no se pudo vincular."],
+    } as Awaited<ReturnType<typeof createExpenseAction>>);
+    mounted = mountComponent(<ExpenseGeneralForm onResult={vi.fn()} />);
+
+    await submitFormAsync(form(mounted.container));
+    await settleSubmission();
+
+    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
+  });
+});
+
 
 vi.mock("./actions", () => ({
   createExpenseAction: vi.fn(),

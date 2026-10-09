@@ -3,6 +3,12 @@
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import { inviteSalonAction } from "../actions";
 import { InviteLinkReveal } from "../invite-link-reveal";
 
@@ -11,7 +17,18 @@ interface InviteSalonFormProps {
 }
 
 export function InviteSalonForm({ plans }: InviteSalonFormProps) {
-  const [state, action, pending] = useActionState(inviteSalonAction, null);
+  const toast = useToast();
+  const { submit } = useSubmissionIntent({
+    procedure: "platform.invite-salon",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
+  const [state, action, pending] = useActionState(
+    (_prev: Awaited<ReturnType<typeof inviteSalonAction>> | null, formData: FormData) =>
+      submit(formDataEntries(formData), (idempotencyKey) =>
+        inviteSalonAction(null, withIdempotencyKey(formData, idempotencyKey))
+      ),
+    null
+  );
 
   return (
     <div className="space-y-3">

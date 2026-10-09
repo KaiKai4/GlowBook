@@ -36,10 +36,10 @@
     "fontWeight": 0
   },
   "src/app/(dashboard)/appointments/[id]/edit/appointment-edit-form.tsx": {
-    "rawPalette": 42,
-    "hex": 3,
+    "rawPalette": 18,
+    "hex": 2,
     "fontSize": 0,
-    "fontWeight": 1
+    "fontWeight": 0
   },
   "src/app/(dashboard)/appointments/[id]/edit/page.tsx": {
     "rawPalette": 8,
@@ -66,7 +66,7 @@
     "fontWeight": 0
   },
   "src/app/(dashboard)/appointments/dialogs/cancel-appointment.tsx": {
-    "rawPalette": 28,
+    "rawPalette": 5,
     "hex": 0,
     "fontSize": 0,
     "fontWeight": 0

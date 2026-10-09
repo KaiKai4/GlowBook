@@ -6,6 +6,7 @@ import {
   findOrCreateCustomerAction,
 } from "@/app/(dashboard)/customers/actions";
 import { phoneValidationMessage } from "@/lib/utils/phone";
+import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buildWizardProps, TEST_DATE } from "@/test/ui-appointments-fixtures";
 import {
@@ -55,7 +56,11 @@ describe("AppointmentWizard", () => {
   });
 
   function render(overrides: Parameters<typeof buildWizardProps>[0] = {}) {
-    mounted = mountComponent(<AppointmentWizard {...buildWizardProps(overrides)} />);
+    mounted = mountComponent(
+      <ToastProvider>
+        <AppointmentWizard {...buildWizardProps(overrides)} />
+      </ToastProvider>
+    );
     return mounted.container;
   }
 

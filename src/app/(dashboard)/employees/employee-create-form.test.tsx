@@ -1,5 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import {
   blur,
@@ -19,6 +30,58 @@ import {
 } from "./actions";
 import { EmployeeCreateForm } from "./employee-create-form";
 import type { CategoryOption, RoleOption } from "./types";
+import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
+import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
+import { submitFormAsync } from "@/test/ui-shared-dom";
+
+describe("EmployeeCreateForm envío con intención idempotente", () => {
+  let mounted: MountedComponent | null = null;
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.innerHTML = "";
+  });
+
+  it("envía idempotency_key en el FormData y la mantiene al reintentar tras un error", async () => {
+    vi.mocked(createEmployeeAction)
+      .mockResolvedValueOnce({ ok: false, error: "El email ya está en uso" })
+      .mockResolvedValueOnce({ ok: true, value: { id: "emp-new" } });
+    mounted = renderForm();
+    setFieldValue(fieldByName(mounted.container, "first_name"), "Marta");
+    setFieldValue(fieldByName(mounted.container, "last_name"), "Lima");
+
+    await submitFormAsync(formOf(mounted.container));
+    await settleSubmission();
+    // React reinicia los campos de un formulario con acción al terminar: se vuelven a escribir los mismos datos.
+    setFieldValue(fieldByName(mounted.container, "first_name"), "Marta");
+    setFieldValue(fieldByName(mounted.container, "last_name"), "Lima");
+    await submitFormAsync(formOf(mounted.container));
+    await settleSubmission();
+
+    const calls = vi.mocked(createEmployeeAction).mock.calls;
+    expect(calls).toHaveLength(2);
+    const firstKey = idempotencyKeyOf(calls[0]?.[1]);
+    expect(firstKey).toMatch(UUID_PATTERN);
+    expect(idempotencyKeyOf(calls[1]?.[1])).toBe(firstKey);
+  });
+
+  it("avisa cuando el colaborador se creó pero un efecto posterior falló", async () => {
+    vi.mocked(createEmployeeAction).mockResolvedValueOnce({
+      ok: true,
+      value: { id: "emp-new" },
+      warnings: ["No se guardaron los servicios del colaborador."],
+    } as Awaited<ReturnType<typeof createEmployeeAction>>);
+    const onCreated = vi.fn();
+    mounted = renderForm({ onCreated });
+
+    await submitFormAsync(formOf(mounted.container));
+    await settleSubmission();
+
+    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
+    expect(onCreated).toHaveBeenCalledTimes(1);
+  });
+});
 
 const routerMock = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn(), push: vi.fn() }));
 

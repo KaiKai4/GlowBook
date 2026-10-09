@@ -1,5 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import type { InventoryPageView } from "@/features/inventory/use-cases/inventory-products";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, findButtonByText, flushAsync, requireElement, submitFormAsync } from "@/test/ui-shared-dom";
@@ -9,6 +20,8 @@ import {
   transferInventoryStockAction,
 } from "./actions";
 import { InventoryManager } from "./inventory-manager";
+import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
+import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
 
 vi.mock("./actions", () => ({
   createInventoryProductAction: vi.fn(),
@@ -31,6 +44,52 @@ function banner(container: HTMLElement): HTMLElement | null {
   );
   return box ?? null;
 }
+
+describe("InventoryManager transferencias con intención idempotente", () => {
+  let mounted: MountedComponent | null = null;
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.innerHTML = "";
+  });
+
+  it("envía idempotency_key en la transferencia y la mantiene al reintentar tras un error", async () => {
+    transferMock.mockReset();
+    transferMock
+      .mockResolvedValueOnce({ ok: false, error: "Stock insuficiente" })
+      .mockResolvedValueOnce({ ok: true, value: "Stock transferido." });
+    mounted = mountComponent(<InventoryManager inventory={inventoryView()} />);
+    clickElement(findButtonByText(mounted.container, "Transferir stock"));
+    const formElement = requireElement<HTMLFormElement>(mounted.container, "form");
+
+    await submitFormAsync(formElement);
+    await settleSubmission();
+    await submitFormAsync(formElement);
+    await settleSubmission();
+
+    expect(transferMock).toHaveBeenCalledTimes(2);
+    const firstKey = idempotencyKeyOf(transferMock.mock.calls[0]?.[1]);
+    expect(firstKey).toMatch(UUID_PATTERN);
+    expect(idempotencyKeyOf(transferMock.mock.calls[1]?.[1])).toBe(firstKey);
+  });
+
+  it("avisa cuando la transferencia se guardó pero un efecto posterior falló", async () => {
+    transferMock.mockReset();
+    transferMock.mockResolvedValueOnce({
+      ok: true,
+      value: "Stock transferido.",
+      warnings: ["El movimiento no se registró en el historial."],
+    } as Awaited<ReturnType<typeof transferInventoryStockAction>>);
+    mounted = mountComponent(<InventoryManager inventory={inventoryView()} />);
+    clickElement(findButtonByText(mounted.container, "Transferir stock"));
+
+    await submitFormAsync(requireElement<HTMLFormElement>(mounted.container, "form"));
+    await settleSubmission();
+
+    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
+  });
+});
 
 describe("InventoryManager", () => {
   let mounted: MountedComponent | null = null;

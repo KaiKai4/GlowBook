@@ -1,7 +1,20 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { flushAsync, requireElement, setFieldValue, submitFormAsync } from "@/test/ui-shared-dom";
+import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
+import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
 import { createInventoryPurchaseExpenseAction } from "./actions";
 import { InventoryPurchaseExpenseForm } from "./inventory-purchase-expense-form";
 
@@ -106,5 +119,41 @@ describe("InventoryPurchaseExpenseForm", () => {
     await flushAsync();
 
     expect(onResult).toHaveBeenCalledWith({ ok: false, message: "Stock insuficiente en origen" });
+  });
+
+  it("envía idempotency_key en el FormData y la mantiene al reintentar tras un error", async () => {
+    purchaseMock
+      .mockResolvedValueOnce({ ok: false, error: "Proveedor no válido" })
+      .mockResolvedValueOnce({ ok: true, value: "Compra registrada." });
+    mounted = mountComponent(
+      <InventoryPurchaseExpenseForm inventoryProducts={PRODUCTS} canManageInventory onResult={vi.fn()} />
+    );
+    const form = requireElement<HTMLFormElement>(mounted.container, "form");
+
+    await submitFormAsync(form);
+    await settleSubmission();
+    await submitFormAsync(form);
+    await settleSubmission();
+
+    expect(purchaseMock).toHaveBeenCalledTimes(2);
+    const firstKey = idempotencyKeyOf(purchaseMock.mock.calls[0]?.[1]);
+    expect(firstKey).toMatch(UUID_PATTERN);
+    expect(idempotencyKeyOf(purchaseMock.mock.calls[1]?.[1])).toBe(firstKey);
+  });
+
+  it("avisa cuando la compra se guardó pero un efecto posterior falló", async () => {
+    purchaseMock.mockResolvedValueOnce({
+      ok: true,
+      value: "Compra registrada.",
+      warnings: ["El stock no se actualizó por completo."],
+    } as Awaited<ReturnType<typeof createInventoryPurchaseExpenseAction>>);
+    mounted = mountComponent(
+      <InventoryPurchaseExpenseForm inventoryProducts={PRODUCTS} canManageInventory onResult={vi.fn()} />
+    );
+
+    await submitFormAsync(requireElement<HTMLFormElement>(mounted.container, "form"));
+    await settleSubmission();
+
+    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
   });
 });

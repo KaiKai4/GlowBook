@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, useEffect } from "react";
 import { ToastProvider, useToast } from "@/components/ui/toast";
-import { renderDom, type RenderedDom } from "@/test/render-dom";
+import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { hashSubmissionData } from "./submission-canonical";
 import {
   SAVED_WITH_WARNINGS_MESSAGE,
@@ -32,8 +32,8 @@ function Harness(options: UseSubmissionIntentOptions) {
   return <output data-testid="pending">{String(intent.pending)}</output>;
 }
 
-function mount(procedure = PROCEDURE): RenderedDom {
-  return renderDom(
+function mount(procedure = PROCEDURE): MountedComponent {
+  return mountComponent(
     <ToastProvider>
       <Harness procedure={procedure} />
     </ToastProvider>
@@ -79,7 +79,7 @@ function readJournal(): unknown {
 }
 
 describe("useSubmissionIntent", () => {
-  let rendered: RenderedDom | null = null;
+  let rendered: MountedComponent | null = null;
 
   beforeEach(() => {
     sessionStorage.clear();
@@ -201,8 +201,10 @@ describe("useSubmissionIntent", () => {
 
     const journal = readJournal() as Array<Record<string, unknown>>;
     expect(journal).toHaveLength(1);
-    expect(Object.keys(journal[0]).sort()).toEqual(["dataHash", "key", "procedure", "startedAt"]);
-    expect(journal[0].procedure).toBe(PROCEDURE);
+    const entry = journal[0];
+    if (!entry) throw new Error("El diario no contiene la intención");
+    expect(Object.keys(entry).sort()).toEqual(["dataHash", "key", "procedure", "startedAt"]);
+    expect(entry.procedure).toBe(PROCEDURE);
   });
 
   it("reuses a journaled key for the same data after remounting", async () => {

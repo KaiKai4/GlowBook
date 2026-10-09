@@ -93,7 +93,7 @@ describe("wizard de citas: cronograma secuencial", () => {
     const rows = [createAppointmentRow(1)];
 
     expect(
-      buildSequentialSchedule({ rows, date: "", time: "10:00", serviceMap })
+      buildSequentialSchedule({ rows, date: "", time: "10:00", timeZone: "America/Panama", serviceMap })
     ).toEqual([]);
   });
 
@@ -103,7 +103,7 @@ describe("wizard de citas: cronograma secuencial", () => {
       { key: "r2", categoryId: "cat-nails", serviceId: manicure.id, employeeId: "" },
     ];
 
-    const schedule = buildSequentialSchedule({ rows, date: THURSDAY, time: "10:00", serviceMap });
+    const schedule = buildSequentialSchedule({ rows, date: THURSDAY, time: "10:00", timeZone: "America/Panama", serviceMap });
 
     expect(schedule.map((item) => item.row.key)).toEqual(["r1", "r2"]);
     expect(schedule[0]?.service).toBe(haircut);
@@ -121,7 +121,7 @@ describe("wizard de citas: cronograma secuencial", () => {
       { key: "r2", categoryId: "cat-hair", serviceId: haircut.id, employeeId: "" },
     ];
 
-    const schedule = buildSequentialSchedule({ rows, date: THURSDAY, time: "10:00", serviceMap });
+    const schedule = buildSequentialSchedule({ rows, date: THURSDAY, time: "10:00", timeZone: "America/Panama", serviceMap });
 
     expect(schedule[0]?.service).toBeUndefined();
     expect(schedule[0]?.start).toBe(schedule[0]?.end);

@@ -1,5 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { findButtonByText, requireElement, setFieldValue } from "@/test/ui-shared-dom";

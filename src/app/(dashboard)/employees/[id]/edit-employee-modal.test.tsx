@@ -1,10 +1,101 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
-import { buttonWithAriaLabel, buttonWithText, click, fieldByLabel, flushAsync, setFieldValue } from "@/test/ui-people-dom";
+import { buttonWithAriaLabel, buttonWithText, click, fieldByLabel, setFieldValue } from "@/test/ui-people-dom";
 import { updateEmployeeAction } from "../actions";
 import type { CategoryOption } from "../types";
 import { EditEmployeeModal } from "./edit-employee-modal";
+import { act } from "react";
+import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
+import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
+
+describe("EditEmployeeModal envío con intención idempotente", () => {
+  let mounted: MountedComponent | null = null;
+
+  beforeEach(() => {
+    vi.mocked(updateEmployeeAction).mockReset();
+  });
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.innerHTML = "";
+  });
+
+  it("envía idempotency_key y la mantiene al reintentar tras un error", async () => {
+    vi.mocked(updateEmployeeAction)
+      .mockResolvedValueOnce({ ok: false, error: "El email ya está en uso" })
+      .mockResolvedValueOnce({ ok: true, value: undefined });
+    mounted = renderModal();
+    openModal(mounted.container);
+
+    click(buttonWithText(document.body, "Guardar cambios"));
+    await settleSubmission();
+    click(buttonWithText(document.body, "Guardar cambios"));
+    await settleSubmission();
+
+    const calls = vi.mocked(updateEmployeeAction).mock.calls;
+    expect(calls).toHaveLength(2);
+    expect(calls[0]?.[0]).toBe("emp-1");
+    const firstKey = idempotencyKeyOf(calls[0]?.[2]);
+    expect(firstKey).toMatch(UUID_PATTERN);
+    expect(idempotencyKeyOf(calls[1]?.[2])).toBe(firstKey);
+  });
+
+  it("no se puede cerrar con Escape, la X ni Cancelar mientras el guardado está en curso", async () => {
+    let release: (value: Awaited<ReturnType<typeof updateEmployeeAction>>) => void = () => {};
+    vi.mocked(updateEmployeeAction).mockReturnValue(
+      new Promise((done) => {
+        release = done;
+      })
+    );
+    mounted = renderModal();
+    openModal(mounted.container);
+
+    click(buttonWithText(document.body, "Guardar cambios"));
+    await settleSubmission();
+    expect(updateEmployeeAction).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+    const closeButton = document.body.querySelector<HTMLButtonElement>("button[aria-label='Cerrar']");
+    expect(closeButton?.disabled).toBe(true);
+    expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+
+    await act(async () => {
+      release({ ok: true, value: undefined });
+    });
+    await settleSubmission();
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it("avisa cuando los datos se guardaron pero un efecto posterior falló", async () => {
+    vi.mocked(updateEmployeeAction).mockResolvedValueOnce({
+      ok: true,
+      value: undefined,
+      warnings: ["Los servicios no se actualizaron."],
+    } as Awaited<ReturnType<typeof updateEmployeeAction>>);
+    mounted = renderModal();
+    openModal(mounted.container);
+
+    click(buttonWithText(document.body, "Guardar cambios"));
+    await settleSubmission();
+
+    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
+  });
+});
 
 const routerMock = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn(), push: vi.fn() }));
 
@@ -92,7 +183,7 @@ describe("EditEmployeeModal", () => {
     setFieldValue(fieldByLabel(document.body, "Comisión (%)"), "");
     click(buttonWithText(document.body, "Uñas"));
     click(buttonWithText(document.body, "Guardar cambios"));
-    await flushAsync();
+    await settleSubmission();
 
     expect(updateEmployeeAction).toHaveBeenCalledTimes(1);
     const [employeeId, previous, formData] = vi.mocked(updateEmployeeAction).mock.calls[0] ?? [];
@@ -113,7 +204,7 @@ describe("EditEmployeeModal", () => {
     openModal(mounted.container);
 
     click(buttonWithText(document.body, "Guardar cambios"));
-    await flushAsync();
+    await settleSubmission();
 
     expect(document.body.textContent).toContain("El teléfono ya está registrado");
     expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
@@ -140,7 +231,7 @@ describe("EditEmployeeModal", () => {
     setFieldValue(fieldByLabel(document.body, "Teléfono"), " 61112222 ");
     setFieldValue(fieldByLabel(document.body, "Email"), " ana.vega@example.com ");
     click(buttonWithText(document.body, "Guardar cambios"));
-    await flushAsync();
+    await settleSubmission();
 
     const formData = vi.mocked(updateEmployeeAction).mock.calls[0]?.[2];
     expect(formData?.get("phone")).toBe("61112222");

@@ -1,15 +1,17 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
+import { act, createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
 import { cancelAppointmentAction } from "@/app/(dashboard)/appointments/actions";
 import {
   deleteTemporaryCustomerAction,
   promoteCustomerAction,
 } from "@/app/(dashboard)/customers/actions";
 import { formatTimeTz } from "@/lib/utils/dates";
+import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { SALON_TZ } from "@/test/ui-appointments-fixtures";
 import { buttonContainingText, buttonWithText, clickAndSettle, click } from "@/test/ui-appointments-dom";
+import { flushAsync } from "@/test/ui-shared-dom";
 import { CancelAppointmentDialog } from "./cancel-appointment";
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }));
@@ -28,6 +30,13 @@ vi.mock("@/app/(dashboard)/customers/actions", () => ({
 }));
 
 type CancelAppt = Parameters<typeof CancelAppointmentDialog>[0]["appt"];
+
+// La clave de idempotencia se calcula con SHA-256 asíncrono antes de llamar a la acción:
+// hay que dejar correr varias tareas pendientes antes de comprobar el resultado.
+async function clickAndFlush(element: Element): Promise<void> {
+  await clickAndSettle(element);
+  for (let i = 0; i < 5; i += 1) await flushAsync();
+}
 
 const START = "2026-10-12T14:00:00-05:00";
 const TEMPLATE =
@@ -70,6 +79,80 @@ const TEMP_CUSTOMER: NonNullable<CancelAppt["customer"]> = {
   is_temporary: true,
 };
 
+describe("CancelAppointmentDialog con intención idempotente", () => {
+  let mounted: MountedComponent | null = null;
+
+  beforeEach(() => {
+    vi.mocked(cancelAppointmentAction).mockReset();
+    vi.mocked(promoteCustomerAction).mockReset();
+    vi.mocked(deleteTemporaryCustomerAction).mockReset();
+  });
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.innerHTML = "";
+  });
+
+  function mountCancel(onClose = vi.fn()): MountedComponent {
+    return mountComponent(
+      <ToastProvider>
+        <CancelAppointmentDialog
+          appt={buildAppt()}
+          open
+          onClose={onClose}
+          tz={SALON_TZ}
+          salonName="Salón Prueba"
+          template={TEMPLATE}
+        />
+      </ToastProvider>
+    );
+  }
+
+  it("envía idempotency_key y la mantiene al reintentar tras un error", async () => {
+    vi.mocked(cancelAppointmentAction)
+      .mockResolvedValueOnce({ ok: false, error: "La cita ya fue completada." })
+      .mockResolvedValueOnce({ ok: true, value: undefined });
+    mounted = mountCancel();
+
+    await clickAndFlush(buttonWithText(mounted.container, "Cancelar cita"));
+    await clickAndFlush(buttonWithText(mounted.container, "Cancelar cita"));
+
+    const calls = vi.mocked(cancelAppointmentAction).mock.calls;
+    expect(calls).toHaveLength(2);
+    const firstKey = String(calls[0]?.[0].get("idempotency_key"));
+    expect(firstKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(String(calls[1]?.[0].get("idempotency_key"))).toBe(firstKey);
+  });
+
+  it("no se puede cerrar con Escape, la X ni Volver mientras la cancelación está en curso", async () => {
+    let release: (value: Awaited<ReturnType<typeof cancelAppointmentAction>>) => void = () => {};
+    vi.mocked(cancelAppointmentAction).mockReturnValue(
+      new Promise((done) => {
+        release = done;
+      })
+    );
+    const onClose = vi.fn();
+    mounted = mountCancel(onClose);
+
+    await clickAndFlush(buttonWithText(mounted.container, "Cancelar cita"));
+    expect(cancelAppointmentAction).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+    const closeButton = mounted.container.querySelector<HTMLButtonElement>("button[aria-label='Cerrar']");
+    expect(closeButton?.disabled).toBe(true);
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => {
+      release({ ok: true, value: undefined });
+    });
+    for (let i = 0; i < 5; i += 1) await flushAsync();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("CancelAppointmentDialog", () => {
   let mounted: MountedComponent | null = null;
 
@@ -91,15 +174,17 @@ describe("CancelAppointmentDialog", () => {
   function render(props: Partial<Parameters<typeof CancelAppointmentDialog>[0]> = {}) {
     const onClose = vi.fn();
     mounted = mountComponent(
-      <CancelAppointmentDialog
-        appt={buildAppt()}
-        open
-        onClose={onClose}
-        tz={SALON_TZ}
-        salonName="Salón Prueba"
-        template={TEMPLATE}
-        {...props}
-      />
+      <ToastProvider>
+        <CancelAppointmentDialog
+          appt={buildAppt()}
+          open
+          onClose={onClose}
+          tz={SALON_TZ}
+          salonName="Salón Prueba"
+          template={TEMPLATE}
+          {...props}
+        />
+      </ToastProvider>
     );
     return { container: mounted.container, onClose };
   }
@@ -130,13 +215,13 @@ describe("CancelAppointmentDialog", () => {
     expect(container.textContent).toContain("¿Guardar los datos del cliente?");
     const discard = buttonContainingText(container, "No, descartar datos");
     const save = buttonContainingText(container, "Sí, guardar cliente");
-    expect(discard.className).toContain("border-amber-400");
+    expect(discard.className).toContain("border-warning");
     expect(save.className).not.toContain("border-brand-400");
 
     click(save);
 
     expect(save.className).toContain("border-brand-400");
-    expect(discard.className).not.toContain("border-amber-400");
+    expect(discard.className).not.toContain("border-warning");
   });
 
   it("ofrece notificar por WhatsApp solo si el cliente tiene teléfono", () => {
@@ -164,9 +249,13 @@ describe("CancelAppointmentDialog", () => {
     vi.mocked(cancelAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
     const { container, onClose } = render();
 
-    await clickAndSettle(buttonWithText(container, "Cancelar cita"));
+    await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
-    expect(cancelAppointmentAction).toHaveBeenCalledWith("appt-1");
+    expect(cancelAppointmentAction).toHaveBeenCalledTimes(1);
+    const formData = vi.mocked(cancelAppointmentAction).mock.calls[0]?.[0];
+    expect(formData).toBeInstanceOf(FormData);
+    expect(formData?.get("appointment_id")).toBe("appt-1");
+    expect(String(formData?.get("idempotency_key"))).toMatch(/^[0-9a-f-]{36}$/);
     expect(promoteCustomerAction).not.toHaveBeenCalled();
     expect(deleteTemporaryCustomerAction).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -178,7 +267,7 @@ describe("CancelAppointmentDialog", () => {
     const { container } = render({ appt: buildAppt({ customer: TEMP_CUSTOMER }) });
 
     click(buttonContainingText(container, "Sí, guardar cliente"));
-    await clickAndSettle(buttonWithText(container, "Cancelar cita"));
+    await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
     expect(promoteCustomerAction).toHaveBeenCalledWith("cust-temp");
     expect(deleteTemporaryCustomerAction).not.toHaveBeenCalled();
@@ -188,7 +277,7 @@ describe("CancelAppointmentDialog", () => {
     vi.mocked(cancelAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
     const { container } = render({ appt: buildAppt({ customer: TEMP_CUSTOMER }) });
 
-    await clickAndSettle(buttonWithText(container, "Cancelar cita"));
+    await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
     expect(deleteTemporaryCustomerAction).toHaveBeenCalledWith("cust-temp");
     expect(promoteCustomerAction).not.toHaveBeenCalled();
@@ -198,7 +287,7 @@ describe("CancelAppointmentDialog", () => {
     vi.mocked(cancelAppointmentAction).mockResolvedValue({ ok: false, error: "La cita ya fue completada." });
     const { container, onClose } = render({ appt: buildAppt({ customer: TEMP_CUSTOMER }) });
 
-    await clickAndSettle(buttonWithText(container, "Cancelar cita"));
+    await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
     expect(container.textContent).toContain("La cita ya fue completada.");
     expect(onClose).not.toHaveBeenCalled();
@@ -207,17 +296,16 @@ describe("CancelAppointmentDialog", () => {
     expect(deleteTemporaryCustomerAction).not.toHaveBeenCalled();
   });
 
-  it("CONDUCTA ACTUAL (posible bug): si fallan las acciones sobre el cliente temporal, la cita queda cancelada y el diálogo se cierra igual", async () => {
-    // El resultado de promoteCustomerAction / deleteTemporaryCustomerAction se ignora.
-    // Se fija el comportamiento actual.
+  it("si falla descartar al cliente temporal, avisa y no cierra en silencio", async () => {
     vi.mocked(cancelAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
     vi.mocked(deleteTemporaryCustomerAction).mockResolvedValue({ ok: false, error: "No se pudo borrar." });
     const { container, onClose } = render({ appt: buildAppt({ customer: TEMP_CUSTOMER }) });
 
-    await clickAndSettle(buttonWithText(container, "Cancelar cita"));
+    await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(container.textContent).not.toContain("No se pudo borrar.");
+    expect(onClose).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("no pudimos descartar los datos temporales del cliente");
+    expect(container.textContent).toContain("No se pudo borrar.");
   });
 
   it("notifica por WhatsApp con el mensaje renderizado de la plantilla y el teléfono en dígitos", async () => {
@@ -225,7 +313,7 @@ describe("CancelAppointmentDialog", () => {
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     const { container, onClose } = render();
 
-    await clickAndSettle(buttonWithText(container, "Cancelar y notificar por WhatsApp"));
+    await clickAndFlush(buttonWithText(container, "Cancelar y notificar por WhatsApp"));
 
     expect(open).toHaveBeenCalledTimes(1);
     const [url, target] = open.mock.calls[0] ?? [];
@@ -242,7 +330,7 @@ describe("CancelAppointmentDialog", () => {
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     const { container } = render({ appt: buildAppt({ items: [] }) });
 
-    await clickAndSettle(buttonWithText(container, "Cancelar y notificar por WhatsApp"));
+    await clickAndFlush(buttonWithText(container, "Cancelar y notificar por WhatsApp"));
 
     const url = String(open.mock.calls[0]?.[0]);
     const message = decodeURIComponent(url.split("?text=")[1] ?? "");
@@ -254,7 +342,7 @@ describe("CancelAppointmentDialog", () => {
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     const { container } = render();
 
-    await clickAndSettle(buttonWithText(container, "Cancelar cita"));
+    await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
     expect(open).not.toHaveBeenCalled();
   });

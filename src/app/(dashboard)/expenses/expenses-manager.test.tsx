@@ -1,6 +1,17 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, findButtonByText, flushAsync, requireElement, setFieldValue, submitFormAsync } from "@/test/ui-shared-dom";

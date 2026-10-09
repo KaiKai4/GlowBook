@@ -42,7 +42,7 @@ const KIND_STYLES: Record<ToastKind, { container: string; icon: typeof CheckCirc
   success: { container: "border-success-border bg-success-subtle text-success-strong", icon: CheckCircle2 },
   error: { container: "border-danger-border bg-danger-subtle text-danger-strong", icon: XCircle },
   info: { container: "border-brand-200 bg-brand-50 text-brand-800", icon: Info },
-  warning: { container: "border-amber-200 bg-amber-50 text-amber-800", icon: AlertTriangle },
+  warning: { container: "border-warning-border bg-warning-subtle text-warning-strong", icon: AlertTriangle },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {

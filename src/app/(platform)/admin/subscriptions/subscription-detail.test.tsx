@@ -6,6 +6,7 @@ import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { changeFieldValue, clickElement, flushAsync, getButtonByText, getFieldByName } from "@/test/ui-admin-dom";
 import { CATALOG_MODULES, makeAddon, makeDetail, makeLimit, makeMetric, makePlan } from "@/test/ui-admin-fixtures";
 import { SubscriptionDetail } from "./subscription-detail";
+import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
 
 vi.mock("./actions", () => ({
   assignPlanAction: vi.fn(),
@@ -39,6 +40,39 @@ function renderDetail(detail = makeDetail()): MountedComponent {
 function tabButton(container: HTMLElement, label: string): HTMLButtonElement {
   return getButtonByText(container, label);
 }
+
+describe("SubscriptionDetail registro de pago con intención idempotente", () => {
+  let mounted: MountedComponent | null = null;
+
+  beforeEach(() => {
+    vi.mocked(registerPaymentAction).mockReset();
+  });
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+  });
+
+  it("envía idempotency_key y la mantiene al reintentar tras un error", async () => {
+    vi.mocked(registerPaymentAction)
+      .mockResolvedValueOnce({ ok: false, message: "Ya existe un pago para ese periodo" })
+      .mockResolvedValueOnce({ ok: true, message: "Pago registrado" });
+    mounted = renderDetail();
+    const paymentButton = getButtonByText(mounted.container, "Registrar pago");
+
+    clickElement(paymentButton);
+    await settleSubmission();
+    // Tras la acción React reinicia el formulario a sus valores por defecto: el reintento envía los mismos datos.
+    clickElement(getButtonByText(mounted.container, "Registrar pago"));
+    await settleSubmission();
+
+    const calls = vi.mocked(registerPaymentAction).mock.calls;
+    expect(calls).toHaveLength(2);
+    const firstKey = idempotencyKeyOf(calls[0]?.[1]);
+    expect(firstKey).toMatch(UUID_PATTERN);
+    expect(idempotencyKeyOf(calls[1]?.[1])).toBe(firstKey);
+  });
+});
 
 describe("SubscriptionDetail", () => {
   let mounted: MountedComponent | null = null;

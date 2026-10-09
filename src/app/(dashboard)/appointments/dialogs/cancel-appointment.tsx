@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
 import { cancelAppointmentAction } from "../actions";
 import { promoteCustomerAction, deleteTemporaryCustomerAction } from "../../customers/actions";
 import { MessageCircle, UserX, UserCheck } from "lucide-react";
@@ -45,6 +46,7 @@ export function CancelAppointmentDialog({
   template: string;
 }) {
   const router = useRouter();
+  const { submit } = useSubmissionIntent({ procedure: "appointments.cancel" });
   const isTemp = appt.customer?.is_temporary ?? false;
   const [saveChoice, setSaveChoice] = useState<SaveChoice>(isTemp ? "discard" : "save");
   const [pending, start] = useTransition();
@@ -85,7 +87,12 @@ export function CancelAppointmentDialog({
   function handleCancel(withWhatsApp: boolean) {
     setError(null);
     start(async () => {
-      const res = await cancelAppointmentAction(appt.id);
+      const res = await submit({ appointment_id: appt.id }, (idempotencyKey) => {
+        const fd = new FormData();
+        fd.set("idempotency_key", idempotencyKey);
+        fd.set("appointment_id", appt.id);
+        return cancelAppointmentAction(fd);
+      });
       if (!res.ok) { setError(res.error ?? "Error al cancelar."); return; }
 
       const customerWarning = await applyCustomerDisposition();
@@ -129,11 +136,11 @@ export function CancelAppointmentDialog({
       <div className="space-y-5">
         {/* Only show customer disposition when the customer was created just for this appointment */}
         {isTemp && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
-            <p className="text-sm font-semibold text-amber-800">
+          <div className="rounded-xl border border-warning-border bg-warning-subtle p-4 space-y-3">
+            <p className="text-sm font-semibold text-warning-strong">
               ¿Guardar los datos del cliente?
             </p>
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-warning-fg">
               Este cliente aún no está registrado. Puedes guardarlo o descartarlo.
             </p>
 
@@ -144,22 +151,22 @@ export function CancelAppointmentDialog({
                 className={cn(
                   "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
                   saveChoice === "save"
-                    ? "border-brand-400 bg-white"
-                    : "border-transparent bg-white/60 hover:bg-white"
+                    ? "border-brand-400 bg-surface"
+                    : "border-transparent bg-surface/60 hover:bg-surface"
                 )}
               >
                 <div className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                  saveChoice === "save" ? "border-brand-500 bg-brand-500" : "border-stone-300"
+                  saveChoice === "save" ? "border-brand-500 bg-brand-500" : "border-border-strong"
                 )}>
-                  {saveChoice === "save" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  {saveChoice === "save" && <div className="h-1.5 w-1.5 rounded-full bg-surface" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
                     <UserCheck className="h-3.5 w-3.5 text-brand-600" />
-                    <p className="text-sm font-semibold text-stone-800">Sí, guardar cliente</p>
+                    <p className="text-sm font-semibold text-fg-secondary">Sí, guardar cliente</p>
                   </div>
-                  <p className="text-xs text-stone-500 mt-0.5">
+                  <p className="text-xs text-fg-subtle mt-0.5">
                     Quedará registrado y podrá usarse en futuras citas.
                   </p>
                 </div>
@@ -171,22 +178,22 @@ export function CancelAppointmentDialog({
                 className={cn(
                   "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
                   saveChoice === "discard"
-                    ? "border-amber-400 bg-white"
-                    : "border-transparent bg-white/60 hover:bg-white"
+                    ? "border-warning bg-surface"
+                    : "border-transparent bg-surface/60 hover:bg-surface"
                 )}
               >
                 <div className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                  saveChoice === "discard" ? "border-amber-500 bg-amber-500" : "border-stone-300"
+                  saveChoice === "discard" ? "border-amber-500 bg-amber-500" : "border-border-strong"
                 )}>
-                  {saveChoice === "discard" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  {saveChoice === "discard" && <div className="h-1.5 w-1.5 rounded-full bg-surface" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <UserX className="h-3.5 w-3.5 text-amber-600" />
-                    <p className="text-sm font-semibold text-stone-800">No, descartar datos</p>
+                    <UserX className="h-3.5 w-3.5 text-warning-fg" />
+                    <p className="text-sm font-semibold text-fg-secondary">No, descartar datos</p>
                   </div>
-                  <p className="text-xs text-stone-500 mt-0.5">
+                  <p className="text-xs text-fg-subtle mt-0.5">
                     No se guardará ningún registro del cliente.
                   </p>
                 </div>
@@ -196,13 +203,13 @@ export function CancelAppointmentDialog({
         )}
 
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+          <div className="rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
             {error}
           </div>
         )}
 
         {warning && (
-          <div role="status" className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+          <div role="status" className="rounded-lg bg-warning-subtle border border-warning-border px-3 py-2 text-sm text-warning-strong">
             {warning}
           </div>
         )}
