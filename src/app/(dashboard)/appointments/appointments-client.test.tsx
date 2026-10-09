@@ -100,7 +100,7 @@ describe("AppointmentsClient", () => {
   it("lista en el resumen las citas próximas del día recibido del servidor", () => {
     mounted = mountComponent(<AppointmentsClient initialCalendar={buildCalendar()} canManage />);
 
-    const summary = mounted.container.querySelectorAll("div.divide-y > div");
+    const summary = mounted.container.querySelectorAll('table[aria-label="Resumen de citas"] tbody tr');
     expect(summary).toHaveLength(1);
     expect(summary[0]?.textContent).toContain("Ana Pérez");
   });

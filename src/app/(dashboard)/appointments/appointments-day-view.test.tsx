@@ -88,9 +88,11 @@ function renderDayView(
   );
 }
 
-/** Fila del resumen que contiene el texto indicado (nombre del cliente). */
+/** Filas de datos del resumen (sin la fila de mensaje vacío). */
 function summaryRows(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelectorAll<HTMLElement>("div.divide-y > div"));
+  return Array.from(
+    container.querySelectorAll<HTMLElement>('table[aria-label="Resumen de citas"] tbody tr')
+  ).filter((row) => !row.querySelector("td[colspan]"));
 }
 
 function fire(element: Element, type: string): void {
