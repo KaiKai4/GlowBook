@@ -59,6 +59,9 @@ function resolveLhciEntry() {
  * Ejecuta "lhci autorun" para una configuración. Si falla, lo repite una vez: Lighthouse
  * puede abortar una pasada con NO_NAVSTART por ruido del entorno (Chrome y Docker en la
  * misma máquina). Las aserciones se aplican igual a la pasada que se repite.
+ * @param {string} config ruta de la configuración de lhci
+ * @param {string[]} extraArgs argumentos extra para lhci
+ * @param {NodeJS.ProcessEnv} env entorno del proceso de lhci
  * @returns {number} código de salida (0 si alguna pasada cumple las aserciones)
  */
 function runAutorunWithRetry(config, extraArgs, env) {
