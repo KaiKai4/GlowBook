@@ -49,4 +49,13 @@ describe("MonthlyAppointmentsChart", () => {
     expect(path).toMatch(/^M /);
     expect(path?.match(/ C /g)).toHaveLength(2);
   });
+
+  it("presenta el título como h2 de una sección con la leyenda y el periodo", () => {
+    mounted = mountComponent(<MonthlyAppointmentsChart points={[point("2026-05", 7)]} />);
+
+    const section = mounted.container.querySelector("section");
+    expect(section?.querySelector("h2")?.textContent).toBe("Citas completadas por mes");
+    expect(section?.textContent).toContain("Evolución de los últimos 12 meses");
+    expect(section?.textContent).toContain("Citas completadas");
+  });
 });
