@@ -241,7 +241,7 @@ npm run release:scale-readiness
 Además:
 
 1. Ejecutar dataset de escala con `npm run scale:seed-salons`.
-2. Revisar rutas críticas y completar `docs/performance-review-2026-06-01.md`.
+2. Revisar rutas críticas y completar `docs/archive/readiness-snapshots/performance-review-2026-06-01.md`.
 3. Ejecutar cleanup con `npm run scale:cleanup-salons`.
 4. Revisar `docs/capacity-plan.md`.
 5. Confirmar runbook de incidentes.

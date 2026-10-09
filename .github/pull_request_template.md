@@ -16,6 +16,9 @@
 - [ ] Sin cambios que dependan de un nombre de rol: los permisos se comprueban con `has_permission`.
 - [ ] Sin `any`, `@ts-ignore` ni `eslint-disable` nuevos.
 - [ ] Sin archivos nuevos de mas de ~300 lineas.
+- [ ] Pruebas de conducta para lo nuevo y para la regresion que se corrige (cruzan la interfaz publica).
+- [ ] Documentacion afectada actualizada (`AGENTS.md`, `docs/`, `SECURITY.md`); `docs-links` en verde.
+- [ ] ADR nuevo o actualizado si la decision no es obvia (contrato, capa, dependencia, herramienta, excepcion).
 
 ## Checklist de migraciones de base de datos
 
