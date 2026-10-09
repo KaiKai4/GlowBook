@@ -197,7 +197,7 @@ export function AppointmentServicesStep({
                         })
                       }
                     >
-                      <option value="">Selecciona categoria...</option>
+                      <option value="" disabled hidden>Selecciona categoria...</option>
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -216,7 +216,7 @@ export function AppointmentServicesStep({
                       }
                       disabled={!item.row.categoryId}
                     >
-                      <option value="">
+                      <option value="" disabled hidden>
                         {!item.row.categoryId
                           ? "Elige categoria primero"
                           : filteredServices.length
@@ -239,7 +239,7 @@ export function AppointmentServicesStep({
                       disabled={!item.row.serviceId}
                       error={!selectedStillEligible ? "Ya no disponible" : undefined}
                     >
-                      <option value="">
+                      <option value="" disabled hidden>
                         {!item.row.serviceId
                           ? "Elige servicio primero"
                           : eligibleEmployees.length

@@ -18,23 +18,6 @@
   },
   {
     "type": "dependency",
-    "from": "src/features/appointments/use-cases/complete-appointment.ts",
-    "to": "src/features/customers/use-cases/customer-temporary.ts",
-    "unresolvedTo": "@/features/customers/use-cases/customer-temporary",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "src/features/appointments/use-cases/get-appointment-detail.ts",
     "to": "src/features/salon/use-cases/salon-identity.ts",
     "unresolvedTo": "@/features/salon/use-cases/salon-identity",
@@ -368,40 +351,6 @@
     "from": "src/features/dashboard/use-cases/get-dashboard-overview.ts",
     "to": "src/features/finance/domain/operational-money.ts",
     "unresolvedTo": "@/features/finance/domain/operational-money",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/dashboard/use-cases/get-dashboard-overview.ts",
-    "to": "src/features/finance/use-cases/operational-money.ts",
-    "unresolvedTo": "@/features/finance/use-cases/operational-money",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/dashboard/use-cases/get-dashboard-overview.ts",
-    "to": "src/features/inventory/use-cases/low-stock-summary.ts",
-    "unresolvedTo": "@/features/inventory/use-cases/low-stock-summary",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -932,57 +881,6 @@
     "from": "src/features/salon/schemas.ts",
     "to": "src/features/payments/domain/payment-methods.ts",
     "unresolvedTo": "@/features/payments/domain/payment-methods",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/salon/use-cases/get-dashboard-shell.ts",
-    "to": "src/features/billing/domain/commercial-plan.ts",
-    "unresolvedTo": "@/features/billing/domain/commercial-plan",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/salon/use-cases/get-dashboard-shell.ts",
-    "to": "src/features/billing/domain/payment-standing.ts",
-    "unresolvedTo": "@/features/billing/domain/payment-standing",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "cross-module-via-index"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/salon/use-cases/get-dashboard-shell.ts",
-    "to": "src/features/billing/use-cases/commercial-plans.ts",
-    "unresolvedTo": "@/features/billing/use-cases/commercial-plans",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",

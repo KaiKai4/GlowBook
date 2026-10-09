@@ -5,13 +5,13 @@ import type { Permission } from "@/lib/auth/permissions";
 import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "../domain/salon-features";
 import { findDashboardShellSalon } from "../data/salon.repo";
-import { getEffectiveSalonPlan } from "@/features/billing/use-cases/commercial-plans";
-import { readEffectivePlanOrNull } from "@/features/billing/use-cases/effective-plan-fallback";
-import { isActionableLimitWarning } from "@/features/billing/domain/commercial-plan";
 import {
   evaluatePaymentStanding,
+  getEffectiveSalonPlan,
+  isActionableLimitWarning,
+  readEffectivePlanOrNull,
   type PaymentStanding,
-} from "@/features/billing/domain/payment-standing";
+} from "@/features/billing";
 
 export interface PlanLimitWarning {
   level: "warning" | "danger";

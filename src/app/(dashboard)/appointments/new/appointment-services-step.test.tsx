@@ -170,6 +170,17 @@ describe("AppointmentServicesStep", () => {
       ]);
     });
 
+    it("el placeholder de cada Select no es una opción elegible de la lista", () => {
+      const { container } = render({
+        schedule: [scheduleItem({ categoryId: "", serviceId: "", employeeId: "" })],
+      });
+
+      click(selectTriggerWithLabel(container, "Categoria"));
+      const listed = Array.from(document.body.querySelectorAll<HTMLButtonElement>("[role='option']"));
+      expect(listed.map((option) => option.textContent?.trim())).toEqual(["Cabello", "Uñas"]);
+      expect(listed.some((option) => option.disabled)).toBe(false);
+    });
+
     it("cambiar de categoría limpia el servicio y el profesional de ese horario", () => {
       const { container, props } = render();
 

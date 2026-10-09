@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  28,
-  'authenticated tiene EXECUTE exactamente en 28 funciones de public (14 previas + 14 de lectura de la fase 5)'
+  29,
+  'authenticated tiene EXECUTE exactamente en 29 funciones de public (28 de la matriz de lectura y citas + confirm_appointment)'
 );
 
 select ok(
