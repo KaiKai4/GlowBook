@@ -1,4 +1,5 @@
 import { MessageSquareText } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireProfile } from "@/lib/auth/session";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
@@ -21,15 +22,15 @@ export default async function PlantillasPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg">
-          <MessageSquareText className="h-6 w-6 text-brand-500" />
-          Plantillas
-        </h1>
-        <p className="mt-0.5 text-sm text-fg-subtle">
-          Personaliza los mensajes de WhatsApp usados en recordatorios y cancelaciones.
-        </p>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <MessageSquareText className="h-6 w-6 text-brand-500" aria-hidden="true" />
+            Plantillas
+          </span>
+        }
+        description="Personaliza los mensajes de WhatsApp usados en recordatorios y cancelaciones."
+      />
 
       <TemplatesManager templates={templates} />
     </div>

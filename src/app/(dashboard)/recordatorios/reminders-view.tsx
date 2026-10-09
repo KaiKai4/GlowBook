@@ -77,7 +77,14 @@ export function RemindersView({
         </div>
       )}
 
-      <RemindersTable rows={filtered} tz={tz} today={today} actions={actions} />
+      {/* La clave por filtros reinicia la paginación de la tabla a la página 1 al cambiar un filtro. */}
+      <RemindersTable
+        key={`${period}|${empId}|${status}`}
+        rows={filtered}
+        tz={tz}
+        today={today}
+        actions={actions}
+      />
     </div>
   );
 }

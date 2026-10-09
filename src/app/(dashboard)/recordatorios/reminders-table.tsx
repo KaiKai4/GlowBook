@@ -1,9 +1,15 @@
-import { Bell } from "lucide-react";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import type { ReminderAppointment } from "@/features/reminders/view-models";
-import { ReminderRow } from "./reminder-row";
+import {
+  ReminderCustomerCell,
+  ReminderDateCell,
+  ReminderEmployeesCell,
+  ReminderServicesCell,
+  ReminderStatusCell,
+} from "./reminder-cells";
+import { ReminderRowActions } from "./reminder-row-actions";
+import { toReminderTableRows, type ReminderTableRow } from "./reminders-table-rows";
 import type { ReminderActions } from "./use-reminder-actions";
-
-const HEADERS = ["Cliente", "Profesional", "Servicios", "Fecha", "Recordatorio", "Acciones"];
 
 interface RemindersTableProps {
   rows: ReminderAppointment[];
@@ -12,34 +18,50 @@ interface RemindersTableProps {
   actions: ReminderActions;
 }
 
+function buildColumns(tz: string, actions: ReminderActions): DataTableColumn<ReminderTableRow>[] {
+  return [
+    { id: "customer", header: "Cliente", cell: ({ appt }) => <ReminderCustomerCell appt={appt} /> },
+    {
+      id: "employees",
+      header: "Profesional",
+      secondary: true,
+      cell: ({ appt }) => <ReminderEmployeesCell appt={appt} />,
+    },
+    {
+      id: "services",
+      header: "Servicios",
+      secondary: true,
+      cell: ({ appt }) => <ReminderServicesCell appt={appt} />,
+    },
+    { id: "date", header: "Fecha", cell: ({ appt }) => <ReminderDateCell appt={appt} tz={tz} /> },
+    { id: "status", header: "Recordatorio", cell: ({ state }) => <ReminderStatusCell state={state} tz={tz} /> },
+    {
+      id: "actions",
+      header: "Acciones",
+      cell: ({ appt, state, sendBusy, confirmBusy }) => (
+        <ReminderRowActions
+          appt={appt}
+          actions={actions}
+          row={state}
+          sendBusy={sendBusy}
+          confirmBusy={confirmBusy}
+        />
+      ),
+    },
+  ];
+}
+
+// Tabla de recordatorios: una fila por cita filtrada, con estado del recordatorio y acciones.
 export function RemindersTable({ rows, tz, today, actions }: RemindersTableProps) {
+  const tableRows = toReminderTableRows(rows, actions, actions, today, tz);
+
   return (
-    <div className="rounded-2xl border border-border bg-surface shadow-soft overflow-visible">
-      {rows.length === 0 ? (
-        <div className="py-16 text-center">
-          <Bell className="mx-auto mb-3 h-8 w-8 text-fg-disabled" />
-          <p className="text-sm text-fg-subtle">Sin citas para estos filtros.</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto lg:overflow-visible">
-          <table className="w-full min-w-[920px] lg:min-w-0 text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-muted">
-                {HEADERS.map((header) => (
-                  <th key={header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-fg-subtle">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {rows.map((appt) => (
-                <ReminderRow key={appt.id} appt={appt} tz={tz} today={today} actions={actions} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    <DataTable
+      label="Citas con recordatorio"
+      columns={buildColumns(tz, actions)}
+      rows={tableRows}
+      getRowId={(row) => row.appt.id}
+      emptyMessage="Sin citas para estos filtros."
+    />
   );
 }

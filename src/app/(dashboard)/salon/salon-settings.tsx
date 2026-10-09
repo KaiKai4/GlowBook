@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { History, Settings } from "lucide-react";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
+import { PageHeader } from "@/components/ui/page-header";
 import type { PaymentMethod } from "@/features/payments/domain/payment-methods";
 import type { SalonBusinessDay as BusinessDay } from "@/features/salon/use-cases/get-salon-settings";
 import { useSalonName } from "./use-salon-name";
@@ -41,24 +42,24 @@ export function SalonSettings({
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-fg flex items-center gap-2">
-            <Settings className="h-6 w-6 text-brand-500" />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Settings className="h-6 w-6 text-brand-500" aria-hidden="true" />
             Configuración del salón
-          </h1>
-          <p className="text-sm text-fg-subtle mt-0.5">
-            Edita el nombre y los días y horarios de atención.
-          </p>
-        </div>
-        <Link
-          href="/salon/actividad"
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-brand-100 bg-surface px-4 text-sm font-semibold text-fg-secondary shadow-sm transition hover:border-brand-300 hover:text-brand-700"
-        >
-          <History className="h-4 w-4" />
-          Log de actividad
-        </Link>
-      </div>
+          </span>
+        }
+        description="Edita el nombre y los días y horarios de atención."
+        actions={
+          <Link
+            href="/salon/actividad"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-brand-100 bg-surface px-4 text-sm font-semibold text-fg-secondary shadow-sm transition hover:border-brand-300 hover:text-brand-700"
+          >
+            <History className="h-4 w-4" />
+            Log de actividad
+          </Link>
+        }
+      />
 
       <SalonGeneralCard name={name} />
       <SalonPaymentsCard payments={payments} />
