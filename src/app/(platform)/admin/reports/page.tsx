@@ -3,6 +3,7 @@ import { Building2, Check, Clock, MessageSquareWarning, RotateCcw, User } from "
 import { getPlatformFeedbackReports } from "@/features/platform/use-cases/get-platform-feedback-reports";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 import { setFeedbackStatusAction } from "./actions";
 
 export default async function AdminReportsPage({
@@ -16,44 +17,48 @@ export default async function AdminReportsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold text-fg flex items-center gap-2">
-            <MessageSquareWarning className="h-6 w-6 text-accent" />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <MessageSquareWarning className="h-6 w-6 text-accent" aria-hidden="true" />
             Reportes
-          </h1>
-          <p className="text-sm text-fg-subtle mt-0.5">
+          </span>
+        }
+        description={
+          <>
             Fallas, caídas y sugerencias enviadas por los salones.
             {view.newCount > 0 && (
               <span className="ml-1 font-semibold text-accent">
                 {view.newCount} sin revisar
               </span>
             )}
-          </p>
-        </div>
-        <div className="flex items-center rounded-lg border border-border bg-surface-muted p-0.5 text-sm">
-          <Link
-            href="/admin/reports"
-            className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
-              !view.showResolved
-                ? "bg-surface text-fg shadow-sm"
-                : "text-fg-subtle hover:text-fg-secondary"
-            }`}
-          >
-            Sin revisar
-          </Link>
-          <Link
-            href="/admin/reports?status=all"
-            className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
-              view.showResolved
-                ? "bg-surface text-fg shadow-sm"
-                : "text-fg-subtle hover:text-fg-secondary"
-            }`}
-          >
-            Todas
-          </Link>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <div className="flex items-center rounded-lg border border-border bg-surface-muted p-0.5 text-sm">
+            <Link
+              href="/admin/reports"
+              className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+                !view.showResolved
+                  ? "bg-surface text-fg shadow-sm"
+                  : "text-fg-subtle hover:text-fg-secondary"
+              }`}
+            >
+              Sin revisar
+            </Link>
+            <Link
+              href="/admin/reports?status=all"
+              className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+                view.showResolved
+                  ? "bg-surface text-fg shadow-sm"
+                  : "text-fg-subtle hover:text-fg-secondary"
+              }`}
+            >
+              Todas
+            </Link>
+          </div>
+        }
+      />
 
       {view.visibleReports.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-surface py-16 text-center">

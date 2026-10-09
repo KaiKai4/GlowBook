@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type {
   SalonSubscriptionDetail,
   SalonSubscriptionRow,
@@ -72,9 +72,10 @@ export function SalonWorkspace({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="truncate text-xl font-semibold text-fg-strong">{salon.name}</h2>
-            <Badge variant={salon.isActive ? "success" : "danger"}>
-              {salon.isActive ? "Activo" : "Suspendido"}
-            </Badge>
+            <StatusBadge
+              variant={salon.isActive ? "success" : "danger"}
+              label={salon.isActive ? "Activo" : "Suspendido"}
+            />
           </div>
           <p className="mt-1 text-sm text-fg-subtle">
             {row?.planName

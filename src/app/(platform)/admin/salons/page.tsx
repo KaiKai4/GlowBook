@@ -5,6 +5,7 @@ import {
   getSubscriptionsPage,
 } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { SalonSubscriptionList } from "../subscriptions/salon-list";
 import { SalonWorkspace } from "./salon-workspace";
@@ -28,30 +29,28 @@ export default async function PlatformSalonsPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg-strong">Salones</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-fg-subtle">
-            Informacion global de cada salon: contacto, plan asignado, consumo de límites y acciones de plataforma.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Salones" value={view.metrics.totalSalons} />
-          <HeaderMetric
-            icon={<Users className="h-4 w-4" />}
-            label="Activos"
-            value={view.metrics.activeSalons}
-            accent="success"
-          />
-          <HeaderMetric icon={<CalendarDays className="h-4 w-4" />} label="Citas totales" value={view.metrics.totalAppointments} />
-          <HeaderMetric
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Alertas"
-            value={data.totals.openAlerts}
-            accent={data.totals.openAlerts > 0 ? "warning" : "default"}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Salones"
+        description="Informacion global de cada salon: contacto, plan asignado, consumo de límites y acciones de plataforma."
+        actions={
+          <>
+            <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Salones" value={view.metrics.totalSalons} />
+            <HeaderMetric
+              icon={<Users className="h-4 w-4" />}
+              label="Activos"
+              value={view.metrics.activeSalons}
+              accent="success"
+            />
+            <HeaderMetric icon={<CalendarDays className="h-4 w-4" />} label="Citas totales" value={view.metrics.totalAppointments} />
+            <HeaderMetric
+              icon={<AlertTriangle className="h-4 w-4" />}
+              label="Alertas"
+              value={data.totals.openAlerts}
+              accent={data.totals.openAlerts > 0 ? "warning" : "default"}
+            />
+          </>
+        }
+      />
 
       <div className="overflow-hidden rounded-2xl border border-brand-100 bg-surface shadow-soft">
         <div className="grid h-[calc(100vh-210px)] min-h-[540px] lg:grid-cols-[320px_1fr]">
