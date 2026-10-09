@@ -59,6 +59,6 @@ describe("ServicesFilters", () => {
     click(trigger);
     const options = Array.from(document.body.querySelectorAll('[role="option"]')).map((option) => option.textContent);
 
-    expect(options).toEqual(["Activos", "Inactivos"]);
+    expect(options).toEqual(["Todos los estados", "Activos", "Inactivos"]);
   });
 });

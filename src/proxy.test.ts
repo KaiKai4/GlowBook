@@ -29,6 +29,28 @@ describe("proxy security headers", () => {
     expect(response.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/);
   });
 
+  it("marks session redirects as no-store, also for api routes", async () => {
+    const page = await proxy(get("/clientes"));
+    const api = await proxy(get("/api/reports/export"));
+
+    expect(page.headers.get("cache-control")).toBe("no-store");
+    expect(api.status).toBe(307);
+    expect(api.headers.get("location")).toBe(`${BASE}/login`);
+    expect(api.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("builds the redirect from the host the client used behind a proxy, not from localhost", async () => {
+    const response = await proxy(
+      get("/clientes", {
+        host: "salon.example",
+        "x-forwarded-host": "salon.example",
+        "x-forwarded-proto": "https",
+      })
+    );
+
+    expect(response.headers.get("location")).toBe("https://salon.example/login");
+  });
+
   it("reuses a valid incoming request id", async () => {
     const response = await proxy(get("/clientes", { "x-request-id": VALID_ID }));
 

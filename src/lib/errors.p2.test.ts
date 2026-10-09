@@ -79,6 +79,26 @@ describe("toPublicErrorMessage: RAISE propios (P0001, 22023, 42501)", () => {
   });
 
   it.each([
+    "La función de cobro no está disponible en tu plan.",
+    "Revisa la tabla de comisiones y la columna de precios.",
+    "Selecciona un servicio para continuar.",
+    "Stack de servicios vacío para esta categoría.",
+  ])("un RAISE de negocio con palabras sueltas se muestra: %s", (rawMessage) => {
+    expect(toPublicErrorMessage(dbError("P0001", rawMessage), FALLBACK)).toBe(rawMessage);
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["sentencia SELECT", "select id from appointments where salon_id = $1"],
+    ["relacion con comillas", 'relation "appointments" does not exist'],
+    ["columna con comillas", 'column "total_price" of relation "appointments" does not exist'],
+    ["funcion con argumentos", "function recalc_appointment(uuid) failed"],
+  ])("un error técnico (%s) se oculta", (_label, rawMessage) => {
+    expect(toPublicErrorMessage(dbError("P0001", rawMessage), FALLBACK)).toBe(FALLBACK);
+    expect(captureError).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
     ["detalle SQL", "syntax error at or near SELECT"],
     ["tabla", "relation public.salons does not exist"],
     ["politica RLS", "new row violates row-level security policy"],

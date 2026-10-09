@@ -52,9 +52,9 @@ const PlanSchema = z.object({
 const PlanLimitSchema = z.object({
   planId: z.string().uuid("Selecciona un plan."),
   metricKey: z.string().trim().min(1, "Selecciona un límite."),
+  // "" evaluado antes que coerce: vacío = sin límite (null), nunca tope 0.
   maxValue: z
-    .union([z.coerce.number().int().min(0), z.literal("")])
-    .transform((value) => (value === "" ? null : value))
+    .union([z.literal("").transform(() => null), z.coerce.number().int().min(0)])
     .nullable()
     .default(null),
   enforcementMode: z.enum(["none", "warn", "block"]).default("warn"),

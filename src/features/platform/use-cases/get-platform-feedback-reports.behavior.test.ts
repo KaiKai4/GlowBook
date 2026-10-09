@@ -105,18 +105,14 @@ describe("getPlatformFeedbackReports report view", () => {
     expect(item.categoryVariant).toBe("default");
   });
 
-  it("CONDUCTA ACTUAL (posible bug): inherited Object keys leak into the category label and tone", async () => {
-    // Las busquedas `MAP[category] ?? fallback` usan objetos literales, asi que una clave heredada
-    // como "constructor" devuelve una funcion de Object en vez del fallback
-    // (src/features/platform/use-cases/get-platform-feedback-reports.ts:9, 38 y 60).
-    // La columna category tiene valores cerrados en la base, por eso el riesgo es latente.
+  it("inherited Object keys do not leak into the category label and tone", async () => {
+    // Las búsquedas por clave usan Object.hasOwn: "constructor" no es una categoría válida.
     mockedFind.mockResolvedValue([report({ category: "constructor" })]);
 
     const item = firstOf((await getPlatformFeedbackReports()).visibleReports);
 
-    expect(item.categoryLabel).not.toBe("constructor");
-    expect(typeof item.categoryLabel).toBe("function");
-    expect(typeof item.categoryVariant).toBe("function");
+    expect(item.categoryLabel).toBe("constructor");
+    expect(item.categoryVariant).toBe("default");
   });
 
   it("offers the opposite toggle: resolving a new report and reopening a resolved one", async () => {

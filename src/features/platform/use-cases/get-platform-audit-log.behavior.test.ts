@@ -66,14 +66,12 @@ describe("getPlatformAuditLog filters", () => {
     expect(view.status).toBe("all");
   });
 
-  it("CONDUCTA ACTUAL (posible bug): accepts inherited Object keys such as 'toString' as audit actions", async () => {
-    // El chequeo usa el operador `in` sobre ACTION_LABELS, que tambien ve las propiedades heredadas
-    // de Object.prototype (src/features/platform/use-cases/get-platform-audit-log.ts:81).
-    // Se fija el comportamiento actual sin corregirlo: la clave llega a la consulta y a la vista.
+  it("rejects inherited Object keys such as 'toString' as audit actions", async () => {
+    // Antes el chequeo usaba el operador `in`, que también ve Object.prototype.
     const view = await getPlatformAuditLog({ action: "toString" });
 
-    expect(mockedFind).toHaveBeenCalledWith(expect.objectContaining({ action: "toString" }));
-    expect(view.action).toBe("toString");
+    expect(mockedFind).toHaveBeenCalledWith(expect.objectContaining({ action: undefined }));
+    expect(view.action).toBe("all");
   });
 
   it("offers every action label plus 'all', and the two statuses", async () => {

@@ -77,8 +77,14 @@ export interface PlatformAuditLogViewModel {
   statuses: Array<{ value: PlatformAuditStatus | "all"; label: string }>;
 }
 
+/** Etiqueta propia del mapa; si no existe, el valor crudo (sin claves heredadas). */
+function lookupLabel(labels: Record<string, string>, key: string): string {
+  return Object.hasOwn(labels, key) ? (labels[key] ?? key) : key;
+}
+
 function isAuditAction(value: string | undefined): value is PlatformAuditAction {
-  return Boolean(value && value in ACTION_LABELS);
+  // Object.hasOwn: "toString" u otras claves del prototipo no son acciones válidas.
+  return Boolean(value && Object.hasOwn(ACTION_LABELS, value));
 }
 
 function isAuditStatus(value: string | undefined): value is PlatformAuditStatus {
@@ -134,9 +140,9 @@ function toViewModel(entry: PlatformAuditRow): PlatformAuditLogEntryViewModel {
   return {
     id: entry.id,
     action,
-    actionLabel: ACTION_LABELS[action] ?? entry.action,
+    actionLabel: lookupLabel(ACTION_LABELS, entry.action),
     status,
-    statusLabel: STATUS_LABELS[status] ?? entry.status,
+    statusLabel: lookupLabel(STATUS_LABELS, entry.status),
     actorLabel: entry.actor_user_id ? `Admin ${shortId(entry.actor_user_id)}` : "Admin eliminado",
     targetLabel: targetLabel(entry),
     metadata: metadataItems(entry.metadata),

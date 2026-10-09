@@ -293,8 +293,7 @@ describe("ServicesManager", () => {
     expect(updateCategoryPricingModeAction).toHaveBeenCalledWith("cat-2", "fixed");
   });
 
-  it("CONDUCTA ACTUAL (posible bug): si cambiar el modo de precio falla no se muestra ningún error", async () => {
-    // Handler handleToggleCategoryPricingMode en services-manager.tsx: el resultado de la acción se ignora.
+  it("si cambiar el modo de precio falla se muestra el error al usuario", async () => {
     vi.mocked(updateCategoryPricingModeAction).mockResolvedValue({ ok: false, error: "No se pudo cambiar el precio" });
     mounted = mountComponent(<ServicesManager categories={[CABELLO]} />);
 
@@ -302,7 +301,7 @@ describe("ServicesManager", () => {
     await flushAsync();
 
     expect(updateCategoryPricingModeAction).toHaveBeenCalledWith("cat-1", "variable");
-    expect(mounted.container.textContent).not.toContain("No se pudo cambiar el precio");
+    expect(mounted.container.textContent).toContain("No se pudo cambiar el precio");
   });
 
   it("muestra el error cuando la edición del servicio falla y mantiene el diálogo abierto", async () => {

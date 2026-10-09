@@ -267,14 +267,23 @@ describe("inventory-products", () => {
       );
     });
 
-    it("informa nombre duplicado cuando el error de BD menciona unicidad", async () => {
-      mockedInsertProduct.mockRejectedValue(new Error("duplicate unique constraint"));
+    it("informa nombre duplicado cuando el error de BD es una violación de unicidad (SQLSTATE 23505)", async () => {
+      mockedInsertProduct.mockRejectedValue(Object.assign(new Error("duplicate key value"), { code: "23505" }));
 
       expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
         ok: false,
         error: "Ya existe un producto con ese nombre.",
       });
       expect(mockedInsertStock).not.toHaveBeenCalled();
+    });
+
+    it("no deduce duplicado por el texto del mensaje si el SQLSTATE no es 23505", async () => {
+      mockedInsertProduct.mockRejectedValue(new Error("duplicate unique constraint"));
+
+      expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
+        ok: false,
+        error: "Error al crear el producto.",
+      });
     });
 
     it("devuelve error generico para otros fallos, incluido un error que no es Error", async () => {

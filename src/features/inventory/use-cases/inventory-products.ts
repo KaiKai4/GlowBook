@@ -119,6 +119,11 @@ export async function getInventoryPage(salonId: string): Promise<InventoryPageVi
   };
 }
 
+/** Duplicado por SQLSTATE 23505 (no por el texto del mensaje, que depende del idioma y del motor). */
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
+}
+
 export async function createInventoryProduct(
   salonId: string,
   input: CreateInventoryProductInput
@@ -166,7 +171,7 @@ export async function createInventoryProduct(
 
     return { ok: true, value: undefined };
   } catch (error) {
-    const message = error instanceof Error && error.message.includes("unique")
+    const message = isUniqueViolation(error)
       ? "Ya existe un producto con ese nombre."
       : "Error al crear el producto.";
     return { ok: false, error: message };

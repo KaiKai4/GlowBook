@@ -335,15 +335,25 @@ describe("employees actions", () => {
       expect(revalidatePath).toHaveBeenCalledWith(`/employees/${EMPLOYEE_ID}`);
     });
 
-    it("CONDUCTA ACTUAL (posible bug): sin comisión en el formulario el parche la fija en 0 y vacía teléfono, email y especialidad", async () => {
+    it("sin comisión, teléfono, email ni especialidad en el formulario el parche no los toca", async () => {
       vi.mocked(updateEmployeeProfile).mockResolvedValue(ok(undefined));
 
       await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ first_name: "Lucía" }));
 
       const patch = vi.mocked(updateEmployeeProfile).mock.calls[0]?.[2];
-      expect(patch?.commission_percentage).toBe(0);
+      expect(patch?.commission_percentage).toBeUndefined();
+      expect(patch?.phone).toBeUndefined();
+      expect(patch?.email).toBeUndefined();
+      expect(patch?.specialty).toBeUndefined();
+    });
+
+    it("un campo enviado vacío sí se guarda como vacío (borrado explícito)", async () => {
+      vi.mocked(updateEmployeeProfile).mockResolvedValue(ok(undefined));
+
+      await updateEmployeeAction(EMPLOYEE_ID, null, formDataOf({ phone: "", specialty: "" }));
+
+      const patch = vi.mocked(updateEmployeeProfile).mock.calls[0]?.[2];
       expect(patch?.phone).toBe("");
-      expect(patch?.email).toBe("");
       expect(patch?.specialty).toBe("");
     });
 

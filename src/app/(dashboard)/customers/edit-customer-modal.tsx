@@ -34,6 +34,7 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [deleting, startDelete] = useTransition();
 
@@ -68,15 +69,17 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
 
   function handleDelete() {
     setError(null);
+    setArchiveError(null);
     setConfirmDeleteOpen(true);
   }
 
   function handleConfirmDelete() {
-    setError(null);
+    setArchiveError(null);
     startDelete(async () => {
       const res = await deleteCustomerAction(customer.id);
       if (!res.ok) {
-        setError(res.error ?? "Error al eliminar el cliente.");
+        // El error se muestra dentro de la confirmación: el diálogo de edición queda debajo.
+        setArchiveError(res.error ?? "Error al eliminar el cliente.");
         return;
       }
 
@@ -152,6 +155,10 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
               </p>
             </div>
           </div>
+
+          {archiveError && (
+            <div role="alert" className="rounded-lg bg-danger-subtle border border-danger-border px-3 py-2.5 text-sm text-danger-strong">{archiveError}</div>
+          )}
 
           <div className="flex gap-2">
             <Button

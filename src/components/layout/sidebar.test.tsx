@@ -111,13 +111,11 @@ describe("Sidebar", () => {
     expect(headers).toEqual(expect.arrayContaining(["Agenda", "Gestión", "Administración"]));
   });
 
-  it("sin permisos solo queda el inicio, y el aviso de 'sin módulos' no se muestra", () => {
-    // CONDUCTA ACTUAL (posible bug): el grupo "Inicio" no exige permisos, así que
-    // groups.length nunca es 0 y el aviso "No tienes módulos asignados" de
-    // sidebar.tsx (líneas 155-164) es código inalcanzable.
+  it("sin permisos solo queda el inicio, y se avisa de que no hay módulos asignados", () => {
+    // "Inicio" no exige permisos, pero el aviso depende de que no haya ningún módulo además de él.
     mounted = renderSidebar([], false);
 
-    expect(mounted.container.textContent).not.toContain("No tienes módulos asignados.");
+    expect(mounted.container.textContent).toContain("No tienes módulos asignados.");
     expect(mounted.container.querySelectorAll("nav a").length).toBe(1);
   });
 

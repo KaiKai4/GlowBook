@@ -45,4 +45,15 @@ describe("InviteLinkReveal", () => {
 
     expect(getButtonByText(mounted.container, "Copiar")).toBeTruthy();
   });
+
+  it("si el portapapeles rechaza la copia muestra un aviso y no marca el enlace como copiado", async () => {
+    writeText.mockRejectedValueOnce(new Error("denied"));
+    mounted = mountComponent(<InviteLinkReveal token="tok-abc" />);
+
+    clickElement(getButtonByText(mounted.container, "Copiar"));
+    await flushAsync();
+
+    expect(mounted.container.textContent).toContain("No se pudo copiar");
+    expect(getButtonByText(mounted.container, "Copiar")).toBeTruthy();
+  });
 });

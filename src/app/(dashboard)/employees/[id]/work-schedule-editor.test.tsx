@@ -117,9 +117,7 @@ describe("WorkScheduleEditor", () => {
     expect(deleteWorkScheduleAction).toHaveBeenCalledWith("s-mon-late", "emp-1");
   });
 
-  it("CONDUCTA ACTUAL (posible bug): si el borrado falla no se muestra ningún error al usuario", async () => {
-    // Handler en work-schedule-editor.tsx (línea 116): la promesa de deleteWorkScheduleAction
-    // se descarta con `void` dentro de startDelete y su resultado nunca se revisa.
+  it("si el borrado falla se muestra el error al usuario", async () => {
     vi.mocked(deleteWorkScheduleAction).mockResolvedValue({ ok: false, error: "No se pudo eliminar el bloque" });
     mounted = renderEditor();
 
@@ -129,6 +127,6 @@ describe("WorkScheduleEditor", () => {
     await flushAsync();
 
     expect(deleteWorkScheduleAction).toHaveBeenCalledTimes(1);
-    expect(mounted.container.textContent).not.toContain("No se pudo eliminar el bloque");
+    expect(mounted.container.textContent).toContain("No se pudo eliminar el bloque");
   });
 });

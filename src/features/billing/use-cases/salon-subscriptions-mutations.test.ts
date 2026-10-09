@@ -430,14 +430,12 @@ describe("assignSalonAddonConfig", () => {
     );
   });
 
-  it("CONDUCTA ACTUAL (posible bug): un precio especial vacío se guarda como 0 en lugar de usar el precio de catálogo", async () => {
-    // AddonExtraSchema.priceOverride: coerce.number() antes que literal(""), así que "" => 0.
-    // Como extraMonthlyPrice usa ?? sobre priceOverride, 0 anula el precio de catálogo.
+  it("un precio especial vacío se guarda como null (precio de catálogo), no como 0", async () => {
     findAddonMock.mockResolvedValueOnce(addon({ monthlyPrice: 8 }));
 
     await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID, priceOverride: "" });
 
-    expect(saveOverrideMock).toHaveBeenCalledWith(expect.objectContaining({ priceOverride: 0 }));
+    expect(saveOverrideMock).toHaveBeenCalledWith(expect.objectContaining({ priceOverride: null }));
   });
 
   it("asigna un extra de módulo habilitado y fuerza cantidad uno aunque se pida otra", async () => {
@@ -510,13 +508,16 @@ describe("saveSalonManualExtraConfig", () => {
     );
   });
 
-  it("CONDUCTA ACTUAL (posible bug): un tope fijo vacío se guarda como 0 y no como sin tope", async () => {
-    // ManualExtraSchema: la unión coerce.number() va antes que literal(""), así que
-    // "" se convierte en 0 y el transform que devolvería null nunca se ejecuta
-    // (src/features/billing/use-cases/salon-subscriptions.ts, ManualExtraSchema.maxOverride).
+  it("un tope fijo vacío se guarda como null (sin tope), no como 0", async () => {
     await saveSalonManualExtraConfig({ salonId: SALON_ID, metricKey: "employees_active", maxOverride: "" });
 
-    expect(saveOverrideMock).toHaveBeenCalledWith(expect.objectContaining({ maxOverride: 0 }));
+    expect(saveOverrideMock).toHaveBeenCalledWith(expect.objectContaining({ maxOverride: null }));
+  });
+
+  it("un incremento máximo vacío se guarda como null, no como 0", async () => {
+    await saveSalonManualExtraConfig({ salonId: SALON_ID, metricKey: "employees_active", maxDelta: "" });
+
+    expect(saveOverrideMock).toHaveBeenCalledWith(expect.objectContaining({ maxDelta: null }));
   });
 
   it("por defecto el extra manual es un regalo y un módulo sin decisión queda habilitado", async () => {

@@ -71,8 +71,8 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     expect(result).toEqual(err("El enlace ha caducado."));
   });
 
-  it("CONDUCTA ACTUAL (posible bug): usa el primer valor de x-forwarded-for cuando falta x-real-ip (suplantable fuera de Vercel)", async () => {
-    requestHeaders({ "x-forwarded-for": "198.51.100.4, 10.0.0.1" });
+  it("cuando falta x-real-ip usa el ultimo valor de x-forwarded-for, no el primero que el cliente puede falsear", async () => {
+    requestHeaders({ "x-forwarded-for": "203.0.113.4, 198.51.100.4" });
     vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
 
     await acceptInvitationAction(INPUT);

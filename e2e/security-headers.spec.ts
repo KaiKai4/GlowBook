@@ -116,6 +116,7 @@ test.describe("endpoints de API", () => {
       expect(response.headers()["cache-control"]).toBe("no-store");
     } else {
       expect(response.headers()["location"]).toMatch(/\/login/);
+      expect(response.headers()["cache-control"]).toBe("no-store");
     }
   });
 

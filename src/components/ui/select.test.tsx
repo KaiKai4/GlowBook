@@ -67,9 +67,8 @@ describe("Select", () => {
     expect(trigger(mounted.container).id).toBe("sucursal");
   });
 
-  // CONDUCTA ACTUAL (posible bug): select.tsx (líneas 70-73) excluye la opción seleccionada de la lista,
-  // así que el usuario no la ve marcada al abrir y un select con una sola opción muestra "Sin opciones".
-  it("al abrir muestra las opciones distintas de la seleccionada, sin las ocultas", () => {
+  // La opción seleccionada aparece en la lista marcada; las ocultas no.
+  it("al abrir muestra todas las opciones visibles, marcando la seleccionada, sin las ocultas", () => {
     mounted = mountComponent(
       <Select label="Servicio" defaultValue="tinte">
         <option value="corte">Corte</option>
@@ -85,7 +84,23 @@ describe("Select", () => {
 
     expect(trigger(mounted.container).getAttribute("aria-expanded")).toBe("true");
     expect(listbox()?.getAttribute("aria-labelledby")).toBe("servicio");
-    expect(optionsList().map((option) => option.textContent)).toEqual(["Corte", "Manicure"]);
+    expect(optionsList().map((option) => option.textContent)).toEqual(["Corte", "Tinte", "Manicure"]);
+    const selected = optionsList().find((option) => option.textContent === "Tinte");
+    expect(selected?.getAttribute("aria-selected")).toBe("true");
+    expect(optionsList().find((option) => option.textContent === "Corte")?.getAttribute("aria-selected")).toBe("false");
+  });
+
+  it("un select de una sola opción muestra esa opción marcada y no 'Sin opciones'", () => {
+    mounted = mountComponent(
+      <Select label="Sede">
+        <option value="norte">Norte</option>
+      </Select>
+    );
+
+    clickElement(trigger(mounted.container));
+
+    expect(optionsList().map((option) => option.textContent)).toEqual(["Norte"]);
+    expect(document.body.textContent).not.toContain("Sin opciones");
   });
 
   it("selecciona una opción con el clic: notifica el valor, actualiza el disparador y cierra la lista", () => {
@@ -148,7 +163,7 @@ describe("Select", () => {
     expect(listbox()).not.toBeNull();
   });
 
-  it("muestra 'Sin opciones' cuando la única opción es la seleccionada", () => {
+  it("una única opción seleccionada aparece marcada, sin 'Sin opciones'", () => {
     mounted = mountComponent(
       <Select label="Servicio">
         <option value="corte">Corte</option>
@@ -157,8 +172,9 @@ describe("Select", () => {
 
     clickElement(trigger(mounted.container));
 
-    expect(optionsList()).toHaveLength(0);
-    expect(listbox()?.textContent).toContain("Sin opciones");
+    expect(optionsList()).toHaveLength(1);
+    expect(optionsList()[0]?.getAttribute("aria-selected")).toBe("true");
+    expect(listbox()?.textContent).not.toContain("Sin opciones");
   });
 
   it("el disparador deshabilitado no abre la lista", () => {
@@ -208,7 +224,8 @@ describe("Select", () => {
     pressKey(trigger(mounted.container), "ArrowUp");
     pressKey(trigger(mounted.container), "Enter");
 
-    expect(onChange.mock.calls[0]?.[0].target.value).toBe("manicure");
+    // El cursor parte de la primera opción (corte), que ahora también está en la lista.
+    expect(onChange.mock.calls[0]?.[0].target.value).toBe("tinte");
   });
 
   it("la flecha arriba desde el primer elemento da la vuelta al último", () => {
@@ -306,6 +323,6 @@ describe("Select", () => {
 
     expect(trigger(mounted.container).textContent).toContain("Alisado");
     clickElement(trigger(mounted.container));
-    expect(optionsList().map((option) => option.textContent)).toEqual(["Keratina"]);
+    expect(optionsList().map((option) => option.textContent)).toEqual(["Alisado", "Keratina"]);
   });
 });

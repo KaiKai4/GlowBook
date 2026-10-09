@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { CreateEmployeeSchema, WorkScheduleSchema } from "@/features/employees/schemas";
+import { EmployeePatchSchema } from "./employee-patch-schema";
 import {
   changeEmployeeRole,
   createEmployeeInviteForExistingEmployee,
@@ -109,7 +110,7 @@ export async function updateEmployeeAction(
   if (!g.ok) return g;
   if (!parseUuid(employeeId)) return { ok: false, error: "Identificador inválido." };
 
-  const parsed = CreateEmployeeSchema.partial().safeParse({
+  const parsed = EmployeePatchSchema.safeParse({
     first_name: formData.get("first_name") ?? undefined,
     last_name: formData.get("last_name") ?? undefined,
     phone: formData.get("phone") ?? undefined,

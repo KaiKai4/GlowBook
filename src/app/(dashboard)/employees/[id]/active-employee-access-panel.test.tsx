@@ -115,7 +115,7 @@ describe("ActiveEmployeeAccessPanel", () => {
     expect(input?.value).toBe(`${window.location.origin}/join/tok-reset`);
   });
 
-  it("CONDUCTA ACTUAL (posible bug): al reiniciar, usa el rol previo aunque el usuario haya elegido Sin rol", async () => {
+  it("al reiniciar con Sin rol envía null y no reutiliza el rol previo", async () => {
     vi.mocked(resetEmployeeAccessAction).mockResolvedValue({
       ok: true,
       value: { token: "tok-reset", expiresAt: "2026-10-16T00:00:00.000Z" },
@@ -126,8 +126,7 @@ describe("ActiveEmployeeAccessPanel", () => {
     click(buttonWithText(mounted.container, "Reiniciar y generar enlace"));
     await flushAsync();
 
-    // Expresión en active-employee-access-panel.tsx: `roleId || currentRoleId || null`.
-    expect(resetEmployeeAccessAction).toHaveBeenCalledWith("emp-1", "role-estilista");
+    expect(resetEmployeeAccessAction).toHaveBeenCalledWith("emp-1", null);
   });
 
   it("muestra el error cuando el reinicio de acceso falla", async () => {
