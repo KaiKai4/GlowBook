@@ -26,7 +26,7 @@ export default async function EmployeeDetailPage({
   if (!hasPermission(profile, PERMISSIONS.EMPLOYEES_MANAGE)) {
     return (
       <div className="py-16 text-center">
-        <p className="text-neutral-500">No tienes permiso para gestionar colaboradores.</p>
+        <p className="text-fg-subtle">No tienes permiso para gestionar colaboradores.</p>
       </div>
     );
   }
@@ -43,17 +43,17 @@ export default async function EmployeeDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/employees" className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900">
+        <Link href="/employees" className="inline-flex items-center gap-1 text-sm text-fg-subtle hover:text-fg">
           <ArrowLeft className="h-4 w-4" />
           Colaboradores
         </Link>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900">
+            <h1 className="text-2xl font-semibold text-fg">
               {view.employee.first_name} {view.employee.last_name}
               {!view.employee.is_active && <Badge variant="default" className="ml-2">Inactivo</Badge>}
             </h1>
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-fg-subtle">
               {view.categories.length > 0
                 ? view.categories.map((category) => category.name).join(" · ")
                 : "Sin categorías"}
@@ -79,28 +79,28 @@ export default async function EmployeeDetailPage({
           <CardHeader><CardTitle>Información</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             {view.employee.phone && (
-              <p className="flex items-center gap-2 text-neutral-600"><Phone className="h-4 w-4" />{view.employee.phone}</p>
+              <p className="flex items-center gap-2 text-fg-muted"><Phone className="h-4 w-4" />{view.employee.phone}</p>
             )}
             {view.employee.email && (
-              <p className="flex items-center gap-2 text-neutral-600"><Mail className="h-4 w-4" />{view.employee.email}</p>
+              <p className="flex items-center gap-2 text-fg-muted"><Mail className="h-4 w-4" />{view.employee.email}</p>
             )}
-            <p className="flex items-center gap-2 text-neutral-600">
+            <p className="flex items-center gap-2 text-fg-muted">
               <Percent className="h-4 w-4" />Comisión: {view.employee.commission_percentage}%
             </p>
             <div className="pt-2">
-              <p className="text-xs font-medium text-neutral-500 mb-1">Categorías</p>
+              <p className="text-xs font-medium text-fg-subtle mb-1">Categorías</p>
               <div className="flex flex-wrap gap-1">
                 {view.categories.length ? view.categories.map((category) => (
                   <Badge key={category.id} variant="info">{category.name}</Badge>
-                )) : <span className="text-xs text-neutral-500">Ninguna</span>}
+                )) : <span className="text-xs text-fg-subtle">Ninguna</span>}
               </div>
             </div>
             <div className="pt-1">
-              <p className="text-xs font-medium text-neutral-500 mb-1">Servicios que realiza</p>
+              <p className="text-xs font-medium text-fg-subtle mb-1">Servicios que realiza</p>
               <div className="flex flex-wrap gap-1">
                 {view.services.length ? view.services.map((service) => (
                   <Badge key={service.id} variant="primary">{service.name}</Badge>
-                )) : <span className="text-xs text-neutral-500">Ninguno</span>}
+                )) : <span className="text-xs text-fg-subtle">Ninguno</span>}
               </div>
             </div>
           </CardContent>
@@ -110,7 +110,7 @@ export default async function EmployeeDetailPage({
           <CardHeader><CardTitle>Disponibilidad</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <WorkScheduleEditor employeeId={view.employee.id} schedules={view.schedules} />
-            <div className="border-t border-stone-100 pt-5">
+            <div className="border-t border-border-subtle pt-5">
               <ScheduleExceptionsPanel
                 employeeId={view.employee.id}
                 exceptions={view.scheduleExceptions}

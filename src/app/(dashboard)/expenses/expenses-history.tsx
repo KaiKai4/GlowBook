@@ -79,14 +79,14 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle>Historial de egresos</CardTitle>
             <div className="text-right">
-              <p className="text-xs font-semibold uppercase text-stone-500">Total filtrado</p>
-              <p className="text-lg font-bold text-red-600">{formatCurrency(filteredTotal)}</p>
+              <p className="text-xs font-semibold uppercase text-fg-subtle">Total filtrado</p>
+              <p className="text-lg font-semibold text-danger">{formatCurrency(filteredTotal)}</p>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-hidden rounded-xl border border-stone-100">
-            <div className="grid grid-cols-[1fr_120px_120px] gap-3 bg-stone-50 px-4 py-3 text-xs font-bold uppercase text-stone-500 md:grid-cols-[130px_170px_1fr_180px_140px]">
+          <div className="overflow-hidden rounded-xl border border-border-subtle">
+            <div className="grid grid-cols-[1fr_120px_120px] gap-3 bg-surface-muted px-4 py-3 text-xs font-semibold uppercase text-fg-subtle md:grid-cols-[130px_170px_1fr_180px_140px]">
               <span>Fecha</span>
               <span>Tipo</span>
               <span>Detalle</span>
@@ -96,9 +96,9 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
             {filteredExpenses.map((item) => (
               <div
                 key={`${item.type}:${item.id}`}
-                className="grid grid-cols-[1fr_120px_120px] gap-3 border-t border-stone-100 px-4 py-3 text-sm md:grid-cols-[130px_170px_1fr_180px_140px]"
+                className="grid grid-cols-[1fr_120px_120px] gap-3 border-t border-border-subtle px-4 py-3 text-sm md:grid-cols-[130px_170px_1fr_180px_140px]"
               >
-                <span className="text-stone-500">
+                <span className="text-fg-subtle">
                   {new Date(`${item.date}T12:00:00`).toLocaleDateString("es-PA")}
                 </span>
                 <span>
@@ -106,7 +106,7 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
                     className={
                       item.type === "inventory_purchase"
                         ? "rounded-full bg-brand-50 px-2 py-1 text-xs font-semibold text-brand-700"
-                        : "rounded-full bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-600"
+                        : "rounded-full bg-surface-sunken px-2 py-1 text-xs font-semibold text-fg-muted"
                     }
                   >
                     {expenseTypeLabel(item.type)}
@@ -114,7 +114,7 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-600">
+                    <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-xs font-semibold text-fg-muted">
                       {item.categoryLabel}
                     </span>
                     {isHttpsReceiptUrl(item.receiptUrl) && (
@@ -122,22 +122,22 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
                         href={item.receiptUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-semibold text-brand-600 hover:underline"
+                        className="text-xs font-semibold text-brand-600 hover:underline"
                       >
                         Ver comprobante
                       </a>
                     )}
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-stone-500">{item.detail}</p>
+                  <p className="mt-0.5 truncate text-xs text-fg-subtle">{item.detail}</p>
                 </div>
-                <span className="hidden truncate text-stone-500 md:block">
+                <span className="hidden truncate text-fg-subtle md:block">
                   {item.commerceName || "Sin registrar"}
                 </span>
-                <span className="text-right font-bold text-red-600">{formatCurrency(item.amount)}</span>
+                <span className="text-right font-semibold text-danger">{formatCurrency(item.amount)}</span>
               </div>
             ))}
             {filteredExpenses.length === 0 && (
-              <p className="border-t border-stone-100 px-4 py-8 text-center text-sm text-stone-500">
+              <p className="border-t border-border-subtle px-4 py-8 text-center text-sm text-fg-subtle">
                 No hay egresos con esos filtros.
               </p>
             )}

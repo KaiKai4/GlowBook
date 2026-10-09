@@ -44,7 +44,7 @@ function rows(container: HTMLElement): string[] {
 }
 
 function totalText(container: HTMLElement): string {
-  return requireElement<HTMLElement>(container, ".text-red-600.text-lg").textContent ?? "";
+  return requireElement<HTMLElement>(container, ".text-danger.text-lg").textContent ?? "";
 }
 
 describe("ExpensesHistory", () => {

@@ -69,7 +69,7 @@ export function EmployeesGrid({
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {employees.map((employee) => {
         const card = (
-          <div className="flex items-center gap-3 rounded-xl border border-brand-100 bg-surface p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(124,58,237,0.12)]">
+          <div className="flex items-center gap-3 rounded-xl border border-brand-100 bg-surface p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-brand-hover">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-100 to-choco-100 text-sm font-semibold text-brand-700">
               {`${employee.first_name[0] ?? ""}${employee.last_name[0] ?? ""}`.toUpperCase()}
             </div>
