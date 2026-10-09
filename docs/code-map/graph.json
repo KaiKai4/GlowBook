@@ -18,7 +18,7 @@
     {
       "id": "app/(platform)",
       "kind": "internal",
-      "files": 32
+      "files": 34
     },
     {
       "id": "app/_composition",
@@ -475,7 +475,7 @@
     {
       "from": "app/(platform)",
       "to": "features/platform",
-      "count": 14
+      "count": 15
     },
     {
       "from": "app/(platform)",
