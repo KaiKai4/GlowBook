@@ -3,7 +3,8 @@ import { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ProductMonthlySales, ReportMonthPoint } from "@/features/reports/domain/analytics";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
-import { MonthlyAreaChart, ProductSalesChart } from "./report-charts";
+import { ProductSalesChart } from "./report-charts";
+import { MonthlyAreaChart } from "./report-area-chart";
 
 // La línea del indicador activo es la única con el color de marca brand-300.
 const INDICATOR = 'line[stroke="var(--color-brand-300)"]';
