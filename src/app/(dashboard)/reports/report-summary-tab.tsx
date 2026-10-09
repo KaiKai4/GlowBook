@@ -1,4 +1,3 @@
-import { CalendarCheck, CircleDollarSign, TrendingDown, TrendingUp, UserPlus } from "lucide-react";
 import { formatCurrency } from "@/infra/format/dates";
 import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 import { MonthlyAreaChart } from "./report-area-chart";
@@ -20,40 +19,35 @@ export function SummaryTab({
       label: "Ingresos del mes",
       value: formatCurrency(report.grossRevenue),
       detail: report.modules.retail ? "Citas y vitrina del mes elegido" : "Citas completadas del mes elegido",
-      icon: CircleDollarSign,
-      tone: "positive",
+      tone: "success",
       visible: true,
     },
     {
       label: "Egresos del mes",
       value: formatCurrency(report.totalExpenses),
       detail: expenseSources(report.modules),
-      icon: TrendingDown,
-      tone: "negative",
+      tone: "danger",
       visible: report.modules.expenses || report.modules.inventory,
     },
     {
       label: "Ganancia del mes",
       value: formatCurrency(report.estimatedProfit),
       detail: "Ingresos menos egresos del mes",
-      icon: report.estimatedProfit >= 0 ? TrendingUp : TrendingDown,
-      tone: report.estimatedProfit >= 0 ? "positive" : "negative",
+      tone: report.estimatedProfit >= 0 ? "success" : "danger",
       visible: true,
     },
     {
       label: "Citas completadas",
       value: report.completedCount.toString(),
       detail: "Durante el mes elegido",
-      icon: CalendarCheck,
-      tone: "brand",
+      tone: "default",
       visible: true,
     },
     {
       label: "Clientes nuevos",
       value: report.newCustomers.toString(),
       detail: "Registrados durante el mes",
-      icon: UserPlus,
-      tone: "blue",
+      tone: "default",
       visible: true,
     },
   ];

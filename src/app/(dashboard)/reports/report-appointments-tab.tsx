@@ -1,4 +1,3 @@
-import { CalendarCheck, CalendarClock, CalendarX } from "lucide-react";
 import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 import { BusyHoursChart } from "./report-charts";
 import { MonthlyAreaChart } from "./report-area-chart";
@@ -20,24 +19,21 @@ export function AppointmentsTab({
             label: "Citas agendadas",
             value: report.totalCount.toString(),
             detail: "Registradas durante el mes",
-            icon: CalendarClock,
-            tone: "blue",
+            tone: "default",
             visible: true,
           },
           {
             label: "Citas completadas",
             value: report.completedCount.toString(),
             detail: "Finalizadas durante el mes",
-            icon: CalendarCheck,
-            tone: "positive",
+            tone: "success",
             visible: true,
           },
           {
             label: "Citas canceladas",
             value: cancelled.toString(),
             detail: "Canceladas durante el mes",
-            icon: CalendarX,
-            tone: "negative",
+            tone: "danger",
             visible: true,
           },
         ]}

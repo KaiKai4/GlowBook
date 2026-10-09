@@ -1,4 +1,3 @@
-import { CalendarCheck, PackageSearch, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import { formatCurrency } from "@/infra/format/dates";
 import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 import { MonthlyAreaChart } from "./report-area-chart";
@@ -13,40 +12,35 @@ export function FinanceTab({ report }: { report: OperationalReportViewModel }) {
             label: "Ingresos por citas",
             value: formatCurrency(report.revenue),
             detail: "Citas completadas y pagadas",
-            icon: CalendarCheck,
-            tone: "positive",
+            tone: "success",
             visible: true,
           },
           {
             label: "Ingresos por vitrina",
             value: formatCurrency(report.retailRevenue),
             detail: "Ventas de productos",
-            icon: ShoppingBag,
-            tone: "blue",
+            tone: "default",
             visible: report.modules.retail,
           },
           {
             label: "Ingresos totales",
             value: formatCurrency(report.grossRevenue),
             detail: report.modules.retail ? "Citas y vitrina" : "Solo citas",
-            icon: WalletCards,
-            tone: "positive",
+            tone: "success",
             visible: true,
           },
           {
             label: "Gastos operativos",
             value: formatCurrency(report.manualExpenses),
             detail: "Egresos registrados",
-            icon: ReceiptText,
-            tone: "negative",
+            tone: "danger",
             visible: report.modules.expenses,
           },
           {
             label: "Reposiciones de inventario",
             value: formatCurrency(report.inventoryPurchases),
             detail: "Compras de productos",
-            icon: PackageSearch,
-            tone: "amber",
+            tone: "warning",
             visible: report.modules.inventory,
           },
         ]}
