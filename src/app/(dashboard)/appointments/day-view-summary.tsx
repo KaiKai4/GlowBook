@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import { ListFilter } from "lucide-react";
 import { cn } from "@/components/ui/cn";
+import { DataTable } from "@/components/ui/data-table";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import {
   SUMMARY_FILTERS,
   type SummaryFilter,
 } from "@/features/appointments/domain/summary-filter";
 import { summaryAppointments } from "./day-view-data";
-import { SummaryRow } from "./day-view-summary-row";
+import { buildSummaryColumns } from "./day-view-summary-columns";
 
 export function AppointmentsSummary({
   appointments, tz, canManage, onComplete, onCancel,
@@ -27,6 +28,16 @@ export function AppointmentsSummary({
     () => summaryAppointments(appointments, summaryFilter),
     [appointments, summaryFilter]
   );
+
+  const columns = buildSummaryColumns(tz, canManage, {
+    openActionsId,
+    onToggleActions: (appt) => setOpenActionsId(openActionsId === appt.id ? null : appt.id),
+    onComplete,
+    onCancel: (appt) => {
+      setOpenActionsId(null);
+      onCancel(appt);
+    },
+  });
 
   return (
     <div className="rounded-2xl border border-brand-100 bg-surface shadow-tile overflow-visible">
@@ -55,29 +66,17 @@ export function AppointmentsSummary({
         </div>
       </div>
 
-      {listAppts.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="text-sm text-fg-subtle">No hay citas para este filtro.</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-border-subtle">
-          {listAppts.map((appt) => (
-            <SummaryRow
-              key={appt.id}
-              appt={appt}
-              tz={tz}
-              canManage={canManage}
-              actionsOpen={openActionsId === appt.id}
-              onToggleActions={() => setOpenActionsId(openActionsId === appt.id ? null : appt.id)}
-              onComplete={() => onComplete(appt)}
-              onCancel={() => {
-                setOpenActionsId(null);
-                onCancel(appt);
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <div className="px-4 pb-4 pt-3 sm:px-5">
+        {/* key por filtro: cambiar de pestaña vuelve a la página 1 de la tabla. */}
+        <DataTable
+          key={summaryFilter}
+          label="Resumen de citas"
+          columns={columns}
+          rows={listAppts}
+          getRowId={(appt) => appt.id}
+          emptyMessage="No hay citas para este filtro."
+        />
+      </div>
     </div>
   );
 }

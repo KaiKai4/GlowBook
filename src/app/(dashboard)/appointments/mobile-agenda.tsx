@@ -1,25 +1,12 @@
 "use client";
 
 import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
-import { cn } from "@/components/ui/cn";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
+import { APPOINTMENT_STATUS_BADGE } from "./appointment-status";
 
 // Agenda en lista para pantallas pequeñas: la grilla horaria del calendario
 // no es usable en un teléfono. Misma data, mismos diálogos al tocar una cita.
-
-const STATUS_DOT: Record<string, string> = {
-  scheduled: "bg-info",
-  confirmed: "bg-brand-600",
-  completed: "bg-success",
-  no_show: "bg-warning",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  scheduled: "Agendada",
-  confirmed: "Confirmada",
-  completed: "Completada",
-  no_show: "No asistió",
-};
 
 function localDateKey(iso: string, tz: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(iso));
@@ -94,20 +81,14 @@ export function MobileAgenda({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full",
-                        STATUS_DOT[appt.status] ?? "bg-fg-subtle"
-                      )}
-                    />
-                    <p className="truncate text-sm font-semibold text-fg-secondary">
-                      {appt.customer?.first_name} {appt.customer?.last_name}
-                    </p>
+                  <p className="truncate text-sm font-semibold text-fg-secondary">
+                    {appt.customer?.first_name} {appt.customer?.last_name}
+                  </p>
+                  <div className="mt-1">
+                    <StatusBadge {...APPOINTMENT_STATUS_BADGE[appt.status]} />
                   </div>
                   <p className="mt-0.5 truncate text-xs text-fg-subtle">
-                    {appt.items.map((item) => item.service?.name).filter(Boolean).join(", ") ||
-                      STATUS_LABEL[appt.status]}
+                    {appt.items.map((item) => item.service?.name).filter(Boolean).join(", ")}
                   </p>
                 </div>
                 <p className="shrink-0 text-sm font-semibold text-fg-secondary">
