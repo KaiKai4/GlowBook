@@ -55,5 +55,13 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    // Proyecto móvil: smoke críticos, auditoría de accesibilidad y layout en Pixel 7.
+    {
+      // Se ejecuta tras "chromium" para no solapar dos runs de los mismos salones de E2E.
+      name: "mobile",
+      dependencies: ["chromium"],
+      use: { ...devices["Pixel 7"] },
+      testMatch: /(accessibility-sweep|responsive-layout|salon-owner|auth|platform-admin)\.spec\.ts$/,
+    },
   ],
 });

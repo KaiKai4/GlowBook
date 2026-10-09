@@ -12,6 +12,7 @@ import {
 import { expectNoSeriousA11yViolations } from "./support/a11y";
 import { isLocalTarget, skipUnlessReady } from "./support/env";
 import { readLocalFixtures } from "./support/local-fixtures";
+import { futureDate, selectCalendarDate } from "./support/calendar";
 
 let credentials: AuthCredentials | null =
   process.env.E2E_SALON_OWNER_EMAIL && process.env.E2E_SALON_OWNER_PASSWORD
@@ -37,37 +38,6 @@ async function login(page: Page) {
   await expect(page).not.toHaveURL(/\/login/);
 }
 
-function futureDate(daysAhead = 14): string {
-  const date = new Date();
-  date.setDate(date.getDate() + daysAhead);
-  return date.toISOString().slice(0, 10);
-}
-
-async function selectCalendarDate(page: Page, label: string, value: string) {
-  const target = new Date(`${value}T12:00:00`);
-  const current = new Date();
-  const monthDifference =
-    (target.getFullYear() - current.getFullYear()) * 12 +
-    target.getMonth() -
-    current.getMonth();
-
-  await page.getByLabel(label).click();
-
-  const direction = monthDifference < 0 ? /Mes anterior/i : /Mes siguiente/i;
-  for (let index = 0; index < Math.abs(monthDifference); index += 1) {
-    await page.getByRole("button", { name: direction }).click();
-  }
-
-  const fullDate = new Intl.DateTimeFormat("es-PA", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(target);
-
-  await page.getByRole("button", { name: fullDate, exact: true }).click();
-}
-
 // El Select del proyecto (src/components/ui/select.tsx) es un combobox: el disparador
 // es un botón etiquetado y las opciones son role="option" dentro de un listbox en portal.
 async function selectFirstRealOption(page: Page, label: string | RegExp) {
@@ -81,10 +51,12 @@ async function selectFirstRealOption(page: Page, label: string | RegExp) {
 test.describe("salon owner critical smoke", () => {
   test.describe.configure({ mode: "serial" });
 
-  test.beforeAll(async () => {
-    // En local el owner A lo crea global-setup; su fixture completo viaja por env.
+  test.beforeAll(async ({}, workerInfo) => {
+    // En local el owner lo crea global-setup; su fixture completo viaja por env.
+    // El proyecto "mobile" usa un salón propio: no comparte los datos que muta el de escritorio.
     if (isLocalTarget) {
-      fixture = readLocalFixtures().salonOwnerA;
+      const owners = readLocalFixtures();
+      fixture = workerInfo.project.name === "mobile" ? owners.salonOwnerMobile : owners.salonOwnerA;
       credentials = { email: fixture.email, password: fixture.password };
       admin = createIntegrationAdminClient(getSupabaseIntegrationEnv());
       return;

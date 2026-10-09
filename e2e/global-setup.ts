@@ -27,12 +27,16 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     const salonOwnerB: SalonOwnerFixture = await createSalonOwnerFixture(admin, "E2E Tenant B");
     cleanups.push(() => cleanupSalonOwnerFixture(admin, salonOwnerB));
 
+    const salonOwnerMobile: SalonOwnerFixture = await createSalonOwnerFixture(admin, "E2E Tenant Mobile");
+    cleanups.push(() => cleanupSalonOwnerFixture(admin, salonOwnerMobile));
+
     const platformAdmin: PlatformAdminFixture = await createPlatformAdminFixture(admin);
     cleanups.push(() => cleanupPlatformAdminFixture(admin, platformAdmin));
 
     process.env[LOCAL_FIXTURES_ENV] = serializeLocalFixtures({
       salonOwnerA,
       salonOwnerB,
+      salonOwnerMobile,
       platformAdmin,
     });
     process.env.E2E_SALON_OWNER_EMAIL = salonOwnerA.email;

@@ -1,6 +1,11 @@
 // Ejecuta Lighthouse CI ("lhci autorun") sobre la build local usando el Chromium
 // completo que instala Playwright (no el headless-shell ni Google Chrome del sistema).
 //
+// Dos configuraciones, cada una con su propio servidor "next start" en el puerto 3200:
+//  - lighthouserc.json: pantallas públicas.
+//  - lighthouserc.auth.json: pantallas autenticadas, con un salón y un owner de prueba
+//    creados en el stack LOCAL para esta ejecución y borrados al terminar.
+//
 // Uso: node scripts/quality/run-lighthouse.mjs [argumentos extra de lhci]
 //
 // La ruta se obtiene de la API de @playwright/test y se pasa a Lighthouse con
@@ -12,6 +17,10 @@ import { chromium } from "@playwright/test";
 // Importar el manifiesto declara el uso de @lhci/cli y da la ruta de su binario.
 import lhciManifest from "@lhci/cli/package.json" with { type: "json" };
 import { ROOT } from "./lib-process.mjs";
+import { createLighthouseOwner } from "./lighthouse-owner.mjs";
+import { ensureLocalSupabase, getLocalSupabaseEnv } from "./supabase-env.mjs";
+
+const CONFIGS = ["lighthouserc.json", "lighthouserc.auth.json"];
 
 /**
  * Ruta del ejecutable de Chromium completo de Playwright, verificada en disco.
@@ -46,19 +55,58 @@ function resolveLhciEntry() {
   return join(lhciDir, bin);
 }
 
-function main() {
-  const extraArgs = process.argv.slice(2);
-  const chromePath = resolveChromiumPath();
-  const result = spawnSync(process.execPath, [resolveLhciEntry(), "autorun", ...extraArgs], {
-    cwd: ROOT,
-    env: { ...process.env, CHROME_PATH: chromePath },
-    stdio: "inherit",
-    shell: false,
-    windowsHide: true,
-  });
-
-  if (result.error) throw result.error;
-  process.exit(result.status ?? 1);
+/**
+ * Ejecuta "lhci autorun" para una configuración. Si falla, lo repite una vez: Lighthouse
+ * puede abortar una pasada con NO_NAVSTART por ruido del entorno (Chrome y Docker en la
+ * misma máquina). Las aserciones se aplican igual a la pasada que se repite.
+ * @returns {number} código de salida (0 si alguna pasada cumple las aserciones)
+ */
+function runAutorunWithRetry(config, extraArgs, env) {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const result = spawnSync(
+      process.execPath,
+      [resolveLhciEntry(), "autorun", `--config=${config}`, ...extraArgs],
+      { cwd: ROOT, env, stdio: "inherit", shell: false, windowsHide: true },
+    );
+    if (result.error) throw result.error;
+    if (result.status === 0) return 0;
+    if (attempt === 1) console.error(`[lighthouse] ${config} falló; se repite una vez.`);
+  }
+  return 1;
 }
 
-main();
+async function main() {
+  const extraArgs = process.argv.slice(2);
+  const chromePath = resolveChromiumPath();
+  await ensureLocalSupabase();
+  const supabaseEnv = await getLocalSupabaseEnv();
+  const owner = await createLighthouseOwner({
+    url: supabaseEnv.NEXT_PUBLIC_SUPABASE_URL,
+    serviceRoleKey: supabaseEnv.SUPABASE_SERVICE_ROLE_KEY,
+  });
+
+  const env = {
+    ...process.env,
+    ...supabaseEnv,
+    CHROME_PATH: chromePath,
+    LH_OWNER_EMAIL: owner.email,
+    LH_OWNER_PASSWORD: owner.password,
+  };
+
+  let status = 0;
+  try {
+    for (const config of CONFIGS) {
+      status = status || runAutorunWithRetry(config, extraArgs, env);
+    }
+  } finally {
+    await owner.cleanup().catch((error) => {
+      console.error(`[lighthouse] No se pudo limpiar el salón de prueba: ${error.message}`);
+    });
+  }
+  process.exit(status);
+}
+
+main().catch((error) => {
+  console.error(`[lighthouse] ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+});

@@ -13,6 +13,8 @@ export const LOCAL_FIXTURES_ENV = "E2E_LOCAL_FIXTURES";
 export interface LocalE2eFixtures {
   salonOwnerA: SalonOwnerFixture;
   salonOwnerB: SalonOwnerFixture;
+  // Salón propio del proyecto "mobile": no comparte datos mutados por el proyecto de escritorio.
+  salonOwnerMobile: SalonOwnerFixture;
   platformAdmin: PlatformAdminFixture;
 }
 
@@ -76,6 +78,7 @@ export function readLocalFixtures(): LocalE2eFixtures {
   return {
     salonOwnerA: toSalonOwner(record.salonOwnerA, "salonOwnerA"),
     salonOwnerB: toSalonOwner(record.salonOwnerB, "salonOwnerB"),
+    salonOwnerMobile: toSalonOwner(record.salonOwnerMobile, "salonOwnerMobile"),
     platformAdmin: toPlatformAdmin(record.platformAdmin),
   };
 }
