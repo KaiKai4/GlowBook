@@ -105,14 +105,16 @@ Pesos permitidos: `font-normal` (400), `font-medium` (500), `font-semibold` (600
 | `font-extrabold` / `font-black` | 0 | `font-semibold` |
 | `font-light` / `font-thin` | 0 | `font-normal` |
 
-## 5. Componentes compartidos previstos
+## 5. Componentes compartidos
 
-- **PageHeader**: titulo `text-2xl font-semibold text-fg-strong`, descripcion `text-sm text-fg-muted`, acciones a la derecha; en movil se apilan.
-- **MetricCard**: etiqueta `text-sm text-fg-muted`, valor `text-2xl font-semibold text-fg`, variacion con icono y texto (nunca solo color).
-- **Panel**: `bg-surface border border-border rounded-xl`, cabecera `text-base font-semibold`.
-- **StatusBadge**: icono + texto. Variantes: success, warning, danger, info, accent, neutral, usando `*-subtle` (fondo), `*-border` (borde) y `*-strong` (texto).
-- **DataTable**: fila de 52px, 10 filas por pagina, sin scroll horizontal en 375px, cabecera `bg-surface-muted text-sm font-semibold text-fg-muted`, dato secundario en segunda linea `text-sm text-fg-muted`.
-- Pantalla de referencia: Clientes (`src/app/(dashboard)/customers/customers-client.tsx`).
+Viven en `src/components/ui/`. Son componentes de servidor salvo `DataTable` (`"use client"`, paginación local). Usan tokens semánticos: las pantallas no repiten clases de paleta cruda para estos patrones.
+
+- **PageHeader** (`page-header.tsx`): cabecera de pantalla. Props: `title` (ReactNode, va dentro del único `h1`, `text-2xl font-semibold text-fg-strong`), `description?` (`text-sm text-fg-muted`), `actions?`. Las acciones van a la derecha en escritorio y se apilan bajo el título en móvil. Una por pantalla.
+- **Panel** (`panel.tsx`): sección con `bg-surface border border-border rounded-xl`. Props: `title?` (h2 `text-base font-semibold text-fg-strong`), `actions?`, `className?`, `children`. Úsalo para agrupar un bloque (tabla, lista, formulario) dentro de una pantalla.
+- **MetricCard** (`metric-card.tsx`): indicador numérico. Props: `label` (`text-sm text-fg-muted`), `value` (`text-2xl font-semibold`), `tone?` (`default`, `success`, `warning`, `danger`; solo colorea el valor), `help?` (`text-xs text-fg-subtle`), `trend?` (`{ direction: "up" | "down" | "flat", label, tone?: "positive" | "negative" | "neutral" }`). La tendencia siempre lleva icono y texto. Úsalo para totales y KPIs.
+- **StatusBadge** (`status-badge.tsx`): estado con icono y texto, nunca solo color. Props: `variant` (`success`, `warning`, `danger`, `info`, `accent`, `neutral`; usa `*-subtle` de fondo, `*-border` de borde y `*-strong` de texto) y `label`. `STOCK_STATUS_BADGES` mapea `ok | low | empty` a `{ variant, label }` con los textos que muestra la app (`Disponible`, `Stock bajo`, `Agotado`); se espera `<StatusBadge {...STOCK_STATUS_BADGES[status]} />`. Los mapas de citas, suscripciones e invitaciones se añadirán junto a su primer consumidor.
+- **DataTable** (`data-table.tsx`): tabla genérica. Props: `label` (nombre accesible), `columns` (`{ id, header, cell(row), secondary?, align?: "left" | "right" }`), `rows`, `getRowId(row)` y `emptyMessage`. Filas de 52px (`h-13`), 10 filas por página con controles "Página anterior" y "Página siguiente" (solo si hay más de 10 filas), cabecera `bg-surface-muted text-sm font-semibold text-fg-muted`, sin scroll horizontal en 375px. Por debajo de `sm` las columnas `secondary` se muestran como segunda línea `text-sm text-fg-muted` bajo la primera columna. Las acciones van en una columna propia no secundaria para seguir visibles en móvil.
+- Pantallas de referencia: Clientes (`customers/customers-client.tsx` y `customers-list.tsx`: PageHeader y DataTable) e Inventario (`inventory/`: PageHeader, Panel, MetricCard, DataTable y StatusBadge).
 
 ## 6. Excepciones de hex y rgba
 

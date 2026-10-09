@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Phone, Mail } from "lucide-react";
 import { EditCustomerModal } from "./edit-customer-modal";
 import { reactivateCustomerAction } from "./actions";
@@ -28,6 +28,78 @@ export function CustomersList({ customers, mode }: { customers: Customer[]; mode
 
   if (customers.length === 0) return null;
 
+  async function reactivate(customerId: string) {
+    setReactivationError(null);
+    setReactivatingId(customerId);
+    const res = await reactivateCustomerAction(customerId);
+    setReactivatingId(null);
+    if (res.ok) router.refresh();
+    else setReactivationError(res.error ?? "No se pudo reactivar el cliente.");
+  }
+
+  const columns: DataTableColumn<Customer>[] = [
+    {
+      id: "customer",
+      header: "Cliente",
+      cell: (customer) => (
+        <p className="font-medium text-fg">
+          {customer.first_name} {customer.last_name}
+          {customer.is_temporary && (
+            <Badge variant="warning" className="ml-2">Temporal</Badge>
+          )}
+        </p>
+      ),
+    },
+    {
+      id: "phone",
+      header: "Teléfono",
+      secondary: true,
+      cell: (customer) =>
+        customer.phone ? (
+          <span className="flex items-center gap-1.5">
+            <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {customer.phone}
+          </span>
+        ) : null,
+    },
+    {
+      id: "email",
+      header: "Correo",
+      secondary: true,
+      cell: (customer) =>
+        customer.email ? (
+          <span className="flex items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {customer.email}
+          </span>
+        ) : null,
+    },
+    {
+      id: "actions",
+      header: "Acciones",
+      align: "right",
+      cell: (customer) =>
+        isArchived ? (
+          <Button
+            variant="primary"
+            className="h-auto shrink-0 px-3 py-1.5 text-xs"
+            loading={reactivatingId === customer.id}
+            onClick={() => reactivate(customer.id)}
+          >
+            Reactivar
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            className="h-auto shrink-0 px-2 py-1 text-xs text-accent hover:underline"
+            onClick={() => setEditing(customer)}
+          >
+            Editar
+          </Button>
+        ),
+    },
+  ];
+
   return (
     <>
       {reactivationError && (
@@ -35,61 +107,13 @@ export function CustomersList({ customers, mode }: { customers: Customer[]; mode
           {reactivationError}
         </div>
       )}
-      {customers.map((customer) => (
-        <Card key={customer.id} className="hover:shadow-sm transition-shadow">
-          <CardContent className="py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="font-medium text-fg">
-                  {customer.first_name} {customer.last_name}
-                  {customer.is_temporary && (
-                    <Badge variant="warning" className="ml-2">Temporal</Badge>
-                  )}
-                </p>
-                <div className="flex items-center gap-3 mt-0.5">
-                  {customer.phone && (
-                    <span className="flex items-center gap-1 text-xs text-fg-subtle">
-                      <Phone className="h-3 w-3" />
-                      {customer.phone}
-                    </span>
-                  )}
-                  {customer.email && (
-                    <span className="flex items-center gap-1 text-xs text-fg-subtle">
-                      <Mail className="h-3 w-3" />
-                      {customer.email}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {isArchived ? (
-                <Button
-                  variant="primary"
-                  className="text-xs shrink-0 h-auto px-3 py-1.5"
-                  loading={reactivatingId === customer.id}
-                  onClick={async () => {
-                    setReactivationError(null);
-                    setReactivatingId(customer.id);
-                    const res = await reactivateCustomerAction(customer.id);
-                    setReactivatingId(null);
-                    if (res.ok) router.refresh();
-                    else setReactivationError(res.error ?? "No se pudo reactivar el cliente.");
-                  }}
-                >
-                  Reactivar
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  className="text-xs text-accent hover:underline shrink-0 h-auto px-2 py-1"
-                  onClick={() => setEditing(customer)}
-                >
-                  Editar
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      <DataTable
+        label={isArchived ? "Clientes archivados" : "Clientes"}
+        columns={columns}
+        rows={customers}
+        getRowId={(customer) => customer.id}
+        emptyMessage="Aún no hay clientes."
+      />
 
       {editing && (
         <EditCustomerModal

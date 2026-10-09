@@ -4,6 +4,7 @@ import { FormEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NewCustomerModal } from "./new-customer-modal";
 import { CustomersList } from "./customers-list";
@@ -50,17 +51,15 @@ export function CustomersClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-fg">Clientes</h1>
-          <p className="mt-1 text-sm text-fg-subtle">
-            {view.query
-              ? `${view.total} ${view.total === 1 ? "resultado" : "resultados"}`
-              : `${view.total} clientes activos`}
-          </p>
-        </div>
-        <NewCustomerModal />
-      </div>
+      <PageHeader
+        title="Clientes"
+        description={
+          view.query
+            ? `${view.total} ${view.total === 1 ? "resultado" : "resultados"}`
+            : `${view.total} clientes activos`
+        }
+        actions={<NewCustomerModal />}
+      />
 
       <form onSubmit={handleSearch} className="flex gap-2">
         <input
@@ -124,7 +123,7 @@ export function CustomersClient({
                 loadCustomers({ q: view.query, page: view.page - 1 })
               }
               disabled={pending || view.page === 1}
-              className="flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-fg-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
+              className="flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-fg-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface disabled:text-fg-disabled"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               Anterior
@@ -135,7 +134,7 @@ export function CustomersClient({
                 loadCustomers({ q: view.query, page: view.page + 1 })
               }
               disabled={pending || view.page === view.totalPages}
-              className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-white disabled:text-fg-disabled"
+              className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface disabled:text-fg-disabled"
             >
               Siguiente
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
