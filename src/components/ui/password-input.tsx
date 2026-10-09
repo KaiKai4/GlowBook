@@ -33,7 +33,7 @@ export function PasswordInput({
           id={inputId}
           type={visible ? "text" : "password"}
           className={cn(
-            "h-11 w-full rounded-lg border border-border-input bg-surface px-3 pr-11 text-sm text-fg shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+            "h-11 w-full rounded-lg border border-border-input bg-surface px-3 pr-11 text-sm text-fg shadow-hairline",
             "placeholder:text-fg-subtle",
             "focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500",
             "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle",
