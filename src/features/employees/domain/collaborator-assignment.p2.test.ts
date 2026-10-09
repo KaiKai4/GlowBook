@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
+import type { ServiceCategoryRef } from "./collaborator-assignment";
 import { PublicError } from "@/infra/public-error";
-import { assertServicesHaveAssignedCategories } from "./collaborator-assignment";
+import { assertCollaboratorAssignments } from "./collaborator-assignment";
+
+function assertServicesHaveAssignedCategories(services: ServiceCategoryRef[], categoryIds: string[]): void {
+  assertCollaboratorAssignments({
+    requestedServiceIds: services.map((service) => service.id),
+    requestedCategoryIds: categoryIds,
+    activeCategoryIds: categoryIds,
+    services,
+  });
+}
 
 describe("asignacion de servicios a colaboradores: categorias", () => {
   it("permite asignar servicios cuyas categorias estan asignadas al colaborador", () => {

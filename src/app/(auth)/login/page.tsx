@@ -2,14 +2,13 @@
 
 import { Suspense, useState, useTransition } from "react";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/infra/supabase/client";
-import { rememberSessionInBrowser } from "@/infra/supabase/session-persistence";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AlertCircle, CheckCircle } from "lucide-react";
+import { signInAction } from "./actions";
 
 const EMAIL_EXAMPLE = "ana@salonluna.com";
 
@@ -76,16 +75,11 @@ export default function LoginPage() {
     if (nextErrors.email || nextErrors.password) return;
 
     startTransition(async () => {
-      // El marcador debe existir antes de que el sign-in escriba las cookies
-      // de auth, para que nazcan ya con la persistencia correcta.
-      rememberSessionInBrowser(remember);
-      const supabase = createSupabaseBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      // El servidor escribe el marcador "recordarme" antes de las cookies de auth,
+      // para que nazcan ya con la persistencia correcta.
+      const result = await signInAction({ email: email.trim(), password, remember });
 
-      if (authError) {
+      if (!result.ok) {
         setFormError("No pudimos iniciar sesión con esos datos.");
         setFieldErrors({
           email: "Revisa que el correo sea el mismo de tu cuenta.",

@@ -11,16 +11,16 @@ import { cancelAppointment } from "@/features/appointments/use-cases/cancel-appo
 import { completeAppointment } from "@/features/appointments/use-cases/complete-appointment";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
+import {
+  parseCompleteAppointmentForm,
+  parseCreateAppointmentForm,
+  parseUpdateAppointmentScheduleForm,
+} from "@/features/appointments/use-cases/appointment-form-parsing";
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import {
-  AppointmentLifecycleSchema,
-  CompleteAppointmentSchema,
-  CreateAppointmentSchema,
-  UpdateAppointmentScheduleSchema,
-} from "@/features/appointments/schemas";
+import { AppointmentLifecycleSchema } from "@/features/appointments/schemas";
 import type { Result } from "@/infra/result";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 import { parseUuid } from "@/infra/validation/route-id";
@@ -82,27 +82,13 @@ export async function createAppointmentAction(
   });
   if (!limit.ok) return { ok: false, error: limit.error };
 
-  const raw = Object.fromEntries(formData);
-  let assignments: unknown;
-  try {
-    assignments = JSON.parse(raw.assignments as string);
-  } catch {
-    return { ok: false, error: "Datos de servicios invalidos." };
-  }
+  const input = parseCreateAppointmentForm(Object.fromEntries(formData));
+  if (!input.ok) return input;
 
-  const parsed = CreateAppointmentSchema.safeParse({
-    ...raw,
-    assignments,
-  });
-
-  if (!parsed.success) {
-    return { ok: false, error: firstIssueMessage(parsed.error) };
-  }
-
-  const result = await createAppointment(parsed.data, {
+  const result = await createAppointment(input.value, {
     salonId: profile.salon_id,
     userId: profile.id,
-    idempotencyKey: parsed.data.idempotency_key,
+    idempotencyKey: input.value.idempotency_key,
   });
 
   if (result.ok) revalidateAppointmentFlows();
@@ -117,26 +103,12 @@ export async function updateAppointmentScheduleAction(
   const permission = await canManageAppointments(profile, "No tienes permiso para editar citas.");
   if (!permission.ok) return permission;
 
-  const raw = Object.fromEntries(formData);
-  let assignments: unknown;
-  try {
-    assignments = JSON.parse(raw.assignments as string);
-  } catch {
-    return { ok: false, error: "Datos de servicios invalidos." };
-  }
+  const input = parseUpdateAppointmentScheduleForm(Object.fromEntries(formData));
+  if (!input.ok) return input;
 
-  const parsed = UpdateAppointmentScheduleSchema.safeParse({
-    ...raw,
-    assignments,
-  });
-
-  if (!parsed.success) {
-    return { ok: false, error: firstIssueMessage(parsed.error) };
-  }
-
-  const result = await updateAppointmentSchedule(parsed.data, {
+  const result = await updateAppointmentSchedule(input.value, {
     salonId: profile.salon_id,
-    idempotencyKey: parsed.data.idempotency_key,
+    idempotencyKey: input.value.idempotency_key,
   });
 
   if (result.ok) revalidateAppointmentFlows();
@@ -185,40 +157,18 @@ export async function completeAppointmentAction(
   const permission = await canManageAppointments(profile, "No tienes permiso para completar citas.");
   if (!permission.ok) return permission;
 
-  let itemCharges: unknown;
-  try {
-    itemCharges = JSON.parse(String(formData.get("item_charges") ?? "[]"));
-  } catch {
-    return { ok: false, error: "Cobros de servicios invalidos." };
-  }
-
-  const parsed = CompleteAppointmentSchema.safeParse({
-    appointment_id: formData.get("appointment_id"),
-    idempotency_key: formData.get("idempotency_key"),
-    payment_method: formData.get("payment_method"),
-    completion_price_note: formData.get("completion_price_note") ?? "",
-    item_charges: itemCharges,
-  });
-
-  if (!parsed.success) {
-    return { ok: false, error: firstIssueMessage(parsed.error) };
-  }
-
-  const paymentEnabled = await assertSalonPaymentMethodEnabled(
-    profile.salon_id,
-    parsed.data.payment_method
+  const input = await parseCompleteAppointmentForm(formData, (method) =>
+    assertSalonPaymentMethodEnabled(profile.salon_id, method)
   );
-  if (!paymentEnabled) {
-    return { ok: false, error: "Ese metodo de pago no esta habilitado para este salon." };
-  }
+  if (!input.ok) return input;
 
   const result = await completeAppointment(
-    parsed.data.appointment_id,
+    input.value.appointment_id,
     profile.salon_id,
-    parsed.data.payment_method,
-    parsed.data.item_charges,
-    parsed.data.completion_price_note,
-    parsed.data.idempotency_key
+    input.value.payment_method,
+    input.value.item_charges,
+    input.value.completion_price_note,
+    input.value.idempotency_key
   );
 
   if (result.ok) {

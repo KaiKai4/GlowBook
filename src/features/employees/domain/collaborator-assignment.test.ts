@@ -1,12 +1,22 @@
 import { describe, expect, it } from "vitest";
+import type { ServiceCategoryRef } from "./collaborator-assignment";
 import {
-  assertServicesHaveAssignedCategories,
+  assertCollaboratorAssignments,
 } from "./collaborator-assignment";
 
 const services = [
   { id: "cut", category_id: "hair" },
   { id: "manicure", category_id: "nails" },
 ];
+
+function assertServicesHaveAssignedCategories(services: ServiceCategoryRef[], categoryIds: string[]): void {
+  assertCollaboratorAssignments({
+    requestedServiceIds: services.map((service) => service.id),
+    requestedCategoryIds: categoryIds,
+    activeCategoryIds: categoryIds,
+    services,
+  });
+}
 
 describe("collaborator assignment", () => {
   it("allows services when their categories are assigned", () => {

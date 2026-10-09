@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import { useRouter } from "next/navigation";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
@@ -66,9 +65,9 @@ export function JoinForm({ token, email, employeeName, salonName }: Props) {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      const res = await acceptEmployeeInvitationAction(token, password);
+      const res = await acceptEmployeeInvitationAction(token, password, email);
 
-      if (res && !res.ok) {
+      if (!res.ok) {
         const message = res.error;
         setFormError(message);
         if (message.toLowerCase().includes("contraseña") || message.toLowerCase().includes("password")) {
@@ -77,14 +76,11 @@ export function JoinForm({ token, email, employeeName, salonName }: Props) {
         return;
       }
 
-      const supabase = createSupabaseBrowserClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) {
-        setDone(true);
-        setTimeout(() => router.push("/login"), 2000);
+      setDone(true);
+      if (!res.value.signedIn) {
+        setTimeout(() => router.push("/login?joined=1"), 2000);
         return;
       }
-      setDone(true);
       setTimeout(() => {
         router.push("/");
         router.refresh();

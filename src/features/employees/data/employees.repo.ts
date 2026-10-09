@@ -1,5 +1,6 @@
+import "server-only";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { assertServicesHaveAssignedCategories } from "@/features/employees/domain/collaborator-assignment";
+import type { ServiceCategoryRef } from "@/features/employees/domain/collaborator-assignment";
 import {
   createEmployeeWithAssignmentsRpc,
   type CreateEmployeeRpcFields,
@@ -113,45 +114,45 @@ export async function findEmployeeByEmail(email: string, salonId: string) {
   return data;
 }
 
-export async function validateEmployeeAssignments(
+/**
+ * Lectura de las categorias activas y de los servicios activos del salon que
+ * coinciden con los ids pedidos. Solo consulta: las reglas de asignacion viven en
+ * el caso de uso (employee-assignments.ts).
+ */
+export async function findActiveAssignmentReferences(
   salonId: string,
   serviceIds: string[],
   categoryIds: string[]
-): Promise<void> {
+): Promise<{ activeCategoryIds: string[]; services: ServiceCategoryRef[] }> {
   const supabase = await createSupabaseServerClient();
-  const uniqueServiceIds = [...new Set(serviceIds)];
-  const uniqueCategoryIds = [...new Set(categoryIds)];
-  const categorySet = new Set(uniqueCategoryIds);
 
-  if (uniqueCategoryIds.length > 0) {
-    const { data: categories, error } = await supabase
+  let activeCategoryIds: string[] = [];
+  if (categoryIds.length > 0) {
+    const { data, error } = await supabase
       .from("service_categories")
       .select("id")
       .eq("salon_id", salonId)
       .eq("is_active", true)
-      .in("id", uniqueCategoryIds);
+      .in("id", categoryIds);
 
     if (error) throw error;
-    if ((categories ?? []).length !== uniqueCategoryIds.length) {
-      throw new Error("Una o mas categorías no pertenecen al salon o estan inactivas.");
-    }
+    activeCategoryIds = (data ?? []).map((row) => row.id);
   }
 
-  if (uniqueServiceIds.length === 0) return;
+  let services: ServiceCategoryRef[] = [];
+  if (serviceIds.length > 0) {
+    const { data, error } = await supabase
+      .from("services")
+      .select("id, category_id")
+      .eq("salon_id", salonId)
+      .eq("is_active", true)
+      .in("id", serviceIds);
 
-  const { data: services, error } = await supabase
-    .from("services")
-    .select("id, category_id")
-    .eq("salon_id", salonId)
-    .eq("is_active", true)
-    .in("id", uniqueServiceIds);
-
-  if (error) throw error;
-  if ((services ?? []).length !== uniqueServiceIds.length) {
-    throw new Error("Uno o mas servicios no pertenecen al salon o estan inactivos.");
+    if (error) throw error;
+    services = data ?? [];
   }
 
-  assertServicesHaveAssignedCategories(services ?? [], [...categorySet]);
+  return { activeCategoryIds, services };
 }
 
 // Alta y edicion de perfil van por RPC transaccionales: colaborador, asignaciones

@@ -64,3 +64,4 @@ export const CompleteAppointmentSchema = z.object({
 
 export type CreateAppointmentInput = z.infer<typeof CreateAppointmentSchema>;
 export type UpdateAppointmentScheduleInput = z.infer<typeof UpdateAppointmentScheduleSchema>;
+export type CompleteAppointmentInput = z.infer<typeof CompleteAppointmentSchema>;

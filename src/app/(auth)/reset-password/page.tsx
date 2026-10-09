@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, KeyRound } from "lucide-react";
 
-import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
+import { updatePasswordAction, verifyRecoveryLinkAction } from "./actions";
 
 type LinkState = "verifying" | "ready" | "invalid";
 
@@ -22,30 +22,14 @@ function ResetPasswordForm() {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    const code = searchParams.get("code");
-    const tokenHash = searchParams.get("token_hash");
+    const link = {
+      code: searchParams.get("code"),
+      tokenHash: searchParams.get("token_hash"),
+    };
 
-    async function verifyLink() {
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        setLinkState(exchangeError ? "invalid" : "ready");
-        return;
-      }
-      if (tokenHash) {
-        const { error: otpError } = await supabase.auth.verifyOtp({
-          type: "recovery",
-          token_hash: tokenHash,
-        });
-        setLinkState(otpError ? "invalid" : "ready");
-        return;
-      }
-      // Sin parametros: puede venir de una sesion de recuperacion ya abierta.
-      const { data } = await supabase.auth.getUser();
-      setLinkState(data.user ? "ready" : "invalid");
-    }
-
-    void verifyLink();
+    void verifyRecoveryLinkAction(link).then((valid) => {
+      setLinkState(valid ? "ready" : "invalid");
+    });
   }, [searchParams]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -62,14 +46,11 @@ function ResetPasswordForm() {
     }
 
     startTransition(async () => {
-      const supabase = createSupabaseBrowserClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) {
-        setError("No se pudo actualizar la contraseña. Pide un enlace nuevo e intentalo otra vez.");
+      const result = await updatePasswordAction(password);
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
-      // Cerramos la sesion de recuperacion para que entre con la nueva clave.
-      await supabase.auth.signOut();
       router.push("/login?reset=1");
     });
   }
