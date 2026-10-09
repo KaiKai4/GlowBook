@@ -78,7 +78,7 @@ export interface ReportDayRangeInput {
   timezone: string;
 }
 
-function modulesArgument(modules: ReportModuleAvailability) {
+export function modulesArgument(modules: ReportModuleAvailability) {
   return {
     inventory: modules.inventory,
     retail: modules.retail,

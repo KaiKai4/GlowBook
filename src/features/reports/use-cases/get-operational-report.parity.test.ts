@@ -11,11 +11,17 @@ import {
   fetchOperationalBreakdown,
   fetchPeriodTotals,
 } from "../data/rpc/reports-read-models.rpc";
-import { findHistoricalReportRows, findSalonReportIdentity, findSalonTimezone } from "../data/reports.repo";
+import { findSalonReportIdentity, findSalonTimezone } from "../data/reports.repo";
+import {
+  fetchBusyHours,
+  fetchExpenseConcepts,
+  fetchInventoryAlerts,
+  fetchMonthlySeries,
+  fetchProductSales,
+} from "../data/rpc/reports-history.rpc";
 import { getOperationalReport } from "./get-operational-report";
 
 vi.mock("../data/reports.repo", () => ({
-  findHistoricalReportRows: vi.fn(),
   findSalonReportIdentity: vi.fn(),
   findSalonTimezone: vi.fn(),
 }));
@@ -24,6 +30,14 @@ vi.mock("../data/rpc/reports-read-models.rpc", () => ({
   fetchPeriodTotals: vi.fn(),
   fetchOperationalBreakdown: vi.fn(),
   fetchCommissionReport: vi.fn(),
+}));
+
+vi.mock("../data/rpc/reports-history.rpc", () => ({
+  fetchMonthlySeries: vi.fn(),
+  fetchBusyHours: vi.fn(),
+  fetchExpenseConcepts: vi.fn(),
+  fetchProductSales: vi.fn(),
+  fetchInventoryAlerts: vi.fn(),
 }));
 
 interface OracleAppointment {
@@ -271,15 +285,28 @@ describe("paridad JS vs SQL del reporte operativo", () => {
       timezone: "UTC",
       created_at: "2026-01-01T00:00:00.000Z",
     });
-    vi.mocked(findHistoricalReportRows).mockResolvedValue({
-      appointmentMonths: [],
-      busyHours: [],
-      retailMonths: [],
-      expenseGroups: [],
-      purchaseMonths: [],
-      productMonths: [],
-      inventoryProducts: [],
-    });
+    // Historial (SQL): serie de 12 meses en cero y sin desgloses; el foco de este test es el periodo.
+    vi.mocked(fetchMonthlySeries).mockResolvedValue(
+      [
+        "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12",
+        "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06",
+      ].map((monthKey) => ({
+        monthKey,
+        completedAppointments: 0,
+        appointmentRevenue: 0,
+        retailRevenue: 0,
+        grossRevenue: 0,
+        operationalExpenses: 0,
+        inventoryPurchases: 0,
+        totalExpenses: 0,
+        profit: 0,
+        marginPct: 0,
+      }))
+    );
+    vi.mocked(fetchBusyHours).mockResolvedValue([]);
+    vi.mocked(fetchExpenseConcepts).mockResolvedValue([]);
+    vi.mocked(fetchProductSales).mockResolvedValue([]);
+    vi.mocked(fetchInventoryAlerts).mockResolvedValue([]);
     mockedTotals.mockResolvedValue(SQL_TOTALS);
     mockedBreakdown.mockResolvedValue(SQL_BREAKDOWN);
     mockedCommissions.mockResolvedValue(SQL_COMMISSIONS);
