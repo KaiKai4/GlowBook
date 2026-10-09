@@ -1,30 +1,20 @@
 "use client";
 
 import {
-  Children,
   forwardRef,
-  isValidElement,
   useCallback,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
-  type ReactElement,
-  type ReactNode,
   type ChangeEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { createPortal } from "react-dom";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-
-interface SelectOption {
-  value: string;
-  label: string;
-  disabled: boolean;
-  hidden: boolean;
-}
+import { getOptions, type SelectOption } from "./select-options";
+import { SelectList, type SelectListPosition } from "./select-list";
 
 interface SelectProps
   extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size" | "multiple"> {
@@ -64,7 +54,7 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
     );
     const [open, setOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
-    const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [position, setPosition] = useState<SelectListPosition>({ top: 0, left: 0, width: 0 });
     const selectedValue = controlled ? String(value) : internalValue;
     const selectedOption = options.find((option) => option.value === selectedValue);
     // La opción seleccionada se lista marcada (aria-selected): no se excluye.
@@ -221,7 +211,7 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
           }}
           onKeyDown={handleTriggerKeyDown}
           className={cn(
-            "flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-border-input bg-surface px-3 text-left text-sm text-fg shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color]",
+            "flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-border-input bg-surface px-3 text-left text-sm text-fg shadow-hairline transition-[border-color,box-shadow,background-color]",
             "hover:border-brand-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500",
             "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle",
             open && "border-brand-500 ring-2 ring-brand-100",
@@ -240,76 +230,22 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
           </p>
         )}
 
-        {open &&
-          createPortal(
-            <div
-              ref={listRef}
-              role="listbox"
-              aria-labelledby={selectId}
-              style={{ top: position.top, left: position.left, width: position.width }}
-              className="fixed z-[80] max-h-72 overflow-y-auto rounded-xl border border-border-subtle bg-surface p-1.5 shadow-[0_18px_42px_rgba(15,23,42,0.18),0_2px_8px_rgba(15,23,42,0.08)]"
-            >
-              {selectableOptions.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-fg-subtle">Sin opciones</div>
-              ) : null}
-
-              {selectableOptions.map((option, index) => {
-                const active = index === activeIndex;
-
-                return (
-                  <button
-                    key={`${option.value}-${index}`}
-                    type="button"
-                    role="option"
-                    aria-selected={option.value === selectedValue}
-                    disabled={option.disabled}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => selectOption(option)}
-                    className={cn(
-                      "flex min-h-10 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-fg-secondary transition-colors",
-                      active && "bg-surface-sunken text-fg-strong",
-                      option.disabled && "cursor-not-allowed text-fg-disabled hover:bg-transparent"
-                    )}
-                  >
-                    <span className="min-w-0 truncate">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>,
-            document.body
-          )}
+        {open && (
+          <SelectList
+            listRef={listRef}
+            labelledBy={selectId}
+            position={position}
+            options={selectableOptions}
+            activeIndex={activeIndex}
+            selectedValue={selectedValue}
+            onHoverOption={setActiveIndex}
+            onSelectOption={selectOption}
+          />
+        )}
       </div>
     );
   }
 );
 Select.displayName = "Select";
-
-function getOptions(children: ReactNode): SelectOption[] {
-  return Children.toArray(children).flatMap((child) => {
-    if (!isValidElement(child)) return [];
-    if (child.type !== "option") return [];
-
-    const option = child as ReactElement<React.OptionHTMLAttributes<HTMLOptionElement>>;
-    const label = nodeToText(option.props.children);
-    const value =
-      option.props.value !== undefined ? String(option.props.value) : label;
-
-    return [
-      {
-        value,
-        label,
-        disabled: Boolean(option.props.disabled),
-        hidden: Boolean(option.props.hidden),
-      },
-    ];
-  });
-}
-
-function nodeToText(node: ReactNode): string {
-  if (typeof node === "string" || typeof node === "number") return String(node);
-  if (Array.isArray(node)) return node.map(nodeToText).join("");
-  if (isValidElement<{ children?: ReactNode }>(node)) return nodeToText(node.props.children);
-  return "";
-}
 
 export { Select };
