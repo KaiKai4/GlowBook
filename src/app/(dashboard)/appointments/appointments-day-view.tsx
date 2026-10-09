@@ -15,6 +15,11 @@ import {
 import type { CalView } from "./date-nav";
 import type { CalendarAppointment, CalendarEmployee } from "@/features/appointments/view-models";
 import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
+import {
+  matchesSummaryFilter,
+  SUMMARY_FILTERS,
+  type SummaryFilter,
+} from "@/features/appointments/domain/summary-filter";
 
 const STATUS_LABEL: Record<string, string> = {
   scheduled: "Agendada", confirmed: "Confirmada", completed: "Completada",
@@ -85,7 +90,7 @@ export function AppointmentsDayView({
   cancellationTemplate: string;
   paymentMethodOptions: PaymentMethodOption[];
 }) {
-  const [summaryFilter, setSummaryFilter] = useState<"upcoming" | "completed" | "cancelled">("upcoming");
+  const [summaryFilter, setSummaryFilter] = useState<SummaryFilter>("upcoming");
   const [openActionsId, setOpenActionsId] = useState<string | null>(null);
   const [detailAppt, setDetailAppt] = useState<ApptFull | null>(null);
   const [completeAppt, setCompleteAppt] = useState<ApptFull | null>(null);
@@ -114,19 +119,10 @@ export function AppointmentsDayView({
     );
   }, [appointments, view, selectedEmpId]);
 
-  const statusFilters = [
-    { value: "upcoming" as const, label: "Citas próximas" },
-    { value: "completed" as const, label: "Completadas" },
-    { value: "cancelled" as const, label: "Canceladas" },
-  ];
-
   const listAppts = useMemo(() => {
-    const filtered = appointments.filter((appointment) => {
-      if (summaryFilter === "upcoming") {
-        return appointment.status === "scheduled" || appointment.status === "confirmed";
-      }
-      return appointment.status === summaryFilter;
-    });
+    const filtered = appointments.filter((appointment) =>
+      matchesSummaryFilter(appointment.status, summaryFilter)
+    );
 
     return sortSummaryAppointments(filtered, false);
   }, [appointments, summaryFilter]);
@@ -217,7 +213,7 @@ export function AppointmentsDayView({
         <div className="rounded-t-2xl border-b border-brand-100 bg-surface px-5 pt-4">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <nav className="flex items-end gap-8" aria-label="Filtros del resumen de citas">
-              {statusFilters.map((f) => (
+              {SUMMARY_FILTERS.map((f) => (
                 <button
                   key={String(f.value)}
                   onClick={() => setSummaryFilter(f.value)}

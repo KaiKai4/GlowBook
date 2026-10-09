@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
 import { formatCurrency } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -43,18 +48,26 @@ export function CompleteAppointmentDialog({
   onClose: () => void;
   paymentMethodOptions: PaymentMethodOption[];
 }) {
+  const toast = useToast();
+  const intent = useSubmissionIntent({
+    procedure: "appointments.complete",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       title="Completar cita"
       className="max-w-lg"
+      dismissible={!intent.pending}
     >
       <CompleteAppointmentForm
         key={appt.id}
         appt={appt}
         onClose={onClose}
         paymentMethodOptions={paymentMethodOptions}
+        submitIntent={intent.submit}
       />
     </Dialog>
   );
@@ -74,10 +87,12 @@ function CompleteAppointmentForm({
   appt,
   onClose,
   paymentMethodOptions,
+  submitIntent,
 }: {
   appt: AppointmentForCompletion;
   onClose: () => void;
   paymentMethodOptions: PaymentMethodOption[];
+  submitIntent: ReturnType<typeof useSubmissionIntent>["submit"];
 }) {
   const router = useRouter();
   const [payment, setPayment] = useState(paymentMethodOptions[0]?.value ?? "cash");
@@ -116,23 +131,32 @@ function CompleteAppointmentForm({
   function handleComplete() {
     if (pending || completed) return;
     setError(null);
-    const fd = new FormData();
-    fd.set("appointment_id", appt.id);
-    fd.set("payment_method", payment);
-    fd.set("completion_price_note", completionPriceNote);
-    fd.set(
-      "item_charges",
-      JSON.stringify(
-        chargedItems.map((item) => ({
-          id: item.id,
-          price: item.price,
-          discountPercentage: item.discountPercentage,
-        }))
-      )
+    const itemCharges = JSON.stringify(
+      chargedItems.map((item) => ({
+        id: item.id,
+        price: item.price,
+        discountPercentage: item.discountPercentage,
+      }))
     );
 
     start(async () => {
-      const res = await completeAppointmentAction(null, fd);
+      const res = await submitIntent(
+        {
+          appointment_id: appt.id,
+          payment_method: payment,
+          completion_price_note: completionPriceNote,
+          item_charges: itemCharges,
+        },
+        (idempotencyKey) => {
+          const fd = new FormData();
+          fd.set("idempotency_key", idempotencyKey);
+          fd.set("appointment_id", appt.id);
+          fd.set("payment_method", payment);
+          fd.set("completion_price_note", completionPriceNote);
+          fd.set("item_charges", itemCharges);
+          return completeAppointmentAction(null, fd);
+        }
+      );
       if (res.ok) {
         setCompleted(true);
         await launchCompletionConfetti(completeButtonRef.current);

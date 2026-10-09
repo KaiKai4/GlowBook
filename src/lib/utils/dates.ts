@@ -111,6 +111,47 @@ export function utcBounds(from: string, to: string, tz: string): { start: string
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
+// Converts a wall-clock date (YYYY-MM-DD) and time (HH:mm) that the user typed for
+// a salon in `timeZone` into the real UTC instant. Never uses the browser or server
+// local zone: `new Date("YYYY-MM-DDTHH:mm")` would silently shift the appointment.
+export function zonedWallTimeToUtc(date: string, time: string, timeZone: string): Date {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute);
+
+  const firstOffset = zoneOffsetMs(wallAsUtc, timeZone);
+  let instant = wallAsUtc - firstOffset;
+  const secondOffset = zoneOffsetMs(instant, timeZone);
+  if (secondOffset !== firstOffset) instant = wallAsUtc - secondOffset;
+
+  return new Date(instant);
+}
+
+// Offset (zone wall clock minus UTC) in ms at the given instant.
+function zoneOffsetMs(instantMs: number, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date(instantMs));
+
+  const read = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
+  const wallAsUtc = Date.UTC(
+    read("year"),
+    read("month") - 1,
+    read("day"),
+    read("hour") % 24,
+    read("minute"),
+    read("second")
+  );
+  return wallAsUtc - Math.floor(instantMs / 1_000) * 1_000;
+}
+
 export function timeToMinutes(time: string): number {
   const [h = NaN, m = NaN] = time.split(":").map(Number);
   return h * 60 + m;

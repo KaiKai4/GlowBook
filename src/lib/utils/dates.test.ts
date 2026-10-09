@@ -7,6 +7,7 @@ import {
   getZonedTimeParts,
   timeToMinutes,
   utcBounds,
+  zonedWallTimeToUtc,
 } from "./dates";
 
 describe("date utilities", () => {
@@ -52,5 +53,31 @@ describe("date utilities", () => {
   it("handles ISO date arithmetic and time parsing", () => {
     expect(addDaysToDateISO("2026-01-31", 1)).toBe("2026-02-01");
     expect(timeToMinutes("09:45")).toBe(585);
+  });
+});
+
+describe("zonedWallTimeToUtc", () => {
+  it("interprets the wall-clock time in the salon timezone (fixed offset)", () => {
+    expect(zonedWallTimeToUtc("2026-07-15", "09:00", "America/Panama").toISOString())
+      .toBe("2026-07-15T14:00:00.000Z");
+  });
+
+  it("applies daylight saving offsets for the salon date", () => {
+    expect(zonedWallTimeToUtc("2026-07-15", "09:00", "Europe/Madrid").toISOString())
+      .toBe("2026-07-15T07:00:00.000Z");
+    expect(zonedWallTimeToUtc("2026-01-15", "09:00", "Europe/Madrid").toISOString())
+      .toBe("2026-01-15T08:00:00.000Z");
+  });
+
+  it("does not depend on the process/browser local timezone", () => {
+    const previous = process.env.TZ;
+    try {
+      process.env.TZ = "Asia/Tokyo";
+      expect(zonedWallTimeToUtc("2026-07-15", "09:00", "America/Panama").toISOString())
+        .toBe("2026-07-15T14:00:00.000Z");
+    } finally {
+      if (previous === undefined) delete process.env.TZ;
+      else process.env.TZ = previous;
+    }
   });
 });

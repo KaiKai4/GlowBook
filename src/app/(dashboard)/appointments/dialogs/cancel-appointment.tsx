@@ -49,6 +49,9 @@ export function CancelAppointmentDialog({
   const [saveChoice, setSaveChoice] = useState<SaveChoice>(isTemp ? "discard" : "save");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Set when the appointment is cancelled but the customer step failed: the dialog
+  // stays open so the user reads the warning instead of it being silently lost.
+  const [warning, setWarning] = useState<string | null>(null);
 
   const customerName = appt.customer
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
@@ -64,20 +67,28 @@ export function CancelAppointmentDialog({
     : "la fecha programada";
   const apptTime = appt.start_time ? formatTimeTz(new Date(appt.start_time), tz) : "la hora programada";
 
+  // Permanent customers are never changed here: only temporary ones get a disposition.
+  async function applyCustomerDisposition(): Promise<string | null> {
+    if (!appt.customer?.id || !isTemp) return null;
+
+    if (saveChoice === "save") {
+      const res = await promoteCustomerAction(appt.customer.id);
+      return res.ok ? null : `La cita se canceló, pero no pudimos guardar al cliente: ${res.error}`;
+    }
+
+    const res = await deleteTemporaryCustomerAction(appt.customer.id);
+    return res.ok
+      ? null
+      : `La cita se canceló, pero no pudimos descartar los datos temporales del cliente: ${res.error}`;
+  }
+
   function handleCancel(withWhatsApp: boolean) {
     setError(null);
     start(async () => {
       const res = await cancelAppointmentAction(appt.id);
       if (!res.ok) { setError(res.error ?? "Error al cancelar."); return; }
 
-      if (appt.customer?.id) {
-        if (isTemp && saveChoice === "save") {
-          await promoteCustomerAction(appt.customer.id);
-        } else if (isTemp && saveChoice === "discard") {
-          await deleteTemporaryCustomerAction(appt.customer.id);
-        }
-        // Permanent customer: no changes to customer record
-      }
+      const customerWarning = await applyCustomerDisposition();
 
       if (withWhatsApp && appt.customer?.phone) {
         const services = appt.items?.map((it) => it.service?.name).filter(Boolean).join(", ") || "Servicios de belleza";
@@ -97,8 +108,12 @@ export function CancelAppointmentDialog({
         window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank", "noopener,noreferrer");
       }
 
-      onClose();
       router.refresh();
+      if (customerWarning) {
+        setWarning(customerWarning);
+        return;
+      }
+      onClose();
     });
   }
 
@@ -109,6 +124,7 @@ export function CancelAppointmentDialog({
       title="Cancelar cita"
       description={`Confirma la cancelación de la cita de ${customerName}.`}
       className="max-w-md"
+      dismissible={!pending}
     >
       <div className="space-y-5">
         {/* Only show customer disposition when the customer was created just for this appointment */}
@@ -185,6 +201,17 @@ export function CancelAppointmentDialog({
           </div>
         )}
 
+        {warning && (
+          <div role="status" className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+            {warning}
+          </div>
+        )}
+
+        {warning ? (
+          <Button variant="ghost" className="w-full" onClick={onClose}>
+            Cerrar
+          </Button>
+        ) : (
         <div className="flex flex-col gap-2">
           {appt.customer?.phone && (
             <Button
@@ -206,6 +233,7 @@ export function CancelAppointmentDialog({
             </Button>
           </div>
         </div>
+        )}
       </div>
     </Dialog>
   );

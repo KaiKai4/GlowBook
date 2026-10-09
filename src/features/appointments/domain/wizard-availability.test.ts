@@ -137,6 +137,7 @@ describe("appointment wizard availability", () => {
       rows: rows.reverse(),
       date: "2026-05-28",
       time: "10:00",
+      timeZone: "America/Panama",
       serviceMap,
     });
 

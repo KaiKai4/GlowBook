@@ -8,7 +8,17 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TimePicker } from "@/components/ui/time-picker";
-import { formatCurrency, formatLocalDateISO, formatTimeTz } from "@/lib/utils/dates";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import {
+  formatCurrency,
+  formatLocalDateISO,
+  formatTimeTz,
+  zonedWallTimeToUtc,
+} from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
 import {
   CalendarDays,
@@ -60,6 +70,7 @@ export function AppointmentEditForm({
   businessHours,
 }: Props) {
   const router = useRouter();
+  const toast = useToast();
   const initialStart = appointment.start_time ? new Date(appointment.start_time) : new Date();
   const serviceMap = useMemo(
     () => new Map(services.map((service) => [service.id, service])),
@@ -86,6 +97,10 @@ export function AppointmentEditForm({
   const [submitting, startSubmit] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
+  const { submit: submitIntent } = useSubmissionIntent({
+    procedure: "appointments.update-schedule",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
 
   useEffect(() => {
     if (!date) return;
@@ -101,8 +116,8 @@ export function AppointmentEditForm({
   );
 
   const schedule = useMemo(
-    () => buildSequentialSchedule({ rows, date, time, serviceMap }),
-    [rows, date, time, serviceMap]
+    () => buildSequentialSchedule({ rows, date, time, timeZone: salonConfig.timezone, serviceMap }),
+    [rows, date, time, salonConfig.timezone, serviceMap]
   );
 
   const isClosedDay = !!date && selectedWindow === null;
@@ -159,20 +174,24 @@ export function AppointmentEditForm({
     setSubmitError(null);
 
     startSubmit(async () => {
-      const base = new Date(`${date}T${time}:00`);
-      const formData = new FormData();
-      formData.set("appointment_id", appointment.id);
-      formData.set("start_time", base.toISOString());
-      formData.set("notes", notes);
-      formData.set(
-        "assignments",
-        JSON.stringify(rows.map((row) => ({
-          service_id: row.serviceId,
-          employee_id: row.employeeId,
-        })))
-      );
+      const startTime = zonedWallTimeToUtc(date, time, appointment.timezone).toISOString();
+      const assignments = JSON.stringify(rows.map((row) => ({
+        service_id: row.serviceId,
+        employee_id: row.employeeId,
+      })));
 
-      const result = await updateAppointmentScheduleAction(null, formData);
+      const result = await submitIntent(
+        { appointment_id: appointment.id, start_time: startTime, notes, assignments },
+        (idempotencyKey) => {
+          const formData = new FormData();
+          formData.set("idempotency_key", idempotencyKey);
+          formData.set("appointment_id", appointment.id);
+          formData.set("start_time", startTime);
+          formData.set("notes", notes);
+          formData.set("assignments", assignments);
+          return updateAppointmentScheduleAction(null, formData);
+        }
+      );
       if (!result.ok) {
         setSubmitError(result.error);
         return;
