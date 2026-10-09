@@ -23,6 +23,7 @@ export function EmployeeCreateDialog({
   roles,
 }: EmployeeCreateDialogProps) {
   const [inviteResult, setInviteResult] = useState<CreateEmployeeResult | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const inviteUrl = inviteResult?.inviteToken
     ? (typeof window !== "undefined" ? `${window.location.origin}/join/${inviteResult.inviteToken}` : "")
@@ -40,6 +41,7 @@ export function EmployeeCreateDialog({
       title={inviteResult ? "Colaborador creado" : "Nuevo colaborador"}
       description={inviteResult ? undefined : "Elige las categorías y los servicios que realiza."}
       className="max-w-lg"
+      dismissible={!busy}
     >
       {inviteResult ? (
         <div className="space-y-5">
@@ -68,6 +70,7 @@ export function EmployeeCreateDialog({
           roles={roles}
           onCreated={closeDialog}
           onCreatedWithInvite={setInviteResult}
+          onBusyChange={setBusy}
         />
       )}
     </Dialog>

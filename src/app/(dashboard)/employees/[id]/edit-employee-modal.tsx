@@ -6,6 +6,12 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserPen } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import { updateEmployeeAction } from "../actions";
 import { CategoryServicePicker } from "../category-service-picker";
 import type { CategoryOption } from "../types";
@@ -45,6 +51,11 @@ export function EditEmployeeModal({
   const [serviceIds, setServiceIds] = useState<string[]>(selectedServiceIds);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const { submit } = useSubmissionIntent({
+    procedure: "employees.update",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
 
   function reset() {
     setFirstName(employee.first_name);
@@ -82,7 +93,9 @@ export function EditEmployeeModal({
 
     setError(null);
     startTransition(async () => {
-      const res = await updateEmployeeAction(employee.id, null, fd);
+      const res = await submit(formDataEntries(fd), (idempotencyKey) =>
+        updateEmployeeAction(employee.id, null, withIdempotencyKey(fd, idempotencyKey))
+      );
       if (res.ok) {
         setOpen(false);
         router.refresh();
@@ -99,7 +112,7 @@ export function EditEmployeeModal({
         Editar datos
       </Button>
 
-      <Dialog open={open} onClose={handleClose} title="Editar colaborador" description="Actualiza datos, categorías y servicios." className="max-w-2xl">
+      <Dialog open={open} onClose={handleClose} title="Editar colaborador" description="Actualiza datos, categorías y servicios." className="max-w-2xl" dismissible={!pending}>
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <Input label="Nombre" value={firstName} onChange={(e) => { setFirstName(e.target.value); setError(null); }} autoFocus />

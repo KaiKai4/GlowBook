@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { completeAppointmentAction } from "@/app/(dashboard)/appointments/actions";
 import { formatCurrency } from "@/lib/utils/dates";
+import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
+import { flushAsync } from "@/test/ui-shared-dom";
 import { PAYMENT_OPTIONS } from "@/test/ui-appointments-fixtures";
 import {
   buttonWithText,
@@ -63,6 +65,56 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+describe("CompleteAppointmentDialog con cobro en curso", () => {
+  let mounted: MountedComponent | null = null;
+
+  beforeEach(() => {
+    vi.mocked(completeAppointmentAction).mockReset();
+  });
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.innerHTML = "";
+  });
+
+  it("no se puede cerrar con Escape ni la X mientras el cobro está en curso", async () => {
+    let release: (value: Awaited<ReturnType<typeof completeAppointmentAction>>) => void = () => {};
+    vi.mocked(completeAppointmentAction).mockReturnValue(
+      new Promise((done) => {
+        release = done;
+      })
+    );
+    const onClose = vi.fn();
+    mounted = mountComponent(
+      <ToastProvider>
+        <CompleteAppointmentDialog
+          appt={APPT}
+          open
+          onClose={onClose}
+          paymentMethodOptions={PAYMENT_OPTIONS}
+        />
+      </ToastProvider>
+    );
+
+    click(buttonWithText(mounted.container, "Cobrar y completar"));
+    for (let i = 0; i < 5; i += 1) await flushAsync();
+    expect(completeAppointmentAction).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+    const closeButton = mounted.container.querySelector<HTMLButtonElement>("button[aria-label='Cerrar']");
+    expect(closeButton?.disabled).toBe(true);
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => {
+      release({ ok: false, error: "La cita ya está cerrada." });
+    });
+    for (let i = 0; i < 5; i += 1) await flushAsync();
+  });
+});
+
 describe("CompleteAppointmentDialog", () => {
   let mounted: MountedComponent | null = null;
   let matchMediaDescriptor: PropertyDescriptor | undefined;
@@ -95,12 +147,14 @@ describe("CompleteAppointmentDialog", () => {
   ) {
     const onClose = vi.fn();
     mounted = mountComponent(
-      <CompleteAppointmentDialog
-        appt={props.appt ?? APPT}
-        open
-        onClose={onClose}
-        paymentMethodOptions={props.paymentMethodOptions ?? PAYMENT_OPTIONS}
-      />
+      <ToastProvider>
+        <CompleteAppointmentDialog
+          appt={props.appt ?? APPT}
+          open
+          onClose={onClose}
+          paymentMethodOptions={props.paymentMethodOptions ?? PAYMENT_OPTIONS}
+        />
+      </ToastProvider>
     );
     return { container: mounted.container, onClose };
   }
@@ -158,6 +212,7 @@ describe("CompleteAppointmentDialog", () => {
     setFieldValue(numberFields(container)[1]!, "10");
     setFieldValue(container.querySelector("textarea")!, "Promo de temporada");
     await clickAndSettle(buttonWithText(container, "Cobrar y completar"));
+    await flushAsync();
 
     expect(completeAppointmentAction).toHaveBeenCalledTimes(1);
     const [prevState, formData] = vi.mocked(completeAppointmentAction).mock.calls[0] ?? [];
@@ -182,6 +237,7 @@ describe("CompleteAppointmentDialog", () => {
     });
 
     await clickAndSettle(buttonWithText(container, "Cobrar y completar"));
+    await flushAsync();
 
     expect(vi.mocked(completeAppointmentAction).mock.calls[0]?.[1]?.get("payment_method")).toBe("transfer");
   });
@@ -197,6 +253,9 @@ describe("CompleteAppointmentDialog", () => {
     const { container, onClose } = render();
 
     await clickAndSettle(buttonWithText(container, "Cobrar y completar"));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
 
     expect(container.textContent).toContain("La cita ya está cerrada.");
     expect(buttonWithText(container, "Cobrar y completar").disabled).toBe(false);
@@ -242,6 +301,7 @@ describe("CompleteAppointmentDialog", () => {
 
     click(buttonWithText(container, "Cobrar y completar"));
     click(buttonWithText(container, "Cobrar y completar"));
+    await flushAsync();
 
     expect(completeAppointmentAction).toHaveBeenCalledTimes(1);
     expect(buttonWithText(container, "Cancelar").disabled).toBe(true);

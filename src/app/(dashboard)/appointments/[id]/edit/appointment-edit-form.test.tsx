@@ -7,6 +7,7 @@ import {
 } from "@/app/(dashboard)/appointments/actions";
 import type { AppointmentDetailViewModel } from "@/features/appointments/use-cases/get-appointment-detail";
 import { formatCurrency } from "@/lib/utils/dates";
+import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import {
   buildWizardProps,
@@ -76,14 +77,16 @@ function buildAppointment(overrides: Partial<AppointmentDetailViewModel> = {}): 
 function renderForm(appointment: AppointmentDetailViewModel = buildAppointment()) {
   const props = buildWizardProps();
   const mounted: MountedComponent = mountComponent(
-    <AppointmentEditForm
-      appointment={appointment}
-      categories={props.categories}
-      services={props.services}
-      employees={props.employees}
-      salonConfig={props.salonConfig}
-      businessHours={props.businessHours}
-    />
+    <ToastProvider>
+      <AppointmentEditForm
+        appointment={appointment}
+        categories={props.categories}
+        services={props.services}
+        employees={props.employees}
+        salonConfig={props.salonConfig}
+        businessHours={props.businessHours}
+      />
+    </ToastProvider>
   );
   return mounted;
 }

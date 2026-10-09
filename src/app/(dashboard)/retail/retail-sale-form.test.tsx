@@ -1,8 +1,21 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, findButtonByText, flushAsync, requireElement, setFieldValue, submitFormAsync } from "@/test/ui-shared-dom";
+import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
+import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
 import { createRetailSaleAction } from "./actions";
 import { RetailSaleForm } from "./retail-sale-form";
 
@@ -164,5 +177,41 @@ describe("RetailSaleForm", () => {
     await flushAsync();
 
     expect(onResult).toHaveBeenCalledWith({ ok: false, message: "Stock insuficiente" });
+  });
+
+  it("envía idempotency_key en el FormData y la mantiene al reintentar tras un error", async () => {
+    saleMock
+      .mockResolvedValueOnce({ ok: false, error: "Stock insuficiente" })
+      .mockResolvedValueOnce({ ok: true, value: "Venta registrada." });
+    mounted = mountComponent(
+      <RetailSaleForm retail={retailView([product({})])} onResult={vi.fn()} />
+    );
+    const form = requireElement<HTMLFormElement>(mounted.container, "form");
+
+    await submitFormAsync(form);
+    await settleSubmission();
+    await submitFormAsync(form);
+    await settleSubmission();
+
+    expect(saleMock).toHaveBeenCalledTimes(2);
+    const firstKey = idempotencyKeyOf(saleMock.mock.calls[0]?.[1]);
+    expect(firstKey).toMatch(UUID_PATTERN);
+    expect(idempotencyKeyOf(saleMock.mock.calls[1]?.[1])).toBe(firstKey);
+  });
+
+  it("avisa cuando la venta se guardó pero un efecto posterior falló", async () => {
+    saleMock.mockResolvedValueOnce({
+      ok: true,
+      value: "Venta registrada.",
+      warnings: ["No se actualizó el stock de vitrina."],
+    } as Awaited<ReturnType<typeof createRetailSaleAction>>);
+    mounted = mountComponent(
+      <RetailSaleForm retail={retailView([product({})])} onResult={vi.fn()} />
+    );
+
+    await submitFormAsync(requireElement<HTMLFormElement>(mounted.container, "form"));
+    await settleSubmission();
+
+    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
   });
 });

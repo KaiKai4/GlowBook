@@ -6,7 +6,13 @@ import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { SALON_TZ } from "@/test/ui-appointments-fixtures";
 import { buttonWithText, click, clickAndSettle } from "@/test/ui-appointments-dom";
+import { flushAsync } from "@/test/ui-shared-dom";
 import { AppointmentDetailDialog } from "./appointment-detail";
+
+// La clave de idempotencia se calcula con SHA-256 asíncrono antes de llamar a la acción.
+async function settleSubmission(): Promise<void> {
+  for (let i = 0; i < 5; i += 1) await flushAsync();
+}
 
 const toastApi = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }));
@@ -224,8 +230,13 @@ describe("AppointmentDetailDialog", () => {
     const { container, onClose } = render();
 
     await clickAndSettle(buttonWithText(container, "Confirmar"));
+    await settleSubmission();
 
-    expect(confirmAppointmentAction).toHaveBeenCalledWith("appt-1");
+    expect(confirmAppointmentAction).toHaveBeenCalledTimes(1);
+    const formData = vi.mocked(confirmAppointmentAction).mock.calls[0]?.[0];
+    expect(formData).toBeInstanceOf(FormData);
+    expect(formData?.get("appointment_id")).toBe("appt-1");
+    expect(String(formData?.get("idempotency_key"))).toMatch(/^[0-9a-f-]{36}$/);
     expect(toastApi.success).toHaveBeenCalledWith("Cita confirmada.");
     expect(router.refresh).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);

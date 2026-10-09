@@ -1,10 +1,64 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => toast,
+}));
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buttonWithText, click, fieldByName, flushAsync, setFieldValue, formOf, submitForm } from "@/test/ui-people-dom";
 import { createEmployeeAction } from "./actions";
 import { EmployeeCreateDialog } from "./employee-create-dialog";
 import type { CategoryOption, RoleOption } from "./types";
+import { act } from "react";
+import { settleSubmission } from "@/test/form-intent-dom";
+
+describe("EmployeeCreateDialog con alta en curso", () => {
+  let mounted: MountedComponent | null = null;
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.innerHTML = "";
+  });
+
+  it("no se puede cerrar con Escape, la X ni Cancelar mientras la alta está en curso", async () => {
+    let release: (value: Awaited<ReturnType<typeof createEmployeeAction>>) => void = () => {};
+    vi.mocked(createEmployeeAction).mockReturnValue(
+      new Promise((done) => {
+        release = done;
+      })
+    );
+    const onOpenChange = vi.fn();
+    mounted = renderDialog(true, onOpenChange);
+    setFieldValue(fieldByName(mounted.container, "first_name"), "Marta");
+    setFieldValue(fieldByName(mounted.container, "last_name"), "Lima");
+
+    await submitForm(formOf(mounted.container));
+    await settleSubmission();
+    expect(createEmployeeAction).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+    const closeButton = mounted.container.querySelector<HTMLButtonElement>("button[aria-label='Cerrar']");
+    expect(closeButton?.disabled).toBe(true);
+    expect(buttonWithText(mounted.container, "Cancelar").disabled).toBe(true);
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    await act(async () => {
+      release({ ok: true, value: { id: "emp-new" } });
+    });
+    await settleSubmission();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+});
 
 const routerMock = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn(), push: vi.fn() }));
 

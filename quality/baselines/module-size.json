@@ -1,11 +1,9 @@
 {
   "scripts/seed-staging-pricing-benchmark-v2.mjs": 678,
   "scripts/seed-staging-pricing-study.mjs": 667,
-  "src/app/(dashboard)/appointments/[id]/edit/appointment-edit-form.tsx": 522,
+  "src/app/(dashboard)/appointments/[id]/edit/appointment-edit-form.tsx": 419,
   "src/app/(dashboard)/appointments/appointments-calendar.tsx": 372,
-  "src/app/(dashboard)/appointments/appointments-day-view.tsx": 372,
-  "src/app/(dashboard)/appointments/dialogs/complete-appointment.tsx": 360,
-  "src/app/(dashboard)/appointments/new/appointment-wizard.tsx": 303,
+  "src/app/(dashboard)/appointments/appointments-day-view.tsx": 368,
   "src/app/(dashboard)/page.tsx": 324,
   "src/app/(dashboard)/recordatorios/reminders-view.tsx": 497,
   "src/app/(dashboard)/reports/report-charts.tsx": 382,

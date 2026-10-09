@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { BadgeDollarSign, CalendarClock, CreditCard, Gift, Gauge, History } from "lucide-react";
-
+import { useIntentFormAction } from "@/components/forms/use-intent-form-action";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -135,7 +135,7 @@ function PlanTab({ detail, plans }: { detail: SalonSubscriptionDetail; plans: Co
 }
 
 function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDetail }) {
-  const [state, action] = useActionState(registerPaymentAction, PLATFORM_PLAN_IDLE_STATE);
+  const [state, action] = useIntentFormAction("platform.register-payment", registerPaymentAction, PLATFORM_PLAN_IDLE_STATE);
   const period = detail.assignment?.currentPeriodStart && detail.assignment.currentPeriodEnd
     ? `${formatDate(detail.assignment.currentPeriodStart)} — ${formatDate(detail.assignment.currentPeriodEnd)}`
     : null;

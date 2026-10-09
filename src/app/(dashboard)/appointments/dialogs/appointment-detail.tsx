@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
 import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
 import {
   CheckCheck,
@@ -75,6 +76,7 @@ export function AppointmentDetailDialog({
   const router = useRouter();
   const toast = useToast();
   const [confirming, startConfirm] = useTransition();
+  const { submit } = useSubmissionIntent({ procedure: "appointments.confirm" });
 
   const customerName = appt.customer
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
@@ -88,7 +90,12 @@ export function AppointmentDetailDialog({
 
   function handleConfirm() {
     startConfirm(async () => {
-      const res = await confirmAppointmentAction(appt.id);
+      const res = await submit({ appointment_id: appt.id }, (idempotencyKey) => {
+        const fd = new FormData();
+        fd.set("idempotency_key", idempotencyKey);
+        fd.set("appointment_id", appt.id);
+        return confirmAppointmentAction(fd);
+      });
       if (res.ok) {
         toast.success("Cita confirmada.");
         router.refresh();
@@ -100,7 +107,13 @@ export function AppointmentDetailDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Detalles de la cita" className="max-w-md">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Detalles de la cita"
+      className="max-w-md"
+      dismissible={!confirming}
+    >
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appt.status] ?? ""}`}>

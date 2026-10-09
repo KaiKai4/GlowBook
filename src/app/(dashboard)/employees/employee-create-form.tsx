@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import {
   createEmployeeAction,
   findArchivedEmployeeByEmailAction,
@@ -23,6 +29,8 @@ interface EmployeeCreateFormProps {
   roles: RoleOption[];
   onCreated: () => void;
   onCreatedWithInvite: (result: CreateEmployeeResult) => void;
+  // Lets the parent dialog block Escape/overlay/X while the create request is in flight.
+  onBusyChange?: (busy: boolean) => void;
 }
 
 export function EmployeeCreateForm({
@@ -30,9 +38,15 @@ export function EmployeeCreateForm({
   roles,
   onCreated,
   onCreatedWithInvite,
+  onBusyChange,
 }: EmployeeCreateFormProps) {
   const router = useRouter();
+  const toast = useToast();
   const [pending, startTransition] = useTransition();
+  const { submit } = useSubmissionIntent({
+    procedure: "employees.create",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
   const [error, setError] = useState<string | null>(null);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -40,10 +54,16 @@ export function EmployeeCreateForm({
   const [archivedMatch, setArchivedMatch] = useState<ArchivedEmployeeMatch | null>(null);
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    onBusyChange?.(pending);
+  }, [pending, onBusyChange]);
+
   function handleCreate(formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const res: Result<CreateEmployeeResult> = await createEmployeeAction(null, formData);
+      const res: Result<CreateEmployeeResult> = await submit(formDataEntries(formData), (idempotencyKey) =>
+        createEmployeeAction(null, withIdempotencyKey(formData, idempotencyKey))
+      );
       if (res.ok) {
         if (res.value.inviteToken) onCreatedWithInvite(res.value);
         else onCreated();
@@ -149,7 +169,7 @@ export function EmployeeCreateForm({
       )}
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onCreated}>
+        <Button type="button" variant="ghost" disabled={pending} onClick={onCreated}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" loading={pending} disabled={!!archivedMatch}>

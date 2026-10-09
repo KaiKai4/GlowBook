@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { InventoryProductOption } from "@/features/inventory/use-cases/inventory-product-options";
+import { useToast } from "@/components/ui/toast";
+import {
+  SAVED_WITH_WARNINGS_MESSAGE,
+  useSubmissionIntent,
+} from "@/components/forms/use-submission-intent";
+import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
 import { formatCurrency } from "@/lib/utils/dates";
 import { createInventoryPurchaseExpenseAction } from "./actions";
 
@@ -25,11 +31,18 @@ export function InventoryPurchaseExpenseForm({
   const [purchaseQuantity, setPurchaseQuantity] = useState("");
   const [purchaseUnitCost, setPurchaseUnitCost] = useState("");
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const { submit } = useSubmissionIntent({
+    procedure: "expenses.inventory-purchase",
+    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
+  });
   const purchasePreview = Number(purchaseQuantity || 0) * Number(purchaseUnitCost || 0);
 
   function handleCreateInventoryPurchase(formData: FormData) {
     startTransition(async () => {
-      const result = await createInventoryPurchaseExpenseAction(null, formData);
+      const result = await submit(formDataEntries(formData), (idempotencyKey) =>
+        createInventoryPurchaseExpenseAction(null, withIdempotencyKey(formData, idempotencyKey))
+      );
       onResult({
         ok: result.ok,
         message: result.ok ? result.value : result.error,

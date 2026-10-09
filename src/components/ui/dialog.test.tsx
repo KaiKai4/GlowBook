@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { act } from "react";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, pressKey } from "@/test/ui-shared-dom";
 import { Dialog } from "./dialog";
@@ -130,5 +131,64 @@ describe("Dialog", () => {
     // twMerge resuelve el conflicto de ancho máximo a favor de className.
     expect(dialogElement().className).not.toContain("max-w-md");
     expect(dialogElement().className).toContain("rounded-2xl");
+  });
+});
+
+describe("Dialog dismissible", () => {
+  let mounted: MountedComponent | null = null;
+
+  afterEach(() => {
+    mounted?.unmount();
+    mounted = null;
+    document.body.style.overflow = "";
+  });
+
+  function pressEscape() {
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+  }
+
+  function overlayElement(): HTMLElement {
+    const overlay = document.querySelector<HTMLElement>("[aria-hidden]");
+    if (!overlay) throw new Error("No hay overlay");
+    return overlay;
+  }
+
+  function closeButton(): HTMLButtonElement {
+    const button = document.querySelector<HTMLButtonElement>("button[aria-label='Cerrar']");
+    if (!button) throw new Error("No hay botón de cierre");
+    return button;
+  }
+
+  it("ignora Escape, clic fuera y la X mientras no es cerrable", () => {
+    const onClose = vi.fn();
+    mounted = mountComponent(
+      <Dialog open onClose={onClose} title="Confirmar" dismissible={false}>
+        <p>contenido</p>
+      </Dialog>
+    );
+
+    pressEscape();
+    clickElement(overlayElement());
+    expect(closeButton().disabled).toBe(true);
+    clickElement(closeButton());
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("cierra con Escape, clic fuera y la X por defecto", () => {
+    const onClose = vi.fn();
+    mounted = mountComponent(
+      <Dialog open onClose={onClose} title="Confirmar">
+        <p>contenido</p>
+      </Dialog>
+    );
+
+    pressEscape();
+    clickElement(overlayElement());
+    clickElement(closeButton());
+
+    expect(onClose).toHaveBeenCalledTimes(3);
   });
 });
