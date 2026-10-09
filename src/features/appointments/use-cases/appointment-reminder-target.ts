@@ -8,9 +8,10 @@ export interface AppointmentReminderTarget {
 }
 
 export async function getAppointmentReminderTarget(
-  appointmentId: string
+  appointmentId: string,
+  salonId: string
 ): Promise<AppointmentReminderTarget | null> {
-  const appointment = await findAppointmentById(appointmentId);
+  const appointment = await findAppointmentById(appointmentId, salonId);
   if (!appointment) return null;
 
   return {

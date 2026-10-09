@@ -2,8 +2,8 @@ import { toPublicErrorMessage } from "@/lib/errors";
 import "server-only";
 import { cache } from "react";
 import { z } from "@/lib/validation/zod";
-
 import { err, ok, type Result } from "@/lib/result";
+import { readEffectivePlanOrNull } from "./effective-plan-fallback";
 import { getDisabledSalonFeatures } from "@/lib/auth/permissions";
 import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
@@ -210,7 +210,7 @@ export async function getEffectiveDisabledSalonFeatures(
   profile: ProfileWithRole
 ): Promise<SalonFeatureKey[]> {
   const legacyDisabledFeatures = getDisabledSalonFeatures(profile);
-  const effectivePlan = await getEffectiveSalonPlan(profile.salon_id).catch(() => null);
+  const effectivePlan = await readEffectivePlanOrNull(profile.salon_id, "disabled-features", getEffectiveSalonPlan);
   if (effectivePlan?.plan) return effectivePlan.disabledModules;
   return legacyDisabledFeatures;
 }
@@ -219,7 +219,7 @@ export async function isEffectiveSalonModuleEnabled(
   profile: ProfileWithRole,
   moduleKey: SalonFeatureKey
 ): Promise<boolean> {
-  const effectivePlan = await getEffectiveSalonPlan(profile.salon_id).catch(() => null);
+  const effectivePlan = await readEffectivePlanOrNull(profile.salon_id, "module-enabled", getEffectiveSalonPlan);
   if (effectivePlan?.plan) return effectivePlan.enabledModules.includes(moduleKey);
   return !getDisabledSalonFeatures(profile).includes(moduleKey);
 }

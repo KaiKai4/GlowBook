@@ -11,7 +11,7 @@ export async function recordManualReminder(input: {
   templateId?: string;
   userId: string;
 }): Promise<Result<string>> {
-  const appointment = await getAppointmentReminderTarget(input.appointmentId);
+  const appointment = await getAppointmentReminderTarget(input.appointmentId, input.salonId);
 
   if (!appointment || appointment.salonId !== input.salonId) {
     return { ok: false, error: "Cita no encontrada." };

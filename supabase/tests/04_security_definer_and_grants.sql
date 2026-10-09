@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  11,
-  'authenticated tiene EXECUTE exactamente en 11 funciones de public'
+  28,
+  'authenticated tiene EXECUTE exactamente en 28 funciones de public (14 previas + 14 de lectura de la fase 5)'
 );
 
 select ok(
@@ -90,14 +90,31 @@ select ok(
       'public.is_platform_admin()',
       'public.create_appointment(jsonb)',
       'public.update_appointment(jsonb)',
+      'public.complete_appointment(jsonb)',
+      'public.cancel_appointment(jsonb)',
+      'public.mark_no_show(jsonb)',
       'public.invite_salon(text)',
-      'public.record_retail_sale(uuid,uuid,uuid,text,numeric,numeric,text,text)',
-      'public.record_inventory_transfer(uuid,uuid,text,text,numeric,text)',
-      'public.record_inventory_purchase(uuid,text,date,uuid,numeric,numeric,text)',
-      'public.report_monthly_history(uuid,timestamptz,timestamptz,text)'
+      'public.record_retail_sale(uuid,uuid,uuid,text,numeric,numeric,text,text,uuid)',
+      'public.record_inventory_transfer(uuid,uuid,text,text,numeric,text,uuid)',
+      'public.record_inventory_purchase(uuid,text,date,uuid,numeric,numeric,text,uuid)',
+      'public.report_monthly_history(uuid,timestamptz,timestamptz,text)',
+      'public.report_day_start(date,text)',
+      'public.report_day_end(date,text)',
+      'public.report_completed_items(timestamptz,timestamptz)',
+      'public.report_dashboard_metrics(text,timestamptz)',
+      'public.report_dashboard_monthly_appointments(text,timestamptz)',
+      'public.report_dashboard_top_services(text,timestamptz)',
+      'public.report_period_totals(date,date,text,jsonb)',
+      'public.report_operational_breakdown(date,date,text)',
+      'public.report_commissions(date,date,text)',
+      'public.report_monthly_series(text,text,text,jsonb,timestamptz)',
+      'public.report_busy_hours(date,date,text)',
+      'public.report_expense_concepts(date,date,jsonb,boolean,integer)',
+      'public.report_product_sales(text,text,text,jsonb,integer)',
+      'public.report_inventory_alerts(jsonb)'
     ]) as sig
   ),
-  'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario'
+  'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita)'
 );
 
 -- (f3) service_role ejecuta exactamente la lista admin (+ consume_rate_limit)

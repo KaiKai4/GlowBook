@@ -190,5 +190,9 @@ try {
   console.error(JSON.stringify({ error: failure.message, code: failure.code ?? null }, null, 2));
   process.exitCode = 1;
 } finally {
-  await client.end().catch(() => {});
+  try {
+    await client.end();
+  } catch {
+    // La conexion pudo cerrarse ya tras el fallo: no bloquea el resultado de la medicion.
+  }
 }

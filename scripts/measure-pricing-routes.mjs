@@ -82,7 +82,11 @@ async function measureRoute(page, route) {
   const startedAt = Date.now();
   const response = await page.goto(route.path, { waitUntil: "domcontentloaded" });
   await page.locator("main, h1, h2").first().waitFor({ state: "visible", timeout: 20_000 });
-  await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => {});
+  try {
+    await page.waitForLoadState("networkidle", { timeout: 20_000 });
+  } catch {
+    // networkidle puede no alcanzarse en rutas con polling: la medicion continua con el DOM listo.
+  }
   const transferBytes = await routeTransferBytes(page);
 
   return {

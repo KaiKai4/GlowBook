@@ -2258,6 +2258,9 @@ export type Database = {
         }
         Returns: number
       }
+      cancel_appointment: { Args: { payload: Json }; Returns: Json }
+      complete_appointment: { Args: { payload: Json }; Returns: Json }
+      confirm_appointment: { Args: { payload: Json }; Returns: Json }
       consume_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: {
@@ -2294,6 +2297,7 @@ export type Database = {
       invite_salon: { Args: { p_email: string }; Returns: string }
       is_owner: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_platform_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      mark_no_show: { Args: { payload: Json }; Returns: Json }
       platform_salon_overviews: {
         Args: Record<PropertyKey, never>
         Returns: {

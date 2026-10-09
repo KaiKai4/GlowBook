@@ -42,8 +42,8 @@ describe("getAppointmentReminderTarget", () => {
   it("devuelve null cuando la cita no existe", async () => {
     mockedFind.mockResolvedValue(null);
 
-    expect(await getAppointmentReminderTarget(appointmentId)).toBeNull();
-    expect(mockedFind).toHaveBeenCalledWith(appointmentId);
+    expect(await getAppointmentReminderTarget(appointmentId, salonId)).toBeNull();
+    expect(mockedFind).toHaveBeenCalledWith(appointmentId, salonId);
   });
 
   it("entrega el salón y el teléfono del cliente para enviar el recordatorio", async () => {
@@ -58,7 +58,7 @@ describe("getAppointmentReminderTarget", () => {
       })
     );
 
-    expect(await getAppointmentReminderTarget(appointmentId)).toEqual({
+    expect(await getAppointmentReminderTarget(appointmentId, salonId)).toEqual({
       salonId,
       customerPhone: "+507 6000-0000",
     });
@@ -76,7 +76,7 @@ describe("getAppointmentReminderTarget", () => {
       })
     );
 
-    const target = await getAppointmentReminderTarget(appointmentId);
+    const target = await getAppointmentReminderTarget(appointmentId, salonId);
 
     expect(target).toEqual({ salonId, customerPhone: undefined });
     expect(target?.customerPhone).toBeUndefined();
@@ -85,7 +85,7 @@ describe("getAppointmentReminderTarget", () => {
   it("sin cliente asociado no inventa teléfono", async () => {
     mockedFind.mockResolvedValue(appointmentWithCustomer(null));
 
-    expect(await getAppointmentReminderTarget(appointmentId)).toEqual({
+    expect(await getAppointmentReminderTarget(appointmentId, salonId)).toEqual({
       salonId,
       customerPhone: undefined,
     });

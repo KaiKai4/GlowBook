@@ -9,14 +9,10 @@ import {
   createAppointmentWithRpc,
   findAppointmentCreationResources,
   findAppointmentForCommand,
-  findAppointmentItemsForPricing,
   findEmployeeExceptionDatesForCommand,
   findEmployeeOccupiedSlotsForCommand,
   findEmployeeWorkSchedulesForCommand,
   findOccupiedSlotsForSalonDate,
-  setAppointmentItemsCalendarBlocking,
-  updateAppointmentItemCharges,
-  updateAppointmentStatus,
   updateAppointmentWithRpc,
   type CreateAppointmentRpcPayload,
 } from "./appointment-commands.repo";
@@ -72,173 +68,6 @@ describe("comandos de cita: cabecera y estado", () => {
     await expect(findAppointmentForCommand(appointmentId, salonId)).rejects.toEqual(failure);
   });
 
-  it("actualiza solo el estado cuando no se piden cobros", async () => {
-    const double = createAppointmentsSupabaseDouble({ appointments: { data: null, error: null } });
-    useDouble(double);
-
-    await updateAppointmentStatus({ appointmentId, salonId, status: "confirmed" });
-
-    const calls = double.callsFor("appointments");
-    expect(calls).toContainEqual({ method: "update", args: [{ status: "confirmed" }] });
-    expect(calls).toContainEqual({ method: "eq", args: ["id", appointmentId] });
-    expect(calls).toContainEqual({ method: "eq", args: ["salon_id", salonId] });
-  });
-
-  it("al completar escribe método de pago, descuento, total y nota", async () => {
-    const double = createAppointmentsSupabaseDouble({ appointments: { data: null, error: null } });
-    useDouble(double);
-
-    await updateAppointmentStatus({
-      appointmentId,
-      salonId,
-      status: "completed",
-      paymentMethod: "card",
-      discountAmount: 0,
-      totalPrice: 47.5,
-      completionPriceNote: "Cortesía",
-    });
-
-    expect(double.callsFor("appointments")).toContainEqual({
-      method: "update",
-      args: [
-        {
-          status: "completed",
-          payment_method: "card",
-          discount_amount: 0,
-          total_price: 47.5,
-          completion_price_note: "Cortesía",
-        },
-      ],
-    });
-  });
-
-  it("propaga el error al escribir el estado", async () => {
-    useDouble(createAppointmentsSupabaseDouble({ appointments: { data: null, error: failure } }));
-
-    await expect(updateAppointmentStatus({ appointmentId, salonId, status: "cancelled" })).rejects.toEqual(
-      failure
-    );
-  });
-});
-
-describe("comandos de cita: ítems de cobro y agenda", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it("lee ítems de la cita con el modo de precio de su categoría", async () => {
-    const double = createAppointmentsSupabaseDouble({
-      appointment_items: {
-        data: [
-          { id: "item-1", price: "20", discount_amount: null, service: { category: { pricing_mode: "variable" } } },
-          { id: "item-2", price: 15, discount_amount: "2.5", service: [{ category: [{ pricing_mode: "fixed" }] }] },
-          { id: "item-3", price: null, discount_amount: null, service: null },
-          { id: "item-4", price: 5, discount_amount: 0, service: { category: { pricing_mode: "otro" } } },
-        ],
-        error: null,
-      },
-    });
-    useDouble(double);
-
-    const items = await findAppointmentItemsForPricing(appointmentId, salonId);
-
-    expect(items).toEqual([
-      { id: "item-1", price: 20, discount_amount: 0, pricing_mode: "variable" },
-      { id: "item-2", price: 15, discount_amount: 2.5, pricing_mode: "fixed" },
-      { id: "item-3", price: 0, discount_amount: 0, pricing_mode: "fixed" },
-      { id: "item-4", price: 5, discount_amount: 0, pricing_mode: "fixed" },
-    ]);
-    const calls = double.callsFor("appointment_items");
-    expect(calls).toContainEqual({ method: "eq", args: ["appointment_id", appointmentId] });
-    expect(calls).toContainEqual({ method: "eq", args: ["salon_id", salonId] });
-  });
-
-  it("sin ítems devuelve lista vacía", async () => {
-    useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: null } }));
-
-    expect(await findAppointmentItemsForPricing(appointmentId, salonId)).toEqual([]);
-  });
-
-  it("propaga el error al leer ítems para cobrar", async () => {
-    useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: failure } }));
-
-    await expect(findAppointmentItemsForPricing(appointmentId, salonId)).rejects.toEqual(failure);
-  });
-
-  it("guarda precio y descuento de cada cargo, siempre acotado a la cita y al salón", async () => {
-    const double = createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: null } });
-    useDouble(double);
-
-    await updateAppointmentItemCharges({
-      appointmentId,
-      salonId,
-      charges: [
-        { id: "item-1", price: 30, discountAmount: 3 },
-        { id: "item-2", price: 10, discountAmount: 0 },
-      ],
-    });
-
-    const calls = double.callsFor("appointment_items");
-    expect(calls.filter((call) => call.method === "update")).toEqual([
-      { method: "update", args: [{ price: 30, discount_amount: 3 }] },
-      { method: "update", args: [{ price: 10, discount_amount: 0 }] },
-    ]);
-    expect(calls.filter((call) => call.method === "eq")).toEqual([
-      { method: "eq", args: ["id", "item-1"] },
-      { method: "eq", args: ["appointment_id", appointmentId] },
-      { method: "eq", args: ["salon_id", salonId] },
-      { method: "eq", args: ["id", "item-2"] },
-      { method: "eq", args: ["appointment_id", appointmentId] },
-      { method: "eq", args: ["salon_id", salonId] },
-    ]);
-  });
-
-  it("sin cargos no escribe nada", async () => {
-    const double = createAppointmentsSupabaseDouble();
-    useDouble(double);
-
-    await updateAppointmentItemCharges({ appointmentId, salonId, charges: [] });
-
-    expect(double.from).not.toHaveBeenCalled();
-  });
-
-  it("si falla un cargo deja de escribir los siguientes", async () => {
-    const double = createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: failure } });
-    useDouble(double);
-
-    await expect(
-      updateAppointmentItemCharges({
-        appointmentId,
-        salonId,
-        charges: [
-          { id: "item-1", price: 30, discountAmount: 0 },
-          { id: "item-2", price: 10, discountAmount: 0 },
-        ],
-      })
-    ).rejects.toEqual(failure);
-    expect(double.from).toHaveBeenCalledTimes(1);
-  });
-
-  it("libera o bloquea la agenda de todos los ítems de la cita dentro del salón", async () => {
-    const double = createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: null } });
-    useDouble(double);
-
-    await setAppointmentItemsCalendarBlocking({ appointmentId, salonId, blocksCalendar: false });
-
-    expect(double.callsFor("appointment_items")).toEqual([
-      { method: "update", args: [{ blocks_calendar: false }] },
-      { method: "eq", args: ["appointment_id", appointmentId] },
-      { method: "eq", args: ["salon_id", salonId] },
-    ]);
-  });
-
-  it("propaga el error al cambiar la agenda", async () => {
-    useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: failure } }));
-
-    await expect(
-      setAppointmentItemsCalendarBlocking({ appointmentId, salonId, blocksCalendar: true })
-    ).rejects.toEqual(failure);
-  });
 });
 
 describe("comandos de cita: recursos para crear o reprogramar", () => {
@@ -511,13 +340,12 @@ describe("comandos de cita: disponibilidad del profesional", () => {
     });
   });
 
-  it("consulta citas bloqueantes del profesional en el día local del salón", async () => {
-    // CONDUCTA ACTUAL (posible bug): la consulta filtra solo por employee_id, sin salon_id
-    // explícito (defensa en profundidad pendiente; CLAUDE.md pide filtro explícito de salón).
+  it("consulta citas bloqueantes del profesional en el día local del salón, filtrando por salón", async () => {
     const double = createAppointmentsSupabaseDouble({ appointment_items: { data: [], error: null } });
     useDouble(double);
 
     await findEmployeeOccupiedSlotsForCommand({
+      salonId,
       employeeId: employeeA,
       date: new Date("2026-05-25T15:00:00.000Z"),
       timezone: "America/Panama",
@@ -525,6 +353,7 @@ describe("comandos de cita: disponibilidad del profesional", () => {
 
     expect(double.callsFor("appointment_items")).toEqual([
       { method: "select", args: ["start_time, end_time"] },
+      { method: "eq", args: ["salon_id", salonId] },
       { method: "eq", args: ["employee_id", employeeA] },
       { method: "eq", args: ["blocks_calendar", true] },
       { method: "gte", args: ["start_time", "2026-05-25T05:00:00.000Z"] },
@@ -537,6 +366,7 @@ describe("comandos de cita: disponibilidad del profesional", () => {
     useDouble(double);
 
     await findEmployeeOccupiedSlotsForCommand({
+      salonId,
       employeeId: employeeA,
       date: new Date("2026-05-25T15:00:00.000Z"),
       timezone: "America/Panama",
@@ -554,6 +384,7 @@ describe("comandos de cita: disponibilidad del profesional", () => {
     useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: blocks, error: null } }));
     expect(
       await findEmployeeOccupiedSlotsForCommand({
+        salonId,
         employeeId: employeeA,
         date: new Date("2026-05-25T15:00:00.000Z"),
         timezone: "America/Panama",
@@ -563,6 +394,7 @@ describe("comandos de cita: disponibilidad del profesional", () => {
     useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: failure } }));
     await expect(
       findEmployeeOccupiedSlotsForCommand({
+        salonId,
         employeeId: employeeA,
         date: new Date("2026-05-25T15:00:00.000Z"),
         timezone: "America/Panama",
@@ -698,6 +530,18 @@ describe("comandos de cita: agenda ocupada por día del salón", () => {
         { method: "lte", args: ["start_time", "2026-05-25T09:59:59.999Z"] },
       ])
     );
+  });
+
+  it("propaga el error al leer la zona horaria del salón en vez de ignorarlo", async () => {
+    useDouble(
+      createAppointmentsSupabaseDouble({
+        salons: { data: null, error: failure },
+        appointment_items: { data: [], error: null },
+        schedule_exceptions: { data: [], error: null },
+      })
+    );
+
+    await expect(findOccupiedSlotsForSalonDate(salonId, "2026-05-25")).rejects.toEqual(failure);
   });
 
   it("sin zona horaria del salón usa UTC", async () => {

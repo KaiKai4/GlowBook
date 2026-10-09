@@ -23,13 +23,6 @@ export interface AppointmentCommandState {
   customer_id: string | null;
 }
 
-export interface AppointmentItemPricingState {
-  id: string;
-  price: number;
-  discount_amount: number;
-  pricing_mode: "fixed" | "variable";
-}
-
 export interface AppointmentCreationAssignmentRequest {
   service_id: string;
   employee_id: string;
@@ -96,127 +89,6 @@ export async function findAppointmentForCommand(
 
   if (error) throw error;
   return data as AppointmentCommandState | null;
-}
-
-export async function updateAppointmentStatus({
-  appointmentId,
-  salonId,
-  status,
-  paymentMethod,
-  discountAmount,
-  totalPrice,
-  completionPriceNote,
-}: {
-  appointmentId: string;
-  salonId: string;
-  status: AppointmentStatus;
-  paymentMethod?: AppointmentPaymentMethod;
-  discountAmount?: number;
-  totalPrice?: number;
-  completionPriceNote?: string;
-}): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const update: Database["public"]["Tables"]["appointments"]["Update"] = {
-    status,
-  };
-
-  if (paymentMethod !== undefined) {
-    update.payment_method = paymentMethod;
-  }
-  if (discountAmount !== undefined) {
-    update.discount_amount = discountAmount;
-  }
-  if (totalPrice !== undefined) {
-    update.total_price = totalPrice;
-  }
-  if (completionPriceNote !== undefined) {
-    update.completion_price_note = completionPriceNote;
-  }
-
-  const { error } = await supabase
-    .from("appointments")
-    .update(update)
-    .eq("id", appointmentId)
-    .eq("salon_id", salonId);
-
-  if (error) throw error;
-}
-
-export async function findAppointmentItemsForPricing(
-  appointmentId: string,
-  salonId: string
-): Promise<AppointmentItemPricingState[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("appointment_items")
-    .select(`
-      id,
-      price,
-      discount_amount,
-      service:services(
-        category:service_categories(pricing_mode)
-      )
-    `)
-    .eq("appointment_id", appointmentId)
-    .eq("salon_id", salonId);
-
-  if (error) throw error;
-
-  return (data ?? []).map((item) => {
-    const service = Array.isArray(item.service) ? item.service[0] : item.service;
-    const category = Array.isArray(service?.category)
-      ? service?.category[0]
-      : service?.category;
-
-    return {
-      id: item.id,
-      price: Number(item.price ?? 0),
-      discount_amount: Number(item.discount_amount ?? 0),
-      pricing_mode: category?.pricing_mode === "variable" ? "variable" : "fixed",
-    };
-  });
-}
-
-export async function updateAppointmentItemCharges({
-  appointmentId,
-  salonId,
-  charges,
-}: {
-  appointmentId: string;
-  salonId: string;
-  charges: Array<{ id: string; price: number; discountAmount: number }>;
-}): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-
-  for (const item of charges) {
-    const { error } = await supabase
-      .from("appointment_items")
-      .update({ price: item.price, discount_amount: item.discountAmount })
-      .eq("id", item.id)
-      .eq("appointment_id", appointmentId)
-      .eq("salon_id", salonId);
-
-    if (error) throw error;
-  }
-}
-
-export async function setAppointmentItemsCalendarBlocking({
-  appointmentId,
-  salonId,
-  blocksCalendar,
-}: {
-  appointmentId: string;
-  salonId: string;
-  blocksCalendar: boolean;
-}): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("appointment_items")
-    .update({ blocks_calendar: blocksCalendar })
-    .eq("appointment_id", appointmentId)
-    .eq("salon_id", salonId);
-
-  if (error) throw error;
 }
 
 export async function findAppointmentCreationResources({
@@ -384,11 +256,13 @@ export async function findEmployeeExceptionDatesForCommand(
 }
 
 export async function findEmployeeOccupiedSlotsForCommand({
+  salonId,
   employeeId,
   date,
   timezone,
   excludeAppointmentId,
 }: {
+  salonId: string;
   employeeId: string;
   date: Date;
   timezone: string;
@@ -400,6 +274,7 @@ export async function findEmployeeOccupiedSlotsForCommand({
   let query = supabase
     .from("appointment_items")
     .select("start_time, end_time")
+    .eq("salon_id", salonId)
     .eq("employee_id", employeeId)
     .eq("blocks_calendar", true)
     .gte("start_time", start.toISOString())
@@ -450,11 +325,13 @@ export async function findOccupiedSlotsForSalonDate(
   excludeAppointmentId?: string
 ): Promise<OccupiedByEmployee> {
   const supabase = await createSupabaseServerClient();
-  const { data: salonData } = await supabase
+  const { data: salonData, error: salonError } = await supabase
     .from("salons")
     .select("timezone")
     .eq("id", salonId)
     .single();
+
+  if (salonError) throw salonError;
 
   const timezone = salonData?.timezone ?? "UTC";
 

@@ -11,13 +11,28 @@ const EVAL_RULES = {
 
 const ZOD_MESSAGE = "Importa Zod desde '@/lib/validation/zod' (adaptador unico, jitless).";
 
-const DYNAMIC_REGEXP_RULE = [
+const SWALLOWED_CATCH_MESSAGE =
+  "Un .catch que no registra el error oculta fallos. Usa try/catch con captureError o runSideEffect (src/lib/effects/run-side-effect.ts).";
+
+// Handlers de .catch vacios o que solo devuelven null/undefined.
+const SWALLOWED_CATCH_SELECTORS = [
+  "CallExpression[callee.property.name='catch'] > :matches(ArrowFunctionExpression, FunctionExpression)[body.type='BlockStatement'][body.body.length=0]",
+  "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='Literal'][body.raw='null']",
+  "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='Identifier'][body.name='undefined']",
+  "CallExpression[callee.property.name='catch'] > :matches(ArrowFunctionExpression, FunctionExpression) > BlockStatement > ReturnStatement[argument.raw='null']",
+];
+
+const RESTRICTED_SYNTAX = [
   "error",
   {
     selector: "NewExpression[callee.name='RegExp'][arguments.0.type!='Literal']",
     message:
       "RegExp construida dinamicamente: riesgo de ReDoS. Usa un literal o una validacion sin regex dinamica.",
   },
+  ...SWALLOWED_CATCH_SELECTORS.map((selector) => ({
+    selector,
+    message: SWALLOWED_CATCH_MESSAGE,
+  })),
 ];
 
 const eslintConfig = defineConfig([
@@ -31,7 +46,7 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "react/no-danger": "error",
-      "no-restricted-syntax": DYNAMIC_REGEXP_RULE,
+      "no-restricted-syntax": RESTRICTED_SYNTAX,
       // Zod se importa solo a traves del adaptador (src/lib/validation/zod.ts),
       // que desactiva la compilacion JIT (sin eval en runtime).
       "no-restricted-imports": [
@@ -52,7 +67,7 @@ const eslintConfig = defineConfig([
   {
     files: ["scripts/**/*.{js,mjs,cjs,ts}"],
     rules: {
-      "no-restricted-syntax": DYNAMIC_REGEXP_RULE,
+      "no-restricted-syntax": RESTRICTED_SYNTAX,
       // Los scripts usan execFile/spawn con argumentos separados. exec/execSync
       // interpretan el comando en una shell y se prohiben.
       "no-restricted-imports": [

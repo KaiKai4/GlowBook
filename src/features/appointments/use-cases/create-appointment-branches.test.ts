@@ -140,6 +140,7 @@ describe("createAppointment: payload del RPC", () => {
     expect(mockedSchedules).toHaveBeenCalledWith(employeeA);
     expect(mockedExceptions).toHaveBeenCalledWith(employeeA);
     expect(mockedOccupied).toHaveBeenCalledWith({
+      salonId,
       employeeId: employeeA,
       date: new Date(startIso),
       timezone: "America/Panama",

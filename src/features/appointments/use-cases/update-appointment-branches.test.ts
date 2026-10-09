@@ -121,6 +121,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
       assignments: [{ service_id: serviceId, employee_id: employeeId }],
     });
     expect(mockedOccupied).toHaveBeenCalledWith({
+      salonId,
       employeeId,
       date: new Date(startIso),
       timezone: "America/Panama",
