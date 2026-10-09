@@ -100,7 +100,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fbf8ff_0%,#ffffff_48%,#f8fafc_100%)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-auth-backdrop px-4 py-10">
       <div className="w-full max-w-[420px]">
         <GlowBookBrand markSize="lg" className="mb-7" />
 
@@ -108,7 +108,7 @@ export default function LoginPage() {
           <JoinedBanner />
         </Suspense>
 
-        <div className="rounded-2xl border border-brand-100 bg-surface p-7 shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]">
+        <div className="rounded-2xl border border-brand-100 bg-surface p-7 shadow-auth-card">
           <div className="mb-6">
             <h2 className="text-xl font-semibold tracking-tight text-fg-strong">Iniciar sesión</h2>
             <p className="mt-1 text-sm text-fg-subtle">Accede al panel de tu salón.</p>
@@ -170,7 +170,7 @@ export default function LoginPage() {
               type="submit"
               variant="primary"
               size="lg"
-              className="mt-2 w-full shadow-[0_10px_24px_rgba(124,58,237,0.28)]"
+              className="mt-2 w-full shadow-brand"
               loading={isPending}
             >
               Iniciar sesión

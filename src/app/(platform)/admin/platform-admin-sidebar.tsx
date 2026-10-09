@@ -35,7 +35,7 @@ export function PlatformAdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-brand-100 bg-surface shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-brand-100 bg-surface shadow-sidebar">
       <div className="border-b border-brand-50 px-5 py-5">
         <div className="flex flex-col items-center gap-1.5 text-center">
           <GlowBookBrand markSize="sm" align="center" />

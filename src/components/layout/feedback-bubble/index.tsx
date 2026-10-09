@@ -227,7 +227,7 @@ export function FeedbackBubble({
         }}
         style={{ left: position.left, top: position.top }}
         className={cn(
-          "fixed z-50 flex h-14 w-14 touch-none cursor-grab items-center justify-center rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.22)] transition-[background-color,color,box-shadow,transform] active:cursor-grabbing hover:scale-105",
+          "fixed z-50 flex h-14 w-14 touch-none cursor-grab items-center justify-center rounded-full shadow-floating transition-[background-color,color,box-shadow,transform] active:cursor-grabbing hover:scale-105",
           open ? "bg-fg-secondary text-surface" : "bg-brand-600 text-surface hover:bg-brand-700"
         )}
         aria-label="Reportar a soporte"
