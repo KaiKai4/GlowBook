@@ -154,8 +154,8 @@ export function AppointmentServicesStep({
                   className={cn(
                     "rounded-xl border bg-surface p-4 transition-all",
                     dragIndex === index
-                      ? "border-brand-400 shadow-[0_0_0_2px_rgba(124,58,237,0.15)]"
-                      : "border-brand-100 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
+                      ? "border-brand-400 shadow-focus"
+                      : "border-brand-100 shadow-hairline"
                   )}
                 >
                   <div className="flex items-center justify-between mb-3">

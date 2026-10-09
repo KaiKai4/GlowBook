@@ -184,7 +184,7 @@ export function CancelAppointmentDialog({
               >
                 <div className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                  saveChoice === "discard" ? "border-amber-500 bg-amber-500" : "border-border-strong"
+                  saveChoice === "discard" ? "border-warning bg-warning" : "border-border-strong"
                 )}>
                   {saveChoice === "discard" && <div className="h-1.5 w-1.5 rounded-full bg-surface" />}
                 </div>
@@ -223,7 +223,7 @@ export function CancelAppointmentDialog({
           {appt.customer?.phone && (
             <Button
               variant="outline"
-              className="w-full border-green-200 text-green-700 hover:bg-green-50"
+              className="w-full border-success-border text-success-fg hover:bg-success-subtle"
               loading={pending}
               onClick={() => handleCancel(true)}
             >

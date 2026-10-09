@@ -20,6 +20,7 @@ export function AppointmentStepper({
         return (
           <div
             key={label}
+            aria-current={active ? "step" : undefined}
             className={cn("flex items-center", index < steps.length - 1 && "flex-1")}
           >
             <div className="flex items-center gap-2.5 shrink-0">
@@ -29,11 +30,18 @@ export function AppointmentStepper({
                   done
                     ? "bg-success text-surface shadow-sm"
                     : active
-                      ? "bg-brand-600 text-surface shadow-[0_0_0_4px_rgba(124,58,237,0.15)]"
+                      ? "bg-brand-600 text-surface shadow-focus-lg"
                       : "bg-surface-sunken text-fg-muted"
                 )}
               >
-                {done ? <Check className="h-4 w-4" /> : stepNumber}
+                {done ? (
+                  <>
+                    <Check className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only">Completado</span>
+                  </>
+                ) : (
+                  stepNumber
+                )}
               </div>
               <div>
                 <p
