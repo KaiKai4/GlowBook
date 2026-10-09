@@ -1,4 +1,4 @@
-// Lectura de clases Tailwind dentro de fuentes .ts/.tsx para el trinquete de tokens.
+// Lectura de clases Tailwind dentro de fuentes .ts/.tsx para el control de tokens.
 // Lo usa check-design-tokens.mjs; separado para mantener cada script bajo el límite de líneas.
 
 // Atributo className con valor entre comillas o entre llaves (aproximación: no lee template literals anidadas).

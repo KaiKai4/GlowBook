@@ -18,7 +18,8 @@ La comprobación `docs-links` (`scripts/quality/check-doc-links.mjs`) verifica q
 | Documento | Para qué sirve |
 |---|---|
 | `docs/development-guide.md` | Flujo diario: entorno, BD local, migraciones, estructura de módulos, pruebas, commits y PR. |
-| `docs/quality-guide.md` | Verificador: cada paso, trinquetes y su estado, y cómo añadir un control. |
+| `docs/quality-guide.md` | Verificador: cada paso, trinquetes y controles absolutos, y cómo añadir un control. |
+| `docs/code-map/modules.mmd` | Mapa de código por módulo (Mermaid, agrupado por capa). Generado desde el grafo de dependencias; `graph.json` tiene los mismos datos. Regenerar con `node scripts/quality/code-map.mjs`. |
 | `docs/testing.md` | Pruebas por tipo, BD local y paridad de CI en detalle. |
 | `docs/production-standard.md` | Workflows de CI, release, sintéticos y nightly; observabilidad y operación. |
 | `docs/security.md` | Detalle técnico de cabeceras, CSP, errores públicos, observabilidad, rate limit y auditoría. |
@@ -57,6 +58,7 @@ Procedimientos paso a paso en `docs/runbooks/`:
 - `docs/adr/0009-modular-monolith-feature-architecture.md`: estructura del monolito modular.
 - `docs/adr/0010-server-only-admin-adapter-exceptions.md`: excepciones de `service_role` y Auth Admin.
 - `docs/adr/0011-verificador-local-igual-ci.md` a `docs/adr/0018-errores-publicos-tipados.md`: calidad, BD de pruebas, migraciones, rate limit y errores públicos.
+- `docs/adr/0019-arquitectura-por-capas-verificada.md`: capas, reglas por patrón, composition root, índices públicos y controles absolutos sin baseline. Supera parcialmente a 0009, 0010 y 0013.
 
 ## Verificacion
 

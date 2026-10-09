@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada.
+Aceptada, con partes superadas por ADR 0019 (reglas de capas y verificación: ahora por `dependency-cruiser` por patrón, con índices públicos y composition root obligatorios).
 
 ## Contexto
 

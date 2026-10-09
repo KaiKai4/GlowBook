@@ -54,10 +54,11 @@ Todos son `static` salvo `unit` y `scripts-tests`, que corren en el job `unit`.
 | Paso | Que comprueba |
 |---|---|
 | `secrets` | Escaneo de secretos con secretlint sobre archivos de git (rastreados y no ignorados). |
-| `design-tokens` | No hay colores ni tipografias literales fuera de los tokens, respetando el trinquete. |
+| `design-tokens` | No hay colores ni tipografias literales fuera de los tokens. Control absoluto, sin baseline. |
 | `dead-code` | Archivos, exports, tipos y dependencias sin uso (knip). |
-| `architecture` | Reglas de capas (`scripts/check-architecture.mjs`) y reglas de grafo (dependency-cruiser, con violaciones conocidas congeladas). |
-| `module-size` | Ningun modulo supera el limite de lineas, respetando el trinquete y la excepcion de tipos generados. |
+| `architecture` | Reglas de capas (`scripts/check-architecture.mjs`) y reglas de grafo (dependency-cruiser sobre `src/`, cero violaciones, sin `--ignore-known`). Las invariantes de capas tambien se afirman en `src/infra/architecture-boundaries.test.ts`. |
+| `module-size` | Ningun modulo supera 300 lineas, salvo la excepcion permanente de tipos generados. Sin baseline. |
+| `code-map` | `docs/code-map/` coincide con el grafo de dependencias regenerado. |
 | `ci-parity` | Cada paso del manifiesto esta en CI y CI no ejecuta herramientas sueltas. |
 | `lint` | ESLint con `--max-warnings 0`. |
 | `types` | TypeScript de la aplicacion y de `scripts/tsconfig.json`. |

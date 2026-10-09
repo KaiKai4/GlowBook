@@ -9,8 +9,8 @@
  *                      depender del runtime de Supabase; el resto solo importa tipos.
  *   src/infra/supabase/admin|auth-admin: solo desde src/infra o features/*\/data.
  *
- * Si una regla falla, se corrige el codigo o, como deuda existente, se congela en
- * .dependency-cruiser-known-violations.json (generado, nunca editado a mano).
+ * Si una regla falla, se corrige el codigo. No hay lista de violaciones conocidas
+ * ni excepciones por archivo (ver docs/adr, ADR de arquitectura por capas).
  *
  * Ejecutar: npx depcruise src --config .dependency-cruiser.cjs
  */

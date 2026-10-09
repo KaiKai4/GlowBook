@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada.
+Aceptada, con partes superadas por ADR 0019 (mecanismo de cumplimiento: la frontera `service_role` se hace cumplir por patrón con la regla `admin-client-boundary`; la lista de archivos autorizados es documentación revisada en code review).
 
 ## Contexto
 

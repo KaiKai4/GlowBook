@@ -33,10 +33,11 @@ Cada paso tiene un límite de tiempo (`timeoutMs`). Si expira, el runner termina
 | Id | Job | Qué comprueba |
 |---|---|---|
 | `secrets` | static | secretlint sobre los archivos rastreados por git. Corre también en `pre-commit`. |
-| `design-tokens` | static | Trinquete de tokens de diseño (clases de paleta cruda, hex, tamaños y pesos fuera de escala). Ver "Trinquetes". |
+| `design-tokens` | static | Control absoluto de tokens de diseño (clases de paleta cruda, hex, tamaños y pesos fuera de escala). Sin baseline: cualquier caso falla. |
 | `dead-code` | static | `knip` (incluye tests) y `knip --production` (solo código de producción). |
-| `architecture` | static | `scripts/check-architecture.mjs` y `dependency-cruiser` con violaciones conocidas congeladas. |
-| `module-size` | static | Ningún archivo de `src/` ni `scripts/` supera 300 líneas, salvo la baseline y la excepción de tipos generados. |
+| `architecture` | static | `scripts/check-architecture.mjs` y `dependency-cruiser` sobre `src/`, sin baseline ni `--ignore-known`. Cero violaciones (ADR 0019). |
+| `module-size` | static | Ningún archivo de `src/` ni `scripts/` supera 300 líneas, salvo la excepción permanente de tipos generados. Sin baseline. |
+| `code-map` | static | `docs/code-map/` está al día con el grafo de dependencias (`code-map.mjs --check`). Regenerar con `node scripts/quality/code-map.mjs`. |
 | `docs-links` | static | Enlaces Markdown relativos y rutas en backticks de la documentación vigente existen (`scripts/quality/check-doc-links.mjs`). |
 | `ci-parity` | static | Cada paso del manifiesto está en CI y CI no ejecuta herramientas de calidad sueltas. |
 | `lint` | static | ESLint con `--max-warnings 0`. |
@@ -63,22 +64,28 @@ Cada paso tiene un límite de tiempo (`timeoutMs`). Si expira, el runner termina
 
 CodeQL corre solo en CI (job `codeql`) y no tiene equivalente local.
 
-## Trinquetes Y Su Estado
+## Trinquetes Y Controles Absolutos
 
 Un trinquete es un contador que solo puede bajar o quedarse igual. Sirve para no añadir deuda mientras se paga la existente (ADR 0013). Ninguno se sube para pasar un gate.
 
-| Trinquete | Script | Baseline versionada | Estado (en la baseline) |
+| Trinquete | Script | Baseline versionada | Estado |
 |---|---|---|---|
-| Tokens de diseño | `scripts/quality/check-design-tokens.mjs` | `quality/baselines/design-tokens.json` | 41 archivos con deuda: 187 clases de paleta cruda, 56 hex, 13 tamaños fuera de escala y 11 pesos fuera de escala. Meta: cero. |
-| Tamaño de módulos | `scripts/quality/check-module-size.mjs` | `quality/baselines/module-size.json` y `quality/module-size-exceptions.json` | 17 archivos por encima de 300 líneas en la baseline. Excepción permanente: `src/types/database.types.ts` (generado). Archivos nuevos: máximo 300. |
 | Cobertura | `scripts/quality/check-coverage.mjs` | `quality/coverage-baseline.json` | Líneas 91.61%, funciones 90.18%, ramas 86.7%. Los umbrales están en el script (ver abajo). |
-| Violaciones de grafo | `dependency-cruiser` | `.dependency-cruiser-known-violations.json` | 67 violaciones conocidas congeladas. Ninguna nueva. |
 | Auditoría | `scripts/quality/check-audit.mjs` | `security/audit-exceptions.json` | Excepciones con caducidad, solo para desarrollo (ADR 0015). |
+
+Controles absolutos (sin baseline, ADR 0019). Fallan con cualquier caso, no hay contador que congelar:
+
+| Control | Script o herramienta | Regla |
+|---|---|---|
+| Tokens de diseño | `scripts/quality/check-design-tokens.mjs` | Cero clases de paleta cruda, hex, tamaños o pesos fuera de escala en `src/`. |
+| Tamaño de módulos | `scripts/quality/check-module-size.mjs` | Ningún archivo de `src/` o `scripts/` supera 300 líneas. Única excepción permanente: `src/types/database.types.ts` (generado), en `quality/module-size-exceptions.json`. |
+| Violaciones de grafo | `dependency-cruiser` (paso `architecture`) | Cero violaciones sobre `src/`. Sin `--ignore-known`. |
+| Mapa de código | `scripts/quality/code-map.mjs --check` | `docs/code-map/` coincide con el grafo regenerado. |
 
 Reglas de uso:
 
-- `--update-baseline` (tokens y tamaño) y `--update` (cobertura) escriben una baseline, pero nunca la suben: el script se niega si alguna cifra sube.
-- Para regenerar sin tocar los archivos versionados, los pasos usan `--baseline-dir <dir>` (por ejemplo, una carpeta temporal). Así se puede comprobar el estado sin commitear cambios de baseline.
+- `--update` (cobertura) escribe la baseline, pero nunca la sube: el script se niega si alguna cifra sube.
+- Los controles absolutos no tienen opción para crear ni regenerar una baseline. Si fallan, se corrige el código.
 - Un archivo nuevo debe tener cero en todas las categorías de tokens y no puede superar 300 líneas.
 - Los umbrales de cobertura son: global 80% líneas y funciones, 70% ramas. Rutas críticas (`src/infra/auth`, `src/infra/security`, `src/features/access`, `src/features/platform`, `src/proxy*.ts`): 90% líneas y funciones, 80% ramas. Los umbrales no se bajan.
 
@@ -90,11 +97,11 @@ Reglas de uso:
 4. Añádelo al job de CI correspondiente con `npm run verify:job -- <job>`. No añadas herramientas sueltas en CI: `ci-parity` lo rechaza.
 5. Ejecuta `node scripts/quality/verify.mjs --step <id>` y `node scripts/quality/check-ci-parity.mjs`.
 6. Documenta el paso en la tabla de esta guía y, si la decisión no es obvia, crea un ADR.
-7. Si el control introduce una baseline, añade su trinquete y su script de actualización que solo baje.
+7. Un control nuevo es absoluto por defecto. Si necesita una baseline, justifícala en un ADR y añade su trinquete con un script de actualización que solo baje.
 
 ## Excepciones Y Lo Que No Se Hace
 
-- No se usan `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `skip` ni `only` para pasar un paso. Los hallazgos se corrigen o, si son deuda existente, se congelan en su baseline.
+- No se usan `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `skip` ni `only` para pasar un paso. Los hallazgos se corrigen. Las únicas baselines que quedan son las de cobertura y auditoría; los controles de tokens, tamaño y grafo no tienen baseline (ADR 0019).
 - No se añaden listas de exclusión a un comprobador para esconder un hallazgo nuevo.
 - Los scripts de operación (seed, cleanup, bootstrap, medición, release, sintéticos) no forman parte del verificador. Viven en `docs/production-standard.md` y en los runbooks.
 

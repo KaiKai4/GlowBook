@@ -15,7 +15,7 @@ Si la decisión es obvia o se deduce del código, no hace falta ADR.
 
 ## Formato
 
-- **Estado**: `Aceptada`, `Propuesta` o `Superada por ADR NNNN`. Un ADR superado no se borra: se marca y se enlaza al que lo sustituye.
+- **Estado**: `Aceptada`, `Propuesta` o `Superada por ADR NNNN`. Un ADR superado no se borra: se marca y se enlaza al que lo sustituye. Si solo una parte queda superada, el estado es `Aceptada, con partes superadas por ADR NNNN` y la sección afectada lo dice.
 - **Contexto**: qué problema existía.
 - **Decisión**: qué se hace.
 - **Consecuencias**: beneficios, costes y cuidados.
@@ -24,7 +24,7 @@ Para el vocabulario del dominio, leer antes `CONTEXT.md`.
 
 ## Índice
 
-Estado revisado a 2026-10-09: los 18 ADR están `Aceptada`. Ninguno está superado por otro.
+Estado revisado a 2026-10-09: los 19 ADR están `Aceptada`. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas.
 
 | ADR | Título | Ámbito |
 |---|---|---|
@@ -46,5 +46,6 @@ Estado revisado a 2026-10-09: los 18 ADR están `Aceptada`. Ninguno está supera
 | [0016](0016-migraciones-forward-only-expand-contract.md) | Migraciones forward-only con expand/contract | Datos |
 | [0017](0017-rate-limit-compartido-postgres.md) | Rate limit compartido en Postgres | Seguridad |
 | [0018](0018-errores-publicos-tipados.md) | Errores públicos tipados | Errores y seguridad |
+| [0019](0019-arquitectura-por-capas-verificada.md) | Arquitectura por capas verificada por herramienta | Arquitectura y calidad |
 
 Las guías que aplican estas decisiones son `docs/quality-guide.md`, `docs/database-contracts.md`, `docs/security.md` y `docs/testing.md`.

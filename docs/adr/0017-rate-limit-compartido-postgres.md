@@ -18,7 +18,7 @@ Las alternativas evaluadas fueron:
 
 El contador vive en la tabla `public.rate_limit_buckets` (RLS activada, sin políticas: nadie la lee ni escribe fuera de la RPC). La RPC `public.consume_rate_limit(p_key, p_max, p_window_seconds)` es `security definer`, valida sus argumentos (clave de 1 a 200 caracteres, máximo positivo, ventana de 1 a 86 400 s), limpia como mucho 100 filas expiradas por llamada y devuelve `allowed` y `retry_after_seconds`. Solo `service_role` puede ejecutarla (migración `20240101000064_security_hardening.sql`).
 
-La aplicación la invoca únicamente desde `src/infra/security/rate-limit.ts` mediante el cliente admin (`src/infra/supabase/admin.ts`). La excepción a ADR 0010 se declara por capa: `scripts/check-architecture.mjs` autoriza el directorio `src/infra/security/` completo, no archivos concretos.
+La aplicación la invoca únicamente desde `src/infra/security/rate-limit.ts` mediante el cliente admin (`src/infra/supabase/admin.ts`). La excepción a ADR 0010 se declara por capa: la regla `admin-client-boundary` de `.dependency-cruiser.cjs` permite importar los clientes admin desde `src/infra/`, no archivos concretos (ADR 0019).
 
 API pública (asíncrona, debe llamarse con `await`):
 
