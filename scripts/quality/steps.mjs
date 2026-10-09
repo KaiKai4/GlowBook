@@ -118,7 +118,13 @@ export const STEPS = [
     cmd: [
       "node",
       "--test",
+      "scripts/lib/pricing-benchmark-activity.test.mjs",
+      "scripts/lib/pricing-benchmark-io.test.mjs",
+      "scripts/lib/pricing-benchmark-model.test.mjs",
+      "scripts/lib/pricing-benchmark-rows.test.mjs",
+      "scripts/lib/pricing-study-rows.test.mjs",
       "scripts/lib/target-guard.test.mjs",
+      "scripts/lib/url.test.mjs",
       "scripts/ops/synthetic-alert.test.mjs",
       "scripts/ops/synthetic-check.test.mjs",
       "scripts/quality/generate-db-types.test.mjs",

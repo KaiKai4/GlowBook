@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const REQUIRED_DOCS = [
-  "docs/runbooks/database-restore.md",
+  "docs/runbooks/restore.md",
   "docs/production-scale-readiness-checklist.md",
 ];
 
@@ -49,8 +49,8 @@ for (const doc of REQUIRED_DOCS) {
   }
 }
 
-const restoreDoc = existsSync(join(process.cwd(), "docs/runbooks/database-restore.md"))
-  ? readDoc("docs/runbooks/database-restore.md")
+const restoreDoc = existsSync(join(process.cwd(), "docs/runbooks/restore.md"))
+  ? readDoc("docs/runbooks/restore.md")
   : "";
 
 for (const text of REQUIRED_RESTORE_EVIDENCE) {

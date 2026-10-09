@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -13,10 +14,6 @@ function loadEnvFileIfPresent() {
     const [key, ...valueParts] = trimmed.split("=");
     if (!process.env[key]) process.env[key] = valueParts.join("=");
   }
-}
-
-function normalizeUrl(value = "") {
-  return value.replace(/\/+$/, "").toLowerCase();
 }
 
 function isLocalUrl(value = "") {
@@ -129,13 +126,13 @@ const expectedDocs = [
   "docs/archive/architecture-history/architecture-audit-2026-06-01.md",
   "docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md",
   "docs/production-scale-readiness-checklist.md",
-  "docs/release-scale-readiness-2026-06-01.md",
+  "docs/archive/readiness-snapshots/release-scale-readiness-2026-06-01.md",
   "docs/capacity-plan.md",
-  "docs/performance-review-2026-06-01.md",
+  "docs/archive/readiness-snapshots/performance-review-2026-06-01.md",
   "docs/runbooks/load-scale-salons.md",
   "docs/runbooks/vercel-staging-env.md",
-  "docs/runbooks/database-restore.md",
-  "docs/runbooks/incidents.md",
+  "docs/runbooks/restore.md",
+  "docs/runbooks/incident.md",
   "docs/security.md",
   "docs/launch-support.md",
 ];

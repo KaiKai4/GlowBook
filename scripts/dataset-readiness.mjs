@@ -4,7 +4,7 @@ import { join } from "node:path";
 const REQUIRED_DOCS = [
   "docs/runbooks/load-scale-salons.md",
   "docs/production-scale-readiness-checklist.md",
-  "docs/performance-review-2026-06-01.md",
+  "docs/archive/readiness-snapshots/performance-review-2026-06-01.md",
 ];
 
 const REQUIRED_SCRIPTS = [
@@ -61,8 +61,8 @@ for (const script of REQUIRED_SCRIPTS) {
 const checklist = existsSync(join(process.cwd(), "docs/production-scale-readiness-checklist.md"))
   ? readDoc("docs/production-scale-readiness-checklist.md")
   : "";
-const performance = existsSync(join(process.cwd(), "docs/performance-review-2026-06-01.md"))
-  ? readDoc("docs/performance-review-2026-06-01.md")
+const performance = existsSync(join(process.cwd(), "docs/archive/readiness-snapshots/performance-review-2026-06-01.md"))
+  ? readDoc("docs/archive/readiness-snapshots/performance-review-2026-06-01.md")
   : "";
 const combined = `${checklist}\n${performance}`;
 

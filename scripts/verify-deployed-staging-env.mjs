@@ -1,3 +1,4 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { assertDeployedSupabaseMatches } from "./deployed-supabase-check.mjs";
@@ -22,11 +23,6 @@ function isLocalUrl(value = "") {
   } catch {
     return false;
   }
-}
-
-/** @param {string} [value] @returns {string} */
-function normalizeUrl(value = "") {
-  return value.replace(/\/+$/, "").toLowerCase();
 }
 
 /** @param {string} message @returns {never} */

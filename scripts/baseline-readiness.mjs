@@ -4,7 +4,7 @@ import { join } from "node:path";
 const REQUIRED_DOCS = [
   "docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md",
   "docs/production-scale-readiness-checklist.md",
-  "docs/release-scale-readiness-2026-06-01.md",
+  "docs/archive/readiness-snapshots/release-scale-readiness-2026-06-01.md",
 ];
 
 const REQUIRED_DECISION_TEXT = [
@@ -92,8 +92,8 @@ for (const doc of REQUIRED_DOCS) {
   }
 }
 
-const decisionDoc = existsSync(join(process.cwd(), "docs/release-scale-readiness-2026-06-01.md"))
-  ? readDoc("docs/release-scale-readiness-2026-06-01.md")
+const decisionDoc = existsSync(join(process.cwd(), "docs/archive/readiness-snapshots/release-scale-readiness-2026-06-01.md"))
+  ? readDoc("docs/archive/readiness-snapshots/release-scale-readiness-2026-06-01.md")
   : "";
 const checklist = existsSync(join(process.cwd(), "docs/production-scale-readiness-checklist.md"))
   ? readDoc("docs/production-scale-readiness-checklist.md")

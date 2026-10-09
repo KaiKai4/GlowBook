@@ -1,11 +1,12 @@
+import { normalizeUrl } from "./lib/url.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const REQUIRED_DOCS = [
   "docs/capacity-plan.md",
-  "docs/performance-review-2026-06-01.md",
+  "docs/archive/readiness-snapshots/performance-review-2026-06-01.md",
   "docs/production-scale-readiness-checklist.md",
-  "docs/runbooks/database-restore.md",
+  "docs/runbooks/restore.md",
 ];
 
 const REQUIRED_CAPACITY_TEXT = [
@@ -41,10 +42,6 @@ function loadEnvFileIfPresent() {
     const [key, ...valueParts] = trimmed.split("=");
     if (!process.env[key]) process.env[key] = valueParts.join("=");
   }
-}
-
-function normalizeUrl(value = "") {
-  return value.replace(/\/+$/, "").toLowerCase();
 }
 
 /** @param {string} message */
