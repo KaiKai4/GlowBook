@@ -143,6 +143,7 @@ function safeDecode(target) {
  */
 export function checkAllDocs(root = ROOT) {
   const files = listDocFiles(root);
+  /** @type {{ files: number, linkCount: number, refCount: number, broken: {from: string, link: string}[], missing: {from: string, path: string}[] }} */
   const result = { files: files.length, linkCount: 0, refCount: 0, broken: [], missing: [] };
   for (const file of files) {
     const partial = checkDocText({ file, text: readFileSync(file, "utf8"), root });

@@ -2,18 +2,11 @@
   "scripts/seed-staging-pricing-benchmark-v2.mjs": 678,
   "scripts/seed-staging-pricing-study.mjs": 667,
   "src/app/(dashboard)/appointments/[id]/edit/appointment-edit-form.tsx": 419,
-  "src/app/(dashboard)/appointments/appointments-calendar.tsx": 372,
-  "src/app/(dashboard)/appointments/appointments-day-view.tsx": 368,
-  "src/app/(dashboard)/page.tsx": 324,
   "src/app/(dashboard)/recordatorios/reminders-view.tsx": 495,
-  "src/app/(dashboard)/reports/report-charts.tsx": 382,
-  "src/app/(dashboard)/reports/reports-view.tsx": 703,
   "src/app/(dashboard)/salon/salon-settings.tsx": 558,
-  "src/app/(platform)/admin/page.tsx": 353,
   "src/components/ui/date-picker.tsx": 525,
   "src/components/ui/select.tsx": 315,
   "src/components/ui/time-picker.tsx": 470,
-  "src/features/appointments/data/appointment-commands.repo.ts": 320,
   "src/features/billing/data/salon-subscriptions.repo.ts": 455,
   "src/features/billing/use-cases/salon-subscriptions.ts": 739
 }
