@@ -23,7 +23,7 @@ describe("InventoryTabs", () => {
     const onChange = vi.fn();
     mounted = mountComponent(<InventoryTabs activeTab="movements" onChange={onChange} />);
 
-    expect(findButtonByText(mounted.container, "Movimientos").className).toContain("bg-accent-subtle");
+    expect(findButtonByText(mounted.container, "Movimientos").className).toContain("bg-brand-600");
     clickElement(findButtonByText(mounted.container, "Nuevo producto"));
 
     expect(onChange).toHaveBeenCalledWith("product");

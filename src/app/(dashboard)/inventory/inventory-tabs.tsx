@@ -29,7 +29,7 @@ export function InventoryTabs({
             className={cn(
               "h-10 rounded-lg px-4 text-sm font-semibold transition-colors",
               activeTab === tab.value
-                ? "bg-accent-subtle text-accent-strong shadow-sm"
+                ? "bg-brand-600 text-surface shadow-sm"
                 : "text-fg-secondary hover:bg-surface-muted hover:text-fg"
             )}
           >

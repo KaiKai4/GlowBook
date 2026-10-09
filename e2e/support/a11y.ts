@@ -9,6 +9,12 @@ const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
  * serious o critical. Llamar tras cada navegación principal.
  */
 export async function expectNoSeriousA11yViolations(page: Page): Promise<void> {
+  // axe mide los colores calculados en ese instante: sin esto, un botón a mitad de
+  // transition-colors (p. ej. una pestaña recién activada) da contrastes intermedios
+  // falsos. Se mide el estado final, que es lo que ve la persona usuaria.
+  await page.addStyleTag({
+    content: "*, *::before, *::after { transition: none !important; animation: none !important; }",
+  });
   const results = await new AxeBuilder({ page }).analyze();
 
   const blocking = results.violations

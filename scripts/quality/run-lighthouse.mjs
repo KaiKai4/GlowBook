@@ -19,6 +19,7 @@ import lhciManifest from "@lhci/cli/package.json" with { type: "json" };
 import { ROOT } from "./lib-process.mjs";
 import { createLighthouseOwner } from "./lighthouse-owner.mjs";
 import { ensureLocalSupabase, getLocalSupabaseEnv } from "./supabase-env.mjs";
+import { isEnvironmentFailure } from "./lighthouse-failure.mjs";
 
 const CONFIGS = ["lighthouserc.json", "lighthouserc.auth.json"];
 
@@ -56,24 +57,26 @@ function resolveLhciEntry() {
 }
 
 /**
- * Ejecuta "lhci autorun" para una configuración. Si falla, lo repite una vez: Lighthouse
- * puede abortar una pasada con NO_NAVSTART por ruido del entorno (Chrome y Docker en la
- * misma máquina). Las aserciones se aplican igual a la pasada que se repite.
+ * Ejecuta "lhci autorun" para una configuración. Solo si la pasada falla por un error de
+ * entorno (isEnvironmentFailure) se repite una vez; un fallo de aserciones falla a la primera.
  * @param {string} config ruta de la configuración de lhci
  * @param {string[]} extraArgs argumentos extra para lhci
  * @param {NodeJS.ProcessEnv} env entorno del proceso de lhci
- * @returns {number} código de salida (0 si alguna pasada cumple las aserciones)
+ * @returns {number} código de salida
  */
 function runAutorunWithRetry(config, extraArgs, env) {
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     const result = spawnSync(
       process.execPath,
       [resolveLhciEntry(), "autorun", `--config=${config}`, ...extraArgs],
-      { cwd: ROOT, env, stdio: "inherit", shell: false, windowsHide: true },
+      { cwd: ROOT, env, stdio: ["inherit", "pipe", "pipe"], encoding: "utf8", maxBuffer: 64 * 1024 * 1024, shell: false, windowsHide: true },
     );
     if (result.error) throw result.error;
+    process.stdout.write(result.stdout ?? "");
+    process.stderr.write(result.stderr ?? "");
     if (result.status === 0) return 0;
-    if (attempt === 1) console.error(`[lighthouse] ${config} falló; se repite una vez.`);
+    if (attempt === 2 || !isEnvironmentFailure(`${result.stdout ?? ""}\n${result.stderr ?? ""}`)) return result.status ?? 1;
+    console.error(`[lighthouse] ${config} falló por un error de entorno de Lighthouse; se repite una vez.`);
   }
   return 1;
 }

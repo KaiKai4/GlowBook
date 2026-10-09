@@ -143,6 +143,7 @@ export const STEPS = [
       "scripts/ops/synthetic-check.test.mjs",
       "scripts/quality/check-doc-links.test.mjs",
       "scripts/quality/generate-db-types.test.mjs",
+      "scripts/quality/lighthouse-failure.test.mjs",
       "scripts/quality/lib-process.test.mjs",
       "scripts/quality/migration-rules.test.mjs",
       "scripts/quality/check-design-tokens.test.mjs",
