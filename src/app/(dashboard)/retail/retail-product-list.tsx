@@ -1,5 +1,5 @@
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
-import { cn } from "@/components/ui/cn";
 import { formatCurrency } from "@/infra/format/dates";
 
 export function RetailProductList({ products }: { products: RetailPageView["products"] }) {
@@ -39,18 +39,13 @@ function ProductCard({ product }: { product: RetailPageView["products"][number] 
       <div className="mt-4 rounded-lg bg-brand-50 px-3 py-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase text-brand-600">Vitrina</p>
-          <span
-            className={cn(
-              "rounded-full px-2 py-1 text-xs font-semibold",
-              isOut
-                ? "bg-danger-subtle text-danger-strong"
-                : isLow
-                  ? "bg-warning-subtle text-warning-fg"
-                  : "bg-success-subtle text-success-fg"
-            )}
-          >
-            {isOut ? "Agotado" : isLow ? "Bajo" : "Disponible"}
-          </span>
+          {isOut ? (
+            <StatusBadge variant="danger" label="Agotado" />
+          ) : isLow ? (
+            <StatusBadge variant="warning" label="Bajo" />
+          ) : (
+            <StatusBadge variant="success" label="Disponible" />
+          )}
         </div>
         <p className="mt-1 text-2xl font-semibold text-fg">{retailStock}</p>
       </div>

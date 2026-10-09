@@ -68,6 +68,14 @@ describe("RolesManager", () => {
     document.body.innerHTML = "";
   });
 
+  it("muestra el título de la pantalla, su descripción y el botón para crear un rol", () => {
+    mounted = mountComponent(<RolesManager roles={ROLES} allPermissions={ALL_PERMISSIONS} />);
+
+    expect(mounted.container.querySelector("h1")?.textContent).toBe("Roles y Permisos");
+    expect(mounted.container.textContent).toContain("Define qué puede hacer cada rol en tu salón.");
+    expect(findButtonByText(mounted.container, "Nuevo rol").textContent).toContain("Nuevo rol");
+  });
+
   it("un rol del sistema muestra el aviso de permisos fijos; solo los roles personalizados se pueden eliminar", () => {
     mounted = mountComponent(<RolesManager roles={ROLES} allPermissions={ALL_PERMISSIONS} />);
 

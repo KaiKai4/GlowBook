@@ -1,6 +1,6 @@
 import { Clock, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/components/ui/cn";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { formatCurrency } from "@/infra/format/dates";
 import type { ServiceItem } from "./services-types";
 
@@ -42,20 +42,11 @@ export function ServiceCard({
         <span className="rounded-full bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent-strong">
           {formatCurrency(service.price)}
         </span>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs",
-            service.is_active ? "bg-success-subtle text-success-fg" : "bg-surface-sunken text-fg-muted"
-          )}
-        >
-          <span
-            className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              service.is_active ? "bg-success" : "bg-fg-subtle"
-            )}
-          />
-          {service.is_active ? "Activo" : "Inactivo"}
-        </span>
+        {service.is_active ? (
+          <StatusBadge variant="success" label="Activo" />
+        ) : (
+          <StatusBadge variant="neutral" label="Inactivo" />
+        )}
         {pricingMode === "variable" && (
           <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
             Variable al cobrar

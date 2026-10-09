@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Shield, Lock, Plus,
   CalendarCheck, Users, Bell, BarChart3, Settings,
@@ -165,16 +166,16 @@ export function RolesManager({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-fg">Roles y Permisos</h1>
-          <p className="text-sm text-fg-subtle mt-1">Define qué puede hacer cada rol en tu salón.</p>
-        </div>
-        <Button variant="primary" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Nuevo rol
-        </Button>
-      </div>
+      <PageHeader
+        title="Roles y Permisos"
+        description="Define qué puede hacer cada rol en tu salón."
+        actions={
+          <Button variant="primary" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Nuevo rol
+          </Button>
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {roles.map((role) => (
