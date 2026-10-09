@@ -6,7 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
+import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 import { AlertTriangle, UserPen } from "lucide-react";
 import { deleteCustomerAction, updateCustomerAction } from "./actions";
 

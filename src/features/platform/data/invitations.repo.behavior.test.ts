@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { hashInvitationToken } from "@/lib/auth/invitation-tokens";
+import { hashInvitationToken } from "@/infra/auth/invitation-tokens";
 import {
   acceptSalonInvitationAsAdmin,
   createSalonInvitation,
@@ -27,11 +27,11 @@ const clients = vi.hoisted(() => ({
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: () => clients.admin,
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: async () => clients.server,
 }));
 

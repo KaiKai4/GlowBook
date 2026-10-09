@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import { getPlatformInvitations, type PlatformInvitationsViewModel } from "@/features/platform/use-cases/get-platform-invitations";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import PlatformInvitationsPage from "./page";
 
-vi.mock("@/lib/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/platform/use-cases/get-platform-invitations", () => ({
   getPlatformInvitations: vi.fn(),
 }));

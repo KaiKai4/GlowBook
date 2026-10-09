@@ -3,19 +3,19 @@ import {
   findSalonInvitationForAcceptance,
   profileExists,
 } from "@/features/platform/data/invitations.repo";
-import { err, ok, type Result } from "@/lib/result";
+import { err, ok, type Result } from "@/infra/result";
 import {
   createPlatformOwnerAuthUser,
   deletePlatformOwnerAuthUser,
   findPlatformOwnerAuthUserByEmail,
   updatePlatformOwnerAuthUser,
 } from "@/features/platform/data/platform-auth.repo";
-import { captureError } from "@/lib/observability";
-import { personNameField } from "@/lib/validation/name";
+import { captureError } from "@/infra/observability";
+import { personNameField } from "@/infra/validation/name";
 import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
 import { recordPlatformAction } from "./platform-audit";
-import { z } from "@/lib/validation/zod";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { z } from "@/infra/validation/zod";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const AcceptSchema = z.object({
   token: z.string().min(1, "Token inválido"),

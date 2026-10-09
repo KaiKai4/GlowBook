@@ -16,7 +16,7 @@ import {
 // Todas las consultas de clientes deben quedar acotadas al salon indicado:
 // la RLS lo garantiza en BD, pero el repositorio tambien lo pide explicitamente.
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: async () => serverClient.current,
 }));
 

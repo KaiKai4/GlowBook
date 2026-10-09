@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
 const PricingModeSchema = z.enum(["fixed", "variable"]);
 

@@ -1,8 +1,8 @@
 import { parseReportFilters } from "@/features/reports/schemas";
 import { getOperationalReport } from "@/features/reports/use-cases/get-operational-report";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
 import { ReportsView } from "./reports-view";
 
 export default async function ReportsPage({

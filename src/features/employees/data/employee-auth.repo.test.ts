@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthError } from "@supabase/supabase-js";
-import { createAuthUser, deleteAuthUser } from "@/lib/supabase/auth-admin";
+import { createAuthUser, deleteAuthUser } from "@/infra/supabase/auth-admin";
 import { createEmployeeAuthUser, deleteEmployeeAuthUser } from "./employee-auth.repo";
 
 // Adaptador delgado sobre el admin de Auth: debe reenviar exactamente los
 // argumentos y devolver la respuesta sin reinterpretarla.
 
-vi.mock("@/lib/supabase/auth-admin", () => ({
+vi.mock("@/infra/supabase/auth-admin", () => ({
   createAuthUser: vi.fn(),
   deleteAuthUser: vi.fn(),
 }));

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
-import { err } from "@/lib/result";
+import { captureError } from "@/infra/observability";
+import { err } from "@/infra/result";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
@@ -14,7 +14,7 @@ import { confirmAppointment } from "./confirm-appointment";
 import { createAppointment } from "./create-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),

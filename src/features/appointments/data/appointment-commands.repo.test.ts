@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import {
   createAppointmentsSupabaseDouble,
   installSupabaseDouble,
@@ -14,7 +14,7 @@ import {
   findOccupiedSlotsForSalonDate,
 } from "./appointment-commands.repo";
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 

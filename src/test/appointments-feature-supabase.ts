@@ -2,7 +2,7 @@
 // Registra cada llamada encadenada (select, eq, gte, update...) por tabla para
 // que los tests afirmen filtros como salon_id sin depender de la base de datos.
 import { vi } from "vitest";
-import type { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { createSupabaseServerClient } from "@/infra/supabase/server";
 
 interface FakeSupabaseError {
   message: string;

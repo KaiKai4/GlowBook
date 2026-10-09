@@ -18,8 +18,8 @@ import {
   formatLocalDateISO,
   formatTimeTz,
   zonedWallTimeToUtc,
-} from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+} from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import { GripVertical, Trash2 } from "lucide-react";
 import { AppointmentEditReview } from "./appointment-edit-review";
 import {

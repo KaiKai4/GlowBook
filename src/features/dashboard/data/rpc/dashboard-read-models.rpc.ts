@@ -1,7 +1,7 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { z } from "@/lib/validation/zod";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { z } from "@/infra/validation/zod";
 
 // Adaptadores tipados de las funciones SQL de lectura del dashboard
 // (supabase/migrations/20240101000066_read_models.sql). Devuelven agregados ya calculados

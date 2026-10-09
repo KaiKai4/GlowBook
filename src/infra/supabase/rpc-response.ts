@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
 /**
  * Interpreta la respuesta de una RPC de Supabase. Un error de PostgREST se

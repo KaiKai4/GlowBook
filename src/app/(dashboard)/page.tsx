@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireProfile } from "@/lib/auth/session";
+import { requireProfile } from "@/infra/auth/session";
 import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
-import { getPermissions, hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { getPermissions, hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { isSalonFeatureDisabled } from "@/features/salon/domain/salon-features";
 import {
@@ -19,8 +19,8 @@ import { PaymentStandingBanner } from "@/components/layout/payment-standing-bann
 import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
 import { OnboardingChecklistCard } from "./onboarding-checklist-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency, formatDate } from "@/lib/utils/dates";
+import { cn } from "@/components/ui/cn";
+import { formatCurrency, formatDate } from "@/infra/format/dates";
 import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
 import {
   AlertCircle,

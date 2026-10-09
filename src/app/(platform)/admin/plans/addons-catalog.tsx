@@ -12,7 +12,7 @@ import type {
   CommercialLimitMetric,
   PlatformModule,
 } from "@/features/billing/use-cases/commercial-plans";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { removeAddonAction, saveAddonAction } from "./actions";
 import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";
 import { InlineState, Panel, StatusPill, SubmitButton } from "./workspace-ui";

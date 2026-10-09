@@ -7,7 +7,7 @@ import {
   SAVED_WITH_WARNINGS_MESSAGE,
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
-import { zonedWallTimeToUtc } from "@/lib/utils/dates";
+import { zonedWallTimeToUtc } from "@/infra/format/dates";
 import type { AppointmentServiceRow } from "@/features/appointments/domain/wizard-availability";
 import { createAppointmentAction } from "../actions";
 import { findOrCreateCustomerAction } from "../../customers/actions";

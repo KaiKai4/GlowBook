@@ -1,9 +1,9 @@
-import { toPublicErrorMessage } from "@/lib/errors";
+import { toPublicErrorMessage } from "@/infra/errors";
 import "server-only";
 
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
-import { err, ok, type Result } from "@/lib/result";
+import { err, ok, type Result } from "@/infra/result";
 import type { CommercialPlan } from "../domain/commercial-plan";
 import type { CommercialAddon } from "../domain/salon-extras";
 import {
@@ -34,7 +34,7 @@ export type {
   PlatformModule,
 } from "../domain/commercial-plan";
 export type { CommercialAddon } from "../domain/salon-extras";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const PlanSchema = z.object({
   id: z.string().uuid().optional(),

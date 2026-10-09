@@ -6,8 +6,8 @@ import {
   getRetailInventoryProducts,
   type RetailInventoryProductView,
 } from "@/features/inventory/use-cases/retail-inventory-products";
-import { toPublicErrorMessage } from "@/lib/errors";
-import { ok, type Result } from "@/lib/result";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { ok, type Result } from "@/infra/result";
 import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
 import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
 import type { RetailSaleInput } from "../schemas";

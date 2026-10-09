@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { findEmployeeById, updateEmployee } from "../data/employees.repo";
 import { revokeEmployeeAccessForArchive } from "./employee-access";
 import { archiveEmployee, reactivateEmployee } from "./employee-lifecycle";
@@ -8,7 +8,7 @@ import { archiveEmployee, reactivateEmployee } from "./employee-lifecycle";
 // revocación de acceso: el perfil se desvincula solo si el archivado llega a
 // guardarse.
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

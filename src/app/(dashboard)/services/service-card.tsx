@@ -1,7 +1,7 @@
 import { Clock, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/dates";
+import { cn } from "@/components/ui/cn";
+import { formatCurrency } from "@/infra/format/dates";
 import type { ServiceItem } from "./services-types";
 
 export function ServiceCard({

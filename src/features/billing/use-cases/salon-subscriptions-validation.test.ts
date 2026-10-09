@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { assignSalonAddonConfig, assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig, saveSalonManualExtraConfig } from "./salon-subscriptions";
 import { assignSalonPlan, recordSalonPlanPayment, saveSalonPlanOverride } from "../data/salon-subscriptions.repo";
-import { err } from "@/lib/result";
+import { err } from "@/infra/result";
 
 // Validación de entrada de suscripciones: los rechazos deben ocurrir antes de
 // cualquier escritura en la base de datos.

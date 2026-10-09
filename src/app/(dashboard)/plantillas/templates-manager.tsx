@@ -11,7 +11,7 @@ import {
   renderMessageTemplate,
   type MessageTemplate,
 } from "@/features/notifications/domain/templates";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { updateNotificationTemplateAction } from "./actions";
 
 const LABELS: Record<MessageTemplate["event"], { title: string; description: string }> = {

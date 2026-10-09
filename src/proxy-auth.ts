@@ -1,4 +1,4 @@
-import { CSP_REPORT_PATH } from "@/lib/security/csp";
+import { CSP_REPORT_PATH } from "@/infra/security/csp";
 
 export type ProxyAuthDecision =
   | { type: "next" }

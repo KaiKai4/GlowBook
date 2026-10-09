@@ -7,7 +7,7 @@ import type {
   SalonSubscriptionDetail,
   SubscriptionsPageData,
 } from "@/features/billing/use-cases/salon-subscriptions";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { countScopeLabel, Panel, StatusText } from "../plans/workspace-ui";
 import { resolveAlertAction } from "./actions";
 

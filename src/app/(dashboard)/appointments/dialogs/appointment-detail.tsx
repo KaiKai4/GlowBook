@@ -7,7 +7,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import {
   CheckCheck,
   CheckCircle2,

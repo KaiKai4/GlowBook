@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requirePlatformAdmin } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import { parseUuid } from "@/lib/validation/route-id";
+import { requirePlatformAdmin } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { parseUuid } from "@/infra/validation/route-id";
 import {
   assignSalonAddonConfig,
   assignSalonCommercialPlanConfig,

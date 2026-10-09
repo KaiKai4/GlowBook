@@ -1,5 +1,5 @@
 import "server-only";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 
 import { getAppointmentReminderTarget } from "@/features/appointments/use-cases/appointment-reminder-target";
 import {
@@ -7,7 +7,7 @@ import {
   findManualReminderSentAt,
   ReminderLogDuplicateError,
 } from "../data/reminder-log.repo";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 const FAILED_MESSAGE = "No se pudo marcar el recordatorio como enviado.";
 

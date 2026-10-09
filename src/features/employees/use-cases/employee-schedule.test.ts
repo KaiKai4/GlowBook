@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { deleteWorkSchedule, upsertWorkSchedule } from "../data/employees.repo";
 import type { WorkScheduleInput } from "../schemas";
 import { addEmployeeWorkSchedule, removeEmployeeWorkSchedule } from "./employee-schedule";
@@ -9,7 +9,7 @@ import { addEmployeeWorkSchedule, removeEmployeeWorkSchedule } from "./employee-
 // estrictamente posterior a la de inicio; HH:MM con ceros a la izquierda se
 // compara como texto, así que el orden lexicográfico debe coincidir con el horario.
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

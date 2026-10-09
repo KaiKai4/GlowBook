@@ -10,7 +10,7 @@ import {
   type PointerEvent,
 } from "react";
 import { MessageCircle, X } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import type { FeedbackCategory } from "@/features/feedback/schemas";
 import { FeedbackPanel } from "./panel";
 import type { SubmitFeedbackAction } from "./types";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 import { parseRpcResponse } from "./rpc-response";
 
 const ResultSchema = z.object({ appointment_id: z.string(), status: z.literal("confirmed") });

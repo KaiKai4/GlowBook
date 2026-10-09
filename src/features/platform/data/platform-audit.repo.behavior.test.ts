@@ -15,7 +15,7 @@ const clients = vi.hoisted(() => ({ admin: null as FakeSupabase | null }));
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: () => clients.admin,
 }));
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
 import { ArrowLeft } from "lucide-react";
 import { AppointmentWizard } from "./appointment-wizard";
 

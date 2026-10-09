@@ -1,7 +1,7 @@
 "use client";
 
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 
 // Agenda en lista para pantallas pequeñas: la grilla horaria del calendario

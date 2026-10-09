@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthError } from "@supabase/supabase-js";
-import { hashInvitationToken } from "@/lib/auth/invitation-tokens";
-import { captureError } from "@/lib/observability";
+import { hashInvitationToken } from "@/infra/auth/invitation-tokens";
+import { captureError } from "@/infra/observability";
 import { findEmployeeById } from "../data/employees.repo";
 import {
   deleteEmployeeInvitations,
@@ -25,7 +25,7 @@ import {
 // invitaciones para colaboradores existentes. El salon_id debe viajar a cada
 // adaptador para que ningún cambio afecte a colaboradores de otro salón.
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

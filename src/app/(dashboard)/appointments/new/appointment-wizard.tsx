@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { isValidOptionalPhone, phoneValidationMessage } from "@/lib/utils/phone";
+import { isValidOptionalPhone, phoneValidationMessage } from "@/infra/format/phone";
 import { getOccupiedSlotsForDate } from "../actions";
 import { checkCustomerPhoneAction } from "../../customers/actions";
 import { useCreateAppointment } from "./use-create-appointment";

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { updateCustomer } from "@/features/customers/data/customers.repo";
 import type { Database } from "@/types/database.types";
 import { archiveCustomer, reactivateCustomer } from "./customer-lifecycle";
@@ -8,7 +8,7 @@ vi.mock("@/features/customers/data/customers.repo", () => ({
   updateCustomer: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

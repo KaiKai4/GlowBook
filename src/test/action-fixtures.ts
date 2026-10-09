@@ -1,7 +1,7 @@
 // Fixtures compartidas por los tests de server actions.
 // Construyen un perfil con la forma real de ProfileWithRole para que los
 // guards de permisos (hasPermission) se evalúen de verdad, sin mocks.
-import type { Permission } from "@/lib/auth/permissions";
+import type { Permission } from "@/infra/auth/permissions";
 import type { ProfileWithRole } from "@/types/app.types";
 
 export const SALON_ID = "00000000-0000-4000-8000-000000000001";

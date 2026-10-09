@@ -1,5 +1,5 @@
-import { captureError } from "@/lib/observability";
-import { toPublicErrorMessage } from "@/lib/errors";
+import { captureError } from "@/infra/observability";
+import { toPublicErrorMessage } from "@/infra/errors";
 import {
   createEmployee as insertEmployee,
   findEmployeeById,
@@ -15,7 +15,7 @@ import {
 import { findLatestPendingEmployeeInvitationRole } from "@/features/employees/data/employee-access.repo";
 import type { UpdateEmployeeProfileRpcFields } from "@/features/employees/data/rpc/update-employee-rpc";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@/features/employees/schemas";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 export interface CreateEmployeeResult {
   id: string;

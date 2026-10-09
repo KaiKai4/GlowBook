@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 import { INVENTORY_LOCATIONS } from "./domain/stock";
 
 const money = z.coerce.number().min(0);

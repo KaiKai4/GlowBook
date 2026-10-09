@@ -1,4 +1,4 @@
-import { runSideEffect } from "@/lib/effects/run-side-effect";
+import { runSideEffect } from "@/infra/effects/run-side-effect";
 import type { EffectiveSalonPlan } from "../domain/commercial-plan";
 
 /**

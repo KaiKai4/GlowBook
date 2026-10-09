@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
 
 export function RetailStats({ retail }: { retail: RetailPageView }) {

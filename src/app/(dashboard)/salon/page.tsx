@@ -1,5 +1,5 @@
-import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import {
   getSalonSettings,
   type SalonBusinessDay,

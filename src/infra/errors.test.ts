@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { PublicError } from "./public-error";
 import { toPublicErrorMessage } from "./errors";
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const FALLBACK = "No se pudo completar la operación.";
 

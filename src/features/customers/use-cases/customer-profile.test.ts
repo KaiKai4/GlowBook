@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { createCustomer, updateCustomer } from "@/features/customers/data/customers.repo";
 import type { CreateCustomerInput, UpdateCustomerInput } from "@/features/customers/schemas";
 import { rejectArchivedDuplicate } from "./customer-duplicates";
@@ -14,7 +14,7 @@ vi.mock("./customer-duplicates", () => ({
   rejectArchivedDuplicate: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

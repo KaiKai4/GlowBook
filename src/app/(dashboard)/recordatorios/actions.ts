@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import { parseUuid } from "@/lib/validation/route-id";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { parseUuid } from "@/infra/validation/route-id";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
 import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 const INVALID_ID = "Identificador inválido.";
 const INVALID_KEY = "Solicitud inválida. Recarga la página e inténtalo de nuevo.";

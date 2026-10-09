@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { CreateExpenseSchema } from "@/features/expenses/schemas";
 import { createExpense, createInventoryPurchaseExpense } from "@/features/expenses/use-cases/expenses";
 import { InventoryPurchaseSchema } from "@/features/inventory/schemas";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 async function guard(options: { inventoryPurchase?: boolean } = {}): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();

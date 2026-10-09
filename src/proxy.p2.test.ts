@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { getOptimisticAuthDecision, hasSupabaseSessionCookie } from "./proxy-auth";
-import { refreshSupabaseSession } from "@/lib/supabase/proxy";
+import { refreshSupabaseSession } from "@/infra/supabase/proxy";
 import { proxy } from "./proxy";
 
 vi.mock("./proxy-auth", () => ({
   getOptimisticAuthDecision: vi.fn(),
   hasSupabaseSessionCookie: vi.fn(),
 }));
-vi.mock("@/lib/supabase/proxy", () => ({ refreshSupabaseSession: vi.fn() }));
+vi.mock("@/infra/supabase/proxy", () => ({ refreshSupabaseSession: vi.fn() }));
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const INCOMING_ID = "123e4567-e89b-42d3-a456-426614174000";

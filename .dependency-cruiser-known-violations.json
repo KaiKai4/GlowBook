@@ -879,43 +879,7 @@
   },
   {
     "type": "dependency",
-    "from": "src/features/billing/domain/commercial-plan.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "domain-isolation-cross-module"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/features/billing/domain/salon-extras.ts",
-    "to": "src/features/salon/domain/salon-features.ts",
-    "unresolvedTo": "@/features/salon/domain/salon-features",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "domain-isolation-cross-module"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/lib/auth/permissions.ts",
+    "from": "src/infra/auth/permissions.ts",
     "to": "src/features/salon/domain/salon-features.ts",
     "unresolvedTo": "@/features/salon/domain/salon-features",
     "dependencyTypes": [
@@ -932,7 +896,7 @@
   },
   {
     "type": "dependency",
-    "from": "src/lib/auth/session.ts",
+    "from": "src/infra/auth/session.ts",
     "to": "node_modules/react/index.js",
     "unresolvedTo": "react",
     "dependencyTypes": [
@@ -946,7 +910,7 @@
   },
   {
     "type": "dependency",
-    "from": "src/lib/auth/session.ts",
+    "from": "src/infra/auth/session.ts",
     "to": "src/features/billing/use-cases/commercial-plans.ts",
     "unresolvedTo": "@/features/billing/use-cases/commercial-plans",
     "dependencyTypes": [
@@ -963,7 +927,7 @@
   },
   {
     "type": "dependency",
-    "from": "src/lib/supabase/server.ts",
+    "from": "src/infra/supabase/server.ts",
     "to": "node_modules/react/index.js",
     "unresolvedTo": "react",
     "dependencyTypes": [
@@ -1009,8 +973,8 @@
   {
     "type": "dependency",
     "from": "src/app/(auth)/forgot-password/page.tsx",
-    "to": "src/lib/supabase/client.ts",
-    "unresolvedTo": "@/lib/supabase/client",
+    "to": "src/infra/supabase/client.ts",
+    "unresolvedTo": "@/infra/supabase/client",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -1026,8 +990,8 @@
   {
     "type": "dependency",
     "from": "src/app/(auth)/invite/[token]/page.tsx",
-    "to": "src/lib/supabase/client.ts",
-    "unresolvedTo": "@/lib/supabase/client",
+    "to": "src/infra/supabase/client.ts",
+    "unresolvedTo": "@/infra/supabase/client",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -1043,8 +1007,8 @@
   {
     "type": "dependency",
     "from": "src/app/(auth)/join/[token]/join-form.tsx",
-    "to": "src/lib/supabase/client.ts",
-    "unresolvedTo": "@/lib/supabase/client",
+    "to": "src/infra/supabase/client.ts",
+    "unresolvedTo": "@/infra/supabase/client",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -1060,8 +1024,8 @@
   {
     "type": "dependency",
     "from": "src/app/(auth)/login/page.tsx",
-    "to": "src/lib/supabase/client.ts",
-    "unresolvedTo": "@/lib/supabase/client",
+    "to": "src/infra/supabase/client.ts",
+    "unresolvedTo": "@/infra/supabase/client",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -1077,8 +1041,8 @@
   {
     "type": "dependency",
     "from": "src/app/(auth)/login/page.tsx",
-    "to": "src/lib/supabase/session-persistence.ts",
-    "unresolvedTo": "@/lib/supabase/session-persistence",
+    "to": "src/infra/supabase/session-persistence.ts",
+    "unresolvedTo": "@/infra/supabase/session-persistence",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -1094,8 +1058,8 @@
   {
     "type": "dependency",
     "from": "src/app/(auth)/reset-password/page.tsx",
-    "to": "src/lib/supabase/client.ts",
-    "unresolvedTo": "@/lib/supabase/client",
+    "to": "src/infra/supabase/client.ts",
+    "unresolvedTo": "@/infra/supabase/client",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",
@@ -1111,8 +1075,8 @@
   {
     "type": "dependency",
     "from": "src/app/api/auth/signout/route.ts",
-    "to": "src/lib/supabase/server.ts",
-    "unresolvedTo": "@/lib/supabase/server",
+    "to": "src/infra/supabase/server.ts",
+    "unresolvedTo": "@/infra/supabase/server",
     "dependencyTypes": [
       "aliased",
       "aliased-tsconfig",

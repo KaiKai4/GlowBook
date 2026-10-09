@@ -2,8 +2,8 @@
 
 import { Suspense, useState, useTransition } from "react";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { rememberSessionInBrowser } from "@/lib/supabase/session-persistence";
+import { createSupabaseBrowserClient } from "@/infra/supabase/client";
+import { rememberSessionInBrowser } from "@/infra/supabase/session-persistence";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";

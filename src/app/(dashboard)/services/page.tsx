@@ -1,5 +1,5 @@
-import { requireProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { getServiceCatalog } from "@/features/services/use-cases/get-service-catalog";
 import { ServicesManager } from "./services-manager";
 

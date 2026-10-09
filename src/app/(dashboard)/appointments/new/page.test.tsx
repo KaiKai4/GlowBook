@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
-import { PERMISSIONS } from "@/lib/auth/permissions";
+import { PERMISSIONS } from "@/infra/auth/permissions";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buildProfile } from "@/test/action-fixtures";
 import { buildWizardProps } from "@/test/ui-appointments-fixtures";
@@ -11,7 +11,7 @@ import NewAppointmentPage from "./page";
 const session = vi.hoisted(() => ({ requireProfile: vi.fn() }));
 const wizardUseCase = vi.hoisted(() => ({ getAppointmentWizardData: vi.fn() }));
 
-vi.mock("@/lib/auth/session", () => session);
+vi.mock("@/infra/auth/session", () => session);
 vi.mock("@/features/appointments/use-cases/get-appointment-wizard-data", () => wizardUseCase);
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; children?: ReactNode }) =>

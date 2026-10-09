@@ -1,6 +1,6 @@
-import { generateInvitationToken } from "@/lib/auth/invitation-tokens";
+import { generateInvitationToken } from "@/infra/auth/invitation-tokens";
 import { findEmployeeById } from "@/features/employees/data/employees.repo";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   deleteEmployeeInvitations,
   deletePendingEmployeeInvitations,
@@ -11,7 +11,7 @@ import {
   updateEmployeeProfileRole,
 } from "@/features/employees/data/employee-access.repo";
 import { deleteEmployeeAuthUser } from "@/features/employees/data/employee-auth.repo";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 export interface EmployeeInviteResult {
   token: string;

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
@@ -11,7 +11,7 @@ import { getEmployeeDetail } from "./get-employee-detail";
 // lectura del rol, invitaciones vencidas o aceptadas, relaciones vacías y
 // feature de roles desactivada.
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

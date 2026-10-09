@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 export function Skeleton({ className }: { className?: string }) {
   return (

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { createEmployeeWithAssignmentsRpc } from "./create-employee-rpc";
 import { updateEmployeeProfileRpc } from "./update-employee-rpc";
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 

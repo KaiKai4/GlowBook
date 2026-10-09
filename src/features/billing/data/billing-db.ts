@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 
 type QueryResult<T> = { data: T | null; error: { message: string } | null };
 type CountResult = { count: number | null; error: { message: string } | null };

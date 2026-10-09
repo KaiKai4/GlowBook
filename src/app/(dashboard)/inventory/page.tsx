@@ -1,7 +1,7 @@
 import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
 import { Package } from "lucide-react";
 import { InventoryManager } from "./inventory-manager";
 

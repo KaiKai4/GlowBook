@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import Image from "next/image";
 
 type LogoSize = "sm" | "md" | "lg";

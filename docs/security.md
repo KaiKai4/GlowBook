@@ -25,7 +25,7 @@ Fecha: 2026-05-30
 (report-uri) y `application/reports+json` (Reporting API). Reglas:
 
 - sin sesion y fuera de la redireccion de auth (`src/proxy-auth.ts`);
-- cuerpo limitado a 16 KB, leido en streaming (`src/lib/http/bounded-body.ts`);
+- cuerpo limitado a 16 KB, leido en streaming (`src/infra/http/bounded-body.ts`);
 - limite anonimo de 30 informes por minuto y IP;
 - se valida con Zod y se registra solo directiva, origen bloqueado (sin ruta
   ni query) y ruta del documento (sin query ni fragmento);
@@ -36,7 +36,7 @@ Fecha: 2026-05-30
 `src/proxy.ts` asigna `x-request-id` a cada request: reutiliza el UUID entrante
 si es valido o genera uno nuevo. La cabecera va en la request y en todas las
 respuestas. `captureError` incluye el `requestId` cuando hay contexto de request
-(`src/lib/observability/request-context.ts`).
+(`src/infra/observability/request-context.ts`).
 
 Redaccion en observabilidad: ademas de claves sensibles y valores secretos del
 entorno, se enmascaran emails (`[email]`) y telefonos de 9 a 15 digitos
@@ -49,7 +49,7 @@ consola de forma minima (solo el tipo de error, nunca la URL ni el cuerpo).
 ## Errores Publicos (Fase 2)
 
 Los mensajes que ve el usuario se resuelven con `toPublicErrorMessage` o con
-`PublicError` (`src/lib/errors.ts`, ADR 0018). Nunca se muestra SQL, nombres de
+`PublicError` (`src/infra/errors.ts`, ADR 0018). Nunca se muestra SQL, nombres de
 tabla, restricciones ni trazas: los SQLSTATE conocidos tienen mensajes fijos y
 el resto cae en un mensaje generico registrado con `captureError`.
 
@@ -58,7 +58,7 @@ Los features deben migrar: lanzar `PublicError` para reglas de negocio y usar
 
 ## Validacion Zod (Fase 2)
 
-Todo `src` importa Zod solo desde `@/lib/validation/zod`, adaptador con
+Todo `src` importa Zod solo desde `@/infra/validation/zod`, adaptador con
 `jitless: true` (sin evaluacion dinamica de codigo). La regla
 `no-restricted-imports` de `eslint.config.mjs` lo exige.
 
@@ -123,7 +123,7 @@ Reglas:
 
 Decision 2026-05-31:
 
-El Adapter inicial de observability es `src/lib/observability`. Emite eventos y
+El Adapter inicial de observability es `src/infra/observability`. Emite eventos y
 errores como JSON estructurado a consola, sanitizando claves sensibles. Para el
 primer deploy, la estrategia operativa es usar logs del hosting o un log drain
 configurado sobre stdout/stderr.
@@ -151,7 +151,7 @@ Reglas:
 
 - Modules de negocio no deben importar SDKs de proveedores de observability.
 - Si se adopta Sentry u otro proveedor, el cambio debe quedar dentro de
-  `src/lib/observability`.
+  `src/infra/observability`.
 - Si se usa webhook/log drain, el token queda server-only y nunca debe llevar
   prefijo `NEXT_PUBLIC_`.
 - Antes de produccion, confirmar acceso a Vercel Logs o al log drain elegido.
@@ -167,7 +167,7 @@ npm run observability:readiness
 El Adapter redacciona metadata sensible y tambien secretos conocidos dentro de
 `error.message`, `error.stack` y valores de metadata con claves no sensibles.
 El comando paso en modo actual sin webhook obligatorio y
-`src/lib/observability/index.test.ts` paso con 3/3 tests.
+`src/infra/observability/index.test.ts` paso con 3/3 tests.
 Para lanzamiento amplio, configurar un proveedor/webhook y activar:
 
 ```text
@@ -195,7 +195,7 @@ obligan a importar SDKs externos desde los Modules de negocio.
 
 Implementado en Fase 2 (ADR 0017): contador compartido en Postgres
 (`rate_limit_buckets` + RPC `consume_rate_limit`, solo `service_role`), accedido
-solo desde `src/lib/security/rate-limit.ts`. Fallo del almacen: fail-open con
+solo desde `src/infra/security/rate-limit.ts`. Fallo del almacen: fail-open con
 `captureError`. La firma es asincrona:
 
 ```ts
@@ -217,7 +217,7 @@ Decision actual para MVP:
 - no introducir un Adapter propio hasta tener senales reales de abuso.
 
 Si aparece abuso antes del lanzamiento, crear un Adapter dedicado en
-`src/lib/rate-limit` y aplicarlo primero a login, invitaciones y operaciones
+`src/infra/rate-limit` y aplicarlo primero a login, invitaciones y operaciones
 Platform destructivas.
 
 Decision para lanzamiento amplio:
@@ -225,7 +225,7 @@ Decision para lanzamiento amplio:
 - revisar rate limiting del hosting para `login`, `invite`, `join`, feedback y
   operaciones Platform;
 - revisar limites de Supabase Auth antes de campanas publicas;
-- mantener un Adapter propio en `src/lib/rate-limit` como Seam futura solo si
+- mantener un Adapter propio en `src/infra/rate-limit` como Seam futura solo si
   los controles del proveedor no alcanzan;
 - registrar la decision en `docs/production-scale-readiness-checklist.md`.
 

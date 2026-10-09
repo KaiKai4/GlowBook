@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 // Feedback transitorio no bloqueante (guardado, estado actualizado). Para
 // confirmaciones o avisos que el usuario debe leer si o si, usar Dialog.

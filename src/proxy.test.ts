@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
-import { refreshSupabaseSession } from "@/lib/supabase/proxy";
+import { refreshSupabaseSession } from "@/infra/supabase/proxy";
 import { proxy } from "./proxy";
 
-vi.mock("@/lib/supabase/proxy", () => ({
+vi.mock("@/infra/supabase/proxy", () => ({
   refreshSupabaseSession: vi.fn(),
 }));
 

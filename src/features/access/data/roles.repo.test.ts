@@ -17,7 +17,7 @@ import {
 
 const dbHolder = vi.hoisted(() => ({ current: null as FakeSupabaseClient | null }));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: async () => dbHolder.current,
 }));
 

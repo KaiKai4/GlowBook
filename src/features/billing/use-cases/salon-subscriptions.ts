@@ -1,10 +1,10 @@
-import { toPublicErrorMessage } from "@/lib/errors";
+import { toPublicErrorMessage } from "@/infra/errors";
 import "server-only";
 import { cache } from "react";
-import { z } from "@/lib/validation/zod";
-import { err, ok, type Result } from "@/lib/result";
+import { z } from "@/infra/validation/zod";
+import { err, ok, type Result } from "@/infra/result";
 import { readEffectivePlanOrNull } from "./effective-plan-fallback";
-import { getDisabledSalonFeatures } from "@/lib/auth/permissions";
+import { getDisabledSalonFeatures } from "@/infra/auth/permissions";
 import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
 import { SALON_FEATURES } from "@/features/salon/domain/salon-features";
@@ -53,7 +53,7 @@ import {
 } from "../data/salon-subscriptions.repo";
 import { findPlanCatalog, findPlanWithChildren } from "../data/commercial-plans.repo";
 import { auditBilling, dateOrNull } from "./billing-shared";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const AssignmentSchema = z.object({
   salonId: z.string().uuid("Selecciona un salon."),

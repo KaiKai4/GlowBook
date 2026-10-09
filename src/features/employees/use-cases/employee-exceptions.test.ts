@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   deleteEmployeeException,
   insertEmployeeException,
@@ -13,7 +13,7 @@ import {
 // según la zona horaria del salón, motivo recortado a 200 caracteres y errores
 // de BD traducidos a mensajes de negocio.
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

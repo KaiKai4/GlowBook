@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import type { EffectiveSalonPlan } from "../domain/commercial-plan";
 import { readEffectivePlanOrNull } from "./effective-plan-fallback";
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const mockedCapture = vi.mocked(captureError);
 const PLAN = { salonId: "salon-1", plan: null } as unknown as EffectiveSalonPlan;

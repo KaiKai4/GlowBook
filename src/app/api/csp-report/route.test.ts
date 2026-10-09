@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { POST } from "./route";
-import { assertAnonymousRateLimit } from "@/lib/security/rate-limit";
+import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
 
-vi.mock("@/lib/security/rate-limit", () => ({ assertAnonymousRateLimit: vi.fn() }));
+vi.mock("@/infra/security/rate-limit", () => ({ assertAnonymousRateLimit: vi.fn() }));
 
 const URL_ = "https://app.glowbook.test/api/csp-report";
 const LEGACY = "application/csp-report";

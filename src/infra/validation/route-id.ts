@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
 // z.guid acepta cualquier UUID con forma 8-4-4-4-12 (incluidos los UUID de seed
 // con version 0), a diferencia de z.uuid que exige version y variante RFC.

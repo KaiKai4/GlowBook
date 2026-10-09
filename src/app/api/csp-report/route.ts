@@ -1,7 +1,7 @@
-import { readBoundedText } from "@/lib/http/bounded-body";
-import { jsonNoStore, noContent } from "@/lib/http/responses";
-import { CSP_REPORT_CONTENT_TYPES, parseCspReport } from "@/lib/security/csp-report";
-import { assertAnonymousRateLimit } from "@/lib/security/rate-limit";
+import { readBoundedText } from "@/infra/http/bounded-body";
+import { jsonNoStore, noContent } from "@/infra/http/responses";
+import { CSP_REPORT_CONTENT_TYPES, parseCspReport } from "@/infra/security/csp-report";
+import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
 
 // Recibe informes de violacion CSP (report-uri y report-to). Es publico por
 // necesidad: el navegador envia el informe sin sesion. Por eso va limitado por

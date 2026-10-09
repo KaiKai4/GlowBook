@@ -1,6 +1,6 @@
 import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
-import { captureError } from "@/lib/observability";
-import { ok, type Result } from "@/lib/result";
+import { captureError } from "@/infra/observability";
+import { ok, type Result } from "@/infra/result";
 import { recordPlatformAction } from "./platform-audit";
 
 export interface DeleteSalonInput {

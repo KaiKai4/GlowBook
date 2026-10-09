@@ -20,7 +20,7 @@ const clients = vi.hoisted(() => ({ server: null as FakeSupabase | null }));
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: async () => clients.server,
 }));
 

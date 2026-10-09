@@ -1,5 +1,5 @@
-import { z } from "@/lib/validation/zod";
-import { isValidOptionalPhone, phoneValidationMessage } from "@/lib/utils/phone";
+import { z } from "@/infra/validation/zod";
+import { isValidOptionalPhone, phoneValidationMessage } from "@/infra/format/phone";
 
 const OptionalPhoneSchema = z
   .string()

@@ -2,7 +2,7 @@
 
 import { useEffect, useId } from "react";
 import { X } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 interface DialogProps {
   open: boolean;

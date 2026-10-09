@@ -1,5 +1,5 @@
 import "server-only";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import type { Database } from "@/types/database.types";
 
 export interface FeedbackReportRow {

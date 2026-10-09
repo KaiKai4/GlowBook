@@ -1,4 +1,4 @@
-import type { ZodError } from "@/lib/validation/zod";
+import type { ZodError } from "@/infra/validation/zod";
 
 // Mensaje del primer issue de un ZodError (safeParse fallido).
 // Zod garantiza al menos un issue cuando safeParse falla; si esa invariante

@@ -1,4 +1,4 @@
-import { captureError, type ObservabilityContext } from "@/lib/observability";
+import { captureError, type ObservabilityContext } from "@/infra/observability";
 
 export type SideEffectOutcome<T> =
   | { ok: true; value: T }

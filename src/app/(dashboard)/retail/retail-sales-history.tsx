@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
 import { paymentMethodLabel } from "@/features/payments/domain/payment-methods";
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 
 export function RetailSalesHistory({ sales }: { sales: RetailPageView["recentSales"] }) {
   return (

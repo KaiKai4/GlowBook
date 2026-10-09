@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { acceptEmployeeInvitation } from "@/features/employees/use-cases/employee-invitations";
-import { assertAnonymousRateLimit } from "@/lib/security/rate-limit";
-import type { Result } from "@/lib/result";
+import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
+import type { Result } from "@/infra/result";
 
 export async function acceptEmployeeInvitationAction(
   token: string,

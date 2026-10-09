@@ -77,17 +77,17 @@ async function postWebhook(url, token) {
 
 loadEnvFileIfPresent();
 
-const adapterPath = join(process.cwd(), "src/lib/observability/index.ts");
-const testPath = join(process.cwd(), "src/lib/observability/index.test.ts");
+const adapterPath = join(process.cwd(), "src/infra/observability/index.ts");
+const testPath = join(process.cwd(), "src/infra/observability/index.test.ts");
 const webhookUrl = process.env.GLOWBOOK_OBSERVABILITY_WEBHOOK_URL;
 const webhookToken = process.env.GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN;
 const requireWebhook = process.env.GLOWBOOK_OBSERVABILITY_REQUIRE_WEBHOOK === "true";
 const requireAlerts = process.env.GLOWBOOK_OBSERVABILITY_REQUIRE_ALERTS === "true";
 
 if (existsSync(adapterPath)) {
-  pass("src/lib/observability adapter exists");
+  pass("src/infra/observability adapter exists");
 } else {
-  fail("src/lib/observability adapter is missing");
+  fail("src/infra/observability adapter is missing");
 }
 
 if (existsSync(testPath)) {

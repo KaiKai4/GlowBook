@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setFeedbackStatus } from "@/features/platform/data/feedback-moderation.repo";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { setFeedbackReportStatus } from "./set-feedback-report-status";
 import { recordPlatformAction } from "./platform-audit";
 
@@ -12,7 +12,7 @@ vi.mock("@/features/platform/data/feedback-moderation.repo", () => ({
   setFeedbackStatus: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

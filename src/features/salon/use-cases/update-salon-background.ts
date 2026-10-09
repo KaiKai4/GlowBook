@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { updateSalonBackground as updateSalonBackgroundRow } from "../data/salon.repo";
 import { SALON_BG_STYLES, type SalonBgStyle } from "../schemas";
 

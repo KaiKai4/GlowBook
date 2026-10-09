@@ -3,7 +3,7 @@ import { createSupabaseDouble, type SupabaseDouble } from "@/test/small-features
 import { recordRetailSaleRpc, type RecordRetailSaleRpcInput } from "./record-retail-sale";
 
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: async () => serverClient.current,
 }));
 

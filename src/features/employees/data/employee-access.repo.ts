@@ -1,6 +1,6 @@
 import "server-only";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { hashInvitationToken } from "@/lib/auth/invitation-tokens";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
+import { hashInvitationToken } from "@/infra/auth/invitation-tokens";
 import type { Database } from "@/types/database.types";
 
 type DbError = { message: string; status?: number };

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 export async function findSalonTimezone(salonId: string): Promise<string | null> {
   const supabase = await createSupabaseServerClient();

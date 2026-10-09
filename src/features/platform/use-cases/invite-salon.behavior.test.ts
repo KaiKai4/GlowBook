@@ -3,8 +3,8 @@ import {
   createSalonInvitation,
   regenerateSalonInvitationToken,
 } from "@/features/platform/data/invitations.repo";
-import { isPlatformAdmin } from "@/lib/auth/session";
-import { captureError } from "@/lib/observability";
+import { isPlatformAdmin } from "@/infra/auth/session";
+import { captureError } from "@/infra/observability";
 import { inviteSalon, regenerateSalonInvitation } from "./invite-salon";
 import { recordPlatformAction } from "./platform-audit";
 import { firstOf } from "@/test/platform-feedback-notifications-helpers";
@@ -18,11 +18,11 @@ vi.mock("@/features/platform/data/invitations.repo", () => ({
   regenerateSalonInvitationToken: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/infra/auth/session", () => ({
   isPlatformAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

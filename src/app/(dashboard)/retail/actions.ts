@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { RetailSaleSchema } from "@/features/retail/schemas";
 import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();

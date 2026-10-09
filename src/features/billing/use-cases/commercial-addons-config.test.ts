@@ -6,7 +6,7 @@ import {
   saveCommercialAddon,
 } from "../data/commercial-addons.repo";
 import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { removeCommercialAddonConfig, saveCommercialAddonConfig } from "./commercial-addons";
 
 // Catálogo de extras: el guardado normaliza código y moneda y limpia los campos

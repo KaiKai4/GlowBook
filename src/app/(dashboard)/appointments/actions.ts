@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import {
   getOccupiedSlotsForSalonDate,
   type OccupiedByEmployee,
@@ -14,16 +14,16 @@ import { createAppointment } from "@/features/appointments/use-cases/create-appo
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import {
   AppointmentLifecycleSchema,
   CompleteAppointmentSchema,
   CreateAppointmentSchema,
   UpdateAppointmentScheduleSchema,
 } from "@/features/appointments/schemas";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
-import { parseUuid } from "@/lib/validation/route-id";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
+import { parseUuid } from "@/infra/validation/route-id";
 
 async function canManageAppointments(
   profile: Awaited<ReturnType<typeof requireActiveProfile>>,

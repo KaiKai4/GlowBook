@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, Clock, History, ShieldCheck, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import type {
   PlatformAuditLogEntryViewModel,
   PlatformAuditLogViewModel,

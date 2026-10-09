@@ -10,8 +10,8 @@ import {
   SAVED_WITH_WARNINGS_MESSAGE,
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
-import { formatCurrency } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatCurrency } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import {
   calculateDiscountAmount,
   calculateFinalChargedTotal,

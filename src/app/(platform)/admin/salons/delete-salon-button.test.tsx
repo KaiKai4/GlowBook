@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { changeFieldValue, clickElement, flushAsync, getButtonByText } from "@/test/ui-admin-dom";
 import { deleteSalonAction } from "../actions";

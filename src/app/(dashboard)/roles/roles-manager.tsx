@@ -10,7 +10,7 @@ import {
   CalendarCheck, Users, Bell, BarChart3, Settings,
   ShoppingBag,
 } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
 import { RoleDeleteButton } from "./delete-role-dialog";
 import {

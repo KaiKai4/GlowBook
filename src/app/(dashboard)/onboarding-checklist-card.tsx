@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Check, ChevronRight, Rocket } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import type { OnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
 
 // Guia de arranque del owner: visible en el dashboard hasta completar los

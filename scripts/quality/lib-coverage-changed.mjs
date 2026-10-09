@@ -19,8 +19,8 @@ import { ROOT, runArgv } from "./lib-process.mjs";
  */
 
 const CRITICAL_GLOBS = [
-  "src/lib/auth/**",
-  "src/lib/security/**",
+  "src/infra/auth/**",
+  "src/infra/security/**",
   "src/features/access/**",
   "src/features/platform/**",
   "src/proxy*.ts",

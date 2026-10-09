@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSubscriptionsPage, type SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import { RegenerateInviteLink } from "./regenerate-invite-link";
 
 export default async function PlatformAdminPage() {

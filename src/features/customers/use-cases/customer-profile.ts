@@ -1,4 +1,4 @@
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   createCustomer,
   updateCustomer,
@@ -7,8 +7,8 @@ import type {
   CreateCustomerInput,
   UpdateCustomerInput,
 } from "@/features/customers/schemas";
-import type { Result } from "@/lib/result";
-import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
+import type { Result } from "@/infra/result";
+import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 import { rejectArchivedDuplicate } from "./customer-duplicates";
 
 function mapCustomerConstraintError(error: unknown, fallback: string): string {

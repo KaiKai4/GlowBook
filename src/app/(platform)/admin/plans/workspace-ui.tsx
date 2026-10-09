@@ -4,7 +4,7 @@ import { useFormStatus } from "react-dom";
 import { CheckCircle2, Layers3, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import type { PlatformPlanActionState } from "./action-state";
 
 export function Panel({ icon, title, description, children, compact = false }: {

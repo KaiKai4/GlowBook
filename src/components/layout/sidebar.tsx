@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
 import { GlowBookBrand, GlowBookMark } from "@/components/brand/glowbook-logo";
-import type { Permission } from "@/lib/auth/permissions";
-import { cn } from "@/lib/utils/cn";
+import type { Permission } from "@/infra/auth/permissions";
+import { cn } from "@/components/ui/cn";
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
 
 import { getVisibleNavGroups } from "./nav-items";

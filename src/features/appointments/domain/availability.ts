@@ -1,4 +1,4 @@
-import { formatLocalDateISO, getZonedTimeParts, timeToMinutes } from "@/lib/utils/dates";
+import { formatLocalDateISO, getZonedTimeParts, timeToMinutes } from "@/infra/format/dates";
 import type {
   BusinessHour,
   OccupiedSlot,

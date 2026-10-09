@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 type RelatedOne<T> = T | T[] | null;
 

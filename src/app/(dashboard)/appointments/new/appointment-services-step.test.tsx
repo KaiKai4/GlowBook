@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
-import { formatTimeTz } from "@/lib/utils/dates";
+import { formatTimeTz } from "@/infra/format/dates";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import {
   WIZARD_CATEGORIES,

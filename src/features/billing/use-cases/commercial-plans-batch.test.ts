@@ -8,7 +8,7 @@ import {
 import { findSubscriptionRows, type AssignmentRow } from "../data/salon-subscriptions.repo";
 import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
 import type { CommercialPlan } from "../domain/commercial-plan";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { plan } from "@/test/billing-plan-fixtures";
 import {
   getCommercialPlansPage,

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveCommercialAddon } from "../data/commercial-addons.repo";
 import { savePlanLimit, savePlanModule } from "../data/commercial-plans.repo";
 import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { saveCommercialAddonConfig } from "./commercial-addons";
 import { saveCommercialPlanLimitsBatch, saveCommercialPlanModulesBatch } from "./commercial-plans";
 

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import { regenerateSalonInvitationToken } from "./invitations.repo";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: vi.fn() }));
-vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: vi.fn() }));
+vi.mock("@/infra/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
 const INVITATION = "00000000-0000-4000-8000-0000000000d1";
 

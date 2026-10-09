@@ -11,7 +11,7 @@ import type {
   SalonSubscriptionDetail,
   SubscriptionsPageData,
 } from "@/features/billing/use-cases/salon-subscriptions";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, MiniMetric, Panel, SubmitButton } from "../plans/workspace-ui";
 import { assignPlanAction } from "./actions";

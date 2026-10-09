@@ -1,4 +1,4 @@
-import { PublicError } from "@/lib/public-error";
+import { PublicError } from "@/infra/public-error";
 export interface ServiceCategoryRef {
   id: string;
   category_id: string;

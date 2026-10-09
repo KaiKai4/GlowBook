@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { confirmReminderAppointmentAction, markReminderSentAction } from "./actions";
 
 const BUSY_MESSAGE = "Espera a que termine la acción anterior.";

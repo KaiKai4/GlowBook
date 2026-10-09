@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
-import { PublicError } from "@/lib/public-error";
+import { captureError } from "@/infra/observability";
+import { PublicError } from "@/infra/public-error";
 import { insertExpense } from "./expenses/data/expenses.repo";
 import { createExpense } from "./expenses/use-cases/expenses";
 import { recordInventoryPurchaseRpc } from "./inventory/data/rpc/record-inventory-purchase";
@@ -12,7 +12,7 @@ import {
 import { recordRetailSaleRpc } from "./retail/data/rpc/record-retail-sale";
 import { createRetailSale } from "./retail/use-cases/retail-sales";
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("./expenses/data/expenses.repo", () => ({ insertExpense: vi.fn() }));
 vi.mock("./inventory/data/rpc/record-inventory-purchase", () => ({

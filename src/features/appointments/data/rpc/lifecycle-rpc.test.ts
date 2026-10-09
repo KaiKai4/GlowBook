@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { cancelAppointmentRpc } from "./cancel-appointment";
 import { completeAppointmentRpc } from "./complete-appointment";
 import { confirmAppointmentRpc } from "./confirm-appointment";
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 

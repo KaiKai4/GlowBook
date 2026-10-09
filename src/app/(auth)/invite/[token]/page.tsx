@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import { useParams, useRouter } from "next/navigation";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";

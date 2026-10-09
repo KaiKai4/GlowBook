@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { hashInvitationToken } from "@/lib/auth/invitation-tokens";
+import { hashInvitationToken } from "@/infra/auth/invitation-tokens";
 import { findSalonInvitationForAcceptance } from "./invitations.repo";
 
 // La base solo conoce el sha256 del token: la consulta de aceptacion debe
 // filtrar por token_hash y nunca por el token en claro.
 
-// Doble del cliente admin: este test no importa @/lib/supabase/admin (ADR 0010).
+// Doble del cliente admin: este test no importa @/infra/supabase/admin (ADR 0010).
 const adminClient = vi.hoisted(() => ({ from: vi.fn<(table: string) => unknown>() }));
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminClient,
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 

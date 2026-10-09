@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { assertServicesHaveAssignedCategories } from "@/features/employees/domain/collaborator-assignment";
 import {
   createEmployeeWithAssignmentsRpc,

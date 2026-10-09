@@ -1,4 +1,4 @@
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   createCustomer,
   deleteCustomer,
@@ -9,8 +9,8 @@ import {
   isValidOptionalPhone,
   normalizeOptionalPhoneInput,
   phoneValidationMessage,
-} from "@/lib/utils/phone";
-import type { Result } from "@/lib/result";
+} from "@/infra/format/phone";
+import type { Result } from "@/infra/result";
 
 function databaseErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error ?? "");

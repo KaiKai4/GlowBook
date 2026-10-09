@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PublicError } from "@/lib/public-error";
+import { PublicError } from "@/infra/public-error";
 import { assertServicesHaveAssignedCategories } from "./collaborator-assignment";
 
 describe("asignacion de servicios a colaboradores: categorias", () => {

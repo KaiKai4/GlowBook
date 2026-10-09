@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import { CalendarDays, Clock3, StickyNote, UserRound } from "lucide-react";
 import type { AppointmentScheduleItem } from "@/features/appointments/domain/wizard-availability";
 

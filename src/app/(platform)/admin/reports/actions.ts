@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import { parseUuid } from "@/lib/validation/route-id";
+import { requirePlatformAdmin } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { parseUuid } from "@/infra/validation/route-id";
 import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedback-report-status";
 
 // Form action: toggle a report between 'new' and 'resolved'. Returns void

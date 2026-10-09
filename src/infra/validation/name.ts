@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
 // People's names: a letter (any alphabet) followed by letters, spaces and common
 // name punctuation (apostrophe, hyphen, period). No digits or other symbols.

@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import { Check, User } from "lucide-react";
 import type {
   AppointmentScheduleItem,

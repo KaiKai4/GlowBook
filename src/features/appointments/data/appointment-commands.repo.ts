@@ -1,7 +1,7 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getUtcDayBoundaries } from "@/lib/utils/dates";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { getUtcDayBoundaries } from "@/infra/format/dates";
 import type { Database } from "@/types/database.types";
 import type { AppointmentStatus } from "../domain/lifecycle";
 import type {

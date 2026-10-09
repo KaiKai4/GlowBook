@@ -14,7 +14,7 @@ import {
   ShoppingBag,
   ReceiptText,
 } from "lucide-react";
-import type { Permission } from "@/lib/auth/permissions";
+import type { Permission } from "@/infra/auth/permissions";
 import type { SalonFeatureKey } from "@/features/salon/domain/salon-features";
 import { normalizeDisabledSalonFeatures } from "@/features/salon/domain/salon-features";
 

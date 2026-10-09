@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { updateSalonTheme as updateSalonThemeRow } from "../data/salon.repo";
 import { SALON_THEMES, type SalonTheme } from "../schemas";
 

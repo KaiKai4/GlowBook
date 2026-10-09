@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PublicError } from "@/lib/public-error";
+import { PublicError } from "@/infra/public-error";
 import { assertTransition } from "./lifecycle";
 import { buildItemPayloads, type SchedulingContext } from "./scheduling";
 import type { ServiceAssignment } from "./types";

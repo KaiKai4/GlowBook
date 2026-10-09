@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRole, deleteRole, setRolePermissions } from "../data/roles.repo";
-import { PublicError } from "@/lib/public-error";
+import { PublicError } from "@/infra/public-error";
 import { createRoleWithPermissions } from "./create-role";
 import { deleteSalonRole } from "./delete-role";
 import { updateRolePermissions } from "./update-role-permissions";

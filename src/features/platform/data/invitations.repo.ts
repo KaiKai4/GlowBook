@@ -1,11 +1,11 @@
 import "server-only";
-import { PublicError } from "@/lib/public-error";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PublicError } from "@/infra/public-error";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import {
   generateInvitationToken,
   hashInvitationToken,
-} from "@/lib/auth/invitation-tokens";
+} from "@/infra/auth/invitation-tokens";
 
 // Sin token: la DB solo guarda el hash. El enlace se muestra una vez al
 // crear o regenerar la invitacion.

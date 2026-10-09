@@ -3,10 +3,10 @@ import {
   createAppointmentsSupabaseDouble,
   installSupabaseDouble,
 } from "@/test/appointments-feature-supabase";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { updateAppointmentWithRpc } from "./update-appointment";
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 

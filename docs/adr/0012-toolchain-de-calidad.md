@@ -30,7 +30,7 @@ Cada herramienta nueva tiene una razon concreta y una alternativa descartada.
 | `fast-check` | Pruebas de propiedades de funciones puras de dominio | Genera casos para reglas de disponibilidad y solapamiento que los ejemplos fijos no cubren. | Solo ejemplos fijos: dejan pasar casos de borde no pensados. |
 | `@axe-core/playwright` | Helper de accesibilidad en E2E | Motor de accesibilidad de referencia, integrado con Playwright. | Revisiones manuales: no se repiten en cada cambio. |
 | `supabase` (CLI) | `db:start`, `db:reset`, `db:test`, tipos y pgTAP | Es la unica forma oficial de levantar el stack local de Supabase y ejecutar `supabase test db`. | Postgres en Docker sin el CLI: no reproduce Auth, roles ni el hook de JWT. |
-| `@stryker-mutator/core` + `vitest-runner` | Workflow nocturno `mutation` (solo CI) | Mide si los tests detectan cambios de comportamiento en `src/features/*/domain` y `src/lib/security`. Es lento, por eso no corre en PR. | Cobertura como unico indicador: una linea puede estar cubierta sin que su aserción la verifique. |
+| `@stryker-mutator/core` + `vitest-runner` | Workflow nocturno `mutation` (solo CI) | Mide si los tests detectan cambios de comportamiento en `src/features/*/domain` y `src/infra/security`. Es lento, por eso no corre en PR. | Cobertura como unico indicador: una linea puede estar cubierta sin que su aserción la verifique. |
 
 Dependencias ya existentes que no se reemplazan: Vitest, ESLint, TypeScript, Playwright y `pg`.
 

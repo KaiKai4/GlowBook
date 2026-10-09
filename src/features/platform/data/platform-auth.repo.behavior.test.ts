@@ -4,7 +4,7 @@ import {
   deleteAuthUser,
   findAuthUserByEmail,
   updateAuthUser,
-} from "@/lib/supabase/auth-admin";
+} from "@/infra/supabase/auth-admin";
 import {
   createPlatformOwnerAuthUser,
   deletePlatformOwnerAuthUser,
@@ -17,7 +17,7 @@ import {
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/supabase/auth-admin", () => ({
+vi.mock("@/infra/supabase/auth-admin", () => ({
   createAuthUser: vi.fn(),
   deleteAuthUser: vi.fn(),
   findAuthUserByEmail: vi.fn(),

@@ -6,7 +6,7 @@ import { findCommercialAddonById, findCommercialAddons } from "./commercial-addo
 // al modelo de dominio de extras comerciales.
 
 const adminClient = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => adminClient.current }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => adminClient.current }));
 
 function useTables(tables: Record<string, FakeQueryResult>) {
   adminClient.current = fakeSupabaseFrom(tables);

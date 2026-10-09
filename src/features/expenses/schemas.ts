@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 import { EXPENSE_CATEGORIES } from "./domain/categories";
 import { isHttpsReceiptUrl } from "./domain/receipt-url";
 

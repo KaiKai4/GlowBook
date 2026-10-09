@@ -6,7 +6,7 @@ import {
 } from "./reports-read-models.rpc";
 
 const rpc = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: async () => ({ rpc }),
 }));
 

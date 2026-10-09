@@ -5,7 +5,7 @@ import {
   checkCustomerPhoneAction,
   findOrCreateCustomerAction,
 } from "@/app/(dashboard)/customers/actions";
-import { phoneValidationMessage } from "@/lib/utils/phone";
+import { phoneValidationMessage } from "@/infra/format/phone";
 import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buildWizardProps, TEST_DATE } from "@/test/ui-appointments-fixtures";

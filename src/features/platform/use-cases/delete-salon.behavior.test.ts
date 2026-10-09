@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { deleteSalon } from "./delete-salon";
 import { recordPlatformAction } from "./platform-audit";
 
@@ -12,7 +12,7 @@ vi.mock("@/features/platform/data/delete-salon.repo", () => ({
   deleteSalonCompletely: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

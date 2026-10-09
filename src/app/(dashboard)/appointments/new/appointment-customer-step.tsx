@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils/cn";
-import { normalizeOptionalPhoneInput } from "@/lib/utils/phone";
+import { cn } from "@/components/ui/cn";
+import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 import { UserPlus, Users } from "lucide-react";
 import type { CustomerOption } from "./appointment-wizard-types";
 

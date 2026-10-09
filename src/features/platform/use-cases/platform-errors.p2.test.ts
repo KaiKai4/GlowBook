@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
-import { PublicError } from "@/lib/public-error";
-import { isPlatformAdmin } from "@/lib/auth/session";
+import { captureError } from "@/infra/observability";
+import { PublicError } from "@/infra/public-error";
+import { isPlatformAdmin } from "@/infra/auth/session";
 import { createSalonInvitation, findSalonInvitationForAcceptance } from "../data/invitations.repo";
 import { acceptInvitation } from "./accept-invitation";
 import { inviteSalon } from "./invite-salon";
 import { recordPlatformAction } from "./platform-audit";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ isPlatformAdmin: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/auth/session", () => ({ isPlatformAdmin: vi.fn() }));
 vi.mock("./platform-audit", () => ({ recordPlatformAction: vi.fn(async () => []) }));
 vi.mock("../data/invitations.repo", () => ({
   acceptSalonInvitationAsAdmin: vi.fn(),

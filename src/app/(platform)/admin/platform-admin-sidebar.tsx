@@ -14,7 +14,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 const PLATFORM_NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },

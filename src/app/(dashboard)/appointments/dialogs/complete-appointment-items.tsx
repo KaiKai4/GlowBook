@@ -1,8 +1,8 @@
 "use client";
 
 import { Tag } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/dates";
+import { cn } from "@/components/ui/cn";
+import { formatCurrency } from "@/infra/format/dates";
 
 export interface ChargedItem {
   id: string;

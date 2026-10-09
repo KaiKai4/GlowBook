@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
 import { act } from "react";
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import {
   buildCalendarAppointment,

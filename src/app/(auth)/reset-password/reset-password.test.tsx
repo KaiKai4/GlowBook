@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, flushAsync, setFieldValue } from "@/test/ui-shared-dom";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import ResetPasswordPage from "./page";
 
 const pushMock = vi.fn();
@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => searchParams,
 }));
 
-vi.mock("@/lib/supabase/client", () => ({
+vi.mock("@/infra/supabase/client", () => ({
   createSupabaseBrowserClient: vi.fn(),
 }));
 

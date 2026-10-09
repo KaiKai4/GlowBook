@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Permission } from "@/lib/auth/permissions";
+import type { Permission } from "@/infra/auth/permissions";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, findButtonByText, requireElement } from "@/test/ui-shared-dom";
 import { Sidebar } from "./sidebar";

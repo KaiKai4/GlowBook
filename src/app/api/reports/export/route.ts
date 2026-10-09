@@ -1,13 +1,13 @@
-import { getProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { getProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import {
   getReportExportData,
   type ReportExportScope,
 } from "@/features/reports/use-cases/get-report-export";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import { captureError } from "@/lib/observability";
-import { binaryNoStore, jsonNoStore } from "@/lib/http/responses";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { captureError } from "@/infra/observability";
+import { binaryNoStore, jsonNoStore } from "@/infra/http/responses";
 import { buildReportWorkbook } from "./workbook";
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;

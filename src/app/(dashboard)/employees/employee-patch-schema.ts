@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 import { CreateEmployeeSchema } from "@/features/employees/schemas";
 
 // Parche de edición: sin .default() (heredado de CreateEmployeeSchema.partial()).

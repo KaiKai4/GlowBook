@@ -1,16 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import { parseUuid } from "@/lib/validation/route-id";
+import { requirePlatformAdmin } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { parseUuid } from "@/infra/validation/route-id";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
 import {
   inviteSalon,
   regenerateSalonInvitation,
 } from "@/features/platform/use-cases/invite-salon";
 import { updateSalonStatus } from "@/features/platform/use-cases/update-salon-status";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 // Devuelve el token en claro: el enlace solo puede mostrarse en esta
 // respuesta porque la DB guarda unicamente el hash.

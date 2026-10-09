@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, KeyRound } from "lucide-react";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";

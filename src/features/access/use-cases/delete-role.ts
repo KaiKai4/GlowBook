@@ -1,7 +1,7 @@
 import "server-only";
 
-import { toPublicErrorMessage } from "@/lib/errors";
-import type { Result } from "@/lib/result";
+import { toPublicErrorMessage } from "@/infra/errors";
+import type { Result } from "@/infra/result";
 import { deleteRole } from "../data/roles.repo";
 
 export async function deleteSalonRole(

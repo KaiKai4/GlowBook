@@ -1,7 +1,7 @@
 import "server-only";
 
-import { toCanonicalPayload } from "@/lib/idempotency/canonical-json";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { errorMessageOf } from "./error-message";
 import type { CreateAppointmentRpcPayload } from "./create-appointment";
 

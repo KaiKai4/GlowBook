@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { FeedbackCategory } from "../schemas";
 
 // Tenant-side write: RLS pins the row to the caller's salon + identity.

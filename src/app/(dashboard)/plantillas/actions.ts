@@ -4,11 +4,11 @@ import { revalidatePath } from "next/cache";
 import { NotificationTemplateSchema } from "@/features/notifications/schemas";
 import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 export async function updateNotificationTemplateAction(
   _prev: Result<void> | null,

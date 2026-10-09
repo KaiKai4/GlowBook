@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { ExpenseHistoryItem } from "@/features/expenses/use-cases/expenses";
 import { isHttpsReceiptUrl } from "@/features/expenses/domain/receipt-url";
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 
 type ExpenseTypeFilter = "all" | "manual" | "inventory_purchase";
 

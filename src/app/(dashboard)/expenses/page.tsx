@@ -1,8 +1,8 @@
 import { getExpensesPage } from "@/features/expenses/use-cases/expenses";
 import { getInventoryProductOptions } from "@/features/inventory/use-cases/inventory-product-options";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
 import { ReceiptText } from "lucide-react";
 import { ExpensesManager } from "./expenses-manager";
 

@@ -1,6 +1,6 @@
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/dates";
+import { cn } from "@/components/ui/cn";
+import { formatCurrency } from "@/infra/format/dates";
 
 export function RetailProductList({ products }: { products: RetailPageView["products"] }) {
   return (

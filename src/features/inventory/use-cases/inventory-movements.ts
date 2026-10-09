@@ -1,7 +1,7 @@
 import "server-only";
 
-import { toPublicErrorMessage } from "@/lib/errors";
-import type { Result } from "@/lib/result";
+import { toPublicErrorMessage } from "@/infra/errors";
+import type { Result } from "@/infra/result";
 import { recordInventoryPurchaseRpc } from "../data/rpc/record-inventory-purchase";
 import { recordInventoryTransferRpc } from "../data/rpc/record-inventory-transfer";
 import type { InventoryPurchaseInput, InventoryTransferInput } from "../schemas";

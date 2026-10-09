@@ -1,7 +1,7 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { z } from "@/lib/validation/zod";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { z } from "@/infra/validation/zod";
 import type { ReportModuleAvailability } from "../../domain/analytics";
 import { modulesArgument, type ReportDayRangeInput } from "./reports-read-models.rpc";
 

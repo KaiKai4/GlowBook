@@ -40,7 +40,7 @@ src/components
   -> ui/          # domain-free UI atoms
   -> layout/      # shared layout Modules
 
-src/lib
+src/infra
   -> auth, Supabase Adapters, utils, validation and Result
 
 supabase/migrations
@@ -59,14 +59,14 @@ app -> features/use-cases -> features/domain + features/data -> lib/supabase -> 
 
 ## Import Rules
 
-- `src/app` may import `src/features`, `src/components` and `src/lib`.
+- `src/app` may import `src/features`, `src/components` and `src/infra`.
 - Server Actions should stay thin: require profile/admin, check permission, parse input, call a use-case and revalidate.
 - `src/features/<domain>/domain` contains pure rules and types for that domain.
 - `src/features/<domain>/data` is the Supabase/Postgres Adapter for that domain.
 - `src/features/<domain>/use-cases` is the Interface that app callers should use for business flows.
 - `src/components/ui` must not import from `src/app` or `src/features`.
 - `src/components/layout` must not import route files from `src/app`.
-- `src/lib/supabase/admin.ts` is server-only and bypasses RLS; use it only in the allowed cases documented in ADR 0010.
+- `src/infra/supabase/admin.ts` is server-only and bypasses RLS; use it only in the allowed cases documented in ADR 0010.
 
 Do not create empty `domain`, `data` or `use-cases` folders for appearance. A folder should contain a real Module or a short README explaining the planned Seam.
 

@@ -1,5 +1,5 @@
 import { Tags, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import type { Category, ServiceItem } from "./services-types";
 import { ServiceCard } from "./service-card";
 

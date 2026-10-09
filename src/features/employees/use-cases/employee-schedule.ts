@@ -1,10 +1,10 @@
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   deleteWorkSchedule,
   upsertWorkSchedule,
 } from "@/features/employees/data/employees.repo";
 import type { WorkScheduleInput } from "@/features/employees/schemas";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 export async function addEmployeeWorkSchedule(
   salonId: string,

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { updateService } from "../data/services.repo";
 import type { UpdateServiceInput } from "../schemas";
 import { isCategoryOwnershipError, isUniqueConstraintError } from "./errors";

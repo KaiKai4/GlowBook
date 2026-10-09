@@ -1,5 +1,5 @@
-import { PublicError } from "@/lib/public-error";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PublicError } from "@/infra/public-error";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 export interface RoleWithPermissions {
   id: string;

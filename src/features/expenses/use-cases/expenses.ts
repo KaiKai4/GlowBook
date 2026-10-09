@@ -1,5 +1,5 @@
-import { toPublicErrorMessage } from "@/lib/errors";
-import { err, ok, type Result } from "@/lib/result";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { err, ok, type Result } from "@/infra/result";
 import type { CreateExpenseInput } from "../schemas";
 import {
   findExpenses,

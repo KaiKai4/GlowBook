@@ -6,7 +6,7 @@ import { getActiveMessageTemplate } from "@/features/notifications/use-cases/act
 import { getSalonBusinessHours } from "@/features/salon/use-cases/salon-business-hours";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
-import { formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
+import { formatLocalDateISO, utcBounds } from "@/infra/format/dates";
 import {
   countActiveCalendarAppointments,
   formatCalendarDateLabel,

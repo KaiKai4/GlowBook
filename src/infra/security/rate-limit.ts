@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
-import { captureError } from "@/lib/observability";
-import { err, ok, type Result } from "@/lib/result";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { captureError } from "@/infra/observability";
+import { err, ok, type Result } from "@/infra/result";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 
 // Rate limiting de ventana fija compartido por todas las instancias: el
 // contador vive en la tabla rate_limit_buckets y se incrementa con la RPC

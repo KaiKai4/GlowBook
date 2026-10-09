@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appointment-detail";
 import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
-import { parseUuid } from "@/lib/validation/route-id";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
+import { parseUuid } from "@/infra/validation/route-id";
 import { AppointmentEditForm } from "./appointment-edit-form";
 
 export default async function EditAppointmentPage({

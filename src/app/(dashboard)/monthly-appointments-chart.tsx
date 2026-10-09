@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import type { MonthlyAppointmentPoint } from "@/features/dashboard/use-cases/get-dashboard-overview";
 
 const WIDTH = 720;

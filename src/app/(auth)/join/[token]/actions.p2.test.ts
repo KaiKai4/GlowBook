@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { acceptEmployeeInvitation } from "@/features/employees/use-cases/employee-invitations";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { acceptEmployeeInvitationAction } from "./actions";
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
@@ -13,8 +13,8 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/employees/use-cases/employee-invitations", () => ({
   acceptEmployeeInvitation: vi.fn(),
 }));

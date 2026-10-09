@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { recordPlatformAudit } from "@/features/platform/data/platform-audit.repo";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { recordPlatformAction } from "./platform-audit";
 
 // La accion del super-admin se emite como evento post-commit. El manejador
@@ -11,7 +11,7 @@ vi.mock("@/features/platform/data/platform-audit.repo", () => ({
   recordPlatformAudit: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

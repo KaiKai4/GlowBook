@@ -11,7 +11,7 @@ const toast = vi.hoisted(() => ({
 vi.mock("@/components/ui/toast", () => ({
   useToast: () => toast,
 }));
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, getButtonByText, getFieldByName, changeFieldValue } from "@/test/ui-admin-dom";
 import { inviteSalonAction } from "../actions";

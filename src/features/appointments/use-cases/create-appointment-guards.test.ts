@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
   findEmployeeExceptionDatesForCommand,
@@ -18,7 +18,7 @@ vi.mock("../data/appointment-commands.repo", () => ({
 vi.mock("../data/rpc/create-appointment", () => ({
   createAppointmentWithRpc: vi.fn(),
 }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 type DayHours = {
   day_of_week: number;

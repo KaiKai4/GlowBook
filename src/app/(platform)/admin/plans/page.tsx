@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Blocks, CreditCard, Gauge, Gift, Layers3, Plus } from "lucide-react";
 
 import { getCommercialPlansPage } from "@/features/billing/use-cases/commercial-plans";
-import { requirePlatformAdmin } from "@/lib/auth/session";
-import { cn } from "@/lib/utils/cn";
+import { requirePlatformAdmin } from "@/infra/auth/session";
+import { cn } from "@/components/ui/cn";
 import { AddonsCatalog } from "./addons-catalog";
 import { PlansWorkspace } from "./plans-workspace";
 

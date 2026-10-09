@@ -7,7 +7,7 @@ import {
 import { getActiveEmployeeNameOptions } from "@/features/employees/use-cases/employee-name-options";
 import { getActiveMessageTemplate } from "@/features/notifications/use-cases/active-message-template";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
-import { addDaysToDateISO, formatLocalDateISO, utcBounds } from "@/lib/utils/dates";
+import { addDaysToDateISO, formatLocalDateISO, utcBounds } from "@/infra/format/dates";
 import { findLatestReminderLogsByAppointmentIds } from "../data/reminder-log.repo";
 import type { ReminderAppointment, ReminderQueueViewModel } from "../view-models";
 

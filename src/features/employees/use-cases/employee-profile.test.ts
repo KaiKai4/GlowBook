@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import type { Database } from "@/types/database.types";
 import {
   createEmployee,
@@ -23,7 +23,7 @@ import {
 // Alta y edicion de colaboradores. Se prueba la orquestacion (lectura previa, RPC
 // transaccional, efectos posteriores) con los adaptadores mockeados.
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

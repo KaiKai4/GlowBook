@@ -14,7 +14,7 @@ vi.mock("./platform-audit", () => ({
   recordPlatformAction: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

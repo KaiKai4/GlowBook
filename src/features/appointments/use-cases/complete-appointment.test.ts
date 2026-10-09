@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { findAppointmentForCommand } from "../data/appointment-commands.repo";
 import { completeAppointmentRpc } from "../data/rpc/complete-appointment";
 import { completeAppointment } from "./complete-appointment";
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

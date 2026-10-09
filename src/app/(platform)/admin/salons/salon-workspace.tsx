@@ -16,7 +16,7 @@ import type {
   SalonSubscriptionRow,
   SubscriptionsPageData,
 } from "@/features/billing/use-cases/salon-subscriptions";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { MiniMetric, Panel } from "../plans/workspace-ui";
 import { UsagePanel } from "../subscriptions/usage-panel";
 import { DeleteSalonButton } from "./delete-salon-button";

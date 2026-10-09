@@ -1,5 +1,5 @@
-import { runSideEffect } from "@/lib/effects/run-side-effect";
-import type { ObservabilityContext } from "@/lib/observability";
+import { runSideEffect } from "@/infra/effects/run-side-effect";
+import type { ObservabilityContext } from "@/infra/observability";
 
 /**
  * Bus de eventos en proceso (servidor). Cada caso de uso emite sus eventos SOLO

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
-import { PublicError } from "@/lib/public-error";
+import { captureError } from "@/infra/observability";
+import { PublicError } from "@/infra/public-error";
 import {
   archiveCommercialAddon,
   countAddonAssignments,
@@ -23,7 +23,7 @@ import {
   saveCommercialPlanModulesBatch,
 } from "./commercial-plans";
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("./billing-shared", () => ({
   auditBilling: vi.fn(async () => []),

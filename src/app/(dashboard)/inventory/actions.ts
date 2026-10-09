@@ -13,13 +13,13 @@ import {
   updateInventoryProductProfile,
 } from "@/features/inventory/use-cases/inventory-products";
 import { transferInventoryStock } from "@/features/inventory/use-cases/inventory-movements";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
-import { parseUuid } from "@/lib/validation/route-id";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
+import { parseUuid } from "@/infra/validation/route-id";
 
 async function guard(): Promise<Result<{ salonId: string }>> {
   const profile = await requireActiveProfile();

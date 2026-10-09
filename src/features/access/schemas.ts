@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
 export const CreateRoleSchema = z.object({
   name: z.string().min(1, "El nombre del rol es obligatorio").max(100),

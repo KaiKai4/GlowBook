@@ -1,7 +1,7 @@
 import { MessageSquareText } from "lucide-react";
-import { requireProfile } from "@/lib/auth/session";
+import { requireProfile } from "@/infra/auth/session";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { getTemplateSettings } from "@/features/notifications/use-cases/get-template-settings";
 import { TemplatesManager } from "./templates-manager";
 

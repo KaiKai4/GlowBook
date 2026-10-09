@@ -2,10 +2,10 @@
 
 import { submitFeedback } from "@/features/feedback/use-cases/submit-feedback";
 import { SubmitFeedbackSchema, type SubmitFeedbackInput } from "@/features/feedback/schemas";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 export async function submitFeedbackAction(
   input: SubmitFeedbackInput

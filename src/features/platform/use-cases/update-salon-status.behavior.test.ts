@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { updateSalonStatus } from "./update-salon-status";
 import { recordPlatformAction } from "./platform-audit";
 
@@ -12,7 +12,7 @@ vi.mock("@/features/platform/data/salons.repo", () => ({
   setSalonActiveStatus: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

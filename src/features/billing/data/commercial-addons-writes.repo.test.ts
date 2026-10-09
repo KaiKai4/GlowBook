@@ -17,7 +17,7 @@ import {
 
 const admin = vi.hoisted(() => ({ factory: vi.fn() }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: admin.factory,
 }));
 

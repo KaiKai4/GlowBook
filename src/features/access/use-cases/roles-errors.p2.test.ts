@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
-import { PublicError } from "@/lib/public-error";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { captureError } from "@/infra/observability";
+import { PublicError } from "@/infra/public-error";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { setRolePermissions, deleteRole } from "../data/roles.repo";
 import { deleteSalonRole } from "./delete-role";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
 type Reply = { data?: unknown; error?: unknown };
 

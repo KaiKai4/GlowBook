@@ -32,11 +32,11 @@ import {
   checkPlanLimit,
   checkPlanModuleAccess,
 } from "@/features/billing/use-cases/commercial-plans";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { guard } from "./employee-action-guard";
 import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
-import { parseUuid } from "@/lib/validation/route-id";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
+import { parseUuid } from "@/infra/validation/route-id";
 
 export async function createEmployeeAction(
   _prev: Result<CreateEmployeeResult> | null,

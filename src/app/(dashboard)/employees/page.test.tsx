@@ -3,17 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getEmployeesPage, type EmployeesPageViewModel } from "@/features/employees/use-cases/get-employees-page";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasPermission } from "@/infra/auth/permissions";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EmployeesPage from "./page";
 import { EmployeesManager } from "./employees-manager";
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/infra/auth/session", () => ({
   requireProfile: vi.fn(async () => ({ id: "user-1", salon_id: "salon-1" })),
 }));
 
-vi.mock("@/lib/auth/permissions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/auth/permissions")>()),
+vi.mock("@/infra/auth/permissions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/infra/auth/permissions")>()),
   hasPermission: vi.fn(),
 }));
 

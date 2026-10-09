@@ -1,8 +1,8 @@
 "use server";
 
 import { acceptInvitation } from "@/features/platform/use-cases/accept-invitation";
-import { assertAnonymousRateLimit } from "@/lib/security/rate-limit";
-import type { Result } from "@/lib/result";
+import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
+import type { Result } from "@/infra/result";
 
 export async function acceptInvitationAction(input: {
   token: string;

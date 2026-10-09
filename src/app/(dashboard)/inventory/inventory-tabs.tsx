@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 export type InventoryTab = "transfer" | "product" | "products" | "movements";
 

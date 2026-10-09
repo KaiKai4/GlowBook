@@ -12,7 +12,7 @@ import { findPlanWithChildren } from "../data/commercial-plans.repo";
 import type { CommercialAddon } from "../domain/salon-extras";
 import { recordPlatformAction } from "@/features/platform/use-cases/platform-audit";
 import { plan } from "@/test/billing-plan-fixtures";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import {
   assignSalonAddonConfig,
   assignSalonCommercialPlanConfig,

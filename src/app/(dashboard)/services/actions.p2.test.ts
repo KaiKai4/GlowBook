@@ -3,10 +3,10 @@ import { revalidatePath } from "next/cache";
 import { archiveServiceCategory } from "@/features/services/use-cases/archive-category";
 import { updateServiceCategory } from "@/features/services/use-cases/update-category";
 import { updateCatalogService } from "@/features/services/use-cases/update-service";
-import { PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import { ok } from "@/lib/result";
+import { PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fixtures";
 import {
   archiveCategoryAction,
@@ -15,8 +15,8 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ requireActiveProfile: vi.fn() }));
-vi.mock("@/lib/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
+vi.mock("@/infra/auth/session", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),

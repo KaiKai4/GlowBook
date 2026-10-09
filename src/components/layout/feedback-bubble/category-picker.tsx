@@ -1,5 +1,5 @@
 import { Bug, HelpCircle, Lightbulb, MoreHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import {
   FEEDBACK_CATEGORIES,
   FEEDBACK_CATEGORY_LABELS,

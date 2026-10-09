@@ -1,5 +1,5 @@
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 
 // Mensual + acumulado + la categoría que más pesa este mes: lo que un dueño
 // quiere saber de un vistazo sobre sus egresos.

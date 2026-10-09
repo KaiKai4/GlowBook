@@ -1,5 +1,5 @@
 import type { RecordPlatformAuditInput } from "@/features/platform/data/platform-audit.repo";
-import { registerDomainEventHandlers } from "@/lib/events/register-handlers";
+import { registerDomainEventHandlers } from "@/infra/events/register-handlers";
 import { AUDIT_EVENT_HANDLERS } from "./audit-event-handlers";
 import { AUDIT_EVENT_BY_ACTION, auditBus } from "./audit-events";
 

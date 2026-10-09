@@ -1,6 +1,6 @@
-import { requireProfile } from "@/lib/auth/session";
+import { requireProfile } from "@/infra/auth/session";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { getEmployeesPage } from "@/features/employees/use-cases/get-employees-page";
 import { EmployeesManager } from "./employees-manager";
 

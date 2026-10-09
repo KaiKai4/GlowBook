@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
@@ -23,7 +23,7 @@ vi.mock("../data/appointment-commands.repo", () => ({
 vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
 }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const salonId = "00000000-0000-4000-8000-0000000000g1";
 const appointmentId = "00000000-0000-4000-8000-0000000000g2";

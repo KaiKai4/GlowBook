@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
 import { getOccupiedSlotsForSalonDate } from "@/features/appointments/use-cases/appointment-availability";
 import { cancelAppointment } from "@/features/appointments/use-cases/cancel-appointment";
@@ -11,7 +11,7 @@ import { confirmAppointment } from "@/features/appointments/use-cases/confirm-ap
 import { createAppointment } from "@/features/appointments/use-cases/create-appointment";
 import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID, SALON_ID, USER_ID } from "@/test/action-fixtures";
 import {
   cancelAppointmentAction,
@@ -24,8 +24,8 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ requireActiveProfile: vi.fn() }));
-vi.mock("@/lib/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
+vi.mock("@/infra/auth/session", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),

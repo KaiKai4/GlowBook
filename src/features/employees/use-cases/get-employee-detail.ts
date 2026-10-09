@@ -1,5 +1,5 @@
 import "server-only";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";

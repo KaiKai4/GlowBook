@@ -1,5 +1,5 @@
 import type { PlatformAuditAction, PlatformAuditStatus } from "@/features/platform/data/platform-audit.repo";
-import { createDomainEventBus, type DomainEventHandlerTable } from "@/lib/events/domain-events";
+import { createDomainEventBus, type DomainEventHandlerTable } from "@/infra/events/domain-events";
 import type { Json } from "@/types/database.types";
 
 // Eventos de auditoria. Los casos de uso NO escriben la auditoria: emiten un

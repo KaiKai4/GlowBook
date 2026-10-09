@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
 // Parseo de informes de violacion CSP. Acepta los dos formatos que emiten los
 // navegadores: application/csp-report (report-uri, formato legacy) y

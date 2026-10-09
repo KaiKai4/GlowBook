@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TimePicker } from "@/components/ui/time-picker";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { Settings, Clock, Check, History, Store, Palette, CreditCard, Plus, X } from "lucide-react";
 import {
   updateSalonInfoAction,

@@ -1,7 +1,7 @@
 import { getRetailPage } from "@/features/retail/use-cases/retail-sales";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
 import { ShoppingBag } from "lucide-react";
 import { RetailManager } from "./retail-manager";
 

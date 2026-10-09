@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { requireActiveProfile } from "./session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => {
@@ -8,11 +8,11 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: vi.fn(),
 }));
 

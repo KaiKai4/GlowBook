@@ -9,7 +9,7 @@ import type {
   CommercialPlan,
   PlatformModule,
 } from "@/features/billing/use-cases/commercial-plans";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { removePlanAction } from "./actions";
 import { PlanForm, PlanInfoEditor, PlanLimits, PlanModules, PlanSummary } from "./plan-sections";
 import { EmptyState, StatusPill } from "./workspace-ui";

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSalonInvitation } from "@/features/platform/data/invitations.repo";
-import { isPlatformAdmin } from "@/lib/auth/session";
+import { isPlatformAdmin } from "@/infra/auth/session";
 import { inviteSalon } from "./invite-salon";
 import { recordPlatformAction } from "./platform-audit";
 
@@ -8,7 +8,7 @@ vi.mock("@/features/platform/data/invitations.repo", () => ({
   createSalonInvitation: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/infra/auth/session", () => ({
   isPlatformAdmin: vi.fn(),
 }));
 

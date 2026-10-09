@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
-import { PublicError } from "@/lib/public-error";
+import { captureError } from "@/infra/observability";
+import { PublicError } from "@/infra/public-error";
 import { findCommercialAddonById } from "../data/commercial-addons.repo";
 import { findPlanWithChildren } from "../data/commercial-plans.repo";
 import {
@@ -24,7 +24,7 @@ import {
   saveSalonManualExtraConfig,
 } from "./salon-subscriptions";
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("./billing-shared", () => ({
   auditBilling: vi.fn(async () => []),
   dateOrNull: (value?: string | null) => (value ? value : null),

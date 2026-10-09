@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   createCustomer,
   deleteCustomer,
   findCustomerByPhone,
   updateCustomer,
 } from "@/features/customers/data/customers.repo";
-import { phoneValidationMessage } from "@/lib/utils/phone";
+import { phoneValidationMessage } from "@/infra/format/phone";
 import type { Database } from "@/types/database.types";
 import {
   deleteTemporaryCustomer,
@@ -21,7 +21,7 @@ vi.mock("@/features/customers/data/customers.repo", () => ({
   updateCustomer: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

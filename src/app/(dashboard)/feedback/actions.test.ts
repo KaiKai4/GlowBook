@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { submitFeedback } from "@/features/feedback/use-cases/submit-feedback";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { buildProfile, SALON_ID, USER_ID } from "@/test/action-fixtures";
 import { submitFeedbackAction } from "./actions";
 
-vi.mock("@/lib/auth/session", () => ({ requireActiveProfile: vi.fn() }));
-vi.mock("@/lib/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
+vi.mock("@/infra/auth/session", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/feedback/use-cases/submit-feedback", () => ({ submitFeedback: vi.fn() }));
 
 const validInput = { category: "bug" as const, message: "  El botón de guardar no responde  " };

@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { PERMISSIONS } from "@/lib/auth/permissions";
-import { requireActiveProfile } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/infra/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
 import { createRoleWithPermissions } from "@/features/access/use-cases/create-role";
 import { deleteSalonRole } from "@/features/access/use-cases/delete-role";
 import { updateRolePermissions } from "@/features/access/use-cases/update-role-permissions";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fixtures";
 import { createRoleAction, deleteRoleAction, updateRolePermissionsAction } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/infra/auth/session", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/features/access/use-cases/create-role", () => ({ createRoleWithPermissions: vi.fn() }));
 vi.mock("@/features/access/use-cases/delete-role", () => ({ deleteSalonRole: vi.fn() }));
 vi.mock("@/features/access/use-cases/update-role-permissions", () => ({

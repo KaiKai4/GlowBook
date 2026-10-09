@@ -1,4 +1,4 @@
-import { addMinutes, getZonedTimeParts, zonedWallTimeToUtc } from "@/lib/utils/dates";
+import { addMinutes, getZonedTimeParts, zonedWallTimeToUtc } from "@/infra/format/dates";
 import { evaluateTimeRange } from "./availability";
 import type {
   BusinessHour,

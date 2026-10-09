@@ -3,13 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { getSalonSubscriptionDetail, getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { makeDetail, makeRow } from "@/test/ui-admin-fixtures";
 import { makeOverviewsView, makeSubscriptionsData } from "@/test/ui-admin-page-fixtures";
 import PlatformSubscriptionsPage from "./page";
 
-vi.mock("@/lib/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({
   getPlatformSalonOverviews: vi.fn(),
 }));

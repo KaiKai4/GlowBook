@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import { AppointmentsCalendar } from "./appointments-calendar";
 import { MobileAgenda } from "./mobile-agenda";
 import { AppointmentDetailDialog } from "./dialogs/appointment-detail";
 import { CompleteAppointmentDialog } from "./dialogs/complete-appointment";
 import { CancelAppointmentDialog } from "./dialogs/cancel-appointment";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import {
   CheckCircle2, ListFilter, MoreHorizontal, Pencil, Search, Trash2, X,
 } from "lucide-react";

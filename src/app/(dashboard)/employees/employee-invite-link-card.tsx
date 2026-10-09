@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Clock, Copy, Link2 } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 interface EmployeeInviteLinkCardProps {
   url: string;

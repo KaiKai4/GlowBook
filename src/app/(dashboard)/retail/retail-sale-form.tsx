@@ -18,7 +18,7 @@ import {
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
 import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 import { createRetailSaleAction } from "./actions";
 
 export function RetailSaleForm({

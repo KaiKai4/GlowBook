@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { ExpenseCategory } from "../schemas";
 import { reportMonthlyHistoryRpc } from "./rpc/report-monthly-history";
 

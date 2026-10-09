@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select } from "@/components/ui/select";
 import { TimePicker } from "@/components/ui/time-picker";
-import { formatTimeTz } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatTimeTz } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import { GripVertical, Plus, Scissors, Trash2 } from "lucide-react";
 import type {
   AppointmentScheduleItem,

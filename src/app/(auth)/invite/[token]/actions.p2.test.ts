@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
 import { acceptInvitation } from "@/features/platform/use-cases/accept-invitation";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { acceptInvitationAction } from "./actions";
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/platform/use-cases/accept-invitation", () => ({
   acceptInvitation: vi.fn(),
 }));

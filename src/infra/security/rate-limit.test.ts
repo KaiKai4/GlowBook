@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { captureError } from "@/infra/observability";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import { assertActionRateLimit } from "./rate-limit";
 
 const rpcMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a intentarlo.";
 const USER_ID = "7d1c9f0e-2b3a-4c5d-8e9f-0a1b2c3d4e5f";

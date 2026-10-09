@@ -1,9 +1,9 @@
 import "server-only";
 
-import { toCanonicalPayload } from "@/lib/idempotency/canonical-json";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { parseRpcResponse } from "@/lib/supabase/rpc-response";
-import { z } from "@/lib/validation/zod";
+import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { parseRpcResponse } from "@/infra/supabase/rpc-response";
+import { z } from "@/infra/validation/zod";
 
 const UpdateEmployeeProfileResultSchema = z.object({
   employee_id: z.string().uuid(),

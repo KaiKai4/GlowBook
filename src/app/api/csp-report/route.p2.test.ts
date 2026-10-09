@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { POST } from "./route";
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const LEGACY = "application/csp-report";
 const REPORTING = "application/reports+json";

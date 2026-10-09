@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { updateSalonPaymentMethods as updateSalonPaymentMethodsRepo } from "../data/salon.repo";
 import { updateSalonPaymentMethods } from "./update-salon-payment-methods";
 
@@ -7,7 +7,7 @@ vi.mock("../data/salon.repo", () => ({
   updateSalonPaymentMethods: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

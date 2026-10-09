@@ -9,7 +9,7 @@ import {
 } from "./dashboard.repo";
 
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/infra/supabase/server", () => ({
   createSupabaseServerClient: async () => serverClient.current,
 }));
 

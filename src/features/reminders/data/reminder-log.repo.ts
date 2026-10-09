@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { Database } from "@/types/database.types";
 
 type ReminderLogInsert = Database["public"]["Tables"]["appointment_reminder_log"]["Insert"];

@@ -1,7 +1,7 @@
 import { getReminderQueue } from "@/features/reminders/use-cases/get-reminder-queue";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { requireProfile } from "@/lib/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { requireProfile } from "@/infra/auth/session";
 import { Bell } from "lucide-react";
 import { RemindersView } from "./reminders-view";
 

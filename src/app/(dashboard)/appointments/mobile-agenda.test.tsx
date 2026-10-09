@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatCurrency, formatTimeTz } from "@/lib/utils/dates";
+import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buildCalendarAppointment, SALON_TZ } from "@/test/ui-appointments-fixtures";
 import { MobileAgenda } from "./mobile-agenda";

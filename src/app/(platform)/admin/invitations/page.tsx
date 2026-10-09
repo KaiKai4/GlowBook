@@ -1,7 +1,7 @@
 import { CheckCircle2, Clock, MailOpen, Plus, TimerOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import { getPlatformInvitations } from "@/features/platform/use-cases/get-platform-invitations";
 import { RegenerateInviteLink } from "../regenerate-invite-link";
 import { InviteSalonForm } from "./invite-salon-form";

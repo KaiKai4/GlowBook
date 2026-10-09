@@ -1,5 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { ProfileWithRole } from "@/types/app.types";

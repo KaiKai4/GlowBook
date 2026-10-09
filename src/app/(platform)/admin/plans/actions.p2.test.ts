@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import {
   removeCommercialPlanConfig,
   saveCommercialPlanConfig,
@@ -12,7 +12,7 @@ import {
   removeCommercialAddonConfig,
   saveCommercialAddonConfig,
 } from "@/features/billing/use-cases/commercial-addons";
-import { err, ok } from "@/lib/result";
+import { err, ok } from "@/infra/result";
 import { formDataOf } from "@/test/action-fixtures";
 import {
   removeAddonAction,
@@ -27,9 +27,9 @@ import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ requirePlatformAdmin: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   removeCommercialPlanConfig: vi.fn(),
   saveCommercialPlanConfig: vi.fn(),

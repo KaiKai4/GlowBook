@@ -4,7 +4,7 @@ import { getEmployeeCalendarOptions } from "@/features/employees/use-cases/emplo
 import { getSalonBusinessHours } from "@/features/salon/use-cases/salon-business-hours";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
-import { utcBounds } from "@/lib/utils/dates";
+import { utcBounds } from "@/infra/format/dates";
 import { getCalendarView } from "./get-calendar-view";
 
 vi.mock("@/features/appointments/data/appointments.repo", () => ({

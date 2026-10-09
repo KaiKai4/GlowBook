@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
-import { formatCurrency } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatCurrency } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import type {
   BusyHourPoint,
   ProductMonthlySales,

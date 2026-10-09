@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { updateSalonName } from "../data/salon.repo";
 import type { SalonInfoInput } from "../schemas";
 

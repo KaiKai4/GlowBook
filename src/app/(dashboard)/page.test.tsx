@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { redirect } from "next/navigation";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
-import { requireProfile } from "@/lib/auth/session";
+import { requireProfile } from "@/infra/auth/session";
 import DashboardPage from "./page";
 
 vi.mock("next/navigation", () => ({
@@ -10,9 +10,9 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT:${url}`);
   }),
 }));
-vi.mock("@/lib/auth/session", () => ({ requireProfile: vi.fn() }));
-vi.mock("@/lib/auth/permissions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/auth/permissions")>()),
+vi.mock("@/infra/auth/session", () => ({ requireProfile: vi.fn() }));
+vi.mock("@/infra/auth/permissions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/infra/auth/permissions")>()),
   getPermissions: vi.fn(() => []),
   hasPermission: vi.fn(() => false),
 }));

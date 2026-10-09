@@ -1,8 +1,8 @@
 import { CreateEmployeeSchema, EmployeeIdempotencySchema } from "@/features/employees/schemas";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@/features/employees/schemas";
 import { EmployeePatchSchema } from "./employee-patch-schema";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 const INVALID_IDEMPOTENCY_KEY = "Solicitud inválida. Recarga la página e inténtalo de nuevo.";
 

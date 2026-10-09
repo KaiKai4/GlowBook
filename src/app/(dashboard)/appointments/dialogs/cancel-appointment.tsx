@@ -8,8 +8,8 @@ import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
 import { cancelAppointmentAction } from "../actions";
 import { promoteCustomerAction, deleteTemporaryCustomerAction } from "../../customers/actions";
 import { MessageCircle, UserX, UserCheck } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import { formatTimeTz } from "@/lib/utils/dates";
+import { cn } from "@/components/ui/cn";
+import { formatTimeTz } from "@/infra/format/dates";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
 
 interface ApptForCancel {

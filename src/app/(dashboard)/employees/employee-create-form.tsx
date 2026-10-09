@@ -22,7 +22,7 @@ import type {
 } from "@/features/employees/use-cases/employee-profile";
 import { CategoryServicePicker } from "./category-service-picker";
 import type { CategoryOption, RoleOption } from "./types";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 interface EmployeeCreateFormProps {
   categories: CategoryOption[];

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { getAppointmentReminderTarget } from "@/features/appointments/use-cases/appointment-reminder-target";
 import {
   createManualReminderLog,
@@ -21,7 +21,7 @@ vi.mock("../data/reminder-log.repo", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

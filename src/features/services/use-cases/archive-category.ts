@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { archiveCategory } from "../data/services.repo";
 
 export async function archiveServiceCategory(

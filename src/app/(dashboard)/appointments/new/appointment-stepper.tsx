@@ -1,7 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 export function AppointmentStepper({
   steps,

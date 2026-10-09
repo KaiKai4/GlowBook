@@ -1,6 +1,6 @@
 import "server-only";
 
-import { formatLocalDateISO, getUtcDayBoundaries } from "@/lib/utils/dates";
+import { formatLocalDateISO, getUtcDayBoundaries } from "@/infra/format/dates";
 import { calculateOperationalMoneyTotals } from "@/features/finance/domain/operational-money";
 import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { findPendingConfirmationRows, type DashboardPendingConfirmationRow } from "../data/dashboard.repo";

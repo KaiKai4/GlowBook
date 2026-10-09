@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 
 // Desglose de los gastos del mes por categoría: barra proporcional + monto.
 // Responde "¿en qué se me va el dinero este mes?" de un vistazo.

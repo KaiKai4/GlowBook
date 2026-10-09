@@ -6,7 +6,7 @@ import {
   deleteTemporaryCustomerAction,
   promoteCustomerAction,
 } from "@/app/(dashboard)/customers/actions";
-import { formatTimeTz } from "@/lib/utils/dates";
+import { formatTimeTz } from "@/infra/format/dates";
 import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { SALON_TZ } from "@/test/ui-appointments-fixtures";

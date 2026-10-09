@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import type { Category } from "./services-types";
 
 function CategoryRow({

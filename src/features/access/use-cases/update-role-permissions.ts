@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 import { setRolePermissions } from "../data/roles.repo";
 import type { UpdateRolePermissionsInput } from "../schemas";
 import {

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, MailOpen } from "lucide-react";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createSupabaseBrowserClient } from "@/infra/supabase/client";
 import { GlowBookBrand } from "@/components/brand/glowbook-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -16,8 +16,8 @@ import {
   UserPlus,
   WalletCards,
 } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/dates";
+import { cn } from "@/components/ui/cn";
+import { formatCurrency } from "@/infra/format/dates";
 import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
 import { buildReportsHref } from "./report-url";
 import {

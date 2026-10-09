@@ -10,7 +10,7 @@ import {
   stockStatus,
 } from "@/features/inventory/domain/stock";
 import type { InventoryProductView } from "@/features/inventory/use-cases/inventory-products";
-import { formatCurrency } from "@/lib/utils/dates";
+import { formatCurrency } from "@/infra/format/dates";
 
 type ProductFormKind = `edit:${string}` | `delete:${string}`;
 

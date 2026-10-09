@@ -6,7 +6,7 @@ Aceptada.
 
 ## Contexto
 
-El rate limit anterior (`src/lib/security/rate-limit.ts`) guardaba los contadores en un `Map` de memoria. En Vercel cada instancia serverless tiene su propio mapa, así que el límite real era "por instancia": un atacante que golpeara varias instancias (o una instancia fría) superaba el límite sin esfuerzo. Además el límite de fuerza bruta sobre `/invite/[token]` y `/join/[token]` dependía de qué instancia recibiera la petición.
+El rate limit anterior (`src/infra/security/rate-limit.ts`) guardaba los contadores en un `Map` de memoria. En Vercel cada instancia serverless tiene su propio mapa, así que el límite real era "por instancia": un atacante que golpeara varias instancias (o una instancia fría) superaba el límite sin esfuerzo. Además el límite de fuerza bruta sobre `/invite/[token]` y `/join/[token]` dependía de qué instancia recibiera la petición.
 
 Las alternativas evaluadas fueron:
 
@@ -18,7 +18,7 @@ Las alternativas evaluadas fueron:
 
 El contador vive en la tabla `public.rate_limit_buckets` (RLS activada, sin políticas: nadie la lee ni escribe fuera de la RPC). La RPC `public.consume_rate_limit(p_key, p_max, p_window_seconds)` es `security definer`, valida sus argumentos (clave de 1 a 200 caracteres, máximo positivo, ventana de 1 a 86 400 s), limpia como mucho 100 filas expiradas por llamada y devuelve `allowed` y `retry_after_seconds`. Solo `service_role` puede ejecutarla (migración `20240101000064_security_hardening.sql`).
 
-La aplicación la invoca únicamente desde `src/lib/security/rate-limit.ts` mediante el cliente admin (`src/lib/supabase/admin.ts`). La excepción a ADR 0010 se declara por capa: `scripts/check-architecture.mjs` autoriza el directorio `src/lib/security/` completo, no archivos concretos.
+La aplicación la invoca únicamente desde `src/infra/security/rate-limit.ts` mediante el cliente admin (`src/infra/supabase/admin.ts`). La excepción a ADR 0010 se declara por capa: `scripts/check-architecture.mjs` autoriza el directorio `src/infra/security/` completo, no archivos concretos.
 
 API pública (asíncrona, debe llamarse con `await`):
 

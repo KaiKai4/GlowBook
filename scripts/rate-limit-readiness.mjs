@@ -14,7 +14,7 @@ const REQUIRED_SECURITY_TEXT = [
   "join",
   "feedback",
   "operaciones Platform",
-  "src/lib/rate-limit",
+  "src/infra/rate-limit",
 ];
 
 const REQUIRED_CHECKLIST_TEXT = [

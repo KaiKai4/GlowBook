@@ -6,7 +6,7 @@ import { findSubscriptionRows } from "./salon-subscriptions.repo";
 // deben llegar al dominio como número o null.
 
 const adminClient = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => adminClient.current }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => adminClient.current }));
 
 function useTables(tables: Record<string, FakeQueryResult>) {
   adminClient.current = fakeSupabaseFrom(tables);

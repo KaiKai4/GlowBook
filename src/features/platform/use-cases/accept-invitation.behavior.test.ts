@@ -12,7 +12,7 @@ import {
   updatePlatformOwnerAuthUser,
 } from "@/features/platform/data/platform-auth.repo";
 import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { acceptInvitation, type AcceptInvitationInput } from "./accept-invitation";
 import { recordPlatformAction } from "./platform-audit";
 
@@ -41,7 +41,7 @@ vi.mock("./platform-audit", () => ({
   recordPlatformAction: vi.fn(async () => []),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

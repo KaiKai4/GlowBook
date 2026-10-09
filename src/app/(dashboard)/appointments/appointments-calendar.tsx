@@ -1,7 +1,7 @@
 "use client";
 
-import { formatTimeTz, formatCurrency } from "@/lib/utils/dates";
-import { cn } from "@/lib/utils/cn";
+import { formatTimeTz, formatCurrency } from "@/infra/format/dates";
+import { cn } from "@/components/ui/cn";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 
 const DEFAULT_START = 8;

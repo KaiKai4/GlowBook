@@ -1,5 +1,5 @@
-import { PublicError } from "@/lib/public-error";
-import { addMinutes } from "@/lib/utils/dates";
+import { PublicError } from "@/infra/public-error";
+import { addMinutes } from "@/infra/format/dates";
 import { evaluateTimeRange } from "./availability";
 import type {
   AppointmentItemPayload,

@@ -97,11 +97,11 @@ SCALE_REMINDERS_DECISION_CONFIRMED=true
 
 ## Fase 50 - Observability
 
-- [x] `src/lib/observability` soporta consola y webhook/log drain.
+- [x] `src/infra/observability` soporta consola y webhook/log drain.
 - [x] El Adapter redacciona metadata, error message y stack con secretos conocidos.
 - [x] Existe `npm run observability:readiness`.
 - [x] `npm run observability:readiness` paso en modo actual.
-- [x] Test de redaccion `src/lib/observability/index.test.ts` paso con 3/3.
+- [x] Test de redaccion `src/infra/observability/index.test.ts` paso con 3/3.
 - [x] El gate puede exigir alertas minimas y retencion antes de lanzamiento amplio.
 - [ ] Proveedor/log drain elegido para lanzamiento amplio.
 - [ ] Alertas minimas configuradas.

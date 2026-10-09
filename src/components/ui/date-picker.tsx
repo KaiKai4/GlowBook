@@ -25,7 +25,7 @@ import {
   setYear,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import {
   getCalendarDays,
   getYearBlock,

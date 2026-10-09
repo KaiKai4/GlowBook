@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { DatePicker } from "@/components/ui/date-picker";
 import type { CalendarView } from "@/features/appointments/view-models";
 

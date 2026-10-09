@@ -14,7 +14,7 @@
   - `data/*.repo.ts` — repositorio Supabase
   - `use-cases/` — orquestación (valida → aplica reglas → persiste)
   - `schemas.ts` — Zod DTOs
-- `src/lib/` — `supabase/{server,client,admin}.ts`, `auth/`, `utils/`, `result.ts`
+- `src/infra/` — `supabase/{server,client,admin}.ts`, `auth/`, `utils/`, `result.ts`
 - `src/components/` — Design system (`ui/`, `layout/`)
 - `supabase/migrations/` — SQL versionado
 

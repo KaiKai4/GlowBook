@@ -1,6 +1,6 @@
-import { captureError } from "@/lib/observability";
-// PublicError vive en @/lib/public-error (modulo puro usable desde el dominio).
-import { PublicError } from "@/lib/public-error";
+import { captureError } from "@/infra/observability";
+// PublicError vive en @/infra/public-error (modulo puro usable desde el dominio).
+import { PublicError } from "@/infra/public-error";
 
 // Mensajes fijos para SQLSTATE conocidos de Postgres/PostgREST. Nunca se
 // devuelve el mensaje original de la base de datos para estos codigos.

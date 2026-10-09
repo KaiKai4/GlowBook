@@ -4,14 +4,14 @@ import type { ReactNode } from "react";
 import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformAdminHome, type PlatformAdminHomeViewModel } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { getButtonByText } from "@/test/ui-admin-dom";
 import { makeRow } from "@/test/ui-admin-fixtures";
 import { makeOverviewsView, makeSubscriptionsData } from "@/test/ui-admin-page-fixtures";
 import PlatformAdminPage from "./page";
 
-vi.mock("@/lib/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/platform/use-cases/get-platform-admin-home", () => ({ getPlatformAdminHome: vi.fn() }));
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({ getPlatformSalonOverviews: vi.fn() }));
 vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({ getSubscriptionsPage: vi.fn() }));

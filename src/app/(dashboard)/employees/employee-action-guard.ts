@@ -1,8 +1,8 @@
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
-import type { Result } from "@/lib/result";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import type { Result } from "@/infra/result";
 
 // Guardia de las acciones de colaboradores: permiso, limite de peticiones y
 // modulo de roles. Vive aparte para mantener actions.ts bajo el limite de lineas.

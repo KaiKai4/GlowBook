@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, Building2, Search } from "lucide-react";
 
 import type { SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   trialing: { label: "Trial", className: "bg-info-subtle text-info-strong" },

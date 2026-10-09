@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
-import { getProfile } from "@/lib/auth/session";
-import { PERMISSIONS } from "@/lib/auth/permissions";
-import { captureError } from "@/lib/observability";
+import { getProfile } from "@/infra/auth/session";
+import { PERMISSIONS } from "@/infra/auth/permissions";
+import { captureError } from "@/infra/observability";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { getReportExportData } from "@/features/reports/use-cases/get-report-export";
 import { buildProfile, SALON_ID, USER_ID } from "@/test/action-fixtures";
@@ -11,9 +11,9 @@ import { GET } from "./route";
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ getProfile: vi.fn() }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/auth/session", () => ({ getProfile: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));

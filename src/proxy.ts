@@ -3,14 +3,14 @@ import {
   getOptimisticAuthDecision,
   hasSupabaseSessionCookie,
 } from "./proxy-auth";
-import { refreshSupabaseSession } from "@/lib/supabase/proxy";
+import { refreshSupabaseSession } from "@/infra/supabase/proxy";
 import {
   buildContentSecurityPolicy,
   generateCspNonce,
   REPORTING_ENDPOINTS_HEADER,
-} from "@/lib/security/csp";
-import { REQUEST_ID_HEADER, resolveRequestId } from "@/lib/observability/request-id";
-import { requestOrigin } from "@/lib/security/same-origin";
+} from "@/infra/security/csp";
+import { REQUEST_ID_HEADER, resolveRequestId } from "@/infra/observability/request-id";
+import { requestOrigin } from "@/infra/security/same-origin";
 
 function copySessionMetadata(source: NextResponse, target: NextResponse) {
   source.cookies.getAll().forEach(({ name, value, ...options }) => {

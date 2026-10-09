@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import { assertAnonymousRateLimit } from "./rate-limit";
 
 const headersMock = vi.hoisted(() => vi.fn());
@@ -9,11 +9,11 @@ vi.mock("next/headers", () => ({
   headers: () => headersMock(),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: vi.fn(),
 }));
 
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a intentarlo.";
 

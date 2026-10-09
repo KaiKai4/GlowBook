@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { err, ok, type Result } from "@/lib/result";
+import { err, ok, type Result } from "@/infra/result";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, findButtonByText, requireElement, setFieldValue } from "@/test/ui-shared-dom";
 import { FeedbackBubble } from "./index";

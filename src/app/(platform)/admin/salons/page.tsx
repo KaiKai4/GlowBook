@@ -5,7 +5,7 @@ import {
   getSubscriptionsPage,
 } from "@/features/billing/use-cases/salon-subscriptions";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import { SalonSubscriptionList } from "../subscriptions/salon-list";
 import { SalonWorkspace } from "./salon-workspace";
 

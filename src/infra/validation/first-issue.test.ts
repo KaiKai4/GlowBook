@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { z, ZodError } from "@/lib/validation/zod";
+import { z, ZodError } from "@/infra/validation/zod";
 import { firstIssueMessage } from "./first-issue";
 
 describe("firstIssueMessage", () => {

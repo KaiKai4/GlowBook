@@ -1,7 +1,7 @@
 import { AuthApiError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteSalonCompletely } from "./delete-salon.repo";
-import { deleteAuthUser } from "@/lib/supabase/auth-admin";
+import { deleteAuthUser } from "@/infra/supabase/auth-admin";
 import {
   argsOf,
   createFakeSupabase,
@@ -17,11 +17,11 @@ const clients = vi.hoisted(() => ({ admin: null as FakeSupabase | null }));
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: () => clients.admin,
 }));
 
-vi.mock("@/lib/supabase/auth-admin", () => ({
+vi.mock("@/infra/supabase/auth-admin", () => ({
   deleteAuthUser: vi.fn(),
 }));
 

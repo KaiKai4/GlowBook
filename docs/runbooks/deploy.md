@@ -131,7 +131,7 @@ Si `npm run test:e2e:staging` reporta mismatch de Supabase desplegado, corregir
 variables en Vercel y redeployar antes de usar ese despliegue como evidencia.
 Seguir `docs/runbooks/vercel-staging-env.md`.
 
-Confirmar que los eventos de `src/lib/observability` aparecen en los logs del
+Confirmar que los eventos de `src/infra/observability` aparecen en los logs del
 hosting o del log drain. Si se usa webhook, configurar
 `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL` y `GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN`.
 

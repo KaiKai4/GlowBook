@@ -163,7 +163,7 @@ Los valores se definen en `scripts/quality/check-coverage.mjs`.
 | Global | 80% | 80% | 70% |
 | Rutas criticas | 90% | 90% | 80% |
 
-Rutas criticas: `src/lib/auth/**`, `src/lib/security/**`, `src/features/access/**`, `src/features/platform/**` y `src/proxy*.ts`.
+Rutas criticas: `src/infra/auth/**`, `src/infra/security/**`, `src/features/access/**`, `src/features/platform/**` y `src/proxy*.ts`.
 
 Los umbrales no se bajan para pasar el gate. La linea base de cobertura global (`quality/coverage-baseline.json`) solo puede subir o quedarse; ver ADR 0013.
 
@@ -171,7 +171,7 @@ Reportes de Vitest: `text-summary`, `json-summary`, `json` y `lcov` en `coverage
 
 ## Mutacion (Solo Nightly)
 
-Stryker corre en el workflow nocturno `nightly.yml` sobre `src/features/*/domain` y `src/lib/security`. No corre en PR por tiempo. Su configuracion vive en `stryker.config.mjs`.
+Stryker corre en el workflow nocturno `nightly.yml` sobre `src/features/*/domain` y `src/infra/security`. No corre en PR por tiempo. Su configuracion vive en `stryker.config.mjs`.
 
 ## Hooks De Git
 

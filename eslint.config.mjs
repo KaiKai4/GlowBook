@@ -9,10 +9,10 @@ const EVAL_RULES = {
   "no-new-func": "error",
 };
 
-const ZOD_MESSAGE = "Importa Zod desde '@/lib/validation/zod' (adaptador unico, jitless).";
+const ZOD_MESSAGE = "Importa Zod desde '@/infra/validation/zod' (adaptador unico, jitless).";
 
 const SWALLOWED_CATCH_MESSAGE =
-  "Un .catch que no registra el error oculta fallos. Usa try/catch con captureError o runSideEffect (src/lib/effects/run-side-effect.ts).";
+  "Un .catch que no registra el error oculta fallos. Usa try/catch con captureError o runSideEffect (src/infra/effects/run-side-effect.ts).";
 
 // Handlers de .catch vacios o que solo devuelven null/undefined.
 const SWALLOWED_CATCH_SELECTORS = [
@@ -47,13 +47,13 @@ const eslintConfig = defineConfig([
     rules: {
       "react/no-danger": "error",
       "no-restricted-syntax": RESTRICTED_SYNTAX,
-      // Zod se importa solo a traves del adaptador (src/lib/validation/zod.ts),
+      // Zod se importa solo a traves del adaptador (src/infra/validation/zod.ts),
       // que desactiva la compilacion JIT (sin eval en runtime).
       "no-restricted-imports": [
         "error",
         {
           // "zod" exacto y subrutas; un patron sin barra coincidiria tambien con
-          // alias como '@/lib/validation/zod' (semantica tipo gitignore).
+          // alias como '@/infra/validation/zod' (semantica tipo gitignore).
           paths: [{ name: "zod", message: ZOD_MESSAGE }],
           patterns: [{ group: ["zod/*"], message: ZOD_MESSAGE }],
         },
@@ -61,7 +61,7 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ["src/lib/validation/zod.ts"],
+    files: ["src/infra/validation/zod.ts"],
     rules: { "no-restricted-imports": "off" },
   },
   {

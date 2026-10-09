@@ -9,9 +9,9 @@ import {
   MessageCircle,
   MoreHorizontal,
 } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { Select } from "@/components/ui/select";
-import { formatTimeTz } from "@/lib/utils/dates";
+import { formatTimeTz } from "@/infra/format/dates";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
 import type { ReminderAppointment, ReminderEmployee } from "@/features/reminders/view-models";
 import { useReminderSubmissions } from "./use-reminder-submissions";

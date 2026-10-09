@@ -1,4 +1,4 @@
-import { z } from "@/lib/validation/zod";
+import { z } from "@/infra/validation/zod";
 
 export const CreateEmployeeSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio").max(100),

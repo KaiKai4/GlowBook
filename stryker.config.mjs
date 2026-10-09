@@ -19,7 +19,7 @@ const config = {
   ],
   mutate: [
     "src/features/*/domain/**/*.ts",
-    "src/lib/security/**/*.ts",
+    "src/infra/security/**/*.ts",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
   ],

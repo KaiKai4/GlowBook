@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { POST } from "./route";
 
-vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
+vi.mock("@/infra/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
 const APP_URL = "https://app.glowbook.test/api/auth/signout";
 const signOut = vi.fn();

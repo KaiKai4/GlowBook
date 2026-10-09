@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { hashInvitationToken } from "@/lib/auth/invitation-tokens";
+import { hashInvitationToken } from "@/infra/auth/invitation-tokens";
 import {
   createFakeSupabase,
   type FakeDbResponse,
@@ -27,7 +27,7 @@ import {
 
 const adminHolder = vi.hoisted(() => ({ current: null as FakeSupabaseClient | null }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminHolder.current,
 }));
 

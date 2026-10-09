@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requirePlatformAdmin } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/infra/auth/session";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import PlatformAdminLayout from "./layout";
 
-vi.mock("@/lib/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/infra/auth/session", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("./platform-admin-sidebar", async () => {
   const React = await import("react");
   return {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   findAssignableEmployeeRole,
   findEmployeeInvitationForJoin,
@@ -21,7 +21,7 @@ import {
 // test de invitaciones principal no toca: estados del enlace, roles inválidos,
 // errores de Auth y rollback de cada paso fallido.
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

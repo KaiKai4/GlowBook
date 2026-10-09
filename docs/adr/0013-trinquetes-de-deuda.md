@@ -31,7 +31,7 @@ Reglas de los trinquetes:
 - Se regeneran solo mediante el paso de calidad correspondiente, nunca a mano para esconder un hallazgo.
 - La meta es cero en todos los trinquetes. Cada trinquete tiene una fase prevista para llegar a cero, indicada en el plan de calidad vigente.
 - La unica excepcion permanente es el archivo de tipos generados `src/types/database.types.ts`. Esta declarado en `quality/module-size-exceptions.json` porque lo genera Supabase y no se edita a mano.
-- Umbrales de cobertura: globales 80% lineas y funciones, 70% ramas. Rutas criticas 90% lineas y funciones, 80% ramas. Las rutas criticas son `src/lib/auth/**`, `src/lib/security/**`, `src/features/access/**`, `src/features/platform/**` y `src/proxy*.ts`.
+- Umbrales de cobertura: globales 80% lineas y funciones, 70% ramas. Rutas criticas 90% lineas y funciones, 80% ramas. Las rutas criticas son `src/infra/auth/**`, `src/infra/security/**`, `src/features/access/**`, `src/features/platform/**` y `src/proxy*.ts`.
 - Ademas del trinquete global, el cambio se mide por lineas tocadas frente a `main` (`check-coverage.mjs`), para que el codigo nuevo no herede la media.
 - Ningun umbral se baja para pasar un gate. Si un umbral es imposible de cumplir, se documenta el hallazgo en el ADR o en el plan, no se reduce el valor.
 

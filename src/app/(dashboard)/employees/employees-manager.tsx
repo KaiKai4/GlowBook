@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Filter, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 import { EmployeeCreateDialog } from "./employee-create-dialog";
 import { EmployeesGrid } from "./employees-grid";
 import type { CategoryOption, EmployeeListItem, RoleOption } from "./types";

@@ -6,7 +6,7 @@ const adminClient = vi.hoisted(() => ({ rpc: vi.fn<(name: string) => unknown>() 
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminClient,
 }));
 

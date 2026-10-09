@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import { findAppointmentForCommand } from "../data/appointment-commands.repo";
 import { cancelAppointmentRpc } from "../data/rpc/cancel-appointment";
 import { cancelAppointment } from "./cancel-appointment";
@@ -10,7 +10,7 @@ vi.mock("../data/appointment-commands.repo", () => ({
 vi.mock("../data/rpc/cancel-appointment", () => ({
   cancelAppointmentRpc: vi.fn(),
 }));
-vi.mock("@/lib/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const appointmentId = "00000000-0000-4000-8000-0000000000a1";
 const salonId = "00000000-0000-4000-8000-0000000000b1";

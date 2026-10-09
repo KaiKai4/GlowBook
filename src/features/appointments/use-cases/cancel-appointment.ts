@@ -1,6 +1,6 @@
-import { toPublicErrorMessage } from "@/lib/errors";
-import { err, ok, type Result } from "@/lib/result";
-import { captureError } from "@/lib/observability";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { err, ok, type Result } from "@/infra/result";
+import { captureError } from "@/infra/observability";
 import { findAppointmentForCommand } from "../data/appointment-commands.repo";
 import { cancelAppointmentRpc } from "../data/rpc/cancel-appointment";
 import { assertTransition } from "../domain/lifecycle";

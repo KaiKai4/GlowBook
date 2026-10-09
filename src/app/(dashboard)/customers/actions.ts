@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveProfile } from "@/lib/auth/session";
-import { hasPermission, PERMISSIONS } from "@/lib/auth/permissions";
-import { assertActionRateLimit } from "@/lib/security/rate-limit";
+import { requireActiveProfile } from "@/infra/auth/session";
+import { hasPermission, PERMISSIONS } from "@/infra/auth/permissions";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { CreateCustomerSchema, UpdateCustomerSchema } from "@/features/customers/schemas";
 import {
   checkPermanentCustomerByPhone,
@@ -24,9 +24,9 @@ import {
   findOrCreateTemporaryCustomer,
   promoteCustomer,
 } from "@/features/customers/use-cases/customer-temporary";
-import type { Result } from "@/lib/result";
-import { firstIssueMessage } from "@/lib/validation/first-issue";
-import { parseUuid } from "@/lib/validation/route-id";
+import type { Result } from "@/infra/result";
+import { firstIssueMessage } from "@/infra/validation/first-issue";
+import { parseUuid } from "@/infra/validation/route-id";
 
 async function canManageCustomers(
   profile: Awaited<ReturnType<typeof requireActiveProfile>>,

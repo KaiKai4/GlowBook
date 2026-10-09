@@ -32,7 +32,7 @@ vi.mock("@/features/platform/use-cases/platform-audit", () => ({
   recordPlatformAction: vi.fn(async () => []),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 

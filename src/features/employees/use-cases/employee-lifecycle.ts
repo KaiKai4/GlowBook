@@ -1,10 +1,10 @@
-import { captureError } from "@/lib/observability";
+import { captureError } from "@/infra/observability";
 import {
   findEmployeeById,
   updateEmployee,
 } from "@/features/employees/data/employees.repo";
 import { revokeEmployeeAccessForArchive } from "./employee-access";
-import type { Result } from "@/lib/result";
+import type { Result } from "@/infra/result";
 
 export async function reactivateEmployee(
   employeeId: string,

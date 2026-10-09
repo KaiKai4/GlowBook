@@ -1,7 +1,7 @@
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 
 import type { PlanLimitWarning } from "@/features/salon/use-cases/get-dashboard-shell";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/components/ui/cn";
 
 export function PlanLimitBanner({ warnings }: { warnings: PlanLimitWarning[] }) {
   if (warnings.length === 0) return null;

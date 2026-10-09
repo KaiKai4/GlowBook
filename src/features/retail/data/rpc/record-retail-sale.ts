@@ -1,8 +1,8 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { parseRpcResponse } from "@/lib/supabase/rpc-response";
-import { z } from "@/lib/validation/zod";
+import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { parseRpcResponse } from "@/infra/supabase/rpc-response";
+import { z } from "@/infra/validation/zod";
 
 const RecordRetailSaleResultSchema = z.string().uuid();
 
