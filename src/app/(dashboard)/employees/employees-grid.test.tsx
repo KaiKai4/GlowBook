@@ -119,6 +119,16 @@ describe("EmployeesGrid", () => {
     expect(mounted.container.querySelector('a[href="/employees/emp-luis"]')?.textContent).toContain("LP");
   });
 
+  it("el estado inactivo se comunica con texto e icono, no solo con color", () => {
+    mounted = renderGrid();
+
+    const badge = Array.from(mounted.container.querySelectorAll("span")).find(
+      (node) => node.textContent === "Inactivo" && node.querySelector("svg")
+    );
+    expect(badge).toBeDefined();
+    expect(badge?.className).toContain("rounded-full");
+  });
+
   it("en modo archivado no enlaza las tarjetas y ofrece reactivar", () => {
     mounted = renderGrid({ isArchived: true, employees: [LUIS], totalEmployees: 1 });
 

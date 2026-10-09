@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Panel } from "@/components/ui/panel";
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
 import { formatCurrency } from "@/lib/utils/dates";
 
@@ -12,11 +12,8 @@ export function ExpensesCategoryBreakdown({ expenses }: { expenses: ExpensesPage
   const max = top.amount || 1;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gastos del mes por categoría</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <Panel title="Gastos del mes por categoría">
+      <div className="space-y-3">
         {totals.map((total) => (
           <div key={`${total.category}:${total.label}`}>
             <div className="flex items-center justify-between gap-3 text-sm">
@@ -33,7 +30,7 @@ export function ExpensesCategoryBreakdown({ expenses }: { expenses: ExpensesPage
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </Panel>
   );
 }

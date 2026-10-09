@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Filter, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils/cn";
 import { EmployeeCreateDialog } from "./employee-create-dialog";
 import { EmployeesGrid } from "./employees-grid";
@@ -44,18 +45,16 @@ export function EmployeesManager({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-fg">Colaboradores</h1>
-          <p className="mt-0.5 text-sm text-fg-subtle">
-            {filteredEmployees.length} de {employees.length} colaboradores {isArchived ? "archivados" : "activos"}
-          </p>
-        </div>
-        <Button variant="primary" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Nuevo colaborador
-        </Button>
-      </div>
+      <PageHeader
+        title="Colaboradores"
+        description={`${filteredEmployees.length} de ${employees.length} colaboradores ${isArchived ? "archivados" : "activos"}`}
+        actions={
+          <Button variant="primary" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Nuevo colaborador
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[220px] max-w-sm flex-1">

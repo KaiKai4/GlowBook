@@ -8,6 +8,8 @@ import { parseUuid } from "@/lib/validation/route-id";
 import { getEmployeeDetail } from "@/features/employees/use-cases/get-employee-detail";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { DeleteEmployeeButton } from "./delete-employee-button";
 import { EditEmployeeModal } from "./edit-employee-modal";
 import { EmployeeAccessPanel } from "./employee-access-panel";
@@ -47,30 +49,36 @@ export default async function EmployeeDetailPage({
           <ArrowLeft className="h-4 w-4" />
           Colaboradores
         </Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-fg">
-              {view.employee.first_name} {view.employee.last_name}
-              {!view.employee.is_active && <Badge variant="default" className="ml-2">Inactivo</Badge>}
-            </h1>
-            <p className="text-sm text-fg-subtle">
-              {view.categories.length > 0
+        <div className="mt-2">
+          <PageHeader
+            title={
+              <>
+                {view.employee.first_name} {view.employee.last_name}
+                {!view.employee.is_active && (
+                  <StatusBadge variant="neutral" label="Inactivo" className="ml-2" />
+                )}
+              </>
+            }
+            description={
+              view.categories.length > 0
                 ? view.categories.map((category) => category.name).join(" · ")
-                : "Sin categorías"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <EditEmployeeModal
-              employee={view.employee}
-              categories={view.categoryOptions}
-              selectedCategoryIds={view.categories.map((category) => category.id)}
-              selectedServiceIds={view.services.map((service) => service.id)}
-            />
-            <DeleteEmployeeButton
-              employeeId={view.employee.id}
-              employeeName={`${view.employee.first_name} ${view.employee.last_name}`}
-            />
-          </div>
+                : "Sin categorías"
+            }
+            actions={
+              <>
+                <EditEmployeeModal
+                  employee={view.employee}
+                  categories={view.categoryOptions}
+                  selectedCategoryIds={view.categories.map((category) => category.id)}
+                  selectedServiceIds={view.services.map((service) => service.id)}
+                />
+                <DeleteEmployeeButton
+                  employeeId={view.employee.id}
+                  employeeName={`${view.employee.first_name} ${view.employee.last_name}`}
+                />
+              </>
+            }
+          />
         </div>
       </div>
 

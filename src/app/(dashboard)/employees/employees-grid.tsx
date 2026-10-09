@@ -4,9 +4,9 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ChevronRight, Link2, ShieldCheck, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
 import { reactivateEmployeeAction } from "./actions";
 import type { EmployeeListItem } from "./types";
@@ -78,7 +78,7 @@ export function EmployeesGrid({
                 <p className="truncate font-semibold text-fg">
                   {employee.first_name} {employee.last_name}
                 </p>
-                {!employee.is_active && <Badge variant="default" className="ml-1">Inactivo</Badge>}
+                {!employee.is_active && <StatusBadge variant="neutral" label="Inactivo" className="ml-1" />}
               </div>
               <p className="truncate text-xs text-fg-subtle">
                 {employee.categories.length > 0 ? employee.categories.join(" · ") : "Sin categorías"}

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, ShieldCheck } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions";
 import { EmployeeInviteLinkCard } from "../employee-invite-link-card";
 import type { RoleOption } from "../types";
@@ -62,8 +63,7 @@ export function ActiveEmployeeAccessPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2.5 rounded-lg border border-success-border-subtle bg-success-subtle px-4 py-3">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-success-fg" />
-        <p className="text-sm font-medium text-success-strong">Acceso activo</p>
+        <StatusBadge variant="success" label="Acceso activo" />
         <span className="ml-auto text-xs text-success-fg">Este colaborador puede iniciar sesion.</span>
       </div>
 

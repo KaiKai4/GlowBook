@@ -44,7 +44,7 @@ function rows(container: HTMLElement): string[] {
 }
 
 function totalText(container: HTMLElement): string {
-  return requireElement<HTMLElement>(container, ".text-danger.text-lg").textContent ?? "";
+  return requireElement<HTMLElement>(container, ".text-danger-strong.text-lg").textContent ?? "";
 }
 
 describe("ExpensesHistory", () => {
@@ -143,5 +143,40 @@ describe("ExpensesHistory", () => {
 
     expect(mounted.container.querySelector('a[href^="javascript:"]')).toBeNull();
     expect(mounted.container.textContent).not.toContain("Ver comprobante");
+  });
+
+  it("pagina el historial de 10 en 10 sobre las filas ya filtradas", () => {
+    const twelve = Array.from({ length: 12 }, (_, index) => item({ id: `m-${index}`, concept: "Luz", amount: 10 }));
+    mounted = mountComponent(<ExpensesHistory history={twelve} />);
+
+    expect(rows(mounted.container)).toHaveLength(10);
+    expect(mounted.container.textContent).toContain("Página 1 de 2");
+
+    clickElement(requireElement<HTMLButtonElement>(mounted.container, "button[aria-label='Página siguiente']"));
+
+    expect(rows(mounted.container)).toHaveLength(2);
+    expect(mounted.container.textContent).toContain("Página 2 de 2");
+  });
+
+  it("al cambiar un filtro vuelve a la página 1", () => {
+    const twelve = Array.from({ length: 12 }, (_, index) => item({ id: `m-${index}`, concept: "Luz", amount: 10 }));
+    mounted = mountComponent(<ExpensesHistory history={twelve} />);
+    clickElement(requireElement<HTMLButtonElement>(mounted.container, "button[aria-label='Página siguiente']"));
+    expect(mounted.container.textContent).toContain("Página 2 de 2");
+
+    setFieldValue(requireElement<HTMLInputElement>(mounted.container, 'input[placeholder="Comercio, nota, producto..."]'), "luz");
+
+    expect(mounted.container.textContent).toContain("Página 1 de 2");
+    expect(rows(mounted.container)).toHaveLength(10);
+  });
+
+  it("muestra el tipo como insignia con texto y el monto sin paginar cuando hay pocas filas", () => {
+    mounted = mountComponent(<ExpensesHistory history={HISTORY} />);
+
+    expect(mounted.container.textContent).not.toContain("Página 1 de");
+    const badge = Array.from(mounted.container.querySelectorAll("span")).find(
+      (node) => node.textContent === "Compra de inventario" && node.querySelector("svg")
+    );
+    expect(badge).toBeDefined();
   });
 });
