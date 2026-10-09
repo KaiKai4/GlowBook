@@ -16,6 +16,9 @@ const dashboardMetricsSchema = z.object({
   lowStockProducts: z.number(),
   totalCustomers: z.number(),
   completedThisMonth: z.number(),
+  monthRevenue: z.number(),
+  monthExpenses: z.number(),
+  estimatedProfit: z.number(),
 });
 
 const monthlyAppointmentSeriesSchema = z.array(

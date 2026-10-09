@@ -37,6 +37,9 @@ const ZERO_METRICS = {
   lowStockProducts: 0,
   totalCustomers: 0,
   completedThisMonth: 0,
+  monthRevenue: 0,
+  monthExpenses: 0,
+  estimatedProfit: 0,
 };
 
 describe("get dashboard overview (ramas)", () => {
@@ -87,6 +90,27 @@ describe("get dashboard overview (ramas)", () => {
       lowStockProducts: 2,
       totalCustomers: 30,
       completedThisMonth: 2,
+    });
+  });
+
+  it("entrega los totales de dinero tal como los calcula la base, sin recalcularlos", async () => {
+    mockedMetrics.mockResolvedValue({
+      ...ZERO_METRICS,
+      appointmentRevenue: 35.5,
+      retailRevenue: 12.25,
+      monthRevenue: 47.8,
+      monthExpenses: 12.5,
+      estimatedProfit: -1.7,
+    });
+
+    const view = await getDashboardOverview({ salonId: "salon-1", wantsReports: true, wantsConfirmations: false, now: NOW });
+
+    expect(view.metrics).toMatchObject({
+      appointmentRevenue: 35.5,
+      retailRevenue: 12.25,
+      monthRevenue: 47.8,
+      monthExpenses: 12.5,
+      estimatedProfit: -1.7,
     });
   });
 

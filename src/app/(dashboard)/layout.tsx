@@ -79,7 +79,7 @@ export default async function DashboardLayout({
     return (
       <ToastProvider>
       <div data-theme={theme} className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-surface-muted">
-        <header className="flex items-center justify-between gap-4 border-b border-brand-100 bg-surface px-6 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+        <header className="flex items-center justify-between gap-4 border-b border-brand-100 bg-surface px-6 py-3 shadow-topbar">
           <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
             <GlowBookBrand markSize="sm" align="center" />
             <div className="min-w-0 max-w-full">
