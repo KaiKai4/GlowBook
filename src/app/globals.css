@@ -76,6 +76,36 @@
   --color-chart-info: #0ea5e9; /* hex */
   --color-chart-info-soft: #7dd3fc; /* hex */
 }
+/* Elevación: sombras semánticas. Sustituyen las sombras arbitrarias
+   shadow-[...rgba(...)]; la tabla de equivalencias está en DESIGN.md §6.
+   Nombres distintos de la escala por defecto de Tailwind (xs/sm/md/lg...)
+   para no alterar los usos existentes de esas clases. */
+@theme {
+  --shadow-hairline: 0 1px 2px rgba(15, 23, 42, 0.04); /* campos, chips */
+  --shadow-topbar: 0 1px 8px rgba(0, 0, 0, 0.04); /* cabecera fija */
+  --shadow-sidebar: 1px 0 8px rgba(0, 0, 0, 0.04); /* barra lateral */
+  --shadow-sticky: 6px 0 12px rgba(15, 23, 42, 0.04); /* columna fija */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06); /* tarjetas y paneles */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.07), 0 0 1px rgba(124, 58, 237, 0.08); /* Card */
+  --shadow-tile: 0 2px 12px rgba(0, 0, 0, 0.08); /* bloques de agenda */
+  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1); /* hover de tarjeta */
+  --shadow-lift: 0 3px 10px rgba(0, 0, 0, 0.18); /* hover de cita */
+  --shadow-popover: 0 10px 28px rgba(28, 25, 23, 0.16); /* calendarios, menús */
+  --shadow-dropdown: 0 18px 42px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08);
+  --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.2); /* botón y panel flotantes */
+  --shadow-auth-card: 0 20px 60px rgba(76, 29, 149, 0.1), 0 2px 8px rgba(15, 23, 42, 0.05);
+  --shadow-brand: 0 10px 24px rgba(124, 58, 237, 0.28); /* botón primario destacado */
+  --shadow-brand-sm: 0 4px 14px rgba(124, 58, 237, 0.35);
+  --shadow-brand-hover: 0 4px 16px rgba(124, 58, 237, 0.12);
+  --shadow-brand-soft: 0 2px 12px rgba(124, 58, 237, 0.08);
+  --shadow-success-soft: 0 2px 6px rgba(16, 185, 129, 0.08);
+  --shadow-focus: 0 0 0 2px rgba(124, 58, 237, 0.15); /* anillo de selección */
+  --shadow-focus-lg: 0 0 0 4px rgba(124, 58, 237, 0.15);
+}
+/* Fondo de las pantallas de acceso (login, invitación, recuperación). */
+@utility bg-auth-backdrop {
+  background-image: linear-gradient(180deg, #fbf8ff 0%, #ffffff 48%, #f8fafc 100%);
+}
 /* Brand accent scale — utilities (bg-brand-600, border-brand-200, …) resolve to
    these CSS variables at runtime, so a [data-theme] wrapper can swap the whole
    accent palette per salon. Defaults to violet (panel looks unchanged). */

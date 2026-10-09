@@ -120,7 +120,33 @@ Pesos permitidos: `font-normal` (400), `font-medium` (500), `font-semibold` (600
 - Relleno `#1c1917` en `monthly-appointments-chart.tsx` y `reports/report-charts.tsx`: equivale a `fg`; migrar a `var(--color-fg)` en SVG.
 - Colores de `reports/reports-view.tsx` y `PRODUCT_COLORS` de `reports/report-charts.tsx`: pasan a `chart-*`.
 - Confeti de `appointments/dialogs/complete-appointment.tsx` (`#22C55E`, `#38BDF8`, `#FACC15`, `#F472B6`): decorativo, excepcion documentada.
-- Sombras `shadow-[...rgba(...)]` (60 ocurrencias): pendiente de tokens `--shadow-*`. Excepcion temporal.
+- Sombras: ya no hay excepcion. Se usan los tokens `--shadow-*` de `globals.css` (tabla siguiente). Los grupos marcados con "≈" unifican valores con diferencias imperceptibles (alfa ±0.02 o difuminado ±2px).
+- Fondo de acceso `bg-[linear-gradient(180deg,#fbf8ff_0%,#ffffff_48%,#f8fafc_100%)]`: utilidad `bg-auth-backdrop` (definida con `@utility` en `globals.css`).
+
+| Sombra arbitraria actual | Token |
+|---|---|
+| `shadow-[0_1px_2px_rgba(15,23,42,0.04)]`, `shadow-[0_1px_4px_rgba(0,0,0,0.05)]` ≈ | `shadow-hairline` |
+| `shadow-[0_1px_8px_rgba(0,0,0,0.04)]` | `shadow-topbar` |
+| `shadow-[1px_0_8px_rgba(0,0,0,0.04)]` | `shadow-sidebar` |
+| `shadow-[6px_0_12px_rgba(15,23,42,0.04)]` | `shadow-sticky` |
+| `shadow-[0_2px_8px_rgba(0,0,0,0.05)]`, `...0.06)]`, `...0.07)]`, `shadow-[0_2px_10px_rgba(15,23,42,0.06)]` ≈ | `shadow-soft` |
+| `shadow-[0_2px_8px_rgba(0,0,0,0.07),0_0_1px_rgba(124,58,237,0.08)]` | `shadow-card` |
+| `shadow-[0_2px_12px_rgba(0,0,0,0.08)]`, `shadow-[0_2px_12px_rgba(0,0,0,0.07)]` ≈ | `shadow-tile` |
+| `shadow-[0_4px_12px_rgba(0,0,0,0.10)]` | `shadow-hover` |
+| `shadow-[0_3px_10px_rgba(0,0,0,0.18)]` | `shadow-lift` |
+| `shadow-[0_8px_24px_rgba(28,25,23,0.16)]`, `shadow-[0_10px_28px_rgba(28,25,23,0.18)]`, `shadow-[0_12px_28px_rgba(15,23,42,0.16)]` ≈ | `shadow-popover` |
+| `shadow-[0_18px_42px_rgba(15,23,42,0.18),0_2px_8px_rgba(15,23,42,0.08)]` | `shadow-dropdown` |
+| `shadow-[0_6px_20px_rgba(0,0,0,0.22)]`, `shadow-[0_8px_30px_rgba(0,0,0,0.18)]` ≈ | `shadow-floating` |
+| `shadow-[0_20px_60px_rgba(76,29,149,0.10),0_2px_8px_rgba(15,23,42,0.05)]` | `shadow-auth-card` |
+| `shadow-[0_10px_24px_rgba(124,58,237,0.28)]` | `shadow-brand` |
+| `shadow-[0_4px_14px_rgba(124,58,237,0.35)]` | `shadow-brand-sm` |
+| `shadow-[0_4px_16px_rgba(124,58,237,0.12)]` | `shadow-brand-hover` |
+| `shadow-[0_2px_12px_rgba(124,58,237,0.08)]`, `shadow-[0_1px_4px_rgba(109,40,217,0.08)]` ≈ | `shadow-brand-soft` |
+| `shadow-[0_2px_6px_rgba(16,185,129,0.08)]` | `shadow-success-soft` |
+| `shadow-[0_0_0_2px_rgba(124,58,237,0.15)]` | `shadow-focus` |
+| `shadow-[0_0_0_4px_rgba(124,58,237,0.15)]` | `shadow-focus-lg` |
+
+Las variantes (`hover:`, `focus:`, `group-hover:`...) se conservan: `hover:shadow-[0_4px_12px_rgba(0,0,0,0.10)]` pasa a `hover:shadow-hover`.
 
 ## 7. Tabla de mapeo completa
 
