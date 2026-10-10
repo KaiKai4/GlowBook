@@ -199,3 +199,11 @@ Los hooks no sustituyen `verify:full`. Antes de considerar un cambio terminado, 
 `src/types/database.types.ts` es un artefacto generado. No se edita a mano. Es la unica excepcion permanente de tamano de modulo (`quality/module-size-exceptions.json`).
 
 Regenerar con `npm run db:types` despues de cualquier migracion que cambie tablas, enums, vistas, columnas o RPC. El paso `types-drift` avisa si el archivo versionado se queda atras.
+
+## Esperas asíncronas en pruebas de UI
+
+Las transiciones que incluyen WebCrypto o Server Actions se esperan por su resultado observable
+(boton habilitado de nuevo, diálogo reemplazado o callback final), con `vi.waitFor` y `act`.
+Un número fijo de tareas o microtareas no garantiza que la operación termine y puede
+dejar trabajo pendiente que contamine el siguiente test. La cancelación de citas
+incluye una acción demorada para cubrir este comportamiento.
