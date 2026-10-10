@@ -22,6 +22,14 @@ const SWALLOWED_CATCH_SELECTORS = [
   "CallExpression[callee.property.name='catch'] > :matches(ArrowFunctionExpression, FunctionExpression) > BlockStatement > ReturnStatement[argument.raw='null']",
 ];
 
+// Consulta Supabase (from/rpc) con `const { data } = await ...` sin desestructurar `error`:
+// el fallo de BD quedaria oculto como "sin datos" (AGENTS.md §9 y §13).
+const SUPABASE_RESULT_WITHOUT_ERROR_SELECTOR =
+  "VariableDeclarator[id.type='ObjectPattern'][init.type='AwaitExpression']:has(Property[key.name='data']):not(:has(Property[key.name='error'])):has(MemberExpression[property.name=/^(from|rpc)$/])";
+
+const SUPABASE_RESULT_WITHOUT_ERROR_MESSAGE =
+  "Consulta Supabase sin error: desestructura { data, error } y lanza el error (if (error) throw error).";
+
 const RESTRICTED_SYNTAX = [
   "error",
   {
@@ -33,6 +41,10 @@ const RESTRICTED_SYNTAX = [
     selector,
     message: SWALLOWED_CATCH_MESSAGE,
   })),
+  {
+    selector: SUPABASE_RESULT_WITHOUT_ERROR_SELECTOR,
+    message: SUPABASE_RESULT_WITHOUT_ERROR_MESSAGE,
+  },
 ];
 
 const eslintConfig = defineConfig([

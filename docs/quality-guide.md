@@ -54,7 +54,7 @@ Cada paso tiene un límite de tiempo (`timeoutMs`). Si expira, el runner termina
 | `sbom` | sbom | SBOM CycloneDX de producción en `.quality/sbom.json` (artefacto local, ignorado por git). |
 | `migrations-lint` | db | squawk y reglas forward-only de `scripts/quality/migration-rules.mjs`. |
 | `db-reset` | db | Reconstruye la BD local desde todas las migraciones (requiere Docker). |
-| `db-tests` | db | Pruebas pgTAP de `supabase/tests` (`supabase test db`). |
+| `db-tests` | db | Pruebas pgTAP de `supabase/tests` con el runner `scripts/quality/run-pgtap.mjs` (ADR 0023; no usa `supabase test db`). |
 | `types-drift` | db | `src/types/database.types.ts` coincide con los tipos que genera la BD local. No regenera nada. |
 | `integration` | db | Vitest, proyecto `integration`. Falla si falta la BD local; no se salta. |
 | `coverage` | db | Cobertura global frente al trinquete y de las líneas cambiadas frente a `main`. |

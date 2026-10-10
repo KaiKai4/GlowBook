@@ -27,7 +27,7 @@ Variables públicas y de servidor principales: `GLOWBOOK_ENV`, `APP_URL`, `NEXT_
 ```text
 npm run db:start     # levanta Supabase local (idempotente)
 npm run db:reset     # reconstruye la BD desde supabase/migrations y supabase/seed.sql
-npm run db:test      # pruebas pgTAP de supabase/tests
+npm run db:test      # pruebas pgTAP de supabase/tests (runner scripts/quality/run-pgtap.mjs, ADR 0023)
 npm run db:types     # regenera src/types/database.types.ts desde la BD local
 ```
 
@@ -71,7 +71,7 @@ Antes de crear carpetas nuevas, usa los nombres de `CONTEXT.md`.
 |---|---|---|
 | Unitarias | `src/**/*.test.ts(x)` (sin `*.rpc.test.ts` ni `*.integration.test.ts`) | `npm run test` |
 | Integración (BD local) | `src/**/*.rpc.test.ts`, `src/**/*.integration.test.ts` | `npm run test:integration` |
-| pgTAP | `supabase/tests/*.sql` | `npm run db:test` |
+| pgTAP | `supabase/tests/*.sql` | `npm run db:test` (runner `scripts/quality/run-pgtap.mjs`) |
 | Scripts | `scripts/**/*.test.mjs` con `node:test` | `node --test <archivo>` (el verificador ejecuta la lista completa) |
 | E2E | `e2e/*.spec.ts` | `npm run test:e2e` |
 | Cobertura | Vitest con v8 | `npm run test:coverage` |

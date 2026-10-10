@@ -40,7 +40,7 @@ No hace falta `.env.local` para verificar. La base local se obtiene del stack de
 | `npm run db:start` | Levanta Supabase local (idempotente). |
 | `npm run db:reset` | Reconstruye la BD local desde `supabase/migrations`. |
 | `npm run release:migrations` | Compara las migraciones locales con el historial de producción (solo lectura; salidas 0 al día, 2 pendientes, 1 error o drift). Las migraciones remotas solo las aplica `release.yml` con `scripts/release/apply-migrations.mjs`. |
-| `npm run db:test` | Ejecuta las pruebas pgTAP de `supabase/tests`. |
+| `npm run db:test` | Ejecuta las pruebas pgTAP de `supabase/tests` con el runner `scripts/quality/run-pgtap.mjs` (no usa `supabase test db`; ver ADR 0023). |
 | `npm run db:types` | Regenera `src/types/database.types.ts` desde la BD local. |
 | `npm run lint` | ESLint con cero avisos. |
 | `npm run type-check` | TypeScript sin emitir. |
@@ -74,7 +74,7 @@ Todos son `static` salvo `unit` y `scripts-tests`, que corren en el job `unit`.
 | `sbom` | sbom | SBOM CycloneDX de produccion en `.quality/sbom.json`. |
 | `migrations-lint` | db | squawk y las reglas forward-only de `scripts/quality/migration-rules.mjs` (bloqueantes) sobre migraciones posteriores a `20240101000063`, y reporte de squawk por regla del resto. Las reglas de `DROP POLICY` y `DROP CONSTRAINT` exigen un contrato (ver ADR 0016). |
 | `db-reset` | db | La BD local se reconstruye desde cero con todas las migraciones. |
-| `db-tests` | db | Pruebas pgTAP de RLS, aislamiento por salon, permisos, `create_appointment` y privilegios. |
+| `db-tests` | db | Pruebas pgTAP de RLS, aislamiento por salon, permisos, `create_appointment` y privilegios. Se ejecutan con `scripts/quality/run-pgtap.mjs` (ADR 0023). |
 | `types-drift` | db | El archivo de tipos versionado coincide con los tipos que genera la BD local. No regenera nada. |
 | `integration` | db | Vitest, proyecto `integration`: pruebas RPC y de integracion. Fallan si falta la BD local. |
 | `coverage` | db | Cobertura global frente al trinquete y cobertura de las lineas cambiadas frente a `main`. |

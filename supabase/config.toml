@@ -382,7 +382,10 @@ deno_version = 2
 # secret_key = "env(SECRET_VALUE)"
 
 [analytics]
-enabled = true
+# Desactivado: las pruebas no usan logs (Logflare/Vector). En Docker Desktop para
+# Windows el contenedor vector se reinicia en bucle y `supabase start` se queda
+# esperando su salud indefinidamente.
+enabled = false
 port = 55427
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
