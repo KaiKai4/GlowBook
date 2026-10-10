@@ -13,6 +13,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["./**/*.mjs", "./types/*.d.cts"],
+  "include": ["./**/*.mjs"],
   "exclude": ["../node_modules", "../.next", "../coverage", "../.quality"]
 }

@@ -24,7 +24,7 @@ Para el vocabulario del dominio, leer antes `CONTEXT.md`.
 
 ## Índice
 
-Estado revisado a 2026-10-09: los 21 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021.
+Estado revisado a 2026-10-10: los 22 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021. ADR 0012 queda además parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
 
 | ADR | Título | Ámbito |
 |---|---|---|
@@ -39,7 +39,7 @@ Estado revisado a 2026-10-09: los 21 ADR están aceptados, con las sustituciones
 | [0009](0009-modular-monolith-feature-architecture.md) | Modular monolith feature architecture | Arquitectura |
 | [0010](0010-server-only-admin-adapter-exceptions.md) | Excepciones server-only del adaptador admin | Seguridad y arquitectura |
 | [0011](0011-verificador-local-igual-ci.md) | Verificador local igual que CI | Calidad |
-| [0012](0012-toolchain-de-calidad.md) | Toolchain de calidad | Calidad |
+| [0012](0012-toolchain-de-calidad.md) | Toolchain de calidad (parcialmente superada por ADR 0022) | Calidad |
 | [0013](0013-trinquetes-de-deuda.md) | Trinquetes de deuda técnica | Calidad |
 | [0014](0014-bd-de-pruebas-supabase-local.md) | Base de datos de pruebas con Supabase local | Calidad y datos |
 | [0015](0015-politica-excepciones-auditoria.md) | Política de excepciones de auditoría de dependencias | Seguridad y calidad |
@@ -49,5 +49,6 @@ Estado revisado a 2026-10-09: los 21 ADR están aceptados, con las sustituciones
 | [0019](0019-arquitectura-por-capas-verificada.md) | Arquitectura por capas verificada por herramienta | Arquitectura y calidad |
 | [0020](0020-release-validada-en-staging.md) | Release validada en staging y publicación explícita | Deploy y seguridad |
 | [0021](0021-deploy-sin-staging-remoto.md) | Deploy sin staging remoto obligatorio | Deploy y operación |
+| [0022](0022-retiro-tooling-staging-pricing-readiness-stryker.md) | Retiro de tooling de staging, pricing, readiness y Stryker | Calidad y operación |
 
 Las guías que aplican estas decisiones son `docs/quality-guide.md`, `docs/database-contracts.md`, `docs/security.md` y `docs/testing.md`.

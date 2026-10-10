@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada.
+Parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
 
 ## Contexto
 
@@ -45,3 +45,5 @@ La programación Nightly queda sustituida por [ADR 0021](0021-deploy-sin-staging
 Herramientas que requieren binarios externos (Docker para la BD local) quedan documentadas como requisito en `docs/testing.md`.
 
 Actualizar cualquiera de estas herramientas puede cambiar reglas o salidas. La actualizacion se hace como cambio normal, con `verify:full` verde.
+
+> **Nota (2026-10-10):** [ADR 0022](0022-retiro-tooling-staging-pricing-readiness-stryker.md) retira `@stryker-mutator/*`, `stryker.config.mjs` y los scripts de readiness. Las filas de Stryker en la tabla y la mención de Stryker en esta ADR describen el estado anterior. Las demás herramientas siguen vigentes.

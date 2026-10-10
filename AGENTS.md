@@ -157,7 +157,7 @@ npm run db:test           # pgTAP
 npm run db:types          # regenera tipos desde la BD local
 ```
 
-Los comandos `staging:*`, `release:*`, `*:seed-*`, `*:cleanup-*`, `pricing:*`, `bootstrap:admin` y `db:migrate` apuntan a entornos remotos. No forman parte de la verificación local y no se ejecutan desde pruebas ni agentes sin instrucción explícita de la persona responsable (`docs/environments.md`).
+Los comandos `release:migrations`, `staging:migrations` y `bootstrap:admin` apuntan a entornos remotos. No forman parte de la verificación local y no se ejecutan desde pruebas ni agentes sin instrucción explícita de la persona responsable (`docs/environments.md`).
 
 ## 16. Definición de terminado
 
