@@ -93,7 +93,7 @@ select ok(
       'public.complete_appointment(jsonb)',
       'public.cancel_appointment(jsonb)',
       'public.mark_no_show(jsonb)',
-      'public.invite_salon(text)',
+      'public.invite_salon(text,uuid)',
       'public.record_retail_sale(uuid,uuid,uuid,text,numeric,numeric,text,text,uuid)',
       'public.record_inventory_transfer(uuid,uuid,text,text,numeric,text,uuid)',
       'public.record_inventory_purchase(uuid,text,date,uuid,numeric,numeric,text,uuid)',

@@ -2743,6 +2743,7 @@ export type Database = {
             invite_salon: {
                 Args: {
                     p_email: string;
+                    p_plan_id?: string;
                 };
                 Returns: string;
             };

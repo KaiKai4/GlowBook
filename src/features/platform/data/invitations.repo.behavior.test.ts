@@ -62,22 +62,23 @@ describe("createSalonInvitation", () => {
     const token = await createSalonInvitation(EMAIL, null);
 
     expect(token).toBe("raw-token");
+    // Sin plan no se envia p_plan_id: la RPC aplica su default (null).
     expect(server.rpc).toHaveBeenCalledWith("invite_salon", { p_email: EMAIL });
     expect(admin.from).not.toHaveBeenCalled();
   });
 
-  it("stores the plan on the invitation by the token hash, never by the raw token", async () => {
+  it("sends the plan inside the same invite_salon RPC, with no second write", async () => {
     const server = createFakeSupabase({
       rpc: { invite_salon: { data: "raw-token", error: null } },
     });
     const admin = useClients(createFakeSupabase(), server);
 
-    await createSalonInvitation(EMAIL, PLAN_ID);
+    const token = await createSalonInvitation(EMAIL, PLAN_ID);
 
-    const query = queryFor(admin, "salon_invitations");
-    expect(argsOf(query, "update")).toEqual([[{ plan_id: PLAN_ID }]]);
-    expect(argsOf(query, "eq")).toEqual([["token_hash", hashInvitationToken("raw-token")]]);
-    expect(argsOf(query, "eq")).not.toContainEqual(["token_hash", "raw-token"]);
+    expect(token).toBe("raw-token");
+    expect(server.rpc).toHaveBeenCalledWith("invite_salon", { p_email: EMAIL, p_plan_id: PLAN_ID });
+    expect(admin.from).not.toHaveBeenCalled();
+    expect(admin.rpc).not.toHaveBeenCalled();
   });
 
   it("propagates RPC failures without writing a plan", async () => {
@@ -87,19 +88,6 @@ describe("createSalonInvitation", () => {
 
     await expect(createSalonInvitation(EMAIL, PLAN_ID)).rejects.toBe(rpcError);
     expect(admin.from).not.toHaveBeenCalled();
-  });
-
-  it("propagates plan assignment failures after the invitation was created", async () => {
-    const planError = { message: "update denied" };
-    const server = createFakeSupabase({
-      rpc: { invite_salon: { data: "raw-token", error: null } },
-    });
-    useClients(
-      createFakeSupabase({ tables: { salon_invitations: { data: null, error: planError } } }),
-      server
-    );
-
-    await expect(createSalonInvitation(EMAIL, PLAN_ID)).rejects.toBe(planError);
   });
 });
 

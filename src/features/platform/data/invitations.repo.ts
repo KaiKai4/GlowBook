@@ -33,6 +33,8 @@ export interface SalonInvitationForAcceptance {
   plan_id: string | null;
 }
 
+// El plan viaja dentro de la misma RPC: la invitacion nace con su plan en una
+// sola operacion (migracion 20240101000071), sin escritura aparte con service_role.
 export async function createSalonInvitation(
   email: string,
   planId: string | null
@@ -40,21 +42,12 @@ export async function createSalonInvitation(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("invite_salon", {
     p_email: email,
+    // Sin plan se omite el parametro: el tipo generado no admite null y la RPC usa null por defecto.
+    p_plan_id: planId ?? undefined,
   });
 
   if (error) throw error;
-  const token = data as string;
-
-  if (planId) {
-    const admin = createSupabaseAdminClient();
-    const { error: planError } = await admin
-      .from("salon_invitations")
-      .update({ plan_id: planId })
-      .eq("token_hash", hashInvitationToken(token));
-    if (planError) throw planError;
-  }
-
-  return token;
+  return data as string;
 }
 
 /**
