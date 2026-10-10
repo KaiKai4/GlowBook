@@ -5,13 +5,14 @@ import {
 import { err, ok, type Result } from "@/infra/result";
 import { captureError } from "@/infra/observability";
 import { z } from "@/infra/validation/zod";
+import { emailSchema } from "@/infra/validation/email";
 import { publishAuditEvent } from "@/features/audit";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 // El plan es obligatorio: el salón debe nacer con su plan asignado para que
 // el owner nunca vea funcionalidades fuera de lo contratado.
 const InviteSchema = z.object({
-  email: z.string().email("Email inválido"),
+  email: emailSchema,
   planId: z.string().uuid("Selecciona el plan que tendrá el salón."),
 });
 

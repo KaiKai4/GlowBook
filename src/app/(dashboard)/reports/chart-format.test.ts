@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { compactNumber, niceMaximum, smoothPath } from "./chart-format";
+import { niceMaximum, smoothPath } from "./chart-format";
+import { formatCompactNumber } from "@/infra/format/money";
 
-describe("compactNumber", () => {
+describe("formatCompactNumber", () => {
   it("muestra los valores pequeños sin abreviar", () => {
-    expect(compactNumber(0)).toBe("0");
-    expect(compactNumber(999)).toBe("999");
+    expect(formatCompactNumber(0)).toBe("0");
+    expect(formatCompactNumber(999)).toBe("999");
   });
 
   it("abrevia los miles con un decimal como máximo", () => {
-    expect(compactNumber(1500)).toMatch(/^1[.,]5/);
-    expect(compactNumber(12_000)).toMatch(/^12/);
+    expect(formatCompactNumber(1500)).toMatch(/^1[.,]5/);
+    expect(formatCompactNumber(12_000)).toMatch(/^12/);
   });
 });
 

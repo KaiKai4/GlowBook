@@ -77,6 +77,14 @@ describe("inviteSalon authorization and validation", () => {
     expect(result).toEqual({ ok: false, error: "Email inválido" });
   });
 
+  it("rejects an email longer than 255 characters", async () => {
+    const longEmail = `${"a".repeat(250)}@example.com`;
+    const result = await inviteSalon({ email: longEmail, planId: PLAN_ID, actorIsPlatformAdmin: isAdmin });
+
+    expect(result).toEqual({ ok: false, error: "Email inválido" });
+    expect(mockedCreate).not.toHaveBeenCalled();
+  });
+
   it("records the invitation with the actor but no target salón yet", async () => {
     await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 

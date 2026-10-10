@@ -1,5 +1,6 @@
 "use client";
 
+import { formatWeekdayShort } from "@/infra/format/es-formats";
 import { cn } from "@/components/ui/cn";
 import { isVisibleOnCalendar } from "@/features/appointments/domain/lifecycle";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
@@ -77,7 +78,7 @@ export function AppointmentsCalendar({
             <div className="sticky left-0 z-30 w-14 shrink-0 border-r border-border bg-surface-muted/95 shadow-sticky" />
             {weekDates.map((d) => {
               const dt = new Date(`${d}T12:00:00`);
-              const dayName = dt.toLocaleDateString("es-PA", { weekday: "short" });
+              const dayName = formatWeekdayShort(dt);
               const dayNum = dt.getDate();
               const isToday = d === today;
               const count = byDate[d]?.length ?? 0;

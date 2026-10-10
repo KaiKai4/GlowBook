@@ -1,3 +1,4 @@
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
 import { formatTimeTz } from "@/infra/format/dates";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
 
@@ -25,12 +26,7 @@ export function buildCancellationMessage({
 }): string {
   const customerFirstName = appt.customer?.first_name ?? "";
   const apptDate = appt.start_time
-    ? new Date(appt.start_time).toLocaleDateString("es-PA", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        timeZone: tz,
-      })
+    ? formatWeekdayDayMonth(new Date(appt.start_time), { weekday: "long", month: "long", timeZone: tz })
     : "la fecha programada";
   const apptTime = appt.start_time
     ? formatTimeTz(new Date(appt.start_time), tz)

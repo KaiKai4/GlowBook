@@ -121,6 +121,14 @@ describe("accept invitation input validation", () => {
     expect(result).toEqual({ ok: false, error: "Email inválido" });
     expect(mockedFindInvitation).not.toHaveBeenCalled();
   });
+
+  it("rejects an email longer than 255 characters before any lookup", async () => {
+    const longEmail = `${"a".repeat(250)}@example.com`;
+    const result = await acceptInvitation({ ...validInput, email: longEmail });
+
+    expect(result).toEqual({ ok: false, error: "Email inválido" });
+    expect(mockedFindInvitation).not.toHaveBeenCalled();
+  });
 });
 
 describe("accept invitation token state", () => {

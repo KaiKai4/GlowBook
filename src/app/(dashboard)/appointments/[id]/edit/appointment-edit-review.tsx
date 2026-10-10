@@ -1,5 +1,6 @@
 "use client";
 
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
 import { Button } from "@/components/ui/button";
 import { formatTimeTz } from "@/infra/format/dates";
 import { formatCurrency } from "@/infra/format/money";
@@ -33,11 +34,10 @@ export function AppointmentEditReview({
   onBack,
   onConfirm,
 }: AppointmentEditReviewProps) {
-  const reviewDate = new Date(`${date}T12:00:00`).toLocaleDateString("es-PA", {
+  const reviewDate = formatWeekdayDayMonth(new Date(`${date}T12:00:00`), {
     weekday: "long",
-    day: "numeric",
     month: "long",
-    year: "numeric",
+    year: true,
   });
   const lastEnd = schedule.at(-1)?.end ?? null;
 

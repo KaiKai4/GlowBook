@@ -1,3 +1,4 @@
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
 import Link from "next/link";
 import { CheckCircle2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { formatTimeTz } from "@/infra/format/dates";
@@ -10,12 +11,7 @@ import { isClosedStatus } from "@/features/appointments/domain/lifecycle";
 import { useSalonDisplay } from "./salon-display-context";
 
 function formatAppointmentDayTz(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("es-PA", {
-    timeZone,
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-  }).format(date);
+  return formatWeekdayDayMonth(date, { weekday: "long", month: "short", timeZone });
 }
 
 export interface SummaryActions {

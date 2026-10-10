@@ -1,3 +1,5 @@
+import { formatLocalDateISO } from "@/infra/format/dates";
+import { formatEsDate } from "@/infra/format/es-formats";
 import { shouldBlockCalendar, type AppointmentStatus } from "./lifecycle";
 
 /** Horario visible del calendario cuando el salón no tiene días abiertos. */
@@ -88,11 +90,11 @@ export function getBusinessHourRange(
 }
 
 function localCalendarDate(iso: string, timezone: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date(iso));
+  return formatLocalDateISO(new Date(iso), timezone);
 }
 
 function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
-  return dateFromISO(date).toLocaleDateString("es-PA", { ...options, timeZone: "UTC" });
+  return formatEsDate(dateFromISO(date), { ...options, timeZone: "UTC" });
 }
 
 export function formatCalendarDateLabel(

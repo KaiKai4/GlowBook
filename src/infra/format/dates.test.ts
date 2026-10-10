@@ -3,6 +3,9 @@ import {
   addDaysToDateISO,
   addMinutes,
   formatLocalDateISO,
+  formatMonthYear,
+  formatShortDateFromISO,
+  formatShortDateTime,
   getUtcDayBoundaries,
   getZonedTimeParts,
   noonProbeForLocalDate,
@@ -114,5 +117,45 @@ describe("noonProbeForLocalDate y límites del día", () => {
     const { start, end } = getUtcDayBoundaries(probe, "America/New_York");
     expect(start.toISOString()).toBe("2026-11-01T04:00:00.000Z");
     expect(end.toISOString()).toBe("2026-11-02T04:59:59.999Z");
+  });
+});
+
+describe("formatShortDateTime", () => {
+  it("incluye día, mes abreviado, año y hora en español", () => {
+    const value = formatShortDateTime(new Date(2026, 9, 12, 14, 30, 0));
+
+    expect(value).toContain("12");
+    expect(value.toLowerCase()).toContain("oct");
+    expect(value).toContain("2026");
+    expect(value).toMatch(/(0?2|14):30/);
+  });
+});
+
+describe("formatShortDate", () => {
+  it("formatea una fecha corta en español con día, mes abreviado y año", () => {
+    const value = formatShortDateFromISO("2026-10-12");
+
+    expect(value).toContain("12");
+    expect(value).toContain("2026");
+    expect(value.toLowerCase()).toContain("oct");
+  });
+});
+
+describe("formatMonthYear", () => {
+  it("formatea mes largo y año en UTC, sin desplazarse de mes en el día 15", () => {
+    const value = formatMonthYear(new Date(Date.UTC(2026, 9, 15)));
+
+    expect(value.toLowerCase()).toContain("octubre");
+    expect(value).toContain("2026");
+  });
+});
+
+describe("formatShortDateFromISO", () => {
+  it("convierte una fecha ISO sin hora en fecha corta sin desplazar el día", () => {
+    const value = formatShortDateFromISO("2026-10-12");
+
+    expect(value).toContain("12");
+    expect(value).toContain("2026");
+    expect(value.toLowerCase()).toContain("oct");
   });
 });

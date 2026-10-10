@@ -1,4 +1,5 @@
 import { z } from "@/infra/validation/zod";
+import { emailSchema, optionalEmailSchema } from "@/infra/validation/email";
 import { isValidOptionalPhone, phoneValidationMessage } from "@/infra/format/phone";
 
 const OptionalPhoneSchema = z
@@ -12,7 +13,7 @@ export const CreateCustomerSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio").max(100),
   last_name: z.string().min(1, "El apellido es obligatorio").max(100),
   phone: OptionalPhoneSchema,
-  email: z.string().email("Email inválido").max(255).optional().nullable(),
+  email: emailSchema.optional().nullable(),
   birth_date: z.string().date().optional().nullable(),
   notes: z.string().max(2000).optional().default(""),
   is_temporary: z.boolean().optional().default(false),
@@ -43,9 +44,7 @@ export const CustomerPhoneLookupSchema = z
 
 export const ArchivedCustomerLookupSchema = z.object({
   phone: z.union([z.literal(""), CustomerPhoneLookupSchema]).optional(),
-  email: z
-    .union([z.literal(""), z.string().email("Email inválido").max(255)])
-    .optional(),
+  email: optionalEmailSchema.optional(),
 });
 
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;

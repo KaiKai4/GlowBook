@@ -1,3 +1,5 @@
+import { formatLocalDateISO } from "@/infra/format/dates";
+import { formatMonthShort } from "@/infra/format/es-formats";
 import { requireInvariant } from "@/infra/invariant";
 import { toResult } from "@/infra/to-result";
 import type { Result } from "@/infra/result";
@@ -29,7 +31,6 @@ import {
   getReportPresetRange,
   getYearRange,
   lastDayOfMonth,
-  localDateString,
   localYear,
 } from "../domain/period";
 import type { ReportFilters, SelectedReportPreset } from "../schemas";
@@ -73,9 +74,8 @@ interface MonthLabel {
 }
 
 function getMonthSequence(now: Date, timezone: string, count = MONTHS_IN_SERIES): MonthLabel[] {
-  const currentMonthKey = localDateString(now, timezone).slice(0, 7);
+  const currentMonthKey = formatLocalDateISO(now, timezone).slice(0, 7);
   const [year = NaN, month = NaN] = currentMonthKey.split("-").map(Number);
-  const label = new Intl.DateTimeFormat("es-PA", { month: "short", timeZone: "UTC" });
 
   return Array.from({ length: count }, (_, index) => {
     const absolute = year * 12 + month - 1 - (count - 1 - index);
@@ -83,7 +83,7 @@ function getMonthSequence(now: Date, timezone: string, count = MONTHS_IN_SERIES)
     const pointMonth = (absolute % 12) + 1;
     return {
       monthKey: `${pointYear}-${String(pointMonth).padStart(2, "0")}`,
-      label: label.format(new Date(Date.UTC(pointYear, pointMonth - 1, 15))).replace(".", ""),
+      label: formatMonthShort(new Date(Date.UTC(pointYear, pointMonth - 1, 15)), "UTC"),
     };
   });
 }

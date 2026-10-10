@@ -1,9 +1,9 @@
+import { formatLocalDateISO } from "@/infra/format/dates";
 import { describe, expect, it } from "vitest";
 import {
   availableReportYears,
   getReportPresetRange,
   getYearRange,
-  localDateString,
   localYear,
 } from "./period";
 
@@ -11,8 +11,8 @@ describe("report period", () => {
   it("formats local dates in the requested timezone", () => {
     const date = new Date("2030-01-02T04:30:00.000Z");
 
-    expect(localDateString(date, "America/Panama")).toBe("2030-01-01");
-    expect(localDateString(date, "UTC")).toBe("2030-01-02");
+    expect(formatLocalDateISO(date, "America/Panama")).toBe("2030-01-01");
+    expect(formatLocalDateISO(date, "UTC")).toBe("2030-01-02");
   });
 
   it("uses the salon-local day for today and current month presets", () => {

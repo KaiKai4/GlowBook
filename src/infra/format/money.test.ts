@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrency, roundCurrency, toAmount } from "./money";
+import { formatCompactNumber, formatCurrency, roundCurrency, toAmount } from "./money";
 
 describe("roundCurrency", () => {
   it("redondea a dos decimales", () => {
@@ -48,5 +48,16 @@ describe("toAmount", () => {
 
   it("devuelve NaN para cadenas no numéricas, igual que Number()", () => {
     expect(toAmount("abc")).toBeNaN();
+  });
+});
+
+describe("formatCompactNumber", () => {
+  it("no abrevia los valores menores de mil", () => {
+    expect(formatCompactNumber(999)).toBe("999");
+  });
+
+  it("abrevia los valores desde mil", () => {
+    expect(formatCompactNumber(1500)).not.toBe("1500");
+    expect(formatCompactNumber(1500)).toContain("1");
   });
 });

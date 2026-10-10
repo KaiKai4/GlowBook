@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumericDate } from "@/infra/format/es-formats";
 import { useMemo, useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { parseOption } from "@/components/forms/parse-option";
@@ -20,7 +21,7 @@ const HISTORY_COLUMNS: DataTableColumn<ExpenseHistoryItem>[] = [
     id: "date",
     header: "Fecha",
     cell: (item) => (
-      <span className="text-fg-subtle">{new Date(`${item.date}T12:00:00`).toLocaleDateString("es-PA")}</span>
+      <span className="text-fg-subtle">{formatNumericDate(new Date(`${item.date}T12:00:00`))}</span>
     ),
   },
   {

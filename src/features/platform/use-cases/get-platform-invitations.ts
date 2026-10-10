@@ -6,6 +6,7 @@ import {
 } from "@/features/platform/data/invitations.repo";
 import { getPlanCatalogSummary } from "@/features/billing";
 import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+import { formatShortDateTime } from "@/infra/format/dates";
 import { findSalonNamesByIds } from "@/features/platform/data/salons.repo";
 
 interface PlatformInvitationViewModel {
@@ -34,13 +35,7 @@ export interface PlatformInvitationsViewModel {
 }
 
 function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString("es-PA", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatShortDateTime(new Date(value));
 }
 
 export async function getPlatformInvitations(proof: PlatformAdminProof): Promise<PlatformInvitationsViewModel> {

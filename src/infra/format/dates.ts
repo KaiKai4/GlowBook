@@ -150,3 +150,40 @@ export function timeToMinutes(time: string): number {
   const [hours = NaN, minutes = NaN] = time.split(":").map(Number);
   return hours * 60 + minutes;
 }
+
+// Fecha corta en español ("12 oct 2026") para un instante, en la zona local del proceso.
+function formatShortDate(date: Date): string {
+  return new Intl.DateTimeFormat("es-PA", { day: "numeric", month: "short", year: "numeric" }).format(
+    date
+  );
+}
+
+// Mes y año en español ("octubre de 2026"), en UTC. Para periodos mensuales anclados a día 15 UTC.
+export function formatMonthYear(date: Date): string {
+  return new Intl.DateTimeFormat("es-PA", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+// Fecha corta con hora en español ("12 oct 2026, 14:30") para un instante, en la zona local del proceso.
+export function formatShortDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("es-PA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+// Fecha corta en español ("12 oct 2026") desde una fecha ISO sin hora (YYYY-MM-DD), en la zona local del proceso.
+export function formatShortDateFromISO(value: string): string {
+  return formatShortDate(new Date(`${value}T00:00:00`));
+}
+
+/** Zona horaria IANA del navegador o del proceso; para formatos sin zona explícita del salón. */
+export function browserTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}

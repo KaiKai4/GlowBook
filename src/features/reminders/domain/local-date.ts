@@ -1,7 +1,8 @@
 // Fechas locales del salón (zona horaria IANA). Funciones puras, sin acceso al reloj.
+import { formatLocalDateISO } from "@/infra/format/dates";
 
 export function localDateStr(isoStr: string, tz: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(isoStr));
+  return formatLocalDateISO(new Date(isoStr), tz);
 }
 
 export function isSameLocalDay(left: string | null, right: string, tz: string): boolean {

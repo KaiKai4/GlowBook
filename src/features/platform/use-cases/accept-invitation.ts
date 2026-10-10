@@ -15,6 +15,7 @@ import { personNameField } from "@/infra/validation/name";
 import { autoAssignPlanOnAcceptance } from "@/features/billing";
 import { publishAuditEvent } from "@/features/audit";
 import { z } from "@/infra/validation/zod";
+import { emailSchema } from "@/infra/validation/email";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 import {
   DUPLICATE_OWNER_MESSAGE,
@@ -26,7 +27,7 @@ import {
 
 const AcceptSchema = z.object({
   token: z.string().min(1, "Token inválido"),
-  email: z.string().email("Email inválido"),
+  email: emailSchema,
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   salon_name: z.string().min(1, "El nombre del salón es obligatorio").max(120),
   full_name: personNameField("Tu nombre es obligatorio", "Tu nombre"),

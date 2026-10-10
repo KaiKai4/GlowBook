@@ -1,12 +1,5 @@
 // Utilidades puras de formato y trazado para los graficos de reportes (sin React).
 
-export function compactNumber(value: number): string {
-  return new Intl.NumberFormat("es-PA", {
-    notation: value >= 1000 ? "compact" : "standard",
-    maximumFractionDigits: 1,
-  }).format(value);
-}
-
 export function niceMaximum(value: number): number {
   const exponent = 10 ** Math.floor(Math.log10(Math.max(value, 1)));
   return Math.ceil(value / exponent) * exponent;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Clock, Copy, Link2 } from "lucide-react";
 import { cn } from "@/components/ui/cn";
+import { formatDate } from "@/infra/format/dates";
 
 interface EmployeeInviteLinkCardProps {
   url: string;
@@ -34,11 +35,7 @@ export function EmployeeInviteLinkCard({
           <>
             {" "}
             - expira el{" "}
-            {new Date(expiresAt).toLocaleDateString("es-PA", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            {formatDate(new Date(expiresAt))}
           </>
         ) : null}
       </p>

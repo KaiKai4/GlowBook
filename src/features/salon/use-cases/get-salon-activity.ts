@@ -1,5 +1,7 @@
+import { formatClockTime } from "@/infra/format/es-formats";
 import "server-only";
 
+import { formatDate } from "@/infra/format/dates";
 import { findSalonActivity } from "../data/activity-log.repo";
 import { describeSalonActivity } from "../domain/activity-messages";
 
@@ -34,17 +36,6 @@ export async function getSalonActivity(salonId: string): Promise<SalonActivityVi
   };
 }
 
-function formatDate(value: Date): string {
-  return new Intl.DateTimeFormat("es-PA", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(value);
-}
-
 function formatTime(value: Date): string {
-  return new Intl.DateTimeFormat("es-PA", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(value);
+  return formatClockTime(value);
 }

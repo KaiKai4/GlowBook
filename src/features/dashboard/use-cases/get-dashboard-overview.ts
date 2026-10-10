@@ -1,6 +1,7 @@
 import "server-only";
 
 import { formatLocalDateISO, getUtcDayBoundaries } from "@/infra/format/dates";
+import { formatMonthShort, formatWeekdayDateTime } from "@/infra/format/es-formats";
 import { getSalonIdentity } from "@/features/salon";
 import { findPendingConfirmationRows, type DashboardPendingConfirmationRow } from "../data/dashboard.repo";
 import {
@@ -85,10 +86,6 @@ function getMonthStart(now: Date, timezone: string): Date {
 function getMonthSequence(monthStart: Date, timezone: string, count = MONTHS_IN_SERIES) {
   const currentMonthKey = formatLocalDateISO(monthStart, timezone).slice(0, 7);
   const [currentYear = NaN, currentMonth = NaN] = currentMonthKey.split("-").map(Number);
-  const formatter = new Intl.DateTimeFormat("es-PA", {
-    timeZone: timezone,
-    month: "short",
-  });
 
   return Array.from({ length: count }, (_, index) => {
     const offset = count - 1 - index;
@@ -100,7 +97,7 @@ function getMonthSequence(monthStart: Date, timezone: string, count = MONTHS_IN_
 
     return {
       monthKey,
-      label: formatter.format(labelDate).replace(".", ""),
+      label: formatMonthShort(labelDate, timezone),
     };
   });
 }
@@ -136,14 +133,6 @@ function mapPendingConfirmations(
   rows: DashboardPendingConfirmationRow[],
   timezone: string
 ): PendingAppointmentConfirmation[] {
-  const formatter = new Intl.DateTimeFormat("es-PA", {
-    timeZone: timezone,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
   return rows.map((appointment) => {
     const customer = firstRelation(appointment.customer);
@@ -152,7 +141,7 @@ function mapPendingConfirmations(
       id: appointment.id,
       customerName: customer ? `${customer.first_name} ${customer.last_name}` : "Cliente",
       phone: customer?.phone ?? null,
-      when: appointment.start_time ? formatter.format(new Date(appointment.start_time)) : "",
+      when: appointment.start_time ? formatWeekdayDateTime(new Date(appointment.start_time), timezone) : "",
     };
   });
 }

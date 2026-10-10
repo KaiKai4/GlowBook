@@ -1,3 +1,4 @@
+import { formatDayMonth, formatWeekdayDayMonth } from "@/infra/format/es-formats";
 import { formatTimeTz } from "@/infra/format/dates";
 import { localDateStr } from "@/features/reminders/domain/local-date";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
@@ -19,11 +20,7 @@ export function buildWhatsAppUrl(phone: string, message: string): string {
 
 export function formatSentAt(sentAt: string, tz: string): string {
   const date = new Date(sentAt);
-  return `${date.toLocaleDateString("es-PA", {
-    day: "numeric",
-    month: "short",
-    timeZone: tz,
-  })} ${formatTimeTz(date, tz)}`;
+  return `${formatDayMonth(date, { month: "short", timeZone: tz })} ${formatTimeTz(date, tz)}`;
 }
 
 export function customerName(appt: ReminderAppointment): string {
@@ -53,12 +50,7 @@ export function buildReminderMessage({
   template: string;
 }): string {
   const start = appt.start_time ? new Date(appt.start_time) : new Date();
-  const dateLabel = start.toLocaleDateString("es-PA", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: tz,
-  });
+  const dateLabel = formatWeekdayDayMonth(start, { weekday: "long", month: "long", timeZone: tz });
   const services =
     appt.items.map((item) => item.service?.name).filter(Boolean).join(", ") ||
     "Servicios de belleza";

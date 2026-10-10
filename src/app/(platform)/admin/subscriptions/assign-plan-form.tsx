@@ -10,7 +10,7 @@ import type { SalonSubscriptionDetail } from "@/features/billing";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";
 import { assignPlanAction } from "./actions";
-import { formatDate } from "./subscription-format";
+import { formatShortDateFromISO } from "@/infra/format/dates";
 import { useAssignPlanState } from "./use-assign-plan-state";
 
 export function AssignPlanForm({ detail, plans }: { detail: SalonSubscriptionDetail; plans: CommercialPlan[] }) {
@@ -99,12 +99,12 @@ function ScheduleSummary({
     <div className="grid gap-3 rounded-xl border border-brand-100 bg-brand-50/30 p-4 sm:grid-cols-2">
       <ScheduleItem
         label={hasExistingStart ? "Inicio (se conserva)" : "Inicio"}
-        value={formatDate(startsAt)}
+        value={formatShortDateFromISO(startsAt)}
         hint={hasExistingStart ? "Fecha original de la suscripción" : "Comienza hoy"}
       />
       <ScheduleItem
         label="Fin del trial"
-        value={trialEndsAt ? formatDate(trialEndsAt) : "Sin trial"}
+        value={trialEndsAt ? formatShortDateFromISO(trialEndsAt) : "Sin trial"}
         hint={
           status !== "trialing"
             ? "El estado no es trial"

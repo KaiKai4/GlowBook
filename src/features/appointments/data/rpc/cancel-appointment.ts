@@ -1,8 +1,7 @@
 import "server-only";
 
-import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { parseRpcResponse } from "@/infra/supabase/rpc-response";
+import { callIdempotentRpc } from "@/infra/supabase/call-idempotent-rpc";
 import { z } from "@/infra/validation/zod";
 
 const CancelAppointmentResultSchema = z.object({
@@ -23,10 +22,8 @@ export async function cancelAppointmentRpc(
   input: CancelAppointmentRpcInput
 ): Promise<CancelAppointmentRpcResult> {
   const supabase = await createSupabaseServerClient();
-  const payload = toCanonicalPayload({
+  return callIdempotentRpc(supabase, "cancel_appointment", {
     appointment_id: input.appointmentId,
     idempotency_key: input.idempotencyKey,
-  });
-  const response = await supabase.rpc("cancel_appointment", { payload });
-  return parseRpcResponse("cancel_appointment", response, CancelAppointmentResultSchema);
+  }, CancelAppointmentResultSchema);
 }

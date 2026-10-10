@@ -1,9 +1,9 @@
+import { formatLocalDateISO } from "@/infra/format/dates";
 import { describe, expect, it } from "vitest";
 import {
   availableReportYears,
   getReportPresetRange,
   getYearRange,
-  localDateString,
   localYear,
 } from "./period";
 
@@ -14,8 +14,8 @@ describe("periodos de reporte (ramas)", () => {
     // 02:00 UTC del 1 de julio es aun 30 de junio en Panama (UTC-5).
     const date = new Date("2026-07-01T02:00:00.000Z");
 
-    expect(localDateString(date, PANAMA)).toBe("2026-06-30");
-    expect(localDateString(date, "UTC")).toBe("2026-07-01");
+    expect(formatLocalDateISO(date, PANAMA)).toBe("2026-06-30");
+    expect(formatLocalDateISO(date, "UTC")).toBe("2026-07-01");
     expect(localYear(date, PANAMA)).toBe(2026);
   });
 

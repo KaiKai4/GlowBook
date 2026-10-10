@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { formatCurrency } from "@/infra/format/money";
 import { cn } from "@/components/ui/cn";
 import type { ReportMonthPoint } from "@/features/reports/domain/analytics";
-import { compactNumber } from "./chart-format";
+import { formatCompactNumber } from "@/infra/format/money";
 import { ChartFrame } from "./report-chart-frame";
 import {
   HEIGHT,
@@ -74,7 +74,7 @@ export function MonthlyAreaChart({
                 strokeDasharray="3 5"
               />
               <text x={PAD.left - 10} y={tick.y + 4} textAnchor="end" className="fill-fg-subtle text-xs">
-                {percent ? `${tick.value}%` : compactNumber(tick.value)}
+                {percent ? `${tick.value}%` : formatCompactNumber(tick.value)}
               </text>
             </g>
           ))}

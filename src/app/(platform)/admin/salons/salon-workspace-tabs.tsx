@@ -9,7 +9,8 @@ import { UsagePanel } from "../subscriptions/usage-panel";
 import { DeleteSalonButton } from "./delete-salon-button";
 import { SalonStatusControl } from "./salon-status-control";
 import type { SalonWorkspaceSalon } from "./salon-workspace-types";
-import { formatDate, STATUS_LABELS } from "./salon-workspace-format";
+import { formatShortDateFromISO } from "@/infra/format/dates";
+import { STATUS_LABELS } from "./salon-workspace-format";
 
 export function UsageTab({
   detail,
@@ -33,9 +34,9 @@ export function UsageTab({
             label={detail.assignment?.currentPeriodEnd ? "Pagado hasta" : "Trial termina"}
             value={
               detail.assignment?.currentPeriodEnd
-                ? formatDate(detail.assignment.currentPeriodEnd)
+                ? formatShortDateFromISO(detail.assignment.currentPeriodEnd)
                 : detail.assignment?.trialEndsAt
-                  ? formatDate(detail.assignment.trialEndsAt)
+                  ? formatShortDateFromISO(detail.assignment.trialEndsAt)
                   : "—"
             }
           />

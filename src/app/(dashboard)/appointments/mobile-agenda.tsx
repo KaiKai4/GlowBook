@@ -1,6 +1,7 @@
 "use client";
 
-import { formatTimeTz } from "@/infra/format/dates";
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
+import { formatLocalDateISO, formatTimeTz } from "@/infra/format/dates";
 import { formatCurrency, toAmount } from "@/infra/format/money";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -13,16 +14,15 @@ import { useSalonDisplay } from "./salon-display-context";
 // no es usable en un teléfono. Misma data, mismos diálogos al tocar una cita.
 
 function localDateKey(iso: string, tz: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(iso));
+  return formatLocalDateISO(new Date(iso), tz);
 }
 
 function dayLabel(dateKey: string): string {
-  return new Intl.DateTimeFormat("es-PA", {
+  return formatWeekdayDayMonth(new Date(`${dateKey}T12:00:00.000Z`), {
     weekday: "long",
-    day: "numeric",
     month: "short",
     timeZone: "UTC",
-  }).format(new Date(`${dateKey}T12:00:00.000Z`));
+  });
 }
 
 export function MobileAgenda({

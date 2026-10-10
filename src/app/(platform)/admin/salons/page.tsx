@@ -5,6 +5,7 @@ import { getSubscriptionsPage } from "@/features/billing";
 import { getPlatformSalonOverviews } from "@/features/platform";
 import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdminProof } from "@/app/_composition/request-context";
+import { formatShortDateTime } from "@/infra/format/dates";
 import { SalonSubscriptionList } from "../subscriptions/salon-list";
 import { SalonWorkspace } from "./salon-workspace";
 
@@ -102,13 +103,7 @@ export default async function PlatformSalonsPage({
 }
 
 function formatRegistrationDate(value: string): string {
-  return new Intl.DateTimeFormat("es-PA", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return formatShortDateTime(new Date(value));
 }
 
 function HeaderMetric({
