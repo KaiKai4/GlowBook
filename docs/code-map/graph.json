@@ -13,12 +13,12 @@
     {
       "id": "app/(dashboard)",
       "kind": "internal",
-      "files": 175
+      "files": 183
     },
     {
       "id": "app/(platform)",
       "kind": "internal",
-      "files": 34
+      "files": 45
     },
     {
       "id": "app/_composition",
@@ -38,12 +38,12 @@
     {
       "id": "components/forms",
       "kind": "internal",
-      "files": 5
+      "files": 6
     },
     {
       "id": "components/layout",
       "kind": "internal",
-      "files": 12
+      "files": 15
     },
     {
       "id": "components/ui",
@@ -330,7 +330,7 @@
     {
       "from": "app/(dashboard)",
       "to": "components/ui",
-      "count": 243
+      "count": 244
     },
     {
       "from": "app/(dashboard)",
@@ -355,7 +355,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/dashboard",
-      "count": 5
+      "count": 7
     },
     {
       "from": "app/(dashboard)",
@@ -445,7 +445,7 @@
     {
       "from": "app/(dashboard)",
       "to": "npm/react",
-      "count": 58
+      "count": 59
     },
     {
       "from": "app/(platform)",
@@ -465,12 +465,12 @@
     {
       "from": "app/(platform)",
       "to": "components/ui",
-      "count": 51
+      "count": 56
     },
     {
       "from": "app/(platform)",
       "to": "features/billing",
-      "count": 27
+      "count": 42
     },
     {
       "from": "app/(platform)",
@@ -490,12 +490,12 @@
     {
       "from": "app/(platform)",
       "to": "npm/next",
-      "count": 10
+      "count": 11
     },
     {
       "from": "app/(platform)",
       "to": "npm/react",
-      "count": 12
+      "count": 16
     },
     {
       "from": "app/(platform)",
@@ -614,8 +614,18 @@
     },
     {
       "from": "components/forms",
+      "to": "components/ui",
+      "count": 1
+    },
+    {
+      "from": "components/forms",
+      "to": "infra/idempotency",
+      "count": 1
+    },
+    {
+      "from": "components/forms",
       "to": "npm/react",
-      "count": 2
+      "count": 3
     },
     {
       "from": "components/layout",
@@ -625,12 +635,12 @@
     {
       "from": "components/layout",
       "to": "components/ui",
-      "count": 6
+      "count": 8
     },
     {
       "from": "components/layout",
       "to": "features/access",
-      "count": 2
+      "count": 1
     },
     {
       "from": "components/layout",
@@ -640,7 +650,7 @@
     {
       "from": "components/layout",
       "to": "features/salon-features",
-      "count": 3
+      "count": 2
     },
     {
       "from": "components/layout",
@@ -655,7 +665,12 @@
     {
       "from": "components/layout",
       "to": "npm/react",
-      "count": 4
+      "count": 5
+    },
+    {
+      "from": "components/ui",
+      "to": "components/forms",
+      "count": 6
     },
     {
       "from": "components/ui",
@@ -665,7 +680,7 @@
     {
       "from": "components/ui",
       "to": "npm/react-dom",
-      "count": 3
+      "count": 1
     },
     {
       "from": "features/access",
