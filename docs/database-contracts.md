@@ -43,8 +43,8 @@ RLS is enabled for tenant and platform tables in `supabase/migrations/2024010100
 |---|---|---|---|
 | `appointment_items` as schedule truth | `20240101000000_initial_schema.sql`, ADR 0002 | `src/features/appointments` | SQL schema + ADR. |
 | `no_overlap_per_employee` | `20240101000000_initial_schema.sql` | `src/features/appointments/domain/availability.ts` for UX; SQL final authority | Prevents double booking per collaborator. |
-| `recalc_appointment()` trigger | `20240101000001_rls_and_functions.sql` | `src/features/appointments/data/appointments.repo.ts` | Keeps appointment header start/end/total derived from items. |
-| `create_appointment(payload jsonb)` | `20240101000003_create_appointment_rpc.sql`, hardened by `20240101000013`, `20240101000015`, `20240101000019` | `src/features/appointments/use-cases/create-appointment.ts` | Atomic appointment creation and final schedule integrity. |
+| `recalc_appointment()` trigger | `20240101000001_rls_and_functions.sql`, vigente desde `20240101000033_item_level_appointment_discounts.sql` | `src/features/appointments/data/appointments.repo.ts` | Keeps appointment header start/end/total derived from items. Ver nota abajo. |
+| `create_appointment(payload jsonb)` | `20240101000003_create_appointment_rpc.sql`, hardened by `20240101000013`, `20240101000015`, `20240101000019`, `20240101000065`, `20240101000072` | `src/features/appointments/use-cases/create-appointment.ts` | Atomic appointment creation and final schedule integrity. Desde `20240101000072` acepta `new_customer` en lugar de `customer_id` (exactamente uno). Ver contrato transaccional abajo. |
 | `blocks_calendar` behavior | schema + lifecycle updates | `src/features/appointments/domain/lifecycle.ts` | Scheduled/confirmed block calendar; cancelled/no_show/completed do not block new slots. |
 | Agenda configuration consumption | `salons` fields, `salon_business_hours` | `src/features/salon` owns configuration; `src/features/appointments/domain/availability.ts` and `src/features/appointments/domain/wizard-availability.ts` consume it | Salon stores schedule policy; appointments applies it when calculating availability. |
 
@@ -69,7 +69,7 @@ These constraints are final data-integrity guards. TypeScript should still valid
 
 | Contract | SQL source | TypeScript owner | Purpose |
 |---|---|---|---|
-| `invite_salon(p_email text)` | `20240101000002_rbac_seed_and_platform.sql` | `src/features/platform/use-cases/invite-salon.ts` | Platform creates Salon invitation. |
+| `invite_salon(p_email text, p_plan_id uuid default null)` | `20240101000002_rbac_seed_and_platform.sql`, reemplazada por `20240101000071_invite_salon_with_plan.sql` | `src/features/platform/use-cases/invite-salon.ts`, `src/features/platform/data/invitations.repo.ts` | Platform creates Salon invitation with its plan in one operation. Ver contrato transaccional abajo. |
 | `accept_invitation(...)` | `20240101000002_rbac_seed_and_platform.sql`, updated by `20240101000006`, `20240101000021` | `src/features/platform/use-cases/accept-invitation.ts` | Invited user accepts Salon invitation. |
 | `accept_invitation_admin(...)` | `20240101000006_invite_admin_accept.sql`, updated by `20240101000021` | `src/features/platform/use-cases/accept-invitation.ts` | Server-side creation of Salon + Owner after Auth account handling. |
 | `create_salon_with_owner(...)` | `20240101000002_rbac_seed_and_platform.sql`, `20240101000006`, `20240101000009` | `src/features/platform` | Atomic Salon + Owner setup. |
@@ -109,6 +109,33 @@ ADR 0004 is the product-level contract. SQL stores the flags; TypeScript owns us
 | Contract | SQL source | TypeScript owner | Purpose |
 |---|---|---|---|
 | `report_expense_month_totals(p_salon_id uuid, p_from date, p_to date)` | `20240101000068_report_expense_month_totals.sql` | `src/features/expenses/data/rpc/report-expense-month-totals.ts` | Totales del mes y desglose por categoria de gastos, calculados en Postgres sin limite de filas. Agrega gastos manuales de `expenses` y compras de inventario como `products`. Es `security invoker` (aplican RLS y filtro explicito por salon) y solo `authenticated` puede ejecutarla. |
+
+## Transactional RPC Contracts
+
+ADR 0024: lo que debe ser atómico vive en una sola RPC. Una llamada RPC es una transacción; si un paso falla, no queda nada escrito. Todas estas funciones siguen el mismo patrón: `revoke all` a `public`, `anon`, `service_role` y grant de `execute` solo a `authenticated`, con `set search_path = public, pg_temp`.
+
+| Contract | SQL source | Seguridad | Grants | Errores (SQLSTATE) | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|---|---|
+| `create_role_with_permissions(p_name text, p_permission_keys text[]) returns uuid` | `20240101000070_role_permission_rpcs.sql` | `security invoker`: aplican RLS de `roles` y `role_permissions` | `authenticated` | `42501` sin `roles.manage`; `22023` si alguna clave no existe en `public.permissions` (no escribe nada) | `src/features/access/data/rpc/role-permissions-rpc.ts` | `11_role_permission_rpcs.sql` |
+| `replace_role_permissions(p_role_id uuid, p_permission_keys text[]) returns void` | `20240101000070_role_permission_rpcs.sql` | `security invoker`; bloquea la fila del rol con `for update` | `authenticated` | `42501` sin `roles.manage`; `P0002` si el rol no existe o no es del salón del claim; `22023` por claves inválidas. Lista vacía = sin permisos | `src/features/access/data/rpc/role-permissions-rpc.ts` | `11_role_permission_rpcs.sql` |
+| `invite_salon(p_email text, p_plan_id uuid default null) returns text` | `20240101000071_invite_salon_with_plan.sql` | `security definer`, con `is_platform_admin()` dentro; guarda solo el hash del token | `authenticated` (la comprobación de plataforma va dentro) | error sin código si no es admin de plataforma; `22023` si el plan no existe o está archivado | `src/features/platform/use-cases/invite-salon.ts` | `12_invitations.sql` |
+| `create_appointment(payload jsonb) returns uuid` con `new_customer` | `20240101000072_create_appointment_new_customer.sql` | `security definer`, con `has_permission(appointments.manage)` y, si hay `new_customer`, `has_permission(customers.manage)` | `authenticated` | `22023` si se envían `customer_id` y `new_customer` a la vez o ninguno, o si el nombre/apellido están vacíos o superan 100 caracteres; `P0001` si el teléfono pertenece a un cliente archivado | `src/features/appointments/data/rpc/create-appointment.ts`, `src/features/appointments/use-cases/create-appointment.ts` | `13_create_appointment_new_customer.sql` |
+| `resolve_new_customer(p_salon uuid, p_data jsonb) returns uuid` (helper interno) | `20240101000072_create_appointment_new_customer.sql` | `security definer`, sin acceso directo | Ninguno: `revoke all` a todos los roles | Igual que arriba (`22023`, `P0001`) | Solo lo llama `create_appointment` | `13_create_appointment_new_customer.sql` |
+
+Notas de cada contrato:
+
+- Los errores se traducen a mensajes públicos en la capa de aplicación (ADR 0018). Nunca se muestra el mensaje crudo de Postgres.
+- `create_appointment` conserva el tipo de retorno `uuid` (id de la cita). El id del cliente nuevo no se devuelve; se consulta desde la cita.
+- La clave de idempotencia de `create_appointment` cubre el payload completo, incluido `new_customer`: un reenvío devuelve la misma cita y no crea un segundo cliente.
+- `resolve_new_customer` reutiliza un cliente temporal con el mismo teléfono, o un cliente activo con ese teléfono, y crea un temporal inactivo en otro caso.
+- Auth no forma parte de estas transacciones. En colaboradores se escribe primero en BD y después se modifica la cuenta de Auth; si Auth falla, la operación devuelve un aviso (ADR 0024).
+
+## Maintenance Notes
+
+- `recalc_appointment()`: el total de la cabecera (`total_price`) suma el `price` de **todos** los `appointment_items` de la cita, sin filtrar por estado. Los items cancelados o marcados como no-show siguen en la tabla (con `blocks_calendar = false`) y siguen sumando al total de la cabecera. Cambiar esto exige una migración nueva y revisar el contrato de citas.
+- Limpieza de `idempotency_keys` (migración `20240101000065`): cada llamada a `idempotency_begin` borra como mucho 100 claves con más de 7 días. Es una limpieza oportunista y acotada.
+- Limpieza de `rate_limit_buckets` (migración `20240101000064`): cada llamada a la función de rate limit borra como mucho 100 cubos expirados.
+- Con esta limpieza oportunista basta mientras no se mida crecimiento de estas tablas. Si se mide, se añadiría `pg_cron` para una purga periódica; está fuera de alcance de este documento.
 
 ## Allowed Duplication
 

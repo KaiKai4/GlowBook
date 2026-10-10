@@ -24,7 +24,7 @@ Para el vocabulario del dominio, leer antes `CONTEXT.md`.
 
 ## Índice
 
-Estado revisado a 2026-10-10: los 23 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021. ADR 0012 queda además parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
+Estado revisado a 2026-10-10: los 24 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021. ADR 0012 queda además parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
 
 | ADR | Título | Ámbito |
 |---|---|---|
@@ -51,5 +51,6 @@ Estado revisado a 2026-10-10: los 23 ADR están aceptados, con las sustituciones
 | [0021](0021-deploy-sin-staging-remoto.md) | Deploy sin staging remoto obligatorio | Deploy y operación |
 | [0022](0022-retiro-tooling-staging-pricing-readiness-stryker.md) | Retiro de tooling de staging, pricing, readiness y Stryker | Calidad y operación |
 | [0023](0023-runner-pgtap-propio-y-supabase-local-sin-analytics.md) | Runner pgTAP propio y Supabase local sin analytics | Calidad y datos |
+| [0024](0024-rpc-transaccionales-roles-invitacion-cita.md) | RPC transaccionales para roles, invitación con plan y cita con cliente nuevo | Datos, citas y plataforma |
 
 Las guías que aplican estas decisiones son `docs/quality-guide.md`, `docs/database-contracts.md`, `docs/security.md` y `docs/testing.md`.

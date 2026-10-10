@@ -74,7 +74,7 @@ Todos son `static` salvo `unit` y `scripts-tests`, que corren en el job `unit`.
 | `sbom` | sbom | SBOM CycloneDX de produccion en `.quality/sbom.json`. |
 | `migrations-lint` | db | squawk y las reglas forward-only de `scripts/quality/migration-rules.mjs` (bloqueantes) sobre migraciones posteriores a `20240101000063`, y reporte de squawk por regla del resto. Las reglas de `DROP POLICY` y `DROP CONSTRAINT` exigen un contrato (ver ADR 0016). |
 | `db-reset` | db | La BD local se reconstruye desde cero con todas las migraciones. |
-| `db-tests` | db | Pruebas pgTAP de RLS, aislamiento por salon, permisos, `create_appointment` y privilegios. Se ejecutan con `scripts/quality/run-pgtap.mjs` (ADR 0023). |
+| `db-tests` | db | Pruebas pgTAP de RLS, aislamiento por salon, permisos, `create_appointment` y privilegios. Se ejecutan con `scripts/quality/run-pgtap.mjs` (ADR 0023). Los ficheros `09` a `13` de `supabase/tests` cubren totales de gastos (09), borrado completo de salón con su catálogo de tablas (10 y 10b), RPC de roles (11), invitaciones con plan (12) y cita con cliente nuevo (13), estas dos últimas según ADR 0024. |
 | `types-drift` | db | El archivo de tipos versionado coincide con los tipos que genera la BD local. No regenera nada. |
 | `integration` | db | Vitest, proyecto `integration`: pruebas RPC y de integracion. Fallan si falta la BD local. |
 | `coverage` | db | Cobertura global frente al trinquete y cobertura de las lineas cambiadas frente a `main`. |
