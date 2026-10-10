@@ -4,6 +4,7 @@ import {
   findExpenses,
   findLifetimeExpenseTotals,
 } from "../data/expenses.repo";
+import { reportExpenseMonthTotalsRpc } from "../data/rpc/report-expense-month-totals";
 import { getInventoryPurchaseExpenseHistory } from "@/features/inventory/use-cases/inventory-purchase-expenses";
 import { getExpensesPage } from "./expenses";
 
@@ -13,6 +14,10 @@ vi.mock("../data/expenses.repo", () => ({
   insertExpense: vi.fn(),
 }));
 
+vi.mock("../data/rpc/report-expense-month-totals", () => ({
+  reportExpenseMonthTotalsRpc: vi.fn(),
+}));
+
 vi.mock("@/features/inventory/use-cases/inventory-purchase-expenses", () => ({
   getInventoryPurchaseExpenseHistory: vi.fn(),
 }));
@@ -20,6 +25,7 @@ vi.mock("@/features/inventory/use-cases/inventory-purchase-expenses", () => ({
 const mockedFindExpenses = vi.mocked(findExpenses);
 const mockedFindLifetimeExpenseTotals = vi.mocked(findLifetimeExpenseTotals);
 const mockedPurchaseHistory = vi.mocked(getInventoryPurchaseExpenseHistory);
+const mockedMonthTotals = vi.mocked(reportExpenseMonthTotalsRpc);
 
 describe("getExpensesPage", () => {
   beforeEach(() => {
@@ -59,6 +65,10 @@ describe("getExpensesPage", () => {
       inventoryPurchases: 200,
       total: 500,
     });
+    mockedMonthTotals.mockResolvedValue([
+      { category: "utilities", customCategory: null, amount: 25 },
+      { category: "products", customCategory: null, amount: 40 },
+    ]);
 
     const result = await getExpensesPage("salon-1");
 
@@ -106,6 +116,11 @@ describe("getExpensesPage", () => {
       },
     ]);
     mockedFindLifetimeExpenseTotals.mockResolvedValue({ manual: 0, inventoryPurchases: 0, total: 0 });
+    mockedMonthTotals.mockResolvedValue([
+      { category: "rent", customCategory: null, amount: 500 },
+      { category: "products", customCategory: null, amount: 120 },
+      { category: "marketing", customCategory: null, amount: 80 },
+    ]);
 
     const result = await getExpensesPage("salon-1");
 

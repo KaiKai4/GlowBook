@@ -104,6 +104,12 @@ Complete Salon deletion is irreversible and must remain Platform-only.
 
 ADR 0004 is the product-level contract. SQL stores the flags; TypeScript owns user-facing lifecycle orchestration.
 
+## Expense Read Models
+
+| Contract | SQL source | TypeScript owner | Purpose |
+|---|---|---|---|
+| `report_expense_month_totals(p_salon_id uuid, p_from date, p_to date)` | `20240101000068_report_expense_month_totals.sql` | `src/features/expenses/data/rpc/report-expense-month-totals.ts` | Totales del mes y desglose por categoria de gastos, calculados en Postgres sin limite de filas. Agrega gastos manuales de `expenses` y compras de inventario como `products`. Es `security invoker` (aplican RLS y filtro explicito por salon) y solo `authenticated` puede ejecutarla. |
+
 ## Allowed Duplication
 
 Allowed duplication exists when TypeScript improves UX and SQL remains final authority:

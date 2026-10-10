@@ -6,6 +6,7 @@ import {
   findLifetimeExpenseTotals,
   insertExpense,
 } from "../data/expenses.repo";
+import { reportExpenseMonthTotalsRpc } from "../data/rpc/report-expense-month-totals";
 import type { CreateExpenseInput } from "../schemas";
 import {
   createExpense,
@@ -17,6 +18,10 @@ vi.mock("../data/expenses.repo", () => ({
   findExpenses: vi.fn(),
   findLifetimeExpenseTotals: vi.fn(),
   insertExpense: vi.fn(),
+}));
+
+vi.mock("../data/rpc/report-expense-month-totals", () => ({
+  reportExpenseMonthTotalsRpc: vi.fn(),
 }));
 
 vi.mock("@/features/inventory/use-cases/inventory-purchase-expenses", () => ({
@@ -32,6 +37,7 @@ const mockedLifetime = vi.mocked(findLifetimeExpenseTotals);
 const mockedInsertExpense = vi.mocked(insertExpense);
 const mockedPurchaseHistory = vi.mocked(getInventoryPurchaseExpenseHistory);
 const mockedRecordPurchase = vi.mocked(recordInventoryPurchase);
+const mockedMonthTotals = vi.mocked(reportExpenseMonthTotalsRpc);
 
 const SALON_ID = "salon-1";
 
@@ -61,6 +67,7 @@ describe("expenses use-cases (ramas)", () => {
     mockedFindExpenses.mockResolvedValue([]);
     mockedPurchaseHistory.mockResolvedValue([]);
     mockedLifetime.mockResolvedValue({ manual: 0, inventoryPurchases: 0, total: 0 });
+    mockedMonthTotals.mockResolvedValue([]);
   });
 
   describe("getExpensesPage", () => {
@@ -104,6 +111,7 @@ describe("expenses use-cases (ramas)", () => {
       mockedFindExpenses.mockResolvedValue([
         expenseRow({ id: "a", amount: "15.25", expense_date: "2026-06-02" }),
       ]);
+      mockedMonthTotals.mockResolvedValue([{ category: "utilities", customCategory: null, amount: 15.25 }]);
 
       const view = await getExpensesPage(SALON_ID);
 
@@ -164,15 +172,16 @@ describe("expenses use-cases (ramas)", () => {
       });
     });
 
-    it("excluye del total mensual los gastos de otros meses y del desglose categorias antiguas", async () => {
+    it("pide a la base el rango del mes en curso y usa sus totales, no los gastos de la lista", async () => {
       mockedFindExpenses.mockResolvedValue([
-        expenseRow({ id: "mayo", expense_date: "2026-05-28", amount: 900, category: "rent" }),
         expenseRow({ id: "junio", expense_date: "2026-06-03", amount: 40, category: "marketing" }),
       ]);
+      mockedMonthTotals.mockResolvedValue([{ category: "marketing", customCategory: null, amount: 40 }]);
       mockedLifetime.mockResolvedValue({ manual: 940, inventoryPurchases: 0, total: 940 });
 
       const view = await getExpensesPage(SALON_ID);
 
+      expect(mockedMonthTotals).toHaveBeenCalledWith({ salonId: SALON_ID, from: "2026-06-01", to: "2026-06-30" });
       expect(view.monthTotal).toBe(40);
       expect(view.lifetimeTotal).toBe(940);
       expect(view.categoryTotals).toEqual([{ category: "marketing", label: "Publicidad y marketing", amount: 40 }]);
@@ -200,16 +209,8 @@ describe("expenses use-cases (ramas)", () => {
           createdAt: "2026-06-06T09:00:00.000Z",
           detail: "x",
         },
-        {
-          id: "c2",
-          date: "2026-05-06",
-          amount: 99,
-          commerceName: null,
-          note: null,
-          createdAt: "2026-05-06T09:00:00.000Z",
-          detail: "y",
-        },
       ]);
+      mockedMonthTotals.mockResolvedValue([{ category: "products", customCategory: null, amount: 30 }]);
 
       const view = await getExpensesPage(SALON_ID);
 

@@ -2895,6 +2895,18 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            report_expense_month_totals: {
+                Args: {
+                    p_from: string;
+                    p_salon_id: string;
+                    p_to: string;
+                };
+                Returns: {
+                    amount: number;
+                    category: string;
+                    custom_category: string;
+                }[];
+            };
             report_inventory_alerts: {
                 Args: {
                     p_modules?: Json;

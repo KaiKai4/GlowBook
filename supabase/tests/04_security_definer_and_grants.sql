@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  31,
-  'authenticated tiene EXECUTE exactamente en 31 funciones de public (28 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores)'
+  32,
+  'authenticated tiene EXECUTE exactamente en 32 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores)'
 );
 
 select ok(
@@ -112,6 +112,7 @@ select ok(
       'public.report_expense_concepts(date,date,jsonb,boolean,integer)',
       'public.report_product_sales(text,text,text,jsonb,integer)',
       'public.report_inventory_alerts(jsonb)',
+      'public.report_expense_month_totals(uuid,date,date)',
       'public.create_employee_with_assignments(jsonb)',
       'public.update_employee_profile(jsonb)'
     ]) as sig
