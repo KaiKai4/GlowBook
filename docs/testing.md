@@ -170,7 +170,7 @@ Los umbrales no se bajan para pasar el gate. La linea base de cobertura global (
 
 Reportes de Vitest: `text-summary`, `json-summary`, `json` y `lcov` en `coverage/`.
 
-## Mutacion (Solo Nightly)
+## Mutación Manual
 
 Stryker queda disponible manualmente con `npx stryker run` sobre `src/features/*/domain` y `src/infra/security`. No forma parte de los workflows automáticos (ADR 0021). Su configuración vive en `stryker.config.mjs`.
 

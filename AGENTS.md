@@ -176,3 +176,11 @@ Un cambio no se da por terminado con `verify:fast` solo, ni con CI en rojo, ni c
 - Los hooks de Husky no se saltan (`--no-verify` prohibido): `pre-commit` ejecuta `secrets` y `lint`; `pre-push` ejecuta `verify:fast`.
 - La plantilla de PR (`.github/pull_request_template.md`) pide evidencia de `verify:full`.
 - Control: `ci-parity` (CI y manifiesto de pasos coinciden) y `check-ci-parity.mjs`.
+
+## 18. Desarrollo y publicación
+
+- Desarrollo y pruebas contra Supabase local; rama desde main, commit, PR y los siete controles obligatorios antes de integrar. Staging remoto es opcional y Nightly no forma parte del flujo vigente (ADR 0021).
+- Solo GlowBook Release publica: éxito de CI por push a main → aprobación Production para migraciones → deploy candidato sin dominio → smoke → segunda aprobación Production para promoción → smoke público. No desplegar directamente para omitir estos controles.
+- Vercel tiene desactivado el deploy automático por Git con `git.deploymentEnabled=false`. Un push a una rama no publica.
+- Las aprobaciones de producción requieren instrucción explícita de la persona responsable; la autorización existente en la sesión sigue siendo válida dentro de su alcance.
+- Procedimiento: `docs/development-guide.md` y `docs/runbooks/deploy.md`. Controles: protección de main, environment Production, `.github/workflows/release.yml`, gate de release y `vercel.json`.

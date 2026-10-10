@@ -20,7 +20,7 @@ Documentos relacionados: `AGENTS.md` (reglas), `docs/quality-guide.md` (verifica
 2. Para verificar en local no hace falta `.env.local`: la BD local se obtiene del stack de Supabase local y el verificador no lee secretos de staging ni de producción.
 3. Nunca expongas `SUPABASE_SERVICE_ROLE_KEY` en variables `NEXT_PUBLIC_*` ni en código de navegador (ver `SECURITY.md`).
 
-Variables públicas y de servidor principales: `GLOWBOOK_ENV`, `APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. El resto (observabilidad, soporte, capacidad, restore, rate limit) lo documenta el propio archivo de ejemplo y los runbooks.
+Variables públicas y de servidor principales: `GLOWBOOK_ENV`, `APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. La sexta variable es `PRODUCTION_SUPABASE_URL`, una guarda de pruebas. La configuración opcional de observabilidad y operación se documenta en `docs/security.md` y los runbooks; no es necesaria para arrancar el entorno local.
 
 ## 3. Base De Datos Local
 
@@ -112,7 +112,25 @@ Los hooks no sustituyen `verify:full`. No se usa `--no-verify` para saltarlos.
 - Un cambio de arquitectura, de contrato de datos o de herramientas incluye un ADR en `docs/adr/`.
 - El workflow `GlowBook CI` (`.github/workflows/ci.yml`) debe estar en verde antes de fusionar. El despliegue lo gestiona `docs/production-standard.md`.
 
-## 10. Comandos De Uso Diario
+## 10. De La Rama A Producción
+
+1. Con el checkout limpio, actualizar main y crear una rama:
+
+   ```bash
+   git switch main
+   git pull --ff-only
+   git switch -c feat/nombre-del-cambio
+   ```
+
+2. Con Docker abierto, ejecutar `npm run db:start` y `npm run dev`. Desarrollar y probar contra Supabase local. Las migraciones se añaden al repositorio, no se aplican manualmente a producción.
+3. Durante el cambio usar `npm run verify:fast`; antes de entregarlo, completar `npm run verify:full` en un checkout limpio. Los hooks no se saltan.
+4. Preparar los archivos, revisar `git diff --cached`, hacer commit en español y subir la rama. Ejemplo: `git commit -m "feat(agenda): permitir filtrar citas"` y `git push -u origin feat/nombre-del-cambio`.
+5. Abrir un PR hacia main con evidencia de verificación. Esperar los siete controles obligatorios de CI y revisar el cambio antes de integrarlo.
+6. Tras el merge, CI vuelve a comprobar el SHA de main. Su éxito dispara GlowBook Release; un push a una rama no hace deploy en Vercel.
+7. Aprobar las migraciones en Production. Después del despliegue candidato y su smoke, aprobar la promoción al dominio público. Seguir los botones y criterios de `docs/runbooks/deploy.md`.
+8. Confirmar la release en verde y el monitor de producción. Staging remoto y Nightly no forman parte de este flujo.
+
+## 11. Comandos De Uso Diario
 
 ```bash
 npm run dev            # servidor de desarrollo de Next.js

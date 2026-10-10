@@ -53,8 +53,7 @@ Principios aplicables a cualquier entorno:
 
 ## Staging Opcional
 
-No es requisito del deploy. Se conserva el proyecto existente; los comandos
-manuales siguen necesitando sus propias credenciales y autorización.
+No es requisito del deploy ni se necesita conservar un proyecto remoto. Si se habilita uno para pruebas manuales, los comandos necesitan sus propias credenciales y autorización.
 
 ## Reinicio De Staging
 
@@ -113,7 +112,7 @@ el rango por defecto de Supabase CLI. Mantener los puertos `554xx` evita que
 - `npm run smoke:seed-5-salons` exige `GLOWBOOK_ENV=staging`, `SMOKE_SEED_CONFIRM=seed-5-salons` y un batch con prefijo `smoke-`.
 - `npm run smoke:cleanup-5-salons` exige `GLOWBOOK_ENV=staging`, `SMOKE_CLEANUP_CONFIRM=cleanup-5-salons` y el mismo `SMOKE_SEED_BATCH_ID`.
 - `synthetic.yml` (cada hora) ejecuta un check de solo lectura contra
-  produccion y staging. Exige sus secretos y falla si faltan. Ver
+  producción únicamente. Exige SYNTHETIC_BASE_URL y falla si falta. Ver
   `docs/runbooks/synthetic-checks.md`.
 
 ## Rotacion De Secretos
@@ -130,5 +129,5 @@ Despues de rotar:
 1. Actualizar variables en hosting.
 2. Actualizar GitHub Actions secrets (incluido `ALERT_WEBHOOK_URL` si aplica).
 3. Ejecutar `npm run verify:full`.
-4. Ejecutar E2E contra staging.
+4. Ejecutar el monitor de producción en solo lectura. Si se mantiene staging opcional y se rotaron sus credenciales, ejecutar allí sus E2E; nunca contra producción.
 5. Confirmar que ninguna variable server-only aparece en el bundle cliente.
