@@ -11,20 +11,33 @@ export const REQUIRED_SECRETS = Object.freeze([
   "VERCEL_TOKEN",
   "VERCEL_ORG_ID",
   "VERCEL_PROJECT_ID",
-  "SUPABASE_ACCESS_TOKEN",
   "PRODUCTION_DB_URL",
   "PRODUCTION_SUPABASE_URL",
   "PRODUCTION_PROJECT_REF",
   "SYNTHETIC_BASE_URL",
-  "ALERT_WEBHOOK_URL",
+  "STAGING_DB_URL",
+  "STAGING_SUPABASE_URL",
+  "STAGING_SUPABASE_ANON_KEY",
+  "STAGING_SUPABASE_SERVICE_ROLE_KEY",
 ]);
 
 /**
- * Nombres de los jobs de release.yml. Sus check-runs están en el mismo commit
- * mientras corre la release, así que se excluyen de la evaluación del gate.
+ * Jobs obligatorios del contrato de CI para el mismo commit.
  */
+export const REQUIRED_CI_JOBS = Object.freeze([
+  "Static (secretos, tokens, arquitectura, lint, tipos, auditoría)",
+  "Unit tests",
+  "Database (Supabase local, migraciones, tests SQL, integración)",
+  "Browser (build y E2E con Playwright)",
+  "Lighthouse (rendimiento y accesibilidad)",
+  "SBOM (dependencias de producción)",
+  "CodeQL (análisis estático de seguridad, solo CI)",
+]);
+
+// La release genera checks propios que se excluyen de su gate.
 export const RELEASE_JOB_NAMES = Object.freeze([
   "Release gate",
+  "Validate staging",
   "Migrations (production)",
   "Deploy staged",
   "Smoke staged",
@@ -94,13 +107,14 @@ export function parseCheckRunsResponse(data) {
 }
 
 /**
- * Evalúa los check-runs del commit. Pasa solo si hay al menos un check de CI
+ * Evalúa los check-runs del commit. Exige todos los jobs del contrato de CI
  * y la última ejecución de cada nombre está completed + success.
  * @param {CheckRunsPage} page
  * @param {readonly string[]} [excludedNames]
+ * @param {readonly string[]} [requiredNames]
  * @returns {{ ok: boolean, failures: string[], evaluated: number }}
  */
-export function evaluateCheckRuns(page, excludedNames = RELEASE_JOB_NAMES) {
+export function evaluateCheckRuns(page, excludedNames = RELEASE_JOB_NAMES, requiredNames = REQUIRED_CI_JOBS) {
   /** @type {string[]} */
   const failures = [];
   if (page.totalCount > page.checkRuns.length) {
@@ -119,6 +133,9 @@ export function evaluateCheckRuns(page, excludedNames = RELEASE_JOB_NAMES) {
 
   if (latest.size === 0) {
     failures.push("no hay check-runs de CI para el commit");
+  }
+  for (const name of requiredNames) {
+    if (!latest.has(name)) failures.push(`falta el check obligatorio "${name}"`);
   }
   for (const run of latest.values()) {
     if (run.status !== "completed") {

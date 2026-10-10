@@ -13,23 +13,26 @@ Producción solo recibe código que ya pasó `verify:full` en CI. La release no 
 | Workflow | Disparo | Qué hace |
 |---|---|---|
 | `ci.yml` (GlowBook CI) | Push y pull request | Jobs `static`, `unit`, `db`, `browser`, `lighthouse`, `sbom` y `codeql`. Cada job llama a `npm run verify:job -- <job>`. |
-| `release.yml` (GlowBook Release) | `workflow_run` de CI en éxito sobre `main`, o manual con un SHA de `main` | Etapas en orden: `gate`, `migrations` (production, con aprobación), `deploy-staged`, `smoke-staged`, `discard-staged` (solo si falla el smoke staged), `promote` (production, con aprobación), smoke de producción, rollback del frontend y alerta si falla tras promover. |
+| `release.yml` (GlowBook Release) | `workflow_run` de CI en éxito sobre `main`, o manual con un SHA de `main` | Etapas en orden: `gate`, `validate-staging` (preview y E2E sobre Supabase staging), `migrations` (production, con aprobación), `deploy-staged`, `smoke-staged`, `discard-staged` (solo si falla el smoke staged), `promote` (production, con aprobación), smoke de producción, rollback del frontend y alerta si falla tras promover. |
 | `synthetic.yml` (GlowBook Synthetic) | Cada hora, en el minuto 23, y manual | Check sintético de disponibilidad en solo lectura contra producción y staging. Si falla, envía alerta y abre un issue con la etiqueta `synthetic-failure`. |
 | `nightly.yml` (GlowBook Nightly) | Programado y manual | Mutación con Stryker (`src/features/*/domain` y `src/infra/security`), deriva de dependencias (`npm outdated` y auditoría completa), deriva de esquema y sintético. |
+
+La política de publicación está en ADR 0020 (`docs/adr/0020-release-validada-en-staging.md`). Los builds remotos conservan los secretos sensibles de producción en Vercel. Las notificaciones iniciales son las de GitHub Actions; el webhook de release es opcional.
 
 Los secretos y el environment `production` (revisores y protección de despliegues) se configuran según `docs/runbooks/deploy.md`.
 
 ## 3. Etapas De La Release
 
-1. **gate**: comprueba que el CI del SHA esté en éxito. No vuelve a ejecutar calidad.
-2. **migrations**: lista las migraciones pendientes, las aplica con el gate `release:migrations` (`scripts/production-migration-gate.mjs --target=production`) y comprueba que no quedan pendientes. Requiere aprobación.
-3. **deploy-staged**: despliega el build sin asignar dominio de producción.
-4. **smoke-staged**: comprobaciones contra el despliegue staged.
-5. **discard-staged**: si el smoke falla, elimina el despliegue staged.
-6. **promote**: promueve el despliegue staged a producción. Requiere aprobación.
-7. **smoke de producción**: comprobaciones contra el dominio de producción.
-8. **rollback y alerta**: si el smoke falla tras promover, vuelve al despliegue anterior y avisa.
-9. **notify-failure**: avisa si falla cualquier etapa anterior a `promote`.
+1. **gate**: exige los siete jobs de CI del SHA en éxito. No acepta controles parciales.
+2. **validate-staging**: verifica historial de staging, despliega el mismo SHA en Preview y ejecuta E2E contra Supabase staging antes de tocar producción.
+3. **migrations**: lista las migraciones pendientes, las aplica con el gate `release:migrations` (`scripts/production-migration-gate.mjs --target=production`) y comprueba que no quedan pendientes. Requiere aprobación.
+4. **deploy-staged**: despliega el build sin asignar dominio de producción.
+5. **smoke-staged**: comprobaciones contra el despliegue staged.
+6. **discard-staged**: si el smoke falla, elimina el despliegue staged.
+7. **promote**: promueve el despliegue staged a producción. Requiere aprobación.
+8. **smoke de producción**: comprobaciones contra el dominio de producción.
+9. **rollback y alerta**: si el smoke falla tras promover, vuelve al despliegue anterior y avisa.
+10. **notify-failure**: avisa si falla cualquier etapa anterior a `promote`.
 
 Migraciones: forward-only con expand/contract (ADR 0016). Si una migración aplicada causa un problema, el remedio es una migración nueva, no editar la existente. El procedimiento está en `docs/runbooks/database-migrations.md`.
 

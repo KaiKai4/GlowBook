@@ -8,6 +8,7 @@ import { getArgValue } from "./args.mjs";
 
 export const RELEASE_STAGES = Object.freeze([
   "gate",
+  "staging",
   "migrations",
   "deploy-staged",
   "smoke-staged",
@@ -92,8 +93,8 @@ async function main() {
   const args = process.argv.slice(2);
   const webhookUrl = (process.env.ALERT_WEBHOOK_URL ?? "").trim();
   if (webhookUrl === "") {
-    console.error("[alert] FALLO: falta ALERT_WEBHOOK_URL. La alerta no puede enviarse.");
-    process.exit(1);
+    console.log("[alert] Sin webhook: el fallo queda registrado en GitHub Actions y sus notificaciones.");
+    return;
   }
 
   let payload;

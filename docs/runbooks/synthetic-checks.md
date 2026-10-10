@@ -35,15 +35,17 @@ El job **falla con mensaje explícito** si falta cualquiera de estos secretos
 (no se salta en silencio):
 
 - `SYNTHETIC_BASE_URL` (producción);
-- `STAGING_BASE_URL` (staging);
-- `ALERT_WEBHOOK_URL` (destino de alertas).
+- `STAGING_BASE_URL` (staging).
+
+`ALERT_WEBHOOK_URL` es opcional. Sin él se usan los avisos de GitHub Actions y
+los issues de incidentes.
 
 `GITHUB_TOKEN` lo provee Actions; el job necesita `issues: write`.
 
 ## Que Pasa Cuando Falla
 
 1. El paso `Run synthetic check` falla y el job queda en rojo.
-2. `scripts/ops/synthetic-alert-cli.mjs` envía un `POST` JSON a
+2. Si hay webhook, `scripts/ops/synthetic-alert-cli.mjs` envía un `POST` JSON a
    `ALERT_WEBHOOK_URL`. El payload contiene: `target`, `checkPath`, `status`,
    `elapsedMs`, `failures`, `runUrl`, `commit` (7 caracteres), `occurredAt`.
    No contiene URL base, cabeceras ni tokens.

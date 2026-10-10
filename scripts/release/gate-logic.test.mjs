@@ -1,8 +1,10 @@
 // Tests de la lógica pura del gate de release.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { readFileSync } from "node:fs";
 import {
   REQUIRED_SECRETS,
+  REQUIRED_CI_JOBS,
   RELEASE_JOB_NAMES,
   evaluateCheckRuns,
   findMissingSecrets,
@@ -23,9 +25,9 @@ describe("findMissingSecrets", () => {
   it("reporta ausentes y vacíos por nombre, sin valores", () => {
     const env = fullEnv();
     delete env.VERCEL_TOKEN;
-    env.ALERT_WEBHOOK_URL = "   ";
+    env.PRODUCTION_DB_URL = "   ";
     const missing = findMissingSecrets(env);
-    assert.deepEqual(missing, ["VERCEL_TOKEN", "ALERT_WEBHOOK_URL"]);
+    assert.deepEqual(missing, ["VERCEL_TOKEN", "PRODUCTION_DB_URL"]);
   });
 
   it("incluye todos los secretos requeridos del contrato", () => {
@@ -33,12 +35,10 @@ describe("findMissingSecrets", () => {
       "VERCEL_TOKEN",
       "VERCEL_ORG_ID",
       "VERCEL_PROJECT_ID",
-      "SUPABASE_ACCESS_TOKEN",
       "PRODUCTION_DB_URL",
       "PRODUCTION_SUPABASE_URL",
       "PRODUCTION_PROJECT_REF",
       "SYNTHETIC_BASE_URL",
-      "ALERT_WEBHOOK_URL",
     ]) {
       assert.ok(REQUIRED_SECRETS.includes(name), `falta ${name}`);
     }
@@ -80,22 +80,40 @@ describe("evaluateCheckRuns", () => {
    * @returns {{ id: number, name: string, status: string, conclusion: string | null }}
    */
   const ok = (id, name) => ({ id, name, status: "completed", conclusion: "success" });
+  /** @param {Parameters<typeof evaluateCheckRuns>[0]} page */
+  const evaluateSubset = (page) => evaluateCheckRuns(page, RELEASE_JOB_NAMES, []);
+
+  it("rechaza un commit que solo tiene el check de Vercel", () => {
+    const result = evaluateCheckRuns({ totalCount: 1, checkRuns: [ok(1, "Vercel")] });
+    assert.equal(result.ok, false);
+  });
+
+  it("exige cada uno de los siete jobs y acepta el conjunto completo", () => {
+    const runs = REQUIRED_CI_JOBS.map((name, index) => ok(index + 1, name));
+    assert.equal(evaluateCheckRuns({ totalCount: runs.length, checkRuns: runs }).ok, true);
+    for (const missing of REQUIRED_CI_JOBS) {
+      const partial = runs.filter((run) => run.name !== missing);
+      const result = evaluateCheckRuns({ totalCount: partial.length, checkRuns: partial });
+      assert.equal(result.ok, false);
+      assert.ok(result.failures.some((failure) => failure.includes(missing)));
+    }
+  });
 
   it("pasa cuando todos los check-runs de CI están en success", () => {
-    const result = evaluateCheckRuns({ totalCount: 2, checkRuns: [ok(1, "Static"), ok(2, "Unit tests")] });
+    const result = evaluateSubset({ totalCount: 2, checkRuns: [ok(1, "Static"), ok(2, "Unit tests")] });
     assert.equal(result.ok, true);
     assert.equal(result.evaluated, 2);
   });
 
   it("falla si no hay ningún check-run de CI", () => {
-    const result = evaluateCheckRuns({ totalCount: 0, checkRuns: [] });
+    const result = evaluateSubset({ totalCount: 0, checkRuns: [] });
     assert.equal(result.ok, false);
     assert.match(result.failures[0], /no hay check-runs/);
   });
 
   it("falla si un check-run está en failure, neutral o cancelled", () => {
     for (const conclusion of ["failure", "neutral", "cancelled"]) {
-      const result = evaluateCheckRuns({
+      const result = evaluateSubset({
         totalCount: 1,
         checkRuns: [{ id: 1, name: "Browser", status: "completed", conclusion }],
       });
@@ -104,7 +122,7 @@ describe("evaluateCheckRuns", () => {
   });
 
   it("falla si un check-run sigue en progreso", () => {
-    const result = evaluateCheckRuns({
+    const result = evaluateSubset({
       totalCount: 1,
       checkRuns: [{ id: 1, name: "Lighthouse", status: "in_progress", conclusion: null }],
     });
@@ -113,7 +131,7 @@ describe("evaluateCheckRuns", () => {
   });
 
   it("usa la ejecución más reciente por nombre (re-run)", () => {
-    const result = evaluateCheckRuns({
+    const result = evaluateSubset({
       totalCount: 2,
       checkRuns: [
         { id: 10, name: "Static", status: "completed", conclusion: "failure" },
@@ -125,7 +143,7 @@ describe("evaluateCheckRuns", () => {
   });
 
   it("ignora los check-runs de los propios jobs de release", () => {
-    const result = evaluateCheckRuns({
+    const result = evaluateSubset({
       totalCount: 2,
       checkRuns: [ok(1, "Static"), { id: 2, name: "Release gate", status: "in_progress", conclusion: null }],
     });
@@ -134,8 +152,13 @@ describe("evaluateCheckRuns", () => {
   });
 
   it("falla si la paginación es incompleta", () => {
-    const result = evaluateCheckRuns({ totalCount: 150, checkRuns: [ok(1, "Static")] });
+    const result = evaluateSubset({ totalCount: 150, checkRuns: [ok(1, "Static")] });
     assert.equal(result.ok, false);
     assert.match(result.failures[0], /paginación incompleta/);
   });
+});
+
+it("el catálogo obligatorio coincide con los nombres publicados por CI", () => {
+  const workflow = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
+  for (const name of REQUIRED_CI_JOBS) assert.ok(workflow.includes("name: " + name));
 });

@@ -50,6 +50,11 @@ Reglas:
 - `SUPABASE_SERVICE_ROLE_KEY` debe ser staging y server-only.
 - No usar prefijo `NEXT_PUBLIC_` para `SUPABASE_SERVICE_ROLE_KEY`.
 
+La comprobación inspecciona la CSP y los chunks públicos. La CSP permite
+identificar el proyecto aunque el login use Server Actions y no incluya el
+cliente Supabase en JavaScript. Una mezcla de hosts de staging y producción
+se rechaza.
+
 ## Redeploy
 
 Despues de corregir variables:

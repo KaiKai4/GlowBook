@@ -172,7 +172,7 @@ describe("EmployeeCreateForm", () => {
     await submitForm(formOf(mounted.container));
     await flushAsync();
 
-    expect(createEmployeeAction).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(createEmployeeAction).toHaveBeenCalledTimes(1));
     const formData = vi.mocked(createEmployeeAction).mock.calls[0]?.[1];
     expect(formData?.get("first_name")).toBe("Marta");
     expect(formData?.get("last_name")).toBe("Lima");
@@ -180,7 +180,7 @@ describe("EmployeeCreateForm", () => {
     expect(formData?.get("commission_percentage")).toBe("35");
     expect(formData?.getAll("category_ids")).toEqual(["cat-cabello"]);
     expect(formData?.getAll("service_ids")).toEqual(["svc-tinte"]);
-    expect(onCreated).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
   });
 
   it("quita los servicios de una categoría al desmarcarla", () => {
@@ -196,7 +196,10 @@ describe("EmployeeCreateForm", () => {
   });
 
   it("notifica el error de la acción y no cierra el formulario", async () => {
-    vi.mocked(createEmployeeAction).mockResolvedValue({ ok: false, error: "El email ya pertenece a otro colaborador" });
+    // La acción puede terminar después de las microtareas iniciales del envío.
+    vi.mocked(createEmployeeAction).mockImplementation(() => new Promise((resolve) => {
+      setTimeout(() => resolve({ ok: false, error: "El email ya pertenece a otro colaborador" }), 30);
+    }));
     const onCreated = vi.fn();
     mounted = renderForm({ onCreated });
     setFieldValue(fieldByName(mounted.container, "first_name"), "Marta");
@@ -204,7 +207,8 @@ describe("EmployeeCreateForm", () => {
     await submitForm(formOf(mounted.container));
     await flushAsync();
 
-    expect(mounted.container.textContent).toContain("El email ya pertenece a otro colaborador");
+    const container = mounted.container;
+    await vi.waitFor(() => expect(container.textContent).toContain("El email ya pertenece a otro colaborador"));
     expect(onCreated).not.toHaveBeenCalled();
   });
 

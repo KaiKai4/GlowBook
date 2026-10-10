@@ -14,6 +14,13 @@ import {
   parseSyntheticTarget,
 } from "./synthetic-alert.mjs";
 
+import { postWebhook } from "./synthetic-alert-cli.mjs";
+
+it("sin webhook conserva los avisos de GitHub sin intentar un POST", async () => {
+  const payload = buildAlertPayload({ target: "production", result: missingResult(), runUrl: "", commit: "", occurredAt: "2026-10-09" });
+  await postWebhook("", payload, async () => { throw new Error("POST inesperado"); });
+});
+
 const failingResult = {
   ok: false,
   failures: ["estado HTTP 500 (se esperaba 200)", "falta la cabecera x-request-id"],

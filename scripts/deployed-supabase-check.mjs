@@ -25,7 +25,9 @@ async function fetchText(url) {
     if (!response.ok) {
       throw new Error(`${response.status} ${response.statusText}`);
     }
-    return await response.text();
+    // El login usa Server Actions y puede no incluir el cliente Supabase en JS.
+    // La CSP expone el origen configurado por el servidor, sin claves.
+    return `${await response.text()}\n${response.headers.get("content-security-policy") ?? ""}`;
   } finally {
     clearTimeout(timeout);
   }
@@ -78,7 +80,7 @@ export async function assertDeployedSupabaseMatches({ baseUrl, expectedUrl }) {
     );
   }
 
-  if (deployedUrls.some((url) => normalizeUrl(url) === normalizeUrl(expectedUrl))) {
+  if (deployedUrls.every((url) => normalizeUrl(url) === normalizeUrl(expectedUrl))) {
     return deployedUrls;
   }
 
