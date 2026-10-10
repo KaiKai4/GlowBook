@@ -1,5 +1,7 @@
 // Tests del payload de alerta y del envío (fetch inyectado).
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { buildAlertPayload, sanitizeHttpsUrl, sendAlert } from "./alert.mjs";
 
@@ -79,4 +81,14 @@ describe("sendAlert", () => {
     const payload = buildAlertPayload({ stage: "gate", sha: SHA });
     await assert.rejects(() => sendAlert("http://insegura.example.com", payload));
   });
+});
+
+it("sin webhook conserva el aviso de GitHub Actions y no intenta enviar", () => {
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL("./alert.mjs", import.meta.url))], {
+    env: { ...process.env, ALERT_WEBHOOK_URL: "" },
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /GitHub Actions/);
 });

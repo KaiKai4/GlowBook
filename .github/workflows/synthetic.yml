@@ -1,7 +1,7 @@
 name: GlowBook Synthetic
 
 # Check sintetico de disponibilidad cada hora, en SOLO LECTURA, contra produccion y staging.
-# Si falla: POST al webhook de alertas (payload sin secretos) y issue con la etiqueta synthetic-failure.
+# Si falla: avisos de Actions, issue synthetic-failure y webhook opcional.
 # Si falta un secreto el job FALLA con un mensaje explicito; ningun paso se salta en silencio.
 # Ver docs/runbooks/synthetic-checks.md.
 
@@ -39,10 +39,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
 
@@ -66,10 +66,6 @@ jobs:
           esac
           if [ -z "$base" ]; then
             echo "::error::Falta el secreto $name. El check sintetico de $SYNTHETIC_TARGET no puede ejecutarse."
-            exit 1
-          fi
-          if [ -z "$ALERT_WEBHOOK_URL" ]; then
-            echo "::error::Falta el secreto ALERT_WEBHOOK_URL. Sin webhook no hay alertas; el job falla a proposito."
             exit 1
           fi
           echo "::add-mask::$base"

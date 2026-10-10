@@ -2,15 +2,12 @@
 // Nunca toca staging ni producción: solo invoca el CLI instalado en node_modules
 // y lee el estado del stack local. Nunca imprime claves ni URLs con credenciales.
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CLI_ENTRY = path.join(ROOT, "node_modules", "supabase", "dist", "supabase.js");
-// La CLI crea este directorio al arrancar el stack desde ESTE checkout. Si el stack
-// responde sin él, lo arrancó otro checkout (mismo project_id) y no debe usarse aquí.
-const STACK_OWNERSHIP_DIR = path.join(ROOT, "supabase", ".temp", "start-secrets");
 // Límites de cada llamada al CLI: nunca se espera indefinidamente a supabase.
 const DOCKER_TIMEOUT_MS = 30_000;
 const STATUS_TIMEOUT_MS = 60_000;
@@ -106,17 +103,29 @@ function isTimeout(error) {
   return Boolean(error) && /** @type {NodeJS.ErrnoException} */ (error).code === "ETIMEDOUT";
 }
 
-/**
- * Un stack local por máquina. Si el stack responde pero este checkout no tiene
- * supabase/.temp/start-secrets, lo arrancó otro checkout: las pruebas se colgaban
- * contra ese stack, así que se falla con instrucciones claras.
- */
+/** @param {unknown} workdir @param {string} expectedRoot @returns {boolean} */
+export function isStackWorkdirMatch(workdir, expectedRoot) {
+  if (typeof workdir !== "string" || workdir.trim() === "") return false;
+  const normalize = process.platform === "win32"
+    ? (/** @type {string} */ value) => path.resolve(value).toLowerCase()
+    : (/** @type {string} */ value) => path.resolve(value);
+  return normalize(workdir) === normalize(expectedRoot);
+}
+
+// La etiqueta de Docker registra el checkout real. No se depende de archivos
+// temporales que pueden desaparecer o cambiar entre versiones de Supabase CLI.
 function assertStackOwnedByThisCheckout() {
-  if (existsSync(STACK_OWNERSHIP_DIR)) return;
+  const config = readFileSync(path.join(ROOT, "supabase", "config.toml"), "utf8");
+  const projectId = /^project_id\s*=\s*"([A-Za-z0-9_-]+)"/m.exec(config)?.[1];
+  if (!projectId) throw new Error("No se pudo identificar el project_id de Supabase local.");
+  const result = spawnSync("docker", [
+    "inspect", "supabase_db_" + projectId,
+    "--format", '{{index .Config.Labels "com.supabase.cli.workdir"}}',
+  ], { encoding: "utf8", shell: false, windowsHide: true, timeout: DOCKER_TIMEOUT_MS });
+  if (result.status === 0 && isStackWorkdirMatch(result.stdout.trim(), ROOT)) return;
   throw new Error(
-    "El Supabase local responde, pero lo arrancó otro checkout de este repositorio " +
-      "(falta supabase/.temp/start-secrets en este directorio). " +
-      "Ejecuta \"supabase stop\" en ese otro checkout y vuelve a arrancar desde este con \"npm run db:start\"."
+    "El stack Supabase local no acredita este checkout como propietario. " +
+    "Detén el stack desde su checkout original y arranca este con npm run db:start."
   );
 }
 

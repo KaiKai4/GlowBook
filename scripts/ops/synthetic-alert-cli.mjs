@@ -101,6 +101,10 @@ export async function findOpenSyntheticIssues(target) {
  * @returns {Promise<void>}
  */
 export async function postWebhook(url, payload, fetchImpl = fetch) {
+  if (url.trim() === "") {
+    console.log("[OK] Sin webhook: avisos de GitHub Actions e incidencias en GitHub.");
+    return;
+  }
   const response = await fetchImpl(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -162,15 +166,11 @@ async function main() {
   const webhookUrl = process.env.ALERT_WEBHOOK_URL?.trim() ?? "";
 
   if (decision.alert) {
-    if (webhookUrl === "") {
-      errors.push("ALERT_WEBHOOK_URL no esta configurado; la alerta no pudo enviarse.");
-    } else {
-      try {
-        await postWebhook(webhookUrl, payload);
-        console.log("[OK] alerta enviada al webhook");
-      } catch (error) {
-        errors.push(error instanceof Error ? error.message : String(error));
-      }
+    try {
+      await postWebhook(webhookUrl, payload);
+      if (webhookUrl !== "") console.log("[OK] alerta enviada al webhook");
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
     }
   }
 

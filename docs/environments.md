@@ -38,16 +38,13 @@ Reglas:
 |---|---|---|---|
 | `local` | `npx supabase start` y `supabase db reset` sobre Docker. | Cualquier desarrollador del equipo. | Vigente. |
 | `staging` | `npm run staging:migrations` (gate con `--target=staging`). | Miembros del equipo con acceso a secretos de staging. El job nightly solo verifica drift en lectura. | Vigente. |
-| `production` | `npm run release:migrations` (gate con `--target=production`). | Owner tecnico, tras revision de la migracion y gate verde. | Vigente como procedimiento manual de `docs/runbooks/deploy.md`. |
+| `production` | Job `migrations` de `release.yml`, tras CI y staging. | Automatización con aprobación del environment Production. | Requiere los secretos documentados en `docs/runbooks/deploy.md`. |
 
-**Regla objetivo:** las migraciones de `production` solo se aplican desde
-`.github/workflows/release.yml`, nunca desde la maquina de una persona.
-
-**Estado real:** `release.yml` **no existe todavia** en `.github/workflows/`
-(solo existen `ci.yml`, `nightly.yml` y `synthetic.yml`). Hasta que se cree, la
-aplicacion de migraciones de produccion sigue el procedimiento manual de
-`docs/runbooks/deploy.md`, con aprobacion explicita del owner y gate verde.
-No aplicar migraciones de produccion fuera de ese procedimiento.
+**Regla vigente:** las migraciones de production se aplican desde
+`.github/workflows/release.yml`, después de CI y E2E de staging y con aprobación.
+El workflow existe. Sin sus secretos obligatorios el gate falla antes de tocar
+producción. El procedimiento manual queda reservado a contingencias documentadas
+en `docs/runbooks/deploy.md`, con aprobación explícita del owner.
 
 Principios aplicables a cualquier entorno:
 
@@ -103,7 +100,7 @@ el rango por defecto de Supabase CLI. Mantener los puertos `554xx` evita que
 - `npm run test:e2e:staging` exige `GLOWBOOK_ENV=staging`, `E2E_BASE_URL` desplegado y Supabase staging.
 - `npm run staging:verify-env` ejecuta solo el check de deployment/Supabase
   para confirmar rapido que Vercel ya no apunta al proyecto equivocado.
-- `npm run test:e2e:staging` tambien inspecciona los chunks publicos del
+- `npm run test:e2e:staging` tambien inspecciona la CSP y los chunks publicos del
   deployment y bloquea si el `NEXT_PUBLIC_SUPABASE_URL` desplegado no coincide
   con el Supabase staging configurado localmente.
 - `npm run release:readiness` y `npm run release:scale-readiness` bloquean si
