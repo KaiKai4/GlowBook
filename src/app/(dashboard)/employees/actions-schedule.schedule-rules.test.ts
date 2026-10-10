@@ -72,7 +72,7 @@ const INVALID = { ok: false, error: "Identificador inválido." } as const;
 const manager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
 const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000f1";
 
-describe("employees actions (horario y excepciones, p2)", () => {
+describe("employees actions (horario y excepciones)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);

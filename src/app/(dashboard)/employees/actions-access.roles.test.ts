@@ -69,7 +69,7 @@ const ROLES_DISABLED = { ok: false, error: "Los roles están deshabilitados para
 const manager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
 const INVITE = { token: "tok-123", expiresAt: "2026-10-10T00:00:00.000Z" };
 
-describe("employees actions (acceso y roles, p2)", () => {
+describe("employees actions (acceso y roles)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);

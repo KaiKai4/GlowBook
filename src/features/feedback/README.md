@@ -21,4 +21,4 @@ Reglas importantes:
 - El salón solo escribe sus propios reportes; la moderación y el cambio de estado viven en `src/features/platform` (`data/feedback-moderation.repo.ts`).
 - El texto que ve el usuario sigue las reglas de errores públicos (`PublicError`).
 
-Tests: `schemas.test.ts`, `use-cases/submit-feedback.test.ts`, `data/feedback.repo.behavior.test.ts`.
+Tests: `schemas.test.ts`, `use-cases/submit-feedback.test.ts`, `data/feedback.repo.test.ts`.

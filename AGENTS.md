@@ -71,7 +71,7 @@ Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por mód
 
 - No hay registro público. La plataforma emite invitaciones con la RPC `invite_salon` (ADR 0005).
 - El invitado abre `/invite/[token]`, se autentica y `accept_invitation` valida token y email y crea salón y owner de forma atómica.
-- Control: `src/features/platform/use-cases/accept-invitation.behavior.test.ts` (paso `unit`) y pruebas de integración de la RPC (paso `integration`).
+- Control: `src/features/platform/use-cases/accept-invitation.conducta.test.ts` (paso `unit`) y pruebas de integración de la RPC (paso `integration`).
 
 ## 6. Plataforma (super-admin)
 

@@ -90,7 +90,7 @@ describe("Dialog: gestión del foco", () => {
     const opener = must(document.querySelector<HTMLButtonElement>("button"), "Falta el botón Abrir");
     opener.focus();
     clickElement(opener);
-    expect(dialogPanel()).toBeTruthy();
+    expect(dialogPanel().getAttribute("aria-modal")).toBe("true");
 
     clickElement(must(document.querySelector<HTMLButtonElement>('button[aria-label="Cerrar"]'), "Falta Cerrar"));
 

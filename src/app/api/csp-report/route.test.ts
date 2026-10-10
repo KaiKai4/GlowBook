@@ -1,77 +1,176 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { headers } from "next/headers";
+import { captureError } from "@/infra/observability";
 import { POST } from "./route";
-import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
 
-vi.mock("@/infra/security/rate-limit", () => ({ assertAnonymousRateLimit: vi.fn() }));
+const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
-const URL_ = "https://app.glowbook.test/api/csp-report";
+vi.mock("next/headers", () => ({ headers: vi.fn() }));
+vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
 const LEGACY = "application/csp-report";
 const REPORTING = "application/reports+json";
+const MAX_BYTES = 16 * 1024;
 
-const legacyBody = JSON.stringify({
-  "csp-report": {
-    "document-uri": "https://app.glowbook.test/clientes/1?x=secreto",
-    "effective-directive": "img-src",
-    "blocked-uri": "https://img.example.test/a.png?token=abc",
-  },
-});
-
-function report(contentType: string, body: string, headers: Record<string, string> = {}) {
-  return new Request(URL_, { method: "POST", headers: { "content-type": contentType, ...headers }, body });
+function report(body: string, contentType: string, extra: Record<string, string> = {}) {
+  return new Request("http://localhost:3000/api/csp-report", {
+    method: "POST",
+    headers: { "content-type": contentType, ...extra },
+    body,
+  });
 }
 
-describe("POST /api/csp-report", () => {
-  let warnSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    vi.mocked(assertAnonymousRateLimit).mockResolvedValue({ ok: true, value: undefined });
-    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+function legacyBody(overrides: Record<string, string> = {}) {
+  return JSON.stringify({
+    "csp-report": {
+      "document-uri": "https://app.glowbook.test/login?next=/admin#x",
+      "effective-directive": "script-src-elem",
+      "blocked-uri": "https://evil.example.com/a.js?token=secreto",
+      ...overrides,
+    },
   });
+}
 
-  afterEach(() => {
-    warnSpy.mockRestore();
-    vi.clearAllMocks();
-  });
+let warnSpy: ReturnType<typeof vi.spyOn>;
 
-  it("accepts a legacy report, logs only a summary and answers 204 no-store", async () => {
-    const response = await POST(report(LEGACY, legacyBody));
+// Dentro de Vercel la IP del cliente se lee de x-real-ip (ver rate-limit.ts).
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1");
+});
 
-    expect(response.status).toBe(204);
-    expect(response.headers.get("cache-control")).toBe("no-store");
-    expect(assertAnonymousRateLimit).toHaveBeenCalledWith("csp-report", { max: 30, windowMs: 60_000 });
-    const logged = String(warnSpy.mock.calls[0]?.[0]);
-    expect(logged).toContain("img.example.test");
-    expect(logged).not.toContain("secreto");
-    expect(logged).not.toContain("token=abc");
-  });
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
-  it("accepts Reporting API bodies", async () => {
-    const body = JSON.stringify([{ type: "csp-violation", body: { effectiveDirective: "script-src", blockedURL: "inline" } }]);
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(headers).mockResolvedValue(new Headers({ "x-real-ip": "203.0.113.9" }) as never);
+  rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
+  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+});
 
-    expect((await POST(report(REPORTING, body))).status).toBe(204);
-  });
+afterEach(() => {
+  warnSpy.mockRestore();
+});
 
-  it("rejects unsupported content types with 415", async () => {
-    const response = await POST(report("application/json", legacyBody));
+describe("POST /api/csp-report: tipo de contenido", () => {
+  it("rechaza tipos no soportados con 415 y sin cache", async () => {
+    const response = await POST(report("{}", "text/plain"));
 
     expect(response.status).toBe(415);
     expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(await response.json()).toEqual({ error: "Tipo de contenido no soportado." });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
-  it("returns 429 when the anonymous limit is exceeded", async () => {
-    vi.mocked(assertAnonymousRateLimit).mockResolvedValue({ ok: false, error: "Demasiados intentos." });
+  it("acepta el tipo con parametros y mayusculas (charset)", async () => {
+    const response = await POST(report(legacyBody(), "Application/CSP-Report; charset=utf-8"));
 
-    expect((await POST(report(LEGACY, legacyBody))).status).toBe(429);
+    expect(response.status).toBe(204);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+  });
+});
+
+describe("POST /api/csp-report: límite de peticiones y tamaño", () => {
+  it("limita por IP con el máximo de 30 por minuto y responde 429", async () => {
+    rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
+
+    const response = await POST(report(legacyBody(), LEGACY));
+
+    expect(rpc).toHaveBeenCalledWith("consume_rate_limit", {
+      p_key: "ip:203.0.113.9:csp-report",
+      p_max: 30,
+      p_window_seconds: 60,
+    });
+    expect(response.status).toBe(429);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it("rejects bodies declared above 16 KB with 413", async () => {
-    const response = await POST(report(LEGACY, legacyBody, { "content-length": String(17 * 1024) }));
+  it("rechaza un Content-Length declarado por encima de 16 KiB con 413", async () => {
+    const response = await POST(report(legacyBody(), LEGACY, { "content-length": String(MAX_BYTES + 1) }));
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: "Informe demasiado grande." });
+  });
+
+  it("rechaza un cuerpo real por encima de 16 KiB aunque no declare tamaño", async () => {
+    const padding = "x".repeat(MAX_BYTES + 10);
+    const body = JSON.stringify({ "csp-report": { "document-uri": padding } });
+
+    const response = await POST(report(body, LEGACY));
 
     expect(response.status).toBe(413);
   });
+});
 
-  it("returns 400 for invalid JSON and for unexpected shapes", async () => {
-    expect((await POST(report(LEGACY, "{no-json"))).status).toBe(400);
-    expect((await POST(report(LEGACY, JSON.stringify({ hola: 1 })))).status).toBe(400);
+describe("POST /api/csp-report: contenido del informe", () => {
+  it("responde 400 si el cuerpo no es JSON", async () => {
+    const response = await POST(report("{no-json", LEGACY));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "JSON inválido." });
+  });
+
+  it("responde 400 si el JSON no tiene la forma del informe", async () => {
+    const response = await POST(report(JSON.stringify({ hola: 1 }), LEGACY));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Informe inválido." });
+  });
+
+  it("registra un resumen mínimo del informe legacy sin query strings y responde 204", async () => {
+    const response = await POST(report(legacyBody(), LEGACY));
+
+    expect(response.status).toBe(204);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const logged = JSON.parse(String(warnSpy.mock.calls[0]?.[0]));
+    expect(logged).toEqual({
+      event: "csp_violation",
+      directive: "script-src-elem",
+      blockedOrigin: "https://evil.example.com",
+      documentPath: "/login",
+    });
+    expect(JSON.stringify(logged)).not.toContain("token=secreto");
+    expect(JSON.stringify(logged)).not.toContain("next=/admin");
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it("registra una violacion por cada informe csp-violation de la Reporting API y omite otros tipos", async () => {
+    const body = JSON.stringify([
+      { type: "csp-violation", body: { effectiveDirective: "img-src", blockedURL: "inline", documentURL: "https://app.glowbook.test/salon" } },
+      { type: "deprecation", body: {} },
+      { type: "csp-violation" },
+    ]);
+
+    const response = await POST(report(body, REPORTING));
+
+    expect(response.status).toBe(204);
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    const first = JSON.parse(String(warnSpy.mock.calls[0]?.[0]));
+    expect(first).toEqual({ event: "csp_violation", directive: "img-src", blockedOrigin: "inline", documentPath: "/salon" });
+    const second = JSON.parse(String(warnSpy.mock.calls[1]?.[0]));
+    expect(second).toEqual({ event: "csp_violation", directive: "unknown", blockedOrigin: "none", documentPath: "none" });
+  });
+
+  it("no registra nada cuando la Reporting API solo trae otros tipos", async () => {
+    const body = JSON.stringify([{ type: "network-error", body: {} }]);
+
+    const response = await POST(report(body, REPORTING));
+
+    expect(response.status).toBe(204);
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/csp-report sin cabecera Content-Type", () => {
+  it("responde 415 sin caché cuando el informe no declara tipo de contenido", async () => {
+    const response = await POST(new Request("http://localhost/api/csp-report", { method: "POST" }));
+
+    expect(response.status).toBe(415);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(await response.json()).toEqual({ error: "Tipo de contenido no soportado." });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

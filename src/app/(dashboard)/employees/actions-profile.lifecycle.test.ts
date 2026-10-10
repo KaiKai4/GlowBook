@@ -78,7 +78,7 @@ const RATE_LIMITED = { ok: false, error: "Demasiados intentos. Espera un momento
 const manager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
 const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000f1";
 
-describe("employees actions (ficha y alta, p2)", () => {
+describe("employees actions (ficha y alta)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);

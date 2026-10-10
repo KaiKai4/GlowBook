@@ -42,6 +42,25 @@ No hace falta `.env.local` para verificar. La base local se obtiene del stack de
 | E2E | `e2e/*.spec.ts` (Playwright, con axe para accesibilidad) | `npm run test:e2e` |
 | Cobertura | Vitest con v8 | `npm run test:coverage` |
 
+### Convención de nombres de archivos de prueba
+
+Cada sufijo tiene un único significado. Un nombre nuevo debe encajar en uno de ellos; no se inventan sufijos por fase, tanda o número.
+
+| Sufijo | Significado | Proyecto Vitest |
+|---|---|---|
+| `*.test.ts(x)` | Prueba unitaria o de conducta. Cruza la interfaz pública del módulo (`index.ts`, use-case, componente o route handler) con sus dependencias externas simuladas. Es el archivo por defecto. | `unit` |
+| `*.properties.test.ts` | Pruebas basadas en propiedades (entradas generadas que deben cumplir un invariante). Son unitarias. | `unit` |
+| `*.rpc.test.ts` | Integración contra la BD local de Supabase: RPC, RLS y repositorios reales. Falla si falta la BD local. | `integration` |
+| `*.integration.test.ts` | Integración contra la BD local, con el mismo contrato que `*.rpc.test.ts` para flujos que no son una sola RPC. | `integration` |
+| `*.<tema>.test.ts` | Segundo archivo de un mismo módulo cuando el `*.test.ts` hermano supera 300 líneas, o una prueba de conducta separada del hermano por tema (`x.conducta.test.ts`). El `<tema>` nombra el asunto, por ejemplo `x.errors.test.ts` o `x.permissions.test.ts`. | `unit` |
+
+Reglas:
+
+- No se usa el sufijo `.p2`. Un archivo de tanda o de fase se renombra por su tema.
+- No existe el sufijo `*.behavior.test.ts`. Una prueba de conducta se llama `*.test.ts`. Las pruebas de conducta que estaban en `*.behavior.test.ts` y tenían un `*.test.ts` hermano se llamaron `*.conducta.test.ts` (tema `conducta`, proyecto `unit`); no se añaden más.
+- Dos archivos que prueban la misma interfaz se fusionan en uno sin perder casos. Un archivo nuevo que repita casos de otro se rechaza en revisión.
+- `vitest.config.ts` decide el proyecto por patrón: `unit` incluye `src/**/*.test.{ts,tsx}` y excluye `*.rpc.test.ts` e `*.integration.test.ts`; `integration` incluye esos dos últimos. Un test que no cae en ninguno de los dos proyectos no se ejecuta, y eso es un error de nombre.
+
 Principios (ADR 0008):
 
 - Las pruebas cruzan la interfaz pública del módulo y describen conducta observable. Evita probar detalles internos.

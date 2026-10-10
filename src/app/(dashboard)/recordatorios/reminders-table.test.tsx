@@ -77,7 +77,7 @@ describe("RemindersView con tabla DataTable", () => {
     const badge = Array.from(container.querySelectorAll<HTMLElement>("tbody span.rounded-full")).find(
       (element) => element.textContent === "Pendiente"
     );
-    expect(badge).toBeDefined();
+    expect(badge?.textContent).toBe("Pendiente");
     expect(badge?.querySelector("svg")).not.toBeNull();
   });
 

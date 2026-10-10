@@ -119,7 +119,7 @@ describe("AppointmentDetailDialog", () => {
     const badge = Array.from(container.querySelectorAll("span")).find(
       (span) => span.textContent === label,
     );
-    expect(badge).toBeDefined();
+    expect(badge?.textContent).toBe(label);
     expect(badge?.querySelector("svg")).not.toBeNull();
   });
 

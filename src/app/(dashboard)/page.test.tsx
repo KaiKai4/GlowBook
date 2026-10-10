@@ -58,7 +58,7 @@ describe("DashboardPage redireccion del unico módulo visible", () => {
   it("no redirige a '/' cuando el unico modulo visible es Inicio (evita bucle)", async () => {
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/")]);
 
-    await expect(DashboardPage()).resolves.toBeDefined();
+    await expect(DashboardPage()).resolves.toMatchObject({ props: expect.any(Object) });
     expect(redirect).not.toHaveBeenCalled();
   });
 

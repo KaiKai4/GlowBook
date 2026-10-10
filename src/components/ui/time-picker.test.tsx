@@ -48,8 +48,7 @@ describe("TimePicker", () => {
     openPicker(mounted.container);
 
     const hourWheel = wheels()[0];
-    expect(hourWheel).toBeDefined();
-    if (!hourWheel) return;
+    if (!hourWheel) throw new Error("Falta la rueda de horas");
     expect(centeredOption(hourWheel)).toBe("10");
 
     act(() => {

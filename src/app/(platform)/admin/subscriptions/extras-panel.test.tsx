@@ -95,13 +95,13 @@ describe("ExtrasPanel", () => {
 
     expect(mounted.container.querySelector('input[name="quantity"]')).not.toBeNull();
     expect(mounted.container.querySelector('input[name="priceOverride"]')).not.toBeNull();
-    expect(getButtonByText(mounted.container, "Asignar extra")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Asignar extra")?.textContent).toBe("Asignar extra");
 
     const gift = mounted.container.querySelector<HTMLInputElement>('input[name="isGift"]');
     clickElement(gift!);
 
     expect(mounted.container.querySelector('input[name="priceOverride"]')).toBeNull();
-    expect(getButtonByText(mounted.container, "Regalar extra")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Regalar extra")?.textContent).toBe("Regalar extra");
   });
 
   it("oculta la cantidad cuando el extra seleccionado es un módulo", () => {

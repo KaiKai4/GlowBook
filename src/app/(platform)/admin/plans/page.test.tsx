@@ -105,6 +105,6 @@ describe("PlatformPlansPage", () => {
     mounted = await render({ view: "otra" });
 
     expect(mounted.container.textContent).toContain("Crea planes comerciales");
-    expect(linkByText(mounted.container, "Nuevo plan")).toBeDefined();
+    expect(linkByText(mounted.container, "Nuevo plan")?.textContent).toBe("Nuevo plan");
   });
 });

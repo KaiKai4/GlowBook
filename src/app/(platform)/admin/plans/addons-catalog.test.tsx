@@ -175,6 +175,6 @@ describe("AddonsCatalog", () => {
     await flushAsync();
 
     expect(mounted.container.textContent).toContain("Selecciona un módulo para el extra.");
-    expect(getButtonByText(mounted.container, "Crear extra")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Crear extra")?.textContent).toBe("Crear extra");
   });
 });

@@ -82,7 +82,6 @@ describe("findPlanCatalog", () => {
     ];
     for (const [table, orderColumn] of expectations) {
       const query = firstQueryOn(fake, table);
-      expect(query, table).toBeDefined();
       expect(argsOf(query, "order")).toEqual([orderColumn, { ascending: true }]);
     }
     expect(argsOf(firstQueryOn(fake, "commercial_plans"), "select")?.[0]).toEqual(

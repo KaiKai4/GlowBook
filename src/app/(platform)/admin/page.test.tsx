@@ -210,7 +210,7 @@ describe("PlatformAdminPage", () => {
     expect(text).toContain("owner4@salon.test");
     expect(text).not.toContain("owner5@salon.test");
     expect(text.match(/Pendiente/g)).toHaveLength(5);
-    expect(getButtonByText(mounted.container, "Regenerar enlace")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Regenerar enlace")?.textContent).toBe("Regenerar enlace");
   });
 
   it("indica cuando no hay invitaciones pendientes", async () => {
