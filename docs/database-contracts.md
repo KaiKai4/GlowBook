@@ -130,6 +130,43 @@ Notas de cada contrato:
 - `resolve_new_customer` reutiliza un cliente temporal con el mismo teléfono, o un cliente activo con ese teléfono, y crea un temporal inactivo en otro caso.
 - Auth no forma parte de estas transacciones. En colaboradores se escribe primero en BD y después se modifica la cuenta de Auth; si Auth falla, la operación devuelve un aviso (ADR 0024).
 
+## Billing Tenant Contracts
+
+ADR 0025: las lecturas de billing del propio salón pasan por RLS con el cliente del usuario (`billingSalonDb()`). El panel de plataforma sigue con `service_role` (`billingDb()`). Migración `20240101000073_billing_tenant_rls.sql`, forward-only: solo cambia políticas, grants y funciones, no datos.
+
+### Políticas (RLS)
+
+| Tabla | Política o regla | Quién lee | TypeScript owner |
+|---|---|---|---|
+| `commercial_plans` | `commercial_plans_select`: plataforma, o `status = 'active'`, o el plan asignado al salón de `public.salon_id()` (aunque esté archivado). Los borradores solo los ve plataforma | `authenticated` | `src/features/billing/data/commercial-plans.repo.ts`, `salon-subscriptions-reads.repo.ts` |
+| `commercial_plan_modules`, `commercial_plan_limits` | Solo si el plan padre es visible para el usuario (la RLS del padre aplica) | `authenticated` (ya no `anon`) | `commercial-plans.repo.ts` |
+| `salon_plan_payments` | `salon_plan_payments_select`: solo `is_platform_admin()` | Plataforma | `salon-subscriptions-reads.repo.ts` (`findSalonPayments`, `service_role`) |
+| `commercial_addons`, `commercial_limit_metrics`, `platform_modules` | Solo `authenticated`. Archivados o inactivos visibles solo para plataforma | `authenticated` | `commercial-addons.repo.ts` |
+| `salon_plan_overrides`, `salon_plan_alerts`, `salon_plan_assignments` | Política por `salon_id` sin cambios; el `select` de tabla queda revocado y se concede por columnas (siguiente tabla) | Salón (columnas concedidas) | `salon-subscriptions-reads.repo.ts` (`findEffectivePlanRowsForSalon`, `findOpenSalonAlerts`) |
+
+### Columnas concedidas al salón
+
+Revocado `select` de tabla a `anon` y `authenticated` en estas tablas; se concede `select (columnas)` a `authenticated`. Lo que no aparece en la lista es interno y solo lo lee plataforma con `service_role`.
+
+| Tabla | Columnas concedidas | Columnas internas (no concedidas) |
+|---|---|---|
+| `salon_plan_overrides` | `id, salon_id, module_key, metric_key, module_enabled, max_delta, max_override, enforcement_mode, warning_threshold, starts_at, ends_at, status, addon_id, quantity` | `reason`, `price_override`, `is_gift` |
+| `salon_plan_alerts` | `id, salon_id, plan_id, metric_key, module_key, severity, message, status, created_at` | Ninguna relevante hoy; cualquier columna nueva queda fuera por defecto |
+| `salon_plan_assignments` | `id, salon_id, plan_id, status, starts_at, ends_at, trial_ends_at, current_period_start, current_period_end, created_at, updated_at` | `notes` |
+
+### Funciones
+
+| Contract | SQL source | Seguridad | Grants | Errores | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|---|---|
+| `count_salon_usage(p_salon_id uuid, p_counters jsonb) returns jsonb` | `20240101000073_billing_tenant_rls.sql` | `security definer`, `set search_path = public, pg_temp`. Guarda: si `auth.role()` no es `service_role`, exige `p_salon_id = public.salon_id()` o `is_platform_admin()` | `revoke` a `public` y `anon`; `execute` a `authenticated` y `service_role` | `42501` si el salón no es el de la sesión ni es plataforma. Contador desconocido cuenta 0 | `src/features/billing/data/salon-subscriptions-usage.repo.ts` | `supabase/tests/19_billing_tenant_rls.sql`; integración `src/features/billing/data/salon-subscriptions-tenant.rpc.test.ts` |
+| `record_plan_alert(p_plan_id uuid, p_metric_key text, p_module_key text, p_severity text, p_message text) returns uuid` | `20240101000073_billing_tenant_rls.sql` | `security definer`, `set search_path = public, pg_temp`. No recibe `salon_id`: usa `public.salon_id()` de la sesión | `revoke` a `public` y `anon`; `execute` a `authenticated` | `42501` si la sesión no tiene salón | `src/features/billing/data/salon-subscriptions-writes.repo.ts` (`recordPlanAlert`) | `supabase/tests/19_billing_tenant_rls.sql`; integración `src/features/billing/data/salon-subscriptions-tenant.rpc.test.ts` |
+
+Notas:
+
+- `count_salon_usage` es `security definer` para que el conteo no dependa de la RLS del llamante: un miembro sin permiso de lectura no vería menos filas y no podría saltarse un límite del plan. La guarda interna es la autoridad.
+- Las escrituras de plataforma sobre una fila de salón (`salon-subscriptions-writes.repo.ts`) filtran por `salon_id` y usan `expectOneUpdatedRow`: cero o varias filas son error.
+- Los mensajes de error se traducen en la capa de aplicación (ADR 0018).
+
 ## Maintenance Notes
 
 - `recalc_appointment()`: el total de la cabecera (`total_price`) suma el `price` de **todos** los `appointment_items` de la cita, sin filtrar por estado. Los items cancelados o marcados como no-show siguen en la tabla (con `blocks_calendar = false`) y siguen sumando al total de la cabecera. Cambiar esto exige una migración nueva y revisar el contrato de citas.

@@ -830,7 +830,7 @@
     {
       "from": "features/billing",
       "to": "infra/supabase",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/billing",
