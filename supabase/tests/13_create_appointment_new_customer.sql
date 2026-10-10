@@ -116,7 +116,7 @@ select throws_ok(
     ))
   $$,
   'P0001',
-  'La duracion del item no coincide con el servicio',
+  'La duración del ítem no coincide con el servicio',
   'una validacion de la cita rechaza el alta'
 );
 

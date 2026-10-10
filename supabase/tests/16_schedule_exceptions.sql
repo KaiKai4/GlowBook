@@ -51,7 +51,7 @@ select throws_ok(
      values ('ec000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000001',
              'ed000000-0000-0000-0000-000000000001', '2030-01-07 20:00:00+00', '2030-01-07 20:30:00+00', 30, 15, 0)$q$,
   'P0001',
-  'El profesional tiene el dia libre en esa fecha',
+  'El profesional tiene el día libre en esa fecha',
   'no se puede agendar un item bloqueante en el dia libre del colaborador'
 );
 
@@ -92,7 +92,7 @@ select throws_ok(
   $q$update appointment_items set employee_id = 'ed000000-0000-0000-0000-000000000001'
       where id = 'f2000000-0000-0000-0000-000000000002'$q$,
   'P0001',
-  'El profesional tiene el dia libre en esa fecha',
+  'El profesional tiene el día libre en esa fecha',
   'reasignar un item bloqueante al colaborador con dia libre se rechaza (update de employee_id)'
 );
 
@@ -100,7 +100,7 @@ select throws_ok(
 select throws_ok(
   $q$update appointment_items set blocks_calendar = true where id = 'f2000000-0000-0000-0000-000000000004'$q$,
   'P0001',
-  'El profesional tiene el dia libre en esa fecha',
+  'El profesional tiene el día libre en esa fecha',
   'volver a bloqueante un item en el dia libre se rechaza (update de blocks_calendar)'
 );
 
@@ -109,7 +109,7 @@ select throws_ok(
   $q$update appointment_items set start_time = '2030-01-07 20:00:00+00', end_time = '2030-01-07 20:30:00+00'
       where id = 'f2000000-0000-0000-0000-000000000001'$q$,
   'P0001',
-  'El profesional tiene el dia libre en esa fecha',
+  'El profesional tiene el día libre en esa fecha',
   'mover un item bloqueante al dia libre se rechaza (update de start_time)'
 );
 
@@ -128,7 +128,7 @@ select throws_ok(
      values ('ec000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000001',
              'ed000000-0000-0000-0000-000000000003', '2030-02-10 21:00:00+00', '2030-02-10 21:30:00+00', 30, 15, 10)$q$,
   'P0001',
-  'El profesional tiene el dia libre en esa fecha',
+  'El profesional tiene el día libre en esa fecha',
   'un item nuevo del colaborador en la fecha de la excepcion se rechaza'
 );
 
@@ -147,7 +147,7 @@ select throws_ok(
      values ('ec000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000001',
              'ed000000-0000-0000-0000-000000000001', '2030-01-07 01:00:00+00', '2030-01-07 01:30:00+00', 30, 15, 11)$q$,
   'P0001',
-  'El profesional tiene el dia libre en esa fecha',
+  'El profesional tiene el día libre en esa fecha',
   'la fecha local usa la zona horaria del salon: en Europe/Madrid 01:00 UTC del 7 cae en dia libre'
 );
 

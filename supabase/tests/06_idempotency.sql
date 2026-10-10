@@ -404,7 +404,7 @@ select throws_ok(
     'appointment_id', current_setting('glowbook.x4'),
     'payment_method', 'bitcoin'))$q$,
   '22023',
-  'Ese metodo de pago no esta habilitado para este salon.',
+  'Ese método de pago no está habilitado para este salón.',
   'completar: un metodo de pago no habilitado para el salon es rechazado'
 );
 
@@ -547,7 +547,7 @@ select throws_ok(
   $q$select public.record_retail_sale('c6100000-0000-0000-0000-000000000001', null,
     'c6600000-0000-0000-0000-000000000001', 'retail', 1, 5, 'cash', 'Cruzada', 'd1000000-0000-0000-0000-000000000013')$q$,
   '42501',
-  'No tienes acceso a este salon.',
+  'No tienes acceso a este salón.',
   'aislamiento: owner del salon B no puede vender en el salon A con clave'
 );
 select set_config('request.jwt.claims',

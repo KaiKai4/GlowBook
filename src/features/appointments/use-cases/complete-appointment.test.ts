@@ -170,8 +170,8 @@ describe("completeAppointment: errores", () => {
   });
 
   it("muestra el mensaje de validación de la base (SQLSTATE 22023)", async () => {
-    // Texto literal de la RPC (supabase/migrations): sin tilde, porque el passthrough muestra el mensaje tal cual.
-    const bdMessage = "Ese metodo de pago no esta habilitado para este salon.";
+    // Texto literal de la RPC (supabase/migrations 20240101000078): el passthrough muestra el mensaje tal cual.
+    const bdMessage = "Ese método de pago no está habilitado para este salón.";
     const deps = makeDeps({
       completeRpc: async () => {
         throw { code: "22023", message: bdMessage };
