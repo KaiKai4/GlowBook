@@ -31,11 +31,14 @@ vi.mock("@/app/(dashboard)/customers/actions", () => ({
 
 type CancelAppt = Parameters<typeof CancelAppointmentDialog>[0]["appt"];
 
-// La clave de idempotencia se calcula con SHA-256 asíncrono antes de llamar a la acción:
-// hay que dejar correr varias tareas pendientes antes de comprobar el resultado.
-async function clickAndFlush(element: Element): Promise<void> {
+// La cancelación incluye SHA-256 nativo: esperamos el fin de la transición,
+// no un número fijo de tareas que pueda dejar trabajo pendiente entre tests.
+async function clickAndFlush(element: HTMLButtonElement): Promise<void> {
   await clickAndSettle(element);
-  for (let i = 0; i < 5; i += 1) await flushAsync();
+  await vi.waitFor(async () => {
+    await flushAsync();
+    expect(!element.isConnected || !element.disabled).toBe(true);
+  });
 }
 
 const START = "2026-10-12T14:00:00-05:00";
@@ -135,8 +138,8 @@ describe("CancelAppointmentDialog con intención idempotente", () => {
     const onClose = vi.fn();
     mounted = mountCancel(onClose);
 
-    await clickAndFlush(buttonWithText(mounted.container, "Cancelar cita"));
-    expect(cancelAppointmentAction).toHaveBeenCalledTimes(1);
+    await clickAndSettle(buttonWithText(mounted.container, "Cancelar cita"));
+    await vi.waitFor(() => expect(cancelAppointmentAction).toHaveBeenCalledTimes(1));
 
     act(() => {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
@@ -148,8 +151,10 @@ describe("CancelAppointmentDialog con intención idempotente", () => {
     await act(async () => {
       release({ ok: true, value: undefined });
     });
-    for (let i = 0; i < 5; i += 1) await flushAsync();
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await vi.waitFor(async () => {
+      await flushAsync();
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
@@ -309,7 +314,9 @@ describe("CancelAppointmentDialog", () => {
   });
 
   it("notifica por WhatsApp con el mensaje renderizado de la plantilla y el teléfono en dígitos", async () => {
-    vi.mocked(cancelAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(cancelAppointmentAction).mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve({ ok: true, value: undefined }), 50))
+    );
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     const { container, onClose } = render();
 
