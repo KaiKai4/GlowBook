@@ -8,7 +8,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { InventoryProductOption } from "@/features/inventory/use-cases/inventory-product-options";
+import type { InventoryProductOption } from "@/features/inventory";
 import { useToast } from "@/components/ui/toast";
 import {
   SAVED_WITH_WARNINGS_MESSAGE,

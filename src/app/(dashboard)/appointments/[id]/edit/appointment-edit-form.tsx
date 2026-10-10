@@ -18,7 +18,7 @@ import type {
   OccupiedByEmployee,
 } from "@/features/appointments/domain/wizard-availability";
 import { useScheduleValidation } from "../../use-schedule-validation";
-import type { AppointmentDetailViewModel } from "@/features/appointments/use-cases/get-appointment-detail";
+import type { AppointmentDetailViewModel } from "@/features/appointments";
 import type { AppointmentWizardProps } from "../../new/appointment-wizard-types";
 import { getOccupiedSlotsForEditDate } from "../../actions";
 

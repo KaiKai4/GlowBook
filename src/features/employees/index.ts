@@ -16,3 +16,6 @@ export { addEmployeeWorkSchedule, removeEmployeeWorkSchedule } from "./use-cases
 export { removeEmployeeScheduleException } from "./use-cases/employee-exceptions";
 export { getEmployeesPage } from "./use-cases/get-employees-page";
 export { getEmployeeDetail } from "./use-cases/get-employee-detail";
+
+export type { EmployeeAdmissionInput } from "./use-cases/employee-admission";
+export type { RoleGate } from "./use-cases/employee-role-commands";

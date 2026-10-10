@@ -3,10 +3,15 @@
  *
  * Reglas de capa expresadas por PATRON (sin listas de archivos ni excepciones):
  *   src/infra          infraestructura: no sube a features, app, components ni React.
- *   src/features/*     modulos de negocio: domain puro, data sin orquestacion, use-cases sin UI,
- *                      y acceso entre modulos solo via index.ts publico.
+ *   src/features/*     modulos de negocio: domain puro (solo infra/format, public-error y result
+ *                      de src/infra), data sin orquestacion, use-cases sin UI y sin acceso directo
+ *                      a Supabase (ese acceso va por data/), y acceso entre modulos solo via
+ *                      index.ts publico.
  *   src/app            rutas y acciones. Solo src/app/_composition (composition root) puede
  *                      depender del runtime de Supabase; el resto solo importa tipos.
+ *   src/app y src/components  importan de features solo via index.ts (o schemas.ts, domain/).
+ *                      Los use-cases y data/ no se importan ni como tipo: sus tipos se exportan
+ *                      por el index.ts del modulo. src/components sigue las mismas reglas que src/app.
  *   src/infra/supabase/admin|auth-admin: solo desde src/infra o features/*\/data.
  *
  * Si una regla falla, se corrige el codigo. No hay lista de violaciones conocidas
@@ -43,11 +48,19 @@ module.exports = {
       name: "domain-pure",
       severity: "error",
       comment:
-        "El dominio (src/features/*/domain) es puro: no importa use-cases, data, app, components, src/infra/supabase, React, Next, Supabase ni server-only.",
+        "El dominio (src/features/*/domain) es puro: no importa use-cases, data, app, components, React, Next, Supabase ni server-only. De src/infra solo permite lo puro (format, public-error, result).",
       from: { path: "^src/features/[^/]+/domain/" },
       to: {
-        path: `^src/features/[^/]+/(use-cases|data)/|^src/(app|components)/|^src/infra/supabase/|${NPM_DOMAIN_FORBIDDEN}`,
+        path: `^src/features/[^/]+/(use-cases|data)/|^src/(app|components)/|^src/infra/(?!(format/|public-error\\.|result\\.))|${NPM_DOMAIN_FORBIDDEN}`,
       },
+    },
+    {
+      name: "use-cases-no-db",
+      severity: "error",
+      comment:
+        "Los use-cases reciben el acceso a datos por los repositorios (data/): no importan el cliente Supabase (src/infra/supabase) ni @supabase/*.",
+      from: { path: "^src/features/[^/]+/use-cases/" },
+      to: { path: `^src/infra/supabase/|${NPM_SUPABASE}` },
     },
     {
       name: "data-no-upward",
@@ -72,12 +85,23 @@ module.exports = {
       name: "app-via-feature-index",
       severity: "error",
       comment:
-        "src/app importa de src/features/X solo a traves de index.ts. Quedan permitidos schemas.ts, domain/ (dominio puro, para componentes cliente) y los imports solo de tipos.",
-      from: { path: "^src/app/" },
+        "src/app y src/components importan de src/features/X solo a traves de index.ts. Quedan permitidos schemas.ts, domain/ (dominio puro, para componentes cliente) y los imports solo de tipos (salvo use-cases/ y data/, ver app-via-feature-index-no-type-exemption).",
+      from: { path: "^src/(app|components)/" },
       to: {
         path: "^src/features/[^/]+/",
-        pathNot: "^src/features/[^/]+/(index|schemas)\\.tsx?$|^src/features/[^/]+/domain/",
+        pathNot:
+          "^src/features/[^/]+/(index|schemas)\\.tsx?$|^src/features/[^/]+/(domain|use-cases|data)/",
         dependencyTypesNot: ["type-only"],
+      },
+    },
+    {
+      name: "app-via-feature-index-no-type-exemption",
+      severity: "error",
+      comment:
+        "Los imports de use-cases/ y data/ desde src/app o src/components quedan prohibidos incluso si son solo de tipo: los tipos se exportan por index.ts del modulo.",
+      from: { path: "^src/(app|components)/" },
+      to: {
+        path: "^src/features/[^/]+/(use-cases|data)/",
       },
     },
     {

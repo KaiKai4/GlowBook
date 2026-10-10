@@ -11,7 +11,7 @@ import {
   INVENTORY_LOCATIONS,
   type InventoryLocation,
 } from "@/features/inventory/domain/stock";
-import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
+import type { RetailPageView } from "@/features/retail";
 import { useToast } from "@/components/ui/toast";
 import {
   SAVED_WITH_WARNINGS_MESSAGE,

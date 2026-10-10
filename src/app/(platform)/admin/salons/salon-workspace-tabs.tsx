@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ArrowUpRight, ShieldAlert } from "lucide-react";
 
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { MiniMetric, Panel } from "../plans/workspace-ui";
 import { UsagePanel } from "../subscriptions/usage-panel";
 import { DeleteSalonButton } from "./delete-salon-button";

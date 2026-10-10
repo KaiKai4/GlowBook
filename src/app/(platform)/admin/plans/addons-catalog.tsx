@@ -11,7 +11,7 @@ import type {
   CommercialAddon,
   CommercialLimitMetric,
   PlatformModule,
-} from "@/features/billing/use-cases/commercial-plans";
+} from "@/features/billing";
 import { cn } from "@/components/ui/cn";
 import { removeAddonAction, saveAddonAction } from "./actions";
 import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/components/ui/cn";
-import type { SalonBusinessDay as BusinessDay } from "@/features/salon/use-cases/get-salon-settings";
+import type { SalonBusinessDay as BusinessDay } from "@/features/salon";
 import { DAY_LABELS } from "./salon-rules";
 import type { BusinessHoursState } from "./use-business-hours";
 

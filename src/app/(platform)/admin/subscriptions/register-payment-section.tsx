@@ -3,7 +3,7 @@ import { useIntentFormAction } from "@/components/forms/use-intent-form-action";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 import { todayIso } from "@/features/billing/domain/assignment-schedule";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";

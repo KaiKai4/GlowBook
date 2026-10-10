@@ -1,5 +1,5 @@
 import { Panel } from "@/components/ui/panel";
-import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
+import type { ExpensesPageView } from "@/features/expenses";
 import { formatCurrency } from "@/infra/format/money";
 
 // Desglose de los gastos del mes por categoría: barra proporcional + monto.

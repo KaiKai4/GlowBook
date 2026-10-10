@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { CreditCard, Gift, Gauge } from "lucide-react";
 
-import type { CommercialPlan } from "@/features/billing/use-cases/commercial-plans";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { CommercialPlan } from "@/features/billing";
+import type { SalonSubscriptionDetail } from "@/features/billing";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { cn } from "@/components/ui/cn";
 import { MiniMetric } from "../plans/workspace-ui";
 import { AssignPlanForm } from "./assign-plan-form";

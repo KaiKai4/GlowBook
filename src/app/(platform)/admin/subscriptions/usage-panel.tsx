@@ -3,8 +3,8 @@
 import { AlertTriangle, ArrowRight, Blocks, Check, Gauge } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { SalonSubscriptionDetail } from "@/features/billing";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { cn } from "@/components/ui/cn";
 import { countScopeLabel, Panel, StatusText } from "../plans/workspace-ui";
 import { resolveAlertAction } from "./actions";

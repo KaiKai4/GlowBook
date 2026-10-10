@@ -108,7 +108,7 @@ Todos son del job `static`, salvo `unit` y `scripts-tests`, que corren en el job
 | `secrets` | static | secretlint sobre los archivos rastreados por git. Corre también en `pre-commit`. |
 | `design-tokens` | static | Control absoluto de tokens de diseño: clases de paleta cruda, hex, tamaños y pesos fuera de escala. Sin baseline: cualquier caso falla. |
 | `dead-code` | static | `knip` (incluye tests) y `knip --production` (solo código de producción). |
-| `architecture` | static | `scripts/check-architecture.mjs` y `dependency-cruiser` sobre `src/`, sin baseline ni `--ignore-known`. Cero violaciones (ADR 0019). Las invariantes de capas también se afirman en `src/infra/architecture-boundaries.test.ts`. |
+| `architecture` | static | `scripts/check-architecture.mjs` y `dependency-cruiser` sobre `src/`, sin baseline ni `--ignore-known`. Cero violaciones (ADR 0019). Las invariantes `infra-no-upward`, `domain-pure` y `use-cases-no-db` también se afirman en `src/infra/architecture-boundaries.test.ts`, que lee sus patrones de la configuración. Las reglas de `src/app` y `src/components` (`app-via-feature-index`, `app-via-feature-index-no-type-exemption`) solo se comprueban en `dependency-cruiser`. |
 | `module-size` | static | Ningún archivo de `src/` ni `scripts/` supera 300 líneas, salvo la excepción permanente de tipos generados. Sin baseline. |
 | `code-map` | static | `docs/code-map/` está al día con el grafo de dependencias (`code-map.mjs --check`). Regenerar con `node scripts/quality/code-map.mjs`. |
 | `docs-links` | static | Enlaces Markdown relativos y rutas en backticks de la documentación vigente existen (`scripts/quality/check-doc-links.mjs`). |

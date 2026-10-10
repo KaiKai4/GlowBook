@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
+import type { RetailPageView } from "@/features/retail";
 import { RetailProductList } from "./retail-product-list";
 import { RetailSaleForm } from "./retail-sale-form";
 import { RetailSalesHistory } from "./retail-sales-history";

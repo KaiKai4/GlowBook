@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NewCustomerModal } from "./new-customer-modal";
 import { CustomersList } from "./customers-list";
-import type { CustomersPageViewModel } from "@/features/customers/use-cases/get-customers-page";
+import type { CustomersPageViewModel } from "@/features/customers";
 import { buildCustomersHref } from "./customer-url";
 
 export function CustomersClient({

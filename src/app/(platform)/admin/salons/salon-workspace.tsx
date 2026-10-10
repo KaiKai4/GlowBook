@@ -4,9 +4,9 @@ import { Building2, Gauge, ShieldAlert } from "lucide-react";
 
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/components/ui/cn";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { useSalonWorkspaceTab } from "./use-salon-workspace-tab";
 import { STATUS_LABELS } from "./salon-workspace-format";
 import { SummaryTab } from "./salon-workspace-summary";

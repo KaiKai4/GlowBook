@@ -6,7 +6,7 @@ import { HandHeart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { CommercialLimitMetric } from "@/features/billing/domain/commercial-plan";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";
 import { giveManualExtraAction } from "./actions";

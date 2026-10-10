@@ -1,6 +1,6 @@
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Panel } from "@/components/ui/panel";
-import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
+import type { RetailPageView } from "@/features/retail";
 import { paymentMethodLabel } from "@/features/payments/domain/payment-methods";
 import { formatCurrency, toAmount } from "@/infra/format/money";
 

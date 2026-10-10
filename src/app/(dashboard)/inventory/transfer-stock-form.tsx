@@ -10,7 +10,7 @@ import {
   INVENTORY_LOCATION_LABELS,
   type InventoryLocation,
 } from "@/features/inventory/domain/stock";
-import type { InventoryProductView } from "@/features/inventory/use-cases/inventory-products";
+import type { InventoryProductView } from "@/features/inventory";
 
 type TransferStockFormProps = {
   products: InventoryProductView[];

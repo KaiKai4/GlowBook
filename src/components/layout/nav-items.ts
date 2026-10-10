@@ -1,4 +1,4 @@
-import type { Permission } from "@/features/access";
+import type { Permission } from "@/features/access/domain/permission-checks";
 import type { SalonFeatureKey } from "@/features/salon-features";
 import { normalizeDisabledSalonFeatures } from "@/features/salon-features";
 

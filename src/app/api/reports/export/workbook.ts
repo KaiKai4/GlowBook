@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 
-import type { ReportExportData } from "@/features/reports/use-cases/get-report-export";
+import type { ReportExportData } from "@/features/reports";
 
 const CURRENCY_FORMAT = '"$"#,##0.00';
 

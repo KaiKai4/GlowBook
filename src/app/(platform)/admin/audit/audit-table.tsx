@@ -3,7 +3,7 @@
 import { AlertTriangle, Clock, UserRound } from "lucide-react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { PlatformAuditLogEntryViewModel } from "@/features/platform/use-cases/get-platform-audit-log";
+import type { PlatformAuditLogEntryViewModel } from "@/features/platform";
 
 function statusVariant(status: PlatformAuditLogEntryViewModel["status"]) {
   return status === "failed" ? "danger" : "success";

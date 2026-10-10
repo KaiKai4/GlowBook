@@ -39,3 +39,4 @@ export {
   type UpdateAppointmentScheduleInput,
 } from "./schemas";
 
+export type { AppointmentDetailViewModel } from "./use-cases/get-appointment-detail";

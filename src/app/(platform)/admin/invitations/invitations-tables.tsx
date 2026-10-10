@@ -2,7 +2,7 @@
 
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { PlatformInvitationsViewModel } from "@/features/platform/use-cases/get-platform-invitations";
+import type { PlatformInvitationsViewModel } from "@/features/platform";
 import { RegenerateInviteLink } from "../regenerate-invite-link";
 
 type PendingInvitation = PlatformInvitationsViewModel["pendingInvitations"][number];

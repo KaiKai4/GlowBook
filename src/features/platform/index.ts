@@ -13,3 +13,6 @@ export { getPlatformSalonOverviews } from "./use-cases/get-platform-salon-overvi
 export { setFeedbackReportStatus } from "./use-cases/set-feedback-report-status";
 export { readFeedbackStatusForm, type FeedbackStatusForm } from "./use-cases/parse-feedback-status-input";
 export { getPlatformFeedbackReports } from "./use-cases/get-platform-feedback-reports";
+
+export type { PlatformAuditLogEntryViewModel, PlatformAuditLogViewModel } from "./use-cases/get-platform-audit-log";
+export type { PlatformInvitationsViewModel } from "./use-cases/get-platform-invitations";

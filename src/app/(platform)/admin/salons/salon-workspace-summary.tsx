@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Building2, Users } from "lucide-react";
 
 import { cn } from "@/components/ui/cn";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 import { MiniMetric, Panel } from "../plans/workspace-ui";
 import type { SalonWorkspaceSalon } from "./salon-workspace-types";

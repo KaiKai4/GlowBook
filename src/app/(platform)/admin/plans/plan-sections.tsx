@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type {
   CommercialPlan,
   PlatformModule,
-} from "@/features/billing/use-cases/commercial-plans";
+} from "@/features/billing";
 import { savePlanAction, savePlanModulesAction } from "./actions";
 import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";
 import {

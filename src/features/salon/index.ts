@@ -19,3 +19,5 @@ export { updateSalonTheme } from "./use-cases/update-salon-theme";
 export { parseBusinessHoursJson } from "./use-cases/business-hours-input";
 export { getSalonActivity, type SalonActivityEntry } from "./use-cases/get-salon-activity";
 export { getSalonSettings } from "./use-cases/get-salon-settings";
+
+export type { SalonBusinessDay } from "./use-cases/get-salon-settings";

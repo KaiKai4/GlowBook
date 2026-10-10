@@ -1,6 +1,6 @@
 import { MetricCard } from "@/components/ui/metric-card";
 import { formatCurrency, toAmount } from "@/infra/format/money";
-import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
+import type { RetailPageView } from "@/features/retail";
 
 export function RetailStats({ retail }: { retail: RetailPageView }) {
   const recentRevenue = retail.recentSales.reduce(

@@ -1,7 +1,7 @@
 import {
   INVENTORY_LOCATION_LABELS,
 } from "@/features/inventory/domain/stock";
-import type { InventoryPageView } from "@/features/inventory/use-cases/inventory-products";
+import type { InventoryPageView } from "@/features/inventory";
 
 type InventoryMovementsListProps = {
   movements: InventoryPageView["recentMovements"];

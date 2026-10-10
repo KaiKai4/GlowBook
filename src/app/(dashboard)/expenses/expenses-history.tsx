@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { ExpenseHistoryItem } from "@/features/expenses/use-cases/expenses";
+import type { ExpenseHistoryItem } from "@/features/expenses";
 import { isHttpsReceiptUrl } from "@/features/expenses/domain/receipt-url";
 import { formatCurrency } from "@/infra/format/money";
 

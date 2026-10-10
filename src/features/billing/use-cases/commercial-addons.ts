@@ -4,7 +4,6 @@ import "server-only";
 import { z } from "@/infra/validation/zod";
 
 import { err, ok, type Result } from "@/infra/result";
-import type { CommercialAddon } from "../domain/salon-extras";
 import {
   archiveCommercialAddon,
   countAddonAssignments,
@@ -45,8 +44,6 @@ const AddonSchema = z
       ctx.addIssue({ code: "custom", message: "Indica cuanto aumenta el límite." });
     }
   });
-
-export type { CommercialAddon };
 
 export async function saveCommercialAddonConfig(
   input: z.input<typeof AddonSchema>,

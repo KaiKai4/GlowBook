@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 import type { SalonTab } from "./salon-workspace-types";
 
 /**

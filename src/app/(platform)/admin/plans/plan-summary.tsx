@@ -4,7 +4,7 @@ import type {
   CommercialLimitMetric,
   CommercialPlan,
   PlatformModule,
-} from "@/features/billing/use-cases/commercial-plans";
+} from "@/features/billing";
 import { countScopeLabel, modeLabel, Panel, StatusText } from "./workspace-ui";
 
 export function PlanSummary({ plan, modules, metrics }: { plan: CommercialPlan; modules: PlatformModule[]; metrics: CommercialLimitMetric[] }) {

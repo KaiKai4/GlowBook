@@ -3,7 +3,7 @@
 import { Gift, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { SalonExtraView } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonExtraView } from "@/features/billing";
 import { Panel } from "../plans/workspace-ui";
 import { cancelExtraAction } from "./actions";
 

@@ -8,7 +8,7 @@ import type {
   CommercialLimitMetric,
   CommercialPlan,
   PlatformModule,
-} from "@/features/billing/use-cases/commercial-plans";
+} from "@/features/billing";
 import { cn } from "@/components/ui/cn";
 import { archivePlanAction, deletePlanAction } from "./actions";
 import { PlanForm, PlanInfoEditor, PlanLimits, PlanModules, PlanSummary } from "./plan-sections";

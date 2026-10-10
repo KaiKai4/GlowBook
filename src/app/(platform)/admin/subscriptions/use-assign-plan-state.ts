@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { CommercialPlan } from "@/features/billing/use-cases/commercial-plans";
+import type { CommercialPlan } from "@/features/billing";
 import { addDays, todayIso } from "@/features/billing/domain/assignment-schedule";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 
 export type SubscriptionAssignment = SalonSubscriptionDetail["assignment"];
 

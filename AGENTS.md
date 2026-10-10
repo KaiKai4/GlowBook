@@ -37,11 +37,12 @@ Server Actions: contexto -> permiso por clave -> rate limit -> validación -> UN
 Reglas (las comprueba `.dependency-cruiser.cjs` por patrón, sin listas de archivos ni excepciones):
 
 - `src/infra` no importa de `src/features`, `src/app`, `src/components`, React ni React-DOM (`infra-no-upward`; además `src/infra/architecture-boundaries.test.ts`).
-- `domain/` no importa `use-cases/`, `data/`, `src/app`, `src/components`, `src/infra/supabase`, Next, React, `@supabase/*` ni `server-only` (`domain-pure`).
+- `domain/` no importa `use-cases/`, `data/`, `src/app`, `src/components`, Next, React, `@supabase/*` ni `server-only`. De `src/infra` solo permite lo puro: `infra/format/`, `infra/public-error` e `infra/result` (`domain-pure`).
 - `data/` no importa `use-cases/`, `src/app`, `src/components` ni React (`data-no-upward`).
 - Un módulo importa de otro solo a través de su `index.ts` (`cross-module-via-index`).
-- `src/app` importa de `src/features/<módulo>` solo a través de su `index.ts`; quedan permitidos `schemas.ts`, `domain/` y los imports solo de tipos (`app-via-feature-index`).
+- `src/app` y `src/components` importan de `src/features/<módulo>` solo a través de su `index.ts`; quedan permitidos `schemas.ts`, `domain/` y, para el resto, los imports solo de tipos (`app-via-feature-index`). Los imports de `use-cases/` y `data/` desde `src/app` o `src/components` quedan prohibidos incluso de tipo: el tipo se exporta por el `index.ts` del módulo (`app-via-feature-index-no-type-exemption`).
 - `use-cases/` no importa React, componentes, rutas ni `next/navigation` (`use-cases-no-ui`).
+- `use-cases/` no importa `src/infra/supabase` ni `@supabase/*`: el acceso a datos pasa por `data/` (`use-cases-no-db`).
 - `app/` y `components/` solo importan Supabase como tipo (`presentation-no-runtime-db`); `src/app/_composition` queda fuera de la regla.
 - Los clientes `service_role` (`src/infra/supabase/admin.ts`, `auth-admin.ts`) solo se importan desde `src/infra` o `features/*/data` (`admin-client-boundary`, ADR 0010).
 - No hay dependencias circulares (`no-circular`). No hay violaciones conocidas: `npx depcruise src --config .dependency-cruiser.cjs` termina en cero, sin baseline.

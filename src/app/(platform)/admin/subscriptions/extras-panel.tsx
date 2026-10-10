@@ -5,10 +5,10 @@ import { Gift, ShoppingCart } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import type { CommercialAddon } from "@/features/billing/use-cases/commercial-addons";
+import type { CommercialAddon } from "@/features/billing";
 import type { CommercialLimitMetric } from "@/features/billing/domain/commercial-plan";
-import type { SalonExtraView } from "@/features/billing/use-cases/salon-subscription-detail";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { SalonExtraView } from "@/features/billing";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";
 import { giveAddonAction } from "./actions";

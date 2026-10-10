@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import type { InventoryPageView } from "@/features/inventory/use-cases/inventory-products";
+import type { InventoryPageView } from "@/features/inventory";
 import { useToast } from "@/components/ui/toast";
 import {
   SAVED_WITH_WARNINGS_MESSAGE,
