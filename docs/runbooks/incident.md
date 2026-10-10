@@ -17,7 +17,7 @@ específicas (datos cruzados, citas, Supabase lento, reportes lentos).
 - Reporte de un salón o del owner de soporte (`docs/launch-support.md`).
 - Alertas de observabilidad (`docs/security.md`, variables
   `GLOWBOOK_OBSERVABILITY_*`).
-- Fallos del job nightly (`nightly.yml`) o de CI sobre `main`.
+- Fallos de CI sobre `main`, de la release o del monitor de producción.
 
 ## Severidad
 

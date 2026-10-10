@@ -1,7 +1,7 @@
 // Tests de la lógica pura del gate de release.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import {
   REQUIRED_SECRETS,
   REQUIRED_CI_JOBS,
@@ -24,8 +24,8 @@ describe("findMissingSecrets", () => {
   });
 
   it("ningún workflow operativo exige un proyecto de staging", () => {
-    for (const name of ["release", "synthetic", "nightly"]) {
-      const workflow = readFileSync(new URL(`../../.github/workflows/${name}.yml`, import.meta.url), "utf8");
+    for (const name of readdirSync(new URL("../../.github/workflows/", import.meta.url)).filter((name) => name.endsWith(".yml"))) {
+      const workflow = readFileSync(new URL(`../../.github/workflows/${name}`, import.meta.url), "utf8");
       assert.doesNotMatch(workflow, /secrets\.STAGING_|target=staging|validate-staging/);
     }
   });

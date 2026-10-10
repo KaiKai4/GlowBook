@@ -24,7 +24,7 @@ Para el vocabulario del dominio, leer antes `CONTEXT.md`.
 
 ## Índice
 
-Estado revisado a 2026-10-09: los 21 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0020 tiene la exigencia de staging remoto sustituida por ADR 0021.
+Estado revisado a 2026-10-09: los 21 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021.
 
 | ADR | Título | Ámbito |
 |---|---|---|

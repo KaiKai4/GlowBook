@@ -15,7 +15,6 @@ Producción solo recibe código que ya pasó `verify:full` en CI. La release no 
 | `ci.yml` (GlowBook CI) | Push y pull request | Jobs `static`, `unit`, `db`, `browser`, `lighthouse`, `sbom` y `codeql`. Cada job llama a `npm run verify:job -- <job>`. |
 | `release.yml` (GlowBook Release) | `workflow_run` de CI en éxito sobre `main`, o manual con un SHA de `main` | Etapas en orden: `gate`, `migrations` (production, con aprobación), `deploy-staged`, `smoke-staged`, `discard-staged` (solo si falla el smoke staged), `promote` (production, con aprobación), smoke de producción, rollback del frontend y alerta si falla tras promover. |
 | `synthetic.yml` (GlowBook Synthetic) | Cada hora, en el minuto 23, y manual | Check sintético de disponibilidad en solo lectura contra producción. Si falla, envía alerta y abre un issue con la etiqueta `synthetic-failure`. |
-| `nightly.yml` (GlowBook Nightly) | Programado y manual | Mutación con Stryker (`src/features/*/domain` y `src/infra/security`), deriva de dependencias (`npm outdated` y auditoría completa), deriva de esquema y sintético. |
 
 La política vigente está en ADR 0021 (`docs/adr/0021-deploy-sin-staging-remoto.md`), que retira staging remoto obligatorio. Los builds remotos conservan los secretos sensibles de producción en Vercel. Las notificaciones iniciales son las de GitHub Actions; el webhook de release es opcional.
 

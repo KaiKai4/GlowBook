@@ -14,8 +14,10 @@ reconstruye Supabase local y prueba migraciones, aislamiento, integración y E2E
 - Retirar validate-staging y sus secretos del contrato de release.
 - Mantener los siete checks de CI, las aprobaciones de Production, migraciones
   forward-only, build sin dominio, smoke previo, promoción y rollback del frontend.
-- Ejecutar los sintéticos solo contra producción. El drift nocturno compara el
-  historial de producción en solo lectura usando PRODUCTION_DB_URL.
+- Ejecutar los sintéticos solo contra producción. Retirar Nightly (mutaciones,
+  outdated, drift y otro sintético) para conservar únicamente CI, Release y el
+  monitor de producción. CI mantiene auditoría de dependencias, CodeQL y SBOM;
+  release comprueba el historial de migraciones antes de publicar.
 - Mantener las pruebas de BD y navegador sobre Supabase local. No dirigir fixtures,
   seeds ni E2E a producción como sustitución de staging.
 - Desactivar publicaciones Git automáticas, incluidos previews, y retirar

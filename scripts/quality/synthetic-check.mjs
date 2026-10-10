@@ -2,7 +2,7 @@
 // Comprueba estado 200 (sin seguir redirecciones), cabeceras de seguridad
 // (incluida Strict-Transport-Security), x-request-id con formato UUID y
 // tiempo de respuesta < 3000 ms.
-// Uso (CI synthetic.yml y nightly): SYNTHETIC_BASE_URL=https://... node scripts/quality/synthetic-check.mjs
+// Uso (CI synthetic.yml): SYNTHETIC_BASE_URL=https://... node scripts/quality/synthetic-check.mjs
 // Opcional: SYNTHETIC_RESULT_FILE=<ruta.json> guarda el resultado (sin URL base) para el job de alertas.
 // No imprime la URL base ni valores de cabeceras: solo nombres y resultados.
 

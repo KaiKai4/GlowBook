@@ -172,7 +172,7 @@ Reportes de Vitest: `text-summary`, `json-summary`, `json` y `lcov` en `coverage
 
 ## Mutacion (Solo Nightly)
 
-Stryker corre en el workflow nocturno `nightly.yml` sobre `src/features/*/domain` y `src/infra/security`. No corre en PR por tiempo. Su configuracion vive en `stryker.config.mjs`.
+Stryker queda disponible manualmente con `npx stryker run` sobre `src/features/*/domain` y `src/infra/security`. No forma parte de los workflows automáticos (ADR 0021). Su configuración vive en `stryker.config.mjs`.
 
 ## Hooks De Git
 
