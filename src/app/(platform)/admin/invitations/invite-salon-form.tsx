@@ -74,7 +74,7 @@ export function InviteSalonForm({ plans }: InviteSalonFormProps) {
 
       <p className="text-xs text-fg-subtle">
         Al aceptar la invitación, el salón nace con este plan: trial, módulos y límites quedan activos
-        antes del primer inicio de sesion.
+        antes del primer inicio de sesión.
       </p>
     </div>
   );

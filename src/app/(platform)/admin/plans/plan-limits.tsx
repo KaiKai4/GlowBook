@@ -95,7 +95,7 @@ function PlanLimitRow({
       <Input name="maxValue" label={`Máximo (${metric.unit || "total"})`} type="number" min="0" defaultValue={limit?.maxValue ?? ""} placeholder="Sin límite" />
       <Select name="countScope" label="Tipo de conteo" defaultValue={limit?.countScope ?? metric.defaultCountScope}>
         <option value="current">Actual</option>
-        <option value="billing_cycle">Ciclo de facturacion</option>
+        <option value="billing_cycle">Ciclo de facturación</option>
         <option value="monthly">Mes calendario</option>
         <option value="lifetime">Historico total</option>
       </Select>

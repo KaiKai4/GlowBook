@@ -9,7 +9,7 @@ de Salon por accidente.
 
 | Accion | Control | Audit log |
 |---|---|---|
-| Invitar Salon | `requirePlatformAdmin` + use-case Platform | `invite_salon` |
+| Invitar salón | `requirePlatformAdmin` + use-case Platform | `invite_salon` |
 | Suspender/reactivar Salon | `requirePlatformAdmin` + use-case Platform | `set_salon_status` |
 | Activar/desactivar features | `requirePlatformAdmin` + constraint SQL | `update_salon_features` |
 | Moderar feedback | `requirePlatformAdmin` | `set_feedback_status` |

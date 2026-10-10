@@ -82,7 +82,7 @@ export function PlatformAdminSidebar() {
             className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-fg-subtle transition-colors hover:bg-surface-muted hover:text-fg"
           >
             <LogOut className="h-4 w-4 text-fg-disabled" aria-hidden="true" />
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </form>
       </div>

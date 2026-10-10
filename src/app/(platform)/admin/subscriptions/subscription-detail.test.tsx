@@ -244,7 +244,7 @@ describe("SubscriptionDetail", () => {
   it("avisa con el toast de advertencia cuando el pago se guardó pero un efecto posterior falló", async () => {
     vi.mocked(registerPaymentAction).mockResolvedValueOnce({
       ok: true,
-      message: "Pago registrado. La suscripción quedo activa con su mes de uso.",
+      message: "Pago registrado. La suscripción quedó activa con su mes de uso.",
       warnings: ["La auditoria no se registro."],
     });
     mounted = renderDetail();

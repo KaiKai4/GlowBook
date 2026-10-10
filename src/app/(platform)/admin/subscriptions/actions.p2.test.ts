@@ -218,7 +218,7 @@ describe("registerPaymentAction", () => {
       ADMIN_ID
     );
     expect(state.ok).toBe(true);
-    expect(state.message).toBe("Pago registrado. La suscripción quedo activa con su mes de uso.");
+    expect(state.message).toBe("Pago registrado. La suscripción quedó activa con su mes de uso.");
     for (const path of SUBSCRIPTION_PATHS) expect(revalidatePath).toHaveBeenCalledWith(path);
   });
 
@@ -242,7 +242,7 @@ describe("registerPaymentAction", () => {
     const state = await registerPaymentAction(PLATFORM_PLAN_IDLE_STATE, formDataOf({ amount: "30" }));
     expect(state).toMatchObject({
       ok: true,
-      message: "Pago registrado. La suscripción quedo activa con su mes de uso.",
+      message: "Pago registrado. La suscripción quedó activa con su mes de uso.",
       warnings: ["La auditoria no se registro."],
     });
   });

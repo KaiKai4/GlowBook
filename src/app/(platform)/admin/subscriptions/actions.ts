@@ -79,7 +79,7 @@ const registerPaymentFlow = definePlatformAction<FormData, RegisterPaymentInput,
   run: async (input, session) => {
     const result = await registerSalonPlanPaymentConfig(input, session.userId);
     return result.ok
-      ? ok("Pago registrado. La suscripción quedo activa con su mes de uso.", result.warnings)
+      ? ok("Pago registrado. La suscripción quedó activa con su mes de uso.", result.warnings)
       : result;
   },
   revalidate: () => SUBSCRIPTION_PATHS,

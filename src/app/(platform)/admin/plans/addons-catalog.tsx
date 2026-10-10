@@ -153,7 +153,7 @@ function AddonForm({
           <Input name="name" label="Nombre" placeholder="Bloque de 1,000 citas" defaultValue={addon?.name ?? ""} required />
           <Input name="code" label="Código interno" placeholder="Se genera desde el nombre" defaultValue={addon?.code ?? ""} />
         </div>
-        <Textarea name="description" label="Descripcion" rows={2} defaultValue={addon?.description ?? ""} />
+        <Textarea name="description" label="Descripción" rows={2} defaultValue={addon?.description ?? ""} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Select name="kind" label="Tipo de extra" value={kind} onChange={(event) => setKind(event.target.value as CommercialAddon["kind"])}>

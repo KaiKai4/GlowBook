@@ -44,7 +44,7 @@ export function NewServiceDialog({
           defaultValue={0}
           required
         />
-        <Textarea name="description" label="Descripcion (opcional)" />
+        <Textarea name="description" label="Descripción (opcional)" />
         {error && <p className="rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>

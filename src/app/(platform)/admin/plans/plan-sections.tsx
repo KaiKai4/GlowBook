@@ -50,7 +50,7 @@ export function PlanForm({ plan, compact = false }: { plan: CommercialPlan | nul
         {plan ? <input type="hidden" name="id" value={plan.id} /> : null}
         <Input name="name" label="Nombre del plan" placeholder="Plan Basico" defaultValue={plan?.name ?? ""} required />
         <Input name="code" label="Código interno" placeholder="Se genera desde el nombre" defaultValue={plan?.code ?? ""} />
-        <Textarea name="description" label="Descripcion" rows={compact ? 2 : 3} defaultValue={plan?.description ?? ""} />
+        <Textarea name="description" label="Descripción" rows={compact ? 2 : 3} defaultValue={plan?.description ?? ""} />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Input name="monthlyPrice" label="Precio mensual" type="number" min="0" step="0.01" defaultValue={plan?.monthlyPrice ?? 0} />
           <Input name="trialDays" label="Trial días" type="number" min="0" defaultValue={plan?.trialDays ?? 0} />

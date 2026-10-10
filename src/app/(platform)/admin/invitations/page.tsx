@@ -32,7 +32,7 @@ export default async function PlatformInvitationsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Invitar Salon
+            Invitar salón
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -65,7 +65,7 @@ export default async function PlatformInvitationsPage() {
         <CardContent>
           {view.acceptedInvitations.length === 0 ? (
             <p className="py-6 text-center text-sm text-fg-subtle">
-              Cuando alguien acepte una invitación aparecerá aquí con su salon y plan.
+              Cuando alguien acepte una invitación aparecerá aquí con su salón y plan.
             </p>
           ) : (
             <AcceptedInvitationsTable rows={view.acceptedInvitations} />

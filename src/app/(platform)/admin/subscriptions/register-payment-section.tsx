@@ -63,7 +63,7 @@ export function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDe
         <Panel
           icon={<History className="h-4 w-4" />}
           title="Historial de pagos"
-          description="Últimos pagos registrados y el mes que cubrio cada uno."
+          description="Últimos pagos registrados y el mes que cubrió cada uno."
         >
           <div className="divide-y divide-brand-100">
             {detail.payments.map((payment) => (

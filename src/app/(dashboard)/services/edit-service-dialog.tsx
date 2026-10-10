@@ -55,7 +55,7 @@ export function EditServiceDialog({
         </Select>
         <Textarea
           name="description"
-          label="Descripcion (opcional)"
+          label="Descripción (opcional)"
           defaultValue={service.description ?? ""}
         />
         {error && <p className="rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</p>}
