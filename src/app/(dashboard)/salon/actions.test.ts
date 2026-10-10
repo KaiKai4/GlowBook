@@ -19,7 +19,15 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/salon/use-cases/update-business-hours", () => ({ updateBusinessHours: vi.fn() }));
 vi.mock("@/features/salon/use-cases/update-salon-background", () => ({ updateSalonBackground: vi.fn() }));

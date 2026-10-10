@@ -10,7 +10,15 @@ import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fix
 import { addWorkScheduleAction } from "./actions-schedule";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),

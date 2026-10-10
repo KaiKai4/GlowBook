@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { notFound } from "next/navigation";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { getEmployeeDetail, type EmployeeDetailViewModel } from "@/features/employees/use-cases/get-employee-detail";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { requireProfile } from "@/app/_composition/request-context";
+import { getRolesEnabled, requireProfile } from "@/app/_composition/request-context";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EmployeeDetailPage from "./page";
@@ -14,14 +13,13 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   }),
 }));
-vi.mock("@/app/_composition/request-context", () => ({ requireProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requireProfile: vi.fn(), getRolesEnabled: vi.fn() }));
 vi.mock("@/features/access", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/access")>()),
   hasPermission: vi.fn(),
 }));
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
-  isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 vi.mock("@/features/employees/use-cases/get-employee-detail", () => ({
   getEmployeeDetail: vi.fn(),
@@ -73,7 +71,7 @@ describe("EmployeeDetailPage", () => {
     vi.clearAllMocks();
     vi.mocked(requireProfile).mockResolvedValue(manager);
     vi.mocked(hasPermission).mockReturnValue(true);
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
+    vi.mocked(getRolesEnabled).mockResolvedValue(true);
     vi.mocked(getEmployeeDetail).mockResolvedValue(view());
   });
 
@@ -129,12 +127,12 @@ describe("EmployeeDetailPage", () => {
   });
 
   it("oculta la sección de acceso cuando el módulo de roles está deshabilitado", async () => {
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+    vi.mocked(getRolesEnabled).mockResolvedValue(false);
     vi.mocked(getEmployeeDetail).mockResolvedValue(view());
 
     mounted = mountComponent(await EmployeeDetailPage({ params: Promise.resolve({ id: EMPLOYEE_ID }) }));
 
-    expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith(manager, "roles");
+    expect(getRolesEnabled).toHaveBeenCalled();
     expect(getEmployeeDetail).toHaveBeenCalledWith(expect.objectContaining({ rolesEnabled: false }));
     expect(mounted.container.textContent).not.toContain("Acceso al sistema");
   });

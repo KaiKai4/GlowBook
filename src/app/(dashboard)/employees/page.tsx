@@ -1,5 +1,4 @@
-import { requireProfile } from "@/app/_composition/request-context";
-import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
+import { getRolesEnabled, requireProfile } from "@/app/_composition/request-context";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getEmployeesPage } from "@/features/employees/use-cases/get-employees-page";
 import { EmployeesManager } from "./employees-manager";
@@ -15,7 +14,7 @@ export default async function EmployeesPage() {
     );
   }
 
-  const rolesEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "roles");
+  const rolesEnabled = await getRolesEnabled();
   const view = await getEmployeesPage({
     salonId: profile.salon_id,
     rolesEnabled,

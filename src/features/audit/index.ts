@@ -1,7 +1,6 @@
 // Punto publico del modulo audit. Otros modulos importan solo desde aqui.
-// Indice de servidor: la escritura en la bitacora (platform_audit_log) la hace
-// el manejador registrado, que consulta la base de datos.
-// Los casos de uso emiten su evento tras el commit.
+// Indice de servidor: publishAuditEvent escribe en la bitacora (platform_audit_log)
+// dentro de runSideEffect. Los casos de uso emiten su evento tras el commit.
 import "server-only";
 
 export { publishAuditEvent } from "./publish-audit-event";

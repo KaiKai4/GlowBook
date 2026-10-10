@@ -2,24 +2,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getEmployeesPage, type EmployeesPageViewModel } from "@/features/employees/use-cases/get-employees-page";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { hasPermission } from "@/features/access";
+import { getRolesEnabled } from "@/app/_composition/request-context";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EmployeesPage from "./page";
 import { EmployeesManager } from "./employees-manager";
 
 vi.mock("@/app/_composition/request-context", () => ({
   requireProfile: vi.fn(async () => ({ id: "user-1", salon_id: "salon-1" })),
+  getRolesEnabled: vi.fn(async () => true),
 }));
 
 vi.mock("@/features/access", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/access")>()),
   hasPermission: vi.fn(),
-}));
-
-vi.mock("@/features/billing", () => ({
-  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
-  isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 
 vi.mock("@/features/employees/use-cases/get-employees-page", () => ({
@@ -44,7 +40,7 @@ describe("EmployeesPage", () => {
 
   beforeEach(() => {
     vi.mocked(hasPermission).mockReset();
-    vi.mocked(isEffectiveSalonModuleEnabled).mockReset();
+    vi.mocked(getRolesEnabled).mockReset();
     vi.mocked(getEmployeesPage).mockReset();
   });
 
@@ -64,12 +60,12 @@ describe("EmployeesPage", () => {
 
   it("carga los colaboradores del salón indicando si el módulo de roles está habilitado", async () => {
     vi.mocked(hasPermission).mockReturnValue(true);
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
+    vi.mocked(getRolesEnabled).mockResolvedValue(true);
     vi.mocked(getEmployeesPage).mockResolvedValue(VIEW);
 
     const element = await EmployeesPage();
 
-    expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith({ id: "user-1", salon_id: "salon-1" }, "roles");
+    expect(getRolesEnabled).toHaveBeenCalled();
     expect(getEmployeesPage).toHaveBeenCalledWith({ salonId: "salon-1", rolesEnabled: true, status: "active" });
     expect(element.type).toBe(EmployeesManager);
     expect(element.props).toEqual({
@@ -82,7 +78,7 @@ describe("EmployeesPage", () => {
 
   it("pasa rolesEnabled en falso cuando el plan no incluye roles", async () => {
     vi.mocked(hasPermission).mockReturnValue(true);
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+    vi.mocked(getRolesEnabled).mockResolvedValue(false);
     vi.mocked(getEmployeesPage).mockResolvedValue({ ...VIEW, roles: [] });
 
     await EmployeesPage();

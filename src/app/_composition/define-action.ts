@@ -1,24 +1,17 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { hasPermission, type Permission } from "@/features/access";
+import type { ActionContext, Permission } from "@/features/access";
 import { assertActionRateLimit, type RateLimitOptions } from "@/infra/security/rate-limit";
 import { err, ok, type Result } from "@/infra/result";
 import type { z } from "@/infra/validation/zod";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 import { parseUuid } from "@/infra/validation/route-id";
-import type { ProfileWithRole } from "@/types/app.types";
-import { requireActiveProfile } from "./request-context";
+import { requireActionContext } from "./request-context";
 
 // Pipeline unico de las server actions de presentacion:
 // contexto -> permiso por clave -> rate limit -> validacion -> UNA llamada a un
 // caso de uso -> revalidacion. La accion solo orquesta: las reglas viven en los
 // casos de uso, y el permiso se pregunta por clave, nunca por nombre de rol.
-
-interface ActionSession {
-  userId: string;
-  salonId: string;
-  profile: ProfileWithRole;
-}
 
 /**
  * Pipeline comun a la sesion de salon y a la de plataforma: rate limit,
@@ -36,18 +29,22 @@ export interface FlowSpec<TRaw, TInput, TOutput, TSession extends { userId: stri
 }
 
 export interface GuardedActionSpec<TRaw, TInput, TOutput>
-  extends FlowSpec<TRaw, TInput, TOutput, ActionSession> {
-  /** Permiso requerido por clave, con el mensaje que se devuelve si falta. */
-  permission?: { key: Permission; deniedMessage: string };
+  extends FlowSpec<TRaw, TInput, TOutput, ActionContext> {
+  /**
+   * Permiso o permisos requeridos por clave (todos obligatorios), con el mensaje
+   * que se devuelve si falta alguno.
+   */
+  permission?: { key: Permission | Permission[]; deniedMessage: string };
 }
 
-async function loadSession(): Promise<ActionSession> {
-  const profile = await requireActiveProfile();
-  return { userId: profile.id, salonId: profile.salon_id, profile };
+/** Indica si el contexto tiene todas las claves de permiso pedidas. */
+function hasAllPermissions(context: ActionContext, key: Permission | Permission[]): boolean {
+  const keys = Array.isArray(key) ? key : [key];
+  return keys.every((permission) => context.permissions.includes(permission));
 }
 
 /**
- * Ejecuta el flujo a partir de una sesion ya resuelta: rate limit, validacion,
+ * Ejecuta el flujo a partir de un contexto ya resuelto: rate limit, validacion,
  * caso de uso y revalidacion. Lo comparten la accion de salon y la de plataforma.
  */
 export async function runActionFlow<TRaw, TInput, TOutput, TSession extends { userId: string }>(
@@ -81,13 +78,13 @@ export function defineAction<TRaw, TInput, TOutput>(
   spec: GuardedActionSpec<TRaw, TInput, TOutput>
 ): (raw: TRaw) => Promise<Result<TOutput>> {
   return async (raw: TRaw): Promise<Result<TOutput>> => {
-    const session = await loadSession();
+    const context = await requireActionContext();
 
-    if (spec.permission && !hasPermission(session.profile, spec.permission.key)) {
+    if (spec.permission && !hasAllPermissions(context, spec.permission.key)) {
       return err(spec.permission.deniedMessage);
     }
 
-    return runActionFlow(spec, session, raw);
+    return runActionFlow(spec, context, raw);
   };
 }
 
@@ -100,7 +97,7 @@ export function parseWithSchema<T>(schema: z.ZodType<T>): (raw: unknown) => Resu
   };
 }
 
-const INVALID_IDENTIFIER_MESSAGE ="Identificador inválido.";
+const INVALID_IDENTIFIER_MESSAGE = "Identificador inválido.";
 
 /** Parser de un UUID: devuelve el valor o el error de identificador invalido. */
 export function parseUuidField(value: string): Result<string> {

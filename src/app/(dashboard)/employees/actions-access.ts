@@ -23,25 +23,22 @@ type RoleChangeRaw = { profileId: string; roleId: string | null };
 const changeRoleFlowAction = defineAction<RoleChangeRaw, RoleChangeRaw, void>({
   ...EMPLOYEE_GUARD,
   parse: (raw) => checkIds(raw, [raw.profileId, raw.roleId]),
-  run: async (raw, session) => changeEmployeeRoleFlow(await roleGateOf(session), raw),
+  run: (raw, session) => changeEmployeeRoleFlow(roleGateOf(session), raw),
   revalidate: () => ["/employees"],
 });
 
 const resetAccessFlowAction = defineAction<EmployeeRoleRaw, EmployeeRoleRaw, EmployeeInvite>({
   ...EMPLOYEE_GUARD,
   parse: (raw) => checkIds(raw, [raw.employeeId, raw.roleId]),
-  run: async (raw, session) => resetEmployeeAccessFlow(await roleGateOf(session), raw),
+  run: (raw, session) => resetEmployeeAccessFlow(roleGateOf(session), raw),
   revalidate: (_out, raw) => ["/employees", `/employees/${raw.employeeId}`],
 });
 
 const generateInviteFlowAction = defineAction<EmployeeRoleRaw, EmployeeRoleRaw, EmployeeInvite>({
   ...EMPLOYEE_GUARD,
   parse: (raw) => checkIds(raw, [raw.employeeId, raw.roleId]),
-  run: async (raw, session) =>
-    generateEmployeeInviteFlow(
-      { ...(await roleGateOf(session)), checkLoginLimit: loginLimitCheck(session.salonId) },
-      raw
-    ),
+  run: (raw, session) =>
+    generateEmployeeInviteFlow({ ...roleGateOf(session), checkLoginLimit: loginLimitCheck(session.salonId) }, raw),
   revalidate: (_out, raw) => [`/employees/${raw.employeeId}`],
 });
 

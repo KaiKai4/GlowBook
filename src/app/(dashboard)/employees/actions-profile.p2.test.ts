@@ -3,22 +3,29 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess, isEffectiveSalonModuleEnabled } from "@/features/billing";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { archiveEmployee, reactivateEmployee } from "@/features/employees/use-cases/employee-lifecycle";
 import { createEmployeeProfile, findArchivedEmployeeByEmail, updateEmployeeProfile } from "@/features/employees/use-cases/employee-profile";
 import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
 import { err, ok } from "@/infra/result";
-import { buildProfile, formDataOf, SALON_ID } from "@/test/action-fixtures";
+import { buildProfile, rolesDisabled, formDataOf, SALON_ID } from "@/test/action-fixtures";
 import { createEmployeeAction, findArchivedEmployeeByEmailAction, reactivateEmployeeAction, updateEmployeeAction, deleteEmployeeAction } from "./actions-profile";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
-  isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 vi.mock("@/features/employees/use-cases/employee-role", () => ({
   changeEmployeeRole: vi.fn(),
@@ -70,7 +77,6 @@ describe("employees actions (ficha y alta, p2)", () => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);
     vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
     vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
     vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
     vi.mocked(getSalonSchedulingConfig).mockResolvedValue({
@@ -135,7 +141,7 @@ describe("employees actions (ficha y alta, p2)", () => {
     });
 
     it("ignora el rol cuando el módulo de roles está deshabilitado y no consume cupo de login", async () => {
-      vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+      vi.mocked(requireActiveProfile).mockResolvedValue(rolesDisabled(manager));
       vi.mocked(createEmployeeProfile).mockResolvedValue(ok({ id: EMPLOYEE_ID }));
 
       await createEmployeeAction(null, validCreateForm({ role_id: ROLE_ID }));

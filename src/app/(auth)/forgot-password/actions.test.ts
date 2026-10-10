@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
 import { headers } from "next/headers";
 import { requestPasswordReset } from "@/infra/auth/password-auth";
 import { err, ok } from "@/infra/result";
 import { requestPasswordResetAction } from "./actions";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/infra/security/rate-limit", () => ({ assertAnonymousRateLimit: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/infra/auth/password-auth", () => ({ requestPasswordReset: vi.fn() }));
 
@@ -13,6 +15,7 @@ function requestHeaders(values: Record<string, string>) {
 }
 
 beforeEach(() => {
+  vi.mocked(assertAnonymousRateLimit).mockResolvedValue(ok(undefined));
   vi.clearAllMocks();
   requestHeaders({ host: "glowbook.app", "x-forwarded-proto": "https" });
   vi.mocked(requestPasswordReset).mockResolvedValue({ error: null });
@@ -55,5 +58,22 @@ describe("requestPasswordResetAction", () => {
     await requestPasswordResetAction("ana@salonluna.com");
 
     expect(requestPasswordReset).toHaveBeenCalledWith("ana@salonluna.com", "http://localhost");
+  });
+});
+
+describe("requestPasswordResetAction con limite por IP", () => {
+  it("si el limite bloquea no envia el correo de recuperacion", async () => {
+    vi.mocked(assertAnonymousRateLimit).mockResolvedValue(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
+
+    const result = await requestPasswordResetAction("ana@salonluna.com");
+
+    expect(result.ok).toBe(false);
+    expect(requestPasswordReset).not.toHaveBeenCalled();
+  });
+
+  it("aplica el limite del restablecimiento con su ambito propio", async () => {
+    await requestPasswordResetAction("ana@salonluna.com");
+
+    expect(assertAnonymousRateLimit).toHaveBeenCalledWith("forgot-password", { max: 5, windowMs: 900_000 });
   });
 });

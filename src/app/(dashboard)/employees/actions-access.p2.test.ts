@@ -3,23 +3,30 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess, isEffectiveSalonModuleEnabled } from "@/features/billing";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { changeEmployeeRole } from "@/features/employees/use-cases/employee-role";
 import { createEmployeeInviteForExistingEmployee } from "@/features/employees/use-cases/employee-invitation-issue";
 import { resetEmployeeAccess } from "@/features/employees/use-cases/employee-revocation";
 import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
 import { err, ok } from "@/infra/result";
-import { buildProfile, SALON_ID } from "@/test/action-fixtures";
+import { buildProfile, rolesDisabled, SALON_ID } from "@/test/action-fixtures";
 import { changeEmployeeRoleAction, resetEmployeeAccessAction, generateEmployeeInviteAction } from "./actions-access";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
-  isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 vi.mock("@/features/employees/use-cases/employee-role", () => ({
   changeEmployeeRole: vi.fn(),
@@ -63,7 +70,6 @@ describe("employees actions (acceso y roles, p2)", () => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);
     vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
     vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
     vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
     vi.mocked(getSalonSchedulingConfig).mockResolvedValue({
@@ -89,7 +95,7 @@ describe("employees actions (acceso y roles, p2)", () => {
     });
 
     it("rechaza cambiar rol cuando el módulo de roles está deshabilitado", async () => {
-      vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+      vi.mocked(requireActiveProfile).mockResolvedValue(rolesDisabled(manager));
 
       expect(await changeEmployeeRoleAction(EMPLOYEE_ID, ROLE_ID)).toEqual(ROLES_DISABLED);
       expect(changeEmployeeRole).not.toHaveBeenCalled();
@@ -127,7 +133,7 @@ describe("employees actions (acceso y roles, p2)", () => {
     });
 
     it("rechaza cuando los roles están deshabilitados", async () => {
-      vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+      vi.mocked(requireActiveProfile).mockResolvedValue(rolesDisabled(manager));
 
       expect(await resetEmployeeAccessAction(EMPLOYEE_ID, null)).toEqual(ROLES_DISABLED);
       expect(resetEmployeeAccess).not.toHaveBeenCalled();
@@ -177,7 +183,7 @@ describe("employees actions (acceso y roles, p2)", () => {
     });
 
     it("rechaza cuando los roles están deshabilitados", async () => {
-      vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+      vi.mocked(requireActiveProfile).mockResolvedValue(rolesDisabled(manager));
 
       expect(await generateEmployeeInviteAction(EMPLOYEE_ID, ROLE_ID)).toEqual(ROLES_DISABLED);
       expect(createEmployeeInviteForExistingEmployee).not.toHaveBeenCalled();

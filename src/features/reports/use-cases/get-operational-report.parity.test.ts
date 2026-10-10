@@ -11,7 +11,7 @@ import {
   fetchOperationalBreakdown,
   fetchPeriodTotals,
 } from "../data/rpc/reports-read-models.rpc";
-import { findSalonReportIdentity, findSalonTimezone } from "../data/reports.repo";
+import { findSalonReportIdentity } from "../data/reports.repo";
 import {
   fetchBusyHours,
   fetchExpenseConcepts,
@@ -23,7 +23,6 @@ import { getOperationalReport } from "./get-operational-report";
 
 vi.mock("../data/reports.repo", () => ({
   findSalonReportIdentity: vi.fn(),
-  findSalonTimezone: vi.fn(),
 }));
 
 vi.mock("../data/rpc/reports-read-models.rpc", () => ({
@@ -279,7 +278,6 @@ function roundPct<T extends { pct: number }>(rows: T[]): Array<Omit<T, "pct"> & 
 describe("paridad JS vs SQL del reporte operativo", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(findSalonTimezone).mockResolvedValue("UTC");
     vi.mocked(findSalonReportIdentity).mockResolvedValue({
       name: "Glow Studio",
       timezone: "UTC",

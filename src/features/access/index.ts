@@ -11,5 +11,6 @@ export {
 } from "./domain/permission-checks";
 export type { Permission } from "./domain/permission-checks";
 export { withDisabledFeatures } from "./domain/with-disabled-features";
-export type { RequestContext } from "./domain/request-context";
+export type { ActionContext, RequestContext } from "./domain/request-context";
 export { getAssignableRoleOptions } from "./use-cases/role-options";
+export { isPlatformAdminUser } from "./data/platform-admins.repo";

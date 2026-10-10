@@ -1,16 +1,10 @@
 import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
-import { PERMISSIONS } from "@/features/access";
-import {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  isEffectiveSalonModuleEnabled,
-  salonModuleScopeFromProfile,
-} from "@/features/billing";
+import { PERMISSIONS, type ActionContext } from "@/features/access";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import type { EmployeeAdmissionInput } from "@/features/employees/use-cases/employee-admission";
 import type { RoleGate } from "@/features/employees/use-cases/employee-role-flows";
 import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
-import type { ProfileWithRole } from "@/types/app.types";
 
 // Politica comun de las acciones de colaboradores: permiso por clave y limite de
 // peticiones por usuario. Cada accion la extiende con defineAction; ninguna la
@@ -25,11 +19,6 @@ export const EMPLOYEE_GUARD = {
   // usuario evita generacion masiva automatizada.
   rateLimit: { scope: "employees", options: RATE_LIMIT_POLICIES.restricted },
 };
-
-/** Roles habilitados en el plan del salon para el perfil de la sesion. */
-export function rolesEnabledOf(profile: ProfileWithRole): Promise<boolean> {
-  return isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "roles");
-}
 
 export function activeLimitCheck(salonId: string): () => ReturnType<typeof checkPlanLimit> {
   return () => checkPlanLimit({ salonId, metricKey: "employees.active" });
@@ -55,7 +44,7 @@ export function checkIds<T>(value: T, ids: (string | null)[]): Result<T> {
   return ids.every((id) => id === null || parseUuid(id) !== null) ? ok(value) : err(INVALID_ID);
 }
 
-/** Puerta de roles de una accion: el salon del perfil y si el plan incluye roles. */
-export async function roleGateOf(session: { salonId: string; profile: ProfileWithRole }): Promise<RoleGate> {
-  return { salonId: session.salonId, rolesEnabled: await rolesEnabledOf(session.profile) };
+/** Puerta de roles de una accion: el salon de la sesion y si el plan incluye roles (resuelto por el composition root). */
+export function roleGateOf(session: ActionContext): RoleGate {
+  return { salonId: session.salonId, rolesEnabled: session.rolesEnabled };
 }

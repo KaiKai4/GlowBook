@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
 import { signInWithPassword } from "@/infra/auth/password-auth";
 import { err, ok } from "@/infra/result";
 import { signInAction } from "./actions";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/infra/security/rate-limit", () => ({ assertAnonymousRateLimit: vi.fn() }));
 vi.mock("@/infra/auth/password-auth", () => ({ signInWithPassword: vi.fn() }));
 
 const SIGN_IN_ERROR = "No pudimos iniciar sesión con esos datos.";
 const INPUT = { email: "ana@salonluna.com", password: "clave-segura-1", remember: true };
 
 beforeEach(() => {
+  vi.mocked(assertAnonymousRateLimit).mockResolvedValue(ok(undefined));
   vi.clearAllMocks();
   vi.mocked(signInWithPassword).mockResolvedValue({ error: null });
 });
@@ -55,6 +58,23 @@ describe("signInAction", () => {
     const result = await signInAction({ ...INPUT, password: "" });
 
     expect(result).toEqual(err(SIGN_IN_ERROR));
+    expect(signInWithPassword).not.toHaveBeenCalled();
+  });
+});
+
+describe("signInAction con limite por IP", () => {
+  it("aplica el limite de inicio de sesion por IP antes de tocar la autenticacion", async () => {
+    await signInAction(INPUT);
+
+    expect(assertAnonymousRateLimit).toHaveBeenCalledWith("sign-in", { max: 20, windowMs: 900_000 });
+  });
+
+  it("si el limite bloquea no intenta iniciar sesion y devuelve el aviso de limite", async () => {
+    vi.mocked(assertAnonymousRateLimit).mockResolvedValue(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
+
+    const result = await signInAction(INPUT);
+
+    expect(result).toEqual(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
     expect(signInWithPassword).not.toHaveBeenCalled();
   });
 });

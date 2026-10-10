@@ -19,7 +19,6 @@ import {
   admissionChecks,
   checkIds,
   EMPLOYEE_GUARD,
-  rolesEnabledOf,
 } from "./employee-action-guard";
 
 // Acciones de ficha del colaborador: alta, busqueda de archivados, edicion, reactivacion y baja.
@@ -35,7 +34,7 @@ const createEmployeeFlowAction = defineAction<FormData, FormData, CreateEmployee
     createEmployeeFlow(
       {
         salonId: session.salonId,
-        rolesEnabled: await rolesEnabledOf(session.profile),
+        rolesEnabled: session.rolesEnabled,
         checks: admissionChecks(session.salonId),
       },
       formData

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
 import {
   establishRecoverySession,
   signOutCurrentSession,
@@ -8,6 +9,7 @@ import { err, ok } from "@/infra/result";
 import { updatePasswordAction, verifyRecoveryLinkAction } from "./actions";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/infra/security/rate-limit", () => ({ assertAnonymousRateLimit: vi.fn() }));
 vi.mock("@/infra/auth/password-auth", () => ({
   establishRecoverySession: vi.fn(),
   updateCurrentPassword: vi.fn(),
@@ -17,6 +19,7 @@ vi.mock("@/infra/auth/password-auth", () => ({
 const UPDATE_ERROR = "No se pudo actualizar la contraseña. Pide un enlace nuevo e intentalo otra vez.";
 
 beforeEach(() => {
+  vi.mocked(assertAnonymousRateLimit).mockResolvedValue(ok(undefined));
   vi.clearAllMocks();
   vi.mocked(establishRecoverySession).mockResolvedValue(true);
   vi.mocked(updateCurrentPassword).mockResolvedValue({ error: null });
@@ -90,5 +93,23 @@ describe("updatePasswordAction", () => {
     const result = await updatePasswordAction("clave-segura-1");
 
     expect(result).toEqual(err(UPDATE_ERROR));
+  });
+});
+
+describe("acciones de recuperacion con limite por IP", () => {
+  it("un enlace bloqueado por el limite cuenta como no valido sin validarlo", async () => {
+    vi.mocked(assertAnonymousRateLimit).mockResolvedValue(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
+
+    await expect(verifyRecoveryLinkAction({ code: "c-1", tokenHash: null })).resolves.toBe(false);
+    expect(establishRecoverySession).not.toHaveBeenCalled();
+  });
+
+  it("una contrasena bloqueada por el limite no se cambia", async () => {
+    vi.mocked(assertAnonymousRateLimit).mockResolvedValue(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
+
+    const result = await updatePasswordAction("clave-nueva-1");
+
+    expect(result.ok).toBe(false);
+    expect(updateCurrentPassword).not.toHaveBeenCalled();
   });
 });

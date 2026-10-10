@@ -1,13 +1,11 @@
-import { createDomainEventBus } from "@/infra/events/domain-events";
-import { registerDomainEventHandlers } from "@/infra/events/register-handlers";
-import { AUDIT_EVENT_HANDLERS } from "./audit-event-handlers";
+import { runSideEffect } from "@/infra/effects/run-side-effect";
+import { recordAuditEvent } from "./audit-event-writer";
 import type { AuditEventMap, AuditEventName } from "./events";
 
-const auditBus = createDomainEventBus<AuditEventMap>();
-
 /**
- * Emite el evento de auditoria de una accion ya confirmada (post-commit).
- * Devuelve avisos si el manejador de auditoria fallo; nunca rechaza.
+ * Emite el evento de auditoria de una accion ya confirmada (post-commit). La
+ * escritura se ejecuta en el mismo proceso, dentro de runSideEffect: si falla se
+ * registra con contexto y se devuelve un aviso; nunca rechaza.
  * Sin actor no hay evento: la accion la ejecuto el sistema, no un admin.
  */
 export async function publishAuditEvent<TName extends AuditEventName>(
@@ -16,9 +14,7 @@ export async function publishAuditEvent<TName extends AuditEventName>(
 ): Promise<string[]> {
   if (!payload.actorUserId) return [];
 
-  registerDomainEventHandlers(auditBus, AUDIT_EVENT_HANDLERS);
-
-  return auditBus.publish(name, payload, {
+  const outcome = await runSideEffect(name, () => recordAuditEvent(payload), {
     module: "platform",
     action: "record_audit",
     metadata: {
@@ -28,4 +24,5 @@ export async function publishAuditEvent<TName extends AuditEventName>(
       targetResourceId: payload.targetResourceId ?? null,
     },
   });
+  return outcome.ok ? [] : [outcome.warning];
 }

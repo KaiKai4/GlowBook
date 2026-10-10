@@ -4,7 +4,7 @@
 // solo como oraculo. Sobre un dataset pequeno, el view model que sale de los payloads SQL
 // debe coincidir con el que produce ese calculo antiguo.
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findSalonReportIdentity, findSalonTimezone } from "../data/reports.repo";
+import { findSalonReportIdentity } from "../data/reports.repo";
 import {
   fetchCommissionReport,
   fetchOperationalBreakdown,
@@ -33,7 +33,6 @@ import { getReportExportData } from "./get-report-export";
 
 vi.mock("../data/reports.repo", () => ({
   findSalonReportIdentity: vi.fn(),
-  findSalonTimezone: vi.fn(),
 }));
 
 vi.mock("../data/rpc/reports-read-models.rpc", () => ({
@@ -380,7 +379,6 @@ function useOperationalSql(): void {
 describe("paridad SQL vs oraculo JS del historial y acumulados", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(findSalonTimezone).mockResolvedValue("UTC");
     vi.mocked(findSalonReportIdentity).mockResolvedValue({
       name: "Glow Studio",
       timezone: "UTC",

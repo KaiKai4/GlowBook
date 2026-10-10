@@ -2,18 +2,6 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 
-export async function findSalonTimezone(salonId: string): Promise<string | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("salons")
-    .select("timezone")
-    .eq("id", salonId)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data?.timezone ?? null;
-}
-
 export interface SalonReportIdentity {
   name: string;
   timezone: string | null;
