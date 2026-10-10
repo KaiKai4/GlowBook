@@ -4,6 +4,7 @@ import {
   installSupabaseDouble,
 } from "@/test/appointments-feature-supabase";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { APPOINTMENT_MESSAGES } from "../../domain/messages";
 import { updateAppointmentWithRpc } from "./update-appointment";
 
 vi.mock("@/infra/supabase/server", () => ({
@@ -50,7 +51,7 @@ describe("updateAppointmentWithRpc", () => {
     });
   });
 
-  it("devuelve ok false con el mensaje de la base cuando el profesional se solapa", async () => {
+  it("devuelve ok false con un mensaje público cuando el profesional se solapa", async () => {
     installSupabaseDouble(createAppointmentsSupabaseDouble({}, { data: null, error: failure }), mockedCreateClient);
 
     const result = await updateAppointmentWithRpc({
@@ -58,6 +59,6 @@ describe("updateAppointmentWithRpc", () => {
       idempotencyKey: KEY,
     });
 
-    expect(result).toEqual({ ok: false, errorMessage: failure.message });
+    expect(result).toEqual({ ok: false, reason: "slot_taken", errorMessage: APPOINTMENT_MESSAGES.updateFailed });
   });
 });

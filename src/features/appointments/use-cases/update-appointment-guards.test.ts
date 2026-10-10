@@ -3,9 +3,9 @@ import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
 } from "../data/appointment-commands.repo";
 import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
@@ -14,9 +14,9 @@ import type { AppointmentCommandState } from "../data/appointment-commands.repo"
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
@@ -107,9 +107,9 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
     vi.resetAllMocks();
     vi.mocked(findAppointmentForCommand).mockResolvedValue(scheduledAppointment);
     vi.mocked(findAppointmentCreationResources).mockResolvedValue(validResources());
-    vi.mocked(findEmployeeWorkSchedulesForCommand).mockResolvedValue(workAllWeek);
-    vi.mocked(findEmployeeExceptionDatesForCommand).mockResolvedValue([]);
-    vi.mocked(findEmployeeOccupiedSlotsForCommand).mockResolvedValue([]);
+    vi.mocked(findWorkSchedulesByEmployeeForCommand).mockResolvedValue(new Map([[employeeId, workAllWeek]]));
+    vi.mocked(findExceptionDatesByEmployeeForCommand).mockResolvedValue(new Map());
+    vi.mocked(findOccupiedSlotsByEmployeeForCommand).mockResolvedValue(new Map());
     vi.mocked(updateAppointmentWithRpc).mockResolvedValue({ ok: true });
   });
 

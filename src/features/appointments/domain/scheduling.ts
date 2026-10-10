@@ -1,6 +1,7 @@
 import { PublicError } from "@/infra/public-error";
 import { addMinutes } from "@/infra/format/dates";
 import { evaluateTimeRange } from "./availability";
+import { isEligible } from "./eligibility";
 import type {
   AppointmentItemPayload,
   BusinessHour,
@@ -36,11 +37,12 @@ function validateAssignment(
   if (!assignment.employee.is_active) {
     throw new PublicError("El profesional no está activo.");
   }
-  if (!assignment.employee.service_ids.includes(assignment.service.id)) {
-    throw new PublicError("El profesional seleccionado no realiza ese servicio.");
-  }
-  if (!assignment.employee.category_ids.includes(assignment.service.category_id)) {
-    throw new PublicError("El profesional seleccionado no atiende esa categoría.");
+  if (!isEligible(assignment.employee, assignment.service)) {
+    throw new PublicError(
+      assignment.employee.service_ids.includes(assignment.service.id)
+        ? "El profesional seleccionado no atiende esa categoría."
+        : "El profesional seleccionado no realiza ese servicio."
+    );
   }
 }
 

@@ -8,9 +8,9 @@ import {
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
   findOccupiedSlotsForSalonDate,
 } from "./appointment-commands.repo";
 
@@ -27,6 +27,7 @@ const categoryId = "00000000-0000-4000-8000-0000000000k4";
 const serviceA = "00000000-0000-4000-8000-0000000000k5";
 const serviceB = "00000000-0000-4000-8000-0000000000k6";
 const employeeA = "00000000-0000-4000-8000-0000000000k7";
+const employeeB = "00000000-0000-4000-8000-0000000000k8";
 
 function useDouble(double: AppointmentsSupabaseDouble): void {
   installSupabaseDouble(double, mockedCreateClient);
@@ -113,6 +114,21 @@ describe("comandos de cita: recursos para crear o reprogramar", () => {
       employee_categories: { data: [{ employee_id: employeeA, category_id: categoryId }], error: null },
     };
   }
+
+  it("cliente nuevo (sin customerId): carga servicios y profesionales y marca customerExists en falso", async () => {
+    const tables = fullTables();
+    useDouble(createAppointmentsSupabaseDouble({ ...tables, customers: { data: null, error: null } }));
+
+    const resources = await findAppointmentCreationResources({
+      salonId,
+      assignments: [{ service_id: serviceA, employee_id: employeeA }],
+    });
+
+    expect(resources.customerExists).toBe(false);
+    expect(resources.salonConfig).not.toBeNull();
+    expect(resources.assignments[0]?.service?.id).toBe(serviceA);
+    expect(resources.assignments[0]?.employee?.id).toBe(employeeA);
+  });
 
   it("arma servicios y profesionales con sus asociaciones y deja nulo lo que no existe", async () => {
     const double = createAppointmentsSupabaseDouble(fullTables());
@@ -305,31 +321,51 @@ describe("comandos de cita: disponibilidad del profesional", () => {
     vi.resetAllMocks();
   });
 
-  it("lee solo los turnos activos del profesional", async () => {
+  it("lee los turnos activos de todos los profesionales en una sola consulta filtrada por salón", async () => {
     const double = createAppointmentsSupabaseDouble({
       work_schedules: {
-        data: [{ day_of_week: 1, start_time: "08:00", end_time: "12:00", is_active: true }],
+        data: [
+          { employee_id: employeeA, day_of_week: 1, start_time: "08:00", end_time: "12:00", is_active: true },
+          { employee_id: employeeB, day_of_week: 2, start_time: "09:00", end_time: "13:00", is_active: true },
+        ],
         error: null,
       },
     });
     useDouble(double);
 
-    expect(await findEmployeeWorkSchedulesForCommand(employeeA)).toEqual([
+    const schedules = await findWorkSchedulesByEmployeeForCommand({
+      salonId,
+      employeeIds: [employeeA, employeeB],
+    });
+
+    expect(schedules.get(employeeA)).toEqual([
       { day_of_week: 1, start_time: "08:00", end_time: "12:00", is_active: true },
     ]);
+    expect(schedules.get(employeeB)).toEqual([
+      { day_of_week: 2, start_time: "09:00", end_time: "13:00", is_active: true },
+    ]);
+    expect(double.from).toHaveBeenCalledTimes(1);
     expect(double.callsFor("work_schedules")).toEqual([
-      { method: "select", args: ["day_of_week, start_time, end_time, is_active"] },
-      { method: "eq", args: ["employee_id", employeeA] },
+      { method: "select", args: ["employee_id, day_of_week, start_time, end_time, is_active"] },
+      { method: "in", args: ["employee_id", [employeeA, employeeB]] },
+      { method: "eq", args: ["salon_id", salonId] },
       { method: "eq", args: ["is_active", true] },
     ]);
   });
 
-  it("sin turnos devuelve lista vacía y propaga errores", async () => {
+  it("sin profesionales no consulta; sin turnos devuelve mapa vacío y propaga errores", async () => {
+    const double = createAppointmentsSupabaseDouble();
+    useDouble(double);
+    expect(await findWorkSchedulesByEmployeeForCommand({ salonId, employeeIds: [] })).toEqual(new Map());
+    expect(double.from).not.toHaveBeenCalled();
+
     useDouble(createAppointmentsSupabaseDouble({ work_schedules: { data: null, error: null } }));
-    expect(await findEmployeeWorkSchedulesForCommand(employeeA)).toEqual([]);
+    expect((await findWorkSchedulesByEmployeeForCommand({ salonId, employeeIds: [employeeA] })).size).toBe(0);
 
     useDouble(createAppointmentsSupabaseDouble({ work_schedules: { data: null, error: failure } }));
-    await expect(findEmployeeWorkSchedulesForCommand(employeeA)).rejects.toEqual(failure);
+    await expect(
+      findWorkSchedulesByEmployeeForCommand({ salonId, employeeIds: [employeeA] })
+    ).rejects.toEqual(failure);
   });
 
   describe("días libres", () => {
@@ -342,47 +378,66 @@ describe("comandos de cita: disponibilidad del profesional", () => {
       vi.useRealTimers();
     });
 
-    it("consulta desde un día antes de hoy para cubrir el desfase horario", async () => {
+    it("consulta en lote desde un día antes de hoy, filtrando por salón", async () => {
       const double = createAppointmentsSupabaseDouble({
         schedule_exceptions: {
-          data: [{ exception_date: "2026-05-24" }, { exception_date: "2026-05-30" }],
+          data: [
+            { employee_id: employeeA, exception_date: "2026-05-24" },
+            { employee_id: employeeB, exception_date: "2026-05-30" },
+          ],
           error: null,
         },
       });
       useDouble(double);
 
-      expect(await findEmployeeExceptionDatesForCommand(employeeA)).toEqual(["2026-05-24", "2026-05-30"]);
+      const exceptions = await findExceptionDatesByEmployeeForCommand({
+        salonId,
+        employeeIds: [employeeA, employeeB],
+      });
+
+      expect(exceptions.get(employeeA)).toEqual(["2026-05-24"]);
+      expect(exceptions.get(employeeB)).toEqual(["2026-05-30"]);
+      expect(double.from).toHaveBeenCalledTimes(1);
       expect(double.callsFor("schedule_exceptions")).toEqual([
-        { method: "select", args: ["exception_date"] },
-        { method: "eq", args: ["employee_id", employeeA] },
+        { method: "select", args: ["employee_id, exception_date"] },
+        { method: "in", args: ["employee_id", [employeeA, employeeB]] },
+        { method: "eq", args: ["salon_id", salonId] },
         { method: "gte", args: ["exception_date", "2026-05-24"] },
       ]);
     });
 
-    it("sin días libres devuelve lista vacía y propaga errores", async () => {
+    it("sin profesionales no consulta; sin días libres devuelve mapa vacío y propaga errores", async () => {
+      const double = createAppointmentsSupabaseDouble();
+      useDouble(double);
+      expect(await findExceptionDatesByEmployeeForCommand({ salonId, employeeIds: [] })).toEqual(new Map());
+      expect(double.from).not.toHaveBeenCalled();
+
       useDouble(createAppointmentsSupabaseDouble({ schedule_exceptions: { data: null, error: null } }));
-      expect(await findEmployeeExceptionDatesForCommand(employeeA)).toEqual([]);
+      expect((await findExceptionDatesByEmployeeForCommand({ salonId, employeeIds: [employeeA] })).size).toBe(0);
 
       useDouble(createAppointmentsSupabaseDouble({ schedule_exceptions: { data: null, error: failure } }));
-      await expect(findEmployeeExceptionDatesForCommand(employeeA)).rejects.toEqual(failure);
+      await expect(
+        findExceptionDatesByEmployeeForCommand({ salonId, employeeIds: [employeeA] })
+      ).rejects.toEqual(failure);
     });
   });
 
-  it("consulta citas bloqueantes del profesional en el día local del salón, filtrando por salón", async () => {
+  it("consulta en lote los bloqueos de los profesionales en el día local del salón, filtrando por salón", async () => {
     const double = createAppointmentsSupabaseDouble({ appointment_items: { data: [], error: null } });
     useDouble(double);
 
-    await findEmployeeOccupiedSlotsForCommand({
+    await findOccupiedSlotsByEmployeeForCommand({
       salonId,
-      employeeId: employeeA,
+      employeeIds: [employeeA, employeeB],
       date: new Date("2026-05-25T15:00:00.000Z"),
       timezone: "America/Panama",
     });
 
+    expect(double.from).toHaveBeenCalledTimes(1);
     expect(double.callsFor("appointment_items")).toEqual([
-      { method: "select", args: ["start_time, end_time"] },
+      { method: "select", args: ["employee_id, start_time, end_time"] },
+      { method: "in", args: ["employee_id", [employeeA, employeeB]] },
       { method: "eq", args: ["salon_id", salonId] },
-      { method: "eq", args: ["employee_id", employeeA] },
       { method: "eq", args: ["blocks_calendar", true] },
       { method: "gte", args: ["start_time", "2026-05-25T05:00:00.000Z"] },
       { method: "lte", args: ["start_time", "2026-05-26T04:59:59.999Z"] },
@@ -393,9 +448,9 @@ describe("comandos de cita: disponibilidad del profesional", () => {
     const double = createAppointmentsSupabaseDouble({ appointment_items: { data: [], error: null } });
     useDouble(double);
 
-    await findEmployeeOccupiedSlotsForCommand({
+    await findOccupiedSlotsByEmployeeForCommand({
       salonId,
-      employeeId: employeeA,
+      employeeIds: [employeeA],
       date: new Date("2026-05-25T15:00:00.000Z"),
       timezone: "America/Panama",
       excludeAppointmentId: appointmentId,
@@ -407,26 +462,29 @@ describe("comandos de cita: disponibilidad del profesional", () => {
     });
   });
 
-  it("devuelve los bloques ocupados tal como llegan y propaga errores", async () => {
-    const blocks = [{ start_time: "2026-05-25T15:00:00.000Z", end_time: "2026-05-25T15:30:00.000Z" }];
+  it("agrupa los bloques ocupados por profesional, no consulta sin profesionales y propaga errores", async () => {
+    const blocks = [
+      { employee_id: employeeA, start_time: "2026-05-25T15:00:00.000Z", end_time: "2026-05-25T15:30:00.000Z" },
+      { employee_id: employeeA, start_time: "2026-05-25T16:00:00.000Z", end_time: "2026-05-25T16:30:00.000Z" },
+    ];
+    const query = { salonId, date: new Date("2026-05-25T15:00:00.000Z"), timezone: "America/Panama" };
     useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: blocks, error: null } }));
-    expect(
-      await findEmployeeOccupiedSlotsForCommand({
-        salonId,
-        employeeId: employeeA,
-        date: new Date("2026-05-25T15:00:00.000Z"),
-        timezone: "America/Panama",
-      })
-    ).toEqual(blocks);
+
+    const occupied = await findOccupiedSlotsByEmployeeForCommand({ ...query, employeeIds: [employeeA, employeeB] });
+    expect(occupied.get(employeeA)).toEqual([
+      { start_time: "2026-05-25T15:00:00.000Z", end_time: "2026-05-25T15:30:00.000Z" },
+      { start_time: "2026-05-25T16:00:00.000Z", end_time: "2026-05-25T16:30:00.000Z" },
+    ]);
+    expect(occupied.has(employeeB)).toBe(false);
+
+    const idle = createAppointmentsSupabaseDouble();
+    useDouble(idle);
+    expect(await findOccupiedSlotsByEmployeeForCommand({ ...query, employeeIds: [] })).toEqual(new Map());
+    expect(idle.from).not.toHaveBeenCalled();
 
     useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: failure } }));
     await expect(
-      findEmployeeOccupiedSlotsForCommand({
-        salonId,
-        employeeId: employeeA,
-        date: new Date("2026-05-25T15:00:00.000Z"),
-        timezone: "America/Panama",
-      })
+      findOccupiedSlotsByEmployeeForCommand({ ...query, employeeIds: [employeeA] })
     ).rejects.toEqual(failure);
   });
 });

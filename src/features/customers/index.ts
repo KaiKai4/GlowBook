@@ -3,3 +3,8 @@
 import "server-only";
 
 export { getActiveCustomerOptions, type CustomerOptionView } from "./use-cases/customer-options";
+export {
+  deleteTemporaryCustomer,
+  isTemporaryCustomer,
+  promoteCustomer,
+} from "./use-cases/customer-temporary";

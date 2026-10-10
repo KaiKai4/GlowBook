@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
 } from "../data/appointment-commands.repo";
 import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
@@ -12,9 +12,9 @@ import { updateAppointmentSchedule } from "./update-appointment";
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
@@ -24,9 +24,9 @@ const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
 const mockedFindAppointmentForCommand = vi.mocked(findAppointmentForCommand);
 const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
-const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findEmployeeWorkSchedulesForCommand);
-const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findEmployeeExceptionDatesForCommand);
-const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findEmployeeOccupiedSlotsForCommand);
+const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findWorkSchedulesByEmployeeForCommand);
+const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findExceptionDatesByEmployeeForCommand);
+const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
 const mockedUpdateAppointmentWithRpc = vi.mocked(updateAppointmentWithRpc);
 
 const appointmentId = "00000000-0000-0000-0000-000000000001";
@@ -87,9 +87,9 @@ function mockValidUpdate() {
       },
     ],
   });
-  mockedFindEmployeeWorkSchedulesForCommand.mockResolvedValue(workAllWeek);
-  mockedFindEmployeeExceptionDatesForCommand.mockResolvedValue([]);
-  mockedFindEmployeeOccupiedSlotsForCommand.mockResolvedValue([]);
+  mockedFindEmployeeWorkSchedulesForCommand.mockResolvedValue(new Map([[employeeId, workAllWeek]]));
+  mockedFindEmployeeExceptionDatesForCommand.mockResolvedValue(new Map());
+  mockedFindEmployeeOccupiedSlotsForCommand.mockResolvedValue(new Map());
   mockedUpdateAppointmentWithRpc.mockResolvedValue({ ok: true });
 }
 
@@ -115,7 +115,7 @@ describe("update appointment schedule", () => {
     expect(mockedFindAppointmentForCommand).toHaveBeenCalledWith(appointmentId, salonId);
     expect(mockedFindEmployeeOccupiedSlotsForCommand).toHaveBeenCalledWith({
       salonId,
-      employeeId,
+      employeeIds: [employeeId],
       date: new Date(startTime),
       timezone: "UTC",
       excludeAppointmentId: appointmentId,
@@ -168,7 +168,7 @@ describe("update appointment schedule", () => {
   it("maps overlap errors to the scheduling message", async () => {
     mockedUpdateAppointmentWithRpc.mockResolvedValue({
       ok: false,
-      errorMessage: "violates no_overlap_per_employee",
+      reason: "slot_taken",
     });
 
     const result = await updateAppointmentSchedule(

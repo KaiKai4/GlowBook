@@ -4,9 +4,9 @@ import { err } from "@/infra/result";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
 } from "../data/appointment-commands.repo";
 import { cancelAppointment } from "./cancel-appointment";
 import { completeAppointment } from "./complete-appointment";
@@ -15,12 +15,13 @@ import { createAppointment } from "./create-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
 
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+vi.mock("@/features/salon", () => ({ assertSalonPaymentMethodEnabled: vi.fn(async () => true) }));
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
   setAppointmentItemsCalendarBlocking: vi.fn(),
   updateAppointmentStatus: vi.fn(),
 }));
@@ -69,16 +70,16 @@ function foreignServiceResources() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(findEmployeeWorkSchedulesForCommand).mockResolvedValue([]);
-  vi.mocked(findEmployeeExceptionDatesForCommand).mockResolvedValue([]);
-  vi.mocked(findEmployeeOccupiedSlotsForCommand).mockResolvedValue([]);
+  vi.mocked(findWorkSchedulesByEmployeeForCommand).mockResolvedValue(new Map());
+  vi.mocked(findExceptionDatesByEmployeeForCommand).mockResolvedValue(new Map());
+  vi.mocked(findOccupiedSlotsByEmployeeForCommand).mockResolvedValue(new Map());
 });
 
 describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
   it("cancelar una cita completada devuelve el motivo de dominio, sin capturar error", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue({ status: "completed" } as never);
 
-    const result = await cancelAppointment(APPOINTMENT, SALON, KEY);
+    const result = await cancelAppointment({ appointmentId: APPOINTMENT, salonId: SALON, idempotencyKey: KEY, customerDisposition: "keep" });
 
     expect(result).toEqual(err('No se puede cambiar el estado de "completed" a "cancelled".'));
     expect(captureError).not.toHaveBeenCalled();
@@ -87,7 +88,7 @@ describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
   it("completar una cita cancelada devuelve el motivo de dominio", async () => {
     vi.mocked(findAppointmentForCommand).mockResolvedValue({ status: "cancelled" } as never);
 
-    const result = await completeAppointment(APPOINTMENT, SALON, "cash", [], "", KEY);
+    const result = await completeAppointment({ appointmentId: APPOINTMENT, salonId: SALON, paymentMethod: "cash", idempotencyKey: KEY });
 
     expect(result).toEqual(err('No se puede cambiar el estado de "cancelled" a "completed".'));
   });
@@ -104,7 +105,7 @@ describe("cancelar, completar y confirmar cita: transiciones invalidas", () => {
     const failure = new Error("timeout");
     vi.mocked(findAppointmentForCommand).mockRejectedValue(failure);
 
-    const result = await cancelAppointment(APPOINTMENT, SALON, KEY);
+    const result = await cancelAppointment({ appointmentId: APPOINTMENT, salonId: SALON, idempotencyKey: KEY, customerDisposition: "keep" });
 
     expect(result).toEqual(err("Cita no encontrada."));
     expect(captureError).toHaveBeenCalledWith(failure, { module: "appointments", action: "cancel" });

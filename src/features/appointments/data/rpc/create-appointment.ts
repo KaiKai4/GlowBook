@@ -4,7 +4,9 @@ import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { parseRpcResponse } from "@/infra/supabase/rpc-response";
 import { z } from "@/infra/validation/zod";
-import { errorMessageOf } from "./error-message";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { APPOINTMENT_MESSAGES } from "../../domain/messages";
+import { classifyAppointmentRpcFailure, type AppointmentRpcFailureReason } from "./rpc-failure-reason";
 
 const CreateAppointmentResultSchema = z.string().uuid();
 
@@ -45,6 +47,8 @@ export interface CreateAppointmentRpcResult {
   ok: boolean;
   appointmentId?: string;
   errorMessage?: string;
+  /** Causa tipada del fallo (solo si ok es false). */
+  reason?: AppointmentRpcFailureReason;
 }
 
 /** Crea la cita y sus items en una transaccion. Los fallos llegan como ok:false con el mensaje de la base. */
@@ -61,6 +65,10 @@ export async function createAppointmentWithRpc(
     const appointmentId = parseRpcResponse("create_appointment", response, CreateAppointmentResultSchema);
     return { ok: true, appointmentId };
   } catch (error) {
-    return { ok: false, errorMessage: errorMessageOf(error) };
+    return {
+      ok: false,
+      reason: classifyAppointmentRpcFailure(error),
+      errorMessage: toPublicErrorMessage(error, APPOINTMENT_MESSAGES.createFailed),
+    };
   }
 }

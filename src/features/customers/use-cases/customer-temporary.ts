@@ -1,5 +1,9 @@
 import { captureError } from "@/infra/observability";
-import { deleteCustomer, updateCustomer } from "@/features/customers/data/customers.repo";
+import {
+  deleteCustomer,
+  findCustomerTemporaryFlag,
+  updateCustomer,
+} from "@/features/customers/data/customers.repo";
 import type { Result } from "@/infra/result";
 import { assertCustomerQuotaAvailable } from "./customer-quota";
 
@@ -35,4 +39,9 @@ export async function deleteTemporaryCustomer(
     captureError(error, { module: "customers", action: "temporary" });
     return { ok: false, error: "Error al descartar el cliente." };
   }
+}
+
+/** Un cliente es temporal si existe en el salón con la marca. Un cliente inexistente no lo es. */
+export async function isTemporaryCustomer(customerId: string, salonId: string): Promise<boolean> {
+  return (await findCustomerTemporaryFlag(customerId, salonId)) === true;
 }

@@ -13,17 +13,18 @@ const CompleteAppointmentResultSchema = z.object({
   total_price: z.number(),
 });
 
-interface CompleteAppointmentRpcItemCharge {
+/** Cobro de un item en la capa de aplicación (camelCase). El snake_case solo existe en el adaptador. */
+interface CompleteAppointmentItemCharge {
   id: string;
   price: number;
-  discount_percentage?: number;
+  discountPercentage?: number;
 }
 
 export interface CompleteAppointmentRpcInput {
   appointmentId: string;
   paymentMethod: string;
   completionPriceNote?: string;
-  itemCharges: CompleteAppointmentRpcItemCharge[];
+  itemCharges: CompleteAppointmentItemCharge[];
   /** Clave de idempotencia (uuid). Sin clave la RPC se ejecuta una sola vez por llamada. */
   idempotencyKey?: string;
 }
@@ -33,6 +34,7 @@ export type CompleteAppointmentRpcResult = z.infer<typeof CompleteAppointmentRes
 /**
  * Completa la cita en una transaccion: precios y descuentos de los items, cabecera,
  * liberacion de la agenda y promocion del cliente temporal. Los totales los calcula la base.
+ * Aqui se mapea el contrato camelCase de la aplicacion al JSON snake_case de la RPC.
  */
 export async function completeAppointmentRpc(
   input: CompleteAppointmentRpcInput
@@ -45,7 +47,7 @@ export async function completeAppointmentRpc(
     item_charges: input.itemCharges.map((charge) => ({
       id: charge.id,
       price: charge.price,
-      discount_percentage: charge.discount_percentage ?? 0,
+      discount_percentage: charge.discountPercentage ?? 0,
     })),
     idempotency_key: input.idempotencyKey,
   });

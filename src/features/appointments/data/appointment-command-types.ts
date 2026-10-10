@@ -2,7 +2,6 @@ import type { Database } from "@/types/database.types";
 import type { AppointmentStatus } from "../domain/lifecycle";
 import type {
   BusinessHour,
-  OccupiedSlot,
   SalonConfig,
   ServiceAssignment,
 } from "../domain/types";
@@ -33,4 +32,4 @@ export interface AppointmentCreationResources {
   }>;
 }
 
-export type OccupiedByEmployee = Record<string, OccupiedSlot[]>;
+export type { OccupiedByEmployee } from "../domain/types";

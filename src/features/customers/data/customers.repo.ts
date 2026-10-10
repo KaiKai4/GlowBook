@@ -106,3 +106,16 @@ export async function updateCustomer(
   if (error) throw error;
   return data;
 }
+
+/** Indica si el cliente es temporal (creado para una cita). Null si no existe en el salón. */
+export async function findCustomerTemporaryFlag(id: string, salonId: string): Promise<boolean | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("customers")
+    .select("is_temporary")
+    .eq("id", id)
+    .eq("salon_id", salonId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? data.is_temporary : null;
+}

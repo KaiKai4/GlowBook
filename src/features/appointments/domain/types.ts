@@ -85,3 +85,6 @@ export interface AppointmentItemPayload {
   price: number;
   ordering: number;
 }
+
+/** Ocupación de la agenda por profesional (clave: id del empleado). Definición única del dominio. */
+export type OccupiedByEmployee = Record<string, OccupiedSlot[]>;

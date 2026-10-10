@@ -63,6 +63,13 @@ export const AppointmentLifecycleSchema = z.object({
   idempotency_key: IdempotencyKeySchema,
 });
 
+/** Qué hacer con un cliente temporal al cancelar: conservarlo tal cual, guardarlo o descartarlo. */
+const CustomerDispositionSchema = z.enum(["keep", "promote", "discard"]);
+
+export const CancelAppointmentSchema = AppointmentLifecycleSchema.extend({
+  customer_disposition: CustomerDispositionSchema.default("keep"),
+});
+
 export const CompleteAppointmentSchema = z.object({
   appointment_id: z.string().uuid("ID de cita inválido"),
   idempotency_key: IdempotencyKeySchema,

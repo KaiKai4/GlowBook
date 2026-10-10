@@ -3,9 +3,9 @@ import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
   type AppointmentCommandState,
   type AppointmentCreationResources,
 } from "../data/appointment-commands.repo";
@@ -16,9 +16,9 @@ import { updateAppointmentSchedule } from "./update-appointment";
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
@@ -37,9 +37,9 @@ const startIso = "2030-01-01T14:00:00.000Z";
 
 const mockedFind = vi.mocked(findAppointmentForCommand);
 const mockedResources = vi.mocked(findAppointmentCreationResources);
-const mockedSchedules = vi.mocked(findEmployeeWorkSchedulesForCommand);
-const mockedExceptions = vi.mocked(findEmployeeExceptionDatesForCommand);
-const mockedOccupied = vi.mocked(findEmployeeOccupiedSlotsForCommand);
+const mockedSchedules = vi.mocked(findWorkSchedulesByEmployeeForCommand);
+const mockedExceptions = vi.mocked(findExceptionDatesByEmployeeForCommand);
+const mockedOccupied = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
 const mockedRpc = vi.mocked(updateAppointmentWithRpc);
 const mockedCaptureError = vi.mocked(captureError);
 
@@ -106,11 +106,11 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
     vi.resetAllMocks();
     mockedFind.mockResolvedValue(state());
     mockedResources.mockResolvedValue(resources());
-    mockedSchedules.mockResolvedValue([
+    mockedSchedules.mockResolvedValue(new Map([[employeeId, [
       { day_of_week: 1, is_active: true, start_time: "08:00", end_time: "18:00" },
-    ]);
-    mockedExceptions.mockResolvedValue([]);
-    mockedOccupied.mockResolvedValue([]);
+    ]]]));
+    mockedExceptions.mockResolvedValue(new Map());
+    mockedOccupied.mockResolvedValue(new Map());
     mockedRpc.mockResolvedValue({ ok: true });
   });
 
@@ -126,7 +126,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
     });
     expect(mockedOccupied).toHaveBeenCalledWith({
       salonId,
-      employeeId,
+      employeeIds: [employeeId],
       date: new Date(startIso),
       timezone: "America/Panama",
       excludeAppointmentId: appointmentId,
@@ -222,11 +222,11 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
     vi.resetAllMocks();
     mockedFind.mockResolvedValue(state());
     mockedResources.mockResolvedValue(resources());
-    mockedSchedules.mockResolvedValue([
+    mockedSchedules.mockResolvedValue(new Map([[employeeId, [
       { day_of_week: 1, is_active: true, start_time: "08:00", end_time: "18:00" },
-    ]);
-    mockedExceptions.mockResolvedValue([]);
-    mockedOccupied.mockResolvedValue([]);
+    ]]]));
+    mockedExceptions.mockResolvedValue(new Map());
+    mockedOccupied.mockResolvedValue(new Map());
     mockedRpc.mockResolvedValue({ ok: true });
   });
 
@@ -256,9 +256,9 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   });
 
   it("si la agenda ya está ocupada en ese horario devuelve el error de dominio y no escribe", async () => {
-    mockedOccupied.mockResolvedValue([
+    mockedOccupied.mockResolvedValue(new Map([[employeeId, [
       { start_time: "2030-01-01T14:10:00.000Z", end_time: "2030-01-01T14:20:00.000Z" },
-    ]);
+    ]]]));
 
     expect(await updateAppointmentSchedule(input(), deps)).toEqual({
       ok: false,
@@ -268,7 +268,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   });
 
   it("rechaza mover la cita a un día libre puntual del profesional", async () => {
-    mockedExceptions.mockResolvedValue(["2030-01-01"]);
+    mockedExceptions.mockResolvedValue(new Map([[employeeId, ["2030-01-01"]]]));
 
     expect(await updateAppointmentSchedule(input(), deps)).toEqual({
       ok: false,
@@ -301,9 +301,9 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
 
   it("rechaza mover la cita fuera del horario del salón", async () => {
     const lateStart = "2030-01-01T23:00:00.000Z"; // 18:00 en Panamá.
-    mockedSchedules.mockResolvedValue([
+    mockedSchedules.mockResolvedValue(new Map([[employeeId, [
       { day_of_week: 1, is_active: true, start_time: "00:00", end_time: "23:59" },
-    ]);
+    ]]]));
 
     expect(await updateAppointmentSchedule(input({ start_time: lateStart }), deps)).toEqual({
       ok: false,
@@ -336,7 +336,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   });
 
   it("si el RPC detecta solapamiento devuelve el mensaje de horario ocupado", async () => {
-    mockedRpc.mockResolvedValue({ ok: false, errorMessage: "no_overlap_per_employee" });
+    mockedRpc.mockResolvedValue({ ok: false, reason: "slot_taken" });
 
     expect(await updateAppointmentSchedule(input(), deps)).toEqual({
       ok: false,
