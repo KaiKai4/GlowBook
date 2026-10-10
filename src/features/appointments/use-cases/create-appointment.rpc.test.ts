@@ -263,7 +263,7 @@ describe(
             },
           ],
         },
-        message: "duración mínima",
+        message: "duracion minima",
       },
       {
         name: "outside salón business hours",
@@ -384,7 +384,7 @@ describe(
           ],
         },
       });
-      expect(customerError?.message).toContain("Cliente inválido");
+      expect(customerError?.message).toContain("Cliente invalido");
 
       const { error: serviceError } = await user.rpc("create_appointment", {
         payload: {
@@ -401,7 +401,7 @@ describe(
           ],
         },
       });
-      expect(serviceError?.message).toContain("Servicio inválido");
+      expect(serviceError?.message).toContain("Servicio invalido");
 
       const { count, error: countError } = await admin
         .from("appointments")
