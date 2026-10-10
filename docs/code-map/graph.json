@@ -290,7 +290,7 @@
     {
       "from": "app/(auth)",
       "to": "infra/security",
-      "count": 1
+      "count": 2
     },
     {
       "from": "app/(auth)",
