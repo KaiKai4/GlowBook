@@ -562,12 +562,23 @@ describe("lecturas por salón", () => {
   });
 
   it("findOpenSalonAlerts pide solo alertas abiertas del salón, las 20 más recientes", async () => {
+    const alertRow = {
+      id: "al-1",
+      salon_id: SALON_ID,
+      plan_id: null,
+      metric_key: "appointments_monthly",
+      module_key: "appointments",
+      severity: "warning",
+      message: "Cerca del límite",
+      status: "open",
+      created_at: "2026-10-01T00:00:00.000Z",
+    };
     const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { data: [{ id: "al-1" }], error: null } },
+      tables: { salon_plan_alerts: { data: [alertRow], error: null } },
     });
     useFake(fake);
 
-    expect(await findOpenSalonAlerts(SALON_ID)).toEqual([{ id: "al-1" }]);
+    expect(await findOpenSalonAlerts(SALON_ID)).toEqual([alertRow]);
     const query = firstQueryOn(fake, "salon_plan_alerts");
     expect(argsOf(query, "eq")).toEqual(["salon_id", SALON_ID]);
     expect(argsOf(query, "order")).toEqual(["created_at", { ascending: false }]);

@@ -1,16 +1,28 @@
 import "server-only";
 
-import type {
-  PlanEnforcementMode,
-  SalonPlanAssignmentStatus,
-  SalonPlanOverride,
-} from "../domain/commercial-plan";
+import type { Database } from "@/types/database.types";
+import type { SalonPlanAssignmentStatus, SalonPlanOverride } from "../domain/commercial-plan";
+import {
+  parseAlertSeverity,
+  parseAlertStatus,
+  parseAssignmentStatus,
+  parseEnforcementMode,
+  parseFeatureKey,
+  parseOverrideStatus,
+} from "./billing-enums";
+
+type Tables = Database["public"]["Tables"];
 
 export const ASSIGNMENT_COLUMNS =
   "id, salon_id, plan_id, status, starts_at, ends_at, trial_ends_at, current_period_start, current_period_end, notes";
 export const OVERRIDE_COLUMNS =
   "id, salon_id, module_key, metric_key, module_enabled, max_delta, max_override, enforcement_mode, warning_threshold, reason, starts_at, ends_at, status, addon_id, quantity, is_gift, price_override";
 export const ALERT_COLUMNS = "id, salon_id, plan_id, metric_key, module_key, severity, message, status, created_at";
+export const PAYMENT_COLUMNS = "id, salon_id, plan_id, amount, currency, paid_at, period_start, period_end, notes";
+
+export type AssignmentDbRow = Pick<Tables["salon_plan_assignments"]["Row"], "id" | "salon_id" | "plan_id" | "status" | "starts_at" | "ends_at" | "trial_ends_at" | "current_period_start" | "current_period_end" | "notes">;
+export type OverrideDbRow = Pick<Tables["salon_plan_overrides"]["Row"], "id" | "salon_id" | "module_key" | "metric_key" | "module_enabled" | "max_delta" | "max_override" | "enforcement_mode" | "warning_threshold" | "reason" | "starts_at" | "ends_at" | "status" | "addon_id" | "quantity" | "is_gift" | "price_override">;
+export type AlertDbRow = Pick<Tables["salon_plan_alerts"]["Row"], "id" | "salon_id" | "plan_id" | "metric_key" | "module_key" | "severity" | "message" | "status" | "created_at">;
 
 export interface AssignmentRow {
   id: string;
@@ -37,26 +49,6 @@ export interface PaymentRow {
   notes: string;
 }
 
-export interface OverrideRow {
-  id: string;
-  salon_id: string;
-  module_key: string | null;
-  metric_key: string | null;
-  module_enabled: boolean | null;
-  max_delta: number | null;
-  max_override: number | null;
-  enforcement_mode: PlanEnforcementMode | null;
-  warning_threshold: number | null;
-  reason: string;
-  starts_at: string | null;
-  ends_at: string | null;
-  status: "active" | "paused" | "canceled";
-  addon_id: string | null;
-  quantity: number;
-  is_gift: boolean;
-  price_override: number | string | null;
-}
-
 export interface PlanAlert {
   id: string;
   salon_id: string;
@@ -69,22 +61,51 @@ export interface PlanAlert {
   created_at: string;
 }
 
-export function mapOverride(row: OverrideRow): SalonPlanOverride {
+export function mapAssignment(row: AssignmentDbRow): AssignmentRow {
+  return {
+    id: row.id,
+    salon_id: row.salon_id,
+    plan_id: row.plan_id,
+    status: parseAssignmentStatus(row.status),
+    starts_at: row.starts_at,
+    ends_at: row.ends_at,
+    trial_ends_at: row.trial_ends_at,
+    current_period_start: row.current_period_start,
+    current_period_end: row.current_period_end,
+    notes: row.notes,
+  };
+}
+
+export function mapAlert(row: AlertDbRow): PlanAlert {
+  return {
+    id: row.id,
+    salon_id: row.salon_id,
+    plan_id: row.plan_id,
+    metric_key: row.metric_key,
+    module_key: row.module_key,
+    severity: parseAlertSeverity(row.severity),
+    message: row.message,
+    status: parseAlertStatus(row.status),
+    created_at: row.created_at,
+  };
+}
+
+export function mapOverride(row: OverrideDbRow): SalonPlanOverride {
   return {
     id: row.id,
     salonId: row.salon_id,
     salonName: "",
-    moduleKey: row.module_key as SalonPlanOverride["moduleKey"],
+    moduleKey: row.module_key === null ? null : parseFeatureKey(row.module_key, "salon_plan_overrides.module_key"),
     metricKey: row.metric_key,
     moduleEnabled: row.module_enabled,
     maxDelta: row.max_delta,
     maxOverride: row.max_override,
-    enforcementMode: row.enforcement_mode,
+    enforcementMode: row.enforcement_mode === null ? null : parseEnforcementMode(row.enforcement_mode),
     warningThreshold: row.warning_threshold,
     reason: row.reason,
     startsAt: row.starts_at,
     endsAt: row.ends_at,
-    status: row.status,
+    status: parseOverrideStatus(row.status),
     addonId: row.addon_id,
     quantity: row.quantity,
     isGift: row.is_gift,

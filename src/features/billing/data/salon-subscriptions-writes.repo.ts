@@ -4,7 +4,7 @@ import type {
   PlanEnforcementMode,
   SalonPlanAssignmentStatus,
 } from "../domain/commercial-plan";
-import { billingDb, countRows, assertOk } from "./billing-db";
+import { billingDb, countOrThrow, throwOnError } from "./billing-db";
 
 export async function recordSalonPlanPayment(values: {
   salonId: string;
@@ -17,8 +17,8 @@ export async function recordSalonPlanPayment(values: {
   notes: string;
 }): Promise<void> {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_payments").insert({
+  throwOnError(
+    await supabase.from("salon_plan_payments").insert({
       salon_id: values.salonId,
       plan_id: values.planId,
       amount: values.amount,
@@ -37,8 +37,8 @@ export async function activatePaidPeriod(values: {
   periodEnd: string;
 }): Promise<void> {
   const supabase = billingDb();
-  await assertOk(
-    supabase
+  throwOnError(
+    await supabase
       .from("salon_plan_assignments")
       .update({
         status: "active",
@@ -59,16 +59,19 @@ export async function assignSalonPlan(values: {
   notes: string;
 }) {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_assignments").upsert({
-      salon_id: values.salonId,
-      plan_id: values.planId,
-      status: values.status,
-      starts_at: values.startsAt,
-      ends_at: values.endsAt,
-      trial_ends_at: values.trialEndsAt,
-      notes: values.notes,
-    }, { onConflict: "salon_id" })
+  throwOnError(
+    await supabase.from("salon_plan_assignments").upsert(
+      {
+        salon_id: values.salonId,
+        plan_id: values.planId,
+        status: values.status,
+        starts_at: values.startsAt,
+        ends_at: values.endsAt,
+        trial_ends_at: values.trialEndsAt,
+        notes: values.notes,
+      },
+      { onConflict: "salon_id" }
+    )
   );
 }
 
@@ -91,8 +94,8 @@ export async function saveSalonPlanOverride(values: {
   priceOverride: number | null;
 }) {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_overrides").insert({
+  throwOnError(
+    await supabase.from("salon_plan_overrides").insert({
       salon_id: values.salonId,
       module_key: values.moduleKey,
       metric_key: values.metricKey,
@@ -118,7 +121,7 @@ export async function updateSalonPlanOverrideStatus(
   status: "active" | "paused" | "canceled"
 ) {
   const supabase = billingDb();
-  await assertOk(supabase.from("salon_plan_overrides").update({ status }).eq("id", overrideId));
+  throwOnError(await supabase.from("salon_plan_overrides").update({ status }).eq("id", overrideId));
 }
 
 export async function recordPlanAlert(values: {
@@ -130,8 +133,8 @@ export async function recordPlanAlert(values: {
   message: string;
 }) {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_alerts").insert({
+  throwOnError(
+    await supabase.from("salon_plan_alerts").insert({
       salon_id: values.salonId,
       plan_id: values.planId,
       metric_key: values.metricKey,
@@ -144,18 +147,16 @@ export async function recordPlanAlert(values: {
 
 export async function resolvePlanAlert(alertId: string) {
   const supabase = billingDb();
-  await assertOk(supabase.from("salon_plan_alerts").update({ status: "resolved" }).eq("id", alertId));
+  throwOnError(await supabase.from("salon_plan_alerts").update({ status: "resolved" }).eq("id", alertId));
 }
 
 export async function hasOpenPlanAlert(salonId: string, metricKey: string): Promise<boolean> {
   const supabase = billingDb();
-  const count = await countRows(
-    supabase
-      .from("salon_plan_alerts")
-      .select("*", { count: "exact", head: true })
-      .eq("salon_id", salonId)
-      .eq("metric_key", metricKey)
-      .eq("status", "open")
-  );
-  return count > 0;
+  const count = await supabase
+    .from("salon_plan_alerts")
+    .select("*", { count: "exact", head: true })
+    .eq("salon_id", salonId)
+    .eq("metric_key", metricKey)
+    .eq("status", "open");
+  return countOrThrow(count) > 0;
 }

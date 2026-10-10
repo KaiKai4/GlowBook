@@ -6,7 +6,17 @@ import { readEffectivePlanOrNull } from "./effective-plan-fallback";
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const mockedCapture = vi.mocked(captureError);
-const PLAN = { salonId: "salon-1", plan: null } as unknown as EffectiveSalonPlan;
+const PLAN: EffectiveSalonPlan = {
+  salonId: "salon-1",
+  plan: null,
+  assignmentStatus: null,
+  currentPeriodEnd: null,
+  trialEndsAt: null,
+  enabledModules: [],
+  disabledModules: [],
+  limits: [],
+  usage: {},
+};
 
 describe("readEffectivePlanOrNull", () => {
   beforeEach(() => {
