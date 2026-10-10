@@ -30,7 +30,7 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
 
       if (res.value.outcome === "archived") {
         setConfirmOpen(false);
-        setArchivedMessage(res.value.message);
+        setArchivedMessage([res.value.message, ...(res.warnings ?? [])].join(" "));
         return;
       }
 

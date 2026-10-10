@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { UserPen } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
-  SAVED_WITH_WARNINGS_MESSAGE,
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
 import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
@@ -52,10 +51,7 @@ export function EditEmployeeModal({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const toast = useToast();
-  const { submit } = useSubmissionIntent({
-    procedure: "employees.update",
-    onWarnings: () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE),
-  });
+  const { submit } = useSubmissionIntent({ procedure: "employees.update" });
 
   function reset() {
     setFirstName(employee.first_name);
@@ -97,6 +93,7 @@ export function EditEmployeeModal({
         updateEmployeeAction(employee.id, null, withIdempotencyKey(fd, idempotencyKey))
       );
       if (res.ok) {
+        if (res.warnings?.length) toast.warning(res.warnings.join(" "));
         setOpen(false);
         router.refresh();
       } else {

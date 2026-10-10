@@ -11,7 +11,8 @@ import {
   updateEmployeeProfileRole,
 } from "@/features/employees/data/employee-access.repo";
 import { deleteEmployeeAuthUser } from "@/features/employees/data/employee-auth.repo";
-import type { Result } from "@/infra/result";
+import { ok, type Result } from "@/infra/result";
+import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
 
 export interface EmployeeInviteResult {
   token: string;
@@ -100,10 +101,15 @@ export async function generateEmployeeInvitation({
   });
 }
 
-export async function revokeEmployeeAuthAccess(
-  employeeId: string,
-  salonId: string,
-  profileId: string
+const OWNER_ACCESS_MESSAGE = "No se puede modificar el acceso de un owner desde colaboradores.";
+
+/**
+ * Validacion previa a cualquier escritura: el perfil vinculado existe en el salon y no es owner.
+ * No escribe nada ni toca Auth.
+ */
+export async function checkEmployeeAccessRevocable(
+  profileId: string,
+  salonId: string
 ): Promise<Result<{ roleId: string | null }>> {
   const { data: linkedProfile, error: profileError } = await findEmployeeAccessProfile(
     profileId,
@@ -115,65 +121,62 @@ export async function revokeEmployeeAuthAccess(
     return { ok: false, error: "No se pudo verificar el acceso actual del colaborador." };
   }
 
-  if (linkedProfile?.is_owner) {
-    return { ok: false, error: "No se puede reiniciar el acceso de un owner desde colaboradores." };
-  }
-
-  const { error: deleteUserError } = await deleteEmployeeAuthUser(profileId);
-  if (deleteUserError) {
-    captureError(deleteUserError, { module: "employees", action: "access" });
-    return { ok: false, error: "No se pudo revocar la cuenta anterior del colaborador." };
-  }
-
-  const { error: unlinkError } = await unlinkEmployeeProfile(employeeId, salonId);
-
-  if (unlinkError) {
-    captureError(unlinkError, { module: "employees", action: "access" });
-    return { ok: false, error: "La cuenta fue revocada, pero no se pudo desvincular el colaborador." };
-  }
+  if (linkedProfile?.is_owner) return { ok: false, error: OWNER_ACCESS_MESSAGE };
 
   return { ok: true, value: { roleId: linkedProfile?.role_id ?? null } };
 }
 
-export async function revokeEmployeeAccessForArchive({
-  employeeId,
-  salonId,
-  profileId,
-}: {
-  employeeId: string;
-  salonId: string;
-  profileId: string | null;
-}): Promise<Result<void>> {
-  if (profileId) {
-    const { data: linkedProfile, error: profileError } = await findEmployeeAccessProfile(
-      profileId,
-      salonId
-    );
-
-    if (profileError) {
-      captureError(profileError, { module: "employees", action: "access" });
-      return { ok: false, error: "Error al verificar el acceso del colaborador." };
-    }
-
-    if (linkedProfile?.is_owner) {
-      return { ok: false, error: "No se puede eliminar un owner desde colaboradores." };
-    }
-
-    const { error: authDeleteError } = await deleteEmployeeAuthUser(profileId);
-    if (authDeleteError) {
-      captureError(authDeleteError, { module: "employees", action: "access" });
-      return { ok: false, error: "No se pudo revocar el acceso del colaborador." };
-    }
+/** Borra la cuenta de Auth. Debe llamarse DESPUES de escribir en BD: si falla, el llamador avisa. */
+export async function deleteEmployeeAuthAccount(profileId: string): Promise<Result<void>> {
+  const { error } = await deleteEmployeeAuthUser(profileId);
+  if (error) {
+    captureError(error, { module: "employees", action: "access" });
+    return { ok: false, error: "No se pudo revocar la cuenta anterior del colaborador." };
   }
 
-  const { error: inviteCleanupError } = await deleteEmployeeInvitations(employeeId, salonId);
+  return { ok: true, value: undefined };
+}
 
-  if (inviteCleanupError) {
-    captureError(inviteCleanupError, { module: "employees", action: "access" });
+/** Escritura en BD: elimina las invitaciones del colaborador dentro del salon. */
+export async function clearEmployeeInvitations(
+  employeeId: string,
+  salonId: string
+): Promise<Result<void>> {
+  const { error } = await deleteEmployeeInvitations(employeeId, salonId);
+  if (error) {
+    captureError(error, { module: "employees", action: "access" });
     return { ok: false, error: "No se pudo limpiar la invitación del colaborador." };
   }
 
   return { ok: true, value: undefined };
+}
+
+/**
+ * Reinicio de acceso: valida, desvincula en BD y despues borra la cuenta de Auth.
+ * Si Auth falla tras la BD, devuelve ok con aviso (la BD ya no tiene profile_id).
+ */
+export async function unlinkEmployeeAccessForReset(
+  employeeId: string,
+  salonId: string,
+  profileId: string
+): Promise<Result<{ roleId: string | null; warnings: string[] }>> {
+  const checked = await checkEmployeeAccessRevocable(profileId, salonId);
+  if (!checked.ok) return checked;
+
+  const { error: unlinkError } = await unlinkEmployeeProfile(employeeId, salonId);
+  if (unlinkError) {
+    captureError(unlinkError, { module: "employees", action: "access" });
+    return { ok: false, error: "No se pudo desvincular el colaborador de su cuenta anterior." };
+  }
+
+  const deleted = await deleteEmployeeAuthAccount(profileId);
+  return {
+    ok: true,
+    value: {
+      roleId: checked.value.roleId,
+      warnings: deleted.ok ? [] : [OLD_ACCOUNT_NOT_DELETED_WARNING],
+    },
+  };
 }
 
 export async function changeEmployeeRole(
@@ -214,18 +217,22 @@ export async function resetEmployeeAccess({
   if (!email) return { ok: false, error: "Este colaborador no tiene email registrado." };
 
   let inviteRoleId = roleId || null;
+  const warnings: string[] = [];
   if (employee.profile_id) {
-    const revoked = await revokeEmployeeAuthAccess(employeeId, salonId, employee.profile_id);
-    if (!revoked.ok) return revoked;
-    inviteRoleId = inviteRoleId || revoked.value.roleId;
+    const unlinked = await unlinkEmployeeAccessForReset(employeeId, salonId, employee.profile_id);
+    if (!unlinked.ok) return unlinked;
+    inviteRoleId = inviteRoleId || unlinked.value.roleId;
+    warnings.push(...unlinked.value.warnings);
   }
 
-  return replacePendingEmployeeInvitation({
+  const invite = await replacePendingEmployeeInvitation({
     employeeId,
     salonId,
     email,
     roleId: inviteRoleId,
   });
+  if (!invite.ok) return invite;
+  return ok(invite.value, warnings);
 }
 
 export async function createEmployeeInviteForExistingEmployee({

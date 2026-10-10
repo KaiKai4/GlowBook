@@ -17,7 +17,6 @@ import { updateEmployeeAction } from "../actions";
 import type { CategoryOption } from "../types";
 import { EditEmployeeModal } from "./edit-employee-modal";
 import { act } from "react";
-import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
 import { UUID_PATTERN, idempotencyKeyOf, settleSubmission } from "@/test/form-intent-dom";
 
 describe("EditEmployeeModal envío con intención idempotente", () => {
@@ -93,7 +92,7 @@ describe("EditEmployeeModal envío con intención idempotente", () => {
     click(buttonWithText(document.body, "Guardar cambios"));
     await settleSubmission();
 
-    expect(toast.warning).toHaveBeenCalledWith(SAVED_WITH_WARNINGS_MESSAGE);
+    expect(toast.warning).toHaveBeenCalledWith("Los servicios no se actualizaron.");
   });
 });
 

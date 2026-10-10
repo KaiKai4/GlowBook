@@ -10,10 +10,12 @@ import {
 import { validateEmployeeAssignments } from "./employee-assignments";
 import { findLatestPendingEmployeeInvitationRole } from "../data/employee-access.repo";
 import {
+  checkEmployeeAccessRevocable,
+  deleteEmployeeAuthAccount,
   generateEmployeeInvitation,
   replacePendingEmployeeInvitation,
-  revokeEmployeeAuthAccess,
 } from "./employee-access";
+import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
 import {
   createEmployeeProfile,
   findArchivedEmployeeByEmail,
@@ -43,9 +45,10 @@ vi.mock("../data/employee-access.repo", () => ({
 }));
 
 vi.mock("./employee-access", () => ({
+  checkEmployeeAccessRevocable: vi.fn(),
+  deleteEmployeeAuthAccount: vi.fn(),
   generateEmployeeInvitation: vi.fn(),
   replacePendingEmployeeInvitation: vi.fn(),
-  revokeEmployeeAuthAccess: vi.fn(),
 }));
 
 type EmployeeRow = Database["public"]["Tables"]["employees"]["Row"];
@@ -66,7 +69,8 @@ const mockedValidateAssignments = vi.mocked(validateEmployeeAssignments);
 const mockedFindLatestInvite = vi.mocked(findLatestPendingEmployeeInvitationRole);
 const mockedGenerateInvite = vi.mocked(generateEmployeeInvitation);
 const mockedReplaceInvite = vi.mocked(replacePendingEmployeeInvitation);
-const mockedRevokeAccess = vi.mocked(revokeEmployeeAuthAccess);
+const mockedCheckRevocable = vi.mocked(checkEmployeeAccessRevocable);
+const mockedDeleteAuthAccount = vi.mocked(deleteEmployeeAuthAccount);
 
 function employeeRow(overrides: Partial<EmployeeRow> = {}): EmployeeRow {
   return {
@@ -269,7 +273,7 @@ describe("updateEmployeeProfile", () => {
     );
 
     expect(result).toEqual({ ok: false, error: "Error al actualizar el colaborador." });
-    expect(mockedRevokeAccess).not.toHaveBeenCalled();
+    expect(mockedCheckRevocable).not.toHaveBeenCalled();
     expect(mockedUpdateRecord).not.toHaveBeenCalled();
   });
 
@@ -282,13 +286,14 @@ describe("updateEmployeeProfile", () => {
       ok: false,
       error: "No puedes dejar sin email a un colaborador que ya tiene acceso al sistema.",
     });
-    expect(mockedRevokeAccess).not.toHaveBeenCalled();
+    expect(mockedCheckRevocable).not.toHaveBeenCalled();
     expect(mockedUpdateRecord).not.toHaveBeenCalled();
   });
 
-  it("cambiar el email de un colaborador con acceso revoca la cuenta, desvincula y reinvita con el rol anterior", async () => {
+  it("cambiar el email de un colaborador con acceso desvincula en la BD, revoca la cuenta y reinvita con el rol anterior", async () => {
     mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: PROFILE_ID }));
-    mockedRevokeAccess.mockResolvedValue({ ok: true, value: { roleId: "role-1" } });
+    mockedCheckRevocable.mockResolvedValue({ ok: true, value: { roleId: "role-1" } });
+    mockedDeleteAuthAccount.mockResolvedValue({ ok: true, value: undefined });
     mockedReplaceInvite.mockResolvedValue({ ok: true, value: { token: "t", expiresAt: "x" } });
 
     const result = await updateEmployeeProfile(
@@ -299,7 +304,7 @@ describe("updateEmployeeProfile", () => {
     );
 
     expect(result).toEqual({ ok: true, value: {} });
-    expect(mockedRevokeAccess).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID, PROFILE_ID);
+    expect(mockedCheckRevocable).toHaveBeenCalledWith(PROFILE_ID, SALON_ID);
     expect(mockedUpdateRecord).toHaveBeenCalledWith(EMPLOYEE_ID, {
       fields: { email: "nuevo@glowbook.test" },
       serviceIds: [SERVICE_ID],
@@ -307,12 +312,66 @@ describe("updateEmployeeProfile", () => {
       unlinkProfile: true,
       idempotencyKey: KEY,
     });
+    expect(mockedDeleteAuthAccount).toHaveBeenCalledWith(PROFILE_ID);
     expect(mockedReplaceInvite).toHaveBeenCalledWith({
       employeeId: EMPLOYEE_ID,
       salonId: SALON_ID,
       email: "nuevo@glowbook.test",
       roleId: "role-1",
     });
+  });
+
+  it("si la escritura en BD falla no borra la cuenta de Auth", async () => {
+    mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: PROFILE_ID }));
+    mockedCheckRevocable.mockResolvedValue({ ok: true, value: { roleId: null } });
+    mockedUpdateRecord.mockRejectedValue(new Error("rpc caida"));
+
+    const result = await updateEmployeeProfile(EMPLOYEE_ID, SALON_ID, { email: "nuevo@glowbook.test" }, KEY);
+
+    expect(result).toEqual({ ok: false, error: "Error al actualizar el colaborador." });
+    expect(mockedDeleteAuthAccount).not.toHaveBeenCalled();
+    expect(mockedReplaceInvite).not.toHaveBeenCalled();
+  });
+
+  it("si Auth falla despues de la BD devuelve ok con aviso", async () => {
+    mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: PROFILE_ID }));
+    mockedCheckRevocable.mockResolvedValue({ ok: true, value: { roleId: null } });
+    mockedDeleteAuthAccount.mockResolvedValue({ ok: false, error: "No se pudo revocar la cuenta anterior del colaborador." });
+    mockedReplaceInvite.mockResolvedValue({ ok: true, value: { token: "t", expiresAt: "x" } });
+
+    const result = await updateEmployeeProfile(EMPLOYEE_ID, SALON_ID, { email: "nuevo@glowbook.test" }, KEY);
+
+    expect(mockedUpdateRecord).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      ok: true,
+      value: {},
+      warnings: [OLD_ACCOUNT_NOT_DELETED_WARNING],
+    });
+  });
+
+  it("escribe en BD antes de borrar la cuenta de Auth", async () => {
+    mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: PROFILE_ID }));
+    mockedCheckRevocable.mockResolvedValue({ ok: true, value: { roleId: null } });
+    mockedDeleteAuthAccount.mockResolvedValue({ ok: true, value: undefined });
+    mockedReplaceInvite.mockResolvedValue({ ok: true, value: { token: "t", expiresAt: "x" } });
+
+    await updateEmployeeProfile(EMPLOYEE_ID, SALON_ID, { email: "nuevo@glowbook.test" }, KEY);
+
+    expect(mockedUpdateRecord.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedDeleteAuthAccount.mock.invocationCallOrder[0] ?? Infinity
+    );
+  });
+
+  it("un colaborador con acceso que es owner no escribe nada", async () => {
+    const message = "No se puede modificar el acceso de un owner desde colaboradores.";
+    mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: PROFILE_ID }));
+    mockedCheckRevocable.mockResolvedValue({ ok: false, error: message });
+
+    const result = await updateEmployeeProfile(EMPLOYEE_ID, SALON_ID, { email: "nuevo@glowbook.test" }, KEY);
+
+    expect(result).toEqual({ ok: false, error: message });
+    expect(mockedUpdateRecord).not.toHaveBeenCalled();
+    expect(mockedDeleteAuthAccount).not.toHaveBeenCalled();
   });
 
   it("lee la invitacion pendiente antes de escribir y reutiliza su rol al cambiar el email", async () => {
@@ -326,7 +385,7 @@ describe("updateEmployeeProfile", () => {
     const readOrder = mockedFindLatestInvite.mock.invocationCallOrder[0];
     const writeOrder = mockedUpdateRecord.mock.invocationCallOrder[0];
     expect(readOrder).toBeLessThan(writeOrder ?? 0);
-    expect(mockedRevokeAccess).not.toHaveBeenCalled();
+    expect(mockedCheckRevocable).not.toHaveBeenCalled();
     expect(mockedReplaceInvite).toHaveBeenCalledWith({
       employeeId: EMPLOYEE_ID,
       salonId: SALON_ID,
@@ -367,7 +426,8 @@ describe("updateEmployeeProfile", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { warnings: ["No se pudo generar el nuevo enlace de acceso."] },
+      value: {},
+      warnings: ["No se pudo generar el nuevo enlace de acceso."],
     });
   });
 

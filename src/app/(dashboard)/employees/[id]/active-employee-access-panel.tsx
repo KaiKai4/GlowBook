@@ -32,6 +32,7 @@ export function ActiveEmployeeAccessPanel({
   // El token en claro solo existe en la respuesta del action; se guarda la URL
   // construida para mostrarla una unica vez.
   const [resetLink, setResetLink] = useState<{ url: string; expiresAt: string } | null>(null);
+  const [resetWarning, setResetWarning] = useState<string | null>(null);
 
   const roleDirty = roleId !== (currentRoleId ?? "");
 
@@ -46,6 +47,7 @@ export function ActiveEmployeeAccessPanel({
 
   function handleResetAccess() {
     setRoleError(null);
+    setResetWarning(null);
     startReset(async () => {
       // "Sin rol" debe enviarse como null: no reutilizar el rol anterior (conservaría permisos).
       const res = await resetEmployeeAccessAction(employeeId, roleId || null);
@@ -54,6 +56,7 @@ export function ActiveEmployeeAccessPanel({
           url: `${window.location.origin}/join/${res.value.token}`,
           expiresAt: res.value.expiresAt,
         });
+        if (res.warnings?.length) setResetWarning(res.warnings.join(" "));
       } else {
         setRoleError(res.error);
       }
@@ -116,6 +119,10 @@ export function ActiveEmployeeAccessPanel({
 
       {resetLink && (
         <EmployeeInviteLinkCard url={resetLink.url} title="Nuevo enlace generado" expiresAt={resetLink.expiresAt} />
+      )}
+
+      {resetWarning && (
+        <p className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2 text-sm text-warning-strong">{resetWarning}</p>
       )}
 
       {roleSaved && !roleDirty && (
