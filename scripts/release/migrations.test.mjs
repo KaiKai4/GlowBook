@@ -1,7 +1,15 @@
 // Tests de la lógica de aplicación de migraciones en production.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildPushArgs, redactDbUrl, validateApplyRequest } from "./migrations-logic.mjs";
+import {
+  buildPushArgs,
+  classifyMigrations,
+  GATE_EXIT,
+  gateExitCode,
+  parseRemoteVersions,
+  redactDbUrl,
+  validateApplyRequest,
+} from "./migrations-logic.mjs";
 import { getArgValue } from "./args.mjs";
 
 const REF = "abcdefghijklmnopqrst";
@@ -73,5 +81,60 @@ describe("getArgValue", () => {
   it("lee --nombre=valor y devuelve null si no existe", () => {
     assert.equal(getArgValue(["--confirm=x"], "confirm"), "x");
     assert.equal(getArgValue([], "confirm"), null);
+  });
+});
+
+describe("parseRemoteVersions", () => {
+  it("extrae versiones remotas de la salida de supabase migration list", () => {
+    const output = [
+      "                   LOCAL          │     REMOTE     │     TIME (UTC)",
+      "  ──────────────────────────────┼────────────────┼──────────────────────",
+      "   20260101000000                │ 20260101000000 │ 2026-01-01 00:00:00",
+      "   20260102000000                │ 20260102000000 │ 2026-01-02 00:00:00",
+      "   20260103000000                │                │ 2026-01-03 00:00:00",
+      "   Sin relación                  │ 20251231235959 │ 2025-12-31 23:59:59",
+    ].join("\n");
+    assert.deepEqual(parseRemoteVersions(output), ["20251231235959", "20260101000000", "20260102000000"]);
+  });
+
+  it("acepta separadores | ASCII y devuelve vacío sin tabla", () => {
+    assert.deepEqual(parseRemoteVersions(" 20260101000000 | 20260101000000 | x"), ["20260101000000"]);
+    assert.deepEqual(parseRemoteVersions("Connecting to remote database...\nNo migrations"), []);
+  });
+});
+
+describe("classifyMigrations", () => {
+  const A = "20260101000000";
+  const B = "20260102000000";
+  const C = "20260103000000";
+
+  it("up-to-date cuando local y remoto coinciden", () => {
+    assert.deepEqual(classifyMigrations([A, B], [A, B]), { status: "up-to-date", pending: [], remoteOnly: [] });
+  });
+
+  it("pending cuando faltan versiones locales en remoto", () => {
+    assert.deepEqual(classifyMigrations([A, B, C], [A]), { status: "pending", pending: [B, C], remoteOnly: [] });
+  });
+
+  it("drift cuando hay versiones solo en remoto", () => {
+    assert.deepEqual(classifyMigrations([A], [A, C]), { status: "drift", pending: [], remoteOnly: [C] });
+  });
+
+  it("drift tiene prioridad cuando también hay pendientes", () => {
+    const result = classifyMigrations([A, B], [C]);
+    assert.equal(result.status, "drift");
+    assert.deepEqual(result.pending, [A, B]);
+    assert.deepEqual(result.remoteOnly, [C]);
+  });
+});
+
+describe("gateExitCode", () => {
+  it("devuelve 0 si está al día, 2 si hay pendientes y 1 si hay drift o error", () => {
+    assert.equal(gateExitCode("up-to-date"), 0);
+    assert.equal(gateExitCode("pending"), 2);
+    assert.equal(gateExitCode("drift"), 1);
+    assert.equal(GATE_EXIT.error, 1);
+    assert.equal(GATE_EXIT.pending, 2);
+    assert.equal(GATE_EXIT.upToDate, 0);
   });
 });

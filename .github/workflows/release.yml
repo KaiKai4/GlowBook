@@ -101,17 +101,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Listado informativo de pendientes. Si falla (hay pendientes o error de red),
-      # se aplica la etapa siguiente; la comprobación final es estricta.
+      # Gate de migraciones. Códigos de salida (scripts/production-migration-gate.mjs):
+      #   0 = al día: no se aplica nada.
+      #   2 = pendientes: el paso siguiente aplica solo las pendientes.
+      #   1 = error o drift (versiones solo en remoto): no se aplica nada y la
+      #       comprobación final falla. El job nunca continúa en verde con código 1.
+      # continue-on-error evita que el código 2 corte el job; el output "code" decide.
       - name: Listar migraciones pendientes
         id: list
         continue-on-error: true
         env:
           SUPABASE_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
-        run: node scripts/production-migration-gate.mjs --target=production
+        run: |
+          set +e
+          node scripts/production-migration-gate.mjs --target=production
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
 
       - name: Aplicar migraciones pendientes
-        if: steps.list.outcome == 'failure'
+        if: steps.list.outputs.code == '2'
         env:
           PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
           GLOWBOOK_RELEASE_AUTOMATION: "true"
