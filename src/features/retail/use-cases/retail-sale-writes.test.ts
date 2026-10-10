@@ -6,6 +6,7 @@ import { createRetailSale } from "./retail-sales";
 import { createRetailSaleWithPlanLimits } from "./retail-sale-writes";
 
 vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));

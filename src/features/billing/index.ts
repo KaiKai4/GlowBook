@@ -4,14 +4,16 @@
 // rutas de servidor, nunca desde componentes cliente.
 import "server-only";
 
+export { getPlanCatalogSummary } from "./use-cases/commercial-plans";
+export { autoAssignPlanOnAcceptance } from "./use-cases/salon-plan-assignment";
 export {
-  checkPlanLimit,
   checkPlanModuleAccess,
   getEffectiveDisabledSalonFeatures,
   getEffectiveSalonPlan,
-  getPlanCatalogSummary,
-} from "./use-cases/commercial-plans";
-export { autoAssignPlanOnAcceptance } from "./use-cases/salon-subscriptions";
+  isEffectiveSalonModuleEnabled,
+  salonModuleScopeFromProfile,
+} from "./use-cases/plan-modules";
+export { checkPlanLimit } from "./use-cases/plan-limits";
 export { readEffectivePlanOrNull } from "./use-cases/effective-plan-fallback";
 export { isActionableLimitWarning } from "./domain/commercial-plan";
 export { evaluatePaymentStanding } from "./domain/payment-standing";

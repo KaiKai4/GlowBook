@@ -7,10 +7,8 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { CommercialPlan } from "@/features/billing/use-cases/commercial-plans";
 import { addDays, todayIso } from "@/features/billing/domain/assignment-schedule";
-import type {
-  SalonSubscriptionDetail,
-  SubscriptionsPageData,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { cn } from "@/components/ui/cn";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, MiniMetric, Panel, SubmitButton } from "../plans/workspace-ui";

@@ -1,6 +1,6 @@
 import { parseReportFilters } from "@/features/reports/schemas";
 import { getOperationalReport } from "@/features/reports/use-cases/get-operational-report";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { ReportsView } from "./reports-view";
@@ -25,9 +25,9 @@ export default async function ReportsPage({
   // Año del acumulado: validado contra los años disponibles en el use-case.
   const year = /^\d{4}$/.test(params.year ?? "") ? Number(params.year) : undefined;
   const modules = {
-    inventory: await isEffectiveSalonModuleEnabled(profile, "inventory"),
-    retail: await isEffectiveSalonModuleEnabled(profile, "retail"),
-    expenses: await isEffectiveSalonModuleEnabled(profile, "expenses"),
+    inventory: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "inventory"),
+    retail: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "retail"),
+    expenses: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "expenses"),
   };
   const report = await getOperationalReport({ salonId: profile.salon_id, filters, modules, year });
 

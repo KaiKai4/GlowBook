@@ -1,4 +1,4 @@
-import type { SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
+import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 
 export interface AttentionItem {
   salonId: string;

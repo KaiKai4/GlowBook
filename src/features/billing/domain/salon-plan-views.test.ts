@@ -132,8 +132,8 @@ describe("extraDetail", () => {
   const metricByKey = new Map([[appointmentsMetric.key, appointmentsMetric]]);
 
   it("describe la activación de un módulo", () => {
-    expect(extraDetail(override({ moduleKey: "reports", moduleEnabled: true }), null, metricByKey)).toBe("Modulo activado");
-    expect(extraDetail(override({ moduleKey: "reports", moduleEnabled: false }), null, metricByKey)).toBe("Modulo desactivado");
+    expect(extraDetail(override({ moduleKey: "reports", moduleEnabled: true }), null, metricByKey)).toBe("Módulo activado");
+    expect(extraDetail(override({ moduleKey: "reports", moduleEnabled: false }), null, metricByKey)).toBe("Módulo desactivado");
   });
 
   it("muestra el límite fijado con su unidad", () => {

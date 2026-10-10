@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
-import { getSalonSubscriptionDetail, getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions";
+import { getSalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
@@ -13,8 +14,10 @@ vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({
   getPlatformSalonOverviews: vi.fn(),
 }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-subscriptions-page", () => ({
   getSubscriptionsPage: vi.fn(),
+}));
+vi.mock("@/features/billing/use-cases/salon-subscription-detail", () => ({
   getSalonSubscriptionDetail: vi.fn(),
 }));
 vi.mock("next/link", async () => {

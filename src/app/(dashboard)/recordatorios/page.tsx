@@ -1,5 +1,5 @@
 import { getReminderQueue } from "@/features/reminders/use-cases/get-reminder-queue";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { PageHeader } from "@/components/ui/page-header";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
@@ -8,7 +8,7 @@ import { RemindersView } from "./reminders-view";
 
 export default async function RecordatoriosPage() {
   const profile = await requireProfile();
-  const remindersEnabled = await isEffectiveSalonModuleEnabled(profile, "recordatorios");
+  const remindersEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "recordatorios");
 
   if (!remindersEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return (

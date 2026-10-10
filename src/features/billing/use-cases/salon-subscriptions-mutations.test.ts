@@ -16,15 +16,9 @@ import type { CommercialAddon } from "../domain/salon-extras";
 import { publishAuditEvent } from "@/features/audit";
 import { plan } from "@/test/billing-plan-fixtures";
 import { err, ok } from "@/infra/result";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  autoAssignPlanOnAcceptance,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "./salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
+import { assignSalonCommercialPlanConfig, autoAssignPlanOnAcceptance, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "./plan-limits";
 
 // Mutaciones de suscripciones: cada caso de uso valida, deriva fechas y datos
 // por salón, persiste y audita. Los rechazos no deben escribir nada.
@@ -238,7 +232,7 @@ describe("assignSalonCommercialPlanConfig", () => {
   it("rechaza un salón inválido antes de consultar el plan", async () => {
     const result = await assignSalonCommercialPlanConfig({ salonId: "no-uuid", planId: PLAN_ID });
 
-    expect(result).toEqual(err("Selecciona un salon."));
+    expect(result).toEqual(err("Selecciona un salón."));
     expect(findPlanMock).not.toHaveBeenCalled();
     expect(assignPlanMock).not.toHaveBeenCalled();
   });
@@ -376,7 +370,7 @@ describe("assignSalonAddonConfig", () => {
   it("rechaza un extra inexistente sin sobreescribir al salón", async () => {
     const result = await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID });
 
-    expect(result).toEqual(err("El extra del catalogo no existe."));
+    expect(result).toEqual(err("El extra del catálogo no existe."));
     expect(saveOverrideMock).not.toHaveBeenCalled();
   });
 
@@ -385,7 +379,7 @@ describe("assignSalonAddonConfig", () => {
 
     const result = await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID });
 
-    expect(result).toEqual(err("Este extra no esta activo en el catalogo."));
+    expect(result).toEqual(err("Este extra no está activo en el catálogo."));
     expect(saveOverrideMock).not.toHaveBeenCalled();
   });
 
@@ -460,7 +454,7 @@ describe("assignSalonAddonConfig", () => {
   it("rechaza un identificador de extra que no es uuid", async () => {
     const result = await assignSalonAddonConfig({ salonId: SALON_ID, addonId: "extra-x" });
 
-    expect(result).toEqual(err("Selecciona un extra del catalogo."));
+    expect(result).toEqual(err("Selecciona un extra del catálogo."));
     expect(findAddonMock).not.toHaveBeenCalled();
   });
 
@@ -479,7 +473,7 @@ describe("saveSalonManualExtraConfig", () => {
   it("exige un módulo o un límite antes de tocar la base", async () => {
     const result = await saveSalonManualExtraConfig({ salonId: SALON_ID });
 
-    expect(result).toEqual(err("Selecciona un modulo o un límite para el extra."));
+    expect(result).toEqual(err("Selecciona un módulo o un límite para el extra."));
     expect(saveOverrideMock).not.toHaveBeenCalled();
   });
 

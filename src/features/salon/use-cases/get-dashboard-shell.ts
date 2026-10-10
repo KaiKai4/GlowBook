@@ -25,6 +25,14 @@ export interface DashboardShellViewModel {
   permissions: Permission[];
   disabledFeatures: SalonFeatureKey[];
   paymentStanding: PaymentStanding;
+  /** Aviso de gracia ya calculado para el banner del dashboard (null fuera de gracia). */
+  paymentGrace: { overdueSince: string; graceDaysLeft: number } | null;
+}
+
+/** Aviso de pago solo durante la gracia: el banner no decide estados. */
+function toPaymentGrace(standing: PaymentStanding): DashboardShellViewModel["paymentGrace"] {
+  if (standing.state !== "grace" || standing.overdueSince === null) return null;
+  return { overdueSince: standing.overdueSince, graceDaysLeft: standing.graceDaysLeft };
 }
 
 /** Estado de pago del salon, evaluado al acceder (sin cron). */
@@ -73,6 +81,7 @@ export async function getDashboardShell(
     salon: { disabled_features: disabledFeatures },
   };
 
+  const paymentStanding = await getSalonPaymentStanding(profile.salon_id);
   return {
     salonName: salon.name,
     isActive: salon.is_active,
@@ -80,6 +89,7 @@ export async function getDashboardShell(
     bgStyle: salon.bg_style || "neutral",
     permissions: getPermissions(profileForAccess),
     disabledFeatures,
-    paymentStanding: await getSalonPaymentStanding(profile.salon_id),
+    paymentStanding,
+    paymentGrace: toPaymentGrace(paymentStanding),
   };
 }

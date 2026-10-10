@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanMetricKey } from "../domain/plan-keys";
-import {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  isEffectiveSalonModuleEnabled,
-} from "./salon-subscriptions";
+import { checkPlanLimit } from "./plan-limits";
+import { checkPlanModuleAccess, isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "./plan-modules";
 import {
   findEffectivePlanRows,
   hasOpenPlanAlert,
@@ -200,7 +197,7 @@ describe("checkPlanModuleAccess", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Reportes no esta incluido en el plan de este salon.",
+      error: "Reportes no está incluido en el plan de este salón.",
     });
   });
 
@@ -218,24 +215,24 @@ describe("isEffectiveSalonModuleEnabled", () => {
     findRowsMock.mockResolvedValueOnce(rows({}));
 
     await expect(
-      isEffectiveSalonModuleEnabled(legacyProfile(["appointments"]), "appointments")
+      isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacyProfile(["appointments"])), "appointments")
     ).resolves.toBe(true);
   });
 
   it("returns false for plan modules that are not enabled, ignoring legacy flags", async () => {
     findRowsMock.mockResolvedValueOnce(rows({}));
 
-    await expect(isEffectiveSalonModuleEnabled(legacyProfile(null), "reports")).resolves.toBe(false);
+    await expect(isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacyProfile(null)), "reports")).resolves.toBe(false);
   });
 
   it("falls back to the legacy disabled_features list when there is no plan", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ plan: null, status: null }));
 
-    await expect(isEffectiveSalonModuleEnabled(legacyProfile(["reports"]), "reports")).resolves.toBe(
+    await expect(isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacyProfile(["reports"])), "reports")).resolves.toBe(
       false
     );
     findRowsMock.mockResolvedValueOnce(rows({ plan: null, status: null }));
-    await expect(isEffectiveSalonModuleEnabled(legacyProfile(["reports"]), "expenses")).resolves.toBe(
+    await expect(isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacyProfile(["reports"])), "expenses")).resolves.toBe(
       true
     );
   });
@@ -243,7 +240,7 @@ describe("isEffectiveSalonModuleEnabled", () => {
   it("falls back to legacy flags when reading the effective plan fails", async () => {
     findRowsMock.mockRejectedValueOnce(new Error("db caida"));
 
-    await expect(isEffectiveSalonModuleEnabled(legacyProfile(["expenses"]), "expenses")).resolves.toBe(
+    await expect(isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacyProfile(["expenses"])), "expenses")).resolves.toBe(
       false
     );
   });

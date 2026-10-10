@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, KeyRound, Mail, Percent, Phone } from "lucide-react";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { parseUuid } from "@/infra/validation/route-id";
@@ -33,7 +33,7 @@ export default async function EmployeeDetailPage({
     );
   }
 
-  const rolesEnabled = await isEffectiveSalonModuleEnabled(profile, "roles");
+  const rolesEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "roles");
   const view = await getEmployeeDetail({
     employeeId: id,
     salonId: profile.salon_id,

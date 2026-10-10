@@ -57,7 +57,7 @@ describe("saveCommercialAddonConfig: validación", () => {
   it("exige el módulo que activa un extra de tipo módulo", async () => {
     expect(
       await saveCommercialAddonConfig({ name: "Reportes", kind: "module", monthlyPrice: 10 })
-    ).toEqual(err("Selecciona el modulo que activa este extra."));
+    ).toEqual(err("Selecciona el módulo que activa este extra."));
     expect(saveCommercialAddon).not.toHaveBeenCalled();
   });
 
@@ -102,7 +102,7 @@ describe("saveCommercialPlanModulesBatch / saveCommercialPlanLimitsBatch: valida
       err("Selecciona un plan.")
     );
     expect(await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: [] })).toEqual(
-      err("No hay modulos para guardar.")
+      err("No hay módulos para guardar.")
     );
     expect(savePlanModule).not.toHaveBeenCalled();
   });

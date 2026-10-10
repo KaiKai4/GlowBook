@@ -21,7 +21,7 @@ vi.mock("../data/platform-auth.repo", () => ({
   findPlatformOwnerAuthUserByEmail: vi.fn(),
   updatePlatformOwnerAuthUser: vi.fn(),
 }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 

@@ -13,12 +13,8 @@ import type { CommercialAddon } from "../domain/salon-extras";
 import { publishAuditEvent } from "@/features/audit";
 import { plan } from "@/test/billing-plan-fixtures";
 import { err, ok } from "@/infra/result";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  registerSalonPlanPaymentConfig,
-  saveSalonManualExtraConfig,
-} from "./salon-subscriptions";
+import { assignSalonAddonConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
+import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
 
 // Caminos felices de los casos de uso de suscripción: validan la entrada,
 // persisten con los datos derivados y auditan la acción.
@@ -161,12 +157,12 @@ describe("extras comerciales del salón", () => {
   it("rechaza un extra inexistente o inactivo sin guardar la sobreescritura", async () => {
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce(null);
     expect(await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID })).toEqual(
-      err("El extra del catalogo no existe.")
+      err("El extra del catálogo no existe.")
     );
 
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce(moduleAddon({ status: "archived" }));
     expect(await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID })).toEqual(
-      err("Este extra no esta activo en el catalogo.")
+      err("Este extra no está activo en el catálogo.")
     );
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
@@ -206,7 +202,7 @@ describe("extras comerciales del salón", () => {
 
   it("exige un módulo o un límite al guardar un extra manual", async () => {
     expect(await saveSalonManualExtraConfig({ salonId: SALON_ID })).toEqual(
-      err("Selecciona un modulo o un límite para el extra.")
+      err("Selecciona un módulo o un límite para el extra.")
     );
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });

@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getEmployeesPage, type EmployeesPageViewModel } from "@/features/employees/use-cases/get-employees-page";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { hasPermission } from "@/features/access";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EmployeesPage from "./page";
@@ -17,7 +17,8 @@ vi.mock("@/features/access", async (importOriginal) => ({
   hasPermission: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 

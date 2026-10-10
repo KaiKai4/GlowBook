@@ -3,11 +3,7 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  isEffectiveSalonModuleEnabled,
-} from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess, isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { changeEmployeeRole, resetEmployeeAccess } from "@/features/employees/use-cases/employee-access";
 import { archiveEmployee } from "@/features/employees/use-cases/employee-lifecycle";
 import { addEmployeeWorkSchedule } from "@/features/employees/use-cases/employee-schedule";
@@ -29,7 +25,8 @@ import {
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
   isEffectiveSalonModuleEnabled: vi.fn(),

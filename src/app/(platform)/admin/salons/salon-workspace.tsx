@@ -11,11 +11,9 @@ import {
 } from "lucide-react";
 
 import { StatusBadge } from "@/components/ui/status-badge";
-import type {
-  SalonSubscriptionDetail,
-  SalonSubscriptionRow,
-  SubscriptionsPageData,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
+import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { cn } from "@/components/ui/cn";
 import { MiniMetric, Panel } from "../plans/workspace-ui";
 import { UsagePanel } from "../subscriptions/usage-panel";

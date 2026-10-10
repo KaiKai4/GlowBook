@@ -10,7 +10,7 @@ import {
   findPlatformOwnerAuthUserByEmail,
   updatePlatformOwnerAuthUser,
 } from "../data/platform-auth.repo";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
+import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-plan-assignment";
 import { acceptInvitation } from "./accept-invitation";
 import { publishAuditEvent } from "@/features/audit";
 
@@ -27,7 +27,7 @@ vi.mock("../data/platform-auth.repo", () => ({
   updatePlatformOwnerAuthUser: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 

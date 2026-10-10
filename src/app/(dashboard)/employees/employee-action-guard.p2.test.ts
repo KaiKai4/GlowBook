@@ -1,15 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  isEffectiveSalonModuleEnabled,
-} from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess, isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { PERMISSIONS } from "@/features/access";
 import { ok } from "@/infra/result";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
 import { admissionChecks, EMPLOYEE_GUARD, rolesEnabledOf } from "./employee-action-guard";
 
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),

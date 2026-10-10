@@ -34,10 +34,10 @@ export default async function DashboardPage() {
 
   // Los avisos del plan (límites y pago vencido) y la guia de arranque solo
   // viven aqui: el owner los ve al entrar, sin perseguirlo por los modulos.
-  const [planWarnings, paymentStanding, onboarding] = profile.is_owner
+  const [planWarnings, paymentGrace, onboarding] = profile.is_owner
     ? await Promise.all([
         getOwnerPlanLimitWarnings(profile.salon_id),
-        getCachedDashboardShell(profile).then((shell) => shell?.paymentStanding ?? null),
+        getCachedDashboardShell(profile).then((shell) => shell?.paymentGrace ?? null),
         getOnboardingChecklist(profile.salon_id),
       ])
     : [[], null, null];
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {paymentStanding ? <PaymentStandingBanner standing={paymentStanding} /> : null}
+      {paymentGrace ? <PaymentStandingBanner notice={paymentGrace} /> : null}
       <PlanLimitBanner warnings={planWarnings} />
 
       <PageHeader title="Bienvenido" description={formatDate(new Date())} />

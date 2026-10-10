@@ -4,7 +4,8 @@ import {
   checkPlanLimit,
   checkPlanModuleAccess,
   isEffectiveSalonModuleEnabled,
-} from "@/features/billing/use-cases/commercial-plans";
+  salonModuleScopeFromProfile,
+} from "@/features/billing";
 import type { EmployeeAdmissionInput } from "@/features/employees/use-cases/employee-admission";
 import type { ProfileWithRole } from "@/types/app.types";
 
@@ -24,7 +25,7 @@ export const EMPLOYEE_GUARD = {
 
 /** Roles habilitados en el plan del salon para el perfil de la sesion. */
 export function rolesEnabledOf(profile: ProfileWithRole): Promise<boolean> {
-  return isEffectiveSalonModuleEnabled(profile, "roles");
+  return isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "roles");
 }
 
 export function activeLimitCheck(salonId: string): () => ReturnType<typeof checkPlanLimit> {

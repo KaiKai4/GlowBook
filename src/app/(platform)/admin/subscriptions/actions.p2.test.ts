@@ -1,14 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "@/features/billing/use-cases/salon-plan-extras";
+import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "@/features/billing/use-cases/salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "@/features/billing/use-cases/plan-limits";
 import { err, ok } from "@/infra/result";
 import { formDataOf } from "@/test/action-fixtures";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
@@ -27,13 +22,17 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-extras", () => ({
   assignSalonAddonConfig: vi.fn(),
-  assignSalonCommercialPlanConfig: vi.fn(),
   cancelSalonExtraConfig: vi.fn(),
-  registerSalonPlanPaymentConfig: vi.fn(),
-  resolveSalonPlanAlertConfig: vi.fn(),
   saveSalonManualExtraConfig: vi.fn(),
+}));
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
+  assignSalonCommercialPlanConfig: vi.fn(),
+  registerSalonPlanPaymentConfig: vi.fn(),
+}));
+vi.mock("@/features/billing/use-cases/plan-limits", () => ({
+  resolveSalonPlanAlertConfig: vi.fn(),
 }));
 
 const ADMIN_ID = "00000000-0000-4000-8000-0000000000ad";

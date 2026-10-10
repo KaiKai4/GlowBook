@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfileWithRole } from "@/types/app.types";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { createSupabaseAdminClient } from "@/infra/supabase/admin";
-import { getEffectiveDisabledSalonFeatures } from "@/features/billing/use-cases/commercial-plans";
+import { getEffectiveDisabledSalonFeatures } from "@/features/billing";
 import {
   getProfile,
   isPlatformAdmin,
@@ -21,7 +21,8 @@ vi.mock("react", () => ({ cache: <T,>(fn: T) => fn }));
 vi.mock("next/navigation", () => navigationMock);
 vi.mock("@/infra/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   getEffectiveDisabledSalonFeatures: vi.fn(),
 }));
 

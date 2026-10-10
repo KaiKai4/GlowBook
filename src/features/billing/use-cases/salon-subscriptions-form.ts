@@ -1,10 +1,6 @@
 import { formFlag, formText, type FormFieldSource } from "@/infra/validation/form-fields";
-import type {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  registerSalonPlanPaymentConfig,
-  saveSalonManualExtraConfig,
-} from "./salon-subscriptions";
+import type { assignSalonAddonConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
+import type { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
 
 // Lectura de los formularios de suscripciones de salon: fija aqui las reglas de
 // formulario (estado por defecto, regalo que ignora el precio, cortesia por

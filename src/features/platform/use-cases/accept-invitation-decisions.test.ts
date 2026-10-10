@@ -5,7 +5,7 @@ import {
   profileExists,
 } from "@/features/platform/data/invitations.repo";
 import { createPlatformOwnerAuthUser } from "@/features/platform/data/platform-auth.repo";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
+import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-plan-assignment";
 import { acceptInvitation } from "./accept-invitation";
 
 // Decisiones de aceptacion de invitacion: estado, vencimiento y correo.
@@ -24,7 +24,7 @@ vi.mock("@/features/platform/data/platform-auth.repo", () => ({
   updatePlatformOwnerAuthUser: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 

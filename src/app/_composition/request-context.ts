@@ -8,7 +8,7 @@ import {
   loadSalonAccessState,
   loadSessionProfile,
 } from "@/features/access/use-cases/session-access";
-import { getEffectiveDisabledSalonFeatures } from "@/features/billing";
+import { getEffectiveDisabledSalonFeatures, salonModuleScopeFromProfile } from "@/features/billing";
 import type { ProfileWithRole } from "@/types/app.types";
 
 // Composition root de la capa de presentacion: el unico sitio que lee la sesion
@@ -29,7 +29,7 @@ const getRequestContext = cache(async (): Promise<RequestContext | null> => {
   // El perfil sale con los modulos efectivos del plan comercial (con fallback
   // a salons.disabled_features si no hay plan): hasPermission y la navegacion
   // deben decidir con la misma fuente, no con la columna legacy a secas.
-  const disabledFeatures = await getEffectiveDisabledSalonFeatures(row);
+  const disabledFeatures = await getEffectiveDisabledSalonFeatures(salonModuleScopeFromProfile(row));
   const profile: ProfileWithRole = { ...row, salon: { disabled_features: disabledFeatures } };
 
   return {

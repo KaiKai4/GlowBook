@@ -1,5 +1,5 @@
 import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { PageHeader } from "@/components/ui/page-header";
@@ -8,7 +8,7 @@ import { InventoryManager } from "./inventory-manager";
 
 export default async function InventoryPage() {
   const profile = await requireProfile();
-  const inventoryEnabled = await isEffectiveSalonModuleEnabled(profile, "inventory");
+  const inventoryEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "inventory");
 
   if (!inventoryEnabled || !hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE)) {
     return (

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getEffectiveSalonPlan } from "./salon-subscriptions";
+import { getEffectiveSalonPlan } from "./plan-modules";
 import {
   findEffectivePlanRows,
   hasOpenPlanAlert,

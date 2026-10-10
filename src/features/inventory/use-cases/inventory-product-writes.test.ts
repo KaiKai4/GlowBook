@@ -10,6 +10,7 @@ import {
 } from "./inventory-product-writes";
 
 vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));

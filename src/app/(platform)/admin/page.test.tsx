@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
-import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions";
+import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { getPlatformAdminHome, type PlatformAdminHomeViewModel } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
@@ -14,7 +14,9 @@ import PlatformAdminPage from "./page";
 vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/platform/use-cases/get-platform-admin-home", () => ({ getPlatformAdminHome: vi.fn() }));
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({ getPlatformSalonOverviews: vi.fn() }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({ getSubscriptionsPage: vi.fn() }));
+vi.mock("@/features/billing/use-cases/salon-subscriptions-page", () => ({
+  getSubscriptionsPage: vi.fn(),
+}));
 vi.mock("./actions", () => ({ regenerateSalonInvitationAction: vi.fn() }));
 vi.mock("next/link", async () => {
   const React = await import("react");

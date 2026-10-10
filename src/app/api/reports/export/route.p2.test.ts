@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { getProfile } from "@/app/_composition/request-context";
 import { PERMISSIONS } from "@/features/access";
 import { captureError } from "@/infra/observability";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { getReportExportData } from "@/features/reports/use-cases/get-report-export";
 import { buildProfile, SALON_ID, USER_ID } from "@/test/action-fixtures";
 import { GET } from "./route";
@@ -14,7 +14,8 @@ vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ getProfile: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 vi.mock("@/features/reports/use-cases/get-report-export", () => ({

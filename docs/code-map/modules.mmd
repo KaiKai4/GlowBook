@@ -18,7 +18,7 @@ flowchart LR
     features_access["features/access (17)"]
     features_appointments["features/appointments (38)"]
     features_audit["features/audit (6)"]
-    features_billing["features/billing (28)"]
+    features_billing["features/billing (31)"]
     features_customers["features/customers (11)"]
     features_dashboard["features/dashboard (7)"]
     features_employees["features/employees (27)"]
@@ -141,9 +141,7 @@ flowchart LR
   components_layout --> components_brand
   components_layout --> components_ui
   components_layout --> features_access
-  components_layout --> features_billing
   components_layout --> features_feedback
-  components_layout --> features_salon
   components_layout --> features_salon_features
   components_layout --> infra
   components_layout --> npm_next
@@ -180,9 +178,10 @@ flowchart LR
   features_billing --> features_audit
   features_billing --> features_salon_features
   features_billing --> infra
-  features_billing --> infra_effects
+  features_billing --> infra_observability
   features_billing --> infra_supabase
   features_billing --> infra_validation
+  features_billing --> npm__supabase_supabase_js
   features_billing --> npm_server_only
   features_billing --> types
   features_customers --> features_billing

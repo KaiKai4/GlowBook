@@ -11,7 +11,7 @@ import {
   findPlatformOwnerAuthUserByEmail,
   updatePlatformOwnerAuthUser,
 } from "@/features/platform/data/platform-auth.repo";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
+import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-plan-assignment";
 import { captureError } from "@/infra/observability";
 import { acceptInvitation, type AcceptInvitationInput } from "./accept-invitation";
 import { publishAuditEvent } from "@/features/audit";
@@ -33,7 +33,7 @@ vi.mock("@/features/platform/data/platform-auth.repo", () => ({
   updatePlatformOwnerAuthUser: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 

@@ -20,7 +20,7 @@ import { commercialPlanAudit, dateOrNull } from "./billing-shared";
 import { publishAuditEvent } from "@/features/audit";
 
 const AssignmentSchema = z.object({
-  salonId: z.string().uuid("Selecciona un salon."),
+  salonId: z.string().uuid("Selecciona un salón."),
   planId: z.string().uuid("Selecciona un plan."),
   status: z.enum(["trialing", "active", "past_due", "paused", "canceled"]).default("trialing"),
   // Inicio y fin del trial se derivan del plan; no se piden al usuario.
@@ -30,7 +30,7 @@ const AssignmentSchema = z.object({
 });
 
 const PaymentSchema = z.object({
-  salonId: z.string().uuid("Selecciona un salon."),
+  salonId: z.string().uuid("Selecciona un salón."),
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
   paidAt: z
     .string()

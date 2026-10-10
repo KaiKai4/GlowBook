@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { notFound } from "next/navigation";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { getEmployeeDetail, type EmployeeDetailViewModel } from "@/features/employees/use-cases/get-employee-detail";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
@@ -19,7 +19,8 @@ vi.mock("@/features/access", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/access")>()),
   hasPermission: vi.fn(),
 }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 vi.mock("@/features/employees/use-cases/get-employee-detail", () => ({

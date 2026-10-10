@@ -2,7 +2,7 @@
 
 import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { revalidatePath } from "next/cache";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
 import { parseNotificationTemplateInput } from "@/features/notifications/use-cases/template-input";
 import { hasPermission, PERMISSIONS } from "@/features/access";
@@ -18,7 +18,7 @@ export async function updateNotificationTemplateAction(
   formData: FormData
 ): Promise<Result<void>> {
   const profile = await requireActiveProfile();
-  const templatesEnabled = await isEffectiveSalonModuleEnabled(profile, "plantillas");
+  const templatesEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "plantillas");
   if (!templatesEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return { ok: false, error: "No tienes permiso para editar plantillas." };
   }

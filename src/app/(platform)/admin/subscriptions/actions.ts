@@ -3,14 +3,9 @@
 import { definePlatformAction } from "@/app/_composition/define-platform-action";
 import { parseUuidField } from "@/app/_composition/define-action";
 import { ok } from "@/infra/result";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "@/features/billing/use-cases/salon-plan-extras";
+import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "@/features/billing/use-cases/salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "@/features/billing/use-cases/plan-limits";
 import {
   readAssignPlanInput,
   readGiveAddonInput,

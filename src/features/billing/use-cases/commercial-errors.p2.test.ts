@@ -213,7 +213,7 @@ describe("commercial plans: modulos y limites en lote", () => {
     });
     expect(await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: [] }, ACTOR)).toEqual({
       ok: false,
-      error: "No hay modulos para guardar.",
+      error: "No hay módulos para guardar.",
     });
     expect(savePlanModule).not.toHaveBeenCalled();
   });
@@ -238,7 +238,7 @@ describe("commercial plans: modulos y limites en lote", () => {
       ACTOR
     );
 
-    expect(result).toEqual({ ok: false, error: "No se pudieron guardar los modulos del plan." });
+    expect(result).toEqual({ ok: false, error: "No se pudieron guardar los módulos del plan." });
   });
 
   it("valida el plan y la lista de limites antes de escribir", async () => {

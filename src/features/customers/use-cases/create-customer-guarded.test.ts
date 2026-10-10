@@ -6,6 +6,7 @@ import { createCustomerProfile } from "./customer-profile";
 import { createCustomerGuarded } from "./create-customer-guarded";
 
 vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
 }));

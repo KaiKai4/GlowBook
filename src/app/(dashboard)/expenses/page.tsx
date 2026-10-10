@@ -1,6 +1,6 @@
 import { getExpensesPage } from "@/features/expenses/use-cases/expenses";
 import { getInventoryProductOptions } from "@/features/inventory/use-cases/inventory-product-options";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { PageHeader } from "@/components/ui/page-header";
@@ -9,7 +9,7 @@ import { ExpensesManager } from "./expenses-manager";
 
 export default async function ExpensesPage() {
   const profile = await requireProfile();
-  const expensesEnabled = await isEffectiveSalonModuleEnabled(profile, "expenses");
+  const expensesEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "expenses");
 
   if (!expensesEnabled || !hasPermission(profile, PERMISSIONS.EXPENSES_MANAGE)) {
     return (
@@ -21,7 +21,7 @@ export default async function ExpensesPage() {
 
   const expenses = await getExpensesPage(profile.salon_id);
   const canManageInventory =
-    (await isEffectiveSalonModuleEnabled(profile, "inventory")) &&
+    (await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "inventory")) &&
     hasPermission(profile, PERMISSIONS.INVENTORY_MANAGE);
   const inventoryProducts = canManageInventory ? await getInventoryProductOptions(profile.salon_id) : [];
 

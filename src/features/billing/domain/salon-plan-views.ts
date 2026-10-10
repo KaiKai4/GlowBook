@@ -92,7 +92,7 @@ export function extraDetail(
   metricByKey: Map<string, CommercialLimitMetric>
 ): string {
   if (override.moduleKey && override.moduleEnabled !== null) {
-    return override.moduleEnabled ? "Modulo activado" : "Modulo desactivado";
+    return override.moduleEnabled ? "Módulo activado" : "Módulo desactivado";
   }
   const metric = override.metricKey ? metricByKey.get(override.metricKey) : null;
   const unit = metric?.unit ?? "";

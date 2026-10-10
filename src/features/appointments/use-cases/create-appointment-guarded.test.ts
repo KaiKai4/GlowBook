@@ -6,6 +6,7 @@ import { createAppointment } from "./create-appointment";
 import { createAppointmentGuarded } from "./create-appointment-guarded";
 
 vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
 }));

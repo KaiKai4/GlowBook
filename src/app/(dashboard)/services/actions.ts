@@ -3,7 +3,7 @@
 import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { archiveServiceCategory } from "@/features/services/use-cases/archive-category";
 import { createServiceCategory } from "@/features/services/use-cases/create-category";
 import {

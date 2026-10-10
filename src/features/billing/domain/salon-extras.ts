@@ -1,8 +1,11 @@
 import type { SalonFeatureKey } from "@/features/salon-features";
 import type { PlanEnforcementMode, SalonPlanOverride } from "./commercial-plan";
 
-export type CommercialAddonKind = "module" | "limit_boost";
-export type CommercialAddonStatus = "draft" | "active" | "archived";
+export const COMMERCIAL_ADDON_KINDS = ["module", "limit_boost"] as const;
+export const COMMERCIAL_ADDON_STATUSES = ["draft", "active", "archived"] as const;
+
+export type CommercialAddonKind = (typeof COMMERCIAL_ADDON_KINDS)[number];
+export type CommercialAddonStatus = (typeof COMMERCIAL_ADDON_STATUSES)[number];
 
 export interface CommercialAddon {
   id: string;

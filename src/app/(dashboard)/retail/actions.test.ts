@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import { err, ok } from "@/infra/result";
@@ -13,7 +13,8 @@ import { createRetailSaleAction } from "./actions";
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));

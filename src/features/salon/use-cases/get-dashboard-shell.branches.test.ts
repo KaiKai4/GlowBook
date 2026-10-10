@@ -5,7 +5,7 @@ import type {
   EffectivePlanLimit,
   EffectiveSalonPlan,
 } from "@/features/billing/domain/commercial-plan";
-import { getEffectiveSalonPlan } from "@/features/billing/use-cases/commercial-plans";
+import { getEffectiveSalonPlan } from "@/features/billing";
 import { plan } from "@/test/billing-plan-fixtures";
 import { findDashboardShellSalon } from "../data/salon.repo";
 import { getDashboardShell, getOwnerPlanLimitWarnings } from "./get-dashboard-shell";
@@ -14,8 +14,18 @@ vi.mock("../data/salon.repo", () => ({
   findDashboardShellSalon: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", async () => ({
+  evaluatePaymentStanding: (await import("@/features/billing/domain/payment-standing")).evaluatePaymentStanding,
+  isActionableLimitWarning: (await import("@/features/billing/domain/commercial-plan")).isActionableLimitWarning,
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   getEffectiveSalonPlan: vi.fn(),
+  readEffectivePlanOrNull: async (salonId: string, _action: string, load: (id: string) => Promise<unknown>) => {
+    try {
+      return await load(salonId);
+    } catch {
+      return null;
+    }
+  },
 }));
 
 const mockedFindShellSalon = vi.mocked(findDashboardShellSalon);

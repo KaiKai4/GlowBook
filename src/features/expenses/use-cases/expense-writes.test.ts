@@ -5,6 +5,7 @@ import { createExpense, createInventoryPurchaseExpense } from "./expenses";
 import { createExpenseWithPlanLimits, createInventoryPurchaseWithPlanLimits } from "./expense-writes";
 
 vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));

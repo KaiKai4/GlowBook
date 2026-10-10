@@ -1,4 +1,4 @@
-import { runSideEffect } from "@/infra/effects/run-side-effect";
+import { captureError } from "@/infra/observability";
 import type { EffectiveSalonPlan } from "../domain/commercial-plan";
 
 /**
@@ -11,9 +11,10 @@ export async function readEffectivePlanOrNull(
   action: string,
   load: (salonId: string) => Promise<EffectiveSalonPlan>
 ): Promise<EffectiveSalonPlan | null> {
-  const outcome = await runSideEffect("plan efectivo", () => load(salonId), {
-    module: "billing",
-    action,
-  });
-  return outcome.ok ? outcome.value : null;
+  try {
+    return await load(salonId);
+  } catch (error) {
+    captureError(error, { module: "billing", action, metadata: { effect: "plan efectivo" } });
+    return null;
+  }
 }

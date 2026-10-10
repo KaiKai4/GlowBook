@@ -12,14 +12,9 @@ import {
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
 } from "@/features/billing/use-cases/commercial-plans";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "@/features/billing/use-cases/salon-plan-extras";
+import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "@/features/billing/use-cases/salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "@/features/billing/use-cases/plan-limits";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { PLATFORM_PLAN_IDLE_STATE } from "./plans/action-state";
 import { archivePlanAction, deletePlanAction, removeAddonAction, saveAddonAction, savePlanAction, savePlanLimitsAction, savePlanModulesAction } from "./plans/actions";
@@ -66,13 +61,17 @@ vi.mock("@/features/billing/use-cases/commercial-addons", () => ({
   removeCommercialAddonConfig: vi.fn(),
   saveCommercialAddonConfig: vi.fn(),
 }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-extras", () => ({
   assignSalonAddonConfig: vi.fn(),
-  assignSalonCommercialPlanConfig: vi.fn(),
   cancelSalonExtraConfig: vi.fn(),
-  registerSalonPlanPaymentConfig: vi.fn(),
-  resolveSalonPlanAlertConfig: vi.fn(),
   saveSalonManualExtraConfig: vi.fn(),
+}));
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
+  assignSalonCommercialPlanConfig: vi.fn(),
+  registerSalonPlanPaymentConfig: vi.fn(),
+}));
+vi.mock("@/features/billing/use-cases/plan-limits", () => ({
+  resolveSalonPlanAlertConfig: vi.fn(),
 }));
 
 const ID = "00000000-0000-4000-8000-0000000000a1";

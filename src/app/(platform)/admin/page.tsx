@@ -13,7 +13,8 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getSubscriptionsPage, type SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
+import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
+import { type SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";

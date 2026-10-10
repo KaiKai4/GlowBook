@@ -20,16 +20,6 @@ import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
 import { commercialPlanAudit, normalizeKey } from "./billing-shared";
 import { publishAuditEvent } from "@/features/audit";
 
-// Re-exports: las actions del dashboard y el shell consultan el plan efectivo
-// a traves de este modulo.
-export {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  getEffectiveDisabledSalonFeatures,
-  getEffectiveSalonPlan,
-  isEffectiveSalonModuleEnabled,
-} from "./salon-subscriptions";
-
 export type {
   CommercialLimitMetric,
   CommercialPlan,
@@ -155,7 +145,7 @@ export async function deletePlan(planId: string, actorUserId?: string | null): P
 const PlanModulesBatchSchema = z.object({
   planId: z.string().uuid("Selecciona un plan."),
   enabledModuleKeys: z.array(z.string().trim().min(1)).default([]),
-  allModuleKeys: z.array(z.string().trim().min(1)).min(1, "No hay modulos para guardar."),
+  allModuleKeys: z.array(z.string().trim().min(1)).min(1, "No hay módulos para guardar."),
 });
 
 export async function saveCommercialPlanModulesBatch(
@@ -174,7 +164,7 @@ export async function saveCommercialPlanModulesBatch(
     const warnings = await publishAuditEvent("billing.plan_module_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_module_saved" });
     return ok(undefined, warnings);
   } catch (error) {
-    return err(toPublicErrorMessage(error, "No se pudieron guardar los modulos del plan."));
+    return err(toPublicErrorMessage(error, "No se pudieron guardar los módulos del plan."));
   }
 }
 

@@ -14,15 +14,9 @@ import {
   updateSalonPlanOverrideStatus,
 } from "../data/salon-subscriptions.repo";
 import { publishAuditEvent } from "@/features/audit";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  autoAssignPlanOnAcceptance,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "./salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
+import { assignSalonCommercialPlanConfig, autoAssignPlanOnAcceptance, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "./plan-limits";
 
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/audit", () => ({ publishAuditEvent: vi.fn(async () => []) }));
@@ -111,7 +105,7 @@ describe("asignar plan al salon", () => {
   it("valida los identificadores antes de consultar nada", async () => {
     const result = await assignSalonCommercialPlanConfig({ salonId: "x", planId: PLAN }, ACTOR);
 
-    expect(result).toEqual({ ok: false, error: "Selecciona un salon." });
+    expect(result).toEqual({ ok: false, error: "Selecciona un salón." });
     expect(assignSalonPlan).not.toHaveBeenCalled();
   });
 
@@ -207,22 +201,22 @@ describe("registrar pago del plan", () => {
 });
 
 describe("extras del salon", () => {
-  it("valida el extra del catalogo y su estado antes de asignarlo", async () => {
+  it("valida el extra del catálogo y su estado antes de asignarlo", async () => {
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: "x" })).toEqual({
       ok: false,
-      error: "Selecciona un extra del catalogo.",
+      error: "Selecciona un extra del catálogo.",
     });
 
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce(null as never);
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: ADDON })).toEqual({
       ok: false,
-      error: "El extra del catalogo no existe.",
+      error: "El extra del catálogo no existe.",
     });
 
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce({ id: ADDON, status: "archived" } as never);
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: ADDON })).toEqual({
       ok: false,
-      error: "Este extra no esta activo en el catalogo.",
+      error: "Este extra no está activo en el catálogo.",
     });
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
@@ -247,7 +241,7 @@ describe("extras del salon", () => {
   it("un cortesia manual sin modulo ni limite se rechaza", async () => {
     const result = await saveSalonManualExtraConfig({ salonId: SALON, moduleKey: "", metricKey: "", maxDelta: "" });
 
-    expect(result).toEqual({ ok: false, error: "Selecciona un modulo o un límite para el extra." });
+    expect(result).toEqual({ ok: false, error: "Selecciona un módulo o un límite para el extra." });
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
 

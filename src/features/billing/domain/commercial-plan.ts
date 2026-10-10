@@ -1,9 +1,30 @@
 import type { SalonFeatureKey } from "@/features/salon-features";
 
-export type CommercialPlanStatus = "draft" | "active" | "archived";
-export type SalonPlanAssignmentStatus = "trialing" | "active" | "past_due" | "paused" | "canceled";
-export type PlanEnforcementMode = "none" | "warn" | "block";
-export type PlanLimitCountScope = "current" | "monthly" | "billing_cycle" | "lifetime";
+// Listas de valores del dominio: fuente unica. La capa de datos valida la BD
+// contra estas mismas listas (data/billing-enums.ts); los tipos se derivan de ellas.
+export const COMMERCIAL_PLAN_STATUSES = ["draft", "active", "archived"] as const;
+export const SALON_PLAN_ASSIGNMENT_STATUSES = ["trialing", "active", "past_due", "paused", "canceled"] as const;
+export const PLAN_ENFORCEMENT_MODES = ["none", "warn", "block"] as const;
+export const PLAN_LIMIT_COUNT_SCOPES = ["current", "monthly", "billing_cycle", "lifetime"] as const;
+export const PLAN_OVERRIDE_STATUSES = ["active", "paused", "canceled"] as const;
+export const USAGE_COUNTER_KEYS = [
+  "appointments_total",
+  "customers_active",
+  "employees_active",
+  "login_users_total",
+  "services_active",
+  "retail_sales_total",
+  "inventory_products_active",
+  "inventory_movements_total",
+  "expenses_total",
+] as const;
+export const PLAN_ALERT_SEVERITIES = ["info", "warning", "danger"] as const;
+export const PLAN_ALERT_STATUSES = ["open", "acknowledged", "resolved"] as const;
+
+export type CommercialPlanStatus = (typeof COMMERCIAL_PLAN_STATUSES)[number];
+export type SalonPlanAssignmentStatus = (typeof SALON_PLAN_ASSIGNMENT_STATUSES)[number];
+export type PlanEnforcementMode = (typeof PLAN_ENFORCEMENT_MODES)[number];
+export type PlanLimitCountScope = (typeof PLAN_LIMIT_COUNT_SCOPES)[number];
 type PlanWarningLevel = "none" | "near_limit" | "over_limit" | "blocked";
 
 export interface PlatformModule {
@@ -72,23 +93,14 @@ export interface SalonPlanOverride {
   reason: string;
   startsAt: string | null;
   endsAt: string | null;
-  status: "active" | "paused" | "canceled";
+  status: (typeof PLAN_OVERRIDE_STATUSES)[number];
   addonId: string | null;
   quantity: number;
   isGift: boolean;
   priceOverride: number | null;
 }
 
-export type UsageCounterKey =
-  | "appointments_total"
-  | "customers_active"
-  | "employees_active"
-  | "login_users_total"
-  | "services_active"
-  | "retail_sales_total"
-  | "inventory_products_active"
-  | "inventory_movements_total"
-  | "expenses_total";
+export type UsageCounterKey = (typeof USAGE_COUNTER_KEYS)[number];
 
 export type SalonPlanUsageByMetric = Record<string, number>;
 

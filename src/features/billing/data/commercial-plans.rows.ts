@@ -7,6 +7,7 @@ import {
   parseCounterKey,
   parseEnforcementMode,
   parseFeatureKey,
+  parsePlanModuleKeys,
   parsePlanStatus,
 } from "./billing-enums";
 
@@ -86,16 +87,15 @@ export function mapPlan(row: PlanDbRow, moduleRows: PlanModuleDbRow[], limitRows
     status: parsePlanStatus(row.status),
     isPublic: row.is_public,
     sortOrder: row.sort_order,
-    modules: moduleRows.filter((module) => module.plan_id === row.id).map(mapPlanModule),
+    modules: moduleRows.filter((module) => module.plan_id === row.id).flatMap(mapPlanModule),
     limits: limitRows.filter((limit) => limit.plan_id === row.id).map(mapPlanLimit),
   };
 }
 
-function mapPlanModule(row: PlanModuleDbRow): CommercialPlanModule {
-  return {
-    moduleKey: parseFeatureKey(row.module_key, "commercial_plan_modules.module_key"),
-    enabled: row.enabled,
-  };
+// Una clave de módulo retirada del catálogo se descarta (ver parsePlanModuleKeys).
+function mapPlanModule(row: PlanModuleDbRow): CommercialPlanModule[] {
+  const [moduleKey] = parsePlanModuleKeys([row.module_key], "commercial_plan_modules.module_key");
+  return moduleKey ? [{ moduleKey, enabled: row.enabled }] : [];
 }
 
 function mapPlanLimit(row: PlanLimitDbRow): CommercialPlanLimit {

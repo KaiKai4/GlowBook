@@ -68,7 +68,7 @@
     {
       "id": "features/billing",
       "kind": "internal",
-      "files": 28
+      "files": 31
     },
     {
       "id": "features/customers",
@@ -475,7 +475,7 @@
     {
       "from": "app/(platform)",
       "to": "features/billing",
-      "count": 24
+      "count": 34
     },
     {
       "from": "app/(platform)",
@@ -639,18 +639,8 @@
     },
     {
       "from": "components/layout",
-      "to": "features/billing",
-      "count": 1
-    },
-    {
-      "from": "components/layout",
       "to": "features/feedback",
       "count": 4
-    },
-    {
-      "from": "components/layout",
-      "to": "features/salon",
-      "count": 1
     },
     {
       "from": "components/layout",
@@ -825,17 +815,17 @@
     {
       "from": "features/billing",
       "to": "features/salon-features",
-      "count": 6
+      "count": 5
     },
     {
       "from": "features/billing",
       "to": "infra",
-      "count": 10
+      "count": 11
     },
     {
       "from": "features/billing",
-      "to": "infra/effects",
-      "count": 1
+      "to": "infra/observability",
+      "count": 2
     },
     {
       "from": "features/billing",
@@ -849,13 +839,18 @@
     },
     {
       "from": "features/billing",
+      "to": "npm/@supabase/supabase-js",
+      "count": 1
+    },
+    {
+      "from": "features/billing",
       "to": "npm/server-only",
-      "count": 17
+      "count": 20
     },
     {
       "from": "features/billing",
       "to": "types",
-      "count": 1
+      "count": 5
     },
     {
       "from": "features/customers",
