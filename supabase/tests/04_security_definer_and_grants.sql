@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  38,
-  'authenticated tiene EXECUTE exactamente en 38 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores + 2 RPC de roles + count_salon_usage y record_plan_alert de F05 + 2 RPC de inventario atomico)'
+  39,
+  'authenticated tiene EXECUTE exactamente en 39 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores + 2 RPC de roles + count_salon_usage y record_plan_alert de F05 + 2 RPC de inventario atomico + discard_temporary_customer)'
 );
 
 select ok(
@@ -120,7 +120,8 @@ select ok(
       'public.count_salon_usage(uuid,jsonb)',
       'public.record_plan_alert(uuid,text,text,text,text)',
       'public.create_inventory_product_with_stock(uuid,text,text,numeric,numeric,boolean,numeric,numeric,numeric,numeric,numeric,numeric)',
-      'public.update_inventory_product_profile(uuid,uuid,text,text,numeric,numeric,boolean,boolean,numeric,numeric,numeric)'
+      'public.update_inventory_product_profile(uuid,uuid,text,text,numeric,numeric,boolean,boolean,numeric,numeric,numeric)',
+      'public.discard_temporary_customer(uuid)'
     ]) as sig
   ),
   'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita y las de billing de F05)'

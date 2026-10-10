@@ -73,7 +73,7 @@
     {
       "id": "features/customers",
       "kind": "internal",
-      "files": 10
+      "files": 11
     },
     {
       "id": "features/dashboard",
@@ -885,7 +885,7 @@
     {
       "from": "features/customers",
       "to": "infra/supabase",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/customers",
@@ -895,7 +895,7 @@
     {
       "from": "features/customers",
       "to": "npm/server-only",
-      "count": 4
+      "count": 5
     },
     {
       "from": "features/customers",

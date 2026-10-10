@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { checkPlanLimit } from "@/features/billing";
 import {
   createCustomer,
-  deleteCustomer,
   findCustomerByPhone,
   updateCustomer,
 } from "../data/customers.repo";
+import { discardTemporaryCustomerRpc } from "../data/rpc/discard-temporary-customer";
 import {
   deleteTemporaryCustomer,
   promoteCustomer,
@@ -17,13 +17,16 @@ vi.mock("@/features/billing", () => ({
 
 vi.mock("../data/customers.repo", () => ({
   createCustomer: vi.fn(),
-  deleteCustomer: vi.fn(),
   findCustomerByPhone: vi.fn(),
   updateCustomer: vi.fn(),
 }));
 
+vi.mock("../data/rpc/discard-temporary-customer", () => ({
+  discardTemporaryCustomerRpc: vi.fn(),
+}));
+
 const mockedCreateCustomer = vi.mocked(createCustomer);
-const mockedDeleteCustomer = vi.mocked(deleteCustomer);
+const mockedDiscard = vi.mocked(discardTemporaryCustomerRpc);
 const mockedFindCustomerByPhone = vi.mocked(findCustomerByPhone);
 const mockedUpdateCustomer = vi.mocked(updateCustomer);
 
@@ -44,7 +47,7 @@ describe("customer temporary workflow", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedCreateCustomer.mockResolvedValue(customer() as never);
-    mockedDeleteCustomer.mockResolvedValue(undefined);
+    mockedDiscard.mockResolvedValue(undefined);
     mockedFindCustomerByPhone.mockResolvedValue(null);
     mockedUpdateCustomer.mockResolvedValue(customer() as never);
     vi.mocked(checkPlanLimit).mockResolvedValue({ ok: true, value: undefined });
@@ -61,7 +64,7 @@ describe("customer temporary workflow", () => {
     expect(mockedUpdateCustomer).not.toHaveBeenCalled();
   });
 
-  it("promotes and deletes temporary customers through their narrow lifecycle actions", async () => {
+  it("promotes and discards temporary customers through their narrow lifecycle actions", async () => {
     await expect(promoteCustomer("customer-1", "salon-1")).resolves.toEqual({
       ok: true,
       value: undefined,
@@ -71,10 +74,10 @@ describe("customer temporary workflow", () => {
       is_active: true,
     });
 
-    await expect(deleteTemporaryCustomer("customer-1", "salon-1")).resolves.toEqual({
+    await expect(deleteTemporaryCustomer("customer-1")).resolves.toEqual({
       ok: true,
       value: undefined,
     });
-    expect(mockedDeleteCustomer).toHaveBeenCalledWith("customer-1", "salon-1");
+    expect(mockedDiscard).toHaveBeenCalledWith("customer-1");
   });
 });

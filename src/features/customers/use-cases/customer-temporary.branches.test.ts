@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { checkPlanLimit } from "@/features/billing";
 import { captureError } from "@/infra/observability";
-import { deleteCustomer, updateCustomer } from "@/features/customers/data/customers.repo";
+import { updateCustomer } from "@/features/customers/data/customers.repo";
+import { discardTemporaryCustomerRpc } from "@/features/customers/data/rpc/discard-temporary-customer";
 import type { Database } from "@/types/database.types";
 import {
   deleteTemporaryCustomer,
@@ -9,8 +10,11 @@ import {
 } from "./customer-temporary";
 
 vi.mock("@/features/customers/data/customers.repo", () => ({
-  deleteCustomer: vi.fn(),
   updateCustomer: vi.fn(),
+}));
+
+vi.mock("@/features/customers/data/rpc/discard-temporary-customer", () => ({
+  discardTemporaryCustomerRpc: vi.fn(),
 }));
 
 vi.mock("@/features/billing", () => ({
@@ -21,7 +25,7 @@ vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-const mockedDelete = vi.mocked(deleteCustomer);
+const mockedDiscard = vi.mocked(discardTemporaryCustomerRpc);
 const mockedUpdate = vi.mocked(updateCustomer);
 const mockedCaptureError = vi.mocked(captureError);
 
@@ -79,18 +83,47 @@ describe("customer-temporary (ramas)", () => {
   });
 
   describe("deleteTemporaryCustomer", () => {
-    it("borra el temporal del salón indicado", async () => {
-      mockedDelete.mockResolvedValue(undefined);
+    it("descarta el temporal mediante la RPC y devuelve ok", async () => {
+      mockedDiscard.mockResolvedValue(undefined);
 
-      expect(await deleteTemporaryCustomer("temp-1", SALON_ID)).toEqual({ ok: true, value: undefined });
-      expect(mockedDelete).toHaveBeenCalledWith("temp-1", SALON_ID);
+      expect(await deleteTemporaryCustomer("temp-1")).toEqual({ ok: true, value: undefined });
+      expect(mockedDiscard).toHaveBeenCalledWith("temp-1");
+      expect(mockedCaptureError).not.toHaveBeenCalled();
     });
 
-    it("registra el error y devuelve mensaje generico si falla el borrado", async () => {
-      const failure = new Error("caida");
-      mockedDelete.mockRejectedValue(failure);
+    it("traduce el SQLSTATE 22023 a un mensaje publico fijo sin registrar error", async () => {
+      mockedDiscard.mockRejectedValue({ code: "22023", message: "texto crudo de Postgres" });
 
-      expect(await deleteTemporaryCustomer("temp-1", SALON_ID)).toEqual({
+      expect(await deleteTemporaryCustomer("temp-1")).toEqual({
+        ok: false,
+        error: "El cliente no se puede descartar: tiene citas activas o completadas.",
+      });
+      expect(mockedCaptureError).not.toHaveBeenCalled();
+    });
+
+    it("traduce el SQLSTATE 42501 a mensaje de permisos", async () => {
+      mockedDiscard.mockRejectedValue({ code: "42501", message: "texto crudo de Postgres" });
+
+      expect(await deleteTemporaryCustomer("temp-1")).toEqual({
+        ok: false,
+        error: "No tienes permiso para descartar clientes.",
+      });
+    });
+
+    it("traduce el SQLSTATE P0002 a mensaje de cliente inexistente", async () => {
+      mockedDiscard.mockRejectedValue({ code: "P0002", message: "texto crudo de Postgres" });
+
+      expect(await deleteTemporaryCustomer("temp-1")).toEqual({
+        ok: false,
+        error: "El cliente no existe en este salón.",
+      });
+    });
+
+    it("registra el error y devuelve mensaje generico si falla por otra causa", async () => {
+      const failure = new Error("caida");
+      mockedDiscard.mockRejectedValue(failure);
+
+      expect(await deleteTemporaryCustomer("temp-1")).toEqual({
         ok: false,
         error: "Error al descartar el cliente.",
       });

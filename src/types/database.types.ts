@@ -2735,6 +2735,12 @@ export type Database = {
                     user_id: string;
                 }[];
             };
+            discard_temporary_customer: {
+                Args: {
+                    p_customer_id: string;
+                };
+                Returns: undefined;
+            };
             find_auth_user_id_by_email: {
                 Args: {
                     p_email: string;

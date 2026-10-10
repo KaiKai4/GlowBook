@@ -81,17 +81,6 @@ export async function findCustomerByEmail(
   return data;
 }
 
-export async function deleteCustomer(id: string, salonId: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("customers")
-    .delete()
-    .eq("id", id)
-    .eq("salon_id", salonId)
-    .eq("is_temporary", true);
-  if (error) throw error;
-}
-
 export async function updateCustomer(
   id: string,
   salonId: string,

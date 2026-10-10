@@ -1,11 +1,26 @@
 import { captureError } from "@/infra/observability";
 import {
-  deleteCustomer,
   findCustomerTemporaryFlag,
   updateCustomer,
 } from "@/features/customers/data/customers.repo";
+import { discardTemporaryCustomerRpc } from "@/features/customers/data/rpc/discard-temporary-customer";
 import type { Result } from "@/infra/result";
 import { assertCustomerQuotaAvailable } from "./customer-quota";
+
+/** Mensajes públicos fijos por SQLSTATE de discard_temporary_customer (ADR 0018). */
+const DISCARD_MESSAGES: Readonly<Record<string, string>> = {
+  "42501": "No tienes permiso para descartar clientes.",
+  P0002: "El cliente no existe en este salón.",
+  "22023": "El cliente no se puede descartar: tiene citas activas o completadas.",
+};
+const DISCARD_FALLBACK = "Error al descartar el cliente.";
+
+function sqlStateOf(error: unknown): string | null {
+  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string") {
+    return error.code;
+  }
+  return null;
+}
 
 export async function promoteCustomer(
   customerId: string,
@@ -28,16 +43,22 @@ export async function promoteCustomer(
   }
 }
 
-export async function deleteTemporaryCustomer(
-  customerId: string,
-  salonId: string
-): Promise<Result<void>> {
+/**
+ * Descarta un cliente temporal con sus citas canceladas o no presentadas (RPC transaccional).
+ * El salón lo fija el claim del JWT dentro de la RPC, no se pasa desde aquí.
+ */
+export async function deleteTemporaryCustomer(customerId: string): Promise<Result<void>> {
   try {
-    await deleteCustomer(customerId, salonId);
+    await discardTemporaryCustomerRpc(customerId);
     return { ok: true, value: undefined };
   } catch (error) {
-    captureError(error, { module: "customers", action: "temporary" });
-    return { ok: false, error: "Error al descartar el cliente." };
+    const sqlState = sqlStateOf(error);
+    const publicMessage = sqlState === null ? undefined : DISCARD_MESSAGES[sqlState];
+    if (publicMessage === undefined) {
+      captureError(error, { module: "customers", action: "temporary" });
+      return { ok: false, error: DISCARD_FALLBACK };
+    }
+    return { ok: false, error: publicMessage };
   }
 }
 

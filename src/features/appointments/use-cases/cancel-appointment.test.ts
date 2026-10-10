@@ -164,7 +164,7 @@ describe("cancelAppointment: decisión sobre el cliente temporal", () => {
       ok: true,
       value: undefined,
     });
-    expect(deps.deleteTemporaryCustomer).toHaveBeenCalledWith(customerId, salonId);
+    expect(deps.deleteTemporaryCustomer).toHaveBeenCalledWith(customerId);
     expect(deps.promoteCustomer).not.toHaveBeenCalled();
   });
 

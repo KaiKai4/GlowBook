@@ -6,7 +6,6 @@ import {
 } from "@/test/small-features-supabase";
 import {
   createCustomer,
-  deleteCustomer,
   findCustomerByEmail,
   findCustomerByPhone,
   findCustomers,
@@ -186,28 +185,6 @@ describe("customers.repo", () => {
       useDb({ customers: { data: null, error: null } });
 
       expect(await findCustomerByEmail(SALON_ID, "nadie@example.com")).toBeNull();
-    });
-  });
-
-  describe("deleteCustomer", () => {
-    it("solo borra clientes temporales del salón indicado", async () => {
-      const db = useDb({ customers: { data: null, error: null } });
-
-      await deleteCustomer("cust-1", SALON_ID);
-
-      expect(operationsOn(db, "customers")).toEqual([
-        { target: "customers", method: "delete", args: [] },
-        { target: "customers", method: "eq", args: ["id", "cust-1"] },
-        { target: "customers", method: "eq", args: ["salon_id", SALON_ID] },
-        { target: "customers", method: "eq", args: ["is_temporary", true] },
-      ]);
-    });
-
-    it("propaga el error de borrado", async () => {
-      const dbError = { message: "bloqueado" };
-      useDb({ customers: { data: null, error: dbError } });
-
-      await expect(deleteCustomer("cust-1", SALON_ID)).rejects.toBe(dbError);
     });
   });
 

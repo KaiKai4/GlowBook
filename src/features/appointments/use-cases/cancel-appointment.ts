@@ -34,7 +34,7 @@ export interface CancelAppointmentDeps {
   cancelRpc: (input: { appointmentId: string; idempotencyKey: string }) => Promise<CancelAppointmentRpcResult>;
   isTemporaryCustomer: (customerId: string, salonId: string) => Promise<boolean>;
   promoteCustomer: (customerId: string, salonId: string) => Promise<Result<void>>;
-  deleteTemporaryCustomer: (customerId: string, salonId: string) => Promise<Result<void>>;
+  deleteTemporaryCustomer: (customerId: string) => Promise<Result<void>>;
 }
 
 const defaultCancelAppointmentDeps: CancelAppointmentDeps = {
@@ -109,7 +109,7 @@ async function applyCustomerDisposition(
       return result.ok ? [] : [`${PROMOTE_WARNING} ${result.error}`];
     }
     if (action === "discard") {
-      const result = await deps.deleteTemporaryCustomer(customerId, salonId);
+      const result = await deps.deleteTemporaryCustomer(customerId);
       return result.ok ? [] : [`${DISCARD_WARNING} ${result.error}`];
     }
     return [];
