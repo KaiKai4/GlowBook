@@ -1,3 +1,4 @@
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { PERMISSIONS } from "@/features/access";
 import {
   checkPlanLimit,
@@ -18,7 +19,7 @@ export const EMPLOYEE_GUARD = {
   },
   // Estas acciones crean cuentas Auth y enlaces de acceso: un límite por
   // usuario evita generacion masiva automatizada.
-  rateLimit: { scope: "employees", options: { max: 30, windowMs: 60_000 } },
+  rateLimit: { scope: "employees", options: RATE_LIMIT_POLICIES.restricted },
 };
 
 /** Roles habilitados en el plan del salon para el perfil de la sesion. */

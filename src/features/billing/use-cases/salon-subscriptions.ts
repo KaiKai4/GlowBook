@@ -6,6 +6,7 @@ import { getDisabledSalonFeatures } from "@/features/access";
 import type { ProfileWithRole } from "@/types/app.types";
 import { type SalonFeatureKey, SALON_FEATURES } from "@/features/salon-features";
 import { checkLimitAction, type EffectiveSalonPlan } from "../domain/commercial-plan";
+import type { PlanMetricKey, PlanModuleKey } from "../domain/plan-keys";
 import {
   buildEffectiveLimits,
   isPlanAssignmentActive,
@@ -64,7 +65,7 @@ export async function getEffectiveSalonPlan(salonId: string): Promise<EffectiveS
 
 export async function checkPlanLimit(input: {
   salonId: string;
-  metricKey: string;
+  metricKey: PlanMetricKey;
   requestedAmount?: number;
 }): Promise<Result<void>> {
   const plan = await getEffectiveSalonPlan(input.salonId);
@@ -129,7 +130,7 @@ export async function resolveSalonPlanAlertConfig(
 
 export async function checkPlanModuleAccess(input: {
   salonId: string;
-  moduleKey: SalonFeatureKey;
+  moduleKey: PlanModuleKey;
 }): Promise<Result<void>> {
   const plan = await getEffectiveSalonPlan(input.salonId);
   if (!plan.plan) return ok(undefined);

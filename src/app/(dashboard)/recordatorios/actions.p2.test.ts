@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
@@ -13,9 +12,6 @@ import { confirmReminderAppointmentAction, markReminderSentAction } from "./acti
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
-  isEffectiveSalonModuleEnabled: vi.fn(),
-}));
 vi.mock("@/features/appointments/use-cases/confirm-appointment", () => ({
   confirmAppointment: vi.fn(),
 }));
@@ -39,20 +35,32 @@ describe("markReminderSentAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(sender);
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
     vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
     vi.mocked(recordManualReminder).mockResolvedValue(ok("wa-link"));
   });
 
   it("rechaza sin consultar el límite cuando el módulo de recordatorios está deshabilitado", async () => {
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+    vi.mocked(requireActiveProfile).mockResolvedValue(
+      buildProfile({ permissions: [PERMISSIONS.REMINDERS_SEND], disabledFeatures: ["recordatorios"] })
+    );
 
     expect(await markReminderSentAction(form({ appointment_id: RECORD_ID, idempotency_key: KEY }))).toEqual({
       ok: false,
       error: "No tienes permiso para enviar recordatorios.",
     });
-    expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith(sender, "recordatorios");
     expect(assertActionRateLimit).not.toHaveBeenCalled();
+    expect(recordManualReminder).not.toHaveBeenCalled();
+  });
+
+  it("rechaza con el mismo mensaje cuando el módulo de plantillas está deshabilitado", async () => {
+    vi.mocked(requireActiveProfile).mockResolvedValue(
+      buildProfile({ permissions: [PERMISSIONS.REMINDERS_SEND], disabledFeatures: ["plantillas"] })
+    );
+
+    expect(await markReminderSentAction(form({ appointment_id: RECORD_ID, idempotency_key: KEY }))).toEqual({
+      ok: false,
+      error: "No tienes permiso para enviar recordatorios.",
+    });
     expect(recordManualReminder).not.toHaveBeenCalled();
   });
 

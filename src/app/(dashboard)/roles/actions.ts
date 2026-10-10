@@ -1,5 +1,6 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import type { CreateRoleInput, UpdateRolePermissionsInput } from "@/features/access/schemas";
@@ -16,7 +17,7 @@ import { parseUuid } from "@/infra/validation/route-id";
 // Politica comun de las acciones de roles: permiso por clave y limite por usuario.
 const ROLE_GUARD = {
   permission: { key: PERMISSIONS.ROLES_MANAGE, deniedMessage: "No tienes permiso para gestionar roles." },
-  rateLimit: { scope: "roles", options: { max: 30, windowMs: 60_000 } },
+  rateLimit: { scope: "roles", options: RATE_LIMIT_POLICIES.restricted },
 };
 
 const createRoleFlow = defineAction<FormData, CreateRoleInput, string>({

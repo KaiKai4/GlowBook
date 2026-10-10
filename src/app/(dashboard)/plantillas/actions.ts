@@ -1,5 +1,6 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { revalidatePath } from "next/cache";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
@@ -22,7 +23,7 @@ export async function updateNotificationTemplateAction(
     return { ok: false, error: "No tienes permiso para editar plantillas." };
   }
 
-  const limited = await assertActionRateLimit(profile.id, "plantillas", { max: 30, windowMs: 60_000 });
+  const limited = await assertActionRateLimit(profile.id, "plantillas", RATE_LIMIT_POLICIES.restricted);
   if (!limited.ok) return limited;
 
   const parsed = parseNotificationTemplateInput({

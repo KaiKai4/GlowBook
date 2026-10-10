@@ -1,5 +1,6 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import {
@@ -29,7 +30,7 @@ import { parseUuid } from "@/infra/validation/route-id";
 // Las acciones solo orquestan: contexto, permiso por clave, rate limit, validacion
 // y UNA llamada a un caso de uso (defineAction). Las reglas viven en los casos de uso.
 
-const CUSTOMERS_RATE_LIMIT = { scope: "customers", options: { max: 60, windowMs: 60_000 } };
+const CUSTOMERS_RATE_LIMIT = { scope: "customers", options: RATE_LIMIT_POLICIES.write };
 const CUSTOMERS_DENIED = "No tienes permiso para gestionar clientes.";
 const CUSTOMERS_DENIED_LIFECYCLE = "Sin permiso para gestionar clientes.";
 const INVALID_ID_MESSAGE = "Identificador inválido.";

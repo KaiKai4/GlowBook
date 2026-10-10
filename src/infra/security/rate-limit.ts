@@ -1,3 +1,4 @@
+import { RATE_LIMIT_POLICIES } from "./rate-limit-policies";
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { captureError } from "@/infra/observability";
@@ -20,7 +21,7 @@ export interface RateLimitOptions {
   windowMs: number;
 }
 
-const DEFAULT_ACTION_LIMIT: RateLimitOptions = { max: 60, windowMs: 60_000 };
+const DEFAULT_ACTION_LIMIT: RateLimitOptions = RATE_LIMIT_POLICIES.write;
 const DEFAULT_ANONYMOUS_LIMIT: RateLimitOptions = { max: 10, windowMs: 60_000 };
 
 const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a intentarlo.";

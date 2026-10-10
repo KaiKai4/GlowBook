@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { PlanMetricKey } from "../domain/plan-keys";
 import {
   checkPlanLimit,
   checkPlanModuleAccess,
@@ -43,6 +44,11 @@ vi.mock("@/features/audit", () => ({
   publishAuditEvent: vi.fn(async () => []),
 }));
 
+// Claves de la fixture de plan (fixtures heredadas, no del catalogo): el test prueba la
+// logica de limites, no el catalogo, asi que se fijan con un cast de test.
+const APPOINTMENTS_METRIC = "appointments_monthly" as PlanMetricKey;
+const EMPLOYEES_METRIC = "employees_active" as PlanMetricKey;
+
 const findRowsMock = vi.mocked(findEffectivePlanRows);
 const hasOpenAlertMock = vi.mocked(hasOpenPlanAlert);
 const recordAlertMock = vi.mocked(recordPlanAlert);
@@ -57,7 +63,7 @@ describe("checkPlanLimit", () => {
   it("allows metrics that the plan does not limit", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ plan: plan({ limits: [] }) }));
 
-    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: "appointments_monthly" });
+    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: APPOINTMENTS_METRIC });
 
     expect(result.ok).toBe(true);
     expect(recordAlertMock).not.toHaveBeenCalled();
@@ -68,7 +74,7 @@ describe("checkPlanLimit", () => {
 
     const result = await checkPlanLimit({
       salonId: "salon-1",
-      metricKey: "appointments_monthly",
+      metricKey: APPOINTMENTS_METRIC,
     });
 
     expect(result).toEqual({
@@ -79,7 +85,7 @@ describe("checkPlanLimit", () => {
       expect.objectContaining({
         salonId: "salon-1",
         planId: "plan-basic",
-        metricKey: "appointments_monthly",
+        metricKey: APPOINTMENTS_METRIC,
         moduleKey: "appointments",
         severity: "danger",
       })
@@ -91,7 +97,7 @@ describe("checkPlanLimit", () => {
 
     const twoMore = await checkPlanLimit({
       salonId: "salon-1",
-      metricKey: "appointments_monthly",
+      metricKey: APPOINTMENTS_METRIC,
       requestedAmount: 2,
     });
 
@@ -101,7 +107,7 @@ describe("checkPlanLimit", () => {
   it("does not block a block-mode limit that lands exactly on the max", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ usage: { appointments_monthly: 9 } }));
 
-    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: "appointments_monthly" });
+    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: APPOINTMENTS_METRIC });
 
     expect(result.ok).toBe(true);
   });
@@ -109,29 +115,29 @@ describe("checkPlanLimit", () => {
   it("allows over-limit usage in warn mode and records a danger alert when already over", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ usage: { employees_active: 3 } }));
 
-    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: "employees_active" });
+    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: EMPLOYEES_METRIC });
 
     expect(result.ok).toBe(true);
     expect(recordAlertMock).toHaveBeenCalledWith(
-      expect.objectContaining({ metricKey: "employees_active", severity: "danger" })
+      expect.objectContaining({ metricKey: EMPLOYEES_METRIC, severity: "danger" })
     );
   });
 
   it("records a warning alert when a warn-mode limit is near the threshold", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ usage: { employees_active: 1 } }));
 
-    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: "employees_active" });
+    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: EMPLOYEES_METRIC });
 
     expect(result.ok).toBe(true);
     expect(recordAlertMock).toHaveBeenCalledWith(
-      expect.objectContaining({ metricKey: "employees_active", severity: "warning" })
+      expect.objectContaining({ metricKey: EMPLOYEES_METRIC, severity: "warning" })
     );
   });
 
   it("does not record an alert when usage is comfortably below the threshold", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ usage: { appointments_monthly: 1 } }));
 
-    await checkPlanLimit({ salonId: "salon-1", metricKey: "appointments_monthly" });
+    await checkPlanLimit({ salonId: "salon-1", metricKey: APPOINTMENTS_METRIC });
 
     expect(recordAlertMock).not.toHaveBeenCalled();
   });
@@ -140,22 +146,22 @@ describe("checkPlanLimit", () => {
     hasOpenAlertMock.mockResolvedValueOnce(true);
     findRowsMock.mockResolvedValueOnce(rows({ usage: { appointments_monthly: 10 } }));
 
-    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: "appointments_monthly" });
+    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: APPOINTMENTS_METRIC });
 
     expect(result.ok).toBe(false);
-    expect(hasOpenAlertMock).toHaveBeenCalledWith("salon-1", "appointments_monthly");
+    expect(hasOpenAlertMock).toHaveBeenCalledWith("salon-1", APPOINTMENTS_METRIC);
     expect(recordAlertMock).not.toHaveBeenCalled();
   });
 
   it("never enforces a limit configured with enforcement 'none'", async () => {
     findRowsMock.mockResolvedValueOnce(
       rows({
-        overrides: [override({ metricKey: "appointments_monthly", enforcementMode: "none" })],
+        overrides: [override({ metricKey: APPOINTMENTS_METRIC, enforcementMode: "none" })],
         usage: { appointments_monthly: 500 },
       })
     );
 
-    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: "appointments_monthly" });
+    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: APPOINTMENTS_METRIC });
 
     expect(result.ok).toBe(true);
   });
@@ -163,7 +169,7 @@ describe("checkPlanLimit", () => {
   it("allows the action when the salon has no plan, so no limit resolves", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ plan: null, usage: {} }));
 
-    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: "appointments_monthly" });
+    const result = await checkPlanLimit({ salonId: "salon-1", metricKey: APPOINTMENTS_METRIC });
 
     expect(result.ok).toBe(true);
     expect(recordAlertMock).not.toHaveBeenCalled();

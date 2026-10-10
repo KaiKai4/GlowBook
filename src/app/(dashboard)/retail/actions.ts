@@ -1,5 +1,6 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import { RetailSaleSchema, type RetailSaleInput } from "@/features/retail/schemas";
@@ -11,7 +12,7 @@ const RETAIL_PATHS = ["/retail", "/inventory", "/reports"] as const;
 
 const createSaleFlow = defineAction<FormData, RetailSaleInput, string>({
   permission: { key: PERMISSIONS.RETAIL_MANAGE, deniedMessage: "No tienes permiso para gestionar vitrina." },
-  rateLimit: { scope: "retail", options: { max: 60, windowMs: 60_000 } },
+  rateLimit: { scope: "retail", options: RATE_LIMIT_POLICIES.write },
   parse: (formData) => parseWithSchema(RetailSaleSchema)(Object.fromEntries(formData)),
   run: (input, session) => createRetailSaleWithPlanLimits(session.salonId, input, input.idempotency_key),
   revalidate: () => RETAIL_PATHS,

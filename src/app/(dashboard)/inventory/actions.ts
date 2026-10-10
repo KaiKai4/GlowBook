@@ -1,5 +1,6 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import {
@@ -23,7 +24,7 @@ const INVENTORY_PATHS = ["/inventory", "/retail", "/reports"] as const;
 
 const createProductFlow = defineAction<FormData, CreateInventoryProductInput, string>({
   permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
-  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  rateLimit: { scope: "inventory", options: RATE_LIMIT_POLICIES.write },
   parse: (formData) =>
     parseWithSchema(CreateInventoryProductSchema)({
       ...Object.fromEntries(formData),
@@ -48,7 +49,7 @@ interface UpdateProductInput {
 
 const updateProductFlow = defineAction<UpdateProductRaw, UpdateProductInput, void>({
   permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
-  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  rateLimit: { scope: "inventory", options: RATE_LIMIT_POLICIES.write },
   parse: ({ productId, formData }) => {
     if (!parseUuid(productId)) return err("Identificador inválido.");
 
@@ -74,7 +75,7 @@ const updateProductFlow = defineAction<UpdateProductRaw, UpdateProductInput, voi
 
 const transferStockFlow = defineAction<FormData, InventoryTransferInput, string>({
   permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
-  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  rateLimit: { scope: "inventory", options: RATE_LIMIT_POLICIES.write },
   parse: (formData) =>
     parseWithSchema(InventoryTransferSchema)({
       ...Object.fromEntries(formData),
@@ -89,7 +90,7 @@ const transferStockFlow = defineAction<FormData, InventoryTransferInput, string>
 
 const deleteProductFlow = defineAction<string, string, string>({
   permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
-  rateLimit: { scope: "inventory", options: { max: 60, windowMs: 60_000 } },
+  rateLimit: { scope: "inventory", options: RATE_LIMIT_POLICIES.write },
   parse: (productId) => (parseUuid(productId) ? ok(productId) : err("Identificador inválido.")),
   run: async (productId, session) => {
     const result = await deleteInventoryProduct(productId, session.salonId);

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { recordAuditLogEntry } from "./data/audit-log.repo";
 import { AUDIT_EVENT_HANDLERS } from "./audit-event-handlers";
+import { PLATFORM_AUDIT_ACTIONS } from "./domain/audit-actions";
 import type { AuditEventName, AuditEventPayload } from "./events";
 
 vi.mock("./data/audit-log.repo", () => ({
@@ -114,5 +115,28 @@ describe("manejador de auditoria", () => {
         errorMessage: "x",
       })
     ).rejects.toThrow("db caida");
+  });
+});
+
+describe("mapa evento -> accion de auditoria", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockedRecordEntry.mockResolvedValue(undefined);
+  });
+
+  it("cubre exactamente los eventos del catalogo", () => {
+    expect(Object.keys(AUDIT_EVENT_HANDLERS).sort()).toEqual([...ALL_EVENT_NAMES].sort());
+  });
+
+  it("el manejador generico registra cada evento con la accion que recibe", async () => {
+    for (const name of ALL_EVENT_NAMES) {
+      // El manejador es generico: se tipa con el payload general y se le pasa
+      // una accion del catalogo cerrado.
+      const action = PLATFORM_AUDIT_ACTIONS[0];
+      const handler = AUDIT_EVENT_HANDLERS[name] as (payload: AuditEventPayload) => Promise<void>;
+      await handler({ actorUserId: "admin-1", action, status: "succeeded" });
+      expect(mockedRecordEntry).toHaveBeenLastCalledWith(expect.objectContaining({ action }));
+    }
+    expect(mockedRecordEntry).toHaveBeenCalledTimes(ALL_EVENT_NAMES.length);
   });
 });

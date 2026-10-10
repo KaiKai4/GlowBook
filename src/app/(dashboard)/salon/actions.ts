@@ -1,5 +1,6 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { revalidatePath } from "next/cache";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
@@ -26,7 +27,7 @@ const PERMISSION = {
   key: PERMISSIONS.SALON_MANAGE,
   deniedMessage: "No tienes permiso para editar el salon.",
 };
-const RATE_LIMIT = { scope: "salon", options: { max: 60, windowMs: 60_000 } };
+const RATE_LIMIT = { scope: "salon", options: RATE_LIMIT_POLICIES.write };
 
 const updateInfoFlow = defineAction<FormData, SalonInfoInput, void>({
   permission: PERMISSION,

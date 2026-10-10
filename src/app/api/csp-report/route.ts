@@ -1,3 +1,4 @@
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { readBoundedText } from "@/infra/http/bounded-body";
 import { jsonNoStore, noContent } from "@/infra/http/responses";
 import { CSP_REPORT_CONTENT_TYPES, parseCspReport } from "@/infra/security/csp-report";
@@ -8,7 +9,7 @@ import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
 // IP, acotado en tamaño y sin registrar mas que un resumen minimo.
 
 const MAX_REPORT_BYTES = 16 * 1024;
-const REPORT_RATE_LIMIT = { max: 30, windowMs: 60_000 };
+const REPORT_RATE_LIMIT = RATE_LIMIT_POLICIES.restricted;
 
 export async function POST(request: Request) {
   const contentType = (request.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";

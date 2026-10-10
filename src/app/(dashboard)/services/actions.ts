@@ -1,5 +1,6 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
@@ -33,7 +34,7 @@ const PERMISSION = {
   key: PERMISSIONS.SERVICES_MANAGE,
   deniedMessage: "No tienes permiso para gestionar servicios.",
 };
-const RATE_LIMIT = { scope: "services", options: { max: 60, windowMs: 60_000 } };
+const RATE_LIMIT = { scope: "services", options: RATE_LIMIT_POLICIES.write };
 const revalidateServices = (): readonly string[] => ["/services"];
 
 const servicePlanGate: ServicePlanGate = {
