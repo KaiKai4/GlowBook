@@ -30,5 +30,8 @@ export default async function AppointmentsPage({
     view: params.view,
   });
 
-  return <AppointmentsClient initialCalendar={calendar} canManage={canManage} />;
+  // Un fallo de carga llega al error boundary de la ruta, como antes de ADR 0029.
+  if (!calendar.ok) throw new Error(calendar.error);
+
+  return <AppointmentsClient initialCalendar={calendar.value} canManage={canManage} />;
 }

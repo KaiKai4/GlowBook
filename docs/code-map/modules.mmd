@@ -36,7 +36,7 @@ flowchart LR
     features_services["features/services (16)"]
   end
   subgraph g_infra["infra"]
-    infra["infra (3)"]
+    infra["infra (5)"]
     infra_auth["infra/auth (5)"]
     infra_config["infra/config (1)"]
     infra_effects["infra/effects (1)"]
@@ -263,6 +263,7 @@ flowchart LR
   features_reminders --> infra_validation
   features_reminders --> npm_server_only
   features_reminders --> types
+  features_reports --> infra
   features_reports --> infra_supabase
   features_reports --> infra_validation
   features_reports --> npm_server_only

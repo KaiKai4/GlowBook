@@ -13,7 +13,8 @@ export async function createCatalogService(
   input: CreateServiceInput
 ): Promise<Result<string>> {
   try {
-    await validateServiceCategory(salonId, input.category_id);
+    const category = await validateServiceCategory(salonId, input.category_id);
+    if (!category.ok) return category;
     const service = await createService(salonId, input);
     return { ok: true, value: service.id };
   } catch (error) {

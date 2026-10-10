@@ -148,7 +148,7 @@
     {
       "id": "infra",
       "kind": "internal",
-      "files": 3
+      "files": 5
     },
     {
       "id": "infra/auth",
@@ -760,7 +760,7 @@
     {
       "from": "features/appointments",
       "to": "infra",
-      "count": 16
+      "count": 21
     },
     {
       "from": "features/appointments",
@@ -1249,6 +1249,11 @@
     },
     {
       "from": "features/reports",
+      "to": "infra",
+      "count": 3
+    },
+    {
+      "from": "features/reports",
       "to": "infra/supabase",
       "count": 3
     },
@@ -1360,7 +1365,7 @@
     {
       "from": "features/services",
       "to": "infra",
-      "count": 10
+      "count": 11
     },
     {
       "from": "features/services",
@@ -1390,7 +1395,7 @@
     {
       "from": "infra",
       "to": "infra/observability",
-      "count": 1
+      "count": 2
     },
     {
       "from": "infra/auth",

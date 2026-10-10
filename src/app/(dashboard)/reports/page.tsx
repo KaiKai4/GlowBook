@@ -28,7 +28,10 @@ export default async function ReportsPage({
     retail: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "retail"),
     expenses: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "expenses"),
   };
-  const report = await getOperationalReport({ salonId: profile.salon_id, filters, modules, year });
+  const result = await getOperationalReport({ salonId: profile.salon_id, filters, modules, year });
+  // Un fallo de carga llega al error boundary de la ruta, como antes de ADR 0029.
+  if (!result.ok) throw new Error(result.error);
+  const report = result.value;
 
   return (
     <ReportsView

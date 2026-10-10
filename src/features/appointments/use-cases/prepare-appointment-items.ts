@@ -1,6 +1,8 @@
 import { toPublicErrorMessage } from "@/infra/errors";
 import { err, ok, type Result } from "@/infra/result";
 import { captureError } from "@/infra/observability";
+import { requireInvariant } from "@/infra/invariant";
+import { toResult } from "@/infra/to-result";
 import {
   findAppointmentCreationResources,
   findExceptionDatesByEmployeeForCommand,
@@ -137,12 +139,16 @@ export async function prepareAppointmentItems(
     return err(toPublicErrorMessage(error, fallbackMessage));
   }
 
-  const lastPayload = payloads[payloads.length - 1];
-  if (!lastPayload) throw new Error("Invariante de cita: sin items para calcular el fin.");
+  // buildItemPayloads devuelve un item por asignación: sin items no hay fin que calcular.
+  const lastPayload = await toResult(
+    async () => requireInvariant(payloads.at(-1), "Invariante de cita: sin items para calcular el fin."),
+    { fallback: fallbackMessage, context: { module: "appointments", action } }
+  );
+  if (!lastPayload.ok) return lastPayload;
 
   const [firstGlobalViolation] = evaluateTimeRange({
     start: startTime,
-    end: lastPayload.end_time,
+    end: lastPayload.value.end_time,
     salonConfig: resources.salonConfig,
     businessHours: resources.businessHours,
     enforceSalonSchedule: true,

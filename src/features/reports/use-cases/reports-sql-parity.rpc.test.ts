@@ -16,6 +16,12 @@ import {
   type TestSupabaseClient,
 } from "@/test/supabase-integration-fixtures";
 import { getOperationalReport } from "./get-operational-report";
+// Desempaqueta el Result del caso de uso: un error inesperado falla el test.
+async function reportOf(input: Parameters<typeof getOperationalReport>[0]) {
+  const result = await getOperationalReport(input);
+  if (!result.ok) throw new Error(result.error);
+  return result.value;
+}
 import { getReportExportData } from "./get-report-export";
 
 const serverClient = vi.hoisted(() => ({ current: null as TestSupabaseClient | null }));
@@ -199,7 +205,7 @@ describe("paridad SQL de historial, acumulados y exportacion contra la base loca
 
       // --- Periodo "mes" (junio 2026) y acumulado del año, con las RPC reales. ---
       // Rango explicito de junio completo: el preset "mes" solo llega hasta el dia de NOW.
-      const report = await getOperationalReport({
+      const report = await reportOf({
         salonId: fixture.salonId,
         filters: { preset: "mes", from: "2026-06-01", to: "2026-06-30" },
         now: NOW,

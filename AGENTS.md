@@ -100,7 +100,9 @@ Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por mód
 
 - Los mensajes que ve el usuario son explícitos (ADR 0018): `PublicError` lanzado a propósito desde un use-case, o un mensaje fijo revisado.
 - Cualquier otro error pasa por `toPublicErrorMessage(error, fallback)` y se registra con `captureError`. Nunca se muestra `error.message` de Postgres, PostgREST, red o trazas.
-- Control: `src/infra/errors.test.ts` y `src/infra/public-error.ts` (paso `unit`).
+- Los casos de uso (`src/features/*/use-cases/**`) devuelven siempre `Result` (`src/infra/result.ts`) y no lanzan (`throw`) hacia el llamador. `domain/` y `data/` sí pueden lanzar `PublicError` o errores técnicos; el caso de uso los convierte con `toResult(fn, { fallback, context })` (`src/infra/to-result.ts`), que aplica `toPublicErrorMessage` y `captureError` (ADR 0029, complementa ADR 0018).
+- Las invariantes internas del caso de uso se comprueban con `requireInvariant` (`src/infra/invariant.ts`), siempre dentro de un `toResult` del mismo caso de uso (ADR 0029).
+- Control: `src/infra/errors.test.ts`, `src/infra/public-error.ts`, `src/infra/to-result.test.ts`, `src/infra/invariant.test.ts` y `src/features/*/use-cases/*.failure.test.ts` (paso `unit`) y la regla ESLint `no-restricted-syntax` que prohíbe `ThrowStatement` en `src/features/*/use-cases/**` salvo `*.test.ts` (`eslint.config.mjs`).
 
 ## 10. Seguridad
 

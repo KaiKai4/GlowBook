@@ -6,6 +6,9 @@ import { getEmployeeCalendarOptions } from "@/features/employees";
 import { getActiveMessageTemplate } from "@/features/notifications";
 import { getSalonBusinessHours, getSalonIdentity, getSalonPaymentMethods } from "@/features/salon";
 import { formatLocalDateISO, utcBounds } from "@/infra/format/dates";
+import { requireInvariant } from "@/infra/invariant";
+import { toResult } from "@/infra/to-result";
+import type { Result } from "@/infra/result";
 import {
   countActiveCalendarAppointments,
   formatCalendarDateLabel,
@@ -80,7 +83,7 @@ function toCalendarAppointment(appointment: Awaited<ReturnType<typeof findAppoin
   };
 }
 
-export async function getCalendarView({
+async function buildCalendarView({
   salonId,
   canViewAll,
   date,
@@ -101,9 +104,8 @@ export async function getCalendarView({
 
   const weekDates = getWeekDates(selectedDate);
   const visibleWeekDates = getVisibleWeekDates(selectedDate, businessHours);
-  const weekStart = weekDates[0];
-  const weekEnd = weekDates[6];
-  if (!weekStart || !weekEnd) throw new Error("Invariante de calendario: la semana tiene 7 días.");
+  const weekStart = requireInvariant(weekDates[0], "Invariante de calendario: la semana tiene 7 días.");
+  const weekEnd = requireInvariant(weekDates[6], "Invariante de calendario: la semana tiene 7 días.");
   const startDate = view === "semanal" ? weekStart : selectedDate;
   const endDate = view === "semanal" ? weekEnd : selectedDate;
   const { start, end } = utcBounds(startDate, endDate, timezone);
@@ -134,4 +136,15 @@ export async function getCalendarView({
     cancellationTemplate: cancellationTemplate.bodyText,
     paymentMethodOptions: paymentMethods.options,
   };
+}
+
+const CALENDAR_LOAD_FAILED_MESSAGE = "No se pudo cargar el calendario de citas.";
+
+export async function getCalendarView(
+  input: GetCalendarViewInput
+): Promise<Result<CalendarViewModel>> {
+  return toResult(() => buildCalendarView(input), {
+    fallback: CALENDAR_LOAD_FAILED_MESSAGE,
+    context: { module: "appointments", action: "calendar-view" },
+  });
 }

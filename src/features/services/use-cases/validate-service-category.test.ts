@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PublicError } from "@/infra/public-error";
 import { findActiveServiceCategory } from "../data/services.repo";
 import { validateServiceCategory } from "./validate-service-category";
 
@@ -19,25 +18,30 @@ describe("validateServiceCategory", () => {
   it("acepta una categoría activa del salón", async () => {
     mockedFind.mockResolvedValue({ id: "cat-1" });
 
-    await expect(validateServiceCategory("salon-1", "cat-1")).resolves.toBeUndefined();
+    await expect(validateServiceCategory("salon-1", "cat-1")).resolves.toEqual({
+      ok: true,
+      value: undefined,
+    });
     expect(mockedFind).toHaveBeenCalledWith("salon-1", "cat-1");
   });
 
   it.each([
     ["inexistente, ajena o inactiva", null],
-  ])("rechaza una categoría %s con PublicError de mensaje fijo", async (_label, row) => {
+  ])("rechaza una categoría %s con mensaje fijo", async (_label, row) => {
     mockedFind.mockResolvedValue(row);
 
-    const error = await validateServiceCategory("salon-1", "cat-x").catch((e: unknown) => e);
-
-    expect(error).toBeInstanceOf(PublicError);
-    expect((error as PublicError).message).toBe(MENSAJE);
+    await expect(validateServiceCategory("salon-1", "cat-x")).resolves.toEqual({
+      ok: false,
+      error: MENSAJE,
+    });
   });
 
-  it("propaga el error de la consulta sin convertirlo en mensaje de negocio", async () => {
-    const dbError = new Error("caida de red");
-    mockedFind.mockRejectedValue(dbError);
+  it("convierte un fallo de la consulta en mensaje generico, sin exponer el original", async () => {
+    mockedFind.mockRejectedValue(new Error("caida de red"));
 
-    await expect(validateServiceCategory("salon-1", "cat-1")).rejects.toBe(dbError);
+    await expect(validateServiceCategory("salon-1", "cat-1")).resolves.toEqual({
+      ok: false,
+      error: "No se pudo validar la categoría del servicio.",
+    });
   });
 });

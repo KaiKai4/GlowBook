@@ -59,6 +59,13 @@ const RESTRICTED_SYNTAX = [
   },
 ];
 
+// Los casos de uso devuelven Result y no lanzan (ADR 0029). Los tests quedan fuera.
+const USE_CASE_THROW_RULE = {
+  selector: "ThrowStatement",
+  message:
+    "Los casos de uso devuelven Result y no lanzan (ADR 0029): usa err(...) o toResult. Los throw van en domain/ o data/.",
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -82,6 +89,13 @@ const eslintConfig = defineConfig([
           patterns: [{ group: ["zod/*"], message: ZOD_MESSAGE }],
         },
       ],
+    },
+  },
+  {
+    files: ["src/features/*/use-cases/**/*.ts"],
+    ignores: ["**/*.test.ts"],
+    rules: {
+      "no-restricted-syntax": [...RESTRICTED_SYNTAX, USE_CASE_THROW_RULE],
     },
   },
   {

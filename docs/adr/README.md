@@ -56,6 +56,7 @@ Estado revisado a 2026-10-10: los 28 ADR están vigentes (ADR 0025 sustituida po
 | [0028](0028-inyeccion-en-comandos-con-logica.md) | Inyección de dependencias en comandos con lógica (sustituye a ADR 0025; modifica reglas de capas de ADR 0019) | Arquitectura y pruebas |
 | [0026](0026-runner-pgtap-propio-y-supabase-local-sin-analytics.md) | Runner pgTAP propio y Supabase local sin analytics | Calidad y datos |
 | [0027](0027-rate-limit-de-inicio-de-sesion.md) | Rate limit de inicio de sesión (global por IP y por IP con correo) | Seguridad |
+| [0029](0029-result-en-casos-de-uso.md) | Result en casos de uso, throw solo en domain y data (complementa 0018) | Errores y arquitectura |
 | [0030](0030-rate-limit-fail-closed-en-login.md) | Rate limit fail-closed en el inicio de sesión (matiza ADR 0017 y 0027) | Seguridad |
 
 Las guías que aplican estas decisiones son `docs/testing.md`, `docs/database-contracts.md` y `docs/security.md`.
