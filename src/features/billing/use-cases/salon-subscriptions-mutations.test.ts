@@ -114,7 +114,7 @@ describe("resolveSalonPlanAlertConfig", () => {
     const result = await resolveSalonPlanAlertConfig("alert-1", SALON_ID, ACTOR_ID);
 
     expect(result).toEqual(ok(undefined));
-    expect(resolveAlertMock).toHaveBeenCalledWith("alert-1");
+    expect(resolveAlertMock).toHaveBeenCalledWith(SALON_ID, "alert-1");
     expect(auditMock).toHaveBeenCalledWith("billing.plan_alert_resolved", 
       expect.objectContaining({
         actorUserId: ACTOR_ID,
@@ -208,7 +208,7 @@ describe("cancelSalonExtraConfig", () => {
     const result = await cancelSalonExtraConfig("ov-1", SALON_ID, ACTOR_ID);
 
     expect(result).toEqual(ok(undefined));
-    expect(updateOverrideStatusMock).toHaveBeenCalledWith("ov-1", "canceled");
+    expect(updateOverrideStatusMock).toHaveBeenCalledWith(SALON_ID, "ov-1", "canceled");
     expect(auditMock).toHaveBeenCalledWith("billing.plan_extra_canceled", 
       expect.objectContaining({
         action: "commercial_plan_extra_canceled",

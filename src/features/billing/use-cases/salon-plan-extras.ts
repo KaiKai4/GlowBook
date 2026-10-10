@@ -126,7 +126,7 @@ export async function cancelSalonExtraConfig(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   try {
-    await updateSalonPlanOverrideStatus(overrideId, "canceled");
+    await updateSalonPlanOverrideStatus(salonId, overrideId, "canceled");
     const warnings = await publishAuditEvent("billing.plan_extra_canceled", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_extra_canceled" });
     return ok(undefined, warnings);
   } catch (error) {

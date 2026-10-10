@@ -43,7 +43,7 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
   assignSalonPlan: vi.fn(),
   findAssignmentForPayment: vi.fn(),
   findAssignmentStartsAt: vi.fn(),
-  findEffectivePlanRows: vi.fn(),
+  findEffectivePlanRowsForPlatform: vi.fn(),
   findOpenSalonAlerts: vi.fn(),
   findSalonPayments: vi.fn(),
   findSubscriptionRows: vi.fn(),
@@ -261,7 +261,7 @@ describe("extras del salon", () => {
   it("cancelar un extra cambia su estado y audita; si falla usa el mensaje de respaldo", async () => {
     vi.mocked(updateSalonPlanOverrideStatus).mockResolvedValueOnce(undefined as never);
     expect(await cancelSalonExtraConfig(OVERRIDE, SALON, ACTOR)).toEqual({ ok: true, value: undefined });
-    expect(updateSalonPlanOverrideStatus).toHaveBeenCalledWith(OVERRIDE, "canceled");
+    expect(updateSalonPlanOverrideStatus).toHaveBeenCalledWith(SALON, OVERRIDE, "canceled");
     expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_extra_canceled", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_extra_canceled", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: SALON }));
 
     vi.mocked(updateSalonPlanOverrideStatus).mockRejectedValueOnce(new Error("timeout"));

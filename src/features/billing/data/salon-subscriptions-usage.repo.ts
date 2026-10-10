@@ -8,14 +8,14 @@ import type {
 } from "../domain/commercial-plan";
 import { scopeWindow } from "../domain/usage-windows";
 import type { BillingDb } from "./billing-db";
-import type { AssignmentRow } from "./salon-subscriptions.rows";
+import type { AssignmentTenantRow } from "./salon-subscriptions.rows";
 
 export async function calculateSalonUsage(
   supabase: BillingDb,
   salonId: string,
   metrics: CommercialLimitMetric[],
   plan: CommercialPlan | null,
-  assignment: AssignmentRow | null
+  assignment: AssignmentTenantRow | null
 ): Promise<SalonPlanUsageByMetric> {
   if (metrics.length === 0) return {};
 

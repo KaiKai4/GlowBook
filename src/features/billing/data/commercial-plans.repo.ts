@@ -8,7 +8,7 @@ import type {
   PlanLimitCountScope,
   PlatformModule,
 } from "../domain/commercial-plan";
-import { billingDb, countOrThrow, rowsOrThrow, throwOnError } from "./billing-db";
+import { billingDb, countOrThrow, rowsOrThrow, throwOnError, type BillingDb } from "./billing-db";
 import {
   MODULE_COLUMNS,
   METRIC_COLUMNS,
@@ -50,8 +50,8 @@ export async function findPlanCatalog(): Promise<PlanCatalog> {
   };
 }
 
-export async function findActiveMetrics(): Promise<CommercialLimitMetric[]> {
-  const supabase = billingDb();
+/** Métricas activas. El cliente lo elige quien llama (plataforma o sesión del salón). */
+export async function findActiveMetrics(supabase: BillingDb): Promise<CommercialLimitMetric[]> {
   const rows = await supabase
     .from("commercial_limit_metrics")
     .select(METRIC_COLUMNS)
@@ -61,8 +61,16 @@ export async function findActiveMetrics(): Promise<CommercialLimitMetric[]> {
     .filter((metric) => metric.isActive && !metric.isArchived);
 }
 
+/** Plan de plataforma con módulos y límites (service_role, cualquier plan). */
 export async function findPlanWithChildren(planId: string): Promise<CommercialPlan | null> {
-  const supabase = billingDb();
+  return loadPlanWithChildren(billingDb(), planId);
+}
+
+/**
+ * Plan con sus módulos y límites con el cliente indicado. Con RLS de inquilino solo
+ * devuelve el plan asignado al salón (aunque esté archivado) o uno activo.
+ */
+export async function loadPlanWithChildren(supabase: BillingDb, planId: string): Promise<CommercialPlan | null> {
   const { data, error } = await supabase
     .from("commercial_plans")
     .select(PLAN_COLUMNS)

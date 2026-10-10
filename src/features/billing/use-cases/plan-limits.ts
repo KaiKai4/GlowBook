@@ -20,7 +20,9 @@ export async function checkPlanLimit(input: {
 }): Promise<Result<void>> {
   const plan = await getEffectiveSalonPlan(input.salonId);
   const limit = plan.limits.find((item) => item.metric.key === input.metricKey);
-  if (!limit) return ok(undefined);
+  // Un límite solo existe con plan activo (buildEffectiveLimits devuelve [] sin plan).
+  const activePlan = plan.plan;
+  if (!limit || !activePlan) return ok(undefined);
 
   const check = checkLimitAction({
     metricKey: input.metricKey,
@@ -34,7 +36,7 @@ export async function checkPlanLimit(input: {
   if (!check.allowed) {
     await recordPlanAlertOnce({
       salonId: input.salonId,
-      planId: plan.plan?.id ?? null,
+      planId: activePlan.id,
       metricKey: input.metricKey,
       moduleKey: limit.metric.moduleKey,
       severity: "danger",
@@ -46,7 +48,7 @@ export async function checkPlanLimit(input: {
   if (limit.warningLevel === "near_limit" || limit.warningLevel === "over_limit") {
     await recordPlanAlertOnce({
       salonId: input.salonId,
-      planId: plan.plan?.id ?? null,
+      planId: activePlan.id,
       metricKey: input.metricKey,
       moduleKey: limit.metric.moduleKey,
       severity: limit.warningLevel === "over_limit" ? "danger" : "warning",
@@ -59,9 +61,15 @@ export async function checkPlanLimit(input: {
 
 // Una alerta abierta por salon y límite: las acciones repetidas cerca del
 // límite no deben inundar el panel de plataforma.
-async function recordPlanAlertOnce(values: Parameters<typeof recordPlanAlert>[0]) {
-  if (values.metricKey && (await hasOpenPlanAlert(values.salonId, values.metricKey))) return;
-  await recordPlanAlert(values);
+async function recordPlanAlertOnce(values: Parameters<typeof recordPlanAlert>[0] & { salonId: string }) {
+  if (await hasOpenPlanAlert(values.salonId, values.metricKey)) return;
+  await recordPlanAlert({
+    planId: values.planId,
+    metricKey: values.metricKey,
+    moduleKey: values.moduleKey,
+    severity: values.severity,
+    message: values.message,
+  });
 }
 
 export async function resolveSalonPlanAlertConfig(
@@ -70,7 +78,7 @@ export async function resolveSalonPlanAlertConfig(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   try {
-    await resolvePlanAlert(alertId);
+    await resolvePlanAlert(salonId, alertId);
     const warnings = await publishAuditEvent("billing.plan_alert_resolved", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_alert_resolved" });
     return ok(undefined, warnings);
   } catch (error) {

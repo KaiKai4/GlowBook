@@ -2,7 +2,7 @@ import "server-only";
 import { getDisabledSalonFeatures } from "@/features/access";
 import { type SalonFeatureKey, SALON_FEATURES } from "@/features/salon-features";
 import { ok, err, type Result } from "@/infra/result";
-import { findEffectivePlanRows } from "../data/salon-subscriptions.repo";
+import { findEffectivePlanRowsForSalon } from "../data/salon-subscriptions.repo";
 import type { EffectiveSalonPlan } from "../domain/commercial-plan";
 import type { PlanModuleKey } from "../domain/plan-keys";
 import {
@@ -21,7 +21,7 @@ export interface SalonModuleScope {
 
 /** Plan efectivo del salón: plan activo, módulos habilitados, límites y uso. */
 export async function getEffectiveSalonPlan(salonId: string): Promise<EffectiveSalonPlan> {
-  const rows = await findEffectivePlanRows(salonId);
+  const rows = await findEffectivePlanRowsForSalon(salonId);
   const plan = isPlanAssignmentActive(rows.assignment?.status) ? rows.plan : null;
   const enabled = resolveEnabledModules(plan, rows.overrides);
 

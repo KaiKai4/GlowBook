@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  findEffectivePlanRows,
+  findEffectivePlanRowsForPlatform,
+  findEffectivePlanRowsForSalon,
   findOpenSalonAlerts,
   findSalonPayments,
   findSubscriptionRows,
@@ -33,7 +34,8 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
   assignSalonPlan: vi.fn(),
   findAssignmentForPayment: vi.fn(),
   findAssignmentStartsAt: vi.fn(),
-  findEffectivePlanRows: vi.fn(),
+  findEffectivePlanRowsForPlatform: vi.fn(),
+  findEffectivePlanRowsForSalon: vi.fn(),
   findOpenSalonAlerts: vi.fn(),
   findSalonPayments: vi.fn(),
   findSubscriptionRows: vi.fn(),
@@ -57,7 +59,8 @@ vi.mock("@/features/audit", () => ({
 }));
 
 const findSubscriptionRowsMock = vi.mocked(findSubscriptionRows);
-const findEffectivePlanRowsMock = vi.mocked(findEffectivePlanRows);
+const findEffectivePlanRowsMock = vi.mocked(findEffectivePlanRowsForSalon);
+const findPlatformRowsMock = vi.mocked(findEffectivePlanRowsForPlatform);
 const findSalonPaymentsMock = vi.mocked(findSalonPayments);
 const findOpenSalonAlertsMock = vi.mocked(findOpenSalonAlerts);
 const findCommercialAddonsMock = vi.mocked(findCommercialAddons);
@@ -314,7 +317,7 @@ describe("getSalonSubscriptionDetail", () => {
       addonId: null,
       isGift: false,
     });
-    findEffectivePlanRowsMock.mockResolvedValue(
+    findPlatformRowsMock.mockResolvedValue(
       rows({
         status: "active",
         plan: basicPlan,
@@ -404,7 +407,7 @@ describe("getSalonSubscriptionDetail", () => {
       quantity: 2,
       addonId: null,
     });
-    findEffectivePlanRowsMock.mockResolvedValue(
+    findPlatformRowsMock.mockResolvedValue(
       rows({ status: "active", plan: basicPlan, overrides: [boost], usage: { appointments_monthly: 50 } })
     );
 
@@ -426,7 +429,7 @@ describe("getSalonSubscriptionDetail", () => {
   it("oculta límites de módulos apagados y expone módulos activados por sobreescritura", async () => {
     const enableReports = override({ moduleKey: "reports", moduleEnabled: true, addonId: null });
     const disableEmployees = override({ moduleKey: "employees", moduleEnabled: false, addonId: null });
-    findEffectivePlanRowsMock.mockResolvedValue(
+    findPlatformRowsMock.mockResolvedValue(
       rows({ status: "active", plan: basicPlan, overrides: [enableReports, disableEmployees] })
     );
 
@@ -436,7 +439,7 @@ describe("getSalonSubscriptionDetail", () => {
     expect(detail.limits.map((limit) => limit.metric.key)).toEqual(["appointments_monthly"]);
     // Módulo que no está en el catálogo se muestra con su clave y el estado de apagado.
     const disabled = override({ moduleKey: "customers", moduleEnabled: false, addonId: null });
-    findEffectivePlanRowsMock.mockResolvedValueOnce(rows({ status: "active", plan: basicPlan, overrides: [disabled] }));
+    findPlatformRowsMock.mockResolvedValueOnce(rows({ status: "active", plan: basicPlan, overrides: [disabled] }));
     const withUnknownModule = await getSalonSubscriptionDetail(SALON_1);
     expect(withUnknownModule.extras[0]).toEqual(
       expect.objectContaining({ name: "customers", detail: "Módulo desactivado" })
@@ -444,7 +447,7 @@ describe("getSalonSubscriptionDetail", () => {
   });
 
   it("no cobra el plan cuando el salón no tiene asignación ni plan", async () => {
-    findEffectivePlanRowsMock.mockResolvedValue(rows({ status: null, plan: null, overrides: [] }));
+    findPlatformRowsMock.mockResolvedValue(rows({ status: null, plan: null, overrides: [] }));
 
     const detail = await getSalonSubscriptionDetail(SALON_1);
 
@@ -458,7 +461,7 @@ describe("getSalonSubscriptionDetail", () => {
 
   it("el detalle con asignación pausada es coherente con el plan efectivo: sin módulos, límites ni precio de plan", async () => {
     // getEffectiveSalonPlan descarta el plan en estado pausado; el detalle debe hacer lo mismo.
-    findEffectivePlanRowsMock.mockResolvedValue(rows({ status: "paused", plan: basicPlan, overrides: [] }));
+    findPlatformRowsMock.mockResolvedValue(rows({ status: "paused", plan: basicPlan, overrides: [] }));
 
     const detail = await getSalonSubscriptionDetail(SALON_1);
 

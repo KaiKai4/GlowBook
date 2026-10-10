@@ -1,5 +1,5 @@
 import type { ProfileWithRole } from "@/types/app.types";
-import type { findEffectivePlanRows } from "@/features/billing/data/salon-subscriptions.repo";
+import type { findEffectivePlanRowsForPlatform } from "@/features/billing/data/salon-subscriptions.repo";
 import type {
   CommercialLimitMetric,
   CommercialPlan,
@@ -121,7 +121,7 @@ export function rows(input: {
   plan?: CommercialPlan | null;
   overrides?: SalonPlanOverride[];
   usage?: Record<string, number>;
-}): Awaited<ReturnType<typeof findEffectivePlanRows>> {
+}): Awaited<ReturnType<typeof findEffectivePlanRowsForPlatform>> {
   const status = input.status === undefined ? "active" : input.status;
   return {
     metrics,

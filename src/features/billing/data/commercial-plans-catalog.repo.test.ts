@@ -6,6 +6,7 @@ import {
   type BillingSupabaseFake,
   firstQueryOn,
 } from "@/test/billing-feature-supabase";
+import { billingDb } from "./billing-db";
 import {
   archiveCommercialPlan,
   deleteCommercialPlan,
@@ -218,7 +219,7 @@ describe("findActiveMetrics", () => {
       })
     );
 
-    const metrics = await findActiveMetrics();
+    const metrics = await findActiveMetrics(billingDb());
 
     expect(metrics.map((metric) => metric.key)).toEqual(["activa"]);
   });

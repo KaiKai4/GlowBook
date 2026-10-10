@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getEffectiveSalonPlan } from "./plan-modules";
 import {
-  findEffectivePlanRows,
+  findEffectivePlanRowsForSalon,
   hasOpenPlanAlert,
   recordPlanAlert,
 } from "../data/salon-subscriptions.repo";
@@ -12,7 +12,7 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
   assignSalonPlan: vi.fn(),
   findAssignmentForPayment: vi.fn(),
   findAssignmentStartsAt: vi.fn(),
-  findEffectivePlanRows: vi.fn(),
+  findEffectivePlanRowsForSalon: vi.fn(),
   findOpenSalonAlerts: vi.fn(),
   findSalonPayments: vi.fn(),
   findSubscriptionRows: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock("@/features/audit", () => ({
   publishAuditEvent: vi.fn(async () => []),
 }));
 
-const findRowsMock = vi.mocked(findEffectivePlanRows);
+const findRowsMock = vi.mocked(findEffectivePlanRowsForSalon);
 const hasOpenAlertMock = vi.mocked(hasOpenPlanAlert);
 const recordAlertMock = vi.mocked(recordPlanAlert);
 

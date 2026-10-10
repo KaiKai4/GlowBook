@@ -1,5 +1,5 @@
 import type { SalonFeatureKey } from "@/features/salon-features";
-import type { PlanEnforcementMode, SalonPlanOverride } from "./commercial-plan";
+import type { PlanEnforcementMode, PlanRuleOverride, SalonPlanOverride } from "./commercial-plan";
 
 export const COMMERCIAL_ADDON_KINDS = ["module", "limit_boost"] as const;
 export const COMMERCIAL_ADDON_STATUSES = ["draft", "active", "archived"] as const;
@@ -50,7 +50,7 @@ export function buildSalonExtras(
 
 export function resolveOverrideMax(
   base: number | null,
-  overrides: SalonPlanOverride[]
+  overrides: PlanRuleOverride[]
 ): number | null {
   const replacement = overrides.find((item) => item.maxOverride !== null);
   if (replacement?.maxOverride !== null && replacement?.maxOverride !== undefined) {
@@ -64,14 +64,14 @@ export function resolveOverrideMax(
 
 export function resolveOverrideMode(
   base: PlanEnforcementMode,
-  overrides: SalonPlanOverride[]
+  overrides: PlanRuleOverride[]
 ): PlanEnforcementMode {
   return overrides.find((item) => item.enforcementMode)?.enforcementMode ?? base;
 }
 
 export function resolveOverrideThreshold(
   base: number,
-  overrides: SalonPlanOverride[]
+  overrides: PlanRuleOverride[]
 ): number {
   return overrides.find((item) => item.warningThreshold !== null)?.warningThreshold ?? base;
 }

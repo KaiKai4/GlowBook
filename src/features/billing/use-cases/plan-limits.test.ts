@@ -3,7 +3,7 @@ import type { PlanMetricKey } from "../domain/plan-keys";
 import { checkPlanLimit } from "./plan-limits";
 import { checkPlanModuleAccess, isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "./plan-modules";
 import {
-  findEffectivePlanRows,
+  findEffectivePlanRowsForSalon,
   hasOpenPlanAlert,
   recordPlanAlert,
 } from "../data/salon-subscriptions.repo";
@@ -15,7 +15,7 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
   assignSalonPlan: vi.fn(),
   findAssignmentForPayment: vi.fn(),
   findAssignmentStartsAt: vi.fn(),
-  findEffectivePlanRows: vi.fn(),
+  findEffectivePlanRowsForSalon: vi.fn(),
   findOpenSalonAlerts: vi.fn(),
   findSalonPayments: vi.fn(),
   findSubscriptionRows: vi.fn(),
@@ -46,7 +46,7 @@ vi.mock("@/features/audit", () => ({
 const APPOINTMENTS_METRIC = "appointments_monthly" as PlanMetricKey;
 const EMPLOYEES_METRIC = "employees_active" as PlanMetricKey;
 
-const findRowsMock = vi.mocked(findEffectivePlanRows);
+const findRowsMock = vi.mocked(findEffectivePlanRowsForSalon);
 const hasOpenAlertMock = vi.mocked(hasOpenPlanAlert);
 const recordAlertMock = vi.mocked(recordPlanAlert);
 
@@ -80,7 +80,6 @@ describe("checkPlanLimit", () => {
     });
     expect(recordAlertMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        salonId: "salon-1",
         planId: "plan-basic",
         metricKey: APPOINTMENTS_METRIC,
         moduleKey: "appointments",

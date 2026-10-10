@@ -6,6 +6,7 @@ import {
   type EffectivePlanLimit,
   type PlanEnforcementMode,
   type SalonPlanAssignmentStatus,
+  type PlanRuleOverride,
   type SalonPlanOverride,
   type SalonPlanUsageByMetric,
 } from "./commercial-plan";
@@ -26,7 +27,7 @@ export function isPlanAssignmentActive(status: SalonPlanAssignmentStatus | null 
 
 export function resolveEnabledModules(
   plan: CommercialPlan | null,
-  overrides: SalonPlanOverride[]
+  overrides: PlanRuleOverride[]
 ): Set<EnabledModuleKey> {
   const enabled = new Set<EnabledModuleKey>();
   if (plan) {
@@ -45,7 +46,7 @@ export function resolveEnabledModules(
 export function buildEffectiveLimits(
   plan: CommercialPlan | null,
   metrics: CommercialLimitMetric[],
-  overrides: SalonPlanOverride[],
+  overrides: PlanRuleOverride[],
   usage: SalonPlanUsageByMetric,
   enabledModules: Set<EnabledModuleKey>
 ): EffectivePlanLimit[] {

@@ -100,6 +100,13 @@ export interface SalonPlanOverride {
   priceOverride: number | null;
 }
 
+/**
+ * Lo que el cálculo de plan efectivo necesita de un override. El salón no puede
+ * leer motivo, precio especial ni regalo (grants de la migración 073), así que
+ * las lecturas de inquilino devuelven este tipo y no SalonPlanOverride.
+ */
+export type PlanRuleOverride = Omit<SalonPlanOverride, "reason" | "isGift" | "priceOverride">;
+
 export type UsageCounterKey = (typeof USAGE_COUNTER_KEYS)[number];
 
 export type SalonPlanUsageByMetric = Record<string, number>;
