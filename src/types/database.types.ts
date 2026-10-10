@@ -2683,6 +2683,13 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            create_role_with_permissions: {
+                Args: {
+                    p_name: string;
+                    p_permission_keys: string[];
+                };
+                Returns: string;
+            };
             create_salon_with_owner: {
                 Args: {
                     p_full_name: string;
@@ -2816,6 +2823,13 @@ export type Database = {
             replace_employee_assignments: {
                 Args: {
                     payload: Json;
+                };
+                Returns: undefined;
+            };
+            replace_role_permissions: {
+                Args: {
+                    p_permission_keys: string[];
+                    p_role_id: string;
                 };
                 Returns: undefined;
             };

@@ -74,7 +74,7 @@ describe("roles actions", () => {
       );
 
       expect(result).toEqual({ ok: true, value: "role-1" });
-      expect(createRoleWithPermissions).toHaveBeenCalledWith(SALON_ID, {
+      expect(createRoleWithPermissions).toHaveBeenCalledWith({
         name: "Recepción",
         permission_keys: ["appointments.view", "customers.manage"],
       });
@@ -86,7 +86,7 @@ describe("roles actions", () => {
 
       await createRoleAction(null, formDataOf({ name: "Solo lectura", permission_keys: "   " }));
 
-      expect(createRoleWithPermissions).toHaveBeenCalledWith(SALON_ID, {
+      expect(createRoleWithPermissions).toHaveBeenCalledWith({
         name: "Solo lectura",
         permission_keys: [],
       });
@@ -130,7 +130,7 @@ describe("roles actions", () => {
       );
 
       expect(result).toEqual({ ok: true, value: undefined });
-      expect(updateRolePermissions).toHaveBeenCalledWith(SALON_ID, {
+      expect(updateRolePermissions).toHaveBeenCalledWith({
         role_id: RECORD_ID,
         permission_keys: ["reports.view"],
       });

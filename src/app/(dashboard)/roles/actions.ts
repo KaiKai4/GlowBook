@@ -22,14 +22,14 @@ const ROLE_GUARD = {
 const createRoleFlow = defineAction<FormData, CreateRoleInput, string>({
   ...ROLE_GUARD,
   parse: parseCreateRoleForm,
-  run: (input, session) => createRoleWithPermissions(session.salonId, input),
+  run: (input) => createRoleWithPermissions(input),
   revalidate: () => ["/roles"],
 });
 
 const updateRolePermissionsFlow = defineAction<FormData, UpdateRolePermissionsInput, void>({
   ...ROLE_GUARD,
   parse: parseUpdateRolePermissionsForm,
-  run: (input, session) => updateRolePermissions(session.salonId, input),
+  run: (input) => updateRolePermissions(input),
   revalidate: () => ["/roles"],
 });
 
