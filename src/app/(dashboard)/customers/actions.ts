@@ -3,9 +3,14 @@
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import {
+  ArchivedCustomerLookupSchema,
   CreateCustomerSchema,
+  CustomerPhoneLookupSchema,
+  FindOrCreateCustomerSchema,
   UpdateCustomerSchema,
+  type ArchivedCustomerLookupInput,
   type CreateCustomerInput,
+  type FindOrCreateCustomerInput,
   type UpdateCustomerInput,
 } from "@/features/customers/schemas";
 import {
@@ -36,6 +41,9 @@ const CUSTOMER_FLOW_PATHS = ["/customers", "/appointments/new"] as const;
 
 const parseCreateCustomer = parseWithSchema(CreateCustomerSchema);
 const parseUpdateCustomer = parseWithSchema(UpdateCustomerSchema);
+const parseCustomerPhone = parseWithSchema(CustomerPhoneLookupSchema);
+const parseArchivedLookup = parseWithSchema(ArchivedCustomerLookupSchema);
+const parseFindOrCreateCustomer = parseWithSchema(FindOrCreateCustomerSchema);
 
 function parseCustomerId(customerId: string): Result<string> {
   const id = parseUuid(customerId);
@@ -53,18 +61,18 @@ const createCustomerFlow = defineAction<FormData, CreateCustomerInput, string>({
 const checkCustomerPhoneFlow = defineAction<string, string, { exists: boolean; archived?: boolean }>({
   permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
   rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: (phone) => ok(phone),
+  parse: parseCustomerPhone,
   run: async (phone, session) => ok(await checkPermanentCustomerByPhone(session.salonId, phone)),
 });
 
 const findArchivedCustomerFlow = defineAction<
   { phone?: string; email?: string },
-  { phone?: string; email?: string },
+  ArchivedCustomerLookupInput,
   ArchivedCustomerMatch | null
 >({
   permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
   rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: (raw) => ok(raw),
+  parse: parseArchivedLookup,
   run: async ({ phone, email }, session) =>
     ok(await findArchivedCustomerByContact(session.salonId, phone, email)),
 });
@@ -79,12 +87,12 @@ const reactivateCustomerFlow = defineAction<string, string, void>({
 
 const findOrCreateCustomerFlow = defineAction<
   { firstName: string; lastName: string; phone?: string },
-  { firstName: string; lastName: string; phone?: string },
+  FindOrCreateCustomerInput,
   string
 >({
   permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
   rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: (raw) => ok(raw),
+  parse: parseFindOrCreateCustomer,
   run: (raw, session) =>
     findOrCreateTemporaryCustomer({
       salonId: session.salonId,

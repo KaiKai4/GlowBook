@@ -162,6 +162,23 @@ describe("customers actions", () => {
       );
       expect(revalidatePath).toHaveBeenCalledWith("/customers");
     });
+
+    // Regresión F02-3: archivar, reactivar o convertir temporal no se hace editando.
+    it("no envía is_active ni is_temporary al caso de uso aunque el formulario los incluya", async () => {
+      vi.mocked(updateCustomerProfile).mockResolvedValue(ok(undefined));
+
+      const result = await updateCustomerAction(
+        RECORD_ID,
+        null,
+        formDataOf({ first_name: "Lucía", is_active: "false", is_temporary: "true" })
+      );
+
+      expect(result).toEqual({ ok: true, value: undefined });
+      expect(updateCustomerProfile).toHaveBeenCalledTimes(1);
+      const data: object = vi.mocked(updateCustomerProfile).mock.calls[0]?.[2] ?? {};
+      expect(data).not.toHaveProperty("is_active");
+      expect(data).not.toHaveProperty("is_temporary");
+    });
   });
 
   describe("consultas de duplicados y contacto", () => {
@@ -188,6 +205,32 @@ describe("customers actions", () => {
       vi.mocked(findArchivedCustomerByContact).mockResolvedValue(null);
       expect(await findArchivedCustomerByContactAction("61234567", "a@b.co")).toBeNull();
       expect(findArchivedCustomerByContact).toHaveBeenCalledWith(SALON_ID, "61234567", "a@b.co");
+    });
+  });
+
+  describe("entrada inválida en consultas de contacto", () => {
+    it("checkCustomerPhoneAction no consulta con un teléfono inválido", async () => {
+      expect(await checkCustomerPhoneAction("2123-4567")).toEqual({ exists: false });
+      expect(await checkCustomerPhoneAction("")).toEqual({ exists: false });
+      expect(checkPermanentCustomerByPhone).not.toHaveBeenCalled();
+    });
+
+    it("findArchivedCustomerByContactAction no consulta con un teléfono o email inválido", async () => {
+      expect(await findArchivedCustomerByContactAction("2123-4567")).toBeNull();
+      expect(await findArchivedCustomerByContactAction(undefined, "no-es-correo")).toBeNull();
+      expect(findArchivedCustomerByContact).not.toHaveBeenCalled();
+    });
+
+    it("findOrCreateCustomerAction rechaza un nombre vacío o un teléfono inválido sin crear", async () => {
+      expect(await findOrCreateCustomerAction("   ", "Pérez")).toEqual({
+        ok: false,
+        error: "El nombre es obligatorio",
+      });
+      expect(await findOrCreateCustomerAction("Ana", "Pérez", "2123-4567")).toEqual({
+        ok: false,
+        error: "El celular debe tener 8 digitos y comenzar con 6.",
+      });
+      expect(findOrCreateTemporaryCustomer).not.toHaveBeenCalled();
     });
   });
 

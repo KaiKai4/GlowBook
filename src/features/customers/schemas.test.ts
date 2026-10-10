@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { CreateCustomerSchema, UpdateCustomerSchema } from "./schemas";
+import {
+  ArchivedCustomerLookupSchema,
+  CreateCustomerSchema,
+  CustomerPhoneLookupSchema,
+  FindOrCreateCustomerSchema,
+  UpdateCustomerSchema,
+} from "./schemas";
 
 const validCustomer = {
   first_name: "Ana",
@@ -61,18 +67,56 @@ describe("customers schemas", () => {
   });
 
   describe("UpdateCustomerSchema", () => {
-    it("acepta el estado activo en una actualizacion parcial", () => {
-      expect(UpdateCustomerSchema.parse({ is_active: false })).toMatchObject({ is_active: false });
+    // Regresión F02-3: archivar/reactivar y convertir temporal solo pasan por sus casos de uso.
+    it("descarta is_active e is_temporary de una edición normal", () => {
+      expect(UpdateCustomerSchema.parse({ is_active: false, is_temporary: true })).toEqual({});
     });
 
-    // Regresión: una edición parcial no debe reescribir notes ni is_temporary.
-    it("una actualizacion parcial no rellena notes ni is_temporary", () => {
-      expect(UpdateCustomerSchema.parse({ is_active: false })).toEqual({ is_active: false });
+    // Una edición parcial no debe reescribir notes ni is_temporary.
+    it("una actualizacion parcial solo devuelve los campos enviados", () => {
+      expect(UpdateCustomerSchema.parse({ notes: "Alergia", is_active: false })).toEqual({ notes: "Alergia" });
     });
 
     it("sigue validando los campos que se envian", () => {
       expect(UpdateCustomerSchema.safeParse({ first_name: "" }).success).toBe(false);
-      expect(UpdateCustomerSchema.safeParse({ is_active: "si" }).success).toBe(false);
+      expect(UpdateCustomerSchema.safeParse({ phone: "2123-4567" }).success).toBe(false);
+    });
+  });
+
+  describe("CustomerPhoneLookupSchema", () => {
+    it("acepta un celular panameño valido y rechaza uno que no cumple", () => {
+      expect(CustomerPhoneLookupSchema.safeParse("61234567").success).toBe(true);
+      expect(CustomerPhoneLookupSchema.safeParse("").success).toBe(false);
+      expect(CustomerPhoneLookupSchema.safeParse("2123-4567").success).toBe(false);
+      expect(CustomerPhoneLookupSchema.safeParse("6".repeat(31)).success).toBe(false);
+    });
+  });
+
+  describe("ArchivedCustomerLookupSchema", () => {
+    it("permite buscar solo por telefono, solo por email o sin datos", () => {
+      expect(ArchivedCustomerLookupSchema.safeParse({ phone: "61234567" }).success).toBe(true);
+      expect(ArchivedCustomerLookupSchema.safeParse({ email: "a@b.co" }).success).toBe(true);
+      expect(ArchivedCustomerLookupSchema.safeParse({ phone: "", email: "" }).success).toBe(true);
+      expect(ArchivedCustomerLookupSchema.safeParse({}).success).toBe(true);
+    });
+
+    it("rechaza un telefono o email con formato invalido", () => {
+      expect(ArchivedCustomerLookupSchema.safeParse({ phone: "2123-4567" }).success).toBe(false);
+      expect(ArchivedCustomerLookupSchema.safeParse({ email: "no-es-correo" }).success).toBe(false);
+    });
+  });
+
+  describe("FindOrCreateCustomerSchema", () => {
+    it("exige nombre y apellido y valida el telefono opcional", () => {
+      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "Ana", lastName: "Pérez" }).success).toBe(true);
+      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "Ana", lastName: "Pérez", phone: "61234567" }).success).toBe(true);
+      expect(FindOrCreateCustomerSchema.safeParse({ firstName: " ", lastName: "Pérez" }).success).toBe(false);
+      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "Ana", lastName: "Pérez", phone: "2123-4567" }).success).toBe(false);
+    });
+
+    it("limita la longitud de nombre y apellido a 100 caracteres", () => {
+      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "a".repeat(101), lastName: "P" }).success).toBe(false);
+      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "A", lastName: "b".repeat(101) }).success).toBe(false);
     });
   });
 });
