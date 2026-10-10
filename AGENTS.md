@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Este archivo es la **única fuente de reglas** para personas y agentes. `CLAUDE.md` solo importa este archivo. Cada regla indica el control que la comprueba: si una regla no tiene control, se marca como convención y se revisa en code review.
 
-Documentos relacionados: `CONTEXT.md` (vocabulario de dominio), `DESIGN.md` (UI), `SECURITY.md` (seguridad), `docs/README.md` (índice), `docs/quality-guide.md` (verificador), `docs/development-guide.md` (flujo local), `docs/production-standard.md` (despliegue y operación), `docs/adr/` (decisiones).
+Documentos relacionados: `CONTEXT.md` (vocabulario de dominio), `DESIGN.md` (UI), `SECURITY.md` (seguridad), `docs/README.md` (índice), `docs/testing.md` (pruebas y verificador), `docs/development-guide.md` (flujo local), `docs/runbooks/deploy.md` (despliegue y operación), `docs/adr/` (decisiones).
 
 ## 1. Producto y stack
 

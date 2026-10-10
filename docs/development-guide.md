@@ -2,7 +2,7 @@
 
 Flujo diario para trabajar en GlowBook en local: preparar el entorno, levantar la base de datos, cambiar el esquema, escribir pruebas y entregar un cambio. Las reglas que deben cumplirse están en `AGENTS.md`; esta guía explica cómo cumplirlas.
 
-Documentos relacionados: `AGENTS.md` (reglas), `docs/quality-guide.md` (verificador), `docs/testing.md` (pruebas y BD local), `docs/database-contracts.md` (contratos de BD), `CONTEXT.md` (vocabulario).
+Documentos relacionados: `AGENTS.md` (reglas), `docs/testing.md` (pruebas, verificador y BD local), `docs/database-contracts.md` (contratos de BD), `docs/runbooks/deploy.md` (publicación), `CONTEXT.md` (vocabulario).
 
 ## 1. Requisitos
 
@@ -16,11 +16,11 @@ Documentos relacionados: `AGENTS.md` (reglas), `docs/quality-guide.md` (verifica
 
 ## 2. Configuración Local
 
-1. Copia `.env.local.example` a `.env.local` y rellena sus seis variables básicas. Los secretos de deploy van en GitHub, no en esta plantilla. `.env.local` está en `.gitignore` y nunca se versiona.
+1. Copia `.env.local.example` a `.env.local` y rellena sus variables básicas. Los secretos de despliegue van en GitHub y Vercel, no en esta plantilla. `.env.local` está en `.gitignore` y nunca se versiona.
 2. Para verificar en local no hace falta `.env.local`: la BD local se obtiene del stack de Supabase local y el verificador no lee secretos de staging ni de producción.
 3. Nunca expongas `SUPABASE_SERVICE_ROLE_KEY` en variables `NEXT_PUBLIC_*` ni en código de navegador (ver `SECURITY.md`).
 
-Variables públicas y de servidor principales: `GLOWBOOK_ENV`, `APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. La sexta variable es `PRODUCTION_SUPABASE_URL`, una guarda de pruebas. La configuración opcional de observabilidad y operación se documenta en `docs/security.md` y los runbooks; no es necesaria para arrancar el entorno local.
+Variables principales: `GLOWBOOK_ENV`, `APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `PRODUCTION_SUPABASE_URL` (guarda de pruebas). La configuración opcional de observabilidad se documenta en `docs/security.md`; no es necesaria para arrancar el entorno local.
 
 ## 3. Base De Datos Local
 
@@ -33,7 +33,7 @@ npm run db:types     # regenera src/types/database.types.ts desde la BD local
 
 Reglas de la BD local:
 
-- Hay un stack local por máquina. Si cambias de checkout, para el stack desde el checkout que lo arrancó (`npx supabase stop`) y vuelve a levantarlo desde el nuevo. `docs/testing.md` explica el motivo y el mensaje de `ensureLocalSupabase`.
+- Hay un stack local por máquina. Si cambias de checkout, para el stack desde el checkout que lo arrancó (`npx supabase stop`) y vuelve a levantarlo desde el nuevo. `docs/testing.md` explica el motivo.
 - Puertos declarados en `supabase/config.toml`: API `55421`, base de datos `55422`.
 - Si `db:start` falla, revisa que Docker esté en ejecución.
 
@@ -43,7 +43,7 @@ Las migraciones son forward-only y siguen expand/contract (ADR 0016). Pasos:
 
 1. Identifica el módulo dueño del cambio en `docs/database-contracts.md` y el ADR relacionado.
 2. Crea una migración nueva en `supabase/migrations/` con el formato `YYYYMMDDHHMMSS_nombre.sql`, con una fecha posterior a la última existente. Nunca edites una migración ya aplicada en producción.
-3. Respeta las prohibiciones: sin `RENAME`, `TRUNCATE` ni `DELETE FROM` sin `WHERE`. Renombrar es un expand seguido de un contract en otra migración.
+3. Respeta las prohibiciones: sin `RENAME`, `TRUNCATE` ni `DELETE FROM` sin `WHERE`. Renombrar es un expand seguido de un contract en otra migración. Las operaciones de contract tienen su formato en `docs/runbooks/database-migrations.md`.
 4. Aplica en local con `npm run db:reset`.
 5. Añade o actualiza pruebas pgTAP en `supabase/tests/` si cambian RLS, RPC, permisos o integridad.
 6. Regenera tipos con `npm run db:types` y revisa el diff de `src/types/database.types.ts`. No lo edites a mano.
@@ -76,28 +76,13 @@ Antes de crear carpetas nuevas, usa los nombres de `CONTEXT.md`.
 
 ## 6. Pruebas
 
-| Tipo | Ubicación | Comando |
-|---|---|---|
-| Unitarias | `src/**/*.test.ts(x)` (sin `*.rpc.test.ts` ni `*.integration.test.ts`) | `npm run test` |
-| Integración (BD local) | `src/**/*.rpc.test.ts`, `src/**/*.integration.test.ts` | `npm run test:integration` |
-| pgTAP | `supabase/tests/*.sql` | `npm run db:test` (runner `scripts/quality/run-pgtap.mjs`) |
-| Scripts | `scripts/**/*.test.mjs` con `node:test` | `node --test <archivo>` (el verificador ejecuta la lista completa) |
-| E2E | `e2e/*.spec.ts` | `npm run test:e2e` |
-| Cobertura | Vitest con v8 | `npm run test:coverage` |
-
-Principios:
-
-- Las pruebas cruzan la interfaz pública del módulo y describen conducta observable. Evita probar detalles internos.
-- Una regla crítica (RLS, permisos, idempotencia, citas, errores públicos) siempre tiene prueba.
-- Una corrección de bug incluye una prueba que falla antes del cambio.
-- Las pruebas de integración fallan si falta la BD local. No se marcan como saltadas.
-- Umbrales y trinquetes: ver `docs/quality-guide.md`.
-
-Para ejecutar solo las pruebas de un cambio mientras iteras:
+Las pruebas (tipos, ubicación, reglas y umbrales de cobertura) están en `docs/testing.md`. Para iterar sobre un cambio sin ejecutar toda la suite:
 
 ```text
 npx vitest run --project unit --maxWorkers=2 <rutas>
 ```
+
+Una regla crítica (RLS, permisos, idempotencia, citas, errores públicos) siempre tiene prueba, y una corrección de bug incluye una prueba que falla antes del cambio.
 
 ## 7. Interfaz De Usuario
 
@@ -119,11 +104,11 @@ Los hooks no sustituyen `verify:full`. No se usa `--no-verify` para saltarlos.
 - Commits en español con formato `tipo(ámbito): mensaje` (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`).
 - Pull request con la plantilla de `.github/pull_request_template.md`. La evidencia de pruebas incluye el comando y su resultado.
 - Un cambio de arquitectura, de contrato de datos o de herramientas incluye un ADR en `docs/adr/`.
-- El workflow `GlowBook CI` (`.github/workflows/ci.yml`) debe estar en verde antes de fusionar. El despliegue lo gestiona `docs/production-standard.md`.
+- El workflow `GlowBook CI` (`.github/workflows/ci.yml`) debe estar en verde antes de fusionar. La publicación la gestiona `docs/runbooks/deploy.md`.
 
 ## 10. De La Rama A Producción
 
-1. Con el checkout limpio, actualizar main y crear una rama:
+1. Con el checkout limpio, actualiza main y crea una rama:
 
    ```bash
    git switch main
@@ -131,13 +116,13 @@ Los hooks no sustituyen `verify:full`. No se usa `--no-verify` para saltarlos.
    git switch -c feat/nombre-del-cambio
    ```
 
-2. Con Docker abierto, ejecutar `npm run db:start` y `npm run dev`. Desarrollar y probar contra Supabase local. Las migraciones se añaden al repositorio, no se aplican manualmente a producción.
-3. Durante el cambio usar `npm run verify:fast`; antes de entregarlo, completar `npm run verify:full` en un checkout limpio. Los hooks no se saltan.
-4. Preparar los archivos, revisar `git diff --cached`, hacer commit en español y subir la rama. Ejemplo: `git commit -m "feat(agenda): permitir filtrar citas"` y `git push -u origin feat/nombre-del-cambio`.
-5. Abrir un PR hacia main con evidencia de verificación. Esperar los siete controles obligatorios de CI y revisar el cambio antes de integrarlo.
-6. Tras el merge, CI vuelve a comprobar el SHA de main. Su éxito dispara GlowBook Release; un push a una rama no hace deploy en Vercel.
-7. Aprobar las migraciones en Production. Después del despliegue candidato y su smoke, aprobar la promoción al dominio público. Seguir los botones y criterios de `docs/runbooks/deploy.md`.
-8. Confirmar la release en verde y el monitor de producción. Staging remoto y Nightly no forman parte de este flujo.
+2. Con Docker abierto, ejecuta `npm run db:start` y `npm run dev`. Desarrolla y prueba contra Supabase local. Las migraciones se añaden al repositorio, no se aplican manualmente a producción.
+3. Durante el cambio usa `npm run verify:fast`; antes de entregarlo, completa `npm run verify:full` en un checkout limpio.
+4. Prepara los archivos, revisa `git diff --cached`, haz commit en español y sube la rama. Ejemplo: `git commit -m "feat(agenda): permitir filtrar citas"` y `git push -u origin feat/nombre-del-cambio`.
+5. Abre un PR hacia main con evidencia de verificación. Espera los siete controles obligatorios de CI y revisa el cambio antes de integrarlo.
+6. Tras el merge, CI vuelve a comprobar el SHA de main. Su éxito dispara GlowBook Release; un push a una rama no despliega en Vercel.
+7. Aprueba las migraciones en Production y, después del despliegue candidato y su smoke, la promoción al dominio público. Sigue los pasos de `docs/runbooks/deploy.md`.
+8. Confirma la release en verde y el monitor de producción.
 
 ## 11. Comandos De Uso Diario
 
@@ -150,4 +135,4 @@ npm run verify:fast    # ciclo diario completo
 npm run verify:full    # definición de terminado
 ```
 
-Los comandos que apuntan a staging o producción (`staging:*`, `release:*`, `*:seed-*`, `*:cleanup-*`, `pricing:*`, `bootstrap:admin`, `db:migrate`) no son de desarrollo diario. Están descritos en `docs/environments.md` y en los runbooks.
+Los comandos que apuntan a entornos remotos (`release:*`, `bootstrap:admin` y similares) no son de desarrollo diario. Están descritos en `docs/environments.md` y en los runbooks, y no se ejecutan desde pruebas ni agentes sin instrucción explícita de la persona responsable.

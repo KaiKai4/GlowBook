@@ -55,4 +55,4 @@ Estado revisado a 2026-10-10: los 26 ADR están aceptados, con las sustituciones
 | [0025](0025-lecturas-de-billing-de-inquilino-con-rls.md) | Lecturas de billing del inquilino con RLS y escrituras de plataforma acotadas (revisa parte de ADR 0010) | Datos, billing y seguridad |
 | [0026](0026-cuando-inyectar-dependencias.md) | Cuándo inyectar dependencias (DIP pragmático) | Arquitectura y pruebas |
 
-Las guías que aplican estas decisiones son `docs/quality-guide.md`, `docs/database-contracts.md`, `docs/security.md` y `docs/testing.md`.
+Las guías que aplican estas decisiones son `docs/testing.md`, `docs/database-contracts.md` y `docs/security.md`.

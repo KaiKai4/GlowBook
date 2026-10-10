@@ -179,6 +179,98 @@ Notas:
 - Las escrituras de plataforma sobre una fila de salón (`salon-subscriptions-writes.repo.ts`) filtran por `salon_id` y usan `expectOneUpdatedRow`: cero o varias filas son error.
 - Los mensajes de error se traducen en la capa de aplicación (ADR 0018).
 
+## Contratos de migraciones 029-067 por módulo
+
+Migraciones forward-only (ADR 0016). Las de esta sección son anteriores a las que ya tienen entrada propia en este documento. Las columnas "Prueba pgTAP" indican el archivo de `supabase/tests/` que cubre el contrato; `—` significa que no hay prueba específica (la cobertura, si existe, es indirecta).
+
+### Citas
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| `update_appointment(payload jsonb) returns void` | `20240101000029`, redefinida en `20240101000030` y en `20240101000065` (con clave de idempotencia) | `security definer`, `search_path = public, pg_temp`; ejecutable por `authenticated` | `src/features/appointments/use-cases` | `03_create_appointment.sql`, `06_idempotency.sql` |
+| `create_appointment(payload jsonb)` (redefinición) | `20240101000030`, reemplazada en `20240101000065` | Igual que arriba | `src/features/appointments/use-cases/create-appointment.ts` | `03_create_appointment.sql`, `06_idempotency.sql` |
+| `recalc_appointment()` con descuentos por ítem | `20240101000032` (añade `discount_amount` a la cabecera y `pricing_mode`, `completion_price_note`) y `20240101000033` (recalcula con descuentos por ítem) | Trigger, sin grant de cliente | `src/features/appointments/data/appointments.repo.ts` | `15_recalc_appointment.sql` |
+| `appointment_items.discount_amount` y precio variable | `20240101000032`, `20240101000033`, guarda `appointment_items_discount_not_greater_than_price` en `20240101000034` | Check constraint: el descuento no supera el precio del ítem | `src/features/appointments/domain` | `15_recalc_appointment.sql` |
+| `enforce_employee_schedule_exception()` | `20240101000061`; trigger `trg_enforce_employee_schedule_exception` sobre `appointment_items` (insert/update de `salon_id`, `employee_id`, `start_time`, `blocks_calendar`) | `security invoker` desde el trigger; `revoke execute` a todos los roles | `src/features/employees/use-cases/employee-schedule.ts`, `src/features/appointments` | `16_schedule_exceptions.sql` |
+| `cancel_appointment(payload jsonb)`, `mark_no_show(payload jsonb)`, `close_appointment_without_charge(uuid, uuid, text)` | `20240101000065` | `security definer`; `cancel_appointment` y `mark_no_show` ejecutables solo por `authenticated`; `close_appointment_without_charge` sin grant de cliente | `src/features/appointments/use-cases` | `06_idempotency.sql` |
+
+### Inventario y venta minorista
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| Tablas `inventory_products`, `inventory_stock_locations`, `inventory_movements`, `inventory_purchases`, `inventory_purchase_items`, `retail_sales`, `retail_sale_items` y `expenses` | `20240101000035`; RLS activado y trigger `updated_at` en las tablas con esa columna | RLS por `salon_id`; escritura de inventario restringida por `inventory.manage` | `src/features/inventory`, `src/features/retail` | `01_tenant_isolation.sql` |
+| `inventory_products.is_retail_enabled` y deleted_at (borrado lógico) | `20240101000037` (columna e índice), `20240101000042` (`deleted_at`) | Sin grant nuevo | `src/features/inventory` | — |
+| Políticas de lectura de `inventory_purchases` y `inventory_purchase_items` | `20240101000041` (amplía a `expenses.manage`) y `20240101000046` (amplía a `reports.view`) | RLS: `inventory.manage`, `expenses.manage` o `reports.view` además de `salon_id()` | `src/features/inventory`, `src/features/expenses`, `src/features/reports` | — |
+| `apply_inventory_stock_delta(...)`, `record_inventory_transfer(...)`, `record_inventory_purchase(...)`, `record_retail_sale(...)` | `20240101000043` (atómicas); `record_retail_sale` cambia de firma en `20240101000044` (métodos de pago); `record_retail_sale`, `record_inventory_purchase` y `record_inventory_transfer` se recrean con `p_idempotency_key uuid default null` en `20240101000065` | `security definer`; `revoke` a `public`; `apply_inventory_stock_delta` y las tres RPC de venta/compra/traspaso con grant a `authenticated` | `src/features/inventory/data/rpc`, `src/features/retail/data/rpc/record-retail-sale.ts` | `04_security_definer_and_grants.sql`, `06_idempotency.sql` |
+| `salons.payment_methods text[]` y constraints de método de pago | `20240101000044` (no vacío; obligatorio en citas con método y en ventas) | Check constraints | `src/features/salon`, `src/features/retail` | — |
+| `customers.search_name` e índice `customers_salon_active_search_name_idx` | `20240101000045` | Columna normalizada para búsqueda por nombre; sin grant nuevo | `src/features/customers/data` | — |
+| `retail_sale_items.quantity` entero | `20240101000036` | Check constraint | `src/features/retail` | — |
+| Columna `expenses.vendor_name` (antes `vendor`) | `20240101000038` | Renombrado histórico, anterior a la regla que prohíbe `RENAME COLUMN` (sección 11 de `AGENTS.md`) | `src/features/expenses` | — |
+| `expenses.custom_category`, `expenses.concept` | `20240101000039` (categoría personalizada obligatoria) y `20240101000040` (concepto no vacío) | Check constraints | `src/features/expenses/domain` | — |
+| `expenses.category` ampliada, `expenses.receipt_url`, índice por categoría | `20240101000062` | Check `expenses_category_check` sustituido; columna opcional | `src/features/expenses` | — |
+
+### Catálogo de servicios
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| `uq_service_categories_active_name_per_salon` (índice único parcial sobre `service_categories(salon_id, name) where is_active`) | `20240101000063` | Sustituye la restricción `service_categories_salon_id_name_key`: permite archivar una categoría y crear otra activa con el mismo nombre | `src/features/services` | — |
+
+### Colaboradores, horarios y perfiles
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| Tabla `schedule_exceptions` (días libres puntuales por colaborador) y políticas `sched_exc_select` (salón) y `sched_exc_write` (`employees.manage`) | `20240101000060` | RLS por `salon_id`; escritura con `has_permission('employees.manage')` | `src/features/employees/use-cases/employee-schedule.ts` | `16_schedule_exceptions.sql` |
+| Índice único `employees_salon_id_id_unique` (`salon_id, id`) | `20240101000060` | Permite a la FK garantizar que la excepción pertenece al mismo salón | `src/features/employees` | `16_schedule_exceptions.sql` |
+| `replace_employee_assignments(payload jsonb)` | `20240101000067` | `security definer`; helper interno sin grant a clientes | `src/features/employees/data` | `08_employee_atomic.sql` |
+| `create_employee_with_assignments(payload jsonb) returns` (`employee_id`) | `20240101000067` | `security definer`; `authenticated` | `src/features/employees/use-cases` | `08_employee_atomic.sql` |
+| `update_employee_profile(payload jsonb)` | `20240101000067` | `security definer`; `authenticated`. Un cambio de email invalida las invitaciones pendientes | `src/features/employees/use-cases` | `08_employee_atomic.sql` |
+| Índice único parcial `employees_active_email_per_salon_unique` (`salon_id, lower(email)` entre colaboradores activos) | `20240101000067` | Solo se crea si no hay duplicados; si los hay, la migración avisa sin fallar el despliegue | `src/features/employees` | `08_employee_atomic.sql` |
+
+### Planes comerciales, complementos y pagos de plataforma
+
+Migraciones `20240101000047` y `20240101000048` son marcadores históricos sin cambios de esquema. El esquema vigente nace en `20240101000049`.
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| Tablas `platform_modules`, `commercial_plans`, `commercial_plan_modules`, `commercial_limit_metrics`, `commercial_plan_limits`, `salon_plan_assignments`, `salon_plan_overrides`, `salon_plan_alerts` | `20240101000049` (sustituye cualquier intento anterior de billing) | RLS activado; lectura según la tabla (ver "Billing Tenant Contracts"); escritura de plataforma con `is_platform_admin()` | `src/features/billing` | `18_platform_rls.sql`, `19_billing_tenant_rls.sql` |
+| `commercial_limit_metrics` y `commercial_plan_limits`: `default_count_scope` y `count_scope` (`current` por defecto) | `20240101000050` | Check/default sin grant nuevo | `src/features/billing` | — |
+| Tabla `commercial_addons` y columnas de complemento en `salon_plan_overrides` (`addon_id`, `quantity`, `is_gift`, `price_override`) | `20240101000051` | RLS: lectura para `authenticated` (archivados solo para plataforma), escritura de plataforma | `src/features/billing/data/commercial-addons.repo.ts` | `18_platform_rls.sql` |
+| `salon_invitations.plan_id`, columnas de periodo en `salon_plan_assignments` y tabla `salon_plan_payments` | `20240101000052` | RLS de `salon_plan_payments`: solo `is_platform_admin()` | `src/features/billing`, `src/features/platform` | `18_platform_rls.sql` |
+| Ajuste de descripciones de métricas de colaborador y de la dueña dentro de los límites | `20240101000053` | Solo datos; no cambia esquema | `src/features/billing` | — |
+| Limpieza de `salons.disabled_features` para salones con plan activo | `20240101000056` | Solo datos (el plan es la fuente de verdad) | `src/features/salon-features` | — |
+| `count_salon_usage(p_salon_id uuid, p_counters jsonb) returns jsonb` (primera versión) | `20240101000057`; endurecida en `20240101000073` | Primera versión sin grant de cliente, concedida a `service_role` en `20240101000064`. Versión vigente en "Billing Tenant Contracts" | `src/features/billing/data/salon-subscriptions-usage.repo.ts` | `19_billing_tenant_rls.sql` |
+
+### Historial, reportes y lecturas agregadas
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| `report_monthly_history(p_salon_id uuid, ...)` | `20240101000058` | `security invoker`: RLS del llamante; grant a `authenticated` | `src/features/reports` | `04_security_definer_and_grants.sql`, `07_read_models.sql` |
+| `report_day_start`, `report_day_end`, `report_completed_items`, `report_dashboard_metrics`, `report_dashboard_monthly_appointments`, `report_dashboard_top_services`, `report_period_totals`, `report_operational_breakdown`, `report_commissions`, `report_monthly_series`, `report_busy_hours`, `report_expense_concepts`, `report_product_sales`, `report_inventory_alerts` | `20240101000066` (read models de dashboard y reportes, sustituyen el cálculo en JS) | `security invoker`; `execute` solo a `authenticated` (`public`, `anon` y `service_role` revocados) | `src/features/reports`, `src/features/dashboard` | `07_read_models.sql` |
+| `platform_salon_overviews()` (con última actividad de agenda) | `20240101000059` (la tabla de retorno cambia: `drop` y `create`) | `security invoker`; grant solo a `service_role` (`20240101000064`) | `src/features/platform/data/salon-overviews.repo.ts` | `04_security_definer_and_grants.sql` |
+| Índices de lectura `idx_items_salon_start`, `idx_retail_sale_items_salon_created`, `idx_customers_salon_created` | `20240101000066` | Sin cambio de permisos | — | — |
+
+### Actividad del salón y auditoría de escritura
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| Tabla `salon_activity_log` (salón, actor, tabla, acción `insert`/`update`/`delete`, id del registro) | `20240101000054` | RLS: lectura por salón; sin escritura directa de clientes | `src/features/audit` | `17_activity_log_triggers.sql` |
+| `log_salon_activity()` y triggers `trg_activity_*` sobre citas, clientes, servicios, colaboradores, gastos, ventas, productos, movimientos, roles y salones | `20240101000054` | `security definer`; `revoke execute` a `public`, `anon` y `authenticated` | `src/features/audit` | `17_activity_log_triggers.sql` |
+
+### Invitaciones
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| `invite_salon(p_email text) returns text` (primera versión con token hasheado) | `20240101000055`; reemplazada en `20240101000071` | `security definer`; guarda solo el hash del token | `src/features/platform/use-cases/invite-salon.ts` | `12_invitations.sql` |
+| `accept_invitation(...)` y `accept_invitation_admin(text, uuid, text, text, text)` (hash del token) | `20240101000055`; `accept_invitation_admin` sin grant a `public`, `anon` ni `authenticated`, y `service_role` en `20240101000064` | `security definer` | `src/features/platform/use-cases/accept-invitation.ts` | `12_invitations.sql` |
+
+### Seguridad, rate limit e idempotencia (infraestructura)
+
+| Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
+|---|---|---|---|---|
+| Endurecimiento de funciones: `revoke` por defecto de `execute` a `public`, `anon`, `authenticated` y `service_role` salvo lista explícita; `alter default privileges` | `20240101000064` | Lista explícita de grants a `authenticated`, `service_role` y `supabase_auth_admin` (hook de token) | `src/infra/security` | `04_security_definer_and_grants.sql` |
+| Tabla `rate_limit_buckets` y `consume_rate_limit(text, integer, integer)` | `20240101000064` | Tabla sin acceso de cliente; función solo a `service_role`. Limpieza de como mucho 100 cubos expirados por llamada | `src/infra/security/rate-limit.ts` (ADR 0017) | `05_rate_limit.sql` |
+| Tabla `idempotency_keys` (RLS sin políticas ni grants de cliente), `idempotency_begin(text, uuid, text)` e `idempotency_finish(text, uuid, jsonb)` | `20240101000065` | Funciones internas, sin grant de cliente; limpieza de como mucho 100 claves de más de 7 días por llamada | `src/infra/idempotency` | `06_idempotency.sql` |
+
 ## Maintenance Notes
 
 - `recalc_appointment()`: el total de la cabecera (`total_price`) suma el `price` de **todos** los `appointment_items` de la cita, sin filtrar por estado. Los items cancelados o marcados como no-show siguen en la tabla (con `blocks_calendar = false`) y siguen sumando al total de la cabecera. Cambiar esto exige una migración nueva y revisar el contrato de citas.
@@ -220,7 +312,7 @@ npm run db:types
 It is part of the SQL-to-TypeScript contract and should not be edited manually.
 After any schema, enum, view or RPC change:
 
-1. Confirm local and remote migration versions with `npx supabase migration list`.
+1. Confirm local and remote migration versions with `npm run release:migrations` (gate de producción: sale con 0 si está al día, 2 si hay migraciones pendientes y 1 si hay error o drift; ver `.github/workflows/release.yml`).
 2. Regenerate `src/types/database.types.ts`.
 3. Review the diff.
 4. Run `npm run type-check`.
@@ -244,31 +336,3 @@ At minimum, security-sensitive database changes should verify:
 - `appointment_items` overlap protection.
 - Platform-only access for cross-tenant reads and destructive operations.
 - `database.types.ts` regenerated after schema changes.
-
-## Scale Readiness Evidence 2026-06-01
-
-For Fase 47 of `docs/archive/architecture-history/architecture-scale-phases-2026-06-01.md`, the critical
-RPC/RLS checks were re-run with Supabase fixtures:
-
-```text
-npm run test -- src/features/appointments/use-cases/create-appointment.rpc.test.ts src/features/platform/data/salon-overviews.rpc.test.ts
-```
-
-Result:
-
-```text
-2 test files passed
-5 tests passed
-```
-
-Coverage:
-
-- `create_appointment(payload jsonb)` rejects manipulated cross-tenant
-  customer/service payloads.
-- Appointment overlap protection remains enforced by the SQL contract.
-- `platform_salon_overviews()` stays Platform-only and is denied to normal
-  tenant users.
-
-The deployed staging E2E pass is still a separate launch-wide gate because it
-validates routing, cookies, Vercel middleware and the deployed runtime, not only
-the database contract.

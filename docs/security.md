@@ -1,6 +1,26 @@
 # Seguridad Operativa
 
-Fecha: 2026-05-30
+Última revisión: 2026-10-10
+
+## Mapa De Controles
+
+Resumen de qué protege cada control y dónde se comprueba. La política de reporte de vulnerabilidades está en `SECURITY.md`.
+
+| Área | Control | Dónde se comprueba |
+|---|---|---|
+| Aislamiento entre salones | RLS en Postgres como autoridad final (ADR 0001) y `public.salon_id()` desde el claim del JWT. | Pruebas pgTAP `supabase/tests/01_tenant_isolation.sql` (paso `db-tests`) y E2E `e2e/multi-tenant-isolation.spec.ts` (paso `e2e`). |
+| Permisos | Permisos globales y roles por salón (ADR 0003). Se comprueba `has_permission`, nunca el nombre del rol. | `supabase/tests/02_permissions_and_hook.sql`, `src/features/access/domain/permission-checks.test.ts`. |
+| Plataforma | Área `/admin` protegida por `is_platform_admin()`. Alta de salones solo por invitación (ADR 0005). | Pruebas de integración y E2E `e2e/platform-admin.spec.ts`. |
+| Cliente `service_role` | Solo en servidor, tras verificar superadmin, y solo desde `src/infra` o `features/*/data` (regla `admin-client-boundary`; ADR 0010). Nunca en navegador ni en variables `NEXT_PUBLIC_*`. | Paso `architecture` y paso `bundle-secrets`. |
+| Secretos | Ningún secreto en el repositorio. Escaneo sobre archivos rastreados por git. | Paso `secrets` (secretlint), también en `pre-commit`. |
+| Dependencias | Producción sin avisos de auditoría y sin excepciones. Desarrollo con excepciones con caducidad (ADR 0015). | Pasos `audit-prod` y `audit-all`, `security/audit-exceptions.json`. |
+| Cabeceras web | Cabeceras estáticas en `next.config.ts` y paso E2E de cabeceras. | `e2e/security-headers.spec.ts`, sección "Headers Web". |
+| CSP | Content-Security-Policy con nonce por petición en `src/proxy.ts` y `src/infra/security/csp.ts`, con endpoint de informes. | Sección "Informes CSP" y "CSP Y Secrets". |
+| Rate limit | Contador compartido en Postgres (`rate_limit_buckets`, RPC `consume_rate_limit`, solo `service_role`) desde `src/infra/security/rate-limit.ts` (ADR 0017). | `supabase/tests/05_rate_limit.sql`, sección "Rate Limiting". |
+| Errores públicos | Solo `PublicError` o mensajes revisados llegan al usuario. Nunca se muestran detalles de Postgres, PostgREST o trazas (ADR 0018). | `src/infra/public-error.ts` y su prueba. |
+| Idempotencia | Las escrituras críticas usan `idempotency_key` y no duplican efectos. | `supabase/tests/06_idempotency.sql` (paso `db-tests`). |
+| Validación de entradas | Zod en el borde de cada entrada (Server Action, route handler, use-case). | `schemas.ts` de cada módulo y sus pruebas. |
+| Migraciones | Forward-only, sin `RENAME`, `TRUNCATE` ni `DELETE` sin `WHERE` (ADR 0016). | Paso `migrations-lint`. |
 
 ## Headers Web
 
@@ -66,37 +86,7 @@ Todo `src` importa Zod solo desde `@/infra/validation/zod`, adaptador con
 `jitless: true` (sin evaluacion dinamica de codigo). La regla
 `no-restricted-imports` de `eslint.config.mjs` lo exige.
 
-CSP queda como decision posterior porque GlowBook todavia necesita validar
-scripts, estilos, fonts, Supabase Auth y assets del hosting real. Antes de
-activar CSP en produccion, probarla en staging con modo report-only.
-
-Decision 2026-06-01:
-
-`next.config.ts` soporta CSP en modo report-only con
-`GLOWBOOK_CSP_REPORT_ONLY=true`. El header no se activa por defecto para evitar
-romper el deployment actual sin observacion previa. Antes de marcar la fase
-como cerrada, activar la variable en staging, redeployar y ejecutar:
-
-```text
-npm run security:readiness
-```
-
-Ese comando valida headers desplegados y revisa que `SUPABASE_SERVICE_ROLE_KEY`
-no aparezca en artefactos publicos/estaticos del build local.
-
-Validacion 2026-06-01:
-
-```text
-npm run security:readiness
-```
-
-Resultado:
-
-- headers base desplegados presentes;
-- `Permissions-Policy` restringe camara, microfono y geolocalizacion;
-- `SUPABASE_SERVICE_ROLE_KEY` no aparece en artefactos publicos/estaticos;
-- CSP report-only queda pendiente de evaluar en staging despues de activar
-  `GLOWBOOK_CSP_REPORT_ONLY=true` y redeployar.
+Activación de CSP en modo report-only: `next.config.ts` soporta `GLOWBOOK_CSP_REPORT_ONLY=true`. El header no se activa por defecto. Para evaluarla, activa la variable en un despliegue no público, revisa en los informes de `/api/csp-report` que Supabase Auth, estilos, fuentes y assets no se bloquean, y solo entonces decide su paso a modo enforce.
 
 ## Service Role
 
@@ -125,7 +115,7 @@ Las variables de entorno se validan con Zod en `src/infra/config/env.ts` al usar
 | Borrado de Salon | Confirmacion exacta por ID, RPC transaccional, audit log. | Requiere backup reciente antes de ejecutar en produccion. |
 | Feature flags de Salon | Platform-only, normalizacion de claves, constraint SQL. | Revisar con soporte antes de desactivar modulos criticos. |
 | Feedback moderation | Platform-only, audit log. | Ninguno para MVP. |
-| E2E/fixtures | Guards contra production URL. | Secrets de staging configurados en CI. |
+| E2E/fixtures | Guards contra production URL. | Secretos del Supabase local de CI; nunca producción. |
 
 ## Observability
 
@@ -144,7 +134,7 @@ GLOWBOOK_OBSERVABILITY_WEBHOOK_URL
 GLOWBOOK_OBSERVABILITY_WEBHOOK_TOKEN
 ```
 
-Validacion 2026-05-31:
+Revisión de logs de 2026-05-31:
 
 - Vercel Logs muestra requests reales `GET 200` en rutas principales.
 - Los `GET 307` observados corresponden a redirects esperados de middleware/auth.
@@ -166,38 +156,7 @@ Reglas:
 - No loguear tokens, cookies, passwords, authorization headers ni
   `SUPABASE_SERVICE_ROLE_KEY`.
 
-Validacion 2026-06-01:
-
-```text
-npm run observability:readiness
-```
-
-El Adapter redacciona metadata sensible y tambien secretos conocidos dentro de
-`error.message`, `error.stack` y valores de metadata con claves no sensibles.
-El comando paso en modo actual sin webhook obligatorio y
-`src/infra/observability/index.test.ts` paso con 3/3 tests.
-Para lanzamiento amplio, configurar un proveedor/webhook y activar:
-
-```text
-GLOWBOOK_OBSERVABILITY_REQUIRE_WEBHOOK=true
-```
-
-Con esa variable, el gate falla si no puede enviar un evento sintetico al
-destino configurado.
-
-Para exigir alertas minimas y retencion antes de lanzamiento amplio:
-
-```text
-GLOWBOOK_OBSERVABILITY_REQUIRE_ALERTS=true
-GLOWBOOK_OBSERVABILITY_ALERT_5XX=<decision>
-GLOWBOOK_OBSERVABILITY_ALERT_SUPABASE_ERRORS=<decision>
-GLOWBOOK_OBSERVABILITY_ALERT_PLATFORM_ERRORS=<decision>
-GLOWBOOK_OBSERVABILITY_ALERT_LATENCY=<decision>
-GLOWBOOK_OBSERVABILITY_RETENTION_DAYS=<dias>
-```
-
-Estas variables son evidencia operativa; no cambian la Interface del Adapter ni
-obligan a importar SDKs externos desde los Modules de negocio.
+El Adapter redacciona metadata sensible y también secretos conocidos dentro de `error.message`, `error.stack` y valores de metadata con claves no sensibles. La cobertura de esa regla está en `src/infra/observability/index.test.ts`.
 
 ## Rate Limiting
 
@@ -235,67 +194,17 @@ Decision para lanzamiento amplio:
 - revisar limites de Supabase Auth antes de campanas publicas;
 - mantener un Adapter propio en `src/infra/security/rate-limit.ts` como Seam futura solo si
   los controles del proveedor no alcanzan;
-- registrar la decision en `docs/production-scale-readiness-checklist.md`.
+- registrar la decision en el ADR 0017 o en uno nuevo.
 
-Gate:
-
-```text
-npm run rate-limit:readiness
-```
-
-El gate valida que las rutas publicas y operaciones sensibles esten
-documentadas. Para exigir confirmacion real de proveedor antes de lanzamiento
-amplio, activar:
-
-```text
-GLOWBOOK_RATE_LIMIT_REQUIRE_PROVIDER_CONFIRMATION=true
-GLOWBOOK_RATE_LIMIT_PROVIDER=<vercel|supabase|waf|custom>
-GLOWBOOK_RATE_LIMIT_LOGIN=<decision>
-GLOWBOOK_RATE_LIMIT_INVITATIONS=<decision>
-GLOWBOOK_RATE_LIMIT_FEEDBACK=<decision>
-GLOWBOOK_RATE_LIMIT_PLATFORM=<decision>
-```
 
 ## CSP Y Secrets
 
-Antes de lanzamiento amplio:
+Antes de ampliar el tráfico público:
 
-1. Probar CSP en staging con `GLOWBOOK_CSP_REPORT_ONLY=true`.
-2. Confirmar que Supabase Auth, estilos, fonts y assets reales no se rompen.
-3. Confirmar que `SUPABASE_SERVICE_ROLE_KEY` no aparece en bundle cliente,
-   Vercel Logs, log drain ni errores capturados.
-4. Rotar secrets si fueron compartidos en screenshots, chats, logs o entornos
-   no confiables.
-5. Mantener `PRODUCTION_SUPABASE_URL` configurado para bloquear scripts contra
-   production.
-
-Gate operativo:
-
-```text
-npm run security:readiness
-```
-
-Para exigir confirmacion de CSP/rotacion/log scan antes de lanzamiento amplio:
-
-```text
-GLOWBOOK_SECURITY_REQUIRE_OPERATION_CONFIRMATION=true
-GLOWBOOK_SECURITY_OWNER=<responsable>
-GLOWBOOK_SECURITY_CSP_REPORT_REVIEWED=<decision>
-GLOWBOOK_SECURITY_SECRET_ROTATION_STATUS=<rotated|scheduled|not-needed>
-GLOWBOOK_SECURITY_LOG_SECRET_SCAN=no-secrets-found
-```
-
-`GLOWBOOK_SECURITY_LOG_SECRET_SCAN` debe quedar en `no-secrets-found` solo
-despues de revisar Vercel Logs o el log drain elegido.
-
-Decision conservadora 2026-06-01:
-
-- Para piloto y crecimiento controlado, se acepta la seguridad base validada por
-  `npm run security:readiness`: headers desplegados y ausencia de
-  `SUPABASE_SERVICE_ROLE_KEY` en artefactos publicos.
-- Antes de campanas publicas masivas, se debe activar o confirmar rate limits,
-  probar CSP report-only y revisar/rotar secrets si fueron compartidos o
-  expuestos.
+1. Probar la CSP en modo report-only (`GLOWBOOK_CSP_REPORT_ONLY=true`) y confirmar que Supabase Auth, estilos, fuentes y assets no se rompen.
+2. Confirmar que `SUPABASE_SERVICE_ROLE_KEY` no aparece en el bundle cliente, en los logs de Vercel, en el log drain ni en errores capturados. El paso `bundle-secrets` del verificador comprueba los artefactos públicos.
+3. Rotar secretos si fueron compartidos en capturas, chats, logs o entornos no confiables.
+4. Mantener `PRODUCTION_SUPABASE_URL` configurado para bloquear scripts contra producción.
 
 ## Auditoria De Dependencias Y Secretos
 

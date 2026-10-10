@@ -102,9 +102,9 @@ The full index with status is in `docs/adr/README.md`.
 - `docs/README.md`: single index of the current documentation.
 - `AGENTS.md`: canonical rules, each one with the control that checks it.
 - `SECURITY.md`: vulnerability reporting and security controls.
-- `docs/development-guide.md`: daily workflow, local database, migrations and tests.
-- `docs/quality-guide.md`: local verifier, steps, ratchets and how to add a control.
-- `docs/production-standard.md`: CI, release, synthetic checks, observability and operations.
+- `docs/development-guide.md`: daily workflow, local database, migrations, naming and commits.
+- `docs/testing.md`: test strategy, local verifier (`verify:fast` and `verify:full`), steps, ratchets and how to add a control.
+- `docs/runbooks/deploy.md`: CI, release with approvals, synthetic checks, observability and production operations.
 - `docs/database-contracts.md`: table, RPC and RLS contracts per module.
 - `docs/environments.md`: environments, guards and secret rotation.
 - `docs/archive/`: dated and superseded documents, for traceability only.
@@ -160,6 +160,10 @@ steps CI executes per job. See `docs/testing.md` for what each step checks and
 `docs/adr/0011-verificador-local-igual-ci.md` for why local and CI share one
 manifest.
 
+## Release
+
+Production is published only by `.github/workflows/release.yml`, after GlowBook CI passes on `main`. It needs two approvals on the Production environment: one for migrations and one for promotion to the public domain. A push to a branch does not deploy. See `docs/runbooks/deploy.md`.
+
 ## Generated Supabase Types
 
 `src/types/database.types.ts` is generated from the local Supabase database,
@@ -187,7 +191,7 @@ Use `.env.local` for local development. The expected public and server variables
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` through `NEXT_PUBLIC_*` or browser code.
 
-See `docs/environments.md` before running E2E fixtures or smoke seeds against
+See `docs/environments.md` before running E2E fixtures or scripts against
 shared Supabase projects.
 
 ## Bootstrap
