@@ -2807,6 +2807,16 @@ export type Database = {
                 };
                 Returns: undefined;
             };
+            record_plan_alert: {
+                Args: {
+                    p_message: string;
+                    p_metric_key: string;
+                    p_module_key: string;
+                    p_plan_id: string;
+                    p_severity: string;
+                };
+                Returns: string;
+            };
             record_retail_sale: {
                 Args: {
                     p_customer_id: string;

@@ -7,7 +7,7 @@
 --   * triggers: ningun rol cliente (se disparan sin comprobar EXECUTE).
 -- Las funciones de extensiones instaladas en public (gbt_*, *_dist) se excluyen del recuento.
 begin;
-select plan(12);
+select plan(14);
 
 -- (e) search_path fijado en todas las SECURITY DEFINER de public
 select is(
@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  34,
-  'authenticated tiene EXECUTE exactamente en 34 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores + 2 RPC de roles)'
+  36,
+  'authenticated tiene EXECUTE exactamente en 36 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores + 2 RPC de roles + count_salon_usage y record_plan_alert de F05)'
 );
 
 select ok(
@@ -116,10 +116,33 @@ select ok(
       'public.create_employee_with_assignments(jsonb)',
       'public.update_employee_profile(jsonb)',
       'public.create_role_with_permissions(text,text[])',
-      'public.replace_role_permissions(uuid,text[])'
+      'public.replace_role_permissions(uuid,text[])',
+      'public.count_salon_usage(uuid,jsonb)',
+      'public.record_plan_alert(uuid,text,text,text,text)'
     ]) as sig
   ),
-  'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita)'
+  'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita y las de billing de F05)'
+);
+
+-- (f2b) anon no ejecuta count_salon_usage ni record_plan_alert (F05)
+select ok(
+  not has_function_privilege('anon', 'public.count_salon_usage(uuid,jsonb)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.record_plan_alert(uuid,text,text,text,text)', 'EXECUTE'),
+  'anon no puede ejecutar count_salon_usage ni record_plan_alert'
+);
+
+-- (f2c) count_salon_usage es SECURITY DEFINER con search_path fijado (F05-C2a)
+select ok(
+  (
+    select p.prosecdef
+      and exists (
+        select 1 from unnest(coalesce(p.proconfig, '{}'::text[])) cfg
+        where cfg like 'search_path=%'
+      )
+    from pg_proc p
+    where p.oid = 'public.count_salon_usage(uuid,jsonb)'::regprocedure
+  ),
+  'count_salon_usage es SECURITY DEFINER y fija search_path'
 );
 
 -- (f3) service_role ejecuta exactamente la lista admin (+ consume_rate_limit)

@@ -7,11 +7,12 @@
 -- Lectura de tablas: un fallo de permiso de tabla cuenta como 0 filas (aislado), igual que un filtro de RLS.
 -- Escritura denegada: 42501 (insufficient_privilege) si no hay politica WITH CHECK, o 0 filas si la politica USING filtra.
 --
--- HALLAZGOS DE SEGURIDAD (no corregidos aqui; ver bloques TODO(seguridad) al final):
---   1. Los miembros de un salon leen overrides, alertas y pagos de su propio salon (reason, notes, importes).
---   2. commercial_plans: los planes en borrador (status = 'draft') son visibles para cualquier usuario autenticado.
+-- Hallazgos de seguridad corregidos en 20240101000073_billing_tenant_rls.sql (F05-C1):
+--   1. Overrides y alertas: el salon solo lee columnas minimas; pagos solo para plataforma.
+--   2. commercial_plans: borradores solo plataforma; el plan asignado al salon se ve aunque este archivado.
+--   3. commercial_plan_modules / commercial_plan_limits: sin "or true"; anon no lee nada.
 begin;
-select plan(28);
+select plan(36);
 
 -- Fixtures (como postgres, saltando RLS)
 insert into auth.users (id, email, aud, role) values
@@ -54,6 +55,15 @@ insert into salon_plan_alerts (salon_id, severity, message) values
 insert into salon_plan_payments (salon_id, plan_id, amount, period_start, period_end, notes) values
   ('c2000000-0000-0000-0000-000000000001', 'c3000000-0000-0000-0000-000000000001', 10, '2030-01-01', '2030-02-01', 'tap18 pago A'),
   ('c2000000-0000-0000-0000-000000000002', 'c3000000-0000-0000-0000-000000000001', 10, '2030-01-01', '2030-02-01', 'tap18 pago B');
+
+insert into commercial_plan_modules (plan_id, module_key, enabled) values
+  ('c3000000-0000-0000-0000-000000000001', 'appointments', true),
+  ('c3000000-0000-0000-0000-000000000002', 'retail', true),
+  ('c3000000-0000-0000-0000-000000000003', 'customers', true);
+
+insert into commercial_plan_limits (plan_id, metric_key, max_value) values
+  ('c3000000-0000-0000-0000-000000000001', 'appointments.total', 100),
+  ('c3000000-0000-0000-0000-000000000002', 'appointments.total', 100);
 
 insert into feedback_reports (salon_id, created_by, message) values
   ('c2000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000002', 'tap18 feedback A');
@@ -150,6 +160,52 @@ select is(
   'los planes archivados no son visibles para un salon'
 );
 
+-- Hallazgo 1 corregido: overrides y alertas del propio salon, sin columnas internas; pagos fuera
+select is(
+  public.tap_count($q$select 1 from salon_plan_overrides where salon_id = 'c2000000-0000-0000-0000-000000000001'$q$),
+  1::bigint,
+  'control: el owner de A ve sus overrides (columnas minimas)'
+);
+
+select throws_ok(
+  $q$select reason from salon_plan_overrides where salon_id = 'c2000000-0000-0000-0000-000000000001'$q$,
+  '42501',
+  null,
+  'el owner de A no puede leer el motivo interno de sus overrides'
+);
+
+select is(
+  public.tap_count($q$select 1 from salon_plan_payments where salon_id = 'c2000000-0000-0000-0000-000000000001'$q$),
+  0::bigint,
+  'el owner de A no ve los pagos de su propio salon (solo plataforma)'
+);
+
+select is(
+  public.tap_count($q$select 1 from salon_plan_alerts where salon_id = 'c2000000-0000-0000-0000-000000000001'$q$),
+  1::bigint,
+  'control: el owner de A ve sus alertas'
+);
+
+-- Hallazgo 2 corregido: borradores ocultos; planes de borrador sin modulos visibles
+select is(
+  public.tap_count($q$select 1 from commercial_plans where status = 'draft'$q$),
+  0::bigint,
+  'los planes en borrador no son visibles para salones'
+);
+
+select is(
+  public.tap_count($q$select 1 from commercial_plan_modules where plan_id = 'c3000000-0000-0000-0000-000000000002'$q$),
+  0::bigint,
+  'los modulos de un plan en borrador no son visibles para salones'
+);
+
+-- Hallazgo 3: el plan activo y sus modulos siguen visibles para el salon
+select is(
+  public.tap_count($q$select 1 from commercial_plan_modules where plan_id = 'c3000000-0000-0000-0000-000000000001'$q$),
+  1::bigint,
+  'control: el owner de A ve los modulos de su plan activo'
+);
+
 -- Escrituras de plataforma denegadas para el owner de A
 select throws_ok(
   $q$insert into platform_admins (user_id) values ('c1000000-0000-0000-0000-000000000002')$q$,
@@ -221,6 +277,25 @@ select is(
   'tras los intentos de escritura del owner, la asignacion de A no ha cambiado'
 );
 
+-- Hallazgo 2 (plan archivado asignado): el salon A pasa a un plan archivado y debe seguir viendolo
+update salon_plan_assignments set plan_id = 'c3000000-0000-0000-0000-000000000003'
+  where salon_id = 'c2000000-0000-0000-0000-000000000001';
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"c1000000-0000-0000-0000-000000000002","role":"authenticated","salon_id":"c2000000-0000-0000-0000-000000000001"}',
+  true
+);
+
+select is(
+  public.tap_count($q$select 1 from commercial_plans where code = 'tap18_archivado'$q$),
+  1::bigint,
+  'el owner de A ve su plan asignado aunque este archivado'
+);
+
+reset role;
+
 -- ===== Sesion del administrador de plataforma =====
 set local role authenticated;
 select set_config(
@@ -253,8 +328,9 @@ select is(
   'el administrador de plataforma ve las asignaciones de plan de todos los salones'
 );
 
+-- Overrides: la plataforma lee las columnas concedidas a authenticated (el motivo lo lee service_role)
 select is(
-  public.tap_count($q$select 1 from salon_plan_overrides where reason like 'tap18 motivo interno%'$q$)
+  public.tap_count($q$select 1 from salon_plan_overrides where module_key = 'appointments'$q$)
   + public.tap_count($q$select 1 from salon_plan_alerts where message like 'tap18 alerta%'$q$)
   + public.tap_count($q$select 1 from salon_plan_payments where notes like 'tap18 pago%'$q$),
   6::bigint,
@@ -300,9 +376,12 @@ select is(
   + public.tap_count($q$select 1 from salon_plan_overrides$q$)
   + public.tap_count($q$select 1 from salon_plan_alerts$q$)
   + public.tap_count($q$select 1 from salon_plan_payments$q$)
-  + public.tap_count($q$select 1 from feedback_reports$q$),
+  + public.tap_count($q$select 1 from feedback_reports$q$)
+  + public.tap_count($q$select 1 from commercial_plan_modules$q$)
+  + public.tap_count($q$select 1 from commercial_plan_limits$q$)
+  + public.tap_count($q$select 1 from commercial_plans$q$),
   0::bigint,
-  'anon no lee ninguna fila de plataforma ni de salones'
+  'anon no lee ninguna fila de plataforma, de salones ni de planes (modulos y limites incluidos)'
 );
 
 select throws_ok(
@@ -311,29 +390,6 @@ select throws_ok(
   null,
   'anon no puede darse de alta como administrador de plataforma'
 );
-
--- ============================================================================
--- TODO(seguridad) 1: los miembros del salon leen overrides, alertas y pagos de SU salon.
--- Demostracion (sesion authenticated con salon_id = A, sin permiso salon.manage ni plataforma):
---   select reason from salon_plan_overrides where salon_id = '<salon A>';   -- devuelve 'tap18 motivo interno A'
---   select notes  from salon_plan_payments  where salon_id = '<salon A>';   -- devuelve 'tap18 pago A'
--- Politica: salon_plan_overrides_select / salon_plan_alerts_select / salon_plan_payments_select / salon_plan_assignments_select
--- (migraciones 049 y 052) usan solo "salon_id = salon_id()". Los motivos, notas e importes internos
--- no son del salon. Asercion correcta (la dejamos sin ejecutar hasta decidir la politica):
---   select is(public.tap_count($q$select 1 from salon_plan_overrides where salon_id = 'c2000000-0000-0000-0000-000000000001'$q$), 0::bigint,
---     'el owner de A no ve overrides internos de su salon');
---   (idem para salon_plan_alerts y salon_plan_payments; salon_plan_assignments.notes tambien es interna)
---
--- TODO(seguridad) 2: commercial_plans_select usa "status <> 'archived' or is_platform_admin()", asi que los
--- borradores (status = 'draft') son visibles para cualquier usuario autenticado. Demostracion:
---   select code from commercial_plans where status = 'draft';   -- como owner de A devuelve 'tap18_draft'
--- Asercion correcta:
---   select is(public.tap_count($q$select 1 from commercial_plans where status = 'draft'$q$), 0::bigint,
---     'los planes en borrador no son visibles para salones');
---
--- TODO(seguridad) 3 (informativo): commercial_plan_modules y commercial_plan_limits usan "using (... or true)":
--- son legibles por cualquier rol, incluido anon, aunque el plan asociado sea un borrador.
--- ============================================================================
 
 select * from finish();
 rollback;
