@@ -71,6 +71,7 @@ Antes de crear carpetas nuevas, usa los nombres de `CONTEXT.md`.
 - **Flujos de acción** (el pipeline de `defineAction`): viven en los `actions*.ts` de `src/app`, con su nombre de módulo. No se crean archivos `*-flow.ts` aparte.
 - **Parseo de entrada** (FormData o campos crudos): `parse-*-input.ts` o `*-input.ts`, con funciones `parse*`.
 - **Variables**: `result` para un valor `Result<T>` y `formData` para un `FormData`. No uses `res`, `r`, `outcome`, `fd` ni `form` para estos tipos.
+- **Inyección de dependencias**: cuándo pasar `deps` y cuándo usar `vi.mock` se decide en [ADR 0026](adr/0026-cuando-inyectar-dependencias.md).
 - **Unidades de tiempo**: nombres completos (`hours`, `minutes`, `seconds`), nunca una letra (`h`, `m`, `s`).
 
 ## 6. Pruebas
