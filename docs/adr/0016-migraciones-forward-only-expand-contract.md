@@ -44,9 +44,10 @@ escribe la migracion.
 5. **DROP FUNCTION** solo si la misma migracion recrea la funcion (`CREATE OR REPLACE`).
 6. **Escrituras remotas acotadas.** Los scripts que escriben en una base remota exigen
    `--confirm=<project-ref>` y rechazan produccion (`scripts/lib/target-guard.mjs`).
-   Las migraciones remotas se aplican solo con `scripts/db-push-guarded.mjs`, que exige
-   `GLOWBOOK_RELEASE_AUTOMATION=true` y que el proyecto enlazado coincida con la
-   confirmacion.
+   Las migraciones remotas se aplican solo desde `.github/workflows/release.yml` con
+   `scripts/release/apply-migrations.mjs`, con doble guarda. El estado se comprueba con
+   `npm run release:migrations` (`scripts/production-migration-gate.mjs`, salidas 0, 1 y 2;
+   ver [ADR 0022](0022-retiro-tooling-staging-pricing-readiness-stryker.md)).
 
 ## Consecuencias
 

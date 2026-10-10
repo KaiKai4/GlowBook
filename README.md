@@ -136,20 +136,15 @@ npm run verify:full  # Quality tier full: everything in verify:fast plus DB, bui
 npm run verify:job -- <job>  # Run the steps of one CI job locally
 npm run lint         # Run ESLint with zero warnings
 npm run architecture:check # Run architecture guardrails only
-npm run release:readiness # Check release blockers for 5+ salon launch
 npm run test         # Run Vitest unit tests
 npm run test:integration # Run Vitest integration tests against local Supabase
 npm run test:coverage # Run Vitest with v8 coverage
 npm run test:e2e     # Run local Playwright critical flows
-npm run test:e2e:staging # Run Playwright against deployed staging
 npm run type-check   # Run TypeScript without emitting
 npm run db:start     # Start local Supabase (Docker)
 npm run db:reset     # Rebuild local database from migrations
 npm run db:test      # Run pgTAP tests against local database
 npm run db:types     # Regenerate Supabase generated types from local database
-npm run db:migrate   # Push Supabase migrations
-npm run smoke:seed-5-salons # Seed realistic staging smoke data
-npm run smoke:cleanup-5-salons # Cleanup a staging smoke batch
 npm run bootstrap:admin -- <email> <password>
 ```
 

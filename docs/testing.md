@@ -39,7 +39,7 @@ No hace falta `.env.local` para verificar. La base local se obtiene del stack de
 | `npm run test:e2e` | Playwright contra la build local. |
 | `npm run db:start` | Levanta Supabase local (idempotente). |
 | `npm run db:reset` | Reconstruye la BD local desde `supabase/migrations`. |
-| `npm run db:migrate` | Aplica migraciones a un proyecto remoto con guardia (`scripts/db-push-guarded.mjs`): exige `GLOWBOOK_RELEASE_AUTOMATION=true` y `--confirm=<project-ref>`. Solo lo usa la automatizacion de release o una persona con el proyecto enlazado. |
+| `npm run release:migrations` | Compara las migraciones locales con el historial de producción (solo lectura; salidas 0 al día, 2 pendientes, 1 error o drift). Las migraciones remotas solo las aplica `release.yml` con `scripts/release/apply-migrations.mjs`. |
 | `npm run db:test` | Ejecuta las pruebas pgTAP de `supabase/tests`. |
 | `npm run db:types` | Regenera `src/types/database.types.ts` desde la BD local. |
 | `npm run lint` | ESLint con cero avisos. |
@@ -172,7 +172,7 @@ Reportes de Vitest: `text-summary`, `json-summary`, `json` y `lcov` en `coverage
 
 ## Mutación Manual
 
-Stryker queda disponible manualmente con `npx stryker run` sobre `src/features/*/domain` y `src/infra/security`. No forma parte de los workflows automáticos (ADR 0021). Su configuración vive en `stryker.config.mjs`.
+Stryker fue retirado por [ADR 0022](adr/0022-retiro-tooling-staging-pricing-readiness-stryker.md). La cobertura con trinquete y las pruebas de conducta son el control vigente.
 
 ## Hooks De Git
 

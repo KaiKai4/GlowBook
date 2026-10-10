@@ -100,9 +100,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Artefactos del prebuild de Vercel CLI (vercel build): no son fuente.
     ".vercel/**",
-    // Salidas generadas de cobertura y de mutación: no son fuente.
+    // Salidas generadas de cobertura: no son fuente.
     "coverage/**",
-    ".stryker-tmp/**",
     // Configuración local de Claude Code (incluye worktrees de agentes) y artefactos locales de calidad.
     ".claude/**",
     ".quality/**",

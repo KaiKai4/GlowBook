@@ -55,13 +55,8 @@ La regla se evalua con `analyzeMigration` en `scripts/quality/migration-rules.mj
 npm run staging:migrations
 ```
 
-Si el comando bloquea, aplicar migraciones en staging:
-
-```text
-npm run db:migrate
-```
-
-Ese comando se apoyara en `scripts/db-push-guarded.mjs` (ver seccion siguiente).
+Si el comando bloquea (salida 2 o 1), no se aplica nada a mano: las migraciones
+remotas solo las aplica `.github/workflows/release.yml` (ver seccion siguiente).
 
 4. Regenerar tipos:
 
@@ -100,12 +95,6 @@ Todo script que escribe en una base de datos (`seed-*`, `cleanup-*`,
   confirmacion.
 - **Remoto** (`https://<ref>.supabase.co`): exige `--confirm=<ref>` con el mismo ref.
 
-Ejemplo para staging (el ref es el de la URL de staging, no de produccion):
-
-```text
-node --env-file=.env.local scripts/seed-staging-smoke.mjs --confirm=<ref-staging>
-```
-
 Si falta el flag, el script termina con codigo 1 y muestra el ref que debe pasarse.
 
 `bootstrap-platform-admin` acepta el mismo flag despues de email y password:
@@ -114,17 +103,13 @@ Si falta el flag, el script termina con codigo 1 y muestra el ref que debe pasar
 node --env-file=.env.local scripts/bootstrap-platform-admin.mjs <email> <password> --confirm=<ref>
 ```
 
-## Aplicar Migraciones Remotas (db-push-guarded)
+## Aplicar Migraciones Remotas (release.yml)
 
-`scripts/db-push-guarded.mjs` envuelve `supabase db push`. Solo se ejecuta si se cumplen
-todas estas condiciones:
-
-1. `GLOWBOOK_RELEASE_AUTOMATION=true` (lo define la automatizacion de release, no una
-   persona en su terminal).
-2. `--confirm=<ref>` coincide con el project-ref de `NEXT_PUBLIC_SUPABASE_URL`.
-3. El proyecto enlazado por la CLI (archivo local `project-ref` que genera la CLI en la carpeta local supabase/.temp) es el mismo ref.
-
-Si no se cumple alguna, termina con codigo 1 sin tocar la base de datos.
+Las migraciones remotas las aplica solo `.github/workflows/release.yml` con
+`scripts/release/apply-migrations.mjs`, con doble guarda. Solo se ejecuta si
+`npm run release:migrations` sale con codigo 2 (pendientes) y tras la aprobacion
+Production. Si sale con 1 (error o drift), la release se bloquea y no se aplica nada.
+No hay comando manual para aplicar migraciones remotas (ver ADR 0022).
 
 ## Gate De Migraciones
 
