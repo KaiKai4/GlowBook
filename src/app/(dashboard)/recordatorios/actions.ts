@@ -3,7 +3,7 @@
 import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
-import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
+import { confirmAppointment } from "@/features/appointments";
 import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
 import {
   parseConfirmReminderInput,

@@ -13,7 +13,7 @@
     {
       "id": "app/(dashboard)",
       "kind": "internal",
-      "files": 167
+      "files": 174
     },
     {
       "id": "app/(platform)",
@@ -58,7 +58,7 @@
     {
       "id": "features/appointments",
       "kind": "internal",
-      "files": 38
+      "files": 40
     },
     {
       "id": "features/audit",
@@ -340,7 +340,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/appointments",
-      "count": 41
+      "count": 37
     },
     {
       "from": "app/(dashboard)",
@@ -350,7 +350,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/customers",
-      "count": 9
+      "count": 8
     },
     {
       "from": "app/(dashboard)",
@@ -385,7 +385,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/payments",
-      "count": 7
+      "count": 8
     },
     {
       "from": "app/(dashboard)",
@@ -715,7 +715,7 @@
     {
       "from": "features/appointments",
       "to": "features/customers",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/appointments",
@@ -745,7 +745,7 @@
     {
       "from": "features/appointments",
       "to": "infra",
-      "count": 15
+      "count": 16
     },
     {
       "from": "features/appointments",
@@ -760,7 +760,7 @@
     {
       "from": "features/appointments",
       "to": "infra/observability",
-      "count": 5
+      "count": 6
     },
     {
       "from": "features/appointments",

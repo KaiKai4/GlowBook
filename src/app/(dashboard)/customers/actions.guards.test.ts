@@ -7,19 +7,13 @@ import { checkPermanentCustomerByPhone, findArchivedCustomerByContact } from "@/
 import { createCustomerGuarded } from "@/features/customers/use-cases/create-customer-guarded";
 import { updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
-import {
-  deleteTemporaryCustomer,
-  promoteCustomer,
-} from "@/features/customers/use-cases/customer-temporary";
 import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID, USER_ID } from "@/test/action-fixtures";
 import {
   checkCustomerPhoneAction,
   createCustomerAction,
   deleteCustomerAction,
-  deleteTemporaryCustomerAction,
   findArchivedCustomerByContactAction,
-  promoteCustomerAction,
   reactivateCustomerAction,
   updateCustomerAction,
 } from "./actions";
@@ -37,10 +31,6 @@ vi.mock("@/features/customers/use-cases/customer-profile", () => ({ updateCustom
 vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
   archiveCustomer: vi.fn(),
   reactivateCustomer: vi.fn(),
-}));
-vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
-  deleteTemporaryCustomer: vi.fn(),
-  promoteCustomer: vi.fn(),
 }));
 
 const CUSTOMER_ID = RECORD_ID;
@@ -83,17 +73,13 @@ describe("customers actions: rate limit por accion", () => {
     expect(findArchivedCustomerByContact).toHaveBeenCalledWith(expect.any(String), "600000000", "a@b.co");
   });
 
-  it("las acciones de ciclo de vida y temporales devuelven el rechazo sin tocar el cliente", async () => {
+  it("las acciones de ciclo de vida devuelven el rechazo sin tocar el cliente", async () => {
     const formData = formDataOf({ first_name: "Ana", last_name: "Ruiz" });
 
     expect(await reactivateCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
-    expect(await promoteCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
-    expect(await deleteTemporaryCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
     expect(await updateCustomerAction(CUSTOMER_ID, null, formData)).toEqual(LIMITED);
     expect(await deleteCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
     expect(reactivateCustomer).not.toHaveBeenCalled();
-    expect(promoteCustomer).not.toHaveBeenCalled();
-    expect(deleteTemporaryCustomer).not.toHaveBeenCalled();
     expect(updateCustomerProfile).not.toHaveBeenCalled();
     expect(archiveCustomer).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();

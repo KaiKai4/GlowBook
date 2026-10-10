@@ -7,10 +7,6 @@ import {
 } from "@/features/customers/use-cases/customer-duplicates";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
-import {
-  deleteTemporaryCustomer,
-  promoteCustomer,
-} from "@/features/customers/use-cases/customer-temporary";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
@@ -20,9 +16,7 @@ import {
   checkCustomerPhoneAction,
   createCustomerAction,
   deleteCustomerAction,
-  deleteTemporaryCustomerAction,
   findArchivedCustomerByContactAction,
-  promoteCustomerAction,
   reactivateCustomerAction,
   updateCustomerAction,
 } from "./actions";
@@ -46,10 +40,6 @@ vi.mock("@/features/customers/use-cases/customer-profile", () => ({
 vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
   archiveCustomer: vi.fn(),
   reactivateCustomer: vi.fn(),
-}));
-vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
-  deleteTemporaryCustomer: vi.fn(),
-  promoteCustomer: vi.fn(),
 }));
 
 const INVALID = { ok: false, error: "Identificador inválido." } as const;
@@ -133,38 +123,6 @@ describe("customers actions: guardas de identificador y límite", () => {
 
     expect(await reactivateCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No encontrado." });
     expect(revalidatePath).not.toHaveBeenCalled();
-  });
-
-  it("promoteCustomerAction rechaza un identificador inválido", async () => {
-    expect(await promoteCustomerAction("cliente")).toEqual(INVALID);
-    expect(promoteCustomer).not.toHaveBeenCalled();
-  });
-
-  it("promoteCustomerAction promueve y revalida el listado", async () => {
-    vi.mocked(promoteCustomer).mockResolvedValue(ok(undefined));
-
-    expect(await promoteCustomerAction(RECORD_ID)).toEqual(ok(undefined));
-    expect(promoteCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
-    expect(revalidatePath).toHaveBeenCalledWith("/customers");
-  });
-
-  it("promoteCustomerAction no revalida cuando la promoción falla", async () => {
-    vi.mocked(promoteCustomer).mockResolvedValue(err("No es temporal."));
-
-    expect(await promoteCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No es temporal." });
-    expect(revalidatePath).not.toHaveBeenCalled();
-  });
-
-  it("deleteTemporaryCustomerAction rechaza un identificador inválido", async () => {
-    expect(await deleteTemporaryCustomerAction("cliente")).toEqual(INVALID);
-    expect(deleteTemporaryCustomer).not.toHaveBeenCalled();
-  });
-
-  it("deleteTemporaryCustomerAction elimina el temporal del salón", async () => {
-    vi.mocked(deleteTemporaryCustomer).mockResolvedValue(ok(undefined));
-
-    expect(await deleteTemporaryCustomerAction(RECORD_ID)).toEqual(ok(undefined));
-    expect(deleteTemporaryCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
   });
 
   it("updateCustomerAction rechaza un identificador inválido sin validar el formulario", async () => {

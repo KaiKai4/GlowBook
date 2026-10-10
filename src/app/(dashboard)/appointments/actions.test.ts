@@ -60,6 +60,13 @@ const validComplete = {
   item_charges: JSON.stringify([{ id: SERVICE_ID, price: 150 }]),
   idempotency_key: KEY,
 };
+const completedResult = {
+  appointment_id: RECORD_ID,
+  status: "completed" as const,
+  subtotal: 150,
+  discount_amount: 0,
+  total_price: 150,
+};
 const lifecycleForm = () => formDataOf({ appointment_id: RECORD_ID, idempotency_key: KEY });
 
 describe("appointments actions", () => {
@@ -240,8 +247,38 @@ describe("appointments actions", () => {
       vi.mocked(requireActiveProfile).mockResolvedValue(manager);
       vi.mocked(cancelAppointment).mockResolvedValue(ok(undefined));
       expect(await cancelAppointmentAction(lifecycleForm())).toEqual({ ok: true, value: undefined });
-      expect(cancelAppointment).toHaveBeenCalledWith(RECORD_ID, SALON_ID, KEY);
+      expect(cancelAppointment).toHaveBeenCalledWith({
+        appointmentId: RECORD_ID,
+        salonId: SALON_ID,
+        idempotencyKey: KEY,
+        customerDisposition: "keep",
+      });
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
+    });
+
+    it("cancelAppointmentAction pasa la decisión sobre el cliente temporal y acepta solo valores válidos", async () => {
+      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
+      vi.mocked(cancelAppointment).mockResolvedValue(ok(undefined));
+
+      await cancelAppointmentAction(formDataOf({ appointment_id: RECORD_ID, idempotency_key: KEY, customer_disposition: "promote" }));
+      expect(cancelAppointment).toHaveBeenLastCalledWith(expect.objectContaining({ customerDisposition: "promote" }));
+
+      const invalid = await cancelAppointmentAction(
+        formDataOf({ appointment_id: RECORD_ID, idempotency_key: KEY, customer_disposition: "borrar" })
+      );
+      expect(invalid.ok).toBe(false);
+      expect(cancelAppointment).toHaveBeenCalledTimes(1);
+    });
+
+    it("cancelAppointmentAction devuelve los avisos del caso de uso sin fallar", async () => {
+      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
+      vi.mocked(cancelAppointment).mockResolvedValue({ ok: true, value: undefined, warnings: ["Aviso de cliente."] });
+
+      expect(await cancelAppointmentAction(lifecycleForm())).toEqual({
+        ok: true,
+        value: undefined,
+        warnings: ["Aviso de cliente."],
+      });
     });
 
     it("confirmAppointmentAction rechaza sin permiso, y confirma y revalida con permiso", async () => {
@@ -289,31 +326,20 @@ describe("appointments actions", () => {
       expect(completeAppointment).not.toHaveBeenCalled();
     });
 
-    it("rechaza un método de pago no habilitado para el salón", async () => {
-      vi.mocked(assertSalonPaymentMethodEnabled).mockResolvedValue(false);
-
-      expect(await completeAppointmentAction(null, formDataOf(validComplete))).toEqual({
-        ok: false,
-        error: "Ese metodo de pago no esta habilitado para este salon.",
-      });
-      expect(assertSalonPaymentMethodEnabled).toHaveBeenCalledWith(SALON_ID, "cash");
-      expect(completeAppointment).not.toHaveBeenCalled();
-    });
-
     it("completa la cita con los cobros parseados y revalida citas y clientes", async () => {
-      vi.mocked(completeAppointment).mockResolvedValue(ok(undefined));
+      vi.mocked(completeAppointment).mockResolvedValue(ok(completedResult));
 
       const result = await completeAppointmentAction(null, formDataOf(validComplete));
 
-      expect(result).toEqual({ ok: true, value: undefined });
-      expect(completeAppointment).toHaveBeenCalledWith(
-        RECORD_ID,
-        SALON_ID,
-        "cash",
-        [{ id: SERVICE_ID, price: 150, discountPercentage: 0 }],
-        "",
-        KEY
-      );
+      expect(result).toEqual({ ok: true, value: completedResult });
+      expect(completeAppointment).toHaveBeenCalledWith({
+        appointmentId: RECORD_ID,
+        salonId: SALON_ID,
+        paymentMethod: "cash",
+        itemCharges: [{ id: SERVICE_ID, price: 150, discountPercentage: 0 }],
+        completionPriceNote: "",
+        idempotencyKey: KEY,
+      });
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
       expect(revalidatePath).toHaveBeenCalledWith("/customers");
     });

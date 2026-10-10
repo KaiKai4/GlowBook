@@ -7,10 +7,6 @@ import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import {
-  deleteTemporaryCustomer,
-  promoteCustomer,
-} from "@/features/customers/use-cases/customer-temporary";
-import {
   checkPermanentCustomerByPhone,
   findArchivedCustomerByContact,
 } from "@/features/customers/use-cases/customer-duplicates";
@@ -21,8 +17,6 @@ import {
   checkCustomerPhoneAction,
   findArchivedCustomerByContactAction,
   reactivateCustomerAction,
-  promoteCustomerAction,
-  deleteTemporaryCustomerAction,
   updateCustomerAction,
   deleteCustomerAction,
 } from "./actions";
@@ -42,10 +36,6 @@ vi.mock("@/features/customers/use-cases/customer-profile", () => ({
 vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
   archiveCustomer: vi.fn(),
   reactivateCustomer: vi.fn(),
-}));
-vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
-  deleteTemporaryCustomer: vi.fn(),
-  promoteCustomer: vi.fn(),
 }));
 vi.mock("@/features/customers/use-cases/customer-duplicates", () => ({
   checkPermanentCustomerByPhone: vi.fn(),
@@ -248,40 +238,6 @@ describe("customers actions", () => {
       vi.mocked(archiveCustomer).mockResolvedValue(err("No encontrado."));
       expect(await deleteCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No encontrado." });
       expect(revalidatePath).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("clientes temporales", () => {
-    it("promoteCustomerAction promueve y revalida /customers", async () => {
-      vi.mocked(promoteCustomer).mockResolvedValue(ok(undefined));
-
-      expect(await promoteCustomerAction(RECORD_ID)).toEqual({ ok: true, value: undefined });
-      expect(promoteCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
-      expect(revalidatePath).toHaveBeenCalledWith("/customers");
-    });
-
-    it("promoteCustomerAction devuelve el error de permiso específico y no promueve", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-
-      expect(await promoteCustomerAction(RECORD_ID)).toEqual({
-        ok: false,
-        error: "Sin permiso para gestionar clientes.",
-      });
-      expect(promoteCustomer).not.toHaveBeenCalled();
-    });
-
-    it("deleteTemporaryCustomerAction borra solo con permiso", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-      expect(await deleteTemporaryCustomerAction(RECORD_ID)).toEqual({
-        ok: false,
-        error: "Sin permiso para gestionar clientes.",
-      });
-      expect(deleteTemporaryCustomer).not.toHaveBeenCalled();
-
-      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
-      vi.mocked(deleteTemporaryCustomer).mockResolvedValue(ok(undefined));
-      expect(await deleteTemporaryCustomerAction(RECORD_ID)).toEqual({ ok: true, value: undefined });
-      expect(deleteTemporaryCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
     });
   });
 });

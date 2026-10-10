@@ -4,13 +4,11 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import {
   SAVED_WITH_WARNINGS_MESSAGE,
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
-import { formatCurrency } from "@/infra/format/dates";
 import { cn } from "@/components/ui/cn";
 import {
   calculateDiscountAmount,
@@ -18,13 +16,12 @@ import {
   clampDiscountPercentage,
   roundCurrency,
 } from "@/features/appointments/domain/pricing";
-import type {
-  PaymentMethod,
-  PaymentMethodOption,
-} from "@/features/payments/domain/payment-methods";
+import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
 import { completeAppointmentAction } from "../actions";
 import { CheckCircle2 } from "lucide-react";
 import { ChargedItemsSection } from "./complete-appointment-items";
+import { CompleteAppointmentTotal } from "./complete-appointment-total";
+import { CompleteAppointmentPaymentFields } from "./complete-appointment-payment-fields";
 import { launchCompletionConfetti } from "./launch-completion-confetti";
 
 export interface AppointmentForCompletion {
@@ -116,9 +113,13 @@ function CompleteAppointmentForm({
     onBusyChange(pending);
   }, [pending, onBusyChange]);
   const [completed, setCompleted] = useState(false);
+  // Total final que devuelve el servidor al completar; la vista previa local no lo sustituye.
+  const [completedTotal, setCompletedTotal] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const completeButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Vista previa: estos importes solo orientan al usuario antes de cobrar. El servidor
+  // recalcula precios y descuentos al completar, y es su resultado el que cuenta.
   const chargedItems = useMemo(
     () =>
       appt.items.map((item) => {
@@ -168,7 +169,9 @@ function CompleteAppointmentForm({
           return completeAppointmentAction(null, fd);
         }
       );
+      // El resultado del cobro lo confirma el servidor: su total final sustituye a la vista previa.
       if (res.ok) {
+        setCompletedTotal(res.value.total_price);
         setCompleted(true);
         await launchCompletionConfetti(completeButtonRef.current);
         router.refresh();
@@ -181,29 +184,12 @@ function CompleteAppointmentForm({
 
   return (
     <div className="space-y-5">
-        <div className="rounded-2xl border border-success-border bg-success-subtle px-5 py-5 text-center">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-success-fg">
-            Total cobrado
-          </p>
-          {discountAmount > 0 ? (
-            <>
-              <p className="text-sm font-semibold text-success-fg line-through">
-                {formatCurrency(subtotal)}
-              </p>
-              <p className="text-2xl font-semibold tracking-tight text-success-strong">
-                {formatCurrency(finalTotal)}
-              </p>
-              <p className="mt-1 text-xs font-medium text-success-fg">
-                Descuento aplicado: {formatCurrency(discountAmount)}
-              </p>
-            </>
-          ) : (
-            <p className="text-2xl font-semibold tracking-tight text-success-strong">
-              {formatCurrency(finalTotal)}
-            </p>
-          )}
-        </div>
-
+        <CompleteAppointmentTotal
+          subtotal={subtotal}
+          discountAmount={discountAmount}
+          finalTotal={completedTotal ?? finalTotal}
+          completed={completed}
+        />
 
         <ChargedItemsSection
           chargedItems={chargedItems}
@@ -216,31 +202,13 @@ function CompleteAppointmentForm({
           finalTotal={finalTotal}
         />
 
-        <div className="grid gap-4">
-          <Select
-            label="Metodo de pago"
-            value={payment}
-            onChange={(event) => setPayment(event.target.value as PaymentMethod)}
-          >
-            {paymentMethodOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-fg-secondary">
-              Nota del cobro (opcional)
-            </label>
-            <textarea
-              value={completionPriceNote}
-              onChange={(event) => setCompletionPriceNote(event.target.value)}
-              rows={2}
-              maxLength={500}
-              placeholder="Ej. promocion, ajuste manual o servicio adicional..."
-              className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm text-fg-secondary focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-        </div>
+        <CompleteAppointmentPaymentFields
+          payment={payment}
+          onPaymentChange={setPayment}
+          paymentMethodOptions={paymentMethodOptions}
+          note={completionPriceNote}
+          onNoteChange={setCompletionPriceNote}
+        />
 
         {error && (
           <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger-strong">

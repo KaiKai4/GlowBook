@@ -3,25 +3,23 @@
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import {
+  AppointmentLifecycleSchema,
+  CancelAppointmentSchema,
+  type CompleteAppointmentResult,
+  cancelAppointment,
+  completeAppointment,
+  confirmAppointment,
+  type CompleteAppointmentInput,
+  createAppointmentGuarded,
+  type CreateAppointmentInput,
   getOccupiedSlotsForSalonDate,
   type OccupiedByEmployee,
-} from "@/features/appointments/use-cases/appointment-availability";
-import { cancelAppointment } from "@/features/appointments/use-cases/cancel-appointment";
-import { completeAppointmentGuarded } from "@/features/appointments/use-cases/complete-appointment-guarded";
-import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
-import { createAppointmentGuarded } from "@/features/appointments/use-cases/create-appointment-guarded";
-import {
   parseCompleteAppointmentForm,
   parseCreateAppointmentForm,
   parseUpdateAppointmentScheduleForm,
-} from "@/features/appointments/use-cases/appointment-form-parsing";
-import { updateAppointmentSchedule } from "@/features/appointments/use-cases/update-appointment";
-import {
-  AppointmentLifecycleSchema,
-  type CompleteAppointmentInput,
-  type CreateAppointmentInput,
   type UpdateAppointmentScheduleInput,
-} from "@/features/appointments/schemas";
+  updateAppointmentSchedule,
+} from "@/features/appointments";
 import type { z } from "@/infra/validation/zod";
 import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
@@ -36,6 +34,7 @@ const COMPLETE_PATHS = ["/appointments", "/customers"] as const;
 const INVALID_ID_MESSAGE = "Identificador inválido.";
 
 type AppointmentLifecycleInput = z.infer<typeof AppointmentLifecycleSchema>;
+type CancelAppointmentFormInput = z.infer<typeof CancelAppointmentSchema>;
 type LifecycleCommand = (appointmentId: string, salonId: string, idempotencyKey: string) => Promise<Result<void>>;
 
 // Returns blocking appointment slots for the salon on a given date, grouped by employee.
@@ -88,14 +87,35 @@ function lifecycleFlow(deniedMessage: string, command: LifecycleCommand) {
   });
 }
 
-const cancelAppointmentFlow = lifecycleFlow("No tienes permiso para cancelar citas.", cancelAppointment);
+const parseCancelAppointment = parseWithSchema(CancelAppointmentSchema);
+const cancelAppointmentFlow = defineAction<FormData, CancelAppointmentFormInput, void>({
+  permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para cancelar citas." },
+  rateLimit: APPOINTMENTS_RATE_LIMIT,
+  parse: (formData) => parseCancelAppointment(Object.fromEntries(formData)),
+  run: (input, session) =>
+    cancelAppointment({
+      appointmentId: input.appointment_id,
+      salonId: session.salonId,
+      idempotencyKey: input.idempotency_key,
+      customerDisposition: input.customer_disposition,
+    }),
+  revalidate: () => APPOINTMENT_PATHS,
+});
 const confirmAppointmentFlow = lifecycleFlow("No tienes permiso para confirmar citas.", confirmAppointment);
 
-const completeAppointmentFlow = defineAction<FormData, CompleteAppointmentInput, void>({
+const completeAppointmentFlow = defineAction<FormData, CompleteAppointmentInput, CompleteAppointmentResult>({
   permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para completar citas." },
   rateLimit: APPOINTMENTS_RATE_LIMIT,
   parse: (formData) => parseCompleteAppointmentForm(formData),
-  run: (input, session) => completeAppointmentGuarded(input, session.salonId),
+  run: (input, session) =>
+    completeAppointment({
+      appointmentId: input.appointment_id,
+      salonId: session.salonId,
+      paymentMethod: input.payment_method,
+      itemCharges: input.item_charges,
+      completionPriceNote: input.completion_price_note,
+      idempotencyKey: input.idempotency_key,
+    }),
   revalidate: () => COMPLETE_PATHS,
 });
 
@@ -135,8 +155,8 @@ export async function confirmAppointmentAction(formData: FormData): Promise<Resu
 }
 
 export async function completeAppointmentAction(
-  _prev: Result<void> | null,
+  _prev: Result<CompleteAppointmentResult> | null,
   formData: FormData
-): Promise<Result<void>> {
+): Promise<Result<CompleteAppointmentResult>> {
   return completeAppointmentFlow(formData);
 }

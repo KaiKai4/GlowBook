@@ -27,10 +27,6 @@ vi.mock("@/app/(dashboard)/appointments/actions", () => ({
   cancelAppointmentAction: vi.fn(),
   completeAppointmentAction: vi.fn(),
 }));
-vi.mock("@/app/(dashboard)/customers/actions", () => ({
-  promoteCustomerAction: vi.fn(),
-  deleteTemporaryCustomerAction: vi.fn(),
-}));
 
 const SCHEDULED = buildCalendarAppointment({ id: "appt-1" });
 const CONFIRMED = buildCalendarAppointment({

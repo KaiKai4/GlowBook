@@ -6,11 +6,10 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
 import { cancelAppointmentAction } from "../actions";
-import { promoteCustomerAction, deleteTemporaryCustomerAction } from "../../customers/actions";
 import { MessageCircle, UserX, UserCheck } from "lucide-react";
 import { cn } from "@/components/ui/cn";
-import { formatTimeTz } from "@/infra/format/dates";
-import { renderMessageTemplate } from "@/features/notifications/domain/templates";
+import { buildWhatsAppUrl, type TemporaryCustomerChoice } from "@/features/appointments/domain/cancellation-message";
+import { buildCancellationMessage } from "./cancellation-message";
 
 interface ApptForCancel {
   id: string;
@@ -28,13 +27,6 @@ interface ApptForCancel {
   }>;
 }
 
-type SaveChoice = "save" | "discard";
-
-function buildWhatsAppUrl(phone: string, message: string): string {
-  const clean = phone.replace(/\D/g, "");
-  return `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
-}
-
 export function CancelAppointmentDialog({
   appt, open, onClose, tz, salonName, template,
 }: {
@@ -48,7 +40,7 @@ export function CancelAppointmentDialog({
   const router = useRouter();
   const { submit } = useSubmissionIntent({ procedure: "appointments.cancel" });
   const isTemp = appt.customer?.is_temporary ?? false;
-  const [saveChoice, setSaveChoice] = useState<SaveChoice>(isTemp ? "discard" : "save");
+  const [saveChoice, setSaveChoice] = useState<TemporaryCustomerChoice>(isTemp ? "discard" : "save");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   // Set when the appointment is cancelled but the customer step failed: the dialog
@@ -59,65 +51,36 @@ export function CancelAppointmentDialog({
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
     : "el cliente";
 
-  const apptDate = appt.start_time
-    ? new Date(appt.start_time).toLocaleDateString("es-PA", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        timeZone: tz,
-      })
-    : "la fecha programada";
-  const apptTime = appt.start_time ? formatTimeTz(new Date(appt.start_time), tz) : "la hora programada";
-
-  // Permanent customers are never changed here: only temporary ones get a disposition.
-  async function applyCustomerDisposition(): Promise<string | null> {
-    if (!appt.customer?.id || !isTemp) return null;
-
-    if (saveChoice === "save") {
-      const res = await promoteCustomerAction(appt.customer.id);
-      return res.ok ? null : `La cita se canceló, pero no pudimos guardar al cliente: ${res.error}`;
-    }
-
-    const res = await deleteTemporaryCustomerAction(appt.customer.id);
-    return res.ok
-      ? null
-      : `La cita se canceló, pero no pudimos descartar los datos temporales del cliente: ${res.error}`;
+  // La decisión sobre el cliente temporal la aplica el servidor en la misma acción de cancelar.
+  // Aquí solo se envía la intención: "keep" para clientes permanentes o citas sin cliente temporal.
+  function customerDispositionIntent(): "keep" | "promote" | "discard" {
+    if (!isTemp) return "keep";
+    return saveChoice === "save" ? "promote" : "discard";
   }
 
   function handleCancel(withWhatsApp: boolean) {
     setError(null);
     start(async () => {
-      const res = await submit({ appointment_id: appt.id }, (idempotencyKey) => {
+      const disposition = customerDispositionIntent();
+      const res = await submit({ appointment_id: appt.id, customer_disposition: disposition }, (idempotencyKey) => {
         const fd = new FormData();
         fd.set("idempotency_key", idempotencyKey);
         fd.set("appointment_id", appt.id);
+        fd.set("customer_disposition", disposition);
         return cancelAppointmentAction(fd);
       });
       if (!res.ok) { setError(res.error ?? "Error al cancelar."); return; }
 
-      const customerWarning = await applyCustomerDisposition();
-
       if (withWhatsApp && appt.customer?.phone) {
-        const services = appt.items?.map((it) => it.service?.name).filter(Boolean).join(", ") || "Servicios de belleza";
-        const collaborators = [...new Set(
-          appt.items
-            ?.map((it) => it.employee ? `${it.employee.first_name} ${it.employee.last_name}` : null)
-            .filter(Boolean) ?? []
-        )].join(", ") || "nuestro equipo";
-        const msg = renderMessageTemplate(template, {
-          cliente: appt.customer.first_name,
-          fecha: apptDate,
-          hora: apptTime,
-          servicios: services,
-          colaboradores: collaborators,
-          salon: salonName,
-        });
+        const msg = buildCancellationMessage({ appt, template, salonName, tz });
         window.open(buildWhatsAppUrl(appt.customer.phone, msg), "_blank", "noopener,noreferrer");
       }
 
       router.refresh();
-      if (customerWarning) {
-        setWarning(customerWarning);
+      // La cita está cancelada; los avisos son de pasos posteriores (cliente) y se muestran sin cerrar.
+      const warnings = res.warnings ?? [];
+      if (warnings.length > 0) {
+        setWarning(warnings.join(" "));
         return;
       }
       onClose();

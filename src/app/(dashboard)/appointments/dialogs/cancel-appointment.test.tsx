@@ -2,10 +2,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
 import { cancelAppointmentAction } from "@/app/(dashboard)/appointments/actions";
-import {
-  deleteTemporaryCustomerAction,
-  promoteCustomerAction,
-} from "@/app/(dashboard)/customers/actions";
 import { formatTimeTz } from "@/infra/format/dates";
 import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
@@ -23,10 +19,6 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("@/app/(dashboard)/appointments/actions", () => ({
   cancelAppointmentAction: vi.fn(),
-}));
-vi.mock("@/app/(dashboard)/customers/actions", () => ({
-  promoteCustomerAction: vi.fn(),
-  deleteTemporaryCustomerAction: vi.fn(),
 }));
 
 type CancelAppt = Parameters<typeof CancelAppointmentDialog>[0]["appt"];
@@ -87,8 +79,6 @@ describe("CancelAppointmentDialog con intención idempotente", () => {
 
   beforeEach(() => {
     vi.mocked(cancelAppointmentAction).mockReset();
-    vi.mocked(promoteCustomerAction).mockReset();
-    vi.mocked(deleteTemporaryCustomerAction).mockReset();
   });
 
   afterEach(() => {
@@ -164,10 +154,6 @@ describe("CancelAppointmentDialog", () => {
   beforeEach(() => {
     router.refresh.mockReset();
     vi.mocked(cancelAppointmentAction).mockReset();
-    vi.mocked(promoteCustomerAction).mockReset();
-    vi.mocked(deleteTemporaryCustomerAction).mockReset();
-    vi.mocked(promoteCustomerAction).mockResolvedValue({ ok: true, value: undefined });
-    vi.mocked(deleteTemporaryCustomerAction).mockResolvedValue({ ok: true, value: undefined });
   });
 
   afterEach(() => {
@@ -261,8 +247,6 @@ describe("CancelAppointmentDialog", () => {
     expect(formData).toBeInstanceOf(FormData);
     expect(formData?.get("appointment_id")).toBe("appt-1");
     expect(String(formData?.get("idempotency_key"))).toMatch(/^[0-9a-f-]{36}$/);
-    expect(promoteCustomerAction).not.toHaveBeenCalled();
-    expect(deleteTemporaryCustomerAction).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(router.refresh).toHaveBeenCalledTimes(1);
   });
@@ -274,8 +258,7 @@ describe("CancelAppointmentDialog", () => {
     click(buttonContainingText(container, "Sí, guardar cliente"));
     await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
-    expect(promoteCustomerAction).toHaveBeenCalledWith("cust-temp");
-    expect(deleteTemporaryCustomerAction).not.toHaveBeenCalled();
+    expect(vi.mocked(cancelAppointmentAction).mock.calls[0]?.[0].get("customer_disposition")).toBe("promote");
   });
 
   it("descarta el cliente temporal al cancelar cuando se elige descartar", async () => {
@@ -284,8 +267,7 @@ describe("CancelAppointmentDialog", () => {
 
     await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
-    expect(deleteTemporaryCustomerAction).toHaveBeenCalledWith("cust-temp");
-    expect(promoteCustomerAction).not.toHaveBeenCalled();
+    expect(vi.mocked(cancelAppointmentAction).mock.calls[0]?.[0].get("customer_disposition")).toBe("discard");
   });
 
   it("muestra el error de cancelación, no cierra y no toca al cliente", async () => {
@@ -297,18 +279,22 @@ describe("CancelAppointmentDialog", () => {
     expect(container.textContent).toContain("La cita ya fue completada.");
     expect(onClose).not.toHaveBeenCalled();
     expect(router.refresh).not.toHaveBeenCalled();
-    expect(promoteCustomerAction).not.toHaveBeenCalled();
-    expect(deleteTemporaryCustomerAction).not.toHaveBeenCalled();
   });
 
-  it("si falla descartar al cliente temporal, avisa y no cierra en silencio", async () => {
-    vi.mocked(cancelAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
-    vi.mocked(deleteTemporaryCustomerAction).mockResolvedValue({ ok: false, error: "No se pudo borrar." });
+  it("si el servidor avisa de que no se pudo descartar al cliente, muestra el aviso y no cierra en silencio", async () => {
+    vi.mocked(cancelAppointmentAction).mockResolvedValue({
+      ok: true,
+      value: undefined,
+      warnings: [
+        "La cita se canceló, pero no pudimos descartar los datos temporales del cliente: No se pudo borrar.",
+      ],
+    });
     const { container, onClose } = render({ appt: buildAppt({ customer: TEMP_CUSTOMER }) });
 
     await clickAndFlush(buttonWithText(container, "Cancelar cita"));
 
     expect(onClose).not.toHaveBeenCalled();
+    expect(router.refresh).toHaveBeenCalledTimes(1);
     expect(container.textContent).toContain("no pudimos descartar los datos temporales del cliente");
     expect(container.textContent).toContain("No se pudo borrar.");
   });
