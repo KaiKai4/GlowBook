@@ -110,6 +110,12 @@ ADR 0004 is the product-level contract. SQL stores the flags; TypeScript owns us
 |---|---|---|---|
 | `report_expense_month_totals(p_salon_id uuid, p_from date, p_to date)` | `20240101000068_report_expense_month_totals.sql` | `src/features/expenses/data/rpc/report-expense-month-totals.ts` | Totales del mes y desglose por categoria de gastos, calculados en Postgres sin limite de filas. Agrega gastos manuales de `expenses` y compras de inventario como `products`. Es `security invoker` (aplican RLS y filtro explicito por salon) y solo `authenticated` puede ejecutarla. |
 
+## Report Read Models
+
+| Contract | SQL source | TypeScript owner | Purpose |
+|---|---|---|---|
+| `report_product_sales(p_first_month text, p_last_month text, p_timezone text, p_modules jsonb, p_limit integer)` | `20240101000066_read_models.sql`; corregida en `20240101000076_report_product_sales_by_sale_date.sql` | `src/features/reports/data/rpc/reports-history.rpc.ts` | Top de productos de vitrina con cantidad por mes. Filtra las ventas por la fecha de venta de la cabecera (`retail_sales.sale_date`) dentro del rango de meses en la zona horaria del salon, y agrupa por mes local de `sale_date`. El `created_at` de la linea (`retail_sale_items`) no define el periodo, asi una venta registrada tarde cuenta en el mes de su fecha de venta. Es `security invoker`, `search_path = public, pg_temp`, sin modulo de vitrina devuelve `[]`, y solo `authenticated` puede ejecutarla. Control: `src/features/reports/use-cases/reports-sql-parity.rpc.test.ts` (paso `integration`). |
+
 ## Transactional RPC Contracts
 
 ADR 0024: lo que debe ser atómico vive en una sola RPC. Una llamada RPC es una transacción; si un paso falla, no queda nada escrito. Todas estas funciones siguen el mismo patrón: `revoke all` a `public`, `anon`, `service_role` y grant de `execute` solo a `authenticated`, con `set search_path = public, pg_temp`.

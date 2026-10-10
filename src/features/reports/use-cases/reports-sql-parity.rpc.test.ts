@@ -108,13 +108,14 @@ async function insertProduct(
   return data.id;
 }
 
-// Venta de vitrina de una linea. El created_at de la linea se fija a la fecha de venta,
-// porque report_product_sales filtra las lineas por esa columna.
+// Venta de vitrina de una linea. Por defecto el created_at de la linea es la fecha de venta.
+// Los casos de registro tardio pasan createdAt distinto para comprobar que report_product_sales
+// filtra por la fecha de venta de la cabecera y no por la fecha de registro de la linea.
 async function insertRetailSale(
   admin: TestSupabaseClient,
   salonId: string,
   productId: string,
-  sale: { saleDate: string; total: number; quantity: number }
+  sale: { saleDate: string; total: number; quantity: number; createdAt?: string }
 ): Promise<void> {
   const { data, error } = await admin
     .from("retail_sales")
@@ -131,7 +132,7 @@ async function insertRetailSale(
     quantity: sale.quantity,
     unit_price: sale.total / sale.quantity,
     total_price: sale.total,
-    created_at: sale.saleDate,
+    created_at: sale.createdAt ?? sale.saleDate,
   });
   ensureOk(itemResult.error);
 }
@@ -379,6 +380,49 @@ describe("paridad SQL de historial, acumulados y exportacion contra la base loca
       expect(noRetail.productTotals).toEqual([]);
     } finally {
       serverClient.current = null;
+      if (fixture) {
+        await cleanupDataset(admin, fixture.salonId);
+        await cleanupSalonOwnerFixture(admin, fixture);
+      }
+    }
+  }, 60_000);
+
+  it("report_product_sales cuenta una venta de junio registrada tarde (created_at en julio) en junio", async () => {
+    const admin = createIntegrationAdminClient(integrationEnv);
+    const user = createIntegrationUserClient(integrationEnv);
+    let fixture: SalonOwnerFixture | null = null;
+
+    try {
+      fixture = await createSalonOwnerFixture(admin, "Paridad SQL registro tardio");
+      const productId = await insertProduct(admin, fixture.salonId, "Acondicionador", {
+        location: "retail",
+        quantity: 5,
+        minimum: 0,
+      });
+      // Venta con fecha de venta en junio pero registrada el 3 de julio: debe contar en junio.
+      await insertRetailSale(admin, fixture.salonId, productId, {
+        saleDate: utc("2026-06-20", 16),
+        total: 25,
+        quantity: 5,
+        createdAt: utc("2026-07-03", 16),
+      });
+
+      const { error: signInError } = await user.auth.signInWithPassword({
+        email: fixture.email,
+        password: fixture.password,
+      });
+      expect(signInError).toBeNull();
+
+      const { data, error } = await user.rpc("report_product_sales", {
+        p_first_month: "2026-06",
+        p_last_month: "2026-06",
+        p_timezone: "America/Panama",
+        p_modules: ALL_MODULES,
+        p_limit: 5,
+      });
+      ensureOk(error);
+      expect(data).toEqual([{ id: productId, name: "Acondicionador", total: 5, months: [5] }]);
+    } finally {
       if (fixture) {
         await cleanupDataset(admin, fixture.salonId);
         await cleanupSalonOwnerFixture(admin, fixture);
