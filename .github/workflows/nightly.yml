@@ -78,13 +78,13 @@ jobs:
         run: node scripts/quality/check-audit.mjs --all
 
   schema-drift:
-    name: Schema drift (migraciones vs staging, solo lectura)
+    name: Schema drift (migraciones vs producción, solo lectura)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       # production-migration-gate.mjs toma la URL de SUPABASE_DB_URL (prioridad)
-      # o STAGING_DATABASE_URL. Solo se usa en modo lectura (migration list).
-      SUPABASE_DB_URL: ${{ secrets.STAGING_DB_URL }}
+      # o PRODUCTION_DATABASE_URL. Solo se usa en modo lectura (migration list).
+      SUPABASE_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -98,15 +98,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Require staging DB secret
+      - name: Require production DB secret
         run: |
           if [ -z "$SUPABASE_DB_URL" ]; then
-            echo "::error::Falta el secreto STAGING_DB_URL. El control de schema drift no puede ejecutarse."
+            echo "::error::Falta el secreto PRODUCTION_DB_URL. El control de schema drift no puede ejecutarse."
             exit 1
           fi
 
-      - name: Check migrations against staging (read-only)
-        run: node scripts/production-migration-gate.mjs --target=staging
+      - name: Check migrations against production (read-only)
+        run: node scripts/production-migration-gate.mjs --target=production
 
   synthetic:
     name: Synthetic check (disponibilidad y cabeceras)

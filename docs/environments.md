@@ -2,12 +2,12 @@
 
 Fecha: 2026-10-09
 
-GlowBook opera como monolito modular con tres entornos separados:
+GlowBook opera como monolito modular con local y producción. Staging remoto es opcional (ADR 0021):
 
 | Entorno | Uso | Supabase | Datos |
 |---|---|---|---|
 | `local` | Desarrollo diario y pruebas manuales locales. | Supabase local en Docker (CLI). | Datos desechables. |
-| `staging` | Validacion de migraciones, E2E desplegado, smoke con 5 salones y check sintetico de solo lectura. | Proyecto Supabase staging. | Datos de prueba persistentes, nunca clientes reales. |
+| `staging` | Herramientas manuales opcionales; fuera de release y monitoreo. | Proyecto Supabase staging. | Datos de prueba persistentes, nunca clientes reales. |
 | `production` | Salones reales. | Proyecto Supabase production. | Datos reales protegidos. |
 
 ## Variables Obligatorias
@@ -27,7 +27,7 @@ Reglas:
 
 - `SUPABASE_SERVICE_ROLE_KEY` es server-only. Nunca debe tener prefijo `NEXT_PUBLIC_`.
 - `PRODUCTION_SUPABASE_URL` existe para que tests y scripts se nieguen a correr contra produccion.
-- Los secretos de GitHub Actions deben usar valores de staging para E2E, no de produccion.
+- CI obtiene credenciales de su Supabase local. No necesita secretos de staging ni usa producción para fixtures.
 - Las credenciales E2E manuales deben pertenecer a staging.
 - En `staging`, `APP_URL` y `E2E_BASE_URL` deben apuntar al deployment real;
   los gates rechazan `localhost` y `127.0.0.1`.
@@ -37,11 +37,11 @@ Reglas:
 | Entorno | Donde se aplican migraciones | Quien puede hacerlo | Estado actual |
 |---|---|---|---|
 | `local` | `npx supabase start` y `supabase db reset` sobre Docker. | Cualquier desarrollador del equipo. | Vigente. |
-| `staging` | `npm run staging:migrations` (gate con `--target=staging`). | Miembros del equipo con acceso a secretos de staging. El job nightly solo verifica drift en lectura. | Vigente. |
-| `production` | Job `migrations` de `release.yml`, tras CI y staging. | Automatización con aprobación del environment Production. | Requiere los secretos documentados en `docs/runbooks/deploy.md`. |
+| `staging` | `npm run staging:migrations` (gate con `--target=staging`). | Miembros del equipo con acceso a secretos de staging. Sin jobs automáticos de staging. | Opcional. |
+| `production` | Job `migrations` de `release.yml`, tras CI con Supabase local. | Automatización con aprobación del environment Production. | Requiere los secretos documentados en `docs/runbooks/deploy.md`. |
 
 **Regla vigente:** las migraciones de production se aplican desde
-`.github/workflows/release.yml`, después de CI y E2E de staging y con aprobación.
+`.github/workflows/release.yml`, después de CI completo con Supabase local y con aprobación.
 El workflow existe. Sin sus secretos obligatorios el gate falla antes de tocar
 producción. El procedimiento manual queda reservado a contingencias documentadas
 en `docs/runbooks/deploy.md`, con aprobación explícita del owner.
@@ -49,7 +49,12 @@ en `docs/runbooks/deploy.md`, con aprobación explícita del owner.
 Principios aplicables a cualquier entorno:
 
 - Una migracion destructiva exige backup reciente (ver `docs/runbooks/restore.md`).
-- Nunca aplicar en produccion una migracion que no haya pasado en staging.
+- Nunca aplicar en producción una migración que no haya pasado las pruebas de BD local de CI.
+
+## Staging Opcional
+
+No es requisito del deploy. Se conserva el proyecto existente; los comandos
+manuales siguen necesitando sus propias credenciales y autorización.
 
 ## Reinicio De Staging
 

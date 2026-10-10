@@ -18,6 +18,18 @@ function fullEnv() {
 }
 
 describe("findMissingSecrets", () => {
+  it("permite publicar con credenciales exclusivamente de producción", () => {
+    const names = ["VERCEL_TOKEN", "VERCEL_ORG_ID", "VERCEL_PROJECT_ID", "PRODUCTION_DB_URL", "PRODUCTION_SUPABASE_URL", "PRODUCTION_PROJECT_REF", "SYNTHETIC_BASE_URL"];
+    assert.deepEqual(findMissingSecrets(Object.fromEntries(names.map((name) => [name, "configured"]))), []);
+  });
+
+  it("ningún workflow operativo exige un proyecto de staging", () => {
+    for (const name of ["release", "synthetic", "nightly"]) {
+      const workflow = readFileSync(new URL(`../../.github/workflows/${name}.yml`, import.meta.url), "utf8");
+      assert.doesNotMatch(workflow, /secrets\.STAGING_|target=staging|validate-staging/);
+    }
+  });
+
   it("no reporta nada cuando todos los secretos existen", () => {
     assert.deepEqual(findMissingSecrets(fullEnv()), []);
   });
