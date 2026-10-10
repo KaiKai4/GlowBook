@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findActiveAssignmentReferences } from "@/features/employees/data/employees.repo";
+import { findActiveAssignmentReferences } from "@/features/employees/data/employees-read.repo";
 import { PublicError } from "@/infra/public-error";
 import { validateEmployeeAssignments } from "./employee-assignments";
 
-vi.mock("@/features/employees/data/employees.repo", () => ({
+vi.mock("@/features/employees/data/employees-read.repo", () => ({
   findActiveAssignmentReferences: vi.fn(),
 }));
 

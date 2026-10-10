@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 
 import { createSupabaseServerClient } from "@/infra/supabase/server";
@@ -105,11 +106,11 @@ export async function findLifetimeExpenseTotals(
   });
 
   const manual = (history.expenseGroups ?? []).reduce(
-    (sum, group) => sum + Number(group.amount ?? 0),
+    (sum, group) => sum + toAmount(group.amount),
     0
   );
   const inventoryPurchases = (history.purchaseMonths ?? []).reduce(
-    (sum, month) => sum + Number(month.amount ?? 0),
+    (sum, month) => sum + toAmount(month.amount),
     0
   );
 

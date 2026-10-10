@@ -32,7 +32,7 @@ const savePlanFlow = definePlatformAction<FormData, SavePlanInput, string>({
   rateLimit: { scope: "admin:savePlanAction" },
   parse: (formData) => ok(readSavePlanInput(formData)),
   run: async (input, session) => {
-    const result = await saveCommercialPlanConfig(input, session.userId);
+    const result = await saveCommercialPlanConfig(session.proof, input, session.userId);
     return result.ok ? ok("Plan guardado.") : result;
   },
   revalidate: () => PLAN_PATHS,
@@ -49,7 +49,7 @@ const archivePlanFlow = definePlatformAction<string, string, void>({
   rateLimit: { scope: "admin:archivePlanAction" },
   parse: parseUuidField,
   run: async (planId, session) => {
-    const result = await archivePlan(planId, session.userId);
+    const result = await archivePlan(session.proof, planId, session.userId);
     return result.ok ? ok(undefined) : result;
   },
   revalidate: () => PLAN_PATHS,
@@ -65,7 +65,7 @@ const deletePlanFlow = definePlatformAction<string, string, void>({
   rateLimit: { scope: "admin:deletePlanAction" },
   parse: parseUuidField,
   run: async (planId, session) => {
-    const result = await deletePlan(planId, session.userId);
+    const result = await deletePlan(session.proof, planId, session.userId);
     return result.ok ? ok(undefined) : result;
   },
   revalidate: () => PLAN_PATHS,
@@ -81,7 +81,7 @@ const savePlanModulesFlow = definePlatformAction<FormData, SavePlanModulesInput,
   rateLimit: { scope: "admin:savePlanModulesAction" },
   parse: (formData) => ok(readSavePlanModulesInput(formData)),
   run: async (input, session) => {
-    const result = await saveCommercialPlanModulesBatch(input, session.userId);
+    const result = await saveCommercialPlanModulesBatch(session.proof, input, session.userId);
     return result.ok ? ok("Módulos del plan actualizados.") : result;
   },
   revalidate: () => PLAN_PATHS,
@@ -98,7 +98,7 @@ const savePlanLimitsFlow = definePlatformAction<FormData, SavePlanLimitsInput, s
   rateLimit: { scope: "admin:savePlanLimitsAction" },
   parse: (formData) => ok(readSavePlanLimitsInput(formData)),
   run: async (input, session) => {
-    const result = await saveCommercialPlanLimitsBatch(input, session.userId);
+    const result = await saveCommercialPlanLimitsBatch(session.proof, input, session.userId);
     return result.ok ? ok("Límites del plan actualizados.") : result;
   },
   revalidate: () => PLAN_PATHS,
@@ -115,7 +115,7 @@ const saveAddonFlow = definePlatformAction<FormData, SaveAddonInput, string>({
   rateLimit: { scope: "admin:saveAddonAction" },
   parse: (formData) => ok(readSaveAddonInput(formData)),
   run: async (input, session) => {
-    const result = await saveCommercialAddonConfig(input, session.userId);
+    const result = await saveCommercialAddonConfig(session.proof, input, session.userId);
     return result.ok ? ok("Extra guardado.") : result;
   },
   revalidate: () => PLAN_PATHS,
@@ -132,7 +132,7 @@ const removeAddonFlow = definePlatformAction<string, string, void>({
   rateLimit: { scope: "admin:removeAddonAction" },
   parse: parseUuidField,
   run: async (addonId, session) => {
-    const result = await removeCommercialAddonConfig(addonId, session.userId);
+    const result = await removeCommercialAddonConfig(session.proof, addonId, session.userId);
     return result.ok ? ok(undefined) : result;
   },
   revalidate: () => PLAN_PATHS,

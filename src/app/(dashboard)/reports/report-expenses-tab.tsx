@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import type { OperationalReportViewModel } from "@/features/reports";
 import { TopExpensesChart } from "./report-charts";
 import { MetricGrid, UnavailableModule } from "./report-metric-grid";

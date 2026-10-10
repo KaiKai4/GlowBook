@@ -1,6 +1,6 @@
 # ADR 0025: Cuándo inyectar dependencias (DIP pragmático)
 
-- **Estado**: Aceptada.
+- **Estado**: Sustituida por [0028](0028-inyeccion-en-comandos-con-logica.md).
 - **Fecha**: 2026-10-10
 
 ## Contexto

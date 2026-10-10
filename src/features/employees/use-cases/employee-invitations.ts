@@ -27,6 +27,35 @@ export type EmployeeInvitationJoinView =
       salonName: string;
     };
 
+/** Dependencias de la vista del enlace. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface EmployeeInvitationJoinDeps {
+  findInvitationForJoin: typeof findEmployeeInvitationForJoin;
+}
+
+/** Dependencias de la aceptación del enlace: lectura, creación de cuenta, perfil, vínculo y rollback. */
+export interface AcceptEmployeeInvitationDeps extends EmployeeInvitationJoinDeps {
+  findAssignableRole: typeof findAssignableEmployeeRole;
+  createAuthUser: typeof createEmployeeAuthUser;
+  deleteAuthUser: typeof deleteEmployeeAuthUser;
+  insertProfile: typeof insertEmployeeProfile;
+  linkProfile: typeof linkEmployeeProfile;
+  markAccepted: typeof markEmployeeInvitationAccepted;
+}
+
+const defaultEmployeeInvitationJoinDeps: EmployeeInvitationJoinDeps = {
+  findInvitationForJoin: findEmployeeInvitationForJoin,
+};
+
+const defaultAcceptEmployeeInvitationDeps: AcceptEmployeeInvitationDeps = {
+  ...defaultEmployeeInvitationJoinDeps,
+  findAssignableRole: findAssignableEmployeeRole,
+  createAuthUser: createEmployeeAuthUser,
+  deleteAuthUser: deleteEmployeeAuthUser,
+  insertProfile: insertEmployeeProfile,
+  linkProfile: linkEmployeeProfile,
+  markAccepted: markEmployeeInvitationAccepted,
+};
+
 function isExpired(expiresAt: string): boolean {
   return new Date(expiresAt) < new Date();
 }
@@ -38,9 +67,10 @@ function employeeName(invitation: EmployeeInvitationForJoin): string {
 }
 
 export async function getEmployeeInvitationJoinView(
-  token: string
+  token: string,
+  deps: EmployeeInvitationJoinDeps = defaultEmployeeInvitationJoinDeps
 ): Promise<EmployeeInvitationJoinView> {
-  const { data: invitation, error } = await findEmployeeInvitationForJoin(token);
+  const { data: invitation, error } = await deps.findInvitationForJoin(token);
 
   if (error) {
     captureError(error, { module: "employees", action: "join" });
@@ -60,25 +90,32 @@ export async function getEmployeeInvitationJoinView(
   };
 }
 
-async function rollbackAuthUser(userId: string, context: string): Promise<void> {
-  const { error } = await deleteEmployeeAuthUser(userId);
+async function rollbackAuthUser(
+  userId: string,
+  context: string,
+  deps: Pick<AcceptEmployeeInvitationDeps, "deleteAuthUser">
+): Promise<void> {
+  const { error } = await deps.deleteAuthUser(userId);
   if (error && error.status !== 404) {
     captureError(error, { module: "employees", action: "join-rollback", metadata: { context } });
   }
 }
 
-export async function acceptEmployeeInvitation({
-  token,
-  password,
-}: {
-  token: string;
-  password: string;
-}): Promise<Result<void>> {
+export async function acceptEmployeeInvitation(
+  {
+    token,
+    password,
+  }: {
+    token: string;
+    password: string;
+  },
+  deps: AcceptEmployeeInvitationDeps = defaultAcceptEmployeeInvitationDeps
+): Promise<Result<void>> {
   if (!password || password.length < 8) {
     return { ok: false, error: "La contraseña debe tener al menos 8 caracteres." };
   }
 
-  const { data: invitation, error } = await findEmployeeInvitationForJoin(token);
+  const { data: invitation, error } = await deps.findInvitationForJoin(token);
   if (error) {
     captureError(error, { module: "employees", action: "join" });
     return { ok: false, error: "No se pudo verificar la invitación." };
@@ -93,7 +130,7 @@ export async function acceptEmployeeInvitation({
 
   let roleId: string | null = null;
   if (invitation.role_id) {
-    const { data: role, error: roleError } = await findAssignableEmployeeRole(
+    const { data: role, error: roleError } = await deps.findAssignableRole(
       invitation.salon_id,
       invitation.role_id
     );
@@ -110,7 +147,7 @@ export async function acceptEmployeeInvitation({
     roleId = role.id;
   }
 
-  const { data: user, error: authError } = await createEmployeeAuthUser({
+  const { data: user, error: authError } = await deps.createAuthUser({
     email: invitation.email,
     password,
     emailConfirm: true,
@@ -127,7 +164,7 @@ export async function acceptEmployeeInvitation({
   }
 
   const fullName = employeeName(invitation);
-  const { error: profileError } = await insertEmployeeProfile({
+  const { error: profileError } = await deps.insertProfile({
     id: user.id,
     salon_id: invitation.salon_id,
     full_name: fullName,
@@ -136,25 +173,25 @@ export async function acceptEmployeeInvitation({
   });
 
   if (profileError) {
-    await rollbackAuthUser(user.id, "profile");
+    await rollbackAuthUser(user.id, "profile", deps);
     return { ok: false, error: "Error al configurar el perfil. Intenta de nuevo." };
   }
 
-  const { error: employeeError } = await linkEmployeeProfile(
+  const { error: employeeError } = await deps.linkProfile(
     invitation.employee_id,
     invitation.salon_id,
     user.id
   );
 
   if (employeeError) {
-    await rollbackAuthUser(user.id, "employee");
+    await rollbackAuthUser(user.id, "employee", deps);
     return { ok: false, error: "Error al vincular el colaborador. Intenta de nuevo." };
   }
 
-  const { error: acceptedError } = await markEmployeeInvitationAccepted(invitation.id, invitation.salon_id);
+  const { error: acceptedError } = await deps.markAccepted(invitation.id, invitation.salon_id);
   if (acceptedError) {
     captureError(acceptedError, { module: "employees", action: "join" });
-    await rollbackAuthUser(user.id, "accepted");
+    await rollbackAuthUser(user.id, "accepted", deps);
     return { ok: false, error: "Error al confirmar la invitación. Solicita un enlace nuevo." };
   }
 

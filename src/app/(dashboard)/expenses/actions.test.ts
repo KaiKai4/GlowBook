@@ -35,6 +35,7 @@ function asContext(profile: ProfileWithRole): ActionContext {
     permissions: getPermissions(profile),
     requestId: "req-1",
     rolesEnabled: true,
+    disabledFeatures: [],
   };
 }
 

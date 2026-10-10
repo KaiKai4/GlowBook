@@ -14,7 +14,10 @@ export async function updateCatalogService(
   input: UpdateServiceInput
 ): Promise<Result<void>> {
   try {
-    if (input.category_id) await validateServiceCategory(salonId, input.category_id);
+    if (input.category_id) {
+      const category = await validateServiceCategory(salonId, input.category_id);
+      if (!category.ok) return category;
+    }
     await updateService(serviceId, salonId, input);
     return { ok: true, value: undefined };
   } catch (error) {

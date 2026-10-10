@@ -1,4 +1,5 @@
 import "server-only";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
 import { findPlanCatalog } from "../data/commercial-plans.repo";
 import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
@@ -27,12 +28,13 @@ export interface SubscriptionsPageData {
 }
 
 export async function getSubscriptionsPage(
+  proof: PlatformAdminProof,
   salons: Array<{ id: string; name: string; is_active: boolean }>
 ): Promise<SubscriptionsPageData> {
   const [catalog, addons, subscription] = await Promise.all([
-    findPlanCatalog(),
-    findCommercialAddons(),
-    findSubscriptionRows(),
+    findPlanCatalog(proof),
+    findCommercialAddons(proof),
+    findSubscriptionRows(proof),
   ]);
 
   const planById = new Map(catalog.plans.map((plan) => [plan.id, plan]));

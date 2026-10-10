@@ -1,11 +1,12 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { getPlatformInvitations, type PlatformInvitationsViewModel } from "@/features/platform/use-cases/get-platform-invitations";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import PlatformInvitationsPage from "./page";
 
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn(async () => issuePlatformAdminProof("admin-1")) }));
 vi.mock("@/features/platform/use-cases/get-platform-invitations", () => ({
   getPlatformInvitations: vi.fn(),
 }));
@@ -36,7 +37,7 @@ describe("PlatformInvitationsPage", () => {
 
     await PlatformInvitationsPage();
 
-    expect(requirePlatformAdmin).toHaveBeenCalled();
+    expect(requirePlatformAdminProof).toHaveBeenCalled();
     expect(getPlatformInvitations).toHaveBeenCalled();
   });
 

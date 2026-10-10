@@ -1,37 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  findAppointmentCreationResources,
-  findAppointmentForCommand,
-  findAppointmentServiceIdsForCommand,
-
-  findOccupiedSlotsByEmployeeForCommand,
-  findExceptionDatesByEmployeeForCommand,
-  findWorkSchedulesByEmployeeForCommand,
-} from "../data/appointment-commands.repo";
-import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
+import { createAppointmentCommandFakes, updateDepsFrom } from "@/test/appointment-command-fakes";
 
-vi.mock("../data/appointment-commands.repo", () => ({
-  findAppointmentCreationResources: vi.fn(),
-  findAppointmentForCommand: vi.fn(),
-  findAppointmentServiceIdsForCommand: vi.fn(),
-  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
-  findExceptionDatesByEmployeeForCommand: vi.fn(),
-  findWorkSchedulesByEmployeeForCommand: vi.fn(),
-}));
-vi.mock("../data/rpc/update-appointment", () => ({
-  updateAppointmentWithRpc: vi.fn(),
-}));
+const fakes = createAppointmentCommandFakes();
+const runUpdate: typeof updateAppointmentSchedule = (input, ctx) => updateAppointmentSchedule(input, ctx, updateDepsFrom(fakes));
 
 const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
-const mockedFindAppointmentForCommand = vi.mocked(findAppointmentForCommand);
-const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
-const mockedFindAppointmentServiceIdsForCommand = vi.mocked(findAppointmentServiceIdsForCommand);
-const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findWorkSchedulesByEmployeeForCommand);
-const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findExceptionDatesByEmployeeForCommand);
-const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
-const mockedUpdateAppointmentWithRpc = vi.mocked(updateAppointmentWithRpc);
+const mockedFindAppointmentForCommand = fakes.findAppointmentForCommand;
+const mockedFindAppointmentCreationResources = fakes.findAppointmentCreationResources;
+const mockedFindAppointmentServiceIdsForCommand = fakes.findAppointmentServiceIdsForCommand;
+const mockedFindEmployeeWorkSchedulesForCommand = fakes.findWorkSchedulesByEmployeeForCommand;
+const mockedFindEmployeeExceptionDatesForCommand = fakes.findExceptionDatesByEmployeeForCommand;
+const mockedFindEmployeeOccupiedSlotsForCommand = fakes.findOccupiedSlotsByEmployeeForCommand;
+const mockedUpdateAppointmentWithRpc = fakes.updateAppointmentWithRpc;
 
 const appointmentId = "00000000-0000-0000-0000-000000000001";
 const salonId = "00000000-0000-0000-0000-000000000002";
@@ -104,7 +86,7 @@ describe("update appointment schedule", () => {
   });
 
   it("rebuilds appointment items through the transactional update adapter", async () => {
-    const result = await updateAppointmentSchedule(
+    const result = await runUpdate(
       {
         appointment_id: appointmentId,
         start_time: startTime,
@@ -154,7 +136,7 @@ describe("update appointment schedule", () => {
       customer_id: customerId,
     });
 
-    const result = await updateAppointmentSchedule(
+    const result = await runUpdate(
       {
         appointment_id: appointmentId,
         start_time: startTime,
@@ -175,7 +157,7 @@ describe("update appointment schedule", () => {
       reason: "slot_taken",
     });
 
-    const result = await updateAppointmentSchedule(
+    const result = await runUpdate(
       {
         appointment_id: appointmentId,
         start_time: startTime,
@@ -202,7 +184,7 @@ describe("update appointment schedule: servicios inactivos ya asignados", () => 
   it("guarda la cita si conserva un servicio inactivo que ya tenía asignado", async () => {
     mockedFindAppointmentServiceIdsForCommand.mockResolvedValue([serviceId]);
 
-    const result = await updateAppointmentSchedule(
+    const result = await runUpdate(
       {
         appointment_id: appointmentId,
         start_time: startTime,
@@ -221,7 +203,7 @@ describe("update appointment schedule: servicios inactivos ya asignados", () => 
   it("rechaza añadir un servicio inactivo que la cita no tenía", async () => {
     mockedFindAppointmentServiceIdsForCommand.mockResolvedValue([]);
 
-    const result = await updateAppointmentSchedule(
+    const result = await runUpdate(
       {
         appointment_id: appointmentId,
         start_time: startTime,

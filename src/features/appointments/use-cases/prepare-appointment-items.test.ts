@@ -1,24 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  findAppointmentCreationResources,
-  findExceptionDatesByEmployeeForCommand,
-  findOccupiedSlotsByEmployeeForCommand,
-  findWorkSchedulesByEmployeeForCommand,
-} from "../data/appointment-commands.repo";
 import { prepareAppointmentItems } from "./prepare-appointment-items";
+import { createAppointmentCommandFakes, prepareDepsFrom } from "@/test/appointment-command-fakes";
 
-vi.mock("../data/appointment-commands.repo", () => ({
-  findAppointmentCreationResources: vi.fn(),
-  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
-  findExceptionDatesByEmployeeForCommand: vi.fn(),
-  findWorkSchedulesByEmployeeForCommand: vi.fn(),
-}));
+const fakes = createAppointmentCommandFakes();
+const runPrepare: typeof prepareAppointmentItems = (input) => prepareAppointmentItems(input, prepareDepsFrom(fakes));
+
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
-const mockedResources = vi.mocked(findAppointmentCreationResources);
-const mockedSchedules = vi.mocked(findWorkSchedulesByEmployeeForCommand);
-const mockedExceptions = vi.mocked(findExceptionDatesByEmployeeForCommand);
-const mockedOccupied = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
+const mockedResources = fakes.findAppointmentCreationResources;
+const mockedSchedules = fakes.findWorkSchedulesByEmployeeForCommand;
+const mockedExceptions = fakes.findExceptionDatesByEmployeeForCommand;
+const mockedOccupied = fakes.findOccupiedSlotsByEmployeeForCommand;
 
 const salonId = "00000000-0000-0000-0000-000000000001";
 const customerId = "00000000-0000-0000-0000-000000000003";
@@ -92,7 +84,7 @@ describe("prepareAppointmentItems", () => {
   it("cliente nuevo (sin customerId) con recursos válidos construye los items", async () => {
     mockedResources.mockResolvedValue(validResources(false));
 
-    const result = await prepareAppointmentItems(baseInput);
+    const result = await runPrepare(baseInput);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -116,7 +108,7 @@ describe("prepareAppointmentItems", () => {
   it("consulta horarios, excepciones y ocupación en lote para todos los profesionales", async () => {
     mockedResources.mockResolvedValue(validResources(true));
 
-    await prepareAppointmentItems({ ...baseInput, customerId, excludeAppointmentId: "appt-1" });
+    await runPrepare({ ...baseInput, customerId, excludeAppointmentId: "appt-1" });
 
     expect(mockedSchedules).toHaveBeenCalledTimes(1);
     expect(mockedSchedules).toHaveBeenCalledWith({ salonId, employeeIds: [employeeId] });
@@ -129,7 +121,7 @@ describe("prepareAppointmentItems", () => {
   it("cliente pedido que no existe devuelve el mensaje de cliente no encontrado", async () => {
     mockedResources.mockResolvedValue(validResources(false));
 
-    const result = await prepareAppointmentItems({ ...baseInput, customerId });
+    const result = await runPrepare({ ...baseInput, customerId });
 
     expect(result).toEqual({ ok: false, error: "Cliente no encontrado en este salón." });
     expect(mockedSchedules).not.toHaveBeenCalled();
@@ -138,7 +130,7 @@ describe("prepareAppointmentItems", () => {
   it("sin salón devuelve el mensaje de salón no encontrado", async () => {
     mockedResources.mockResolvedValue({ ...validResources(true), salonConfig: null });
 
-    const result = await prepareAppointmentItems(baseInput);
+    const result = await runPrepare(baseInput);
 
     expect(result.ok).toBe(false);
     expect(mockedSchedules).not.toHaveBeenCalled();
@@ -148,7 +140,7 @@ describe("prepareAppointmentItems", () => {
     mockedResources.mockResolvedValue(validResources(false));
     mockedSchedules.mockRejectedValue(new Error("boom"));
 
-    const result = await prepareAppointmentItems(baseInput);
+    const result = await runPrepare(baseInput);
 
     expect(result.ok).toBe(false);
   });

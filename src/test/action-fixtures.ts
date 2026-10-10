@@ -52,6 +52,7 @@ export function contextFromProfile(profile: ProfileWithRole): ActionContext {
     permissions: getPermissions(profile),
     requestId: "req-test",
     rolesEnabled: !getDisabledSalonFeatures(profile).includes("roles"),
+    disabledFeatures: getDisabledSalonFeatures(profile),
   };
 }
 

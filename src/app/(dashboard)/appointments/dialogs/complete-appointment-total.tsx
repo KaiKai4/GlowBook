@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 
 /**
  * Banner del total en el diálogo de completar.

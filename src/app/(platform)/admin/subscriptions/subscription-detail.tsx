@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { CreditCard, Gift, Gauge } from "lucide-react";
 
-import type { CommercialPlan } from "@/features/billing/use-cases/commercial-plans";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { CommercialPlan } from "@/features/billing";
+import type { SalonSubscriptionDetail } from "@/features/billing";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { cn } from "@/components/ui/cn";
 import { MiniMetric } from "../plans/workspace-ui";
 import { AssignPlanForm } from "./assign-plan-form";
 import { ExtrasPanel } from "./extras-panel";
 import { RegisterPaymentSection } from "./register-payment-section";
-import { formatDate } from "./subscription-format";
+import { formatShortDateFromISO } from "@/infra/format/dates";
 import { UsagePanel } from "./usage-panel";
 
 type DetailTab = "plan" | "extras" | "usage";
@@ -116,9 +116,9 @@ function PlanTab({ detail, plans }: { detail: SalonSubscriptionDetail; plans: Co
         <MiniMetric label="Extras" value={`USD ${detail.extrasPrice.toFixed(2)}`} />
         <MiniMetric label="Total mensual" value={`USD ${detail.monthlyTotal.toFixed(2)}`} />
         {paidUntil ? (
-          <MiniMetric label="Pagado hasta" value={formatDate(paidUntil)} />
+          <MiniMetric label="Pagado hasta" value={formatShortDateFromISO(paidUntil)} />
         ) : (
-          <MiniMetric label="Trial termina" value={trialEndsAt ? formatDate(trialEndsAt) : "—"} />
+          <MiniMetric label="Trial termina" value={trialEndsAt ? formatShortDateFromISO(trialEndsAt) : "—"} />
         )}
       </div>
       <div className="grid gap-5 xl:grid-cols-2">

@@ -1,10 +1,11 @@
 import { z } from "@/infra/validation/zod";
+import { optionalEmailSchema } from "@/infra/validation/email";
 
 export const CreateEmployeeSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio").max(100),
   last_name: z.string().min(1, "El apellido es obligatorio").max(100),
   phone: z.string().max(30).optional().default(""),
-  email: z.union([z.literal(""), z.string().email("Email inválido").max(255)]).optional().default(""),
+  email: optionalEmailSchema.optional().default(""),
   specialty: z.string().max(100).optional().default(""),
   commission_percentage: z.number().min(0).max(100).optional().default(0),
   hire_date: z.string().date().optional().nullable(),
@@ -32,7 +33,7 @@ export const EmployeePatchSchema = z.object({
   first_name: CreateEmployeeSchema.shape.first_name.optional(),
   last_name: CreateEmployeeSchema.shape.last_name.optional(),
   phone: z.string().max(30).optional(),
-  email: z.union([z.literal(""), z.string().email("Email inválido").max(255)]).optional(),
+  email: optionalEmailSchema.optional(),
   specialty: z.string().max(100).optional(),
   commission_percentage: z.number().min(0).max(100).optional(),
   service_ids: z.array(z.string().uuid()).optional(),

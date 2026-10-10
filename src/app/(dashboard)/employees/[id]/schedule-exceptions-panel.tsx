@@ -1,5 +1,7 @@
 "use client";
 
+import { browserTimeZone, formatLocalDateISO } from "@/infra/format/dates";
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarOff, Plus, Trash2 } from "lucide-react";
@@ -15,22 +17,15 @@ interface ScheduleException {
 }
 
 function exceptionDateLabel(date: string): string {
-  return new Intl.DateTimeFormat("es-PA", {
+  return formatWeekdayDayMonth(new Date(`${date}T12:00:00.000Z`), {
     weekday: "long",
-    day: "numeric",
     month: "long",
     timeZone: "UTC",
-  }).format(new Date(`${date}T12:00:00.000Z`));
+  });
 }
 
 function localToday(): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
+  return formatLocalDateISO(new Date(), browserTimeZone());
 }
 
 // Días libres puntuales (vacaciones, permisos): bloquean la agenda de ese

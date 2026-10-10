@@ -1,5 +1,6 @@
 "use client";
 
+import { toAmount } from "@/infra/format/money";
 import Link from "next/link";
 import { Dialog } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -17,10 +18,9 @@ import {
 import { useAppointmentConfirm } from "./use-appointment-confirm";
 
 export function AppointmentDetailDialog({
-  appt, tz, open, onClose, canManage, onComplete, onCancel,
+  appt, open, onClose, canManage, onComplete, onCancel,
 }: {
   appt: ApptForDetail;
-  tz: string;
   open: boolean;
   onClose: () => void;
   canManage: boolean;
@@ -37,8 +37,8 @@ export function AppointmentDetailDialog({
 
   const accentClass = ITEM_ACCENT[appt.status] ?? "border-l-border-strong";
   const canEdit = canManage && canEditSchedule(appt.status);
-  const subtotal = appt.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
-  const discountAmount = Number(appt.discount_amount ?? 0);
+  const subtotal = appt.items.reduce((sum, item) => sum + toAmount(item.price), 0);
+  const discountAmount = toAmount(appt.discount_amount);
   const whatsappPhone = appt.customer?.phone?.replace(/\D/g, "") ?? "";
 
   return (
@@ -73,7 +73,7 @@ export function AppointmentDetailDialog({
           whatsappPhone={whatsappPhone}
         />
 
-        <ServiceItemsList items={appt.items} accentClass={accentClass} tz={tz} />
+        <ServiceItemsList items={appt.items} accentClass={accentClass} />
 
         <TotalsBox
           subtotal={subtotal}

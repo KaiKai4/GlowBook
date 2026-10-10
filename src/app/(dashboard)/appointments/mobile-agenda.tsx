@@ -1,38 +1,46 @@
 "use client";
 
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
+import { formatLocalDateISO, formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency, toAmount } from "@/infra/format/money";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { isVisibleOnCalendar } from "@/features/appointments/domain/lifecycle";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import { appointmentStatusPresentation } from "./appointment-status";
+import { useSalonDisplay } from "./salon-display-context";
 
 // Agenda en lista para pantallas pequeñas: la grilla horaria del calendario
 // no es usable en un teléfono. Misma data, mismos diálogos al tocar una cita.
 
 function localDateKey(iso: string, tz: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(iso));
+  return formatLocalDateISO(new Date(iso), tz);
 }
 
 function dayLabel(dateKey: string): string {
-  return new Intl.DateTimeFormat("es-PA", {
+  return formatWeekdayDayMonth(new Date(`${dateKey}T12:00:00.000Z`), {
     weekday: "long",
-    day: "numeric",
     month: "short",
     timeZone: "UTC",
-  }).format(new Date(`${dateKey}T12:00:00.000Z`));
+  });
 }
 
 export function MobileAgenda({
   appointments,
-  tz,
   onApptClick,
 }: {
   appointments: CalendarAppointment[];
-  tz: string;
   onApptClick: (appt: CalendarAppointment) => void;
 }) {
+  const { tz } = useSalonDisplay();
+  // Solo citas visibles con hora de inicio: el filtro estrecha `startIso` a string.
   const visible = appointments
-    .filter((appt) => appt.status !== "cancelled" && appt.start_time)
-    .sort((a, b) => new Date(a.start_time!).getTime() - new Date(b.start_time!).getTime());
+    .flatMap((appt) =>
+      isVisibleOnCalendar(appt.status) && appt.start_time
+        ? [{ appt, startIso: appt.start_time }]
+        : []
+    )
+    .sort((a, b) => new Date(a.startIso).getTime() - new Date(b.startIso).getTime());
 
   if (visible.length === 0) {
     return (
@@ -42,11 +50,11 @@ export function MobileAgenda({
     );
   }
 
-  const byDay = new Map<string, CalendarAppointment[]>();
-  for (const appt of visible) {
-    const key = localDateKey(appt.start_time!, tz);
+  const byDay = new Map<string, Array<{ appt: CalendarAppointment; startIso: string }>>();
+  for (const entry of visible) {
+    const key = localDateKey(entry.startIso, tz);
     const group = byDay.get(key) ?? [];
-    group.push(appt);
+    group.push(entry);
     byDay.set(key, group);
   }
 
@@ -63,16 +71,17 @@ export function MobileAgenda({
             </p>
           </div>
           <div className="divide-y divide-border-subtle">
-            {dayAppointments.map((appt) => (
-              <button
+            {dayAppointments.map(({ appt, startIso }) => (
+              <Button
                 key={appt.id}
                 type="button"
+                variant="ghost"
                 onClick={() => onApptClick(appt)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-brand-50/60"
+                className="h-auto w-full justify-start gap-3 rounded-none px-4 py-3 text-left font-normal transition-colors hover:bg-transparent active:bg-brand-50/60"
               >
                 <div className="w-16 shrink-0">
                   <p className="text-sm font-semibold tabular-nums text-fg-secondary">
-                    {formatTimeTz(new Date(appt.start_time!), tz)}
+                    {formatTimeTz(new Date(startIso), tz)}
                   </p>
                   {appt.end_time && (
                     <p className="text-xs tabular-nums text-fg-subtle">
@@ -92,9 +101,9 @@ export function MobileAgenda({
                   </p>
                 </div>
                 <p className="shrink-0 text-sm font-semibold text-fg-secondary">
-                  {formatCurrency(Number(appt.total_price ?? 0))}
+                  {formatCurrency(toAmount(appt.total_price))}
                 </p>
-              </button>
+              </Button>
             ))}
           </div>
         </div>

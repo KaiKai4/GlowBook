@@ -1,8 +1,9 @@
 // Content-Security-Policy en modo enforce, con nonce por request.
 // Los scripts solo corren si llevan el nonce ('strict-dynamic' permite los
-// chunks que Next encadena desde un script ya confiable). Los estilos
-// mantienen 'unsafe-inline' porque React renderiza atributos style inline
-// (graficas, alturas calculadas); el riesgo real esta en script-src.
+// chunks que Next encadena desde un script ya confiable). Los estilos mantienen
+// 'unsafe-inline': React escribe atributos style inline (graficas, alturas calculadas)
+// y Next o herramientas de prueba pueden inyectar <style> sin nonce. Es la excepcion
+// documentada en docs/security.md ("Excepcion CSP"); el riesgo real esta en script-src.
 
 // Endpoint que recibe los informes de violacion (report-uri / report-to). Va
 // en la cabecera Reporting-Endpoints y en la directiva report-uri.

@@ -1,19 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { recordInventoryPurchaseRpc } from "../data/rpc/record-inventory-purchase";
-import { recordInventoryTransferRpc } from "../data/rpc/record-inventory-transfer";
+import { describe, expect, it, vi } from "vitest";
 import type { InventoryPurchaseInput, InventoryTransferInput } from "../schemas";
-import { recordInventoryPurchase, transferInventoryStock } from "./inventory-movements";
+import {
+  recordInventoryPurchase,
+  transferInventoryStock,
+  type InventoryMovementsDeps,
+} from "./inventory-movements";
 
-vi.mock("../data/rpc/record-inventory-purchase", () => ({
-  recordInventoryPurchaseRpc: vi.fn(),
-}));
-
-vi.mock("../data/rpc/record-inventory-transfer", () => ({
-  recordInventoryTransferRpc: vi.fn(),
-}));
-
-const mockedRecordPurchase = vi.mocked(recordInventoryPurchaseRpc);
-const mockedTransfer = vi.mocked(recordInventoryTransferRpc);
+/** Fakes tipados de los adaptadores RPC de movimientos. */
+function fakeDeps() {
+  return {
+    recordTransfer: vi.fn<InventoryMovementsDeps["recordTransfer"]>(async () => undefined),
+    recordPurchase: vi.fn<InventoryMovementsDeps["recordPurchase"]>(async () => "purchase-1"),
+  };
+}
 
 const SALON_ID = "salon-1";
 const PRODUCT_ID = "00000000-0000-4000-8000-000000000033";
@@ -40,19 +39,15 @@ const purchaseInput: InventoryPurchaseInput = {
 };
 
 describe("movimientos de inventario", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe("transferInventoryStock", () => {
     it("transfiere el stock dentro del salón con la clave y devuelve éxito", async () => {
-      mockedTransfer.mockResolvedValue(undefined);
+      const deps = fakeDeps();
 
-      expect(await transferInventoryStock(SALON_ID, transferInput, KEY)).toEqual({
+      expect(await transferInventoryStock(SALON_ID, transferInput, KEY, deps)).toEqual({
         ok: true,
         value: undefined,
       });
-      expect(mockedTransfer).toHaveBeenCalledWith({
+      expect(deps.recordTransfer).toHaveBeenCalledWith({
         salonId: SALON_ID,
         productId: PRODUCT_ID,
         fromLocation: "storage",
@@ -64,9 +59,10 @@ describe("movimientos de inventario", () => {
     });
 
     it("devuelve error con texto no vacio cuando la transferencia falla", async () => {
-      mockedTransfer.mockRejectedValue(new Error("stock insuficiente"));
+      const deps = fakeDeps();
+      deps.recordTransfer.mockRejectedValue(new Error("stock insuficiente"));
 
-      const result = await transferInventoryStock(SALON_ID, transferInput, KEY);
+      const result = await transferInventoryStock(SALON_ID, transferInput, KEY, deps);
 
       expect(result.ok).toBe(false);
       expect(result).toHaveProperty("error");
@@ -77,13 +73,13 @@ describe("movimientos de inventario", () => {
 
   describe("recordInventoryPurchase", () => {
     it("registra la compra con la clave, sin ubicación y devuelve éxito", async () => {
-      mockedRecordPurchase.mockResolvedValue("purchase-1");
+      const deps = fakeDeps();
 
-      expect(await recordInventoryPurchase(SALON_ID, purchaseInput, KEY)).toEqual({
+      expect(await recordInventoryPurchase(SALON_ID, purchaseInput, KEY, deps)).toEqual({
         ok: true,
         value: undefined,
       });
-      expect(mockedRecordPurchase).toHaveBeenCalledWith({
+      expect(deps.recordPurchase).toHaveBeenCalledWith({
         salonId: SALON_ID,
         supplierName: "Distribuidora",
         purchaseDate: "2026-06-10",
@@ -96,13 +92,13 @@ describe("movimientos de inventario", () => {
     });
 
     it("devuelve error con texto no vacio cuando el registro falla", async () => {
-      mockedRecordPurchase.mockRejectedValue(new Error("fallo"));
+      const deps = fakeDeps();
+      deps.recordPurchase.mockRejectedValue(new Error("fallo"));
 
-      const result = await recordInventoryPurchase(SALON_ID, purchaseInput, KEY);
+      const result = await recordInventoryPurchase(SALON_ID, purchaseInput, KEY, deps);
 
       expect(result.ok).toBe(false);
       expect((result as { error: string }).error.length).toBeGreaterThan(0);
     });
   });
-
 });

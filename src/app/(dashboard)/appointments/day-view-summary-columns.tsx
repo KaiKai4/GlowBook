@@ -1,19 +1,17 @@
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
 import Link from "next/link";
 import { CheckCircle2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency, toAmount } from "@/infra/format/money";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { DataTableColumn } from "@/components/ui/data-table";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import { appointmentStatusPresentation } from "./appointment-status";
 import { isClosedStatus } from "@/features/appointments/domain/lifecycle";
+import { useSalonDisplay } from "./salon-display-context";
 
 function formatAppointmentDayTz(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("es-PA", {
-    timeZone,
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-  }).format(date);
+  return formatWeekdayDayMonth(date, { weekday: "long", month: "short", timeZone });
 }
 
 export interface SummaryActions {
@@ -23,7 +21,8 @@ export interface SummaryActions {
   onCancel: (appt: CalendarAppointment) => void;
 }
 
-function WhenCell({ appt, tz }: { appt: CalendarAppointment; tz: string }) {
+function WhenCell({ appt }: { appt: CalendarAppointment }) {
+  const { tz } = useSalonDisplay();
   return (
     <>
       {appt.start_time && (
@@ -95,7 +94,6 @@ function ActionsCell({
 
 /** Columnas del resumen de citas para DataTable (el orden define el móvil: nombre, luego datos secundarios). */
 export function buildSummaryColumns(
-  tz: string,
   canManage: boolean,
   actions: SummaryActions,
 ): DataTableColumn<CalendarAppointment>[] {
@@ -116,7 +114,7 @@ export function buildSummaryColumns(
       id: "when",
       header: "Fecha y hora",
       secondary: true,
-      cell: (appt) => <WhenCell appt={appt} tz={tz} />,
+      cell: (appt) => <WhenCell appt={appt} />,
     },
     {
       id: "status",
@@ -130,7 +128,7 @@ export function buildSummaryColumns(
       align: "right",
       cell: (appt) => (
         <span className="text-sm font-semibold text-fg-secondary">
-          {formatCurrency(Number(appt.total_price ?? 0))}
+          {formatCurrency(toAmount(appt.total_price))}
         </span>
       ),
     },

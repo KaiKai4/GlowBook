@@ -1,3 +1,8 @@
+import { formatLocalDateISO } from "@/infra/format/dates";
+import { formatMonthShort } from "@/infra/format/es-formats";
+import { requireInvariant } from "@/infra/invariant";
+import { toResult } from "@/infra/to-result";
+import type { Result } from "@/infra/result";
 import { findSalonReportIdentity } from "../data/reports.repo";
 import {
   fetchCommissionReport,
@@ -26,7 +31,6 @@ import {
   getReportPresetRange,
   getYearRange,
   lastDayOfMonth,
-  localDateString,
   localYear,
 } from "../domain/period";
 import type { ReportFilters, SelectedReportPreset } from "../schemas";
@@ -70,9 +74,8 @@ interface MonthLabel {
 }
 
 function getMonthSequence(now: Date, timezone: string, count = MONTHS_IN_SERIES): MonthLabel[] {
-  const currentMonthKey = localDateString(now, timezone).slice(0, 7);
+  const currentMonthKey = formatLocalDateISO(now, timezone).slice(0, 7);
   const [year = NaN, month = NaN] = currentMonthKey.split("-").map(Number);
-  const label = new Intl.DateTimeFormat("es-PA", { month: "short", timeZone: "UTC" });
 
   return Array.from({ length: count }, (_, index) => {
     const absolute = year * 12 + month - 1 - (count - 1 - index);
@@ -80,12 +83,12 @@ function getMonthSequence(now: Date, timezone: string, count = MONTHS_IN_SERIES)
     const pointMonth = (absolute % 12) + 1;
     return {
       monthKey: `${pointYear}-${String(pointMonth).padStart(2, "0")}`,
-      label: label.format(new Date(Date.UTC(pointYear, pointMonth - 1, 15))).replace(".", ""),
+      label: formatMonthShort(new Date(Date.UTC(pointYear, pointMonth - 1, 15)), "UTC"),
     };
   });
 }
 
-export async function getOperationalReport({
+async function buildOperationalReport({
   salonId,
   filters,
   modules = { inventory: true, retail: true, expenses: true },
@@ -176,8 +179,7 @@ async function getOperationalReportPeriod({
 function toMonthPoints(series: MonthlySeriesRow[], months: MonthLabel[]): ReportMonthPoint[] {
   const rowsByMonth = new Map(series.map((row) => [row.monthKey, row]));
   return months.map((month) => {
-    const row = rowsByMonth.get(month.monthKey);
-    if (!row) throw new Error("Invariante de reporte: la serie mensual no cubre el mes solicitado.");
+    const row = requireInvariant(rowsByMonth.get(month.monthKey), "Invariante de reporte: la serie mensual no cubre el mes solicitado.");
     return {
       monthKey: month.monthKey,
       label: month.label,
@@ -204,9 +206,8 @@ async function getHistoricalAnalytics({
   timezone: string;
 }): Promise<HistoricalReportAnalytics> {
   const months = getMonthSequence(now, timezone);
-  const firstMonth = months[0];
-  const lastMonth = months.at(-1);
-  if (!firstMonth || !lastMonth) throw new Error("Invariante de reporte: sin meses para el historial.");
+  const firstMonth = requireInvariant(months[0], "Invariante de reporte: sin meses para el historial.");
+  const lastMonth = requireInvariant(months.at(-1), "Invariante de reporte: sin meses para el historial.");
   const from = `${firstMonth.monthKey}-01`;
   const to = lastDayOfMonth(lastMonth.monthKey);
 
@@ -235,4 +236,15 @@ async function getHistoricalAnalytics({
     topExpenses,
     inventoryAlerts,
   };
+}
+
+const REPORT_LOAD_FAILED_MESSAGE = "No se pudo cargar el reporte operativo.";
+
+export async function getOperationalReport(
+  input: GetOperationalReportInput
+): Promise<Result<OperationalReportViewModel>> {
+  return toResult(() => buildOperationalReport(input), {
+    fallback: REPORT_LOAD_FAILED_MESSAGE,
+    context: { module: "reports", action: "operational-report" },
+  });
 }

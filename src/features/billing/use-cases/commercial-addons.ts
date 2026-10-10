@@ -4,7 +4,7 @@ import "server-only";
 import { z } from "@/infra/validation/zod";
 
 import { err, ok, type Result } from "@/infra/result";
-import type { CommercialAddon } from "../domain/salon-extras";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import {
   archiveCommercialAddon,
   countAddonAssignments,
@@ -46,17 +46,34 @@ const AddonSchema = z
     }
   });
 
-export type { CommercialAddon };
+/** Dependencias de los comandos de escritura del catálogo de extras. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface CommercialAddonCommandDeps {
+  saveCommercialAddon: typeof saveCommercialAddon;
+  archiveCommercialAddon: typeof archiveCommercialAddon;
+  countAddonAssignments: typeof countAddonAssignments;
+  deleteCommercialAddon: typeof deleteCommercialAddon;
+  publishAuditEvent: typeof publishAuditEvent;
+}
+
+const defaultCommercialAddonCommandDeps: CommercialAddonCommandDeps = {
+  saveCommercialAddon,
+  archiveCommercialAddon,
+  countAddonAssignments,
+  deleteCommercialAddon,
+  publishAuditEvent,
+};
 
 export async function saveCommercialAddonConfig(
+  proof: PlatformAdminProof,
   input: z.input<typeof AddonSchema>,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: CommercialAddonCommandDeps = defaultCommercialAddonCommandDeps
 ): Promise<Result<string>> {
   const parsed = AddonSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   try {
-    const id = await saveCommercialAddon({
+    const id = await deps.saveCommercialAddon(proof, {
       id: parsed.data.id,
       code: normalizeKey(parsed.data.code || parsed.data.name),
       name: parsed.data.name,
@@ -70,7 +87,7 @@ export async function saveCommercialAddonConfig(
       status: parsed.data.status,
       sortOrder: parsed.data.sortOrder,
     });
-    const warnings = await publishAuditEvent("billing.addon_saved", { ...commercialPlanAudit(actorUserId, id), action: "commercial_addon_saved" });
+    const warnings = await deps.publishAuditEvent("billing.addon_saved", { ...commercialPlanAudit(actorUserId, id), action: "commercial_addon_saved" });
     return ok(id, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
@@ -78,18 +95,20 @@ export async function saveCommercialAddonConfig(
 }
 
 export async function removeCommercialAddonConfig(
+  proof: PlatformAdminProof,
   addonId: string,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: CommercialAddonCommandDeps = defaultCommercialAddonCommandDeps
 ): Promise<Result<void>> {
   try {
-    const assignments = await countAddonAssignments(addonId);
+    const assignments = await deps.countAddonAssignments(proof, addonId);
     let warnings: string[];
     if (assignments > 0) {
-      await archiveCommercialAddon(addonId);
-      warnings = await publishAuditEvent("billing.addon_archived", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_archived" });
+      await deps.archiveCommercialAddon(proof, addonId);
+      warnings = await deps.publishAuditEvent("billing.addon_archived", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_archived" });
     } else {
-      await deleteCommercialAddon(addonId);
-      warnings = await publishAuditEvent("billing.addon_deleted", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_deleted" });
+      await deps.deleteCommercialAddon(proof, addonId);
+      warnings = await deps.publishAuditEvent("billing.addon_deleted", { ...commercialPlanAudit(actorUserId, addonId), action: "commercial_addon_deleted" });
     }
     return ok(undefined, warnings);
   } catch (error) {

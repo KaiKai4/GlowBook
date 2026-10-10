@@ -6,7 +6,8 @@ import { GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency, formatLocalDateISO } from "@/infra/format/dates";
+import { formatLocalDateISO } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { AppointmentEditReview } from "./appointment-edit-review";
 import { AppointmentEditScheduleCard } from "./appointment-edit-schedule-card";
 import { AppointmentEditServiceRow } from "./appointment-edit-service-row";
@@ -17,7 +18,7 @@ import type {
   OccupiedByEmployee,
 } from "@/features/appointments/domain/wizard-availability";
 import { useScheduleValidation } from "../../use-schedule-validation";
-import type { AppointmentDetailViewModel } from "@/features/appointments/use-cases/get-appointment-detail";
+import type { AppointmentDetailViewModel } from "@/features/appointments";
 import type { AppointmentWizardProps } from "../../new/appointment-wizard-types";
 import { getOccupiedSlotsForEditDate } from "../../actions";
 

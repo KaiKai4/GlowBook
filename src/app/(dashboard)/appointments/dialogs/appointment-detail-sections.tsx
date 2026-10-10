@@ -1,5 +1,8 @@
 import { CreditCard, MessageCircle, Phone, Timer, User } from "lucide-react";
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { useSalonDisplay } from "../salon-display-context";
+import { formatCurrency, toAmount } from "@/infra/format/money";
+import { calculateItemChargedPrice } from "@/features/appointments/domain/pricing";
 
 export interface ApptItem {
   id: string;
@@ -73,12 +76,11 @@ export function ClientCard({
 export function ServiceItemsList({
   items,
   accentClass,
-  tz,
 }: {
   items: ApptItem[];
   accentClass: string;
-  tz: string;
 }) {
+  const { tz } = useSalonDisplay();
   return (
     <div className="space-y-2.5">
       {items.map((item) => (
@@ -97,14 +99,14 @@ export function ServiceItemsList({
             </p>
           </div>
           <div className="flex flex-col items-end gap-0.5 shrink-0 ml-3">
-            {Number(item.discount_amount ?? 0) > 0 && (
+            {toAmount(item.discount_amount) > 0 && (
               <span className="text-xs font-semibold text-success-fg">
-                -{formatCurrency(Number(item.discount_amount ?? 0))}
+                -{formatCurrency(toAmount(item.discount_amount))}
               </span>
             )}
             <span className="text-sm font-semibold text-fg-secondary">
               {formatCurrency(
-                Math.max(0, Number(item.price) - Number(item.discount_amount ?? 0))
+                calculateItemChargedPrice(toAmount(item.price), toAmount(item.discount_amount))
               )}
             </span>
             <span className="flex items-center gap-0.5 text-xs text-fg-subtle font-medium">
@@ -149,7 +151,7 @@ export function TotalsBox({
             <span className="text-sm font-semibold text-success-strong">Total cobrado</span>
           </div>
           <span className="text-lg font-semibold text-success-strong">
-            {formatCurrency(Number(totalPrice ?? 0))}
+            {formatCurrency(toAmount(totalPrice))}
           </span>
         </div>
       </div>

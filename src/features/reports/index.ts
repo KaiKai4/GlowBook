@@ -6,3 +6,5 @@ export { getOperationalReport, type OperationalReportViewModel } from "./use-cas
 export { parseReportFilters, type ReportQueryInput } from "./schemas";
 
 export { getReportExportData, type ReportExportScope } from "./use-cases/get-report-export";
+
+export type { ReportExportData } from "./use-cases/get-report-export";

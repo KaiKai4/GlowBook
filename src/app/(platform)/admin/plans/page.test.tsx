@@ -1,13 +1,14 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { getCommercialPlansPage } from "@/features/billing/use-cases/commercial-plans";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { makeCommercialPlansData } from "@/test/ui-admin-page-fixtures";
 import PlatformPlansPage from "./page";
 
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn(async () => issuePlatformAdminProof("admin-1")) }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
   getCommercialPlansPage: vi.fn(),
 }));
@@ -51,7 +52,7 @@ describe("PlatformPlansPage", () => {
   it("exige rol de plataforma y carga el catálogo comercial", async () => {
     mounted = await render();
 
-    expect(requirePlatformAdmin).toHaveBeenCalled();
+    expect(requirePlatformAdminProof).toHaveBeenCalled();
     expect(getCommercialPlansPage).toHaveBeenCalledTimes(1);
   });
 
@@ -104,6 +105,6 @@ describe("PlatformPlansPage", () => {
     mounted = await render({ view: "otra" });
 
     expect(mounted.container.textContent).toContain("Crea planes comerciales");
-    expect(linkByText(mounted.container, "Nuevo plan")).toBeDefined();
+    expect(linkByText(mounted.container, "Nuevo plan")?.textContent).toBe("Nuevo plan");
   });
 });

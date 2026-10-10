@@ -1,44 +1,38 @@
 "use server";
 
 import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
-import { revalidatePath } from "next/cache";
-import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
-import { updateMessageTemplate } from "@/features/notifications";
-import { parseNotificationTemplateInput } from "@/features/notifications";
-import { hasPermission, PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { defineAction } from "@/app/_composition/define-action";
+import { PERMISSIONS } from "@/features/access";
+import {
+  parseNotificationTemplateInput,
+  updateMessageTemplate,
+  type NotificationTemplateInput,
+} from "@/features/notifications";
 import type { Result } from "@/infra/result";
 
-// Se conserva el guard a mano: el modulo de plantillas del plan se comprueba
-// antes del limite de peticiones (y defineAction solo sabe de permisos por clave).
-// La validacion de la plantilla vive en features/notifications/use-cases.
+// Edicion de la plantilla de recordatorios. El modulo de plantillas del plan se
+// comprueba en el pipeline (antes del limite de peticiones); la validacion de la
+// plantilla vive en features/notifications/use-cases.
+const updateTemplateFlow = defineAction<FormData, NotificationTemplateInput, void>({
+  module: "plantillas",
+  permission: {
+    key: PERMISSIONS.REMINDERS_SEND,
+    deniedMessage: "No tienes permiso para editar plantillas.",
+  },
+  rateLimit: { scope: "plantillas", options: RATE_LIMIT_POLICIES.restricted },
+  parse: (formData) =>
+    parseNotificationTemplateInput({
+      event: formData.get("event"),
+      body_text: formData.get("body_text"),
+      is_active: formData.get("is_active") === "on",
+    }),
+  run: (input, session) => updateMessageTemplate(session.salonId, input),
+  revalidate: () => ["/plantillas", "/recordatorios", "/appointments"],
+});
+
 export async function updateNotificationTemplateAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  const profile = await requireActiveProfile();
-  const templatesEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "plantillas");
-  if (!templatesEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
-    return { ok: false, error: "No tienes permiso para editar plantillas." };
-  }
-
-  const limited = await assertActionRateLimit(profile.id, "plantillas", RATE_LIMIT_POLICIES.restricted);
-  if (!limited.ok) return limited;
-
-  const parsed = parseNotificationTemplateInput({
-    event: formData.get("event"),
-    body_text: formData.get("body_text"),
-    is_active: formData.get("is_active") === "on",
-  });
-  if (!parsed.ok) return parsed;
-
-  const result = await updateMessageTemplate(profile.salon_id, parsed.value);
-  if (result.ok) {
-    revalidatePath("/plantillas");
-    revalidatePath("/recordatorios");
-    revalidatePath("/appointments");
-  }
-
-  return result;
+  return updateTemplateFlow(formData);
 }

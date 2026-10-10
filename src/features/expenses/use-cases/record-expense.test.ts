@@ -1,18 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { err, ok } from "@/infra/result";
-import { createExpense, createInventoryPurchaseExpense } from "./expenses";
-import { createExpenseWithPlanLimits, createInventoryPurchaseWithPlanLimits } from "./record-expense";
-
-vi.mock("@/features/billing", () => ({
-  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
-  checkPlanModuleAccess: vi.fn(),
-  checkPlanLimit: vi.fn(),
-}));
-vi.mock("./expenses", () => ({
-  createExpense: vi.fn(),
-  createInventoryPurchaseExpense: vi.fn(),
-}));
+import type { createExpense, createInventoryPurchaseExpense } from "./expenses";
+import {
+  createExpenseWithPlanLimits,
+  createInventoryPurchaseWithPlanLimits,
+  type CreateExpenseWithPlanLimitsDeps,
+  type CreateInventoryPurchaseWithPlanLimitsDeps,
+} from "./record-expense";
 
 const SALON = "salon-1";
 const KEY = "00000000-0000-4000-8000-0000000000c1";
@@ -35,72 +29,90 @@ const purchaseInput = {
   idempotency_key: KEY,
 } as Parameters<typeof createInventoryPurchaseExpense>[1];
 
+const checkModuleAccess = vi.fn<CreateExpenseWithPlanLimitsDeps["checkModuleAccess"]>();
+const checkLimit = vi.fn<CreateExpenseWithPlanLimitsDeps["checkLimit"]>();
+const expenseCreate = vi.fn<CreateExpenseWithPlanLimitsDeps["createExpense"]>();
+const expenseDeps: CreateExpenseWithPlanLimitsDeps = {
+  checkModuleAccess,
+  checkLimit,
+  createExpense: expenseCreate,
+};
+
+const purchaseCheckModuleAccess = vi.fn<CreateInventoryPurchaseWithPlanLimitsDeps["checkModuleAccess"]>();
+const purchaseCheckLimit = vi.fn<CreateInventoryPurchaseWithPlanLimitsDeps["checkLimit"]>();
+const createPurchaseExpense = vi.fn<CreateInventoryPurchaseWithPlanLimitsDeps["createPurchaseExpense"]>();
+const purchaseDeps: CreateInventoryPurchaseWithPlanLimitsDeps = {
+  checkModuleAccess: purchaseCheckModuleAccess,
+  checkLimit: purchaseCheckLimit,
+  createPurchaseExpense,
+};
+
 describe("createExpenseWithPlanLimits", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
-    vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
+    checkModuleAccess.mockResolvedValue(ok(undefined));
+    checkLimit.mockResolvedValue(ok(undefined));
   });
 
   it("consulta el módulo gastos y el cupo total antes de registrar", async () => {
-    vi.mocked(createExpense).mockResolvedValue(ok("exp-1"));
+    expenseCreate.mockResolvedValue(ok("exp-1"));
 
-    expect(await createExpenseWithPlanLimits(SALON, expenseInput, KEY)).toEqual(ok("exp-1"));
-    expect(checkPlanModuleAccess).toHaveBeenCalledWith({ salonId: SALON, moduleKey: "expenses" });
-    expect(checkPlanLimit).toHaveBeenCalledWith({ salonId: SALON, metricKey: "expenses.total" });
-    expect(createExpense).toHaveBeenCalledWith(SALON, expenseInput, KEY);
+    expect(await createExpenseWithPlanLimits(SALON, expenseInput, KEY, expenseDeps)).toEqual(ok("exp-1"));
+    expect(checkModuleAccess).toHaveBeenCalledWith({ salonId: SALON, moduleKey: "expenses" });
+    expect(checkLimit).toHaveBeenCalledWith({ salonId: SALON, metricKey: "expenses.total" });
+    expect(expenseCreate).toHaveBeenCalledWith(SALON, expenseInput, KEY);
   });
 
   it("devuelve el rechazo del módulo sin registrar", async () => {
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(err("Módulo no incluido en tu plan."));
+    checkModuleAccess.mockResolvedValue(err("Módulo no incluido en tu plan."));
 
-    expect(await createExpenseWithPlanLimits(SALON, expenseInput, KEY)).toEqual({
+    expect(await createExpenseWithPlanLimits(SALON, expenseInput, KEY, expenseDeps)).toEqual({
       ok: false,
       error: "Módulo no incluido en tu plan.",
     });
-    expect(createExpense).not.toHaveBeenCalled();
+    expect(expenseCreate).not.toHaveBeenCalled();
   });
 
   it("devuelve el rechazo del cupo sin registrar", async () => {
-    vi.mocked(checkPlanLimit).mockResolvedValue(err("Límite de gastos alcanzado."));
+    checkLimit.mockResolvedValue(err("Límite de gastos alcanzado."));
 
-    expect(await createExpenseWithPlanLimits(SALON, expenseInput, KEY)).toEqual({
+    expect(await createExpenseWithPlanLimits(SALON, expenseInput, KEY, expenseDeps)).toEqual({
       ok: false,
       error: "Límite de gastos alcanzado.",
     });
-    expect(createExpense).not.toHaveBeenCalled();
+    expect(expenseCreate).not.toHaveBeenCalled();
   });
 });
 
 describe("createInventoryPurchaseWithPlanLimits", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
-    vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
+    purchaseCheckModuleAccess.mockResolvedValue(ok(undefined));
+    purchaseCheckLimit.mockResolvedValue(ok(undefined));
   });
 
   it("consulta el módulo inventario y el cupo de movimientos antes de registrar la compra", async () => {
-    vi.mocked(createInventoryPurchaseExpense).mockResolvedValue(ok("exp-2"));
+    createPurchaseExpense.mockResolvedValue(ok("exp-2"));
 
-    expect(await createInventoryPurchaseWithPlanLimits(SALON, purchaseInput, KEY)).toEqual(ok("exp-2"));
-    expect(checkPlanModuleAccess).toHaveBeenCalledWith({ salonId: SALON, moduleKey: "inventory" });
-    expect(checkPlanLimit).toHaveBeenCalledWith({ salonId: SALON, metricKey: "inventory.movements" });
-    expect(createInventoryPurchaseExpense).toHaveBeenCalledWith(SALON, purchaseInput, KEY);
+    expect(await createInventoryPurchaseWithPlanLimits(SALON, purchaseInput, KEY, purchaseDeps)).toEqual(ok("exp-2"));
+    expect(purchaseCheckModuleAccess).toHaveBeenCalledWith({ salonId: SALON, moduleKey: "inventory" });
+    expect(purchaseCheckLimit).toHaveBeenCalledWith({ salonId: SALON, metricKey: "inventory.movements" });
+    expect(createPurchaseExpense).toHaveBeenCalledWith(SALON, purchaseInput, KEY);
   });
 
   it("devuelve el rechazo del módulo o del cupo sin registrar", async () => {
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(err("Módulo no incluido en tu plan."));
-    expect(await createInventoryPurchaseWithPlanLimits(SALON, purchaseInput, KEY)).toEqual({
+    purchaseCheckModuleAccess.mockResolvedValue(err("Módulo no incluido en tu plan."));
+    expect(await createInventoryPurchaseWithPlanLimits(SALON, purchaseInput, KEY, purchaseDeps)).toEqual({
       ok: false,
       error: "Módulo no incluido en tu plan.",
     });
 
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
-    vi.mocked(checkPlanLimit).mockResolvedValue(err("Límite de movimientos alcanzado."));
-    expect(await createInventoryPurchaseWithPlanLimits(SALON, purchaseInput, KEY)).toEqual({
+    purchaseCheckModuleAccess.mockResolvedValue(ok(undefined));
+    purchaseCheckLimit.mockResolvedValue(err("Límite de movimientos alcanzado."));
+    expect(await createInventoryPurchaseWithPlanLimits(SALON, purchaseInput, KEY, purchaseDeps)).toEqual({
       ok: false,
       error: "Límite de movimientos alcanzado.",
     });
-    expect(createInventoryPurchaseExpense).not.toHaveBeenCalled();
+    expect(createPurchaseExpense).not.toHaveBeenCalled();
   });
 });

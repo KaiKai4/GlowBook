@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { err, ok, type Result } from "@/infra/result";
 import type { CreateExpenseInput } from "../schemas";
@@ -73,7 +74,7 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
     id: expense.id,
     type: "manual",
     date: expense.expense_date,
-    amount: Number(expense.amount ?? 0),
+    amount: toAmount(expense.amount),
     concept: expense.concept || expense.custom_category || "Gasto general",
     categoryLabel: expenseDisplayLabel(expense.category, expense.custom_category),
     commerceName: expense.vendor_name,
@@ -122,25 +123,47 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
   };
 }
 
+/** Dependencias de la inserción de gastos. Producción usa el repo; los tests inyectan fakes. */
+export interface CreateExpenseDeps {
+  insertExpense: typeof insertExpense;
+}
+
+// Wrapper perezoso: el repo se lee al ejecutar, no al cargar el módulo. Así los tests que no
+// escriben no necesitan que el módulo del repo exporte el nombre de escritura.
+const defaultCreateExpenseDeps: CreateExpenseDeps = {
+  insertExpense: (...args) => insertExpense(...args),
+};
+
 export async function createExpense(
   salonId: string,
   input: CreateExpenseInput,
-  idempotencyKey: string
+  idempotencyKey: string,
+  deps: CreateExpenseDeps = defaultCreateExpenseDeps
 ): Promise<Result<string>> {
   try {
-    await insertExpense(salonId, input, idempotencyKey);
+    await deps.insertExpense(salonId, input, idempotencyKey);
     return ok("Gasto registrado.");
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo registrar el gasto."));
   }
 }
 
+/** Dependencias de la compra de inventario registrada como gasto. */
+export interface CreateInventoryPurchaseExpenseDeps {
+  recordPurchase: typeof recordInventoryPurchase;
+}
+
+const defaultCreateInventoryPurchaseExpenseDeps: CreateInventoryPurchaseExpenseDeps = {
+  recordPurchase: recordInventoryPurchase,
+};
+
 export async function createInventoryPurchaseExpense(
   salonId: string,
   input: InventoryPurchaseInput,
-  idempotencyKey: string
+  idempotencyKey: string,
+  deps: CreateInventoryPurchaseExpenseDeps = defaultCreateInventoryPurchaseExpenseDeps
 ): Promise<Result<string>> {
-  const result = await recordInventoryPurchase(
+  const result = await deps.recordPurchase(
     salonId,
     { ...input, location: "storage" },
     idempotencyKey

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { SalonBusinessDay as BusinessDay } from "@/features/salon/use-cases/get-salon-settings";
+import type { SalonBusinessDay as BusinessDay } from "@/features/salon";
 import { updateBusinessHoursAction } from "./actions";
 import { firstHoursError } from "./salon-rules";
 

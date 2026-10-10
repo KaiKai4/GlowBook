@@ -1,3 +1,4 @@
+import { formatHour12 } from "@/infra/format/es-formats";
 // Tipos de view model de reportes e historial. Las cifras llegan ya agregadas desde
 // las funciones SQL de supabase/migrations/20240101000066_read_models.sql; este dominio
 // solo da formato (etiquetas) y recorta la serie mensual a la ventana exportable.
@@ -87,11 +88,7 @@ const BUSY_HOUR_LABEL_YEAR = 2026;
 
 /** Etiqueta de hora en formato 12 h, p. ej. "3 p. m.". */
 export function busyHourLabel(hour: number): string {
-  return new Intl.DateTimeFormat("es-PA", {
-    hour: "numeric",
-    hour12: true,
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(BUSY_HOUR_LABEL_YEAR, 0, 1, hour)));
+  return formatHour12(new Date(Date.UTC(BUSY_HOUR_LABEL_YEAR, 0, 1, hour)), "UTC");
 }
 
 /** Un mes tiene movimientos si hay citas completadas, ingresos o gastos distintos de cero. */

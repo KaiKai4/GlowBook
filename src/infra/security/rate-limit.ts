@@ -10,21 +10,29 @@ import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 // consume_rate_limit (ver ADR 0017). Solo el service_role puede ejecutarla, y
 // este modulo es la unica puerta de acceso desde la aplicacion.
 //
-// Politica ante fallo del almacen: fail-open. Si la RPC falla, la operacion se
-// permite y el error se registra con captureError. La fuerza bruta de tokens
-// de invitación queda cubierta por la entropia del token, no por este limite.
+// Politica ante fallo del almacen (failMode): por defecto fail-open. Si la RPC
+// falla, la operacion se permite y el error se registra con captureError. Las
+// politicas de seguridad que no pueden quedar sin freno (inicio de sesion, ADR
+// 0030) usan fail-closed: si el almacen falla, la operacion se rechaza con un
+// mensaje fijo. La fuerza bruta de tokens de invitación queda cubierta por la
+// entropia del token, no por este limite.
+
+type RateLimitFailMode = "open" | "closed";
 
 export interface RateLimitOptions {
   /** Máximo de intentos dentro de la ventana. */
   max: number;
   /** Duración de la ventana en milisegundos. */
   windowMs: number;
+  /** Qué hacer si el almacén de límites falla. Por defecto "open". */
+  failMode?: RateLimitFailMode;
 }
 
 const DEFAULT_ACTION_LIMIT: RateLimitOptions = RATE_LIMIT_POLICIES.write;
 const DEFAULT_ANONYMOUS_LIMIT: RateLimitOptions = { max: 10, windowMs: 60_000 };
 
 const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a intentarlo.";
+const UNAVAILABLE_MESSAGE = "No podemos comprobar tus intentos ahora. Vuelve a intentarlo en unos minutos.";
 
 // Limites de la RPC: clave de hasta 200 caracteres y ventana de 1 a 86400 s.
 const MAX_KEY_LENGTH = 200;
@@ -64,8 +72,14 @@ async function consumeRateLimit(
     if (!decision) throw new Error("consume_rate_limit no devolvio decision.");
     return decision.allowed ? ok(undefined) : err(RATE_LIMIT_MESSAGE);
   } catch (failure) {
-    captureError(failure, { module: "security", action: "rate-limit", metadata: { scope } });
-    return ok(undefined);
+    const failMode = options.failMode ?? "open";
+    // severity "high": un fallo del almacen deja sin freno una accion sensible.
+    captureError(failure, {
+      module: "security",
+      action: "rate-limit",
+      metadata: { scope, failMode, severity: "high" },
+    });
+    return failMode === "closed" ? err(UNAVAILABLE_MESSAGE) : ok(undefined);
   }
 }
 
@@ -82,12 +96,16 @@ export function assertActionRateLimit(
 }
 
 /**
- * IP del cliente. En Vercel la plataforma fija x-real-ip, por eso se prefiere.
- * Como respaldo se usa el ÚLTIMO valor de x-forwarded-for: es el que añade el
- * proxy más cercano; el primero lo escribe el cliente y es falseable fuera de
- * Vercel. Devuelve null si no hay ninguna de las dos cabeceras.
+ * IP del cliente. Solo dentro de Vercel (process.env.VERCEL definido) se confía
+ * en las cabeceras de la plataforma: x-real-ip, y como respaldo el ÚLTIMO valor
+ * de x-forwarded-for (el que añade el proxy más cercano; el primero lo escribe
+ * el cliente y es falseable). Fuera de Vercel ambas cabeceras las puede enviar
+ * cualquiera, así que se ignoran y la petición cae al bucket compartido (ver
+ * SECURITY.md y docs/security.md, "Lectura de la IP del cliente").
  */
 async function clientIp(): Promise<string | null> {
+  if (!process.env.VERCEL) return null;
+
   const headerList = await headers();
   const realIp = headerList.get("x-real-ip")?.trim();
   if (realIp) return realIp;

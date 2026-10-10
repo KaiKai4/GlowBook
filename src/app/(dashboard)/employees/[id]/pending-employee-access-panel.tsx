@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Link2, RefreshCw, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/infra/format/dates";
 import { Select } from "@/components/ui/select";
 import { generateEmployeeInviteAction } from "../actions-access";
 import { EmployeeInviteLinkCard } from "../employee-invite-link-card";
@@ -83,11 +84,7 @@ export function PendingEmployeeAccessPanel({
       ) : invitation ? (
         <div className="rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-xs text-fg-subtle">
           Hay un enlace activo que expira el{" "}
-          {new Date(invitation.expiresAt).toLocaleDateString("es-PA", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
+          {formatDate(new Date(invitation.expiresAt))}
           . Por seguridad no puede volver a mostrarse; si se perdió, regenera uno nuevo (el anterior queda invalidado).
         </div>
       ) : null}

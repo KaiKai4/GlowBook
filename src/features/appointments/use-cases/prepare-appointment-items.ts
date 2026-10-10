@@ -1,6 +1,8 @@
 import { toPublicErrorMessage } from "@/infra/errors";
 import { err, ok, type Result } from "@/infra/result";
 import { captureError } from "@/infra/observability";
+import { requireInvariant } from "@/infra/invariant";
+import { toResult } from "@/infra/to-result";
 import {
   findAppointmentCreationResources,
   findExceptionDatesByEmployeeForCommand,
@@ -30,6 +32,21 @@ export interface PreparedAppointmentItems {
   startTime: Date;
 }
 
+/** Lecturas que necesita la preparación. Producción usa los repos; los tests inyectan fakes. */
+export interface PrepareAppointmentItemsDeps {
+  findAppointmentCreationResources: typeof findAppointmentCreationResources;
+  findExceptionDatesByEmployeeForCommand: typeof findExceptionDatesByEmployeeForCommand;
+  findOccupiedSlotsByEmployeeForCommand: typeof findOccupiedSlotsByEmployeeForCommand;
+  findWorkSchedulesByEmployeeForCommand: typeof findWorkSchedulesByEmployeeForCommand;
+}
+
+const defaultPrepareAppointmentItemsDeps: PrepareAppointmentItemsDeps = {
+  findAppointmentCreationResources,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
+};
+
 export interface PrepareAppointmentItemsInput {
   salonId: string;
   /** Ausente con cliente nuevo: todavía no existe y la RPC lo da de alta. */
@@ -50,7 +67,8 @@ export interface PrepareAppointmentItemsInput {
  * el rango global. No escribe nada.
  */
 export async function prepareAppointmentItems(
-  input: PrepareAppointmentItemsInput
+  input: PrepareAppointmentItemsInput,
+  deps: PrepareAppointmentItemsDeps = defaultPrepareAppointmentItemsDeps
 ): Promise<Result<PreparedAppointmentItems>> {
   const { salonId, action } = input;
   const fallbackMessage =
@@ -58,7 +76,7 @@ export async function prepareAppointmentItems(
 
   let resources: AppointmentCreationResources;
   try {
-    resources = await findAppointmentCreationResources({
+    resources = await deps.findAppointmentCreationResources({
       salonId,
       customerId: input.customerId,
       assignments: input.assignments,
@@ -86,9 +104,9 @@ export async function prepareAppointmentItems(
   try {
     // Tres consultas en lote para todos los profesionales, en paralelo.
     const [schedules, exceptions, occupied] = await Promise.all([
-      findWorkSchedulesByEmployeeForCommand({ salonId, employeeIds }),
-      findExceptionDatesByEmployeeForCommand({ salonId, employeeIds }),
-      findOccupiedSlotsByEmployeeForCommand({
+      deps.findWorkSchedulesByEmployeeForCommand({ salonId, employeeIds }),
+      deps.findExceptionDatesByEmployeeForCommand({ salonId, employeeIds }),
+      deps.findOccupiedSlotsByEmployeeForCommand({
         salonId,
         employeeIds,
         date: startTime,
@@ -121,12 +139,16 @@ export async function prepareAppointmentItems(
     return err(toPublicErrorMessage(error, fallbackMessage));
   }
 
-  const lastPayload = payloads[payloads.length - 1];
-  if (!lastPayload) throw new Error("Invariante de cita: sin items para calcular el fin.");
+  // buildItemPayloads devuelve un item por asignación: sin items no hay fin que calcular.
+  const lastPayload = await toResult(
+    async () => requireInvariant(payloads.at(-1), "Invariante de cita: sin items para calcular el fin."),
+    { fallback: fallbackMessage, context: { module: "appointments", action } }
+  );
+  if (!lastPayload.ok) return lastPayload;
 
   const [firstGlobalViolation] = evaluateTimeRange({
     start: startTime,
-    end: lastPayload.end_time,
+    end: lastPayload.value.end_time,
     salonConfig: resources.salonConfig,
     businessHours: resources.businessHours,
     enforceSalonSchedule: true,

@@ -1,4 +1,4 @@
-import { findActiveAssignmentReferences } from "@/features/employees/data/employees.repo";
+import { findActiveAssignmentReferences } from "@/features/employees/data/employees-read.repo";
 import { assertCollaboratorAssignments } from "@/features/employees/domain/collaborator-assignment";
 
 /**

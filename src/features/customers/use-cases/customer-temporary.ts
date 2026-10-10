@@ -5,7 +5,24 @@ import {
 } from "@/features/customers/data/customers.repo";
 import { discardTemporaryCustomerRpc } from "@/features/customers/data/rpc/discard-temporary-customer";
 import type { Result } from "@/infra/result";
-import { assertCustomerQuotaAvailable } from "./customer-quota";
+import { assertCustomerQuotaAvailable, type AssertCustomerQuota } from "./customer-quota";
+
+/** Dependencias de la promoción y descarte de temporales. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface CustomerTemporaryDeps {
+  assertQuota: AssertCustomerQuota;
+  updateCustomer: (
+    customerId: string,
+    salonId: string,
+    input: Parameters<typeof updateCustomer>[2]
+  ) => Promise<unknown>;
+  discardTemporaryCustomerRpc: (customerId: string) => Promise<void>;
+}
+
+const defaultCustomerTemporaryDeps: CustomerTemporaryDeps = {
+  assertQuota: assertCustomerQuotaAvailable,
+  updateCustomer,
+  discardTemporaryCustomerRpc,
+};
 
 /** Mensajes públicos fijos por SQLSTATE de discard_temporary_customer (ADR 0018). */
 const DISCARD_MESSAGES: Readonly<Record<string, string>> = {
@@ -24,14 +41,15 @@ function sqlStateOf(error: unknown): string | null {
 
 export async function promoteCustomer(
   customerId: string,
-  salonId: string
+  salonId: string,
+  deps: CustomerTemporaryDeps = defaultCustomerTemporaryDeps
 ): Promise<Result<void>> {
   try {
     // El cupo se comprueba antes de escribir: promover un temporal activa un cliente.
-    const limit = await assertCustomerQuotaAvailable(salonId);
+    const limit = await deps.assertQuota(salonId);
     if (!limit.ok) return limit;
 
-    await updateCustomer(customerId, salonId, {
+    await deps.updateCustomer(customerId, salonId, {
       is_temporary: false,
       is_active: true,
     });
@@ -47,9 +65,12 @@ export async function promoteCustomer(
  * Descarta un cliente temporal con sus citas canceladas o no presentadas (RPC transaccional).
  * El salón lo fija el claim del JWT dentro de la RPC, no se pasa desde aquí.
  */
-export async function deleteTemporaryCustomer(customerId: string): Promise<Result<void>> {
+export async function deleteTemporaryCustomer(
+  customerId: string,
+  deps: CustomerTemporaryDeps = defaultCustomerTemporaryDeps
+): Promise<Result<void>> {
   try {
-    await discardTemporaryCustomerRpc(customerId);
+    await deps.discardTemporaryCustomerRpc(customerId);
     return { ok: true, value: undefined };
   } catch (error) {
     const sqlState = sqlStateOf(error);

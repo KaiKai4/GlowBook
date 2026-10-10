@@ -1,8 +1,7 @@
 import "server-only";
 
-import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { parseRpcResponse } from "@/infra/supabase/rpc-response";
+import { callIdempotentRpc } from "@/infra/supabase/call-idempotent-rpc";
 import { z } from "@/infra/validation/zod";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { APPOINTMENT_MESSAGES } from "../../domain/messages";
@@ -57,12 +56,10 @@ export async function createAppointmentWithRpc(
 ): Promise<CreateAppointmentRpcResult> {
   try {
     const supabase = await createSupabaseServerClient();
-    const payload = toCanonicalPayload({
+    const appointmentId = await callIdempotentRpc(supabase, "create_appointment", {
       ...input.payload,
       idempotency_key: input.idempotencyKey,
-    });
-    const response = await supabase.rpc("create_appointment", { payload });
-    const appointmentId = parseRpcResponse("create_appointment", response, CreateAppointmentResultSchema);
+    }, CreateAppointmentResultSchema);
     return { ok: true, appointmentId };
   } catch (error) {
     return {

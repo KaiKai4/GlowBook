@@ -1,3 +1,4 @@
+import { formatDayMonth } from "@/infra/format/es-formats";
 import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 
 export interface AttentionItem {
@@ -57,7 +58,5 @@ export function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("es-PA", { day: "numeric", month: "short" }).format(
-    new Date(`${value}T00:00:00`)
-  );
+  return formatDayMonth(new Date(`${value}T00:00:00`), { month: "short" });
 }

@@ -1,36 +1,37 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthError } from "@supabase/supabase-js";
 import { captureError } from "@/infra/observability";
-import { findEmployeeById } from "../data/employees.repo";
-import { findAssignableEmployeeRole, findEmployeeAccessProfile, unlinkEmployeeProfile } from "../data/employee-access.repo";
-import { deleteEmployeeInvitations, deletePendingEmployeeInvitations, insertEmployeeInvitation } from "../data/employee-invitations.repo";
+import {
+  findAssignableEmployeeRole,
+  findEmployeeAccessProfile,
+  unlinkEmployeeProfile,
+} from "../data/employee-access.repo";
+import {
+  deletePendingEmployeeInvitations,
+  insertEmployeeInvitation,
+} from "../data/employee-invitations.repo";
 import { deleteEmployeeAuthUser } from "../data/employee-auth.repo";
-import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount, resetEmployeeAccess } from "./employee-revocation";
+import {
+  checkEmployeeAccessRevocable,
+  deleteEmployeeAuthAccount,
+  resetEmployeeAccess,
+  type CheckEmployeeAccessRevocableDeps,
+  type DeleteEmployeeAuthAccountDeps,
+  type ResetEmployeeAccessDeps,
+} from "./employee-revocation";
 import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
 
+// La validación del rol de la nueva invitación (employee-role) sigue leyendo por el repositorio.
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("../data/employees.repo", () => ({
-  findEmployeeById: vi.fn(),
-}));
-
+// Las lecturas de acceso se mockean aquí; las escrituras llegan como fakes tipados.
 vi.mock("../data/employee-access.repo", () => ({
   findAssignableEmployeeRole: vi.fn(),
   findEmployeeAccessProfile: vi.fn(),
   unlinkEmployeeProfile: vi.fn(),
   updateEmployeeProfileRole: vi.fn(),
-}));
-
-vi.mock("../data/employee-invitations.repo", () => ({
-  deleteEmployeeInvitations: vi.fn(),
-  deletePendingEmployeeInvitations: vi.fn(),
-  insertEmployeeInvitation: vi.fn(),
-}));
-
-vi.mock("../data/employee-auth.repo", () => ({
-  deleteEmployeeAuthUser: vi.fn(),
 }));
 
 function employeeRow(overrides: Partial<{ email: string | null; profile_id: string | null }> = {}) {
@@ -46,14 +47,30 @@ const EMPLOYEE_ID = "employee-1";
 const PROFILE_ID = "profile-1";
 const NOW = new Date("2026-10-09T12:00:00.000Z");
 const mockedCaptureError = vi.mocked(captureError);
-const mockedFindEmployeeById = vi.mocked(findEmployeeById);
-const mockedDeleteEmployeeInvitations = vi.mocked(deleteEmployeeInvitations);
-const mockedDeletePending = vi.mocked(deletePendingEmployeeInvitations);
 const mockedFindAssignableRole = vi.mocked(findAssignableEmployeeRole);
-const mockedFindAccessProfile = vi.mocked(findEmployeeAccessProfile);
-const mockedInsertInvitation = vi.mocked(insertEmployeeInvitation);
-const mockedUnlinkProfile = vi.mocked(unlinkEmployeeProfile);
-const mockedDeleteAuthUser = vi.mocked(deleteEmployeeAuthUser);
+
+// Fakes tipados de las dependencias de lectura y escritura.
+const mockedFindEmployeeById = vi.fn<ResetEmployeeAccessDeps["findEmployeeById"]>();
+const mockedFindAccessProfile = vi.fn<typeof findEmployeeAccessProfile>();
+const mockedUnlinkProfile = vi.fn<typeof unlinkEmployeeProfile>();
+const mockedDeleteAuthUser = vi.fn<typeof deleteEmployeeAuthUser>();
+const mockedDeletePending = vi.fn<typeof deletePendingEmployeeInvitations>();
+const mockedInsertInvitation = vi.fn<typeof insertEmployeeInvitation>();
+
+const checkDeps: CheckEmployeeAccessRevocableDeps = {
+  findAccessProfile: mockedFindAccessProfile,
+};
+const deleteAuthDeps: DeleteEmployeeAuthAccountDeps = {
+  deleteAuthUser: mockedDeleteAuthUser,
+};
+const resetDeps: ResetEmployeeAccessDeps = {
+  findEmployeeById: mockedFindEmployeeById,
+  findAccessProfile: mockedFindAccessProfile,
+  unlinkProfile: mockedUnlinkProfile,
+  deleteAuthUser: mockedDeleteAuthUser,
+  deletePendingInvitations: mockedDeletePending,
+  insertInvitation: mockedInsertInvitation,
+};
 
 describe("revocacion y reinicio de acceso", () => {
   beforeEach(() => {
@@ -69,7 +86,6 @@ describe("revocacion y reinicio de acceso", () => {
     mockedInsertInvitation.mockResolvedValue({ error: null });
     mockedDeleteAuthUser.mockResolvedValue({ data: undefined, error: null });
     mockedUnlinkProfile.mockResolvedValue({ error: null });
-    mockedDeleteEmployeeInvitations.mockResolvedValue({ error: null });
   });
 
   afterEach(() => {
@@ -78,11 +94,11 @@ describe("revocacion y reinicio de acceso", () => {
 
   describe("reinicio de acceso con cuenta vinculada (vía resetEmployeeAccess)", () => {
     beforeEach(() => {
-      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }) as never);
+      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }));
     });
 
     it("válida, desvincula en BD y después borra la cuenta de Auth", async () => {
-      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null }, resetDeps);
 
       expect(result.ok).toBe(true);
       expect(mockedFindAccessProfile).toHaveBeenCalledWith(PROFILE_ID, SALON_ID);
@@ -96,7 +112,7 @@ describe("revocacion y reinicio de acceso", () => {
     it("si la desvinculación en BD falla, no borra la cuenta de Auth", async () => {
       mockedUnlinkProfile.mockResolvedValue({ error: { message: "bloqueado" } });
 
-      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null }, resetDeps);
 
       expect(result).toEqual({
         ok: false,
@@ -110,7 +126,7 @@ describe("revocacion y reinicio de acceso", () => {
       const failure = new AuthError("auth caido");
       mockedDeleteAuthUser.mockResolvedValue({ data: null, error: failure });
 
-      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null }, resetDeps);
 
       expect(mockedUnlinkProfile).toHaveBeenCalledTimes(1);
       expect(result.ok).toBe(true);
@@ -124,7 +140,7 @@ describe("revocacion y reinicio de acceso", () => {
     it("nunca desvincula ni borra la cuenta de un owner", async () => {
       mockedFindAccessProfile.mockResolvedValue({ data: { role_id: null, is_owner: true }, error: null });
 
-      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null }, resetDeps);
 
       expect(result).toEqual({
         ok: false,
@@ -138,7 +154,7 @@ describe("revocacion y reinicio de acceso", () => {
     it("sin acceso verificable (error al leer el perfil) no desvincula ni borra Auth", async () => {
       mockedFindAccessProfile.mockResolvedValue({ data: null, error: { message: "caido" } });
 
-      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null }, resetDeps);
 
       expect(result).toEqual({
         ok: false,
@@ -151,7 +167,7 @@ describe("revocacion y reinicio de acceso", () => {
 
   describe("checkEmployeeAccessRevocable", () => {
     it("devuelve el rol del perfil sin tocar Auth ni la BD", async () => {
-      const result = await checkEmployeeAccessRevocable(PROFILE_ID, SALON_ID);
+      const result = await checkEmployeeAccessRevocable(PROFILE_ID, SALON_ID, checkDeps);
 
       expect(result).toEqual({ ok: true, value: { roleId: "role-1" } });
       expect(mockedFindAccessProfile).toHaveBeenCalledWith(PROFILE_ID, SALON_ID);
@@ -162,7 +178,7 @@ describe("revocacion y reinicio de acceso", () => {
     it("rechaza la cuenta de un owner sin validar nada más", async () => {
       mockedFindAccessProfile.mockResolvedValue({ data: { role_id: null, is_owner: true }, error: null });
 
-      const result = await checkEmployeeAccessRevocable(PROFILE_ID, SALON_ID);
+      const result = await checkEmployeeAccessRevocable(PROFILE_ID, SALON_ID, checkDeps);
 
       expect(result.ok).toBe(false);
       expect(mockedDeleteAuthUser).not.toHaveBeenCalled();
@@ -171,7 +187,7 @@ describe("revocacion y reinicio de acceso", () => {
     it("informa y registra el error si no puede verificar el perfil", async () => {
       mockedFindAccessProfile.mockResolvedValue({ data: null, error: { message: "caido" } });
 
-      const result = await checkEmployeeAccessRevocable(PROFILE_ID, SALON_ID);
+      const result = await checkEmployeeAccessRevocable(PROFILE_ID, SALON_ID, checkDeps);
 
       expect(result).toEqual({
         ok: false,
@@ -183,7 +199,7 @@ describe("revocacion y reinicio de acceso", () => {
 
   describe("deleteEmployeeAuthAccount", () => {
     it("borra la cuenta de Auth del perfil", async () => {
-      const result = await deleteEmployeeAuthAccount(PROFILE_ID);
+      const result = await deleteEmployeeAuthAccount(PROFILE_ID, deleteAuthDeps);
 
       expect(result).toEqual({ ok: true, value: undefined });
       expect(mockedDeleteAuthUser).toHaveBeenCalledWith(PROFILE_ID);
@@ -193,7 +209,7 @@ describe("revocacion y reinicio de acceso", () => {
       const failure = new AuthError("auth caido");
       mockedDeleteAuthUser.mockResolvedValue({ data: null, error: failure });
 
-      const result = await deleteEmployeeAuthAccount(PROFILE_ID);
+      const result = await deleteEmployeeAuthAccount(PROFILE_ID, deleteAuthDeps);
 
       expect(result).toEqual({
         ok: false,
@@ -205,13 +221,16 @@ describe("revocacion y reinicio de acceso", () => {
 
   describe("resetEmployeeAccess", () => {
     it("devuelve 'no encontrado' sin tocar accesos cuando el colaborador no existe en el salón", async () => {
-      mockedFindEmployeeById.mockResolvedValue(null as never);
+      mockedFindEmployeeById.mockResolvedValue(null);
 
-      const result = await resetEmployeeAccess({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: null,
-      });
+      const result = await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: null,
+        },
+        resetDeps
+      );
 
       expect(result).toEqual({ ok: false, error: "Colaborador no encontrado." });
       expect(mockedFindEmployeeById).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID);
@@ -219,13 +238,16 @@ describe("revocacion y reinicio de acceso", () => {
     });
 
     it("exige un email registrado, incluso si solo tiene espacios", async () => {
-      mockedFindEmployeeById.mockResolvedValue(employeeRow({ email: "   " }) as never);
+      mockedFindEmployeeById.mockResolvedValue(employeeRow({ email: "   " }));
 
-      const result = await resetEmployeeAccess({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: null,
-      });
+      const result = await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: null,
+        },
+        resetDeps
+      );
 
       expect(result).toEqual({
         ok: false,
@@ -235,13 +257,16 @@ describe("revocacion y reinicio de acceso", () => {
     });
 
     it("sin cuenta vinculada crea una invitación nueva con el rol pedido", async () => {
-      mockedFindEmployeeById.mockResolvedValue(employeeRow() as never);
+      mockedFindEmployeeById.mockResolvedValue(employeeRow());
 
-      const result = await resetEmployeeAccess({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: "role-1",
-      });
+      const result = await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: "role-1",
+        },
+        resetDeps
+      );
 
       expect(result.ok).toBe(true);
       expect(mockedDeleteAuthUser).not.toHaveBeenCalled();
@@ -252,14 +277,17 @@ describe("revocacion y reinicio de acceso", () => {
 
     it("con cuenta vinculada revoca primero y hereda el rol anterior si no se pide otro", async () => {
       mockedFindEmployeeById.mockResolvedValue(
-        employeeRow({ profile_id: PROFILE_ID }) as never
+        employeeRow({ profile_id: PROFILE_ID })
       );
 
-      const result = await resetEmployeeAccess({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: null,
-      });
+      const result = await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: null,
+        },
+        resetDeps
+      );
 
       expect(result.ok).toBe(true);
       expect(mockedDeleteAuthUser).toHaveBeenCalledWith(PROFILE_ID);
@@ -270,16 +298,19 @@ describe("revocacion y reinicio de acceso", () => {
 
     it("con cuenta vinculada usa el rol pedido en lugar del anterior", async () => {
       mockedFindEmployeeById.mockResolvedValue(
-        employeeRow({ profile_id: PROFILE_ID }) as never
+        employeeRow({ profile_id: PROFILE_ID })
       );
 
       mockedFindAssignableRole.mockResolvedValue({ data: { id: "role-2" }, error: null });
 
-      await resetEmployeeAccess({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: "role-2",
-      });
+      await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: "role-2",
+        },
+        resetDeps
+      );
 
       expect(mockedFindAssignableRole).toHaveBeenCalledWith(SALON_ID, "role-2");
       expect(mockedInsertInvitation).toHaveBeenCalledWith(
@@ -289,15 +320,18 @@ describe("revocacion y reinicio de acceso", () => {
 
     it("si la desvinculación falla, no borra Auth ni crea invitación nueva", async () => {
       mockedFindEmployeeById.mockResolvedValue(
-        employeeRow({ profile_id: PROFILE_ID }) as never
+        employeeRow({ profile_id: PROFILE_ID })
       );
       mockedUnlinkProfile.mockResolvedValue({ error: { message: "bloqueado" } });
 
-      const result = await resetEmployeeAccess({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: null,
-      });
+      const result = await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: null,
+        },
+        resetDeps
+      );
 
       expect(result.ok).toBe(false);
       expect(mockedDeleteAuthUser).not.toHaveBeenCalled();
@@ -305,9 +339,9 @@ describe("revocacion y reinicio de acceso", () => {
     });
 
     it("desvincula antes de borrar Auth y crea la invitación", async () => {
-      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }) as never);
+      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }));
 
-      await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+      await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null }, resetDeps);
 
       expect(mockedUnlinkProfile.mock.invocationCallOrder[0]).toBeLessThan(
         mockedDeleteAuthUser.mock.invocationCallOrder[0] ?? Infinity
@@ -318,14 +352,17 @@ describe("revocacion y reinicio de acceso", () => {
     });
 
     it("si Auth falla tras desvincular, crea la invitación y devuelve el aviso", async () => {
-      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }) as never);
+      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }));
       mockedDeleteAuthUser.mockResolvedValue({ data: null, error: new AuthError("auth caido") });
 
-      const result = await resetEmployeeAccess({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: null,
-      });
+      const result = await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: null,
+        },
+        resetDeps
+      );
 
       expect(mockedInsertInvitation).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
@@ -333,6 +370,23 @@ describe("revocacion y reinicio de acceso", () => {
         value: expect.objectContaining({ token: expect.any(String) }),
         warnings: [OLD_ACCOUNT_NOT_DELETED_WARNING],
       });
+    });
+
+    it("si no se puede crear la invitación nueva, devuelve error y no informa de éxito", async () => {
+      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }));
+      mockedInsertInvitation.mockResolvedValue({ error: new Error("insert rechazado") });
+
+      const result = await resetEmployeeAccess(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: "role-1",
+        },
+        resetDeps
+      );
+
+      expect(result.ok).toBe(false);
+      expect(mockedDeleteAuthUser).toHaveBeenCalledTimes(1);
     });
   });
 });

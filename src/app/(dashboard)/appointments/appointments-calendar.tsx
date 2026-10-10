@@ -1,6 +1,8 @@
 "use client";
 
+import { formatWeekdayShort } from "@/infra/format/es-formats";
 import { cn } from "@/components/ui/cn";
+import { isVisibleOnCalendar } from "@/features/appointments/domain/lifecycle";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import { DayColumn } from "./calendar-day-column";
 import { TimeGutter } from "./calendar-time-gutter";
@@ -11,12 +13,12 @@ import {
   getLocalDate,
   todayISO,
 } from "./calendar-geometry";
+import { useSalonDisplay } from "./salon-display-context";
 
 export type ApptCalItem = CalendarAppointment;
 
 export function AppointmentsCalendar({
   appointments,
-  tz,
   onApptClick,
   mode = "diaria",
   weekDates,
@@ -25,7 +27,6 @@ export function AppointmentsCalendar({
   businessEnd = DEFAULT_END,
 }: {
   appointments: ApptCalItem[];
-  tz: string;
   onApptClick: (appt: ApptCalItem) => void;
   mode?: "diaria" | "semanal";
   weekDates?: string[];
@@ -33,8 +34,9 @@ export function AppointmentsCalendar({
   businessStart?: number;
   businessEnd?: number;
 }) {
+  const { tz } = useSalonDisplay();
   const today = todayISO();
-  const visible = appointments.filter((a) => a.status !== "cancelled" && a.start_time);
+  const visible = appointments.filter((a) => isVisibleOnCalendar(a.status) && a.start_time);
   const { calStart, calEnd } = computeRange(visible, tz, businessStart, businessEnd);
   const totalHours = calEnd - calStart;
 
@@ -76,7 +78,7 @@ export function AppointmentsCalendar({
             <div className="sticky left-0 z-30 w-14 shrink-0 border-r border-border bg-surface-muted/95 shadow-sticky" />
             {weekDates.map((d) => {
               const dt = new Date(`${d}T12:00:00`);
-              const dayName = dt.toLocaleDateString("es-PA", { weekday: "short" });
+              const dayName = formatWeekdayShort(dt);
               const dayNum = dt.getDate();
               const isToday = d === today;
               const count = byDate[d]?.length ?? 0;
@@ -115,8 +117,7 @@ export function AppointmentsCalendar({
                   )}
                 >
                   <DayColumn
-                    appointments={byDate[d] ?? []}
-                    tz={tz}
+                    appointments={byDate[d] ?? []}
                     onApptClick={onApptClick}
                     calStart={calStart}
                     totalHours={totalHours}
@@ -149,8 +150,7 @@ export function AppointmentsCalendar({
         />
         <div className="flex-1">
           <DayColumn
-            appointments={appointments}
-            tz={tz}
+            appointments={appointments}
             onApptClick={onApptClick}
             calStart={calStart}
             totalHours={totalHours}

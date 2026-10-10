@@ -10,6 +10,7 @@ import {
 import {
   activatePaidPeriod,
   assignSalonPlan,
+  assignSalonPlanAtAcceptance,
   findAssignmentForPayment,
   findAssignmentStartsAt,
   findEffectivePlanRowsForPlatform,
@@ -20,6 +21,8 @@ import {
   saveSalonPlanOverride,
   updateSalonPlanOverrideStatus,
 } from "./salon-subscriptions.repo";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Repositorio de suscripciones de salón. Es cross-tenant (service_role), así que
 // cada consulta que toca datos de un salón debe filtrar por salon_id de forma
@@ -128,7 +131,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     const fake = createBillingSupabaseFake({ tables: baseTables() });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     const assignmentQuery = firstQueryOn(fake, "salon_plan_assignments");
     expect(argsOf(assignmentQuery, "eq")).toEqual(["salon_id", SALON_ID]);
@@ -179,7 +182,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(rows.overrides.map((override) => override.id)).toEqual([
       "vigente",
@@ -196,7 +199,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(rows.assignment).toBeNull();
     expect(rows.plan).toBeNull();
@@ -218,7 +221,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(argsOf(firstQueryOn(fake, "commercial_plans"), "eq")).toEqual(["id", "plan-1"]);
     expect(usageCall(fake)?.p_salon_id).toBe(SALON_ID);
@@ -233,7 +236,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(rows.usage).toEqual({ appointments_monthly: 3, employees_active: 0 });
   });
@@ -244,7 +247,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(rows.usage).toEqual({});
     expect(queriesOn(fake, "rpc:count_salon_usage")).toHaveLength(0);
@@ -257,7 +260,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     });
     useFake(fake);
 
-    await expect(findEffectivePlanRowsForPlatform(SALON_ID)).rejects.toBeInstanceOf(Error);
+    await expect(findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID)).rejects.toBeInstanceOf(Error);
   });
 
   it("lanza el error de la consulta de asignación", async () => {
@@ -266,7 +269,7 @@ describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", (
     });
     useFake(fake);
 
-    await expect(findEffectivePlanRowsForPlatform(SALON_ID)).rejects.toBeInstanceOf(Error);
+    await expect(findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID)).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -283,7 +286,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toEqual({
       key: "appointments_monthly",
@@ -305,7 +308,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(countersByKey(fake).employees_active).toMatchObject({ from: null, to: null });
   });
@@ -336,7 +339,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({ from: null, to: null });
   });
@@ -360,7 +363,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2026-10-05T00:00:00.000Z",
@@ -380,7 +383,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     // Hoy 9 de octubre es antes del día 15: el ciclo vigente arranco el 15 de septiembre.
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
@@ -402,7 +405,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2026-10-15T00:00:00.000Z",
@@ -423,7 +426,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2025-12-20T00:00:00.000Z",
@@ -443,7 +446,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     // Día ancla 31: en septiembre (30 días) cae el 30; el siguiente corte es el 31 de octubre.
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
@@ -464,7 +467,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
     useFake(fake);
 
-    await findEffectivePlanRowsForPlatform(SALON_ID);
+    await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2026-10-01T00:00:00.000Z",
@@ -480,13 +483,13 @@ describe("lecturas por salón", () => {
     });
     useFake(fake);
 
-    expect(await findAssignmentStartsAt(SALON_ID)).toBe("2026-02-01");
+    expect(await findAssignmentStartsAt(ADMIN_PROOF, SALON_ID)).toBe("2026-02-01");
     const query = firstQueryOn(fake, "salon_plan_assignments");
     expect(argsOf(query, "select")).toEqual(["starts_at"]);
     expect(argsOf(query, "eq")).toEqual(["salon_id", SALON_ID]);
 
     useFake(createBillingSupabaseFake({ tables: { salon_plan_assignments: { data: null, error: null } } }));
-    expect(await findAssignmentStartsAt(OTHER_SALON_ID)).toBeNull();
+    expect(await findAssignmentStartsAt(ADMIN_PROOF, OTHER_SALON_ID)).toBeNull();
   });
 
   it("findAssignmentForPayment devuelve plan y fin de período del salón indicado", async () => {
@@ -500,7 +503,7 @@ describe("lecturas por salón", () => {
     });
     useFake(fake);
 
-    expect(await findAssignmentForPayment(SALON_ID)).toEqual({
+    expect(await findAssignmentForPayment(ADMIN_PROOF, SALON_ID)).toEqual({
       plan_id: "plan-1",
       current_period_end: "2026-11-05",
     });
@@ -516,7 +519,7 @@ describe("lecturas por salón", () => {
       })
     );
 
-    await expect(findAssignmentForPayment(SALON_ID)).rejects.toBeInstanceOf(Error);
+    await expect(findAssignmentForPayment(ADMIN_PROOF, SALON_ID)).rejects.toBeInstanceOf(Error);
   });
 
   it("findSalonPayments pide los últimos 12 pagos del salón, más recientes primero", async () => {
@@ -530,7 +533,7 @@ describe("lecturas por salón", () => {
     });
     useFake(fake);
 
-    const payments = await findSalonPayments(SALON_ID);
+    const payments = await findSalonPayments(ADMIN_PROOF, SALON_ID);
 
     expect(payments).toEqual([{ id: "pay-2", salon_id: SALON_ID, amount: "20.00" }]);
     const query = firstQueryOn(fake, "salon_plan_payments");
@@ -545,7 +548,7 @@ describe("lecturas por salón", () => {
     });
     useFake(fake);
 
-    expect(await findSalonPayments(SALON_ID, 3)).toEqual([]);
+    expect(await findSalonPayments(ADMIN_PROOF, SALON_ID, 3)).toEqual([]);
     expect(argsOf(firstQueryOn(fake, "salon_plan_payments"), "limit")).toEqual([3]);
   });
 
@@ -556,7 +559,7 @@ describe("lecturas por salón", () => {
       })
     );
 
-    await expect(findSalonPayments(SALON_ID)).rejects.toBeInstanceOf(Error);
+    await expect(findSalonPayments(ADMIN_PROOF, SALON_ID)).rejects.toBeInstanceOf(Error);
   });
 
   it("findOpenSalonAlerts pide solo alertas abiertas del salón, las 20 más recientes", async () => {
@@ -576,7 +579,7 @@ describe("lecturas por salón", () => {
     });
     useFake(fake);
 
-    expect(await findOpenSalonAlerts(SALON_ID)).toEqual([alertRow]);
+    expect(await findOpenSalonAlerts(ADMIN_PROOF, SALON_ID)).toEqual([alertRow]);
     const query = firstQueryOn(fake, "salon_plan_alerts");
     expect(argsOf(query, "eq")).toEqual(["salon_id", SALON_ID]);
     expect(argsOf(query, "order")).toEqual(["created_at", { ascending: false }]);
@@ -585,14 +588,14 @@ describe("lecturas por salón", () => {
 
   it("findOpenSalonAlerts normaliza nulos y propaga errores", async () => {
     useFake(createBillingSupabaseFake({ tables: { salon_plan_alerts: { data: null, error: null } } }));
-    expect(await findOpenSalonAlerts(SALON_ID)).toEqual([]);
+    expect(await findOpenSalonAlerts(ADMIN_PROOF, SALON_ID)).toEqual([]);
 
     useFake(
       createBillingSupabaseFake({
         tables: { salon_plan_alerts: { data: null, error: { message: "sin acceso" } } },
       })
     );
-    await expect(findOpenSalonAlerts(SALON_ID)).rejects.toBeInstanceOf(Error);
+    await expect(findOpenSalonAlerts(ADMIN_PROOF, SALON_ID)).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -601,7 +604,7 @@ describe("escrituras por salón", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await assignSalonPlan({
+    await assignSalonPlan(ADMIN_PROOF, {
       salonId: SALON_ID,
       planId: "plan-1",
       status: "trialing",
@@ -630,7 +633,7 @@ describe("escrituras por salón", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await activatePaidPeriod({ salonId: SALON_ID, periodStart: "2026-10-09", periodEnd: "2026-11-09" });
+    await activatePaidPeriod(ADMIN_PROOF, { salonId: SALON_ID, periodStart: "2026-10-09", periodEnd: "2026-11-09" });
 
     const query = firstQueryOn(fake, "salon_plan_assignments");
     expect(argsOf(query, "update")).toEqual([
@@ -643,7 +646,7 @@ describe("escrituras por salón", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await recordSalonPlanPayment({
+    await recordSalonPlanPayment(ADMIN_PROOF, {
       salonId: SALON_ID,
       planId: "plan-1",
       amount: 20,
@@ -671,7 +674,7 @@ describe("escrituras por salón", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await saveSalonPlanOverride({
+    await saveSalonPlanOverride(ADMIN_PROOF, {
       salonId: SALON_ID,
       moduleKey: null,
       metricKey: "employees_active",
@@ -717,7 +720,7 @@ describe("escrituras por salón", () => {
     });
     useFake(fake);
 
-    await updateSalonPlanOverrideStatus(SALON_ID, "ov-1", "paused");
+    await updateSalonPlanOverrideStatus(ADMIN_PROOF, SALON_ID, "ov-1", "paused");
 
     const query = firstQueryOn(fake, "salon_plan_overrides");
     expect(argsOf(query, "update")).toEqual([{ status: "paused" }]);
@@ -730,7 +733,7 @@ describe("escrituras por salón", () => {
 
   it("updateSalonPlanOverrideStatus falla si no afecta exactamente una sobreescritura", async () => {
     useFake(createBillingSupabaseFake({ tables: { salon_plan_overrides: { data: [], error: null } } }));
-    await expect(updateSalonPlanOverrideStatus(SALON_ID, "ov-otro", "paused")).rejects.toThrow(
+    await expect(updateSalonPlanOverrideStatus(ADMIN_PROOF, SALON_ID, "ov-otro", "paused")).rejects.toThrow(
       "Se esperaba actualizar 1 extra del plan y se actualizaron 0."
     );
 
@@ -739,7 +742,7 @@ describe("escrituras por salón", () => {
         tables: { salon_plan_overrides: { data: [{ id: "ov-1" }, { id: "ov-1" }], error: null } },
       })
     );
-    await expect(updateSalonPlanOverrideStatus(SALON_ID, "ov-1", "paused")).rejects.toThrow(
+    await expect(updateSalonPlanOverrideStatus(ADMIN_PROOF, SALON_ID, "ov-1", "paused")).rejects.toThrow(
       "se actualizaron 2"
     );
   });
@@ -750,7 +753,7 @@ describe("escrituras por salón", () => {
     });
     useFake(fake);
 
-    await resolvePlanAlert(SALON_ID, "al-1");
+    await resolvePlanAlert(ADMIN_PROOF, SALON_ID, "al-1");
 
     const query = firstQueryOn(fake, "salon_plan_alerts");
     expect(argsOf(query, "update")).toEqual([{ status: "resolved" }]);
@@ -763,7 +766,7 @@ describe("escrituras por salón", () => {
   it("resolvePlanAlert falla si la alerta no pertenece al salón (cero filas)", async () => {
     useFake(createBillingSupabaseFake({ tables: { salon_plan_alerts: { data: [], error: null } } }));
 
-    await expect(resolvePlanAlert(SALON_ID, "al-ajena")).rejects.toThrow("se actualizaron 0");
+    await expect(resolvePlanAlert(ADMIN_PROOF, SALON_ID, "al-ajena")).rejects.toThrow("se actualizaron 0");
   });
 
   it("propaga los errores de escritura de cada operación", async () => {
@@ -779,7 +782,7 @@ describe("escrituras por salón", () => {
     );
 
     await expect(
-      assignSalonPlan({
+      assignSalonPlan(ADMIN_PROOF, {
         salonId: SALON_ID,
         planId: "plan-1",
         status: "active",
@@ -790,7 +793,7 @@ describe("escrituras por salón", () => {
       })
     ).rejects.toBeInstanceOf(Error);
     await expect(
-      recordSalonPlanPayment({
+      recordSalonPlanPayment(ADMIN_PROOF, {
         salonId: SALON_ID,
         planId: null,
         amount: 1,
@@ -802,7 +805,29 @@ describe("escrituras por salón", () => {
       })
     ).rejects.toBeInstanceOf(Error);
     await expect(
-      updateSalonPlanOverrideStatus(SALON_ID, "ov-1", "canceled")
+      updateSalonPlanOverrideStatus(ADMIN_PROOF, SALON_ID, "ov-1", "canceled")
     ).rejects.toBeInstanceOf(Error);
+  });
+});
+
+describe("assignSalonPlanAtAcceptance (alta por invitación, sin prueba)", () => {
+  it("hace upsert de la asignación del salón con el cliente de servicio", async () => {
+    const fake = createBillingSupabaseFake();
+    useFake(fake);
+
+    await assignSalonPlanAtAcceptance({
+      salonId: SALON_ID,
+      planId: "plan-1",
+      status: "active",
+      startsAt: "2026-10-09",
+      endsAt: null,
+      trialEndsAt: "2026-10-23",
+      notes: "Alta",
+    });
+
+    const query = firstQueryOn(fake, "salon_plan_assignments");
+    expect(argsOf(query, "upsert")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ salon_id: SALON_ID, plan_id: "plan-1", status: "active" })])
+    );
   });
 });

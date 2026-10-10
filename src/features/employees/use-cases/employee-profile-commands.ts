@@ -1,11 +1,8 @@
 import { admitNewEmployee, type EmployeeAdmissionInput } from "./employee-admission";
-import { parseCreateEmployeeForm, parseUpdateEmployeeForm, readIdempotencyKey } from "./parse-employee-input";
-import {
-  createEmployeeProfile,
-  updateEmployeeProfile,
-  type CreateEmployeeResult,
-  type EmployeeWriteResult,
-} from "./employee-profile";
+import { createEmployeeProfile } from "./employee-profile-create";
+import { updateEmployeeProfile } from "./employee-profile-update";
+import type { CreateEmployeeResult, EmployeeWriteResult } from "./employee-profile-results";
+import type { CreateEmployeeInput, UpdateEmployeeInput } from "../schemas";
 import type { Result } from "@/infra/result";
 
 export interface CreateEmployeeFlowInput {
@@ -14,46 +11,31 @@ export interface CreateEmployeeFlowInput {
   rolesEnabled: boolean;
   /** Chequeos del plan, inyectados por la accion: el caso de uso no importa billing. */
   checks: EmployeeAdmissionInput["checks"];
+  /** Rol pedido en el formulario (null si no se envio). */
+  requestedRoleId: string | null;
+  idempotencyKey: string;
+  /** Datos del alta, ya validados en el borde (la accion). */
+  data: CreateEmployeeInput;
 }
 
-/**
- * Alta de colaborador. Orden observable: admision del plan (y cupo de login si
- * hay rol) antes de validar la clave de idempotencia y el formulario.
- */
-export async function createEmployee(
-  input: CreateEmployeeFlowInput,
-  formData: FormData
-): Promise<Result<CreateEmployeeResult>> {
+/** Alta de colaborador: admision del plan (y cupo de login si hay rol) y luego la escritura. */
+export async function createEmployee(input: CreateEmployeeFlowInput): Promise<Result<CreateEmployeeResult>> {
   const admission = await admitNewEmployee({
     rolesEnabled: input.rolesEnabled,
-    requestedRoleId: requestedRoleIdOf(formData),
+    requestedRoleId: input.requestedRoleId,
     checks: input.checks,
   });
   if (!admission.ok) return admission;
 
-  const key = readIdempotencyKey(formData);
-  if (!key.ok) return key;
-  const parsed = parseCreateEmployeeForm(formData);
-  if (!parsed.ok) return parsed;
-
-  return createEmployeeProfile(input.salonId, parsed.value, admission.value.roleId, key.value);
+  return createEmployeeProfile(input.salonId, input.data, admission.value.roleId, input.idempotencyKey);
 }
 
-/** Edicion de colaborador: clave de idempotencia y formulario, luego la escritura. */
+/** Edicion de colaborador: la escritura de los campos presentes. */
 export async function updateEmployee(
   salonId: string,
   employeeId: string,
-  formData: FormData
+  data: UpdateEmployeeInput,
+  idempotencyKey: string
 ): Promise<Result<EmployeeWriteResult>> {
-  const key = readIdempotencyKey(formData);
-  if (!key.ok) return key;
-  const parsed = parseUpdateEmployeeForm(formData);
-  if (!parsed.ok) return parsed;
-
-  return updateEmployeeProfile(employeeId, salonId, parsed.value, key.value);
-}
-
-function requestedRoleIdOf(formData: FormData): string | null {
-  const raw = formData.get("role_id");
-  return typeof raw === "string" ? raw : null;
+  return updateEmployeeProfile(employeeId, salonId, data, idempotencyKey);
 }

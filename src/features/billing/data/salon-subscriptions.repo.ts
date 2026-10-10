@@ -17,6 +17,7 @@ export {
   recordSalonPlanPayment,
   activatePaidPeriod,
   assignSalonPlan,
+  assignSalonPlanAtAcceptance,
   saveSalonPlanOverride,
   updateSalonPlanOverrideStatus,
   recordPlanAlert,

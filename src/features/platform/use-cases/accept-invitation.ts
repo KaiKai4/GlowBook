@@ -15,6 +15,7 @@ import { personNameField } from "@/infra/validation/name";
 import { autoAssignPlanOnAcceptance } from "@/features/billing";
 import { publishAuditEvent } from "@/features/audit";
 import { z } from "@/infra/validation/zod";
+import { emailSchema } from "@/infra/validation/email";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 import {
   DUPLICATE_OWNER_MESSAGE,
@@ -26,7 +27,7 @@ import {
 
 const AcceptSchema = z.object({
   token: z.string().min(1, "Token inválido"),
-  email: z.string().email("Email inválido"),
+  email: emailSchema,
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   salon_name: z.string().min(1, "El nombre del salón es obligatorio").max(120),
   full_name: personNameField("Tu nombre es obligatorio", "Tu nombre"),
@@ -34,10 +35,35 @@ const AcceptSchema = z.object({
 
 export type AcceptInvitationInput = z.infer<typeof AcceptSchema>;
 
+/** Dependencias del caso de uso. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface AcceptInvitationDeps {
+  findInvitation: typeof findSalonInvitationForAcceptance;
+  profileExists: typeof profileExists;
+  acceptSalonAsAdmin: typeof acceptSalonInvitationAsAdmin;
+  createOwnerAuthUser: typeof createPlatformOwnerAuthUser;
+  deleteOwnerAuthUser: typeof deletePlatformOwnerAuthUser;
+  findOwnerAuthUserByEmail: typeof findPlatformOwnerAuthUserByEmail;
+  updateOwnerAuthUser: typeof updatePlatformOwnerAuthUser;
+  autoAssignPlan: typeof autoAssignPlanOnAcceptance;
+  publishAuditEvent: typeof publishAuditEvent;
+}
+
+const defaultAcceptInvitationDeps: AcceptInvitationDeps = {
+  findInvitation: findSalonInvitationForAcceptance,
+  profileExists,
+  acceptSalonAsAdmin: acceptSalonInvitationAsAdmin,
+  createOwnerAuthUser: createPlatformOwnerAuthUser,
+  deleteOwnerAuthUser: deletePlatformOwnerAuthUser,
+  findOwnerAuthUserByEmail: findPlatformOwnerAuthUserByEmail,
+  updateOwnerAuthUser: updatePlatformOwnerAuthUser,
+  autoAssignPlan: autoAssignPlanOnAcceptance,
+  publishAuditEvent,
+};
+
 const ACCOUNT_CREATE_FAILED = "No se pudo crear la cuenta. Intentalo de nuevo en unos momentos.";
 
-async function rollbackCreatedOwner(userId: string): Promise<void> {
-  const { error } = await deletePlatformOwnerAuthUser(userId);
+async function rollbackCreatedOwner(userId: string, deps: AcceptInvitationDeps): Promise<void> {
+  const { error } = await deps.deleteOwnerAuthUser(userId);
   if (error && error.status !== 404) {
     captureError(error, {
       module: "platform",
@@ -51,14 +77,15 @@ async function rollbackCreatedOwner(userId: string): Promise<void> {
 async function reuseExistingOwner(
   email: string,
   password: string,
-  emailDomain: string
+  emailDomain: string,
+  deps: AcceptInvitationDeps
 ): Promise<Result<string>> {
-  const existing = await findPlatformOwnerAuthUserByEmail(email);
+  const existing = await deps.findOwnerAuthUserByEmail(email);
   if (existing.error || !existing.data) return err(ACCOUNT_CREATE_FAILED);
 
   let hasProfile = false;
   try {
-    hasProfile = await profileExists(existing.data.id);
+    hasProfile = await deps.profileExists(existing.data.id);
   } catch (error) {
     captureError(error, {
       module: "platform",
@@ -69,7 +96,7 @@ async function reuseExistingOwner(
   }
   if (hasProfile) return err(DUPLICATE_OWNER_MESSAGE);
 
-  const updated = await updatePlatformOwnerAuthUser(existing.data.id, { password, emailConfirm: true });
+  const updated = await deps.updateOwnerAuthUser(existing.data.id, { password, emailConfirm: true });
   if (updated.error) {
     return err("No se pudo actualizar la cuenta. Intentalo de nuevo en unos momentos.");
   }
@@ -81,9 +108,10 @@ async function reuseExistingOwner(
 async function resolveOwnerAccount(
   email: string,
   password: string,
-  emailDomain: string
+  emailDomain: string,
+  deps: AcceptInvitationDeps
 ): Promise<Result<{ userId: string; createdNewUser: boolean }>> {
-  const { data: created, error: createError } = await createPlatformOwnerAuthUser({
+  const { data: created, error: createError } = await deps.createOwnerAuthUser({
     email,
     password,
     emailConfirm: true,
@@ -91,7 +119,7 @@ async function resolveOwnerAccount(
 
   if (createError || !created) {
     if (!isAlreadyRegisteredError(createError?.message)) return err(ACCOUNT_CREATE_FAILED);
-    const reused = await reuseExistingOwner(email, password, emailDomain);
+    const reused = await reuseExistingOwner(email, password, emailDomain, deps);
     if (!reused.ok) return reused;
     return ok({ userId: reused.value, createdNewUser: false });
   }
@@ -103,9 +131,10 @@ async function resolveOwnerAccount(
 async function assignInvitedPlan(
   salonId: string,
   planId: string,
-  userId: string
+  userId: string,
+  deps: AcceptInvitationDeps
 ): Promise<string[]> {
-  const assigned = await autoAssignPlanOnAcceptance({ salonId, planId, acceptedByUserId: userId });
+  const assigned = await deps.autoAssignPlan({ salonId, planId, acceptedByUserId: userId });
   if (!assigned.ok) {
     captureError(new Error(assigned.error), {
       module: "platform",
@@ -119,7 +148,10 @@ async function assignInvitedPlan(
 
 // Server-side acceptance: creates the owner account (email pre-confirmed) and the
 // salon atomically using the privileged data adapter. No dependency on email confirmation.
-export async function acceptInvitation(input: AcceptInvitationInput): Promise<Result<void>> {
+export async function acceptInvitation(
+  input: AcceptInvitationInput,
+  deps: AcceptInvitationDeps = defaultAcceptInvitationDeps
+): Promise<Result<void>> {
   const parsed = AcceptSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
@@ -128,7 +160,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
 
   let invitation;
   try {
-    invitation = await findSalonInvitationForAcceptance(token);
+    invitation = await deps.findInvitation(token);
   } catch (error) {
     captureError(error, {
       module: "platform",
@@ -141,13 +173,13 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
   const rejection = invitationRejection({ invitation, email, now: new Date() });
   if (rejection || !invitation) return err(rejection ?? "Invitación inválida o ya utilizada.");
 
-  const owner = await resolveOwnerAccount(email, password, emailDomain);
+  const owner = await resolveOwnerAccount(email, password, emailDomain, deps);
   if (!owner.ok) return owner;
   const { userId, createdNewUser } = owner.value;
 
   let salonId: string;
   try {
-    salonId = await acceptSalonInvitationAsAdmin({
+    salonId = await deps.acceptSalonAsAdmin({
       token,
       userId,
       email,
@@ -155,7 +187,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
       fullName: full_name,
     });
   } catch (error) {
-    if (createdNewUser) await rollbackCreatedOwner(userId);
+    if (createdNewUser) await rollbackCreatedOwner(userId, deps);
     captureError(error, {
       module: "platform",
       action: "accept_invitation",
@@ -167,9 +199,9 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
 
   const warnings: string[] = [];
   const planId = planToAssign(invitation);
-  if (planId) warnings.push(...(await assignInvitedPlan(salonId, planId, userId)));
+  if (planId) warnings.push(...(await assignInvitedPlan(salonId, planId, userId, deps)));
 
-  const auditWarnings = await publishAuditEvent("salon.invitation_accepted", {
+  const auditWarnings = await deps.publishAuditEvent("salon.invitation_accepted", {
     actorUserId: userId,
     action: "invitation_accepted",
     status: "succeeded",

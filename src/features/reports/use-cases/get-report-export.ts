@@ -1,5 +1,7 @@
 import "server-only";
 
+import { formatLocalDateISO, formatMonthYear } from "@/infra/format/dates";
+import { formatLongDateTime } from "@/infra/format/es-formats";
 import { findSalonReportIdentity } from "../data/reports.repo";
 import { fetchPeriodTotals } from "../data/rpc/reports-read-models.rpc";
 import {
@@ -15,7 +17,7 @@ import {
   type MonthlyExportRow,
   type ReportModuleAvailability,
 } from "../domain/analytics";
-import { getYearRange, lastDayOfMonth, localDateString, localYear } from "../domain/period";
+import { getYearRange, lastDayOfMonth, localYear } from "../domain/period";
 
 const DEFAULT_REPORT_TIMEZONE = "America/Panama";
 // Historico completo: la base agrega en la ventana amplia y los meses sin movimientos
@@ -59,12 +61,7 @@ interface ExportBounds {
 
 function monthLabel(monthKey: string): string {
   const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
-  const formatter = new Intl.DateTimeFormat("es-PA", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-  return formatter.format(new Date(Date.UTC(year, month - 1, 15)));
+  return formatMonthYear(new Date(Date.UTC(year, month - 1, 15)));
 }
 
 function exportBounds(scope: ReportExportScope, timezone: string, now: Date): ExportBounds {
@@ -95,7 +92,7 @@ function exportBounds(scope: ReportExportScope, timezone: string, now: Date): Ex
     to: `${lastYear}-12-31`,
     firstMonth: LIFETIME_FIRST_MONTH,
     lastMonth: `${lastYear}-12`,
-    currentMonthKey: localDateString(now, timezone).slice(0, 7),
+    currentMonthKey: formatLocalDateISO(now, timezone).slice(0, 7),
   };
 }
 
@@ -177,11 +174,7 @@ export async function getReportExportData(
 
   return {
     salonName: identity?.name ?? "GlowBook",
-    generatedAtLabel: new Intl.DateTimeFormat("es-PA", {
-      dateStyle: "long",
-      timeStyle: "short",
-      timeZone: timezone,
-    }).format(now),
+    generatedAtLabel: formatLongDateTime(now, timezone),
     timezone,
     modules,
     scopeLabel,

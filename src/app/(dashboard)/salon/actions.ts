@@ -1,7 +1,6 @@
 "use server";
 
 import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
-import { revalidatePath } from "next/cache";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import { parseBusinessHoursJson } from "@/features/salon";
@@ -20,20 +19,21 @@ import {
 import { ok, type Result } from "@/infra/result";
 
 // Las acciones solo adaptan la entrada y pasan por el pipeline de defineAction.
-// La revalidacion del layout completo (tema, fondo, nombre) queda fuera de
-// revalidate porque defineAction solo revalida rutas por ruta.
+// Tema, fondo y nombre cambian el layout completo del dashboard: se revalida el layout.
 
 const PERMISSION = {
   key: PERMISSIONS.SALON_MANAGE,
   deniedMessage: "No tienes permiso para editar el salón.",
 };
 const RATE_LIMIT = { scope: "salon", options: RATE_LIMIT_POLICIES.write };
+const LAYOUT = { path: "/", type: "layout" } as const;
 
 const updateInfoFlow = defineAction<FormData, SalonInfoInput, void>({
   permission: PERMISSION,
   rateLimit: RATE_LIMIT,
   parse: (formData) => parseWithSchema(SalonInfoSchema)({ name: formData.get("name") }),
   run: (input, session) => updateSalonInfo(session.salonId, input),
+  revalidate: () => [LAYOUT],
 });
 
 const updateThemeFlow = defineAction<string, string, void>({
@@ -41,6 +41,7 @@ const updateThemeFlow = defineAction<string, string, void>({
   rateLimit: RATE_LIMIT,
   parse: (theme) => ok(theme),
   run: (theme, session) => updateSalonTheme(session.salonId, theme),
+  revalidate: () => [LAYOUT],
 });
 
 const updateBackgroundFlow = defineAction<string, string, void>({
@@ -48,6 +49,7 @@ const updateBackgroundFlow = defineAction<string, string, void>({
   rateLimit: RATE_LIMIT,
   parse: (bgStyle) => ok(bgStyle),
   run: (bgStyle, session) => updateSalonBackground(session.salonId, bgStyle),
+  revalidate: () => [LAYOUT],
 });
 
 const updateBusinessHoursFlow = defineAction<string, BusinessDayInput[], void>({
@@ -66,24 +68,19 @@ const updatePaymentMethodsFlow = defineAction<string[], SalonPaymentMethodsInput
   revalidate: () => ["/salon", "/appointments", "/retail"],
 });
 
-function revalidateLayout<T>(result: Result<T>): Result<T> {
-  if (result.ok) revalidatePath("/", "layout");
-  return result;
-}
-
 export async function updateSalonInfoAction(
   _prev: Result<void> | null,
   formData: FormData
 ): Promise<Result<void>> {
-  return revalidateLayout(await updateInfoFlow(formData));
+  return updateInfoFlow(formData);
 }
 
 export async function updateSalonThemeAction(theme: string): Promise<Result<void>> {
-  return revalidateLayout(await updateThemeFlow(theme));
+  return updateThemeFlow(theme);
 }
 
 export async function updateSalonBgAction(bgStyle: string): Promise<Result<void>> {
-  return revalidateLayout(await updateBackgroundFlow(bgStyle));
+  return updateBackgroundFlow(bgStyle);
 }
 
 export async function updateBusinessHoursAction(hoursJson: string): Promise<Result<void>> {

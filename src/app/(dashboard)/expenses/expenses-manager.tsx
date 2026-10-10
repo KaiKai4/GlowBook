@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
-import type { InventoryProductOption } from "@/features/inventory/use-cases/inventory-product-options";
+import type { ExpensesPageView } from "@/features/expenses";
+import type { InventoryProductOption } from "@/features/inventory";
 import { ExpenseGeneralForm } from "./expense-general-form";
 import { ExpensesCategoryBreakdown } from "./expenses-category-breakdown";
 import { ExpensesHistory } from "./expenses-history";

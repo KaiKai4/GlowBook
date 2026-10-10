@@ -5,7 +5,7 @@ import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission } from "@/features/access";
 import { getDashboardOverview } from "@/features/dashboard";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { partialDouble } from "@/test/partial-double";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import DashboardPage from "./page";
@@ -58,7 +58,7 @@ describe("DashboardPage redireccion del unico módulo visible", () => {
   it("no redirige a '/' cuando el unico modulo visible es Inicio (evita bucle)", async () => {
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/")]);
 
-    await expect(DashboardPage()).resolves.toBeDefined();
+    await expect(DashboardPage()).resolves.toMatchObject({ props: expect.any(Object) });
     expect(redirect).not.toHaveBeenCalled();
   });
 

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeSupabaseFrom, type FakeQueryResult } from "@/test/supabase-query-fake";
 import { findSubscriptionRows } from "./salon-subscriptions.repo";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Mapeo de overrides de plan: columnas snake_case y precio numérico como texto
 // deben llegar al dominio como número o null.
@@ -50,7 +52,7 @@ describe("findSubscriptionRows: mapeo de overrides", () => {
       },
     });
 
-    const result = await findSubscriptionRows();
+    const result = await findSubscriptionRows(ADMIN_PROOF);
 
     expect(result.overrides).toEqual([
       expect.objectContaining({ id: "ov-1", salonId: SALON_ID, priceOverride: 15.5, isGift: true }),
@@ -61,6 +63,6 @@ describe("findSubscriptionRows: mapeo de overrides", () => {
   it("devuelve listas vacías cuando no hay asignaciones, overrides ni alertas", async () => {
     useTables({});
 
-    expect(await findSubscriptionRows()).toEqual({ assignments: [], overrides: [], alerts: [] });
+    expect(await findSubscriptionRows(ADMIN_PROOF)).toEqual({ assignments: [], overrides: [], alerts: [] });
   });
 });

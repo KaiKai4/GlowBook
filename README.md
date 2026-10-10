@@ -127,36 +127,12 @@ See `docs/database-contracts.md` before changing RPCs, triggers, constraints or 
 
 ## Commands
 
-```bash
-npm run dev          # Start local Next dev server
-npm run build        # Build production bundle
-npm run start        # Start production server after build
-npm run verify:fast  # Quality tier fast: static checks and unit tests
-npm run verify:full  # Quality tier full: everything in verify:fast plus DB, build, E2E and Lighthouse
-npm run verify:job -- <job>  # Run the steps of one CI job locally
-npm run lint         # Run ESLint with zero warnings
-npm run architecture:check # Run architecture guardrails only
-npm run test         # Run Vitest unit tests
-npm run test:integration # Run Vitest integration tests against local Supabase
-npm run test:coverage # Run Vitest with v8 coverage
-npm run test:e2e     # Run local Playwright critical flows
-npm run type-check   # Run TypeScript without emitting
-npm run db:start     # Start local Supabase (Docker)
-npm run db:reset     # Rebuild local database from migrations
-npm run db:test      # Run pgTAP tests against local database
-npm run db:types     # Regenerate Supabase generated types from local database
-npm run bootstrap:admin -- <email> <password>
-```
+La lista completa de comandos (setup, base de datos local, verificación y uso diario) está en `docs/development-guide.md`. Los comandos de verificación son `npm run verify:fast` (ciclo diario) y `npm run verify:full` (definición de terminado).
 
 Before shipping a change, run the full local gate on a clean checkout with
-Docker running:
-
-```bash
-npm run verify:full
-```
-
-`verify:full` runs the steps declared in `scripts/quality/steps.mjs`, the same
-steps CI executes per job. See `docs/testing.md` for what each step checks and
+Docker running: `npm run verify:full`. It runs the steps declared in
+`scripts/quality/steps.mjs`, the same steps CI executes per job. See
+`docs/testing.md` for what each step checks and
 `docs/adr/0011-verificador-local-igual-ci.md` for why local and CI share one
 manifest.
 

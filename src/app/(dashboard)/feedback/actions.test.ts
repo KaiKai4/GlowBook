@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { submitFeedback } from "@/features/feedback/use-cases/submit-feedback";
 import { err, ok } from "@/infra/result";
 import { buildProfile, SALON_ID, USER_ID } from "@/test/action-fixtures";
 import { submitFeedbackAction } from "./actions";
 
+const { requireActiveProfile } = vi.hoisted(() => ({ requireActiveProfile: vi.fn() }));
+
 vi.mock("@/app/_composition/request-context", async () => {
   // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
   const { contextFromProfile } = await import("@/test/action-fixtures");
-  const requireActiveProfile = vi.fn();
   return {
     requireActiveProfile,
     requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),

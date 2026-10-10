@@ -19,9 +19,9 @@ export function aggregateByCategory(expenses: ExpenseAggregateInput[]): Category
   const totals = new Map<string, CategoryTotal>();
 
   for (const expense of expenses) {
-    const isCustom = expense.category === "other" && Boolean(expense.customCategory?.trim());
-    const key = isCustom ? `other:${expense.customCategory!.trim()}` : expense.category;
-    const label = isCustom ? expense.customCategory!.trim() : EXPENSE_CATEGORY_LABELS[expense.category];
+    const customLabel = expense.category === "other" ? expense.customCategory?.trim() : undefined;
+    const key = customLabel ? `other:${customLabel}` : expense.category;
+    const label = customLabel || EXPENSE_CATEGORY_LABELS[expense.category];
 
     const existing = totals.get(key);
     if (existing) {

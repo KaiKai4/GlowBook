@@ -15,7 +15,8 @@ vi.mock("@/features/access", async (importOriginal) => ({
   hasPermission: vi.fn(),
 }));
 
-vi.mock("@/features/billing", () => ({
+vi.mock("@/features/billing", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/billing")>()),
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));

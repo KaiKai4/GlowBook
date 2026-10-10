@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import { captureError } from "@/infra/observability";
 import "server-only";
 
@@ -11,11 +12,26 @@ import {
 import {
   createInventoryProductWithStockRpc,
   updateInventoryProductProfileRpc,
+  type CreateInventoryProductRpcInput,
+  type UpdateInventoryProductRpcInput,
 } from "../data/rpc/inventory-product-rpc";
 import type {
   CreateInventoryProductInput,
   UpdateInventoryProductInput,
 } from "../schemas";
+
+/** Dependencias de los comandos de escritura. Producción usa los adaptadores reales; los tests inyectan fakes. */
+export interface InventoryProductsDeps {
+  createProductWithStock: (input: CreateInventoryProductRpcInput) => Promise<string>;
+  updateProductProfile: (input: UpdateInventoryProductRpcInput) => Promise<void>;
+  softDeleteProduct: (productId: string, salonId: string) => Promise<void>;
+}
+
+const defaultInventoryProductsDeps: InventoryProductsDeps = {
+  createProductWithStock: createInventoryProductWithStockRpc,
+  updateProductProfile: updateInventoryProductProfileRpc,
+  softDeleteProduct: softDeleteInventoryProduct,
+};
 
 interface InventoryStockView {
   location: InventoryLocation;
@@ -77,8 +93,8 @@ export async function getInventoryPage(salonId: string): Promise<InventoryPageVi
   const productViews = products.map((product) => {
     const stock = INVENTORY_LOCATIONS.map((location) => {
       const row = product.inventory_stock_locations?.find((item) => item.location === location);
-      const quantity = Number(row?.quantity ?? 0);
-      const minimumQuantity = Number(row?.minimum_quantity ?? 0);
+      const quantity = toAmount(row?.quantity);
+      const minimumQuantity = toAmount(row?.minimum_quantity);
       return {
         location,
         label: LOCATION_LABELS[location],
@@ -92,8 +108,8 @@ export async function getInventoryPage(salonId: string): Promise<InventoryPageVi
       id: product.id,
       name: product.name,
       category: product.category ?? "",
-      costPrice: Number(product.cost_price ?? 0),
-      salePrice: Number(product.sale_price ?? 0),
+      costPrice: toAmount(product.cost_price),
+      salePrice: toAmount(product.sale_price),
       isRetailEnabled: Boolean(product.is_retail_enabled),
       isActive: product.is_active,
       totalQuantity: stock.reduce((sum, item) => sum + item.quantity, 0),
@@ -111,8 +127,8 @@ export async function getInventoryPage(salonId: string): Promise<InventoryPageVi
       productName: productNameFromRelation(movement.product),
       location: movement.location,
       movementType: movement.movement_type,
-      quantityDelta: Number(movement.quantity_delta ?? 0),
-      quantityAfter: Number(movement.quantity_after ?? 0),
+      quantityDelta: toAmount(movement.quantity_delta),
+      quantityAfter: toAmount(movement.quantity_after),
       note: movement.note ?? "",
       createdAt: movement.created_at,
     })),
@@ -126,10 +142,11 @@ function isUniqueViolation(error: unknown): boolean {
 
 export async function createInventoryProduct(
   salonId: string,
-  input: CreateInventoryProductInput
+  input: CreateInventoryProductInput,
+  deps: InventoryProductsDeps = defaultInventoryProductsDeps
 ): Promise<Result<void>> {
   try {
-    await createInventoryProductWithStockRpc({
+    await deps.createProductWithStock({
       salonId,
       name: input.name,
       category: input.category || null,
@@ -156,10 +173,11 @@ export async function createInventoryProduct(
 export async function updateInventoryProductProfile(
   productId: string,
   salonId: string,
-  input: UpdateInventoryProductInput
+  input: UpdateInventoryProductInput,
+  deps: InventoryProductsDeps = defaultInventoryProductsDeps
 ): Promise<Result<void>> {
   try {
-    await updateInventoryProductProfileRpc({
+    await deps.updateProductProfile({
       salonId,
       productId,
       name: input.name,
@@ -181,10 +199,11 @@ export async function updateInventoryProductProfile(
 
 export async function deleteInventoryProduct(
   productId: string,
-  salonId: string
+  salonId: string,
+  deps: InventoryProductsDeps = defaultInventoryProductsDeps
 ): Promise<Result<void>> {
   try {
-    await softDeleteInventoryProduct(productId, salonId);
+    await deps.softDeleteProduct(productId, salonId);
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "inventory", action: "delete_product" });

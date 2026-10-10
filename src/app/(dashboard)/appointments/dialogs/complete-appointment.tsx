@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -10,34 +9,18 @@ import {
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
 import { cn } from "@/components/ui/cn";
-import {
-  calculateDiscountAmount,
-  calculateFinalChargedTotal,
-  clampDiscountPercentage,
-  roundCurrency,
-} from "@/features/appointments/domain/pricing";
 import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
-import { completeAppointmentAction } from "../actions";
 import { CheckCircle2 } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
 import { ChargedItemsSection } from "./complete-appointment-items";
 import { CompleteAppointmentTotal } from "./complete-appointment-total";
 import { CompleteAppointmentPaymentFields } from "./complete-appointment-payment-fields";
-import { launchCompletionConfetti } from "./launch-completion-confetti";
+import {
+  type AppointmentForCompletion,
+  useCompleteAppointment,
+} from "./use-complete-appointment";
 
-export interface AppointmentForCompletion {
-  id: string;
-  total_price: number | string | null;
-  customer: { first_name: string; last_name: string } | null;
-  items: Array<{
-    id: string;
-    price: number;
-    discount_amount?: number;
-    service: {
-      name: string;
-      category: { name: string; pricing_mode: "fixed" | "variable" } | null;
-    } | null;
-  }>;
-}
+export type { AppointmentForCompletion } from "./use-complete-appointment";
 
 export function CompleteAppointmentDialog({
   appt, open, onClose, paymentMethodOptions,
@@ -76,16 +59,6 @@ export function CompleteAppointmentDialog({
   );
 }
 
-function buildInitialItemPrices(appt: AppointmentForCompletion) {
-  return Object.fromEntries(
-    appt.items.map((item) => [item.id, String(Number(item.price ?? 0))])
-  );
-}
-
-function buildInitialItemDiscounts(appt: AppointmentForCompletion) {
-  return Object.fromEntries(appt.items.map((item) => [item.id, ""]));
-}
-
 function CompleteAppointmentForm({
   appt,
   onClose,
@@ -99,147 +72,85 @@ function CompleteAppointmentForm({
   submitIntent: ReturnType<typeof useSubmissionIntent>["submit"];
   onBusyChange: (busy: boolean) => void;
 }) {
-  const router = useRouter();
-  const [payment, setPayment] = useState(paymentMethodOptions[0]?.value ?? "cash");
-  const [itemPrices, setItemPrices] = useState<Record<string, string>>(() =>
-    buildInitialItemPrices(appt)
-  );
-  const [itemDiscounts, setItemDiscounts] = useState<Record<string, string>>(() =>
-    buildInitialItemDiscounts(appt)
-  );
-  const [completionPriceNote, setCompletionPriceNote] = useState("");
-  const [pending, start] = useTransition();
-  useEffect(() => {
-    onBusyChange(pending);
-  }, [pending, onBusyChange]);
-  const [completed, setCompleted] = useState(false);
-  // Total final que devuelve el servidor al completar; la vista previa local no lo sustituye.
-  const [completedTotal, setCompletedTotal] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const completeButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Vista previa: estos importes solo orientan al usuario antes de cobrar. El servidor
-  // recalcula precios y descuentos al completar, y es su resultado el que cuenta.
-  const chargedItems = useMemo(
-    () =>
-      appt.items.map((item) => {
-        const price = roundCurrency(Number(itemPrices[item.id] ?? item.price ?? 0));
-        const discountPercentage = clampDiscountPercentage(
-          parseFloat(itemDiscounts[item.id] || "0") || 0
-        );
-        const discountAmount = calculateDiscountAmount(price, discountPercentage);
-        const finalPrice = calculateFinalChargedTotal(price, discountAmount);
-        const isVariable = item.service?.category?.pricing_mode === "variable";
-        return { ...item, price, discountPercentage, discountAmount, finalPrice, isVariable };
-      }),
-    [appt.items, itemDiscounts, itemPrices]
-  );
-  const subtotal = roundCurrency(chargedItems.reduce((sum, item) => sum + item.price, 0));
-  const discountAmount = roundCurrency(
-    chargedItems.reduce((sum, item) => sum + item.discountAmount, 0)
-  );
-  const finalTotal = calculateFinalChargedTotal(subtotal, discountAmount);
-
-  function handleComplete() {
-    if (pending || completed) return;
-    setError(null);
-    const itemCharges = JSON.stringify(
-      chargedItems.map((item) => ({
-        id: item.id,
-        price: item.price,
-        discountPercentage: item.discountPercentage,
-      }))
-    );
-
-    start(async () => {
-      const result = await submitIntent(
-        {
-          appointment_id: appt.id,
-          payment_method: payment,
-          completion_price_note: completionPriceNote,
-          item_charges: itemCharges,
-        },
-        (idempotencyKey) => {
-          const formData = new FormData();
-          formData.set("idempotency_key", idempotencyKey);
-          formData.set("appointment_id", appt.id);
-          formData.set("payment_method", payment);
-          formData.set("completion_price_note", completionPriceNote);
-          formData.set("item_charges", itemCharges);
-          return completeAppointmentAction(null, formData);
-        }
-      );
-      // El resultado del cobro lo confirma el servidor: su total final sustituye a la vista previa.
-      if (result.ok) {
-        setCompletedTotal(result.value.total_price);
-        setCompleted(true);
-        await launchCompletionConfetti(completeButtonRef.current);
-        router.refresh();
-        window.setTimeout(onClose, 700);
-      } else {
-        setError(result.error ?? "Error al completar la cita.");
-      }
-    });
-  }
+  const {
+    payment,
+    setPayment,
+    itemPrices,
+    setItemPrices,
+    itemDiscounts,
+    setItemDiscounts,
+    completionPriceNote,
+    setCompletionPriceNote,
+    pending,
+    completed,
+    completedTotal,
+    error,
+    completeButtonRef,
+    preview,
+    handleComplete,
+  } = useCompleteAppointment({
+    appt,
+    paymentMethodOptions,
+    onClose,
+    submitIntent,
+    onBusyChange,
+  });
+  const { items: chargedItems, subtotal, discountAmount, finalTotal } = preview;
 
   return (
     <div className="space-y-5">
-        <CompleteAppointmentTotal
-          subtotal={subtotal}
-          discountAmount={discountAmount}
-          finalTotal={completedTotal ?? finalTotal}
-          completed={completed}
-        />
+      <CompleteAppointmentTotal
+        subtotal={subtotal}
+        discountAmount={discountAmount}
+        finalTotal={completedTotal ?? finalTotal}
+        completed={completed}
+      />
 
-        <ChargedItemsSection
-          chargedItems={chargedItems}
-          itemPrices={itemPrices}
-          itemDiscounts={itemDiscounts}
-          setItemPrices={setItemPrices}
-          setItemDiscounts={setItemDiscounts}
-          subtotal={subtotal}
-          discountAmount={discountAmount}
-          finalTotal={finalTotal}
-        />
+      <ChargedItemsSection
+        chargedItems={chargedItems}
+        itemPrices={itemPrices}
+        itemDiscounts={itemDiscounts}
+        setItemPrices={setItemPrices}
+        setItemDiscounts={setItemDiscounts}
+        subtotal={subtotal}
+        discountAmount={discountAmount}
+        finalTotal={finalTotal}
+      />
 
-        <CompleteAppointmentPaymentFields
-          payment={payment}
-          onPaymentChange={setPayment}
-          paymentMethodOptions={paymentMethodOptions}
-          note={completionPriceNote}
-          onNoteChange={setCompletionPriceNote}
-        />
+      <CompleteAppointmentPaymentFields
+        payment={payment}
+        onPaymentChange={setPayment}
+        paymentMethodOptions={paymentMethodOptions}
+        note={completionPriceNote}
+        onNoteChange={setCompletionPriceNote}
+      />
 
-        {error && (
-          <div className="rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger-strong">
-            {error}
-          </div>
-        )}
+      {error && <Alert variant="danger">{error}</Alert>}
 
-        <div className="flex gap-3 pt-1">
-          <Button
-            variant="ghost"
-            className="flex-1"
-            disabled={pending || completed}
-            onClick={onClose}
-          >
-            Cancelar
-          </Button>
-          <Button
-            ref={completeButtonRef}
-            variant="primary"
-            className={cn(
-              "flex-1 transition-[background-color,transform] duration-200 disabled:opacity-100",
-              completed && "bg-success-solid hover:bg-success-solid"
-            )}
-            loading={pending && !completed}
-            disabled={completed}
-            onClick={handleComplete}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            {completed ? "Cita completada" : "Cobrar y completar"}
-          </Button>
-        </div>
+      <div className="flex gap-3 pt-1">
+        <Button
+          variant="ghost"
+          className="flex-1"
+          disabled={pending || completed}
+          onClick={onClose}
+        >
+          Cancelar
+        </Button>
+        <Button
+          ref={completeButtonRef}
+          variant="primary"
+          className={cn(
+            "flex-1 transition-[background-color,transform] duration-200 disabled:opacity-100",
+            completed && "bg-success-solid hover:bg-success-solid"
+          )}
+          loading={pending && !completed}
+          disabled={completed}
+          onClick={handleComplete}
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          {completed ? "Cita completada" : "Cobrar y completar"}
+        </Button>
+      </div>
     </div>
   );
 }

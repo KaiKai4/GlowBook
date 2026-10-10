@@ -10,12 +10,15 @@ import {
   type SalonOwnerFixture,
 } from "@/test/supabase-integration-fixtures";
 import type { Database } from "@/types/database.types";
-import {
-  calculateDiscountAmount,
-  calculateFinalChargedTotal,
-  roundCurrency,
-} from "../../domain/pricing";
+import { roundCurrency } from "@/infra/format/money";
+import { calculateItemChargedPrice, previewCompletionTotals } from "../../domain/pricing";
 import { completeAppointmentRpc, type CompleteAppointmentRpcInput } from "./complete-appointment";
+
+/** Descuento en moneda de un item, leído de la vista previa pública del cobro. */
+const discountOf = (subtotal: number, pct: number): number =>
+  previewCompletionTotals([{ id: "x", price: subtotal, discountPercentage: pct }]).discountAmount;
+
+
 
 // La prueba usa el adaptador real de completar cita; solo sustituye el cliente de servidor
 // (cookies) por el cliente de integración ya autenticado como owner del salón de prueba.
@@ -127,14 +130,14 @@ function referenceFor(items: PricingItemSpec[], rows: ItemRow[]): Reference {
     const charge = spec.charge;
     const price = roundCurrency(charge ? charge.price : row.price);
     const discountPercentage = charge ? charge.discountPercentage : 0;
-    return { price, discount: calculateDiscountAmount(price, discountPercentage) };
+    return { price, discount: discountOf(price, discountPercentage) };
   });
   const subtotal = roundCurrency(perItem.reduce((sum, item) => sum + item.price, 0));
   const discount = roundCurrency(perItem.reduce((sum, item) => sum + item.discount, 0));
   return {
     subtotal,
     discount,
-    total: calculateFinalChargedTotal(subtotal, discount),
+    total: calculateItemChargedPrice(subtotal, discount),
     items: perItem,
   };
 }

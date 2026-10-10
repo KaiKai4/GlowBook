@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 
 import type { InventoryLocation } from "../domain/stock";
@@ -25,10 +26,10 @@ export async function getRetailInventoryProducts(salonId: string): Promise<Retai
       id: product.id,
       name: product.name,
       category: product.category ?? "",
-      salePrice: Number(product.sale_price ?? 0),
+      salePrice: toAmount(product.sale_price),
       stock: (product.inventory_stock_locations ?? []).map((stock) => ({
         location: stock.location,
-        quantity: Number(stock.quantity ?? 0),
+        quantity: toAmount(stock.quantity),
       })),
     }));
 }

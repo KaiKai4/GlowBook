@@ -35,3 +35,13 @@ Solo la rama `main`, desplegada en producción por la release (`docs/runbooks/de
 - La corrección lleva una prueba que falla antes del cambio (regla de `AGENTS.md`, sección 16).
 - Si la vulnerabilidad expuso secretos, se rotan antes de cerrar el caso (`docs/environments.md`, sección de rotación).
 - Si hay datos de salones expuestos, se evalúa la notificación con la persona responsable.
+
+## Cabeceras De IP Del Cliente
+
+El rate limit de rutas anonimas usa la IP del cliente. `x-real-ip` solo es fiable
+detrás de Vercel, que la fija en cada peticion; fuera de la plataforma cualquier
+cliente puede enviarla. El respaldo `x-forwarded-for` tambien solo se lee cuando
+`VERCEL` esta definido. Fuera de Vercel se ignoran ambas y el limite cae en el
+bucket compartido `ip:unknown`. Detalle en `docs/security.md`, sección "Lectura de la IP
+del cliente". Reportar cualquier forma de falsear la IP detrás de Vercel por el
+canal de arriba.

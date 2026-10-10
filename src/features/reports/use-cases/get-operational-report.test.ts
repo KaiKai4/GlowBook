@@ -13,6 +13,12 @@ import {
 } from "../data/rpc/reports-history.rpc";
 import { findSalonReportIdentity } from "../data/reports.repo";
 import { getOperationalReport } from "./get-operational-report";
+// Desempaqueta el Result del caso de uso: un error inesperado falla el test.
+async function reportOf(input: Parameters<typeof getOperationalReport>[0]) {
+  const result = await getOperationalReport(input);
+  if (!result.ok) throw new Error(result.error);
+  return result.value;
+}
 
 vi.mock("../data/reports.repo", () => ({
   findSalonReportIdentity: vi.fn(),
@@ -124,7 +130,7 @@ describe("get operational report", () => {
   });
 
   it("combines the SQL period totals with the breakdowns and commissions of the same range", async () => {
-    const report = await getOperationalReport({
+    const report = await reportOf({
       salonId: "salon-1",
       filters: { preset: "mes", from: "2026-06-01", to: "2026-06-03" },
       now: new Date("2026-06-03T12:00:00.000Z"),
@@ -156,7 +162,7 @@ describe("get operational report", () => {
       created_at: "2024-03-10T00:00:00.000Z",
     });
 
-    const report = await getOperationalReport({
+    const report = await reportOf({
       salonId: "salon-1",
       filters: { preset: "mes" },
       now: NOW,
@@ -175,7 +181,7 @@ describe("get operational report", () => {
     );
     mockedIdentity.mockResolvedValue({ name: "Glow", timezone: "UTC", created_at: "2024-03-10T00:00:00.000Z" });
 
-    const report = await getOperationalReport({
+    const report = await reportOf({
       salonId: "salon-1",
       filters: { preset: "mes" },
       year: 2025,
@@ -207,7 +213,7 @@ describe("get operational report", () => {
       created_at: "2024-03-10T00:00:00.000Z",
     });
 
-    const report = await getOperationalReport({
+    const report = await reportOf({
       salonId: "salon-1",
       filters: { preset: "mes" },
       year: 2025,
@@ -218,7 +224,7 @@ describe("get operational report", () => {
   });
 
   it("falls back to the current year when the requested year has no data", async () => {
-    const report = await getOperationalReport({
+    const report = await reportOf({
       salonId: "salon-1",
       filters: { preset: "mes" },
       year: 2020,
@@ -231,7 +237,7 @@ describe("get operational report", () => {
   it("passes disabled modules to the SQL totals so they read as zero", async () => {
     const modules = { inventory: false, retail: true, expenses: false };
 
-    await getOperationalReport({
+    await reportOf({
       salonId: "salon-1",
       filters: { preset: "mes", from: "2026-05-01", to: "2026-05-31" },
       modules,
@@ -244,7 +250,7 @@ describe("get operational report", () => {
   it("pide la serie, horas, gastos, productos y alertas de la ventana de 12 meses en SQL", async () => {
     const modules = { inventory: true, retail: true, expenses: true };
 
-    await getOperationalReport({ salonId: "salon-1", filters: { preset: "mes" }, now: NOW });
+    await reportOf({ salonId: "salon-1", filters: { preset: "mes" }, now: NOW });
 
     expect(mockedSeries).toHaveBeenCalledWith({
       firstMonth: "2025-07",
@@ -283,7 +289,7 @@ describe("get operational report", () => {
       { id: "p1", name: "Shampoo", retail: 1, internal: 0, storage: 0, total: 1, minimum: 2, state: "bajo" },
     ]);
 
-    const report = await getOperationalReport({ salonId: "salon-1", filters: { preset: "mes" }, now: NOW });
+    const report = await reportOf({ salonId: "salon-1", filters: { preset: "mes" }, now: NOW });
 
     expect(report.analytics.months).toHaveLength(12);
     expect(report.analytics.months.at(-2)).toMatchObject({
@@ -303,11 +309,11 @@ describe("get operational report", () => {
     ]);
   });
 
-  it("falla con un mensaje claro si la serie mensual no cubre la ventana", async () => {
+  it("devuelve un error generico si la serie mensual no cubre la ventana, sin exponer el detalle", async () => {
     mockedSeries.mockResolvedValue([]);
 
-    await expect(getOperationalReport({ salonId: "salon-1", filters: { preset: "mes" }, now: NOW })).rejects.toThrow(
-      "Invariante de reporte"
-    );
+    const result = await getOperationalReport({ salonId: "salon-1", filters: { preset: "mes" }, now: NOW });
+
+    expect(result).toEqual({ ok: false, error: "No se pudo cargar el reporte operativo." });
   });
 });

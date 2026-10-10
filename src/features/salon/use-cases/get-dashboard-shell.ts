@@ -13,6 +13,7 @@ import {
   evaluatePaymentStanding,
   getEffectiveSalonPlan,
   isActionableLimitWarning,
+  planLimitMessage,
   readEffectivePlanOrNull,
   type PaymentStanding,
 } from "@/features/billing";
@@ -61,7 +62,11 @@ export async function getOwnerPlanLimitWarnings(salonId: string): Promise<PlanLi
     .filter(isActionableLimitWarning)
     .map((limit) => ({
       level: limit.warningLevel === "near_limit" ? ("warning" as const) : ("danger" as const),
-      message: limit.message,
+      message: planLimitMessage(limit.messageCode, {
+        metricName: limit.metric.name,
+        used: limit.used,
+        maxValue: limit.maxValue,
+      }),
     }));
 }
 

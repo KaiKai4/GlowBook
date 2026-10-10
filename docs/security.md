@@ -11,7 +11,7 @@ Resumen de qué protege cada control y dónde se comprueba. La política de repo
 | Aislamiento entre salones | RLS en Postgres como autoridad final (ADR 0001) y `public.salon_id()` desde el claim del JWT. | Pruebas pgTAP `supabase/tests/01_tenant_isolation.sql` (paso `db-tests`) y E2E `e2e/multi-tenant-isolation.spec.ts` (paso `e2e`). |
 | Permisos | Permisos globales y roles por salón (ADR 0003). Se comprueba `has_permission`, nunca el nombre del rol. | `supabase/tests/02_permissions_and_hook.sql`, `src/features/access/domain/permission-checks.test.ts`. |
 | Plataforma | Área `/admin` protegida por `is_platform_admin()`. Alta de salones solo por invitación (ADR 0005). | Pruebas de integración y E2E `e2e/platform-admin.spec.ts`. |
-| Cliente `service_role` | Solo en servidor, tras verificar superadmin, y solo desde `src/infra` o `features/*/data` (regla `admin-client-boundary`; ADR 0010). Nunca en navegador ni en variables `NEXT_PUBLIC_*`. | Paso `architecture` y paso `bundle-secrets`. |
+| Cliente `service_role` | Solo en servidor, tras verificar superadmin, y solo desde `src/infra` o `features/*/data` (regla `admin-client-boundary`; ADR 0010). Nunca en navegador ni en variables `NEXT_PUBLIC_*`. Las lecturas y escrituras de billing de plataforma exigen `PlatformAdminProof` como primer parámetro (ADR 0028): solo `requirePlatformAdminProof` (composition root) la emite, y la regla `platform-admin-proof-issuer` impide importarla en runtime fuera de `src/app/_composition` y `src/infra/auth`. | Paso `architecture`, paso `bundle-secrets` y `src/infra/architecture-boundaries.test.ts`. |
 | Secretos | Ningún secreto en el repositorio. Escaneo sobre archivos rastreados por git. | Paso `secrets` (secretlint), también en `pre-commit`. |
 | Dependencias | Producción sin avisos de auditoría y sin excepciones. Desarrollo con excepciones con caducidad (ADR 0015). | Pasos `audit-prod` y `audit-all`, `security/audit-exceptions.json`. |
 | Cabeceras web | Cabeceras estáticas en `next.config.ts` y paso E2E de cabeceras. | `e2e/security-headers.spec.ts`, sección "Headers Web". |
@@ -101,6 +101,10 @@ Reglas:
 - registrar acciones Platform sensibles en `platform_audit_log`;
 - no loguear tokens, cookies, passwords ni service role.
 
+## Privilegios De Anon
+
+`anon` no tiene privilegios de tabla, vista ni secuencia en `public` (migración `20240101000080_anon_table_privileges.sql`, prueba `supabase/tests/24_anon_table_privileges.sql`). Ninguna función de `public` es ejecutable por `anon` (migración `20240101000064_security_hardening.sql`). Las políticas RLS con `salon_id` aplican solo a `authenticated`. Así, un fallo de política no expone datos a un cliente sin sesión.
+
 ## Variables De Entorno
 
 Las variables de entorno se validan con Zod en `src/infra/config/env.ts` al usarse, no al importar el modulo, y no tienen valores por defecto. Si falta una variable requerida, el error indica cual falta sin mostrar su valor. Los secretos siguen fuera del repositorio.
@@ -163,7 +167,9 @@ El Adapter redacciona metadata sensible y también secretos conocidos dentro de 
 Implementado en Fase 2 (ADR 0017): contador compartido en Postgres
 (`rate_limit_buckets` + RPC `consume_rate_limit`, solo `service_role`), accedido
 solo desde `src/infra/security/rate-limit.ts`. Fallo del almacen: fail-open con
-`captureError`. La firma es asincrona:
+`captureError` por defecto. El inicio de sesion usa `failMode: "closed"` (ADR 0030):
+si el almacen falla, rechaza el intento con un mensaje fijo. El error se registra con
+`severity: "high"`. La firma es asincrona:
 
 ```ts
 await assertActionRateLimit(userId, scope, { max, windowMs });
@@ -203,6 +209,44 @@ Decision para lanzamiento amplio:
   los controles del proveedor no alcanzan;
 - registrar la decision en el ADR 0017 o en uno nuevo.
 
+
+## Excepcion CSP: estilos con unsafe-inline
+
+`style-src` mantiene `'self' 'unsafe-inline'` (`src/infra/security/csp.ts`). Se evaluo
+exigir nonce a los elementos `<style>` siguiendo la guia de Next
+(`node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md`, seccion
+"Nonces"), con `style-src-attr 'unsafe-inline'` para los atributos. Se descarto el
+2026-10-10 porque:
+
+- React escribe atributos `style="..."` en tiempo de render (alturas calculadas, anchos
+  de graficas). CSP no aplica nonces ni hashes a esos atributos.
+- La inyeccion de `<style>` sin nonce rompia el barrido de accesibilidad e2e
+  (`e2e/support/a11y.ts` desactiva transiciones con `page.addStyleTag`), y Next o
+  bibliotecas pueden inyectar `<style>` sin nonce segun el navegador.
+
+El riesgo de ejecucion de codigo esta en `script-src`, que usa nonce y
+`strict-dynamic` sin `unsafe-inline`. Pruebas: `src/infra/security/csp.test.ts`.
+Revisar esta excepcion si Next ofrece nonce para estilos sin romper atributos.
+
+## Lectura de la IP del cliente
+
+El rate limit anonimo (`src/infra/security/rate-limit.ts`) obtiene la IP asi:
+
+Solo si `process.env.VERCEL` esta definido (ejecucion en Vercel) se confia en las
+cabeceras de la plataforma:
+
+1. `x-real-ip`: la fija la plataforma en cada peticion.
+2. `x-forwarded-for`: respaldo cuando falta `x-real-ip`. Se usa el ultimo valor de
+   la lista (el que añade el proxy mas cercano), nunca el primero, que el cliente
+   puede falsear.
+3. Sin ninguna de las dos: bucket compartido `ip:unknown` (limite mas laxo).
+
+Fuera de Vercel el codigo ignora ambas cabeceras y usa siempre `ip:unknown`: un
+cliente puede enviar cualquier `x-real-ip` o `x-forwarded-for`, asi que elegiria su
+propio bucket. Por eso el despliegue publico debe ir detras de Vercel. Pruebas:
+`src/infra/security/rate-limit-guards.test.ts` (casos con y sin `VERCEL`) y
+`rate-limit.p2.test.ts`. Las pruebas de rutas que dependen de `x-real-ip` fijan
+`VERCEL=1` en su setup.
 
 ## CSP Y Secrets
 

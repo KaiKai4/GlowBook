@@ -1,3 +1,4 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { err, ok } from "@/infra/result";
@@ -5,11 +6,11 @@ import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { z } from "@/infra/validation/zod";
 import { parseWithSchema } from "./define-action";
 import { definePlatformAction } from "./define-platform-action";
-import { requirePlatformAdmin } from "./request-context";
+import { requirePlatformAdminProof } from "./request-context";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("./request-context", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("./request-context", () => ({ requirePlatformAdminProof: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 
 const ADMIN_ID = "admin-1";
@@ -17,13 +18,13 @@ const SCHEMA = z.object({ name: z.string().min(2, "Nombre demasiado corto") });
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requirePlatformAdmin).mockResolvedValue(ADMIN_ID);
+  vi.mocked(requirePlatformAdminProof).mockResolvedValue(issuePlatformAdminProof(ADMIN_ID));
   vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
 });
 
 describe("definePlatformAction", () => {
   it("sin ser platform admin propaga la redireccion sin tocar el rate limit ni el caso de uso", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new Error("NEXT_REDIRECT:/login"));
+    vi.mocked(requirePlatformAdminProof).mockRejectedValue(new Error("NEXT_REDIRECT:/login"));
     const run = vi.fn();
     const action = definePlatformAction({
       rateLimit: { scope: "admin:x" },
@@ -82,7 +83,7 @@ describe("definePlatformAction", () => {
     const result = await action({ name: "Ana" });
 
     expect(run).toHaveBeenCalledTimes(1);
-    expect(run).toHaveBeenCalledWith({ name: "Ana" }, { userId: ADMIN_ID });
+    expect(run).toHaveBeenCalledWith({ name: "Ana" }, expect.objectContaining({ userId: ADMIN_ID, proof: issuePlatformAdminProof(ADMIN_ID) }));
     expect(result).toEqual(ok("creado"));
   });
 

@@ -2,11 +2,11 @@ import Link from "next/link";
 import { ArrowUpRight, Building2, Users } from "lucide-react";
 
 import { cn } from "@/components/ui/cn";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 import { MiniMetric, Panel } from "../plans/workspace-ui";
 import type { SalonWorkspaceSalon } from "./salon-workspace-types";
-import { formatDate } from "./salon-workspace-format";
+import { formatShortDateFromISO } from "@/infra/format/dates";
 
 export function SummaryTab({
   salon,
@@ -66,11 +66,11 @@ export function SummaryTab({
               </p>
               {detail.assignment?.currentPeriodEnd ? (
                 <p className="mt-0.5 text-xs text-success-fg">
-                  Pagado hasta {formatDate(detail.assignment.currentPeriodEnd)}
+                  Pagado hasta {formatShortDateFromISO(detail.assignment.currentPeriodEnd)}
                 </p>
               ) : detail.assignment?.trialEndsAt ? (
                 <p className="mt-0.5 text-xs text-info-fg">
-                  Trial hasta {formatDate(detail.assignment.trialEndsAt)}
+                  Trial hasta {formatShortDateFromISO(detail.assignment.trialEndsAt)}
                 </p>
               ) : null}
             </div>

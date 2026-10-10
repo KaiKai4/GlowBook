@@ -13,3 +13,5 @@ export { checkPermanentCustomerByPhone, findArchivedCustomerByContact, type Arch
 export { createCustomerProfile, updateCustomerProfile } from "./use-cases/customer-profile";
 export { archiveCustomer, reactivateCustomer } from "./use-cases/customer-lifecycle";
 export { getCustomersPage } from "./use-cases/get-customers-page";
+
+export type { CustomersPageViewModel } from "./use-cases/get-customers-page";

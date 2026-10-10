@@ -51,7 +51,9 @@ describe("report workbook", () => {
       "Gastos por concepto",
       "Productos vendidos",
     ]);
-    await expect(workbook.xlsx.writeBuffer()).resolves.toBeTruthy();
+    const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+    // Un .xlsx es un contenedor ZIP: empieza por "PK".
+    expect(buffer.subarray(0, 2).toString("latin1")).toBe("PK");
   });
 
   it("does not crash when every optional module is disabled", async () => {
@@ -65,6 +67,7 @@ describe("report workbook", () => {
     const monthly = workbook.getWorksheet("Por mes");
     expect(monthly?.columnCount).toBeGreaterThan(0);
     expect(monthly?.getRow(1).values).not.toContain("Ingresos vitrina");
-    await expect(workbook.xlsx.writeBuffer()).resolves.toBeTruthy();
+    const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+    expect(buffer.subarray(0, 2).toString("latin1")).toBe("PK");
   });
 });

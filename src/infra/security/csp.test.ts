@@ -16,6 +16,13 @@ describe("content security policy", () => {
     expect(csp).toContain("object-src 'none'");
   });
 
+  it("keeps unsafe-inline for styles (documented exception) and never for scripts", () => {
+    const csp = buildContentSecurityPolicy({ nonce: "abc123", mode: "production" });
+
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+    expect(csp).not.toMatch(/script-src [^;]*'unsafe-inline'/);
+  });
+
   it("only allows eval in development", () => {
     expect(buildContentSecurityPolicy({ nonce: "n", mode: "development" })).toContain("'unsafe-eval'");
     expect(buildContentSecurityPolicy({ nonce: "n", mode: "production" })).not.toContain("'unsafe-eval'");

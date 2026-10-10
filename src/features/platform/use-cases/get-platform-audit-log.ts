@@ -2,6 +2,7 @@ import "server-only";
 
 import type { PlatformAuditAction, PlatformAuditStatus } from "@/features/audit";
 import { findPlatformAuditLog, type PlatformAuditRow } from "@/features/platform/data/platform-audit.repo";
+import { formatShortDateTime } from "@/infra/format/dates";
 import type { Json } from "@/types/database.types";
 import { auditActionOptions, auditActionText, isKnownAuditAction } from "./audit-messages";
 
@@ -60,13 +61,7 @@ function isAuditStatus(value: string | undefined): value is PlatformAuditStatus 
 }
 
 function formatCreatedAt(value: string): string {
-  return new Date(value).toLocaleString("es-PA", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatShortDateTime(new Date(value));
 }
 
 function shortId(value: string): string {

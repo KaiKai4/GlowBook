@@ -1,7 +1,8 @@
+import { formatNumericDateTime } from "@/infra/format/es-formats";
 import {
   INVENTORY_LOCATION_LABELS,
 } from "@/features/inventory/domain/stock";
-import type { InventoryPageView } from "@/features/inventory/use-cases/inventory-products";
+import type { InventoryPageView } from "@/features/inventory";
 
 type InventoryMovementsListProps = {
   movements: InventoryPageView["recentMovements"];
@@ -26,7 +27,7 @@ export function InventoryMovementsList({ movements }: InventoryMovementsListProp
               {movement.quantityDelta > 0 ? "+" : ""}
               {movement.quantityDelta}
             </span>
-            <span className="text-fg-subtle">{new Date(movement.createdAt).toLocaleString("es-PA")}</span>
+            <span className="text-fg-subtle">{formatNumericDateTime(new Date(movement.createdAt))}</span>
           </div>
         ))}
         {movements.length === 0 && (

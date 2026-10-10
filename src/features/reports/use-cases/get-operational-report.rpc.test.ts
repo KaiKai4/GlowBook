@@ -17,6 +17,12 @@ import {
   type TestSupabaseClient,
 } from "@/test/supabase-integration-fixtures";
 import { getOperationalReport } from "./get-operational-report";
+// Desempaqueta el Result del caso de uso: un error inesperado falla el test.
+async function reportOf(input: Parameters<typeof getOperationalReport>[0]) {
+  const result = await getOperationalReport(input);
+  if (!result.ok) throw new Error(result.error);
+  return result.value;
+}
 
 const serverClient = vi.hoisted(() => ({ current: null as TestSupabaseClient | null }));
 vi.mock("@/infra/supabase/server", () => ({
@@ -49,7 +55,7 @@ describe("getOperationalReport contra la base local", () => {
       expect(signInError).toBeNull();
       serverClient.current = user;
 
-      const report = await getOperationalReport({
+      const report = await reportOf({
         salonId: fixture.salonId,
         filters: { preset: "mes" },
       });

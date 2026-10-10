@@ -177,6 +177,6 @@ describe("ExpensesHistory", () => {
     const badge = Array.from(mounted.container.querySelectorAll("span")).find(
       (node) => node.textContent === "Compra de inventario" && node.querySelector("svg")
     );
-    expect(badge).toBeDefined();
+    expect(badge?.textContent).toBe("Compra de inventario");
   });
 });

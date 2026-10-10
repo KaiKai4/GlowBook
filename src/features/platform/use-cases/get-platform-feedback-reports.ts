@@ -1,6 +1,7 @@
 import "server-only";
 
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from "@/features/feedback";
+import { formatShortDateTime } from "@/infra/format/dates";
 import { findFeedbackReports } from "../data/feedback-moderation.repo";
 
 type PlatformFeedbackCategoryVariant = "danger" | "warning" | "info" | "default";
@@ -46,13 +47,7 @@ function categoryVariant(category: string): PlatformFeedbackReportViewModel["cat
 }
 
 function formatCreatedAt(value: string): string {
-  return new Date(value).toLocaleString("es-PA", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatShortDateTime(new Date(value));
 }
 
 function toReportViewModel(

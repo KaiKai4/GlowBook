@@ -7,34 +7,33 @@ import {
   type InventoryMovementRow,
   type InventoryProductRow,
 } from "../data/inventory.repo";
-import {
-  createInventoryProductWithStockRpc,
-  updateInventoryProductProfileRpc,
-} from "../data/rpc/inventory-product-rpc";
 import type { CreateInventoryProductInput, UpdateInventoryProductInput } from "../schemas";
 import {
   createInventoryProduct,
   deleteInventoryProduct,
   getInventoryPage,
   updateInventoryProductProfile,
+  type InventoryProductsDeps,
 } from "./inventory-products";
 
+// Los casos de escritura reciben fakes tipados (InventoryProductsDeps).
 vi.mock("../data/inventory.repo", () => ({
   findInventoryProducts: vi.fn(),
   findRecentInventoryMovements: vi.fn(),
   softDeleteInventoryProduct: vi.fn(),
 }));
 
-vi.mock("../data/rpc/inventory-product-rpc", () => ({
-  createInventoryProductWithStockRpc: vi.fn(),
-  updateInventoryProductProfileRpc: vi.fn(),
-}));
-
 const mockedFindProducts = vi.mocked(findInventoryProducts);
 const mockedFindMovements = vi.mocked(findRecentInventoryMovements);
-const mockedCreateRpc = vi.mocked(createInventoryProductWithStockRpc);
-const mockedUpdateRpc = vi.mocked(updateInventoryProductProfileRpc);
-const mockedSoftDelete = vi.mocked(softDeleteInventoryProduct);
+
+/** Fakes tipados de los comandos de escritura: cada dependencia es un vi.fn con la firma real. */
+function fakeDeps() {
+  return {
+    createProductWithStock: vi.fn<InventoryProductsDeps["createProductWithStock"]>(async () => PRODUCT_ID),
+    updateProductProfile: vi.fn<InventoryProductsDeps["updateProductProfile"]>(async () => undefined),
+    softDeleteProduct: vi.fn<InventoryProductsDeps["softDeleteProduct"]>(async () => undefined),
+  };
+}
 
 type InventoryStockRow = NonNullable<InventoryProductRow["inventory_stock_locations"]>[number];
 
@@ -229,12 +228,12 @@ describe("inventory-products", () => {
 
   describe("createInventoryProduct", () => {
     it("envia el producto con sus cantidades y minimos por ubicacion a la RPC del salon", async () => {
-      mockedCreateRpc.mockResolvedValue(PRODUCT_ID);
+      const deps = fakeDeps();
 
-      expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({ ok: true, value: undefined });
+      expect(await createInventoryProduct(SALON_ID, createInput(), deps)).toEqual({ ok: true, value: undefined });
 
-      expect(mockedCreateRpc).toHaveBeenCalledTimes(1);
-      expect(mockedCreateRpc).toHaveBeenCalledWith({
+      expect(deps.createProductWithStock).toHaveBeenCalledTimes(1);
+      expect(deps.createProductWithStock).toHaveBeenCalledWith({
         salonId: SALON_ID,
         name: "Tinte",
         category: "Color",
@@ -251,40 +250,43 @@ describe("inventory-products", () => {
     });
 
     it("envia categoria nula cuando viene vacia", async () => {
-      mockedCreateRpc.mockResolvedValue(PRODUCT_ID);
+      const deps = fakeDeps();
 
-      await createInventoryProduct(SALON_ID, createInput({ category: "" }));
+      await createInventoryProduct(SALON_ID, createInput({ category: "" }), deps);
 
-      expect(mockedCreateRpc).toHaveBeenCalledWith(expect.objectContaining({ category: null }));
+      expect(deps.createProductWithStock).toHaveBeenCalledWith(expect.objectContaining({ category: null }));
     });
 
     it("informa nombre duplicado cuando el error de BD es una violación de unicidad (SQLSTATE 23505)", async () => {
-      mockedCreateRpc.mockRejectedValue(Object.assign(new Error("duplicate key value"), { code: "23505" }));
+      const deps = fakeDeps();
+      deps.createProductWithStock.mockRejectedValue(Object.assign(new Error("duplicate key value"), { code: "23505" }));
 
-      expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
+      expect(await createInventoryProduct(SALON_ID, createInput(), deps)).toEqual({
         ok: false,
         error: "Ya existe un producto con ese nombre.",
       });
     });
 
     it("no deduce duplicado por el texto del mensaje si el SQLSTATE no es 23505", async () => {
-      mockedCreateRpc.mockRejectedValue(new Error("duplicate unique constraint"));
+      const deps = fakeDeps();
+      deps.createProductWithStock.mockRejectedValue(new Error("duplicate unique constraint"));
 
-      expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
+      expect(await createInventoryProduct(SALON_ID, createInput(), deps)).toEqual({
         ok: false,
         error: "Error al crear el producto.",
       });
     });
 
     it("devuelve error generico para otros fallos, incluido un error que no es Error", async () => {
-      mockedCreateRpc.mockRejectedValue(new Error("caida"));
-      expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
+      const deps = fakeDeps();
+      deps.createProductWithStock.mockRejectedValue(new Error("caida"));
+      expect(await createInventoryProduct(SALON_ID, createInput(), deps)).toEqual({
         ok: false,
         error: "Error al crear el producto.",
       });
 
-      mockedCreateRpc.mockRejectedValue("texto");
-      expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
+      deps.createProductWithStock.mockRejectedValue("texto");
+      expect(await createInventoryProduct(SALON_ID, createInput(), deps)).toEqual({
         ok: false,
         error: "Error al crear el producto.",
       });
@@ -293,15 +295,15 @@ describe("inventory-products", () => {
 
   describe("updateInventoryProductProfile", () => {
     it("envia el producto y los minimos de cada ubicacion en una sola llamada a la RPC", async () => {
-      mockedUpdateRpc.mockResolvedValue(undefined);
+      const deps = fakeDeps();
 
-      expect(await updateInventoryProductProfile(PRODUCT_ID, SALON_ID, updateInput())).toEqual({
+      expect(await updateInventoryProductProfile(PRODUCT_ID, SALON_ID, updateInput(), deps)).toEqual({
         ok: true,
         value: undefined,
       });
 
-      expect(mockedUpdateRpc).toHaveBeenCalledTimes(1);
-      expect(mockedUpdateRpc).toHaveBeenCalledWith({
+      expect(deps.updateProductProfile).toHaveBeenCalledTimes(1);
+      expect(deps.updateProductProfile).toHaveBeenCalledWith({
         salonId: SALON_ID,
         productId: PRODUCT_ID,
         name: "Tinte",
@@ -317,9 +319,10 @@ describe("inventory-products", () => {
     });
 
     it("devuelve error generico si la RPC falla y registra el error", async () => {
-      mockedUpdateRpc.mockRejectedValue(new Error("caida"));
+      const deps = fakeDeps();
+      deps.updateProductProfile.mockRejectedValue(new Error("caida"));
 
-      expect(await updateInventoryProductProfile(PRODUCT_ID, SALON_ID, updateInput())).toEqual({
+      expect(await updateInventoryProductProfile(PRODUCT_ID, SALON_ID, updateInput(), deps)).toEqual({
         ok: false,
         error: "Error al actualizar el producto.",
       });
@@ -332,14 +335,17 @@ describe("inventory-products", () => {
 
   describe("deleteInventoryProduct", () => {
     it("aplica borrado logico del producto del salón", async () => {
-      expect(await deleteInventoryProduct(PRODUCT_ID, SALON_ID)).toEqual({ ok: true, value: undefined });
-      expect(mockedSoftDelete).toHaveBeenCalledWith(PRODUCT_ID, SALON_ID);
+      const deps = fakeDeps();
+
+      expect(await deleteInventoryProduct(PRODUCT_ID, SALON_ID, deps)).toEqual({ ok: true, value: undefined });
+      expect(deps.softDeleteProduct).toHaveBeenCalledWith(PRODUCT_ID, SALON_ID);
     });
 
     it("devuelve error generico si el borrado logico falla", async () => {
-      mockedSoftDelete.mockRejectedValue(new Error("caida"));
+      const deps = fakeDeps();
+      deps.softDeleteProduct.mockRejectedValue(new Error("caida"));
 
-      expect(await deleteInventoryProduct(PRODUCT_ID, SALON_ID)).toEqual({
+      expect(await deleteInventoryProduct(PRODUCT_ID, SALON_ID, deps)).toEqual({
         ok: false,
         error: "Error al eliminar el producto.",
       });
@@ -351,10 +357,22 @@ vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 describe("registro de errores de eliminación", () => {
   it("registra con captureError el fallo al eliminar el producto", async () => {
+    const deps = fakeDeps();
     const dbError = new Error("caida");
-    mockedSoftDelete.mockRejectedValue(dbError);
+    deps.softDeleteProduct.mockRejectedValue(dbError);
 
-    expect(await deleteInventoryProduct("prod-1", "salon-1")).toEqual({ ok: false, error: "Error al eliminar el producto." });
+    expect(await deleteInventoryProduct("prod-1", "salon-1", deps)).toEqual({ ok: false, error: "Error al eliminar el producto." });
     expect(captureError).toHaveBeenCalledWith(dbError, { module: "inventory", action: "delete_product" });
+  });
+});
+
+describe("deleteInventoryProduct sin dependencias inyectadas", () => {
+  it("usa el repositorio real para el borrado lógico del producto", async () => {
+    vi.mocked(softDeleteInventoryProduct).mockResolvedValue(undefined);
+
+    const result = await deleteInventoryProduct(PRODUCT_ID, SALON_ID);
+
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(softDeleteInventoryProduct).toHaveBeenCalledWith(PRODUCT_ID, SALON_ID);
   });
 });

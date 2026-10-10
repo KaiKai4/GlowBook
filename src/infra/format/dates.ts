@@ -48,10 +48,6 @@ export function formatDate(date: Date): string {
   return date.toLocaleDateString("es-PA", { year: "numeric", month: "long", day: "numeric" });
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("es-PA", { style: "currency", currency: "USD" }).format(amount);
-}
-
 export function formatLocalDateISO(date: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -74,32 +70,30 @@ export function addDaysToDateISO(date: string, days: number): string {
 
 // Returns the UTC timestamps for the start (00:00:00.000) and end (23:59:59.999)
 // of the calendar day that `date` falls on in the given IANA timezone.
-// Uses the wall-clock parts of `date` in that timezone to compute the offset, so
-// it is correct across DST transitions and never relies on the server's local time.
+// Resolves the local day first and then the real UTC instant of its local midnight,
+// so it is correct on DST transition days (23h or 25h days), where subtracting the
+// local wall-clock seconds from the instant would be off by one hour.
 export function getUtcDayBoundaries(
   date: Date,
   timezone: string
 ): { start: Date; end: Date } {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
+  const localDay = formatLocalDateISO(date, timezone);
+  const start = zonedWallTimeToUtc(localDay, "00:00", timezone);
+  const nextMidnight = zonedWallTimeToUtc(addDaysToDateISO(localDay, 1), "00:00", timezone);
+  return { start, end: new Date(nextMidnight.getTime() - 1) };
+}
 
-  const hours = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-  const minutes = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-  const seconds = parseInt(parts.find((p) => p.type === "second")?.value ?? "0", 10);
-
-  const secondsFromMidnight = (hours === 24 ? 0 : hours) * 3600 + minutes * 60 + seconds;
-  const startMs =
-    date.getTime() - secondsFromMidnight * 1_000 - date.getUTCMilliseconds();
-
-  return {
-    start: new Date(startMs),
-    end: new Date(startMs + 24 * 60 * 60 * 1_000 - 1),
-  };
+// Instante cercano al mediodía UTC de la fecha local `date` (YYYY-MM-DD) en `timeZone`.
+// Si la zona lo desplaza a otro día local, lo ajusta ±12 h. Sirve como sonda para
+// getUtcDayBoundaries: cualquier instante dentro del día local vale.
+export function noonProbeForLocalDate(date: string, timeZone: string): Date {
+  let probe = new Date(`${date}T12:00:00.000Z`);
+  const probeLocal = new Intl.DateTimeFormat("en-CA", { timeZone }).format(probe);
+  if (probeLocal !== date) {
+    const delta = probeLocal > date ? -12 : 12;
+    probe = new Date(probe.getTime() + delta * 60 * 60_000);
+  }
+  return probe;
 }
 
 // UTC instant range covering the local days [from, to] (YYYY-MM-DD) in the salon's
@@ -155,4 +149,41 @@ function zoneOffsetMs(instantMs: number, timeZone: string): number {
 export function timeToMinutes(time: string): number {
   const [hours = NaN, minutes = NaN] = time.split(":").map(Number);
   return hours * 60 + minutes;
+}
+
+// Fecha corta en español ("12 oct 2026") para un instante, en la zona local del proceso.
+function formatShortDate(date: Date): string {
+  return new Intl.DateTimeFormat("es-PA", { day: "numeric", month: "short", year: "numeric" }).format(
+    date
+  );
+}
+
+// Mes y año en español ("octubre de 2026"), en UTC. Para periodos mensuales anclados a día 15 UTC.
+export function formatMonthYear(date: Date): string {
+  return new Intl.DateTimeFormat("es-PA", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+// Fecha corta con hora en español ("12 oct 2026, 14:30") para un instante, en la zona local del proceso.
+export function formatShortDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("es-PA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+// Fecha corta en español ("12 oct 2026") desde una fecha ISO sin hora (YYYY-MM-DD), en la zona local del proceso.
+export function formatShortDateFromISO(value: string): string {
+  return formatShortDate(new Date(`${value}T00:00:00`));
+}
+
+/** Zona horaria IANA del navegador o del proceso; para formatos sin zona explícita del salón. */
+export function browserTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }

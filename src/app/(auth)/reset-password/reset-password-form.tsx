@@ -1,0 +1,134 @@
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AlertCircle, KeyRound } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
+import { updatePasswordAction, verifyRecoveryLinkAction } from "./actions";
+
+type LinkState = "verifying" | "ready" | "invalid";
+
+export function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [linkState, setLinkState] = useState<LinkState>("verifying");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    const link = {
+      code: searchParams.get("code"),
+      tokenHash: searchParams.get("token_hash"),
+    };
+
+    void verifyRecoveryLinkAction(link).then((valid) => {
+      setLinkState(valid ? "ready" : "invalid");
+    });
+  }, [searchParams]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await updatePasswordAction(password);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.push("/login?reset=1");
+    });
+  }
+
+  if (linkState === "verifying") {
+    return <p className="py-8 text-center text-sm text-fg-subtle">Verificando el enlace...</p>;
+  }
+
+  if (linkState === "invalid") {
+    return (
+      <div className="text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-danger-subtle">
+          <AlertCircle className="h-7 w-7 text-danger" />
+        </div>
+        <h2 className="mt-4 text-xl font-semibold tracking-tight text-fg-strong">
+          Enlace inválido o vencido
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-fg-subtle">
+          Los enlaces de recuperacion vencen rapido por seguridad. Solicita uno nuevo.
+        </p>
+        <Link
+          href="/forgot-password"
+          className="mt-6 inline-block text-sm font-medium text-brand-600 hover:text-brand-700 hover:underline"
+        >
+          Pedir un enlace nuevo
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="mb-6">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50">
+          <KeyRound className="h-5 w-5 text-brand-600" />
+        </div>
+        <h2 className="mt-4 text-xl font-semibold tracking-tight text-fg-strong">
+          Crea tu nueva contraseña
+        </h2>
+        <p className="mt-1 text-sm text-fg-subtle">
+          Mínimo 8 caracteres. La usaras la próxima vez que inicies sesion.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <PasswordInput
+          label="Nueva contraseña"
+          placeholder="Tu nueva contraseña"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setError("");
+          }}
+          required
+          autoComplete="new-password"
+        />
+        <PasswordInput
+          label="Confirmar contraseña"
+          placeholder="Repite la contraseña"
+          value={confirm}
+          onChange={(e) => {
+            setConfirm(e.target.value);
+            setError("");
+          }}
+          required
+          autoComplete="new-password"
+        />
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-lg border border-danger-border-subtle bg-danger-subtle px-3 py-2.5 text-sm text-danger-strong">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
+
+        <Button type="submit" variant="primary" size="lg" className="w-full" loading={isPending}>
+          Guardar contraseña
+        </Button>
+      </form>
+    </>
+  );
+}

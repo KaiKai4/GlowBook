@@ -21,4 +21,4 @@ Reglas importantes:
 - Este módulo no envía mensajes. El envío real aún no existe.
 - Los permisos de escritura de plantillas se comprueban en la acción de `src/app`, no en este módulo.
 
-Tests: `schemas.test.ts`, `domain/templates.test.ts`, `use-cases/*.test.ts`, `data/notification-templates.repo.behavior.test.ts`.
+Tests: `schemas.test.ts`, `domain/templates.test.ts`, `use-cases/*.test.ts`, `data/notification-templates.repo.test.ts`.

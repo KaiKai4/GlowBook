@@ -1,3 +1,4 @@
+import { formatLocalDateISO, getZonedTimeParts } from "@/infra/format/dates";
 import type { ReportPreset } from "../schemas";
 
 /** Días hacia atrás que cubre la ventana de 30 días (incluye hoy). */
@@ -6,16 +7,6 @@ const LAST_30_DAYS_OFFSET = 29;
 const LAST_90_DAYS_OFFSET = 89;
 
 const DAY_MS = 86_400_000;
-
-const WEEKDAY_TO_MONDAY_OFFSET: Record<string, number> = {
-  Sun: 6,
-  Mon: 0,
-  Tue: 1,
-  Wed: 2,
-  Thu: 3,
-  Fri: 4,
-  Sat: 5,
-};
 
 export interface ReportDateRange {
   from: string;
@@ -26,23 +17,9 @@ function pad(value: number): string {
   return value.toString().padStart(2, "0");
 }
 
-export function localDateString(date: Date, timezone: string): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-
-  const partMap: Record<string, string> = {};
-  for (const part of parts) partMap[part.type] = part.value;
-
-  return `${partMap.year}-${partMap.month}-${partMap.day}`;
-}
-
 /** Año calendario local (en la zona del salón) de una fecha dada. */
 export function localYear(date: Date, timezone: string): number {
-  return Number(localDateString(date, timezone).slice(0, 4));
+  return Number(formatLocalDateISO(date, timezone).slice(0, 4));
 }
 
 /**
@@ -81,50 +58,53 @@ function previousMonthRange(today: string): ReportDateRange {
   };
 }
 
+interface PresetContext {
+  now: Date;
+  timezone: string;
+  /** Hoy en la zona del salón (YYYY-MM-DD). */
+  today: string;
+}
+
+/** Rango de cada preset. Tabla en lugar de switch: añadir un preset es una entrada. */
+const PRESETS: Record<ReportPreset, (context: PresetContext) => ReportDateRange> = {
+  hoy: ({ today }) => ({ from: today, to: today }),
+
+  semana: ({ now, timezone }) => {
+    const offset = getZonedTimeParts(now, timezone).dayOfWeek;
+    const monday = new Date(now.getTime() - offset * DAY_MS);
+    const sunday = new Date(monday.getTime() + 6 * DAY_MS);
+
+    return {
+      from: formatLocalDateISO(monday, timezone),
+      to: formatLocalDateISO(sunday, timezone),
+    };
+  },
+
+  mes: ({ today }) => {
+    const [year, month] = today.split("-");
+    return { from: `${year}-${month}-01`, to: today };
+  },
+
+  mes_anterior: ({ today }) => previousMonthRange(today),
+
+  "30dias": ({ now, timezone, today }) => {
+    const fromDate = new Date(now.getTime() - LAST_30_DAYS_OFFSET * DAY_MS);
+    return { from: formatLocalDateISO(fromDate, timezone), to: today };
+  },
+
+  "90dias": ({ now, timezone, today }) => {
+    const fromDate = new Date(now.getTime() - LAST_90_DAYS_OFFSET * DAY_MS);
+    return { from: formatLocalDateISO(fromDate, timezone), to: today };
+  },
+};
+
 export function getReportPresetRange(
   preset: ReportPreset,
   timezone: string,
   now = new Date()
 ): ReportDateRange {
-  const today = localDateString(now, timezone);
-
-  switch (preset) {
-    case "hoy":
-      return { from: today, to: today };
-
-    case "semana": {
-      const weekday = new Intl.DateTimeFormat("en-US", {
-        timeZone: timezone,
-        weekday: "short",
-      }).format(now);
-      const offset = WEEKDAY_TO_MONDAY_OFFSET[weekday] ?? 0;
-      const monday = new Date(now.getTime() - offset * DAY_MS);
-      const sunday = new Date(monday.getTime() + 6 * DAY_MS);
-
-      return {
-        from: localDateString(monday, timezone),
-        to: localDateString(sunday, timezone),
-      };
-    }
-
-    case "mes": {
-      const [year, month] = today.split("-");
-      return { from: `${year}-${month}-01`, to: today };
-    }
-
-    case "mes_anterior":
-      return previousMonthRange(today);
-
-    case "30dias": {
-      const fromDate = new Date(now.getTime() - LAST_30_DAYS_OFFSET * DAY_MS);
-      return { from: localDateString(fromDate, timezone), to: today };
-    }
-
-    case "90dias": {
-      const fromDate = new Date(now.getTime() - LAST_90_DAYS_OFFSET * DAY_MS);
-      return { from: localDateString(fromDate, timezone), to: today };
-    }
-  }
+  const today = formatLocalDateISO(now, timezone);
+  return PRESETS[preset]({ now, timezone, today });
 }
 
 /** Último día (YYYY-MM-DD) de un mes dado como YYYY-MM. */

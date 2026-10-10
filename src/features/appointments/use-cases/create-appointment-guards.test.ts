@@ -1,23 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import {
-  findAppointmentCreationResources,
-  findExceptionDatesByEmployeeForCommand,
-  findOccupiedSlotsByEmployeeForCommand,
-  findWorkSchedulesByEmployeeForCommand,
-} from "../data/appointment-commands.repo";
-import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
 import { createAppointment } from "./create-appointment";
+import { createAppointmentCommandFakes, createDepsFrom } from "@/test/appointment-command-fakes";
 
-vi.mock("../data/appointment-commands.repo", () => ({
-  findAppointmentCreationResources: vi.fn(),
-  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
-  findExceptionDatesByEmployeeForCommand: vi.fn(),
-  findWorkSchedulesByEmployeeForCommand: vi.fn(),
-}));
-vi.mock("../data/rpc/create-appointment", () => ({
-  createAppointmentWithRpc: vi.fn(),
-}));
+const fakes = createAppointmentCommandFakes();
+const runCreate: typeof createAppointment = (input, ctx) => createAppointment(input, ctx, createDepsFrom(fakes));
+
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 type DayHours = {
@@ -95,45 +83,45 @@ function validResources(overrides: { businessHours?: typeof openAllWeek } = {}) 
 describe("createAppointment: guardas del caso de uso", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(findAppointmentCreationResources).mockResolvedValue(validResources());
-    vi.mocked(findWorkSchedulesByEmployeeForCommand).mockResolvedValue(new Map([[employeeId, workAllWeek]]));
-    vi.mocked(findExceptionDatesByEmployeeForCommand).mockResolvedValue(new Map());
-    vi.mocked(findOccupiedSlotsByEmployeeForCommand).mockResolvedValue(new Map());
-    vi.mocked(createAppointmentWithRpc).mockResolvedValue({ ok: true, appointmentId: "appointment-1" });
+    fakes.findAppointmentCreationResources.mockResolvedValue(validResources());
+    fakes.findWorkSchedulesByEmployeeForCommand.mockResolvedValue(new Map([[employeeId, workAllWeek]]));
+    fakes.findExceptionDatesByEmployeeForCommand.mockResolvedValue(new Map());
+    fakes.findOccupiedSlotsByEmployeeForCommand.mockResolvedValue(new Map());
+    fakes.createAppointmentWithRpc.mockResolvedValue({ ok: true, appointmentId: "appointment-1" });
   });
 
   it("rechaza si el cliente no pertenece al salón", async () => {
-    vi.mocked(findAppointmentCreationResources).mockResolvedValue({
+    fakes.findAppointmentCreationResources.mockResolvedValue({
       ...validResources(),
       customerExists: false,
     });
 
-    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
+    expect(await runCreate(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Cliente no encontrado en este salón.",
     });
-    expect(createAppointmentWithRpc).not.toHaveBeenCalled();
+    expect(fakes.createAppointmentWithRpc).not.toHaveBeenCalled();
   });
 
   it("rechaza si el salón no tiene configuración", async () => {
-    vi.mocked(findAppointmentCreationResources).mockResolvedValue({
+    fakes.findAppointmentCreationResources.mockResolvedValue({
       ...validResources(),
       salonConfig: null,
     });
 
-    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
+    expect(await runCreate(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Salón no encontrado.",
     });
   });
 
   it("rechaza si algún servicio o profesional no existe en el salón", async () => {
-    vi.mocked(findAppointmentCreationResources).mockResolvedValue({
+    fakes.findAppointmentCreationResources.mockResolvedValue({
       ...validResources(),
       assignments: [{ ...validAssignment(), employee: null }],
     });
 
-    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
+    expect(await runCreate(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Servicio o profesional no encontrado en el salón.",
     });
@@ -141,9 +129,9 @@ describe("createAppointment: guardas del caso de uso", () => {
 
   it("devuelve 'Datos inválidos.' y registra el error si falla la carga de recursos", async () => {
     const failure = new Error("db down");
-    vi.mocked(findAppointmentCreationResources).mockRejectedValue(failure);
+    fakes.findAppointmentCreationResources.mockRejectedValue(failure);
 
-    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
+    expect(await runCreate(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Datos inválidos.",
     });
@@ -152,40 +140,40 @@ describe("createAppointment: guardas del caso de uso", () => {
 
   it("devuelve error de disponibilidad si falla consultar la agenda del profesional", async () => {
     const failure = new Error("timeout");
-    vi.mocked(findWorkSchedulesByEmployeeForCommand).mockRejectedValue(failure);
+    fakes.findWorkSchedulesByEmployeeForCommand.mockRejectedValue(failure);
 
-    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
+    expect(await runCreate(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "No se pudo validar la disponibilidad del profesional.",
     });
     expect(captureError).toHaveBeenCalledWith(failure, { module: "appointments", action: "create" });
-    expect(createAppointmentWithRpc).not.toHaveBeenCalled();
+    expect(fakes.createAppointmentWithRpc).not.toHaveBeenCalled();
   });
 
   it("rechaza una cita en un día en que el salón está cerrado sin llamar al RPC", async () => {
     const closedTuesday = openAllWeek.map((day) =>
       day.day_of_week === 1 ? { ...day, is_open: false, open_time: null, close_time: null } : day
     );
-    vi.mocked(findAppointmentCreationResources).mockResolvedValue(
+    fakes.findAppointmentCreationResources.mockResolvedValue(
       validResources({ businessHours: closedTuesday })
     );
 
-    expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
+    expect(await runCreate(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "El salón está cerrado ese día.",
     });
-    expect(createAppointmentWithRpc).not.toHaveBeenCalled();
+    expect(fakes.createAppointmentWithRpc).not.toHaveBeenCalled();
   });
 
   it("devuelve el error del dominio si la cita no tiene servicios", async () => {
     // El schema exige al menos un servicio; una llamada directa llega aquí
     // y el dominio lo rechaza antes de calcular el fin.
-    vi.mocked(findAppointmentCreationResources).mockResolvedValue({ ...validResources(), assignments: [] });
+    fakes.findAppointmentCreationResources.mockResolvedValue({ ...validResources(), assignments: [] });
 
-    expect(await createAppointment({ ...input, assignments: [] }, { salonId, userId, idempotencyKey })).toEqual({
+    expect(await runCreate({ ...input, assignments: [] }, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
       error: "Selecciona al menos un servicio.",
     });
-    expect(createAppointmentWithRpc).not.toHaveBeenCalled();
+    expect(fakes.createAppointmentWithRpc).not.toHaveBeenCalled();
   });
 });

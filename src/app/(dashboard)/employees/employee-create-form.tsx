@@ -19,7 +19,7 @@ import {
 import type {
   ArchivedEmployeeMatch,
   CreateEmployeeResult,
-} from "@/features/employees/use-cases/employee-profile";
+} from "@/features/employees";
 import { CategoryServicePicker } from "./category-service-picker";
 import type { CategoryOption, RoleOption } from "./types";
 import type { Result } from "@/infra/result";

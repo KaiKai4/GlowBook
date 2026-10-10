@@ -72,7 +72,7 @@ describe("assertActionRateLimit", () => {
     expect(captureError).toHaveBeenCalledWith(failure, {
       module: "security",
       action: "rate-limit",
-      metadata: { scope: "retail" },
+      metadata: { scope: "retail", failMode: "open", severity: "high" },
     });
   });
 

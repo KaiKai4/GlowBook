@@ -19,18 +19,34 @@ interface Deps {
   idempotencyKey: string;
 }
 
+/** Dependencias del caso de uso. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface UpdateAppointmentDeps {
+  findAppointmentForCommand: typeof findAppointmentForCommand;
+  findAppointmentServiceIdsForCommand: typeof findAppointmentServiceIdsForCommand;
+  prepareAppointmentItems: typeof prepareAppointmentItems;
+  updateAppointmentWithRpc: typeof updateAppointmentWithRpc;
+}
+
+const defaultUpdateAppointmentDeps: UpdateAppointmentDeps = {
+  findAppointmentForCommand,
+  findAppointmentServiceIdsForCommand,
+  prepareAppointmentItems,
+  updateAppointmentWithRpc,
+};
+
 export async function updateAppointmentSchedule(
   input: UpdateAppointmentScheduleInput,
-  { salonId, idempotencyKey }: Deps
+  { salonId, idempotencyKey }: Deps,
+  deps: UpdateAppointmentDeps = defaultUpdateAppointmentDeps
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
   let currentServiceIds: string[] = [];
 
   try {
-    appointment = await findAppointmentForCommand(input.appointment_id, salonId);
+    appointment = await deps.findAppointmentForCommand(input.appointment_id, salonId);
     // Servicios que la cita ya tiene: si siguen asignados aunque se hayan desactivado, se conservan.
     if (appointment) {
-      currentServiceIds = await findAppointmentServiceIdsForCommand(input.appointment_id, salonId);
+      currentServiceIds = await deps.findAppointmentServiceIdsForCommand(input.appointment_id, salonId);
     }
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
@@ -43,7 +59,7 @@ export async function updateAppointmentSchedule(
   }
   if (!appointment.customer_id) return err(APPOINTMENT_MESSAGES.missingCustomer);
 
-  const prepared = await prepareAppointmentItems({
+  const prepared = await deps.prepareAppointmentItems({
     salonId,
     customerId: appointment.customer_id,
     assignments: input.assignments,
@@ -62,7 +78,7 @@ export async function updateAppointmentSchedule(
 
   let updated: Awaited<ReturnType<typeof updateAppointmentWithRpc>>;
   try {
-    updated = await updateAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
+    updated = await deps.updateAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
     return err(APPOINTMENT_MESSAGES.updateFailed);

@@ -1,13 +1,13 @@
+import { getZonedTimeParts } from "@/infra/format/dates";
+
+
+
 /** Hora (HH:mm, 24 h) de una fecha en la zona horaria indicada. Medianoche se expresa como 00:00. */
 export function localTime(date: Date, timeZone: string): string {
-  const value = new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
-
-  return value === "24:00" ? "00:00" : value;
+  const { minutesOfDay } = getZonedTimeParts(date, timeZone);
+  const hours = String(Math.floor(minutesOfDay / 60)).padStart(2, "0");
+  const minutes = String(minutesOfDay % 60).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 /** Clave estable de fila de servicio para React (única por montaje). */

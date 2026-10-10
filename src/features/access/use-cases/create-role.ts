@@ -14,10 +14,20 @@ function isUniqueConstraintError(error: unknown): boolean {
   return sqlStateOf(error) === "23505" || message.includes("unique") || message.includes("duplicate");
 }
 
+/** Dependencias del caso de uso. Producción usa la RPC real; los tests inyectan fakes. */
+export interface CreateRoleWithPermissionsDeps {
+  createRoleWithPermissionsRpc: (name: string, permissionKeys: string[]) => Promise<string>;
+}
+
+const defaultCreateRoleWithPermissionsDeps: CreateRoleWithPermissionsDeps = {
+  createRoleWithPermissionsRpc,
+};
+
 // Una sola llamada RPC: el rol y sus permisos se crean en la misma transaccion. El salon sale del
 // claim del usuario (la RPC lo toma de public.salon_id()), no de un parametro.
 export async function createRoleWithPermissions(
-  input: CreateRoleInput
+  input: CreateRoleInput,
+  deps: CreateRoleWithPermissionsDeps = defaultCreateRoleWithPermissionsDeps
 ): Promise<Result<string>> {
   const permissionKeys = uniquePermissionKeys(input.permission_keys);
   if (!hasOnlyKnownPermissionKeys(permissionKeys)) {
@@ -25,7 +35,7 @@ export async function createRoleWithPermissions(
   }
 
   try {
-    const roleId = await createRoleWithPermissionsRpc(input.name, permissionKeys);
+    const roleId = await deps.createRoleWithPermissionsRpc(input.name, permissionKeys);
     return { ok: true, value: roleId };
   } catch (error) {
     if (isUniqueConstraintError(error)) {

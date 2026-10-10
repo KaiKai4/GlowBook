@@ -13,10 +13,9 @@ import { summaryAppointments } from "./day-view-data";
 import { buildSummaryColumns } from "./day-view-summary-columns";
 
 export function AppointmentsSummary({
-  appointments, tz, canManage, onComplete, onCancel,
+  appointments, canManage, onComplete, onCancel,
 }: {
   appointments: CalendarAppointment[];
-  tz: string;
   canManage: boolean;
   onComplete: (appt: CalendarAppointment) => void;
   onCancel: (appt: CalendarAppointment) => void;
@@ -29,7 +28,7 @@ export function AppointmentsSummary({
     [appointments, summaryFilter]
   );
 
-  const columns = buildSummaryColumns(tz, canManage, {
+  const columns = buildSummaryColumns(canManage, {
     openActionsId,
     onToggleActions: (appt) => setOpenActionsId(openActionsId === appt.id ? null : appt.id),
     onComplete,

@@ -43,8 +43,6 @@ describe("Dialog", () => {
     const describedBy = dialog.getAttribute("aria-describedby");
 
     expect(dialog.getAttribute("aria-modal")).toBe("true");
-    expect(labelledBy).toBeTruthy();
-    expect(describedBy).toBeTruthy();
     expect(labelledBy ? document.getElementById(labelledBy)?.textContent : null).toBe("Eliminar cita");
     expect(describedBy ? document.getElementById(describedBy)?.textContent : null).toBe(
       "Esta acción no se puede deshacer"

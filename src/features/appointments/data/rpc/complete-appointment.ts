@@ -1,8 +1,7 @@
 import "server-only";
 
-import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { parseRpcResponse } from "@/infra/supabase/rpc-response";
+import { callIdempotentRpc } from "@/infra/supabase/call-idempotent-rpc";
 import { z } from "@/infra/validation/zod";
 
 const CompleteAppointmentResultSchema = z.object({
@@ -40,7 +39,7 @@ export async function completeAppointmentRpc(
   input: CompleteAppointmentRpcInput
 ): Promise<CompleteAppointmentRpcResult> {
   const supabase = await createSupabaseServerClient();
-  const payload = toCanonicalPayload({
+  return callIdempotentRpc(supabase, "complete_appointment", {
     appointment_id: input.appointmentId,
     payment_method: input.paymentMethod,
     completion_price_note: input.completionPriceNote ?? "",
@@ -50,7 +49,5 @@ export async function completeAppointmentRpc(
       discount_percentage: charge.discountPercentage ?? 0,
     })),
     idempotency_key: input.idempotencyKey,
-  });
-  const response = await supabase.rpc("complete_appointment", { payload });
-  return parseRpcResponse("complete_appointment", response, CompleteAppointmentResultSchema);
+  }, CompleteAppointmentResultSchema);
 }

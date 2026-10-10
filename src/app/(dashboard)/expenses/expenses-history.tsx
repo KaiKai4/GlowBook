@@ -1,23 +1,27 @@
 "use client";
 
+import { formatNumericDate } from "@/infra/format/es-formats";
 import { useMemo, useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { parseOption } from "@/components/forms/parse-option";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { ExpenseHistoryItem } from "@/features/expenses/use-cases/expenses";
+import type { ExpenseHistoryItem } from "@/features/expenses";
 import { isHttpsReceiptUrl } from "@/features/expenses/domain/receipt-url";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
+import { z } from "@/infra/validation/zod";
 
-type ExpenseTypeFilter = "all" | "manual" | "inventory_purchase";
+const EXPENSE_TYPE_FILTER_SCHEMA = z.enum(["all", "manual", "inventory_purchase"]);
+type ExpenseTypeFilter = z.infer<typeof EXPENSE_TYPE_FILTER_SCHEMA>;
 
 const HISTORY_COLUMNS: DataTableColumn<ExpenseHistoryItem>[] = [
   {
     id: "date",
     header: "Fecha",
     cell: (item) => (
-      <span className="text-fg-subtle">{new Date(`${item.date}T12:00:00`).toLocaleDateString("es-PA")}</span>
+      <span className="text-fg-subtle">{formatNumericDate(new Date(`${item.date}T12:00:00`))}</span>
     ),
   },
   {
@@ -121,7 +125,7 @@ export function ExpensesHistory({ history }: { history: ExpenseHistoryItem[] }) 
           <Select
             label="Tipo de egreso"
             value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value as ExpenseTypeFilter)}
+            onChange={(event) => setTypeFilter(parseOption(EXPENSE_TYPE_FILTER_SCHEMA, event.target.value, typeFilter))}
           >
             <option value="all">Todos</option>
             <option value="manual">Gasto general</option>

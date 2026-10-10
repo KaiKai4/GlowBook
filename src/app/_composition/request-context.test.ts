@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requireActiveProfile, requireProfile } from "./request-context";
+import { requireActionContext, requireProfile } from "./request-context";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 vi.mock("next/navigation", () => ({
@@ -64,7 +64,7 @@ function supabaseMock({
   return { auth, from };
 }
 
-describe("requireActiveProfile", () => {
+describe("requireActionContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -72,10 +72,9 @@ describe("requireActiveProfile", () => {
   it("returns the profile when profile and salón are active", async () => {
     mockedCreateSupabaseServerClient.mockResolvedValue(supabaseMock({}) as never);
 
-    await expect(requireActiveProfile()).resolves.toMatchObject({
-      id: "user-1",
-      salon_id: "salon-1",
-      is_active: true,
+    await expect(requireActionContext()).resolves.toMatchObject({
+      userId: "user-1",
+      salonId: "salon-1",
     });
   });
 
@@ -84,7 +83,7 @@ describe("requireActiveProfile", () => {
       supabaseMock({ profile: { ...activeProfile, is_active: false } }) as never
     );
 
-    await expect(requireActiveProfile()).rejects.toThrow("REDIRECT:/login");
+    await expect(requireActionContext()).rejects.toThrow("REDIRECT:/login");
   });
 
   it("redirects to the dashboard shell when the salón is suspended", async () => {
@@ -92,13 +91,13 @@ describe("requireActiveProfile", () => {
       supabaseMock({ salon: { id: "salon-1", is_active: false } }) as never
     );
 
-    await expect(requireActiveProfile()).rejects.toThrow("REDIRECT:/");
+    await expect(requireActionContext()).rejects.toThrow("REDIRECT:/");
   });
 
   it("redirects to login when the salón no longer exists", async () => {
     mockedCreateSupabaseServerClient.mockResolvedValue(supabaseMock({ salon: null }) as never);
 
-    await expect(requireActiveProfile()).rejects.toThrow("REDIRECT:/login");
+    await expect(requireActionContext()).rejects.toThrow("REDIRECT:/login");
   });
 });
 

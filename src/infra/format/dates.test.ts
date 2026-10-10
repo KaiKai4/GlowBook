@@ -3,8 +3,12 @@ import {
   addDaysToDateISO,
   addMinutes,
   formatLocalDateISO,
+  formatMonthYear,
+  formatShortDateFromISO,
+  formatShortDateTime,
   getUtcDayBoundaries,
   getZonedTimeParts,
+  noonProbeForLocalDate,
   timeToMinutes,
   utcBounds,
   zonedWallTimeToUtc,
@@ -79,5 +83,79 @@ describe("zonedWallTimeToUtc", () => {
       if (previous === undefined) delete process.env.TZ;
       else process.env.TZ = previous;
     }
+  });
+});
+
+describe("noonProbeForLocalDate y límites del día", () => {
+  it("no desplaza la sonda en UTC-12 (el mediodía UTC sigue en el mismo día local)", () => {
+    const probe = noonProbeForLocalDate("2026-05-28", "Etc/GMT+12");
+    expect(probe.toISOString()).toBe("2026-05-28T12:00:00.000Z");
+
+    const { start, end } = getUtcDayBoundaries(probe, "Etc/GMT+12");
+    expect(start.toISOString()).toBe("2026-05-28T12:00:00.000Z");
+    expect(end.toISOString()).toBe("2026-05-29T11:59:59.999Z");
+  });
+
+  it("retrasa 12 h la sonda en UTC+14 para no caer en el día siguiente", () => {
+    const probe = noonProbeForLocalDate("2026-05-28", "Pacific/Kiritimati");
+    expect(probe.toISOString()).toBe("2026-05-28T00:00:00.000Z");
+
+    const { start, end } = getUtcDayBoundaries(probe, "Pacific/Kiritimati");
+    expect(start.toISOString()).toBe("2026-05-27T10:00:00.000Z");
+    expect(end.toISOString()).toBe("2026-05-28T09:59:59.999Z");
+  });
+
+  it("cubre un día de 23 h al entrar en horario de verano (America/New_York 2026-03-08)", () => {
+    const probe = noonProbeForLocalDate("2026-03-08", "America/New_York");
+    const { start, end } = getUtcDayBoundaries(probe, "America/New_York");
+    expect(start.toISOString()).toBe("2026-03-08T05:00:00.000Z");
+    expect(end.toISOString()).toBe("2026-03-09T03:59:59.999Z");
+  });
+
+  it("cubre un día de 25 h al salir de horario de verano (America/New_York 2026-11-01)", () => {
+    const probe = noonProbeForLocalDate("2026-11-01", "America/New_York");
+    const { start, end } = getUtcDayBoundaries(probe, "America/New_York");
+    expect(start.toISOString()).toBe("2026-11-01T04:00:00.000Z");
+    expect(end.toISOString()).toBe("2026-11-02T04:59:59.999Z");
+  });
+});
+
+describe("formatShortDateTime", () => {
+  it("incluye día, mes abreviado, año y hora en español", () => {
+    const value = formatShortDateTime(new Date(2026, 9, 12, 14, 30, 0));
+
+    expect(value).toContain("12");
+    expect(value.toLowerCase()).toContain("oct");
+    expect(value).toContain("2026");
+    expect(value).toMatch(/(0?2|14):30/);
+  });
+});
+
+describe("formatShortDate", () => {
+  it("formatea una fecha corta en español con día, mes abreviado y año", () => {
+    const value = formatShortDateFromISO("2026-10-12");
+
+    expect(value).toContain("12");
+    expect(value).toContain("2026");
+    expect(value.toLowerCase()).toContain("oct");
+  });
+});
+
+describe("formatMonthYear", () => {
+  it("formatea mes largo y año en UTC, sin desplazarse de mes en el día 15", () => {
+    const value = formatMonthYear(new Date(Date.UTC(2026, 9, 15)));
+
+    expect(value.toLowerCase()).toContain("octubre");
+    expect(value).toContain("2026");
+  });
+});
+
+describe("formatShortDateFromISO", () => {
+  it("convierte una fecha ISO sin hora en fecha corta sin desplazar el día", () => {
+    const value = formatShortDateFromISO("2026-10-12");
+
+    expect(value).toContain("12");
+    expect(value).toContain("2026");
+    expect(value.toLowerCase()).toContain("oct");
   });
 });

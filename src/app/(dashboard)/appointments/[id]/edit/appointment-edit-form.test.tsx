@@ -6,7 +6,7 @@ import {
   updateAppointmentScheduleAction,
 } from "@/app/(dashboard)/appointments/actions";
 import type { AppointmentDetailViewModel } from "@/features/appointments/use-cases/get-appointment-detail";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import {

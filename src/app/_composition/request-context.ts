@@ -2,6 +2,10 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { readSessionUserId } from "@/infra/auth/session";
+import {
+  issuePlatformAdminProof,
+  type PlatformAdminProof,
+} from "@/infra/auth/platform-admin-proof";
 import { getRequestId } from "@/infra/observability/request-context";
 import {
   getPermissions,
@@ -55,6 +59,7 @@ const getRequestContext = cache(async (): Promise<RequestContext | null> => {
     // Los módulos deshabilitados ya salen del plan efectivo: el modulo de roles
     // esta activo si no figura en esa lista (mismo criterio que isEffectiveSalonModuleEnabled).
     rolesEnabled: !disabledFeatures.includes("roles"),
+    disabledFeatures,
   };
 });
 
@@ -88,14 +93,11 @@ async function requireActiveRequestContext(): Promise<RequestContext> {
   return context;
 }
 
-export async function requireActiveProfile(): Promise<ProfileWithRole> {
-  return (await requireActiveRequestContext()).profile;
-}
-
 /** Contexto minimo para los casos de uso de una accion de salon (sin perfil completo). */
 export async function requireActionContext(): Promise<ActionContext> {
-  const { userId, salonId, permissions, requestId, rolesEnabled } = await requireActiveRequestContext();
-  return { userId, salonId, permissions, requestId, rolesEnabled };
+  const { userId, salonId, permissions, requestId, rolesEnabled, disabledFeatures } =
+    await requireActiveRequestContext();
+  return { userId, salonId, permissions, requestId, rolesEnabled, disabledFeatures };
 }
 
 /** Si el plan del salón incluye el modulo de roles, leido del contexto memoizado de la request. */
@@ -110,11 +112,21 @@ export async function isPlatformAdmin(): Promise<boolean> {
   return isPlatformAdminCached(userId);
 }
 
-export async function requirePlatformAdmin(): Promise<string> {
+/**
+ * Prueba de platform admin de la sesion actual (ADR 0028). Redirige a /login si
+ * no hay sesion o el usuario no figura en platform_admins. Es la unica fuente de
+ * PlatformAdminProof: los casos de uso de plataforma la exigen para llegar a billing.
+ */
+export async function requirePlatformAdminProof(): Promise<PlatformAdminProof> {
   const userId = await getSessionUserId();
   if (!userId) redirect("/login");
 
   const isAdmin = await isPlatformAdminCached(userId);
   if (!isAdmin) redirect("/login");
-  return userId;
+  return issuePlatformAdminProof(userId);
+}
+
+/** Id del platform admin de la sesion actual; redirige a /login si no lo es. */
+export async function requirePlatformAdmin(): Promise<string> {
+  return (await requirePlatformAdminProof()).userId;
 }

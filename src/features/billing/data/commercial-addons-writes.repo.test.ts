@@ -11,6 +11,8 @@ import {
   deleteCommercialAddon,
   saveCommercialAddon,
 } from "./commercial-addons.repo";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Escrituras de extras comerciales: insert/update con snake_case, archivado
 // lógico frente a borrado, y conteo de asignaciones que decide entre ambos.
@@ -50,7 +52,7 @@ describe("saveCommercialAddon", () => {
     });
     useFake(fake);
 
-    expect(await saveCommercialAddon(addonValues)).toBe("addon-nuevo");
+    expect(await saveCommercialAddon(ADMIN_PROOF, addonValues)).toBe("addon-nuevo");
 
     const query = firstQueryOn(fake, "commercial_addons");
     expect(argsOf(query, "insert")?.[0]).toEqual({
@@ -74,7 +76,7 @@ describe("saveCommercialAddon", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    const id = await saveCommercialAddon({
+    const id = await saveCommercialAddon(ADMIN_PROOF, {
       ...addonValues,
       id: "addon-1",
       kind: "limit_boost",
@@ -95,7 +97,7 @@ describe("saveCommercialAddon", () => {
   it("lanza el mensaje propio cuando la inserción no devuelve fila", async () => {
     useFake(createBillingSupabaseFake({ tables: { commercial_addons: { data: null, error: null } } }));
 
-    await expect(saveCommercialAddon(addonValues)).rejects.toThrow("No se pudo crear el extra.");
+    await expect(saveCommercialAddon(ADMIN_PROOF, addonValues)).rejects.toThrow("No se pudo crear el extra.");
   });
 
   it("propaga el error de la inserción y de la actualización", async () => {
@@ -105,8 +107,8 @@ describe("saveCommercialAddon", () => {
       })
     );
 
-    await expect(saveCommercialAddon(addonValues)).rejects.toBeInstanceOf(Error);
-    await expect(saveCommercialAddon({ ...addonValues, id: "addon-1" })).rejects.toBeInstanceOf(Error);
+    await expect(saveCommercialAddon(ADMIN_PROOF, addonValues)).rejects.toBeInstanceOf(Error);
+    await expect(saveCommercialAddon(ADMIN_PROOF, { ...addonValues, id: "addon-1" })).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -115,7 +117,7 @@ describe("archiveCommercialAddon y deleteCommercialAddon", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await archiveCommercialAddon("addon-1");
+    await archiveCommercialAddon(ADMIN_PROOF, "addon-1");
 
     const query = firstQueryOn(fake, "commercial_addons");
     expect(argsOf(query, "update")).toEqual([{ status: "archived" }]);
@@ -127,7 +129,7 @@ describe("archiveCommercialAddon y deleteCommercialAddon", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await deleteCommercialAddon("addon-1");
+    await deleteCommercialAddon(ADMIN_PROOF, "addon-1");
 
     const query = firstQueryOn(fake, "commercial_addons");
     expect(query.calls.map((call) => call.method)).toEqual(["delete", "eq"]);
@@ -141,8 +143,8 @@ describe("archiveCommercialAddon y deleteCommercialAddon", () => {
       })
     );
 
-    await expect(archiveCommercialAddon("addon-1")).rejects.toBeInstanceOf(Error);
-    await expect(deleteCommercialAddon("addon-1")).rejects.toBeInstanceOf(Error);
+    await expect(archiveCommercialAddon(ADMIN_PROOF, "addon-1")).rejects.toBeInstanceOf(Error);
+    await expect(deleteCommercialAddon(ADMIN_PROOF, "addon-1")).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -153,7 +155,7 @@ describe("countAddonAssignments", () => {
     });
     useFake(fake);
 
-    expect(await countAddonAssignments("addon-1")).toBe(4);
+    expect(await countAddonAssignments(ADMIN_PROOF, "addon-1")).toBe(4);
 
     const query = firstQueryOn(fake, "salon_plan_overrides");
     expect(argsOf(query, "select")).toEqual(["*", { count: "exact", head: true }]);
@@ -162,13 +164,13 @@ describe("countAddonAssignments", () => {
 
   it("devuelve cero cuando el conteo llega nulo y propaga errores", async () => {
     useFake(createBillingSupabaseFake({ tables: { salon_plan_overrides: { count: null, error: null } } }));
-    expect(await countAddonAssignments("addon-1")).toBe(0);
+    expect(await countAddonAssignments(ADMIN_PROOF, "addon-1")).toBe(0);
 
     useFake(
       createBillingSupabaseFake({
         tables: { salon_plan_overrides: { count: null, error: { message: "timeout" } } },
       })
     );
-    await expect(countAddonAssignments("addon-1")).rejects.toBeInstanceOf(Error);
+    await expect(countAddonAssignments(ADMIN_PROOF, "addon-1")).rejects.toBeInstanceOf(Error);
   });
 });

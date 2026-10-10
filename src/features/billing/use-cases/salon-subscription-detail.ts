@@ -1,4 +1,7 @@
 import "server-only";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+import { planLimitMessage } from "../messages";
+import { roundCurrency } from "@/infra/format/money";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
 import { findPlanCatalog } from "../data/commercial-plans.repo";
 import {
@@ -22,7 +25,6 @@ import {
   isPlanAssignmentActive,
   manualExtraName,
   resolveEnabledModules,
-  round2,
   type EnabledModuleKey,
 } from "../domain/salon-plan-views";
 
@@ -54,6 +56,9 @@ interface SalonAlertView {
   createdAt: string;
 }
 
+/** Límite con su texto visible ya resuelto (la vista no recibe códigos). */
+type SalonPlanLimitView = EffectivePlanLimit & { message: string };
+
 export interface SalonSubscriptionDetail {
   salonId: string;
   assignment: {
@@ -68,7 +73,7 @@ export interface SalonSubscriptionDetail {
   } | null;
   plan: CommercialPlan | null;
   enabledModules: EnabledModuleKey[];
-  limits: EffectivePlanLimit[];
+  limits: SalonPlanLimitView[];
   extras: SalonExtraView[];
   payments: SalonPaymentView[];
   openAlerts: SalonAlertView[];
@@ -77,13 +82,28 @@ export interface SalonSubscriptionDetail {
   monthlyTotal: number;
 }
 
-export async function getSalonSubscriptionDetail(salonId: string): Promise<SalonSubscriptionDetail> {
+/** Añade el texto visible de un límite a partir de su código de dominio. */
+function withLimitMessage(limit: EffectivePlanLimit): SalonPlanLimitView {
+  return {
+    ...limit,
+    message: planLimitMessage(limit.messageCode, {
+      metricName: limit.metric.name,
+      used: limit.used,
+      maxValue: limit.maxValue,
+    }),
+  };
+}
+
+export async function getSalonSubscriptionDetail(
+  proof: PlatformAdminProof,
+  salonId: string
+): Promise<SalonSubscriptionDetail> {
   const [rows, addons, modules, payments, openAlerts] = await Promise.all([
-    findEffectivePlanRowsForPlatform(salonId),
-    findCommercialAddons(),
-    findPlanCatalog().then((catalog) => catalog.modules),
-    findSalonPayments(salonId),
-    findOpenSalonAlerts(salonId),
+    findEffectivePlanRowsForPlatform(proof, salonId),
+    findCommercialAddons(proof),
+    findPlanCatalog(proof).then((catalog) => catalog.modules),
+    findSalonPayments(proof, salonId),
+    findOpenSalonAlerts(proof, salonId),
   ]);
 
   // Mismo criterio que getEffectiveSalonPlan: un plan pausado/cancelado no da módulos ni límites.
@@ -105,7 +125,7 @@ export async function getSalonSubscriptionDetail(salonId: string): Promise<Salon
   }));
 
   const planPrice = plan ? plan.monthlyPrice : 0;
-  const extrasPrice = round2(extrasViews.reduce((total, extra) => total + extra.monthlyPrice, 0));
+  const extrasPrice = roundCurrency(extrasViews.reduce((total, extra) => total + extra.monthlyPrice, 0));
 
   return {
     salonId,
@@ -123,7 +143,7 @@ export async function getSalonSubscriptionDetail(salonId: string): Promise<Salon
       : null,
     plan,
     enabledModules: Array.from(enabled),
-    limits: buildEffectiveLimits(plan, rows.metrics, rows.overrides, rows.usage, enabled),
+    limits: buildEffectiveLimits(plan, rows.metrics, rows.overrides, rows.usage, enabled).map(withLimitMessage),
     extras: extrasViews,
     payments: payments.map((payment) => ({
       id: payment.id,
@@ -142,6 +162,6 @@ export async function getSalonSubscriptionDetail(salonId: string): Promise<Salon
     })),
     planPrice,
     extrasPrice,
-    monthlyTotal: round2(planPrice + extrasPrice),
+    monthlyTotal: roundCurrency(planPrice + extrasPrice),
   };
 }

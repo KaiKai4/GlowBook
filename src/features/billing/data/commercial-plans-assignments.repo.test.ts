@@ -6,6 +6,8 @@ import {
   type BillingSupabaseFake,
 } from "@/test/billing-feature-supabase";
 import { countPlanAssignments } from "./commercial-plans.repo";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Conteo de asignaciones de salon a un plan (cualquier estado). Lo usa el
 // caso de uso para impedir borrar planes con salones asignados.
@@ -31,7 +33,7 @@ describe("countPlanAssignments", () => {
     });
     useFake(fake);
 
-    await expect(countPlanAssignments("plan-1")).resolves.toBe(3);
+    await expect(countPlanAssignments(ADMIN_PROOF, "plan-1")).resolves.toBe(3);
 
     const query = firstQueryOn(fake, "salon_plan_assignments");
     expect(argsOf(query, "select")).toEqual(["id", { count: "exact", head: true }]);
@@ -44,7 +46,7 @@ describe("countPlanAssignments", () => {
     });
     useFake(fake);
 
-    await expect(countPlanAssignments("plan-1")).resolves.toBe(0);
+    await expect(countPlanAssignments(ADMIN_PROOF, "plan-1")).resolves.toBe(0);
   });
 
   it("lanza el mensaje de error de la base de datos", async () => {
@@ -55,6 +57,6 @@ describe("countPlanAssignments", () => {
     });
     useFake(fake);
 
-    await expect(countPlanAssignments("plan-1")).rejects.toThrow("fallo de conteo");
+    await expect(countPlanAssignments(ADMIN_PROOF, "plan-1")).rejects.toThrow("fallo de conteo");
   });
 });

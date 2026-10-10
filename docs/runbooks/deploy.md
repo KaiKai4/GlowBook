@@ -101,7 +101,7 @@ Mientras se prepara la nueva versión, el frontend anterior sigue activo. Las mi
 
 - La observabilidad es el adaptador `src/infra/observability`: emite eventos y errores como JSON estructurado, sanitizando claves sensibles y con el request id. En el primer despliegue, los logs salen por el hosting o por un log drain.
 - Opcionalmente, `GLOWBOOK_OBSERVABILITY_WEBHOOK_URL` (y su token) envía los payloads sanitizados a un webhook. Detalle en `docs/security.md`, sección "Observability".
-- Rate limit compartido en Postgres (`consume_rate_limit`, solo `service_role`), desde `src/infra/security/rate-limit.ts` (ADR 0017). Si el almacén falla, la política es fail-open con `captureError`.
+- Rate limit compartido en Postgres (`consume_rate_limit`, solo `service_role`), desde `src/infra/security/rate-limit.ts` (ADR 0017). Si el almacén falla, la política es fail-open con `captureError` (inicio de sesión: fail-closed, ADR 0030).
 - Cabeceras estáticas, CSP con nonce y auditoría de dependencias: `docs/security.md`.
 
 ## Operación: Índice De Runbooks

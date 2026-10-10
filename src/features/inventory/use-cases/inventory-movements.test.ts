@@ -1,31 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   recordInventoryPurchase,
   transferInventoryStock,
+  type InventoryMovementsDeps,
 } from "./inventory-movements";
-import { recordInventoryPurchaseRpc } from "../data/rpc/record-inventory-purchase";
-import { recordInventoryTransferRpc } from "../data/rpc/record-inventory-transfer";
-
-vi.mock("../data/rpc/record-inventory-purchase", () => ({
-  recordInventoryPurchaseRpc: vi.fn(),
-}));
-
-vi.mock("../data/rpc/record-inventory-transfer", () => ({
-  recordInventoryTransferRpc: vi.fn(),
-}));
 
 const KEY = "00000000-0000-4000-8000-0000000000c1";
 
-const mockedTransfer = vi.mocked(recordInventoryTransferRpc);
-const mockedPurchase = vi.mocked(recordInventoryPurchaseRpc);
+/** Fakes tipados de los adaptadores RPC de movimientos. */
+function fakeDeps() {
+  return {
+    recordTransfer: vi.fn<InventoryMovementsDeps["recordTransfer"]>(async () => undefined),
+    recordPurchase: vi.fn<InventoryMovementsDeps["recordPurchase"]>(async () => "purchase-1"),
+  };
+}
 
 describe("inventory movement use-cases", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("registra la transferencia con el adaptador RPC y reenvia la clave", async () => {
-    mockedTransfer.mockResolvedValue(undefined);
+    const deps = fakeDeps();
 
     const result = await transferInventoryStock(
       "salon-1",
@@ -37,11 +29,12 @@ describe("inventory movement use-cases", () => {
         note: "Reposicion interna",
         idempotency_key: KEY,
       },
-      KEY
+      KEY,
+      deps
     );
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedTransfer).toHaveBeenCalledWith({
+    expect(deps.recordTransfer).toHaveBeenCalledWith({
       salonId: "salon-1",
       productId: "product-1",
       fromLocation: "storage",
@@ -53,7 +46,8 @@ describe("inventory movement use-cases", () => {
   });
 
   it("preserves our own RAISE messages (SQLSTATE P0001) when an atomic transfer fails", async () => {
-    mockedTransfer.mockRejectedValue({ code: "P0001", message: "Stock insuficiente para completar la transferencia." });
+    const deps = fakeDeps();
+    deps.recordTransfer.mockRejectedValue({ code: "P0001", message: "Stock insuficiente para completar la transferencia." });
 
     const result = await transferInventoryStock(
       "salon-1",
@@ -65,7 +59,8 @@ describe("inventory movement use-cases", () => {
         note: "",
         idempotency_key: KEY,
       },
-      KEY
+      KEY,
+      deps
     );
 
     expect(result).toEqual({
@@ -75,7 +70,7 @@ describe("inventory movement use-cases", () => {
   });
 
   it("registra la compra con el adaptador RPC y reenvia la clave", async () => {
-    mockedPurchase.mockResolvedValue("purchase-1");
+    const deps = fakeDeps();
 
     const result = await recordInventoryPurchase(
       "salon-1",
@@ -89,11 +84,12 @@ describe("inventory movement use-cases", () => {
         note: "Compra de prueba",
         idempotency_key: KEY,
       },
-      KEY
+      KEY,
+      deps
     );
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(mockedPurchase).toHaveBeenCalledWith({
+    expect(deps.recordPurchase).toHaveBeenCalledWith({
       salonId: "salon-1",
       supplierName: "Panafoto",
       purchaseDate: "2026-06-03",
@@ -106,7 +102,7 @@ describe("inventory movement use-cases", () => {
   });
 
   it("envia la misma clave en un reenvio del formulario de compra", async () => {
-    mockedPurchase.mockResolvedValue("purchase-1");
+    const deps = fakeDeps();
     const input = {
       supplier_name: "",
       purchase_date: "2026-06-03",
@@ -118,9 +114,9 @@ describe("inventory movement use-cases", () => {
       idempotency_key: KEY,
     };
 
-    await recordInventoryPurchase("salon-1", input, KEY);
-    await recordInventoryPurchase("salon-1", input, KEY);
+    await recordInventoryPurchase("salon-1", input, KEY, deps);
+    await recordInventoryPurchase("salon-1", input, KEY, deps);
 
-    expect(mockedPurchase.mock.calls.map(([call]) => call.idempotencyKey)).toEqual([KEY, KEY]);
+    expect(deps.recordPurchase.mock.calls.map(([call]) => call.idempotencyKey)).toEqual([KEY, KEY]);
   });
 });

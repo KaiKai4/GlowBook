@@ -6,6 +6,12 @@ import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
 import { utcBounds } from "@/infra/format/dates";
 import { getCalendarView } from "./get-calendar-view";
+// Desempaqueta el Result del caso de uso: un error inesperado falla el test.
+async function calendarOf(input: Parameters<typeof getCalendarView>[0]) {
+  const result = await getCalendarView(input);
+  if (!result.ok) throw new Error(result.error);
+  return result.value;
+}
 
 vi.mock("@/features/appointments/data/appointments.repo", () => ({
   findAppointmentsBySalon: vi.fn(async () => []),
@@ -35,7 +41,7 @@ describe("getCalendarView", () => {
   });
 
   it("en vista semanal consulta la semana completa y etiqueta el rango visible", async () => {
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "semanal" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "semanal" });
 
     expect(model).toMatchObject({
       date: WEDNESDAY,
@@ -51,7 +57,7 @@ describe("getCalendarView", () => {
   });
 
   it("en vista diaria consulta solo el día seleccionado", async () => {
-    await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(findAppointmentsBySalon).toHaveBeenCalledWith(SALON_ID, {
       startDate: utcBounds(WEDNESDAY, WEDNESDAY, "America/Panama").start,
@@ -60,7 +66,7 @@ describe("getCalendarView", () => {
   });
 
   it("degrada la vista por trabajador a semanal cuando el usuario no puede verlo todo", async () => {
-    const model = await getCalendarView({
+    const model = await calendarOf({
       salonId: SALON_ID,
       canViewAll: false,
       date: WEDNESDAY,
@@ -73,7 +79,7 @@ describe("getCalendarView", () => {
   });
 
   it("carga los profesionales para la vista por trabajador cuando puede verlo todo", async () => {
-    const model = await getCalendarView({
+    const model = await calendarOf({
       salonId: SALON_ID,
       canViewAll: true,
       date: WEDNESDAY,
@@ -87,7 +93,7 @@ describe("getCalendarView", () => {
 
   it("usa la fecha local del salón a partir de 'now' cuando no se indica fecha", async () => {
     // 2026-05-27T02:00Z es todavía 26 de mayo en Panamá (UTC-5).
-    const model = await getCalendarView({
+    const model = await calendarOf({
       salonId: SALON_ID,
       canViewAll: false,
       view: "diaria",
@@ -99,7 +105,7 @@ describe("getCalendarView", () => {
   });
 
   it("consulta los métodos de pago y el horario del salón", async () => {
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY });
 
     expect(getSalonBusinessHours).toHaveBeenCalledWith(SALON_ID);
     expect(getSalonPaymentMethods).toHaveBeenCalledWith(SALON_ID);

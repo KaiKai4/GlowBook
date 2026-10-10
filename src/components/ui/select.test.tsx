@@ -299,7 +299,6 @@ describe("Select", () => {
 
     expect(mounted.container.textContent).toContain("Selecciona un servicio");
     const describedBy = trigger(mounted.container).getAttribute("aria-describedby");
-    expect(describedBy).toBeTruthy();
     expect(document.getElementById(describedBy ?? "")?.textContent).toBe("Selecciona un servicio");
     expect(trigger(mounted.container).className).toContain("border-danger");
   });

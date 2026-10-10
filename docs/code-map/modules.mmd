@@ -2,26 +2,26 @@
 flowchart LR
   subgraph g_app["app"]
     app["app (3)"]
-    app__auth_["app/(auth) (12)"]
-    app__dashboard_["app/(dashboard) (183)"]
-    app__platform_["app/(platform) (45)"]
+    app__auth_["app/(auth) (16)"]
+    app__dashboard_["app/(dashboard) (186)"]
+    app__platform_["app/(platform) (44)"]
     app__composition["app/_composition (5)"]
     app_api["app/api (4)"]
   end
   subgraph g_components["components"]
     components_brand["components/brand (1)"]
-    components_forms["components/forms (6)"]
+    components_forms["components/forms (7)"]
     components_layout["components/layout (15)"]
-    components_ui["components/ui (26)"]
+    components_ui["components/ui (28)"]
   end
   subgraph g_features["features"]
-    features_access["features/access (19)"]
+    features_access["features/access (20)"]
     features_appointments["features/appointments (40)"]
     features_audit["features/audit (6)"]
-    features_billing["features/billing (31)"]
-    features_customers["features/customers (11)"]
+    features_billing["features/billing (32)"]
+    features_customers["features/customers (12)"]
     features_dashboard["features/dashboard (8)"]
-    features_employees["features/employees (30)"]
+    features_employees["features/employees (35)"]
     features_expenses["features/expenses (11)"]
     features_feedback["features/feedback (4)"]
     features_inventory["features/inventory (14)"]
@@ -36,17 +36,17 @@ flowchart LR
     features_services["features/services (16)"]
   end
   subgraph g_infra["infra"]
-    infra["infra (3)"]
-    infra_auth["infra/auth (4)"]
+    infra["infra (5)"]
+    infra_auth["infra/auth (5)"]
     infra_config["infra/config (1)"]
     infra_effects["infra/effects (1)"]
-    infra_format["infra/format (2)"]
+    infra_format["infra/format (4)"]
     infra_http["infra/http (2)"]
     infra_idempotency["infra/idempotency (1)"]
     infra_observability["infra/observability (5)"]
     infra_security["infra/security (5)"]
-    infra_supabase["infra/supabase (7)"]
-    infra_validation["infra/validation (5)"]
+    infra_supabase["infra/supabase (8)"]
+    infra_validation["infra/validation (6)"]
   end
   subgraph g_npm["npm"]
     npm__supabase_ssr["npm/@supabase/ssr"]
@@ -110,6 +110,7 @@ flowchart LR
   app__platform_ --> features_billing
   app__platform_ --> features_platform
   app__platform_ --> infra
+  app__platform_ --> infra_format
   app__platform_ --> infra_validation
   app__platform_ --> npm_next
   app__platform_ --> npm_react
@@ -117,6 +118,7 @@ flowchart LR
   app__composition --> features_access
   app__composition --> features_billing
   app__composition --> features_salon
+  app__composition --> features_salon_features
   app__composition --> infra
   app__composition --> infra_auth
   app__composition --> infra_observability
@@ -138,6 +140,7 @@ flowchart LR
   components_brand --> npm_next
   components_forms --> components_ui
   components_forms --> infra_idempotency
+  components_forms --> infra_validation
   components_forms --> npm_react
   components_layout --> components_brand
   components_layout --> components_ui
@@ -166,7 +169,6 @@ flowchart LR
   features_appointments --> features_services
   features_appointments --> infra
   features_appointments --> infra_format
-  features_appointments --> infra_idempotency
   features_appointments --> infra_observability
   features_appointments --> infra_supabase
   features_appointments --> infra_validation
@@ -180,6 +182,8 @@ flowchart LR
   features_billing --> features_audit
   features_billing --> features_salon_features
   features_billing --> infra
+  features_billing --> infra_auth
+  features_billing --> infra_format
   features_billing --> infra_observability
   features_billing --> infra_supabase
   features_billing --> infra_validation
@@ -205,7 +209,6 @@ flowchart LR
   features_employees --> infra
   features_employees --> infra_auth
   features_employees --> infra_format
-  features_employees --> infra_idempotency
   features_employees --> infra_observability
   features_employees --> infra_supabase
   features_employees --> infra_validation
@@ -215,6 +218,7 @@ flowchart LR
   features_expenses --> features_billing
   features_expenses --> features_inventory
   features_expenses --> infra
+  features_expenses --> infra_format
   features_expenses --> infra_supabase
   features_expenses --> infra_validation
   features_expenses --> npm_server_only
@@ -225,6 +229,7 @@ flowchart LR
   features_feedback --> npm_server_only
   features_inventory --> features_billing
   features_inventory --> infra
+  features_inventory --> infra_format
   features_inventory --> infra_observability
   features_inventory --> infra_supabase
   features_inventory --> infra_validation
@@ -241,6 +246,7 @@ flowchart LR
   features_platform --> features_salon_features
   features_platform --> infra
   features_platform --> infra_auth
+  features_platform --> infra_format
   features_platform --> infra_observability
   features_platform --> infra_supabase
   features_platform --> infra_validation
@@ -258,6 +264,8 @@ flowchart LR
   features_reminders --> infra_validation
   features_reminders --> npm_server_only
   features_reminders --> types
+  features_reports --> infra
+  features_reports --> infra_format
   features_reports --> infra_supabase
   features_reports --> infra_validation
   features_reports --> npm_server_only
@@ -275,6 +283,7 @@ flowchart LR
   features_salon --> features_payments
   features_salon --> features_salon_features
   features_salon --> infra
+  features_salon --> infra_format
   features_salon --> infra_observability
   features_salon --> infra_supabase
   features_salon --> infra_validation
@@ -302,6 +311,7 @@ flowchart LR
   infra_security --> infra_validation
   infra_security --> npm_next
   infra_supabase --> infra_config
+  infra_supabase --> infra_idempotency
   infra_supabase --> infra_validation
   infra_supabase --> npm__supabase_ssr
   infra_supabase --> npm__supabase_supabase_js

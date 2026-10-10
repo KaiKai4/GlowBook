@@ -1,5 +1,5 @@
 import { MetricCard } from "@/components/ui/metric-card";
-import type { InventoryPageView } from "@/features/inventory/use-cases/inventory-products";
+import type { InventoryPageView } from "@/features/inventory";
 
 export function InventoryStats({ inventory }: { inventory: InventoryPageView }) {
   const lowProducts = inventory.lowStock.length;

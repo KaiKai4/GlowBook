@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPermanentCustomerByPhone, findArchivedCustomerByContact } from "@/features/customers/use-cases/customer-duplicates";
-import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
+import {
+  checkPermanentCustomerByPhone,
+  findArchivedCustomerByContact,
+} from "@/features/customers/use-cases/customer-duplicates";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
+import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
+import { PERMISSIONS } from "@/features/access";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { err, ok } from "@/infra/result";
-import { buildProfile, formDataOf, RECORD_ID, USER_ID } from "@/test/action-fixtures";
+import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fixtures";
 import {
   checkCustomerPhoneAction,
   createCustomerAction,
@@ -17,18 +20,23 @@ import {
   updateCustomerAction,
 } from "./actions";
 
+const { requireActiveProfile } = vi.hoisted(() => ({ requireActiveProfile: vi.fn() }));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", async () => {
   // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
   const { contextFromProfile } = await import("@/test/action-fixtures");
-  const requireActiveProfile = vi.fn();
   return {
     requireActiveProfile,
     requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
   };
 });
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing", () => ({ checkPlanLimit: vi.fn(), checkPlanModuleAccess: vi.fn() }));
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
+  checkPlanLimit: vi.fn(),
+  checkPlanModuleAccess: vi.fn(),
+}));
 vi.mock("@/features/customers/use-cases/customer-duplicates", () => ({
   checkPermanentCustomerByPhone: vi.fn(),
   findArchivedCustomerByContact: vi.fn(),
@@ -42,56 +50,121 @@ vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
   reactivateCustomer: vi.fn(),
 }));
 
-const CUSTOMER_ID = RECORD_ID;
+const INVALID = { ok: false, error: "Identificador inválido." } as const;
+const RATE_LIMITED = { ok: false, error: "Demasiados intentos. Espera un momento y vuelve a intentarlo." } as const;
 const manager = buildProfile({ permissions: [PERMISSIONS.CUSTOMERS_MANAGE] });
-const LIMITED = err("Demasiados intentos.");
 
-describe("customers actions: rate limit por acción", () => {
+describe("customers actions: guardas de identificador y límite", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);
-    vi.mocked(assertActionRateLimit).mockResolvedValue(LIMITED);
+    vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
   });
 
-  it("aplica el ámbito customers con 60 peticiones por minuto", async () => {
-    await reactivateCustomerAction(CUSTOMER_ID);
+  it("createCustomerAction devuelve el bloqueo del límite sin crear el cliente", async () => {
+    vi.mocked(assertActionRateLimit).mockResolvedValue(RATE_LIMITED);
 
-    expect(assertActionRateLimit).toHaveBeenCalledWith(USER_ID, "customers", { max: 60, windowMs: 60_000 });
-  });
-
-  it("createCustomerAction devuelve el rechazo sin crear el cliente", async () => {
-    expect(await createCustomerAction(null, formDataOf({ first_name: "Ana" }))).toEqual(LIMITED);
+    expect(await createCustomerAction(null, formDataOf({ first_name: "Ana", last_name: "Pérez" }))).toEqual(
+      RATE_LIMITED
+    );
+    expect(checkPlanModuleAccess).not.toHaveBeenCalled();
     expect(createCustomerProfile).not.toHaveBeenCalled();
-    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("las consultas de duplicados devuelven su respuesta vacía cuando el límite bloquea", async () => {
-    expect(await checkCustomerPhoneAction("600000000")).toEqual({ exists: false });
-    expect(await findArchivedCustomerByContactAction("600000000")).toBeNull();
+  it("createCustomerAction aplica el límite de 60 peticiones por minuto en el ámbito customers", async () => {
+    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
+    vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
+    vi.mocked(createCustomerProfile).mockResolvedValue(ok("cli-1"));
+
+    await createCustomerAction(null, formDataOf({ first_name: "Ana", last_name: "Pérez" }));
+
+    expect(assertActionRateLimit).toHaveBeenCalledWith(buildProfile().id, "customers", {
+      max: 60,
+      windowMs: 60_000,
+    });
+  });
+
+  it("checkCustomerPhoneAction responde sin existencia cuando el límite bloquea la consulta", async () => {
+    vi.mocked(assertActionRateLimit).mockResolvedValue(RATE_LIMITED);
+
+    expect(await checkCustomerPhoneAction("+507 6000-0000")).toEqual({ exists: false });
     expect(checkPermanentCustomerByPhone).not.toHaveBeenCalled();
+  });
+
+  it("checkCustomerPhoneAction consulta el teléfono dentro del salón", async () => {
+    vi.mocked(checkPermanentCustomerByPhone).mockResolvedValue({ exists: true, archived: false });
+
+    expect(await checkCustomerPhoneAction("+507 6000-0000")).toEqual({ exists: true, archived: false });
+    expect(checkPermanentCustomerByPhone).toHaveBeenCalledWith(SALON_ID, "+507 6000-0000");
+  });
+
+  it("findArchivedCustomerByContactAction devuelve null cuando el límite bloquea", async () => {
+    vi.mocked(assertActionRateLimit).mockResolvedValue(RATE_LIMITED);
+
+    expect(await findArchivedCustomerByContactAction("+507 6000-0000")).toBeNull();
     expect(findArchivedCustomerByContact).not.toHaveBeenCalled();
   });
 
-  it("las consultas de duplicados devuelven el resultado del caso de uso sin límite", async () => {
-    vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
-    vi.mocked(checkPermanentCustomerByPhone).mockResolvedValue({ exists: true, archived: false });
+  it("findArchivedCustomerByContactAction busca por teléfono y correo del salón", async () => {
     vi.mocked(findArchivedCustomerByContact).mockResolvedValue(null);
 
-    expect(await checkCustomerPhoneAction("600000000")).toEqual({ exists: true, archived: false });
-    expect(await findArchivedCustomerByContactAction("600000000", "a@b.co")).toBeNull();
-    expect(findArchivedCustomerByContact).toHaveBeenCalledWith(expect.any(String), "600000000", "a@b.co");
+    expect(await findArchivedCustomerByContactAction("+507 6000-0000", "ana@example.com")).toBeNull();
+    expect(findArchivedCustomerByContact).toHaveBeenCalledWith(SALON_ID, "+507 6000-0000", "ana@example.com");
   });
 
-  it("las acciones de ciclo de vida devuelven el rechazo sin tocar el cliente", async () => {
-    const formData = formDataOf({ first_name: "Ana", last_name: "Ruiz" });
-
-    expect(await reactivateCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
-    expect(await updateCustomerAction(CUSTOMER_ID, null, formData)).toEqual(LIMITED);
-    expect(await deleteCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
+  it("reactivateCustomerAction rechaza un identificador inválido", async () => {
+    expect(await reactivateCustomerAction("cliente")).toEqual(INVALID);
     expect(reactivateCustomer).not.toHaveBeenCalled();
-    expect(updateCustomerProfile).not.toHaveBeenCalled();
-    expect(archiveCustomer).not.toHaveBeenCalled();
+  });
+
+  it("reactivateCustomerAction reactiva y revalida clientes y nueva cita", async () => {
+    vi.mocked(reactivateCustomer).mockResolvedValue(ok(undefined));
+
+    expect(await reactivateCustomerAction(RECORD_ID)).toEqual(ok(undefined));
+    expect(reactivateCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
+    expect(revalidatePath).toHaveBeenCalledWith("/customers");
+    expect(revalidatePath).toHaveBeenCalledWith("/appointments/new");
+  });
+
+  it("reactivateCustomerAction no revalida cuando falla", async () => {
+    vi.mocked(reactivateCustomer).mockResolvedValue(err("No encontrado."));
+
+    expect(await reactivateCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No encontrado." });
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
+  it("updateCustomerAction rechaza un identificador inválido sin validar el formulario", async () => {
+    expect(await updateCustomerAction("cliente", null, formDataOf({ first_name: "Ana" }))).toEqual(INVALID);
+    expect(updateCustomerProfile).not.toHaveBeenCalled();
+  });
+
+  it("updateCustomerAction rechaza formularios inválidos sin persistir", async () => {
+    const result = await updateCustomerAction(RECORD_ID, null, formDataOf({ email: "no-es-email" }));
+
+    expect(result.ok).toBe(false);
+    expect(updateCustomerProfile).not.toHaveBeenCalled();
+  });
+
+  it("updateCustomerAction actualiza el cliente y revalida el listado", async () => {
+    vi.mocked(updateCustomerProfile).mockResolvedValue(ok(undefined));
+
+    expect(await updateCustomerAction(RECORD_ID, null, formDataOf({ first_name: "Ana" }))).toEqual(ok(undefined));
+    expect(updateCustomerProfile).toHaveBeenCalledWith(RECORD_ID, SALON_ID, expect.objectContaining({ first_name: "Ana" }));
+    expect(revalidatePath).toHaveBeenCalledWith("/customers");
+  });
+
+  it("deleteCustomerAction rechaza un identificador inválido sin archivar", async () => {
+    expect(await deleteCustomerAction("cliente")).toEqual(INVALID);
+    expect(archiveCustomer).not.toHaveBeenCalled();
+  });
+
+  it("deleteCustomerAction archiva el cliente y revalida listado y nueva cita", async () => {
+    const outcome = ok({ outcome: "archived" as const, message: "Cliente archivado." });
+    vi.mocked(archiveCustomer).mockResolvedValue(outcome);
+
+    expect(await deleteCustomerAction(RECORD_ID)).toEqual(outcome);
+    expect(archiveCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
+    expect(revalidatePath).toHaveBeenCalledWith("/customers");
+    expect(revalidatePath).toHaveBeenCalledWith("/appointments/new");
+  });
 });

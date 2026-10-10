@@ -12,19 +12,29 @@ export interface UpdateSalonStatusInput {
   actorUserId?: string | null;
 }
 
-export async function updateSalonStatus({
-  salonId,
-  isActive,
-  actorUserId,
-}: UpdateSalonStatusInput): Promise<Result<boolean>> {
+/** Dependencias del caso de uso. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface UpdateSalonStatusDeps {
+  setSalonActiveStatus: typeof setSalonActiveStatus;
+  publishAuditEvent: typeof publishAuditEvent;
+}
+
+const defaultUpdateSalonStatusDeps: UpdateSalonStatusDeps = {
+  setSalonActiveStatus,
+  publishAuditEvent,
+};
+
+export async function updateSalonStatus(
+  { salonId, isActive, actorUserId }: UpdateSalonStatusInput,
+  deps: UpdateSalonStatusDeps = defaultUpdateSalonStatusDeps
+): Promise<Result<boolean>> {
   const trimmedSalonId = salonId.trim();
   if (!trimmedSalonId) {
     return { ok: false, error: "Salón inválido." };
   }
 
   try {
-    await setSalonActiveStatus(trimmedSalonId, isActive);
-    const warnings = await publishAuditEvent("platform.salon_status_changed", {
+    await deps.setSalonActiveStatus(trimmedSalonId, isActive);
+    const warnings = await deps.publishAuditEvent("platform.salon_status_changed", {
       actorUserId: actorUserId ?? null,
       action: "set_salon_status",
       status: "succeeded",
@@ -39,7 +49,7 @@ export async function updateSalonStatus({
       metadata: { salonId: trimmedSalonId, isActive },
     });
     const message = error instanceof Error ? error.message : "Error desconocido";
-    await publishAuditEvent("platform.salon_status_changed", {
+    await deps.publishAuditEvent("platform.salon_status_changed", {
       actorUserId: actorUserId ?? null,
       action: "set_salon_status",
       status: "failed",

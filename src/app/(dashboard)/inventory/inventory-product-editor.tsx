@@ -6,7 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { INVENTORY_LOCATION_LABELS } from "@/features/inventory/domain/stock";
-import type { InventoryProductView } from "@/features/inventory/use-cases/inventory-products";
+import type { InventoryProductView } from "@/features/inventory";
 
 type InventoryProductEditorProps = {
   product: InventoryProductView;

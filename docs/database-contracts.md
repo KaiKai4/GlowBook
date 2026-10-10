@@ -37,6 +37,10 @@ RLS is enabled for tenant and platform tables in `supabase/migrations/2024010100
 | Platform invitations | `20240101000001_rls_and_functions.sql`, `20240101000002_rbac_seed_and_platform.sql` | `src/features/platform` | Salon creation is controlled by Platform invitation. |
 | RLS policy performance | `20240101000028_optimize_rls_policy_performance.sql` | all SQL-backed feature repos | RLS must avoid per-row `auth.uid()`/permission helper evaluation where a statement-level initplan is enough. Write policies should not use `FOR ALL` when explicit `SELECT` policies exist. |
 
+### Privilegios de tabla de anon
+
+Supabase concede por defecto privilegios de tabla a `anon` en `public`. La migración `20240101000080_anon_table_privileges.sql` los revoca: `anon` no tiene `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES` ni `TRIGGER` sobre tablas y vistas de `public`, ni uso de secuencias, y los privilegios por defecto del rol `postgres` no le conceden nada. Las políticas con `salon_id` aplican a `authenticated`; la política `perm_read` de `permissions` también. Los flujos sin sesión (invitaciones) usan `service_role` en servidor. Prueba: `supabase/tests/24_anon_table_privileges.sql`.
+
 ## Appointment Contracts
 
 | Contract | SQL source | TypeScript owner | Authority |
@@ -275,6 +279,7 @@ Migraciones `20240101000047` y `20240101000048` son marcadores históricos sin c
 ## Maintenance Notes
 
 - `recalc_appointment()`: el total de la cabecera (`total_price`) suma el `price` de **todos** los `appointment_items` de la cita, sin filtrar por estado. Los items cancelados o marcados como no-show siguen en la tabla (con `blocks_calendar = false`) y siguen sumando al total de la cabecera. Cambiar esto exige una migración nueva y revisar el contrato de citas.
+- Llamada desde el cliente: las RPC idempotentes se invocan con `callIdempotentRpc` (`src/infra/supabase/call-idempotent-rpc.ts`). El helper serializa el payload con `toCanonicalPayload`, llama a la RPC con el argumento `payload` y valida la respuesta con `parseRpcResponse`. Lo usan los `data/rpc` de `appointments` y `employees`. Un error de PostgREST se relanza tal cual y lo traduce el caso de uso a un mensaje público.
 - Limpieza de `idempotency_keys` (migración `20240101000065`): cada llamada a `idempotency_begin` borra como mucho 100 claves con más de 7 días. Es una limpieza oportunista y acotada.
 - Limpieza de `rate_limit_buckets` (migración `20240101000064`): cada llamada a la función de rate limit borra como mucho 100 cubos expirados.
 - Con esta limpieza oportunista basta mientras no se mida crecimiento de estas tablas. Si se mide, se añadiría `pg_cron` para una purga periódica; está fuera de alcance de este documento.

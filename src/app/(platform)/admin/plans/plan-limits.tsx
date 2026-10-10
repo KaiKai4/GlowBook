@@ -8,7 +8,7 @@ import type {
   CommercialLimitMetric,
   CommercialPlan,
   PlatformModule,
-} from "@/features/billing/use-cases/commercial-plans";
+} from "@/features/billing";
 import { savePlanLimitsAction } from "./actions";
 import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";
 import { InlineState, SaveAllButton } from "./workspace-ui";

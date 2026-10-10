@@ -10,13 +10,27 @@ const MAX_EXCEPTION_REASON_LENGTH = 200;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-export async function addEmployeeScheduleException(input: {
-  salonId: string;
-  employeeId: string;
-  exceptionDate: string;
-  reason: string;
-  timezone: string;
-}): Promise<Result<void>> {
+/** Dependencias de los días libres. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface EmployeeExceptionDeps {
+  insertException: typeof insertEmployeeException;
+  deleteException: typeof deleteEmployeeException;
+}
+
+const defaultEmployeeExceptionDeps: EmployeeExceptionDeps = {
+  insertException: insertEmployeeException,
+  deleteException: deleteEmployeeException,
+};
+
+export async function addEmployeeScheduleException(
+  input: {
+    salonId: string;
+    employeeId: string;
+    exceptionDate: string;
+    reason: string;
+    timezone: string;
+  },
+  deps: EmployeeExceptionDeps = defaultEmployeeExceptionDeps
+): Promise<Result<void>> {
   if (!DATE_PATTERN.test(input.exceptionDate)) {
     return { ok: false, error: "Selecciona una fecha válida." };
   }
@@ -27,7 +41,7 @@ export async function addEmployeeScheduleException(input: {
   }
 
   try {
-    await insertEmployeeException({
+    await deps.insertException({
       salonId: input.salonId,
       employeeId: input.employeeId,
       exceptionDate: input.exceptionDate,
@@ -47,10 +61,11 @@ export async function addEmployeeScheduleException(input: {
 export async function removeEmployeeScheduleException(
   salonId: string,
   employeeId: string,
-  exceptionId: string
+  exceptionId: string,
+  deps: EmployeeExceptionDeps = defaultEmployeeExceptionDeps
 ): Promise<Result<void>> {
   try {
-    await deleteEmployeeException(exceptionId, employeeId, salonId);
+    await deps.deleteException(exceptionId, employeeId, salonId);
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "employees", action: "exception-remove" });

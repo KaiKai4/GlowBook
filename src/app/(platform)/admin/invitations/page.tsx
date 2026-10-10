@@ -1,14 +1,14 @@
 import { CheckCircle2, Clock, MailOpen, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { getPlatformInvitations } from "@/features/platform";
 import { InviteSalonForm } from "./invite-salon-form";
 import { AcceptedInvitationsTable, PendingInvitationsTable } from "./invitations-tables";
 
 export default async function PlatformInvitationsPage() {
-  await requirePlatformAdmin();
-  const view = await getPlatformInvitations();
+  const proof = await requirePlatformAdminProof();
+  const view = await getPlatformInvitations(proof);
 
   return (
     <div className="space-y-6">

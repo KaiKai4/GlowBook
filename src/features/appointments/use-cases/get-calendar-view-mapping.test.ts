@@ -6,6 +6,12 @@ import { getSalonIdentity } from "@/features/salon/use-cases/salon-identity";
 import { getSalonPaymentMethods } from "@/features/salon/use-cases/salon-payment-methods";
 import { findAppointmentsBySalon, type AppointmentWithDetails } from "../data/appointments.repo";
 import { getCalendarView } from "./get-calendar-view";
+// Desempaqueta el Result del caso de uso: un error inesperado falla el test.
+async function calendarOf(input: Parameters<typeof getCalendarView>[0]) {
+  const result = await getCalendarView(input);
+  if (!result.ok) throw new Error(result.error);
+  return result.value;
+}
 
 vi.mock("../data/appointments.repo", () => ({
   findAppointmentsBySalon: vi.fn(),
@@ -89,7 +95,7 @@ describe("getCalendarView: mapeo de citas", () => {
   it("un estado desconocido de la BD se muestra como agendada", async () => {
     mockedFindAppointments.mockResolvedValue([row({ status: "archivada" })]);
 
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(model.appointments[0]?.status).toBe("scheduled");
   });
@@ -138,7 +144,7 @@ describe("getCalendarView: mapeo de citas", () => {
       }),
     ]);
 
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(model.appointments[0]?.items.map((item) => item.service?.category?.pricing_mode)).toEqual([
       "fixed",
@@ -184,7 +190,7 @@ describe("getCalendarView: mapeo de citas", () => {
       }),
     ]);
 
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(model.appointments[0]?.items[0]).toMatchObject({ service: null, discount_amount: 0 });
     expect(model.appointments[0]?.items[1]?.service).toEqual({
@@ -204,7 +210,7 @@ describe("getCalendarView: mapeo de citas", () => {
       row({ id: "e", status: "scheduled", start_time: "2026-05-31T14:00:00.000Z" }),
     ]);
 
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(model.appointments).toHaveLength(5);
     expect(model.activeCount).toBe(3);
@@ -218,7 +224,7 @@ describe("getCalendarView: mapeo de citas", () => {
       row({ id: "e", status: "scheduled", start_time: "2026-05-31T14:00:00.000Z" }),
     ]);
 
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "semanal" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "semanal" });
 
     expect(model.view).toBe("semanal");
     expect(model.activeCount).toBe(2);
@@ -245,7 +251,7 @@ describe("getCalendarView: vistas, zona y textos del salón", () => {
   });
 
   it("sin permiso de vista general la vista por trabajador se degrada a semanal sin cargar colaboradores", async () => {
-    const model = await getCalendarView({
+    const model = await calendarOf({
       salonId: SALON_ID,
       canViewAll: false,
       date: WEDNESDAY,
@@ -257,7 +263,7 @@ describe("getCalendarView: vistas, zona y textos del salón", () => {
   });
 
   it("con permiso de vista general la vista por trabajador carga los colaboradores del salón", async () => {
-    const model = await getCalendarView({
+    const model = await calendarOf({
       salonId: SALON_ID,
       canViewAll: true,
       date: WEDNESDAY,
@@ -273,13 +279,13 @@ describe("getCalendarView: vistas, zona y textos del salón", () => {
   });
 
   it("una vista desconocida o ausente cae en semanal", async () => {
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: true, date: WEDNESDAY, view: "mensual" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: true, date: WEDNESDAY, view: "mensual" });
 
     expect(model.view).toBe("semanal");
   });
 
   it("consulta solo el día seleccionado en vista diaria con los límites UTC de la zona del salón", async () => {
-    await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(mockedFindAppointments).toHaveBeenCalledWith(SALON_ID, {
       startDate: "2026-05-27T05:00:00.000Z",
@@ -290,7 +296,7 @@ describe("getCalendarView: vistas, zona y textos del salón", () => {
   it("sin identidad del salón usa la zona horaria y el nombre de respaldo", async () => {
     mockedIdentity.mockResolvedValue(null);
 
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(model).toMatchObject({ timezone: "America/Panama", salonName: "tu salón" });
   });
@@ -299,7 +305,7 @@ describe("getCalendarView: vistas, zona y textos del salón", () => {
     mockedIdentity.mockResolvedValue({ name: "Glow", timezone: "Pacific/Kiritimati", payment_methods: [] });
 
     // 2026-05-27T23:30Z es 2026-05-28 en Kiritimati (UTC+14).
-    const model = await getCalendarView({
+    const model = await calendarOf({
       salonId: SALON_ID,
       canViewAll: false,
       view: "diaria",
@@ -310,7 +316,7 @@ describe("getCalendarView: vistas, zona y textos del salón", () => {
   });
 
   it("expone el texto de cancelación activo y las opciones de pago del salón", async () => {
-    const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
+    const model = await calendarOf({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
     expect(model.cancellationTemplate).toBe("Tu cita fue cancelada.");
     expect(model.paymentMethodOptions).toEqual([{ value: "cash", label: "Efectivo" }]);

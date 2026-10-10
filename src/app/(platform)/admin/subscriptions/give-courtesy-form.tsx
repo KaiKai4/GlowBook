@@ -3,13 +3,17 @@
 import { useActionState, useState } from "react";
 import { HandHeart } from "lucide-react";
 
+import { parseOption } from "@/components/forms/parse-option";
 import { Input } from "@/components/ui/input";
+import { z } from "@/infra/validation/zod";
 import { Select } from "@/components/ui/select";
 import type { CommercialLimitMetric } from "@/features/billing/domain/commercial-plan";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
+import type { SubscriptionsPageData } from "@/features/billing";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";
 import { giveManualExtraAction } from "./actions";
+
+const TARGET_TYPE_SCHEMA = z.enum(["metric", "module"]);
 
 export function GiveCourtesyForm({
   salonId,
@@ -39,7 +43,7 @@ export function GiveCourtesyForm({
             name="__targetType"
             label="Tipo de cortesia"
             value={targetType}
-            onChange={(event) => setTargetType(event.target.value as "metric" | "module")}
+            onChange={(event) => setTargetType(parseOption(TARGET_TYPE_SCHEMA, event.target.value, targetType))}
           >
             <option value="metric">Aumentar un límite</option>
             <option value="module">Activar un módulo</option>

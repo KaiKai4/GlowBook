@@ -2,7 +2,7 @@
 
 import { Tag } from "lucide-react";
 import { cn } from "@/components/ui/cn";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 
 export interface ChargedItem {
   id: string;

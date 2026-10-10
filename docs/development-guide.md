@@ -1,6 +1,6 @@
 # Guia De Desarrollo
 
-Flujo diario para trabajar en GlowBook en local: preparar el entorno, levantar la base de datos, cambiar el esquema, escribir pruebas y entregar un cambio. Las reglas que deben cumplirse están en `AGENTS.md`; esta guía explica cómo cumplirlas.
+Flujo diario para trabajar en GlowBook en local: preparar el entorno, levantar la base de datos, cambiar el esquema, escribir pruebas y entregar un cambio. Las reglas que deben cumplirse están en `AGENTS.md`; esta guía explica cómo cumplirlas. Es la única guía de setup y flujo diario: el resto de documentos enlazan aquí en vez de repetir comandos (ADR 0031).
 
 Documentos relacionados: `AGENTS.md` (reglas), `docs/testing.md` (pruebas, verificador y BD local), `docs/database-contracts.md` (contratos de BD), `docs/runbooks/deploy.md` (publicación), `CONTEXT.md` (vocabulario).
 
@@ -71,7 +71,7 @@ Antes de crear carpetas nuevas, usa los nombres de `CONTEXT.md`.
 - **Flujos de acción** (el pipeline de `defineAction`): viven en los `actions*.ts` de `src/app`, con su nombre de módulo. No se crean archivos `*-flow.ts` aparte.
 - **Parseo de entrada** (FormData o campos crudos): `parse-*-input.ts` o `*-input.ts`, con funciones `parse*`.
 - **Variables**: `result` para un valor `Result<T>` y `formData` para un `FormData`. No uses `res`, `r`, `outcome`, `fd` ni `form` para estos tipos.
-- **Inyección de dependencias**: cuándo pasar `deps` y cuándo usar `vi.mock` se decide en [ADR 0025](adr/0025-cuando-inyectar-dependencias.md).
+- **Inyección de dependencias**: cuándo pasar `deps` y cuándo usar `vi.mock` se decide en [ADR 0028](adr/0028-inyeccion-en-comandos-con-logica.md).
 - **Unidades de tiempo**: nombres completos (`hours`, `minutes`, `seconds`), nunca una letra (`h`, `m`, `s`).
 
 ## 6. Pruebas

@@ -1,20 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findCustomerByEmail, findCustomerByPhone } from "../data/customers.repo";
+import { describe, expect, it, vi } from "vitest";
+import type { DuplicateCandidate } from "@/features/customers/domain/duplicates";
 import {
   checkPermanentCustomerByPhone,
   findArchivedCustomerByContact,
   rejectArchivedDuplicate,
+  type CustomerDuplicatesDeps,
 } from "./customer-duplicates";
 
-vi.mock("../data/customers.repo", () => ({
-  findCustomerByEmail: vi.fn(),
-  findCustomerByPhone: vi.fn(),
-}));
-
-const mockedFindCustomerByEmail = vi.mocked(findCustomerByEmail);
-const mockedFindCustomerByPhone = vi.mocked(findCustomerByPhone);
-
-function customer(overrides: Record<string, unknown> = {}) {
+function customer(overrides: Partial<DuplicateCandidate> = {}): DuplicateCandidate {
   return {
     id: "customer-1",
     first_name: "Ana",
@@ -27,42 +20,45 @@ function customer(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("customer duplicate guards", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-    mockedFindCustomerByEmail.mockResolvedValue(null);
-    mockedFindCustomerByPhone.mockResolvedValue(null);
-  });
+/** Fakes tipados: por defecto no hay coincidencias en la base. */
+function makeDeps(overrides: Partial<CustomerDuplicatesDeps> = {}): CustomerDuplicatesDeps {
+  return {
+    findCustomerByPhone: vi.fn<CustomerDuplicatesDeps["findCustomerByPhone"]>(async () => null),
+    findCustomerByEmail: vi.fn<CustomerDuplicatesDeps["findCustomerByEmail"]>(async () => null),
+    ...overrides,
+  };
+}
 
+describe("customer duplicate guards", () => {
   it("ignores blank phone values and temporary customers in permanent duplicate checks", async () => {
-    await expect(checkPermanentCustomerByPhone("salon-1", " ")).resolves.toEqual({
+    const deps = makeDeps();
+    await expect(checkPermanentCustomerByPhone("salon-1", " ", deps)).resolves.toEqual({
       exists: false,
     });
-    expect(mockedFindCustomerByPhone).not.toHaveBeenCalled();
+    expect(deps.findCustomerByPhone).not.toHaveBeenCalled();
 
-    mockedFindCustomerByPhone.mockResolvedValue(customer({ is_temporary: true }) as never);
-    await expect(checkPermanentCustomerByPhone("salon-1", "60000000")).resolves.toEqual({
+    deps.findCustomerByPhone = vi.fn(async () => customer({ is_temporary: true }));
+    await expect(checkPermanentCustomerByPhone("salon-1", "60000000", deps)).resolves.toEqual({
       exists: false,
     });
   });
 
   it("marks permanent phone duplicates as active or archived", async () => {
-    mockedFindCustomerByPhone.mockResolvedValue(customer({ is_active: false }) as never);
+    const deps = makeDeps({ findCustomerByPhone: async () => customer({ is_active: false }) });
 
-    await expect(checkPermanentCustomerByPhone("salon-1", "60000000")).resolves.toEqual({
+    await expect(checkPermanentCustomerByPhone("salon-1", "60000000", deps)).resolves.toEqual({
       exists: true,
       archived: true,
     });
   });
 
   it("finds an archived customer by phone or email and returns a display-safe match", async () => {
-    mockedFindCustomerByPhone.mockResolvedValue(null);
-    mockedFindCustomerByEmail.mockResolvedValue(
-      customer({ id: "archived-1", is_active: false }) as never
-    );
+    const deps = makeDeps({
+      findCustomerByEmail: async () => customer({ id: "archived-1", is_active: false }),
+    });
 
     await expect(
-      findArchivedCustomerByContact("salon-1", "60000000", "ana@example.com")
+      findArchivedCustomerByContact("salon-1", "60000000", "ana@example.com", deps)
     ).resolves.toEqual({
       id: "archived-1",
       name: "Ana Vega",
@@ -72,14 +68,15 @@ describe("customer duplicate guards", () => {
   });
 
   it("rejects creates that would duplicate archived permanent customer history", async () => {
-    mockedFindCustomerByPhone.mockResolvedValue(
-      customer({ id: "archived-1", is_active: false }) as never
-    );
-
-    const result = await rejectArchivedDuplicate("salon-1", {
-      phone: "60000000",
-      email: null,
+    const deps = makeDeps({
+      findCustomerByPhone: async () => customer({ id: "archived-1", is_active: false }),
     });
+
+    const result = await rejectArchivedDuplicate(
+      "salon-1",
+      { phone: "60000000", email: null },
+      deps
+    );
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain("Ya existe un cliente");

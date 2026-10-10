@@ -4,7 +4,6 @@
 import type {
   CommercialLimitMetric,
   CommercialPlan,
-  EffectivePlanLimit,
   PlatformModule,
 } from "@/features/billing/domain/commercial-plan";
 import type { CommercialAddon } from "@/features/billing/domain/salon-extras";
@@ -46,7 +45,9 @@ export function makeMetric(overrides: Partial<CommercialLimitMetric> = {}): Comm
   };
 }
 
-export function makeLimit(overrides: Partial<EffectivePlanLimit> = {}): EffectivePlanLimit {
+type SalonPlanLimitView = SalonSubscriptionDetail["limits"][number];
+
+export function makeLimit(overrides: Partial<SalonPlanLimitView> = {}): SalonPlanLimitView {
   return {
     metric: makeMetric(),
     maxValue: 100,
@@ -57,6 +58,7 @@ export function makeLimit(overrides: Partial<EffectivePlanLimit> = {}): Effectiv
     remaining: 60,
     percentage: 40,
     warningLevel: "none",
+    messageCode: null,
     message: "",
     ...overrides,
   };

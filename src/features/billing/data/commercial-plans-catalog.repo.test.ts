@@ -13,10 +13,13 @@ import {
   findActiveMetrics,
   findPlanCatalog,
   findPlanWithChildren,
+  findPlanWithChildrenAtAcceptance,
   savePlanLimit,
   savePlanModule,
   saveCommercialPlan,
 } from "./commercial-plans.repo";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Catálogo comercial (planes, módulos y límites). Es configuración global
 // cross-tenant: no lleva salon_id, pero sus tablas hijas se filtran por plan_id.
@@ -68,7 +71,7 @@ describe("findPlanCatalog", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await findPlanCatalog();
+    await findPlanCatalog(ADMIN_PROOF);
 
     const expectations: Array<[string, string]> = [
       ["platform_modules", "sort_order"],
@@ -79,7 +82,6 @@ describe("findPlanCatalog", () => {
     ];
     for (const [table, orderColumn] of expectations) {
       const query = firstQueryOn(fake, table);
-      expect(query, table).toBeDefined();
       expect(argsOf(query, "order")).toEqual([orderColumn, { ascending: true }]);
     }
     expect(argsOf(firstQueryOn(fake, "commercial_plans"), "select")?.[0]).toEqual(
@@ -134,7 +136,7 @@ describe("findPlanCatalog", () => {
     });
     useFake(fake);
 
-    const catalog = await findPlanCatalog();
+    const catalog = await findPlanCatalog(ADMIN_PROOF);
 
     expect(catalog.modules).toEqual([
       {
@@ -188,7 +190,7 @@ describe("findPlanCatalog", () => {
   it("devuelve un catálogo vacío cuando no hay filas", async () => {
     useFake(createBillingSupabaseFake());
 
-    expect(await findPlanCatalog()).toEqual({ modules: [], metrics: [], plans: [] });
+    expect(await findPlanCatalog(ADMIN_PROOF)).toEqual({ modules: [], metrics: [], plans: [] });
   });
 
   it("propaga el error de cualquiera de las consultas", async () => {
@@ -198,7 +200,7 @@ describe("findPlanCatalog", () => {
       })
     );
 
-    await expect(findPlanCatalog()).rejects.toBeInstanceOf(Error);
+    await expect(findPlanCatalog(ADMIN_PROOF)).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -232,7 +234,7 @@ describe("findPlanWithChildren", () => {
     });
     useFake(fake);
 
-    expect(await findPlanWithChildren("missing")).toBeNull();
+    expect(await findPlanWithChildren(ADMIN_PROOF, "missing")).toBeNull();
     expect(queriesOn(fake, "commercial_plan_modules")).toHaveLength(0);
     expect(queriesOn(fake, "commercial_plan_limits")).toHaveLength(0);
   });
@@ -262,7 +264,7 @@ describe("findPlanWithChildren", () => {
     });
     useFake(fake);
 
-    const plan = await findPlanWithChildren("plan-1");
+    const plan = await findPlanWithChildren(ADMIN_PROOF, "plan-1");
 
     expect(argsOf(firstQueryOn(fake, "commercial_plans"), "eq")).toEqual(["id", "plan-1"]);
     expect(argsOf(firstQueryOn(fake, "commercial_plan_modules"), "eq")).toEqual(["plan_id", "plan-1"]);
@@ -292,7 +294,7 @@ describe("findPlanWithChildren", () => {
       })
     );
 
-    await expect(findPlanWithChildren("plan-1")).rejects.toBeInstanceOf(Error);
+    await expect(findPlanWithChildren(ADMIN_PROOF, "plan-1")).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -313,7 +315,7 @@ describe("saveCommercialPlan", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    const id = await saveCommercialPlan({ ...values, id: "plan-1" });
+    const id = await saveCommercialPlan(ADMIN_PROOF, { ...values, id: "plan-1" });
 
     expect(id).toBe("plan-1");
     const query = firstQueryOn(fake, "commercial_plans");
@@ -338,7 +340,7 @@ describe("saveCommercialPlan", () => {
     });
     useFake(fake);
 
-    expect(await saveCommercialPlan(values)).toBe("plan-nuevo");
+    expect(await saveCommercialPlan(ADMIN_PROOF, values)).toBe("plan-nuevo");
     const query = firstQueryOn(fake, "commercial_plans");
     expect(argsOf(query, "insert")?.[0]).toEqual(expect.objectContaining({ code: "pro", monthly_price: 49 }));
     expect(argsOf(query, "select")).toEqual(["id"]);
@@ -347,7 +349,7 @@ describe("saveCommercialPlan", () => {
   it("falla con mensaje propio cuando la inserción no devuelve fila", async () => {
     useFake(createBillingSupabaseFake({ tables: { commercial_plans: { data: null, error: null } } }));
 
-    await expect(saveCommercialPlan(values)).rejects.toThrow("No se pudo crear el plan.");
+    await expect(saveCommercialPlan(ADMIN_PROOF, values)).rejects.toThrow("No se pudo crear el plan.");
   });
 
   it("propaga el error de la inserción", async () => {
@@ -357,7 +359,7 @@ describe("saveCommercialPlan", () => {
       })
     );
 
-    await expect(saveCommercialPlan(values)).rejects.toBeInstanceOf(Error);
+    await expect(saveCommercialPlan(ADMIN_PROOF, values)).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -366,7 +368,7 @@ describe("archiveCommercialPlan y deleteCommercialPlan", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await archiveCommercialPlan("plan-1");
+    await archiveCommercialPlan(ADMIN_PROOF, "plan-1");
 
     const query = firstQueryOn(fake, "commercial_plans");
     expect(argsOf(query, "update")).toEqual([{ status: "archived" }]);
@@ -378,7 +380,7 @@ describe("archiveCommercialPlan y deleteCommercialPlan", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await deleteCommercialPlan("plan-1");
+    await deleteCommercialPlan(ADMIN_PROOF, "plan-1");
 
     const query = firstQueryOn(fake, "commercial_plans");
     expect(query.calls.map((call) => call.method)).toEqual(["delete", "eq"]);
@@ -392,8 +394,8 @@ describe("archiveCommercialPlan y deleteCommercialPlan", () => {
       })
     );
 
-    await expect(archiveCommercialPlan("plan-1")).rejects.toBeInstanceOf(Error);
-    await expect(deleteCommercialPlan("plan-1")).rejects.toBeInstanceOf(Error);
+    await expect(archiveCommercialPlan(ADMIN_PROOF, "plan-1")).rejects.toBeInstanceOf(Error);
+    await expect(deleteCommercialPlan(ADMIN_PROOF, "plan-1")).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -402,7 +404,7 @@ describe("savePlanModule y savePlanLimit", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await savePlanModule({ planId: "plan-1", moduleKey: "reports", enabled: false });
+    await savePlanModule(ADMIN_PROOF, { planId: "plan-1", moduleKey: "reports", enabled: false });
 
     const query = firstQueryOn(fake, "commercial_plan_modules");
     expect(argsOf(query, "upsert")).toEqual([
@@ -415,7 +417,7 @@ describe("savePlanModule y savePlanLimit", () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
-    await savePlanLimit({
+    await savePlanLimit(ADMIN_PROOF, {
       planId: "plan-1",
       metricKey: "employees_active",
       maxValue: null,
@@ -449,10 +451,10 @@ describe("savePlanModule y savePlanLimit", () => {
     );
 
     await expect(
-      savePlanModule({ planId: "plan-1", moduleKey: "reports", enabled: true })
+      savePlanModule(ADMIN_PROOF, { planId: "plan-1", moduleKey: "reports", enabled: true })
     ).rejects.toBeInstanceOf(Error);
     await expect(
-      savePlanLimit({
+      savePlanLimit(ADMIN_PROOF, {
         planId: "plan-1",
         metricKey: "x",
         maxValue: 1,
@@ -461,5 +463,24 @@ describe("savePlanModule y savePlanLimit", () => {
         countScope: "monthly",
       })
     ).rejects.toBeInstanceOf(Error);
+  });
+});
+
+describe("findPlanWithChildrenAtAcceptance (alta por invitación, sin prueba)", () => {
+  it("lee el plan con sus módulos y límites usando el cliente de servicio", async () => {
+    const fake = createBillingSupabaseFake({
+      tables: {
+        commercial_plans: { data: planRow("plan-1"), error: null },
+        commercial_plan_modules: { data: [], error: null },
+        commercial_plan_limits: { data: [], error: null },
+      },
+    });
+    useFake(fake);
+
+    const plan = await findPlanWithChildrenAtAcceptance("plan-1");
+
+    expect(plan?.id).toBe("plan-1");
+    expect(queriesOn(fake, "commercial_plan_modules")).toHaveLength(1);
+    expect(queriesOn(fake, "commercial_plan_limits")).toHaveLength(1);
   });
 });

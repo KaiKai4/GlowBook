@@ -16,6 +16,7 @@ export {
 export { checkPlanLimit } from "./use-cases/plan-limits";
 export { readEffectivePlanOrNull } from "./use-cases/effective-plan-fallback";
 export { isActionableLimitWarning } from "./domain/commercial-plan";
+export { planLimitMessage } from "./messages";
 export { evaluatePaymentStanding } from "./domain/payment-standing";
 export type { PaymentStanding } from "./domain/payment-standing";
 
@@ -28,3 +29,7 @@ export { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from 
 export { resolveSalonPlanAlertConfig } from "./use-cases/plan-limits";
 export { getSalonSubscriptionDetail } from "./use-cases/salon-subscription-detail";
 export { readAssignPlanInput, readGiveAddonInput, readManualExtraInput, readRegisterPaymentInput, type AssignPlanInput, type GiveAddonInput, type ManualExtraInput, type RegisterPaymentInput } from "./use-cases/parse-salon-subscription-input";
+
+export type { CommercialAddon, CommercialLimitMetric, PlatformModule, CommercialPlan } from "./use-cases/commercial-plans";
+export type { SalonSubscriptionDetail, SalonExtraView } from "./use-cases/salon-subscription-detail";
+export type { SubscriptionsPageData } from "./use-cases/salon-subscriptions-page";

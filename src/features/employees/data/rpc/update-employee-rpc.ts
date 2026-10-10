@@ -1,8 +1,7 @@
 import "server-only";
 
-import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { parseRpcResponse } from "@/infra/supabase/rpc-response";
+import { callIdempotentRpc } from "@/infra/supabase/call-idempotent-rpc";
 import { z } from "@/infra/validation/zod";
 
 const UpdateEmployeeProfileResultSchema = z.object({
@@ -39,19 +38,13 @@ export async function updateEmployeeProfileRpc(
   input: UpdateEmployeeProfileRpcInput
 ): Promise<{ employeeId: string }> {
   const supabase = await createSupabaseServerClient();
-  const payload = toCanonicalPayload({
+  const parsed = await callIdempotentRpc(supabase, "update_employee_profile", {
     employee_id: input.employeeId,
     fields: input.fields,
     service_ids: input.serviceIds,
     category_ids: input.categoryIds,
     unlink_profile: input.unlinkProfile,
     idempotency_key: input.idempotencyKey,
-  });
-  const response = await supabase.rpc("update_employee_profile", { payload });
-  const parsed = parseRpcResponse(
-    "update_employee_profile",
-    response,
-    UpdateEmployeeProfileResultSchema
-  );
+  }, UpdateEmployeeProfileResultSchema);
   return { employeeId: parsed.employee_id };
 }

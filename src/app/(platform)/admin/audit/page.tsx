@@ -2,7 +2,7 @@ import Link from "next/link";
 import { History, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
-import type { PlatformAuditLogViewModel } from "@/features/platform/use-cases/get-platform-audit-log";
+import type { PlatformAuditLogViewModel } from "@/features/platform";
 import { getPlatformAuditLog } from "@/features/platform";
 import { AuditTable } from "./audit-table";
 

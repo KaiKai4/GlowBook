@@ -22,6 +22,11 @@ export function isClosedStatus(status: string): boolean {
   return CLOSED_SET.has(status);
 }
 
+/** Una cita se muestra en el calendario salvo que esté cancelada (las completadas y no-show sí se ven). */
+export function isVisibleOnCalendar(status: string): boolean {
+  return status !== "cancelled";
+}
+
 /** La agenda de una cita (fecha, hora, servicios) solo se edita mientras no está cerrada. */
 export function canEditSchedule(status: string): boolean {
   return !isClosedStatus(status);

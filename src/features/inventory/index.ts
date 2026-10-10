@@ -13,3 +13,6 @@ export {
 export { getInventoryProductOptions } from "./use-cases/inventory-product-options";
 export { deleteInventoryProduct, updateInventoryProductProfile, getInventoryPage } from "./use-cases/inventory-products";
 export { createInventoryProductWithPlanLimits, transferInventoryStockWithPlanLimits } from "./use-cases/manage-inventory-products";
+
+export type { InventoryProductOption } from "./use-cases/inventory-product-options";
+export type { InventoryPageView, InventoryProductView } from "./use-cases/inventory-products";

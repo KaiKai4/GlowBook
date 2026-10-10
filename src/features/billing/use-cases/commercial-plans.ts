@@ -4,6 +4,7 @@ import "server-only";
 import { z } from "@/infra/validation/zod";
 
 import { err, ok, type Result } from "@/infra/result";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import type { CommercialPlan } from "../domain/commercial-plan";
 import type { CommercialAddon } from "../domain/salon-extras";
 import {
@@ -54,6 +55,27 @@ const PlanLimitSchema = z.object({
   countScope: z.enum(["current", "monthly", "billing_cycle", "lifetime"]).default("current"),
 });
 
+/** Dependencias de los comandos de escritura del catálogo de planes. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface CommercialPlanCommandDeps {
+  saveCommercialPlan: typeof saveCommercialPlan;
+  archiveCommercialPlan: typeof archiveCommercialPlan;
+  countPlanAssignments: typeof countPlanAssignments;
+  deleteCommercialPlan: typeof deleteCommercialPlan;
+  savePlanModule: typeof savePlanModule;
+  savePlanLimit: typeof savePlanLimit;
+  publishAuditEvent: typeof publishAuditEvent;
+}
+
+const defaultCommercialPlanCommandDeps: CommercialPlanCommandDeps = {
+  saveCommercialPlan,
+  archiveCommercialPlan,
+  countPlanAssignments,
+  deleteCommercialPlan,
+  savePlanModule,
+  savePlanLimit,
+  publishAuditEvent,
+};
+
 export interface CommercialPlansPageData {
   modules: Awaited<ReturnType<typeof findPlanCatalog>>["modules"];
   metrics: Awaited<ReturnType<typeof findPlanCatalog>>["metrics"];
@@ -63,10 +85,10 @@ export interface CommercialPlansPageData {
 }
 
 /** Catálogo minimo de planes para otros features (ej. invitaciones). */
-export async function getPlanCatalogSummary(): Promise<
+export async function getPlanCatalogSummary(proof: PlatformAdminProof): Promise<
   Array<Pick<CommercialPlan, "id" | "name" | "currency" | "monthlyPrice" | "trialDays" | "status">>
 > {
-  const catalog = await findPlanCatalog();
+  const catalog = await findPlanCatalog(proof);
   return catalog.plans.map((plan) => ({
     id: plan.id,
     name: plan.name,
@@ -77,11 +99,11 @@ export async function getPlanCatalogSummary(): Promise<
   }));
 }
 
-export async function getCommercialPlansPage(): Promise<CommercialPlansPageData> {
+export async function getCommercialPlansPage(proof: PlatformAdminProof): Promise<CommercialPlansPageData> {
   const [catalog, addons, subscription] = await Promise.all([
-    findPlanCatalog(),
-    findCommercialAddons(),
-    findSubscriptionRows(),
+    findPlanCatalog(proof),
+    findCommercialAddons(proof),
+    findSubscriptionRows(proof),
   ]);
 
   const assignmentsByPlan: Record<string, number> = {};
@@ -99,18 +121,20 @@ export async function getCommercialPlansPage(): Promise<CommercialPlansPageData>
 }
 
 export async function saveCommercialPlanConfig(
+  proof: PlatformAdminProof,
   input: z.input<typeof PlanSchema>,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: CommercialPlanCommandDeps = defaultCommercialPlanCommandDeps
 ): Promise<Result<string>> {
   const parsed = PlanSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
-    const id = await saveCommercialPlan({
+    const id = await deps.saveCommercialPlan(proof, {
       ...parsed.data,
       code: normalizeKey(parsed.data.code || parsed.data.name),
       currency: parsed.data.currency.toUpperCase(),
     });
-    const warnings = await publishAuditEvent("billing.plan_saved", { ...commercialPlanAudit(actorUserId, id), action: "commercial_plan_saved" });
+    const warnings = await deps.publishAuditEvent("billing.plan_saved", { ...commercialPlanAudit(actorUserId, id), action: "commercial_plan_saved" });
     return ok(id, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el plan."));
@@ -118,10 +142,15 @@ export async function saveCommercialPlanConfig(
 }
 
 /** Archiva el plan: lo retira del catálogo sin tocar las asignaciones existentes. */
-export async function archivePlan(planId: string, actorUserId?: string | null): Promise<Result<void>> {
+export async function archivePlan(
+  proof: PlatformAdminProof,
+  planId: string,
+  actorUserId?: string | null,
+  deps: CommercialPlanCommandDeps = defaultCommercialPlanCommandDeps
+): Promise<Result<void>> {
   try {
-    await archiveCommercialPlan(planId);
-    const warnings = await publishAuditEvent("billing.plan_archived", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_archived" });
+    await deps.archiveCommercialPlan(proof, planId);
+    const warnings = await deps.publishAuditEvent("billing.plan_archived", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_archived" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo archivar el plan."));
@@ -131,11 +160,16 @@ export async function archivePlan(planId: string, actorUserId?: string | null): 
 const PLAN_HAS_ASSIGNMENTS_MESSAGE = "El plan tiene salones asignados. Archívalo en lugar de eliminarlo.";
 
 /** Borra el plan solo si ningun salon lo tiene asignado; el conteo lo hace el servidor. */
-export async function deletePlan(planId: string, actorUserId?: string | null): Promise<Result<void>> {
+export async function deletePlan(
+  proof: PlatformAdminProof,
+  planId: string,
+  actorUserId?: string | null,
+  deps: CommercialPlanCommandDeps = defaultCommercialPlanCommandDeps
+): Promise<Result<void>> {
   try {
-    if ((await countPlanAssignments(planId)) > 0) return err(PLAN_HAS_ASSIGNMENTS_MESSAGE);
-    await deleteCommercialPlan(planId);
-    const warnings = await publishAuditEvent("billing.plan_deleted", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_deleted" });
+    if ((await deps.countPlanAssignments(proof, planId)) > 0) return err(PLAN_HAS_ASSIGNMENTS_MESSAGE);
+    await deps.deleteCommercialPlan(proof, planId);
+    const warnings = await deps.publishAuditEvent("billing.plan_deleted", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_deleted" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo eliminar el plan."));
@@ -149,8 +183,10 @@ const PlanModulesBatchSchema = z.object({
 });
 
 export async function saveCommercialPlanModulesBatch(
+  proof: PlatformAdminProof,
   input: z.input<typeof PlanModulesBatchSchema>,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: CommercialPlanCommandDeps = defaultCommercialPlanCommandDeps
 ): Promise<Result<void>> {
   const parsed = PlanModulesBatchSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
@@ -158,10 +194,10 @@ export async function saveCommercialPlanModulesBatch(
   try {
     await Promise.all(
       parsed.data.allModuleKeys.map((moduleKey) =>
-        savePlanModule({ planId: parsed.data.planId, moduleKey, enabled: enabled.has(moduleKey) })
+        deps.savePlanModule(proof, { planId: parsed.data.planId, moduleKey, enabled: enabled.has(moduleKey) })
       )
     );
-    const warnings = await publishAuditEvent("billing.plan_module_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_module_saved" });
+    const warnings = await deps.publishAuditEvent("billing.plan_module_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_module_saved" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudieron guardar los módulos del plan."));
@@ -174,16 +210,18 @@ const PlanLimitsBatchSchema = z.object({
 });
 
 export async function saveCommercialPlanLimitsBatch(
+  proof: PlatformAdminProof,
   input: z.input<typeof PlanLimitsBatchSchema>,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: CommercialPlanCommandDeps = defaultCommercialPlanCommandDeps
 ): Promise<Result<void>> {
   const parsed = PlanLimitsBatchSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
     await Promise.all(
-      parsed.data.limits.map((limit) => savePlanLimit({ ...limit, planId: parsed.data.planId }))
+      parsed.data.limits.map((limit) => deps.savePlanLimit(proof, { ...limit, planId: parsed.data.planId }))
     );
-    const warnings = await publishAuditEvent("billing.plan_limit_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_limit_saved" });
+    const warnings = await deps.publishAuditEvent("billing.plan_limit_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_limit_saved" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudieron guardar los límites del plan."));

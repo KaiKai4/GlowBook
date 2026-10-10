@@ -32,6 +32,18 @@ describe("expense category totals", () => {
     ]);
   });
 
+  it("trata el texto libre vacío o de solo espacios como 'Otro' y ignora el texto en otras categorías", () => {
+    const totals = aggregateByCategory([
+      { category: "other", customCategory: "   ", amount: 10 },
+      { category: "rent", customCategory: "Local", amount: 20 },
+    ]);
+
+    expect(totals).toEqual([
+      { category: "rent", label: "Alquiler", amount: 20 },
+      { category: "other", label: "Otro", amount: 10 },
+    ]);
+  });
+
   it("reports the top category or null", () => {
     expect(topCategory([])).toBeNull();
     expect(

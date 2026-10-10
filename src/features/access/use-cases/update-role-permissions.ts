@@ -10,10 +10,20 @@ import {
 } from "./permissions";
 import { rolePermissionsErrorMessage } from "./role-permission-errors";
 
+/** Dependencias del caso de uso. Producción usa la RPC real; los tests inyectan fakes. */
+export interface UpdateRolePermissionsDeps {
+  replaceRolePermissionsRpc: (roleId: string, permissionKeys: string[]) => Promise<void>;
+}
+
+const defaultUpdateRolePermissionsDeps: UpdateRolePermissionsDeps = {
+  replaceRolePermissionsRpc,
+};
+
 // Una sola llamada RPC: los permisos anteriores se borran y se insertan los nuevos en la misma
 // transaccion, sin dejar el rol a medias. El salon sale del claim (no del parametro).
 export async function updateRolePermissions(
-  input: UpdateRolePermissionsInput
+  input: UpdateRolePermissionsInput,
+  deps: UpdateRolePermissionsDeps = defaultUpdateRolePermissionsDeps
 ): Promise<Result<void>> {
   const permissionKeys = uniquePermissionKeys(input.permission_keys);
   if (!hasOnlyKnownPermissionKeys(permissionKeys)) {
@@ -21,7 +31,7 @@ export async function updateRolePermissions(
   }
 
   try {
-    await replaceRolePermissionsRpc(input.role_id, permissionKeys);
+    await deps.replaceRolePermissionsRpc(input.role_id, permissionKeys);
     return { ok: true, value: undefined };
   } catch (error) {
     const message = rolePermissionsErrorMessage(error);

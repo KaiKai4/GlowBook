@@ -3,6 +3,7 @@ import {
   assertTransition,
   canEditSchedule,
   isClosedStatus,
+  isVisibleOnCalendar,
   REMINDABLE_APPOINTMENT_STATUSES,
   shouldBlockCalendar,
 } from "./lifecycle";
@@ -30,6 +31,16 @@ describe("appointment lifecycle", () => {
     expect(shouldBlockCalendar("completed")).toBe(false);
     expect(shouldBlockCalendar("cancelled")).toBe(false);
     expect(shouldBlockCalendar("no_show")).toBe(false);
+  });
+});
+
+describe("visibilidad en calendario", () => {
+  it("cubre los cinco estados: solo la cancelada queda oculta", () => {
+    expect(isVisibleOnCalendar("scheduled")).toBe(true);
+    expect(isVisibleOnCalendar("confirmed")).toBe(true);
+    expect(isVisibleOnCalendar("completed")).toBe(true);
+    expect(isVisibleOnCalendar("cancelled")).toBe(false);
+    expect(isVisibleOnCalendar("no_show")).toBe(true);
   });
 });
 

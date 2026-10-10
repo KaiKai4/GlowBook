@@ -38,12 +38,12 @@ describe("InviteLinkReveal", () => {
     await flushAsync();
 
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/invite/tok-abc`);
-    expect(getButtonByText(mounted.container, "Copiado")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Copiado")?.textContent).toBe("Copiado");
 
     vi.advanceTimersByTime(2000);
     await flushAsync();
 
-    expect(getButtonByText(mounted.container, "Copiar")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Copiar")?.textContent).toBe("Copiar");
   });
 
   it("si el portapapeles rechaza la copia muestra un aviso y no marca el enlace como copiado", async () => {
@@ -54,6 +54,6 @@ describe("InviteLinkReveal", () => {
     await flushAsync();
 
     expect(mounted.container.textContent).toContain("No se pudo copiar");
-    expect(getButtonByText(mounted.container, "Copiar")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Copiar")?.textContent).toBe("Copiar");
   });
 });

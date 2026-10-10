@@ -5,13 +5,14 @@ import {
 import { err, ok, type Result } from "@/infra/result";
 import { captureError } from "@/infra/observability";
 import { z } from "@/infra/validation/zod";
+import { emailSchema } from "@/infra/validation/email";
 import { publishAuditEvent } from "@/features/audit";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 // El plan es obligatorio: el salón debe nacer con su plan asignado para que
 // el owner nunca vea funcionalidades fuera de lo contratado.
 const InviteSchema = z.object({
-  email: z.string().email("Email inválido"),
+  email: emailSchema,
   planId: z.string().uuid("Selecciona el plan que tendrá el salón."),
 });
 
@@ -21,7 +22,23 @@ export interface InviteSalonInput extends z.input<typeof InviteSchema> {
   actorIsPlatformAdmin: boolean;
 }
 
-export async function inviteSalon(input: InviteSalonInput): Promise<Result<string>> {
+/** Dependencias de los casos de uso de invitación. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface InviteSalonDeps {
+  createSalonInvitation: typeof createSalonInvitation;
+  regenerateSalonInvitationToken: typeof regenerateSalonInvitationToken;
+  publishAuditEvent: typeof publishAuditEvent;
+}
+
+const defaultInviteSalonDeps: InviteSalonDeps = {
+  createSalonInvitation,
+  regenerateSalonInvitationToken,
+  publishAuditEvent,
+};
+
+export async function inviteSalon(
+  input: InviteSalonInput,
+  deps: InviteSalonDeps = defaultInviteSalonDeps
+): Promise<Result<string>> {
   if (!input.actorIsPlatformAdmin) return err("No autorizado.");
 
   const parsed = InviteSchema.safeParse(input);
@@ -30,8 +47,8 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
   const emailDomain = parsed.data.email.split("@").at(-1) ?? "unknown";
 
   try {
-    const token = await createSalonInvitation(parsed.data.email, parsed.data.planId);
-    const warnings = await publishAuditEvent("platform.salon_invited", {
+    const token = await deps.createSalonInvitation(parsed.data.email, parsed.data.planId);
+    const warnings = await deps.publishAuditEvent("platform.salon_invited", {
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "succeeded",
@@ -45,7 +62,7 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
       action: "invite_salon",
       metadata: { emailDomain },
     });
-    await publishAuditEvent("platform.salon_invited", {
+    await deps.publishAuditEvent("platform.salon_invited", {
       actorUserId: input.actorUserId ?? null,
       action: "invite_salon",
       status: "failed",
@@ -61,16 +78,19 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
  * Reemplaza el token de una invitación pendiente. El enlace anterior queda
  * invalidado y el nuevo se muestra una sola vez.
  */
-export async function regenerateSalonInvitation(input: {
-  invitationId: string;
-  actorUserId?: string | null;
-  actorIsPlatformAdmin: boolean;
-}): Promise<Result<string>> {
+export async function regenerateSalonInvitation(
+  input: {
+    invitationId: string;
+    actorUserId?: string | null;
+    actorIsPlatformAdmin: boolean;
+  },
+  deps: InviteSalonDeps = defaultInviteSalonDeps
+): Promise<Result<string>> {
   if (!input.actorIsPlatformAdmin) return err("No autorizado.");
 
   try {
-    const token = await regenerateSalonInvitationToken(input.invitationId);
-    const warnings = await publishAuditEvent("platform.salon_invitation_regenerated", {
+    const token = await deps.regenerateSalonInvitationToken(input.invitationId);
+    const warnings = await deps.publishAuditEvent("platform.salon_invitation_regenerated", {
       actorUserId: input.actorUserId ?? null,
       action: "regenerate_salon_invitation",
       status: "succeeded",
@@ -84,7 +104,7 @@ export async function regenerateSalonInvitation(input: {
       action: "regenerate_salon_invitation",
       metadata: { invitationId: input.invitationId },
     });
-    await publishAuditEvent("platform.salon_invitation_regenerated", {
+    await deps.publishAuditEvent("platform.salon_invitation_regenerated", {
       actorUserId: input.actorUserId ?? null,
       action: "regenerate_salon_invitation",
       status: "failed",

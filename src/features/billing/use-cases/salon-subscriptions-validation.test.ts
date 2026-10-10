@@ -3,6 +3,8 @@ import { assignSalonAddonConfig, saveSalonManualExtraConfig } from "./salon-plan
 import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
 import { assignSalonPlan, recordSalonPlanPayment, saveSalonPlanOverride } from "../data/salon-subscriptions.repo";
 import { err } from "@/infra/result";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Validación de entrada de suscripciones: los rechazos deben ocurrir antes de
 // cualquier escritura en la base de datos.
@@ -44,31 +46,31 @@ describe("suscripciones de salón: validación de entrada", () => {
   });
 
   it("asignar plan exige salón y plan válidos sin escribir", async () => {
-    expect(await assignSalonCommercialPlanConfig({ salonId: "x", planId: PLAN_ID })).toEqual(
+    expect(await assignSalonCommercialPlanConfig(ADMIN_PROOF, { salonId: "x", planId: PLAN_ID })).toEqual(
       err("Selecciona un salón.")
     );
-    expect(await assignSalonCommercialPlanConfig({ salonId: SALON_ID, planId: "x" })).toEqual(
+    expect(await assignSalonCommercialPlanConfig(ADMIN_PROOF, { salonId: SALON_ID, planId: "x" })).toEqual(
       err("Selecciona un plan.")
     );
     expect(assignSalonPlan).not.toHaveBeenCalled();
   });
 
   it("registrar un pago rechaza montos negativos sin escribir", async () => {
-    expect(await registerSalonPlanPaymentConfig({ salonId: SALON_ID, amount: -5 })).toEqual(
+    expect(await registerSalonPlanPaymentConfig(ADMIN_PROOF, { salonId: SALON_ID, amount: -5 })).toEqual(
       err("El monto no puede ser negativo.")
     );
     expect(recordSalonPlanPayment).not.toHaveBeenCalled();
   });
 
   it("asignar un extra exige un extra válido del catálogo", async () => {
-    expect(await assignSalonAddonConfig({ salonId: SALON_ID, addonId: "x" })).toEqual(
+    expect(await assignSalonAddonConfig(ADMIN_PROOF, { salonId: SALON_ID, addonId: "x" })).toEqual(
       err("Selecciona un extra del catálogo.")
     );
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
 
   it("el extra manual exige un salón válido antes de calcular overrides", async () => {
-    expect(await saveSalonManualExtraConfig({ salonId: "x" })).toEqual(err("Selecciona un salón."));
+    expect(await saveSalonManualExtraConfig(ADMIN_PROOF, { salonId: "x" })).toEqual(err("Selecciona un salón."));
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
 });

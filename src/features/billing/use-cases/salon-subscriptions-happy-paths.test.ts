@@ -15,6 +15,8 @@ import { plan } from "@/test/billing-plan-fixtures";
 import { err, ok } from "@/infra/result";
 import { assignSalonAddonConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
 import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Caminos felices de los casos de uso de suscripción: validan la entrada,
 // persisten con los datos derivados y auditan la acción.
@@ -78,7 +80,7 @@ describe("asignar plan al salón", () => {
     vi.mocked(findPlanWithChildren).mockResolvedValue(null);
     vi.mocked(findAssignmentStartsAt).mockResolvedValue(null);
 
-    expect(await assignSalonCommercialPlanConfig({ salonId: SALON_ID, planId: PLAN_ID })).toEqual(
+    expect(await assignSalonCommercialPlanConfig(ADMIN_PROOF, { salonId: SALON_ID, planId: PLAN_ID })).toEqual(
       err("El plan seleccionado no existe.")
     );
     expect(assignSalonPlan).not.toHaveBeenCalled();
@@ -88,13 +90,13 @@ describe("asignar plan al salón", () => {
     vi.mocked(findPlanWithChildren).mockResolvedValue(plan({ trialDays: 0 }));
     vi.mocked(findAssignmentStartsAt).mockResolvedValue(null);
 
-    const result = await assignSalonCommercialPlanConfig(
+    const result = await assignSalonCommercialPlanConfig(ADMIN_PROOF, 
       { salonId: SALON_ID, planId: PLAN_ID, notes: "  Migrado desde Excel  " },
       "actor-1"
     );
 
     expect(result).toEqual(ok(undefined));
-    expect(assignSalonPlan).toHaveBeenCalledWith(
+    expect(assignSalonPlan).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({
         salonId: SALON_ID,
         planId: PLAN_ID,
@@ -115,7 +117,7 @@ describe("registrar pago de mensualidad", () => {
   it("rechaza el pago de un salón que no tiene plan asignado", async () => {
     vi.mocked(findAssignmentForPayment).mockResolvedValue(null);
 
-    expect(await registerSalonPlanPaymentConfig({ salonId: SALON_ID, amount: 25 })).toEqual(
+    expect(await registerSalonPlanPaymentConfig(ADMIN_PROOF, { salonId: SALON_ID, amount: 25 })).toEqual(
       err("Este salón no tiene plan asignado. Asígnale un plan primero.")
     );
     expect(recordSalonPlanPayment).not.toHaveBeenCalled();
@@ -126,13 +128,13 @@ describe("registrar pago de mensualidad", () => {
     vi.mocked(findAssignmentForPayment).mockResolvedValue({ plan_id: PLAN_ID, current_period_end: null });
     vi.mocked(findPlanWithChildren).mockResolvedValue(plan({ currency: "USD" }));
 
-    const result = await registerSalonPlanPaymentConfig(
+    const result = await registerSalonPlanPaymentConfig(ADMIN_PROOF, 
       { salonId: SALON_ID, amount: 25, paidAt: "2026-05-10", notes: "Transferencia" },
       "actor-1"
     );
 
     expect(result).toEqual(ok(undefined));
-    expect(recordSalonPlanPayment).toHaveBeenCalledWith(
+    expect(recordSalonPlanPayment).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({
         salonId: SALON_ID,
         planId: PLAN_ID,
@@ -142,7 +144,7 @@ describe("registrar pago de mensualidad", () => {
         notes: "Transferencia",
       })
     );
-    expect(activatePaidPeriod).toHaveBeenCalledWith(
+    expect(activatePaidPeriod).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ salonId: SALON_ID, periodStart: expect.any(String), periodEnd: expect.any(String) })
     );
     expect(publishAuditEvent).toHaveBeenCalledWith("billing.payment_registered", expect.objectContaining({ action: "commercial_plan_payment_recorded", targetResourceId: SALON_ID }));
@@ -156,12 +158,12 @@ describe("extras comerciales del salón", () => {
 
   it("rechaza un extra inexistente o inactivo sin guardar la sobreescritura", async () => {
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce(null);
-    expect(await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID })).toEqual(
+    expect(await assignSalonAddonConfig(ADMIN_PROOF, { salonId: SALON_ID, addonId: ADDON_ID })).toEqual(
       err("El extra del catálogo no existe.")
     );
 
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce(moduleAddon({ status: "archived" }));
-    expect(await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID })).toEqual(
+    expect(await assignSalonAddonConfig(ADMIN_PROOF, { salonId: SALON_ID, addonId: ADDON_ID })).toEqual(
       err("Este extra no está activo en el catálogo.")
     );
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
@@ -170,10 +172,10 @@ describe("extras comerciales del salón", () => {
   it("asigna un extra de módulo habilitando el módulo y sin límite", async () => {
     vi.mocked(findCommercialAddonById).mockResolvedValue(moduleAddon());
 
-    const result = await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID, reason: "Compra web" });
+    const result = await assignSalonAddonConfig(ADMIN_PROOF, { salonId: SALON_ID, addonId: ADDON_ID, reason: "Compra web" });
 
     expect(result).toEqual(ok(undefined));
-    expect(saveSalonPlanOverride).toHaveBeenCalledWith(
+    expect(saveSalonPlanOverride).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({
         salonId: SALON_ID,
         moduleKey: "reports",
@@ -193,29 +195,29 @@ describe("extras comerciales del salón", () => {
       moduleAddon({ kind: "limit_boost", moduleKey: null, metricKey: "customers_active", limitDelta: 20 })
     );
 
-    await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID, quantity: 3 });
+    await assignSalonAddonConfig(ADMIN_PROOF, { salonId: SALON_ID, addonId: ADDON_ID, quantity: 3 });
 
-    expect(saveSalonPlanOverride).toHaveBeenCalledWith(
+    expect(saveSalonPlanOverride).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ moduleEnabled: null, maxDelta: 20, metricKey: "customers_active", quantity: 3 })
     );
   });
 
   it("exige un módulo o un límite al guardar un extra manual", async () => {
-    expect(await saveSalonManualExtraConfig({ salonId: SALON_ID })).toEqual(
+    expect(await saveSalonManualExtraConfig(ADMIN_PROOF, { salonId: SALON_ID })).toEqual(
       err("Selecciona un módulo o un límite para el extra.")
     );
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
 
   it("guarda un extra manual de módulo habilitado por defecto", async () => {
-    const result = await saveSalonManualExtraConfig({
+    const result = await saveSalonManualExtraConfig(ADMIN_PROOF, {
       salonId: SALON_ID,
       moduleKey: "reports",
       reason: "Cortesía",
     });
 
     expect(result).toEqual(ok(undefined));
-    expect(saveSalonPlanOverride).toHaveBeenCalledWith(
+    expect(saveSalonPlanOverride).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({
         salonId: SALON_ID,
         moduleKey: "reports",

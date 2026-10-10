@@ -1,35 +1,32 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { hashInvitationToken } from "@/infra/auth/invitation-tokens";
 import { captureError } from "@/infra/observability";
-import { findEmployeeById } from "../data/employees.repo";
-import { findAssignableEmployeeRole, findEmployeeAccessProfile, unlinkEmployeeProfile } from "../data/employee-access.repo";
-import { deleteEmployeeInvitations, deletePendingEmployeeInvitations, insertEmployeeInvitation } from "../data/employee-invitations.repo";
-import { deleteEmployeeAuthUser } from "../data/employee-auth.repo";
-import { createEmployeeInviteForExistingEmployee, replacePendingEmployeeInvitation, clearEmployeeInvitations } from "./employee-invitation-issue";
+import { findAssignableEmployeeRole } from "../data/employee-access.repo";
+import {
+  deleteEmployeeInvitations,
+  deletePendingEmployeeInvitations,
+  insertEmployeeInvitation,
+} from "../data/employee-invitations.repo";
+import {
+  clearEmployeeInvitations,
+  createEmployeeInviteForExistingEmployee,
+  replacePendingEmployeeInvitation,
+  type ClearEmployeeInvitationsDeps,
+  type CreateInviteForExistingEmployeeDeps,
+  type ReplacePendingEmployeeInvitationDeps,
+} from "./employee-invitation-issue";
 
+// La validación del rol (employee-role) sigue leyendo por el repositorio: se mockea solo esa lectura.
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("../data/employees.repo", () => ({
-  findEmployeeById: vi.fn(),
-}));
-
+// Las lecturas de acceso se mockean aquí; las escrituras llegan como fakes tipados.
 vi.mock("../data/employee-access.repo", () => ({
   findAssignableEmployeeRole: vi.fn(),
   findEmployeeAccessProfile: vi.fn(),
   unlinkEmployeeProfile: vi.fn(),
   updateEmployeeProfileRole: vi.fn(),
-}));
-
-vi.mock("../data/employee-invitations.repo", () => ({
-  deleteEmployeeInvitations: vi.fn(),
-  deletePendingEmployeeInvitations: vi.fn(),
-  insertEmployeeInvitation: vi.fn(),
-}));
-
-vi.mock("../data/employee-auth.repo", () => ({
-  deleteEmployeeAuthUser: vi.fn(),
 }));
 
 function employeeRow(overrides: Partial<{ email: string | null; profile_id: string | null }> = {}) {
@@ -46,14 +43,25 @@ const PROFILE_ID = "profile-1";
 const NOW = new Date("2026-10-09T12:00:00.000Z");
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const mockedCaptureError = vi.mocked(captureError);
-const mockedFindEmployeeById = vi.mocked(findEmployeeById);
-const mockedDeleteEmployeeInvitations = vi.mocked(deleteEmployeeInvitations);
-const mockedDeletePending = vi.mocked(deletePendingEmployeeInvitations);
 const mockedFindAssignableRole = vi.mocked(findAssignableEmployeeRole);
-const mockedFindAccessProfile = vi.mocked(findEmployeeAccessProfile);
-const mockedInsertInvitation = vi.mocked(insertEmployeeInvitation);
-const mockedUnlinkProfile = vi.mocked(unlinkEmployeeProfile);
-const mockedDeleteAuthUser = vi.mocked(deleteEmployeeAuthUser);
+
+// Fakes tipados de las dependencias de escritura y de la lectura del colaborador.
+const mockedFindEmployeeById = vi.fn<CreateInviteForExistingEmployeeDeps["findEmployeeById"]>();
+const mockedDeleteEmployeeInvitations = vi.fn<typeof deleteEmployeeInvitations>();
+const mockedDeletePending = vi.fn<typeof deletePendingEmployeeInvitations>();
+const mockedInsertInvitation = vi.fn<typeof insertEmployeeInvitation>();
+
+const replaceDeps: ReplacePendingEmployeeInvitationDeps = {
+  deletePendingInvitations: mockedDeletePending,
+  insertInvitation: mockedInsertInvitation,
+};
+const createDeps: CreateInviteForExistingEmployeeDeps = {
+  ...replaceDeps,
+  findEmployeeById: mockedFindEmployeeById,
+};
+const clearDeps: ClearEmployeeInvitationsDeps = {
+  deleteInvitations: mockedDeleteEmployeeInvitations,
+};
 
 describe("invitaciones de acceso (emision y limpieza)", () => {
   beforeEach(() => {
@@ -61,14 +69,8 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
     mockedFindAssignableRole.mockResolvedValue({ data: { id: "role-1" }, error: null });
-    mockedFindAccessProfile.mockResolvedValue({
-      data: { role_id: "role-1", is_owner: false },
-      error: null,
-    });
     mockedDeletePending.mockResolvedValue({ error: null });
     mockedInsertInvitation.mockResolvedValue({ error: null });
-    mockedDeleteAuthUser.mockResolvedValue({ data: undefined, error: null });
-    mockedUnlinkProfile.mockResolvedValue({ error: null });
     mockedDeleteEmployeeInvitations.mockResolvedValue({ error: null });
   });
 
@@ -78,12 +80,15 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
 
   describe("replacePendingEmployeeInvitation", () => {
     it("guarda solo el hash del token y vence a los 7 días", async () => {
-      const result = await replacePendingEmployeeInvitation({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        email: "ana@salon.test",
-        roleId: "role-1",
-      });
+      const result = await replacePendingEmployeeInvitation(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          email: "ana@salon.test",
+          roleId: "role-1",
+        },
+        replaceDeps
+      );
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -100,12 +105,15 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     });
 
     it("inválida primero las invitaciones pendientes del colaborador en el salón", async () => {
-      await replacePendingEmployeeInvitation({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        email: "ana@salon.test",
-        roleId: null,
-      });
+      await replacePendingEmployeeInvitation(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          email: "ana@salon.test",
+          roleId: null,
+        },
+        replaceDeps
+      );
 
       expect(mockedDeletePending).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID);
       expect(mockedDeletePending.mock.invocationCallOrder[0]).toBeLessThan(
@@ -114,12 +122,15 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     });
 
     it("sin rol asignado guarda role_id nulo y no consulta roles", async () => {
-      await replacePendingEmployeeInvitation({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        email: "ana@salon.test",
-        roleId: null,
-      });
+      await replacePendingEmployeeInvitation(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          email: "ana@salon.test",
+          roleId: null,
+        },
+        replaceDeps
+      );
 
       expect(mockedFindAssignableRole).not.toHaveBeenCalled();
       expect(mockedInsertInvitation).toHaveBeenCalledWith(
@@ -130,12 +141,15 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     it("rechaza un rol que no es asignable para el salón sin tocar invitaciones", async () => {
       mockedFindAssignableRole.mockResolvedValue({ data: null, error: null });
 
-      const result = await replacePendingEmployeeInvitation({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        email: "ana@salon.test",
-        roleId: "role-ajeno",
-      });
+      const result = await replacePendingEmployeeInvitation(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          email: "ana@salon.test",
+          roleId: "role-ajeno",
+        },
+        replaceDeps
+      );
 
       expect(result).toEqual({
         ok: false,
@@ -149,12 +163,15 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     it("informa cuando falla la verificación del rol y registra el error", async () => {
       mockedFindAssignableRole.mockResolvedValue({ data: null, error: { message: "caido" } });
 
-      const result = await replacePendingEmployeeInvitation({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        email: "ana@salon.test",
-        roleId: "role-1",
-      });
+      const result = await replacePendingEmployeeInvitation(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          email: "ana@salon.test",
+          roleId: "role-1",
+        },
+        replaceDeps
+      );
 
       expect(result).toEqual({
         ok: false,
@@ -170,12 +187,15 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     it("no genera enlace nuevo si no pudo invalidar el anterior", async () => {
       mockedDeletePending.mockResolvedValue({ error: { message: "bloqueado" } });
 
-      const result = await replacePendingEmployeeInvitation({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        email: "ana@salon.test",
-        roleId: null,
-      });
+      const result = await replacePendingEmployeeInvitation(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          email: "ana@salon.test",
+          roleId: null,
+        },
+        replaceDeps
+      );
 
       expect(result).toEqual({
         ok: false,
@@ -188,12 +208,15 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     it("informa cuando la inserción del nuevo enlace falla", async () => {
       mockedInsertInvitation.mockResolvedValue({ error: { message: "sin cupo" } });
 
-      const result = await replacePendingEmployeeInvitation({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        email: "ana@salon.test",
-        roleId: null,
-      });
+      const result = await replacePendingEmployeeInvitation(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          email: "ana@salon.test",
+          roleId: null,
+        },
+        replaceDeps
+      );
 
       expect(result).toEqual({
         ok: false,
@@ -205,14 +228,17 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
   describe("createEmployeeInviteForExistingEmployee", () => {
     it("crea invitación con el email recortado para un colaborador sin acceso", async () => {
       mockedFindEmployeeById.mockResolvedValue(
-        employeeRow({ email: "  ana@salon.test  " }) as never
+        employeeRow({ email: "  ana@salon.test  " })
       );
 
-      const result = await createEmployeeInviteForExistingEmployee({
-        employeeId: EMPLOYEE_ID,
-        salonId: SALON_ID,
-        roleId: "",
-      });
+      const result = await createEmployeeInviteForExistingEmployee(
+        {
+          employeeId: EMPLOYEE_ID,
+          salonId: SALON_ID,
+          roleId: "",
+        },
+        createDeps
+      );
 
       expect(result.ok).toBe(true);
       expect(mockedInsertInvitation).toHaveBeenCalledWith(
@@ -221,26 +247,32 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     });
 
     it("devuelve 'no encontrado' si el colaborador no existe", async () => {
-      mockedFindEmployeeById.mockResolvedValue(null as never);
+      mockedFindEmployeeById.mockResolvedValue(null);
 
       await expect(
-        createEmployeeInviteForExistingEmployee({
-          employeeId: EMPLOYEE_ID,
-          salonId: SALON_ID,
-          roleId: null,
-        })
+        createEmployeeInviteForExistingEmployee(
+          {
+            employeeId: EMPLOYEE_ID,
+            salonId: SALON_ID,
+            roleId: null,
+          },
+          createDeps
+        )
       ).resolves.toEqual({ ok: false, error: "Colaborador no encontrado." });
     });
 
     it("no permite invitar a un colaborador sin email", async () => {
-      mockedFindEmployeeById.mockResolvedValue(employeeRow({ email: null }) as never);
+      mockedFindEmployeeById.mockResolvedValue(employeeRow({ email: null }));
 
       await expect(
-        createEmployeeInviteForExistingEmployee({
-          employeeId: EMPLOYEE_ID,
-          salonId: SALON_ID,
-          roleId: null,
-        })
+        createEmployeeInviteForExistingEmployee(
+          {
+            employeeId: EMPLOYEE_ID,
+            salonId: SALON_ID,
+            roleId: null,
+          },
+          createDeps
+        )
       ).resolves.toEqual({
         ok: false,
         error: "Este colaborador no tiene email registrado.",
@@ -249,15 +281,18 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
 
     it("no invita a un colaborador que ya tiene cuenta vinculada", async () => {
       mockedFindEmployeeById.mockResolvedValue(
-        employeeRow({ profile_id: PROFILE_ID }) as never
+        employeeRow({ profile_id: PROFILE_ID })
       );
 
       await expect(
-        createEmployeeInviteForExistingEmployee({
-          employeeId: EMPLOYEE_ID,
-          salonId: SALON_ID,
-          roleId: null,
-        })
+        createEmployeeInviteForExistingEmployee(
+          {
+            employeeId: EMPLOYEE_ID,
+            salonId: SALON_ID,
+            roleId: null,
+          },
+          createDeps
+        )
       ).resolves.toEqual({
         ok: false,
         error: "Este colaborador ya tiene acceso al sistema.",
@@ -268,7 +303,7 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
 
   describe("clearEmployeeInvitations", () => {
     it("limpia las invitaciones del colaborador dentro del salón", async () => {
-      const result = await clearEmployeeInvitations(EMPLOYEE_ID, SALON_ID);
+      const result = await clearEmployeeInvitations(EMPLOYEE_ID, SALON_ID, clearDeps);
 
       expect(result).toEqual({ ok: true, value: undefined });
       expect(mockedDeleteEmployeeInvitations).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID);
@@ -277,7 +312,7 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
     it("informa si la limpieza falla", async () => {
       mockedDeleteEmployeeInvitations.mockResolvedValue({ error: { message: "bloqueado" } });
 
-      const result = await clearEmployeeInvitations(EMPLOYEE_ID, SALON_ID);
+      const result = await clearEmployeeInvitations(EMPLOYEE_ID, SALON_ID, clearDeps);
 
       expect(result).toEqual({
         ok: false,

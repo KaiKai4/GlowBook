@@ -5,7 +5,7 @@ import { History, Settings } from "lucide-react";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
 import { PageHeader } from "@/components/ui/page-header";
 import type { PaymentMethod } from "@/features/payments/domain/payment-methods";
-import type { SalonBusinessDay as BusinessDay } from "@/features/salon/use-cases/get-salon-settings";
+import type { SalonBusinessDay as BusinessDay } from "@/features/salon";
 import { useSalonName } from "./use-salon-name";
 import { useBusinessHours } from "./use-business-hours";
 import { usePaymentMethods } from "./use-payment-methods";

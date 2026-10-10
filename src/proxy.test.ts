@@ -85,7 +85,7 @@ describe("proxy security headers", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("content-security-policy")).toContain("report-to csp-endpoint");
-    expect(response.headers.get("x-request-id")).toBeTruthy();
+    expect(response.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/);
   });
 });
 
@@ -101,7 +101,7 @@ describe("proxy with a Supabase session cookie", () => {
     expect(response.headers.get("location")).toBe(`${BASE}/`);
     expect(response.headers.get("set-cookie")).toContain("sb-project-auth-token=refreshed");
     expect(response.headers.get("content-security-policy")).toContain("report-uri /api/csp-report");
-    expect(response.headers.get("x-request-id")).toBeTruthy();
+    expect(response.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it("passes a logged-in user through on protected routes with the security headers", async () => {

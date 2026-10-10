@@ -3,7 +3,8 @@ import "server-only";
 import type { Database } from "@/types/database.types";
 import type { CommercialAddon, CommercialAddonKind, CommercialAddonStatus } from "../domain/salon-extras";
 import { parseAddonKind, parseAddonStatus, parseFeatureKey } from "./billing-enums";
-import { billingDb, countOrThrow, rowsOrThrow, throwOnError } from "./billing-db";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+import { countOrThrow, platformDb, rowsOrThrow, throwOnError } from "./billing-db";
 
 const ADDON_COLUMNS =
   "id, code, name, description, kind, module_key, metric_key, limit_delta, currency, monthly_price, status, sort_order";
@@ -41,14 +42,14 @@ function mapAddon(row: AddonDbRow): CommercialAddon {
   };
 }
 
-export async function findCommercialAddons(): Promise<CommercialAddon[]> {
-  const supabase = billingDb();
+export async function findCommercialAddons(proof: PlatformAdminProof): Promise<CommercialAddon[]> {
+  const supabase = platformDb(proof);
   const rows = await supabase.from("commercial_addons").select(ADDON_COLUMNS).order("sort_order", { ascending: true });
   return rowsOrThrow<AddonDbRow>(rows).map(mapAddon);
 }
 
-export async function findCommercialAddonById(addonId: string): Promise<CommercialAddon | null> {
-  const supabase = billingDb();
+export async function findCommercialAddonById(proof: PlatformAdminProof, addonId: string): Promise<CommercialAddon | null> {
+  const supabase = platformDb(proof);
   const { data, error } = await supabase
     .from("commercial_addons")
     .select(ADDON_COLUMNS)
@@ -58,7 +59,7 @@ export async function findCommercialAddonById(addonId: string): Promise<Commerci
   return data ? mapAddon(data) : null;
 }
 
-export async function saveCommercialAddon(values: {
+export async function saveCommercialAddon(proof: PlatformAdminProof, values: {
   id?: string;
   code: string;
   name: string;
@@ -72,7 +73,7 @@ export async function saveCommercialAddon(values: {
   status: CommercialAddonStatus;
   sortOrder: number;
 }): Promise<string> {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   const payload = {
     code: values.code,
     name: values.name,
@@ -98,18 +99,18 @@ export async function saveCommercialAddon(values: {
   return data.id;
 }
 
-export async function archiveCommercialAddon(addonId: string): Promise<void> {
-  const supabase = billingDb();
+export async function archiveCommercialAddon(proof: PlatformAdminProof, addonId: string): Promise<void> {
+  const supabase = platformDb(proof);
   throwOnError(await supabase.from("commercial_addons").update({ status: "archived" }).eq("id", addonId));
 }
 
-export async function deleteCommercialAddon(addonId: string): Promise<void> {
-  const supabase = billingDb();
+export async function deleteCommercialAddon(proof: PlatformAdminProof, addonId: string): Promise<void> {
+  const supabase = platformDb(proof);
   throwOnError(await supabase.from("commercial_addons").delete().eq("id", addonId));
 }
 
-export async function countAddonAssignments(addonId: string): Promise<number> {
-  const supabase = billingDb();
+export async function countAddonAssignments(proof: PlatformAdminProof, addonId: string): Promise<number> {
+  const supabase = platformDb(proof);
   return countOrThrow(
     await supabase
       .from("salon_plan_overrides")

@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 
 import { getSalonIdentity } from "@/features/salon";
@@ -64,9 +65,9 @@ export async function getAppointmentDetail({
       : null,
     start_time: appointment.start_time,
     end_time: appointment.end_time,
-    subtotal_price: appointment.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0),
-    discount_amount: Number(appointment.discount_amount ?? 0),
-    total_price: Number(appointment.total_price ?? 0),
+    subtotal_price: appointment.items.reduce((sum, item) => sum + toAmount(item.price), 0),
+    discount_amount: toAmount(appointment.discount_amount),
+    total_price: toAmount(appointment.total_price),
     completion_price_note: appointment.completion_price_note || null,
     notes: appointment.notes,
     timezone: salon?.timezone ?? "America/Panama",
@@ -82,8 +83,8 @@ export async function getAppointmentDetail({
         : "Colaborador no asignado",
       start_time: item.start_time,
       end_time: item.end_time,
-      price: Number(item.price ?? 0),
-      discountAmount: Number(item.discount_amount ?? 0),
+      price: toAmount(item.price),
+      discountAmount: toAmount(item.discount_amount),
     })),
   };
 }

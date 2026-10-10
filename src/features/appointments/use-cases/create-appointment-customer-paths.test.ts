@@ -1,25 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import {
-  findAppointmentCreationResources,
-  findExceptionDatesByEmployeeForCommand,
-  findOccupiedSlotsByEmployeeForCommand,
-  findWorkSchedulesByEmployeeForCommand,
-  type AppointmentCreationResources,
-} from "../data/appointment-commands.repo";
-import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
+import type { AppointmentCreationResources } from "../data/appointment-commands.repo";
 import type { CreateAppointmentInput } from "../schemas";
 import { createAppointment } from "./create-appointment";
+import { createAppointmentCommandFakes, createDepsFrom } from "@/test/appointment-command-fakes";
 
-vi.mock("../data/appointment-commands.repo", () => ({
-  findAppointmentCreationResources: vi.fn(),
-  findExceptionDatesByEmployeeForCommand: vi.fn(),
-  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
-  findWorkSchedulesByEmployeeForCommand: vi.fn(),
-}));
-vi.mock("../data/rpc/create-appointment", () => ({
-  createAppointmentWithRpc: vi.fn(),
-}));
+const fakes = createAppointmentCommandFakes();
+const runCreate: typeof createAppointment = (input, ctx) => createAppointment(input, ctx, createDepsFrom(fakes));
+
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const salonId = "00000000-0000-4000-8000-0000000000e1";
@@ -33,11 +21,11 @@ const deps = { salonId, userId, idempotencyKey };
 // 2030-01-01 es martes. 09:00 en Panamá son las 14:00 UTC.
 const startIso = "2030-01-01T14:00:00.000Z";
 
-const mockedResources = vi.mocked(findAppointmentCreationResources);
-const mockedRpc = vi.mocked(createAppointmentWithRpc);
-const mockedSchedules = vi.mocked(findWorkSchedulesByEmployeeForCommand);
-const mockedExceptions = vi.mocked(findExceptionDatesByEmployeeForCommand);
-const mockedOccupied = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
+const mockedResources = fakes.findAppointmentCreationResources;
+const mockedRpc = fakes.createAppointmentWithRpc;
+const mockedSchedules = fakes.findWorkSchedulesByEmployeeForCommand;
+const mockedExceptions = fakes.findExceptionDatesByEmployeeForCommand;
+const mockedOccupied = fakes.findOccupiedSlotsByEmployeeForCommand;
 const mockedCaptureError = vi.mocked(captureError);
 
 const validAssignment: AppointmentCreationResources["assignments"][number] = {
@@ -105,7 +93,7 @@ describe("createAppointment: cliente nuevo", () => {
   });
 
   it("envía new_customer al RPC en lugar de customer_id, sin el teléfono vacío", async () => {
-    const result = await createAppointment(
+    const result = await runCreate(
       newCustomerInput({ first_name: "Luis", last_name: "Soto", phone: "   " }),
       deps
     );
@@ -122,7 +110,7 @@ describe("createAppointment: cliente nuevo", () => {
   });
 
   it("conserva el teléfono del cliente nuevo sin espacios sobrantes", async () => {
-    await createAppointment(
+    await runCreate(
       newCustomerInput({ first_name: "Luis", last_name: "Soto", phone: "  +50761112233 " }),
       deps
     );
@@ -135,7 +123,7 @@ describe("createAppointment: cliente nuevo", () => {
   });
 
   it("no rechaza el cliente nuevo por no existir todavía", async () => {
-    const result = await createAppointment(
+    const result = await runCreate(
       newCustomerInput({ first_name: "Luis", last_name: "Soto" }),
       deps
     );
@@ -153,7 +141,7 @@ describe("createAppointment: cliente nuevo", () => {
         "Este cliente no está disponible para nuevas citas. Restáuralo desde Clientes para conservar su historial.",
     });
 
-    expect(await createAppointment(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
+    expect(await runCreate(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
       ok: false,
       error:
         "Este cliente no está disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.",
@@ -164,7 +152,7 @@ describe("createAppointment: cliente nuevo", () => {
     const failure = new Error("resources query failed");
     mockedResources.mockRejectedValue(failure);
 
-    expect(await createAppointment(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
+    expect(await runCreate(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
       ok: false,
       error: "Datos inválidos.",
     });
@@ -176,7 +164,7 @@ describe("createAppointment: cliente nuevo", () => {
     const failure = new Error("schedule query failed");
     mockedSchedules.mockRejectedValue(failure);
 
-    expect(await createAppointment(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
+    expect(await runCreate(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
       ok: false,
       error: "No se pudo validar la disponibilidad del profesional.",
     });
@@ -194,7 +182,7 @@ describe("createAppointment: cliente existente no encontrado", () => {
     mockedResources.mockResolvedValue({ ...newCustomerResources(), customerExists: false });
 
     expect(
-      await createAppointment(
+      await runCreate(
         {
           customer_id: "00000000-0000-4000-8000-0000000000e3",
           start_time: startIso,
@@ -211,7 +199,7 @@ describe("createAppointment: cliente existente no encontrado", () => {
   it("rechaza si el salón no tiene configuración", async () => {
     mockedResources.mockResolvedValue({ ...newCustomerResources(), salonConfig: null });
 
-    expect(await createAppointment(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
+    expect(await runCreate(newCustomerInput({ first_name: "Luis", last_name: "Soto" }), deps)).toEqual({
       ok: false,
       error: "Salón no encontrado.",
     });

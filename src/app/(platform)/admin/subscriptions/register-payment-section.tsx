@@ -3,12 +3,12 @@ import { useIntentFormAction } from "@/components/forms/use-intent-form-action";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionDetail } from "@/features/billing";
 import { todayIso } from "@/features/billing/domain/assignment-schedule";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";
 import { registerPaymentAction } from "./actions";
-import { formatDate } from "./subscription-format";
+import { formatShortDateFromISO } from "@/infra/format/dates";
 
 export function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDetail }) {
   const toast = useToast();
@@ -19,7 +19,7 @@ export function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDe
     () => toast.warning(SAVED_WITH_WARNINGS_MESSAGE)
   );
   const period = detail.assignment?.currentPeriodStart && detail.assignment.currentPeriodEnd
-    ? `${formatDate(detail.assignment.currentPeriodStart)} — ${formatDate(detail.assignment.currentPeriodEnd)}`
+    ? `${formatShortDateFromISO(detail.assignment.currentPeriodStart)} — ${formatShortDateFromISO(detail.assignment.currentPeriodEnd)}`
     : null;
 
   return (
@@ -72,13 +72,13 @@ export function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDe
                   <p className="text-sm font-semibold text-fg">
                     {payment.currency} {payment.amount.toFixed(2)}
                     <span className="ml-2 text-xs font-normal text-fg-subtle">
-                      pagado el {formatDate(payment.paidAt)}
+                      pagado el {formatShortDateFromISO(payment.paidAt)}
                     </span>
                   </p>
                   {payment.notes ? <p className="mt-0.5 text-xs text-fg-subtle">{payment.notes}</p> : null}
                 </div>
                 <span className="rounded-lg bg-success-subtle px-2.5 py-1 text-xs font-semibold text-success-strong">
-                  {formatDate(payment.periodStart)} — {formatDate(payment.periodEnd)}
+                  {formatShortDateFromISO(payment.periodStart)} — {formatShortDateFromISO(payment.periodEnd)}
                 </span>
               </div>
             ))}

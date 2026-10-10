@@ -1,23 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { checkPlanLimit } from "@/features/billing";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { captureError } from "@/infra/observability";
-import { updateCustomer } from "@/features/customers/data/customers.repo";
 import type { Database } from "@/types/database.types";
-import { archiveCustomer, reactivateCustomer } from "./customer-lifecycle";
-
-vi.mock("@/features/customers/data/customers.repo", () => ({
-  updateCustomer: vi.fn(),
-}));
-
-vi.mock("@/features/billing", () => ({
-  checkPlanLimit: vi.fn(),
-}));
+import { ok, type Result } from "@/infra/result";
+import {
+  archiveCustomer,
+  reactivateCustomer,
+  type CustomerLifecycleDeps,
+} from "./customer-lifecycle";
 
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-const mockedUpdate = vi.mocked(updateCustomer);
 const mockedCaptureError = vi.mocked(captureError);
 
 const SALON_ID = "salon-1";
@@ -38,18 +32,31 @@ const customerRow: Database["public"]["Tables"]["customers"]["Row"] = {
   updated_at: "2026-06-01T00:00:00.000Z",
 };
 
+/** Fakes tipados: por defecto hay cupo y la actualización funciona. */
+interface LifecycleFakes {
+  deps: CustomerLifecycleDeps;
+  assertQuota: Mock<CustomerLifecycleDeps["assertQuota"]>;
+  updateCustomer: Mock<CustomerLifecycleDeps["updateCustomer"]>;
+}
+
+function makeFakes(): LifecycleFakes {
+  const assertQuota = vi.fn<CustomerLifecycleDeps["assertQuota"]>(async (): Promise<Result<void>> => ok(undefined));
+  const updateCustomer = vi.fn<CustomerLifecycleDeps["updateCustomer"]>(async () => customerRow);
+  return { deps: { assertQuota, updateCustomer }, assertQuota, updateCustomer };
+}
+
 describe("customer-lifecycle (ramas de error)", () => {
+  let fakes: LifecycleFakes;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: true, value: undefined });
+    fakes = makeFakes();
   });
 
   describe("reactivateCustomer", () => {
     it("marca al cliente como activo y permanente dentro del salón", async () => {
-      mockedUpdate.mockResolvedValue(customerRow);
-
-      expect(await reactivateCustomer("cust-1", SALON_ID)).toEqual({ ok: true, value: undefined });
-      expect(mockedUpdate).toHaveBeenCalledWith("cust-1", SALON_ID, {
+      expect(await reactivateCustomer("cust-1", SALON_ID, fakes.deps)).toEqual({ ok: true, value: undefined });
+      expect(fakes.updateCustomer).toHaveBeenCalledWith("cust-1", SALON_ID, {
         is_active: true,
         is_temporary: false,
       });
@@ -57,9 +64,9 @@ describe("customer-lifecycle (ramas de error)", () => {
 
     it("registra el error y devuelve mensaje generico si falla la reactivacion", async () => {
       const failure = new Error("caida");
-      mockedUpdate.mockRejectedValue(failure);
+      fakes.updateCustomer.mockRejectedValue(failure);
 
-      expect(await reactivateCustomer("cust-1", SALON_ID)).toEqual({
+      expect(await reactivateCustomer("cust-1", SALON_ID, fakes.deps)).toEqual({
         ok: false,
         error: "No se pudo reactivar el cliente.",
       });
@@ -69,23 +76,21 @@ describe("customer-lifecycle (ramas de error)", () => {
 
   describe("archiveCustomer", () => {
     it("archiva solo desactivando el cliente y devuelve el mensaje de trazabilidad", async () => {
-      mockedUpdate.mockResolvedValue(customerRow);
-
-      expect(await archiveCustomer("cust-1", SALON_ID)).toEqual({
+      expect(await archiveCustomer("cust-1", SALON_ID, fakes.deps)).toEqual({
         ok: true,
         value: {
           outcome: "archived",
           message: "Cliente archivado conservando su información para trazabilidad.",
         },
       });
-      expect(mockedUpdate).toHaveBeenCalledWith("cust-1", SALON_ID, { is_active: false });
+      expect(fakes.updateCustomer).toHaveBeenCalledWith("cust-1", SALON_ID, { is_active: false });
     });
 
     it("registra el error y devuelve mensaje generico si falla el archivado", async () => {
       const failure = new Error("caida");
-      mockedUpdate.mockRejectedValue(failure);
+      fakes.updateCustomer.mockRejectedValue(failure);
 
-      expect(await archiveCustomer("cust-1", SALON_ID)).toEqual({
+      expect(await archiveCustomer("cust-1", SALON_ID, fakes.deps)).toEqual({
         ok: false,
         error: "No se pudo archivar el cliente.",
       });

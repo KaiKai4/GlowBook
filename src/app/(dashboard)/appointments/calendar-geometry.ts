@@ -1,3 +1,4 @@
+import { formatLocalDateISO, getZonedTimeParts } from "@/infra/format/dates";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 
 export const DEFAULT_START = 8;
@@ -15,13 +16,8 @@ export function hourLabel(h24: number): { num: number; period: string } {
 }
 
 function getLocalHM(isoStr: string, tz: string): { h: number; m: number } {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
-  }).formatToParts(new Date(isoStr));
-  let h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0");
-  if (h === 24) h = 0;
-  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0");
-  return { h, m };
+  const { minutesOfDay } = getZonedTimeParts(new Date(isoStr), tz);
+  return { h: Math.floor(minutesOfDay / 60), m: minutesOfDay % 60 };
 }
 
 // Effective grid range: starts at the salon's open hour but always widens to keep
@@ -62,7 +58,7 @@ function getMinutesFromCalStart(isoStr: string, tz: string, calStart: number): n
 }
 
 export function getLocalDate(isoStr: string, tz: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(isoStr));
+  return formatLocalDateISO(new Date(isoStr), tz);
 }
 
 export interface PositionedAppointment {

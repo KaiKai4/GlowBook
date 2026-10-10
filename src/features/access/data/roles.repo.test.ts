@@ -7,6 +7,7 @@ import {
 import {
   deleteRole,
   findAllPermissions,
+  findRoleForDelete,
   findRolesWithPermissions,
 } from "./roles.repo";
 
@@ -96,63 +97,49 @@ describe("roles repo", () => {
     });
   });
 
-  describe("deleteRole", () => {
-    it("borra el rol solo si pertenece al salón y no es de sistema", async () => {
-      useTables({
-        roles: [
-          { data: { is_system: false }, error: null },
-          { data: null, error: null },
-        ],
-      });
+  describe("findRoleForDelete", () => {
+    it("consulta el rol acotado al salón, sin decidir sobre él", async () => {
+      useTables({ roles: [{ data: { is_system: true }, error: null }] });
 
-      await deleteRole(ROLE_ID, SALON_ID);
-
+      await expect(findRoleForDelete(ROLE_ID, SALON_ID)).resolves.toEqual({ is_system: true });
       expect(db.callsFor("roles")).toEqual([
         expect.objectContaining({ method: "select" }),
         { table: "roles", method: "eq", args: ["id", ROLE_ID] },
         { table: "roles", method: "eq", args: ["salon_id", SALON_ID] },
         expect.objectContaining({ method: "single" }),
+      ]);
+    });
+
+    it("devuelve null si el rol no existe en el salón", async () => {
+      useTables({ roles: [{ data: null, error: null }] });
+
+      await expect(findRoleForDelete(ROLE_ID, SALON_ID)).resolves.toBeNull();
+    });
+
+    it("propaga el error al buscar el rol", async () => {
+      useTables({ roles: [{ data: null, error: { message: "búsqueda fallida" } }] });
+
+      await expect(findRoleForDelete(ROLE_ID, SALON_ID)).rejects.toEqual({
+        message: "búsqueda fallida",
+      });
+    });
+  });
+
+  describe("deleteRole", () => {
+    it("borra el rol acotado al salón", async () => {
+      useTables({ roles: [{ data: null, error: null }] });
+
+      await deleteRole(ROLE_ID, SALON_ID);
+
+      expect(db.callsFor("roles")).toEqual([
         expect.objectContaining({ method: "delete" }),
         { table: "roles", method: "eq", args: ["id", ROLE_ID] },
         { table: "roles", method: "eq", args: ["salon_id", SALON_ID] },
       ]);
     });
 
-    it("no borra roles de sistema", async () => {
-      useTables({ roles: [{ data: { is_system: true }, error: null }] });
-
-      await expect(deleteRole(ROLE_ID, SALON_ID)).rejects.toThrow(
-        "Los roles de sistema no se pueden eliminar."
-      );
-      expect(db.callsFor("roles").map((call) => call.method)).toEqual([
-        "select",
-        "eq",
-        "eq",
-        "single",
-      ]);
-    });
-
-    it("lanza 'Rol no encontrado.' si el rol no existe en el salón", async () => {
-      useTables({ roles: [{ data: null, error: null }] });
-
-      await expect(deleteRole(ROLE_ID, SALON_ID)).rejects.toThrow("Rol no encontrado.");
-    });
-
-    it("propaga el error al buscar el rol", async () => {
-      useTables({ roles: [{ data: null, error: { message: "búsqueda fallida" } }] });
-
-      await expect(deleteRole(ROLE_ID, SALON_ID)).rejects.toEqual({
-        message: "búsqueda fallida",
-      });
-    });
-
     it("propaga el error al ejecutar el borrado", async () => {
-      useTables({
-        roles: [
-          { data: { is_system: false }, error: null },
-          { data: null, error: { message: "borrado rechazado" } },
-        ],
-      });
+      useTables({ roles: [{ data: null, error: { message: "borrado rechazado" } }] });
 
       await expect(deleteRole(ROLE_ID, SALON_ID)).rejects.toEqual({
         message: "borrado rechazado",

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
 import { inviteSalon, regenerateSalonInvitation } from "@/features/platform/use-cases/invite-salon";
 import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedback-report-status";
@@ -37,7 +37,7 @@ import {
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
@@ -121,7 +121,7 @@ const ACTIONS: Array<[string, () => Promise<unknown>]> = [
 beforeEach(() => {
   vi.clearAllMocks();
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
-  vi.mocked(requirePlatformAdmin).mockRejectedValue(new Error("NEXT_REDIRECT:/login"));
+  vi.mocked(requirePlatformAdminProof).mockRejectedValue(new Error("NEXT_REDIRECT:/login"));
 });
 
 describe("acciones de plataforma: guarda de platform admin", () => {

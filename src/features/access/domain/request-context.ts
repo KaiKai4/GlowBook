@@ -1,4 +1,5 @@
 import type { ProfileWithRole } from "@/types/app.types";
+import type { SalonFeatureKey } from "@/features/salon-features";
 import type { Permission } from "./permission-checks";
 
 /**
@@ -13,6 +14,8 @@ export interface ActionContext {
   requestId: string;
   /** Si el plan del salón incluye el modulo de roles (calculado una vez por request). */
   rolesEnabled: boolean;
+  /** Features del salón deshabilitadas (heredadas); la guarda de módulo de defineAction las usa como respaldo del plan. */
+  disabledFeatures: SalonFeatureKey[];
 }
 
 /**

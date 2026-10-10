@@ -1,3 +1,4 @@
+import { formatWeekdayDayMonth } from "@/infra/format/es-formats";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatTimeTz } from "@/infra/format/dates";
 import type { ReminderAppointment } from "@/features/reminders";
@@ -37,7 +38,7 @@ export function ReminderDateCell({ appt, tz }: { appt: ReminderAppointment; tz: 
     <span className="block whitespace-nowrap">
       <span className="block font-semibold text-brand-700">{formatTimeTz(startTime, tz)}</span>
       <span className="mt-0.5 block text-xs capitalize text-fg-subtle">
-        {startTime.toLocaleDateString("es-PA", { weekday: "short", day: "numeric", month: "short", timeZone: tz })}
+        {formatWeekdayDayMonth(startTime, { weekday: "short", month: "short", timeZone: tz })}
       </span>
     </span>
   );

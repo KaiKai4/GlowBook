@@ -8,7 +8,6 @@ import {
   isPlanAssignmentActive,
   manualExtraName,
   resolveEnabledModules,
-  round2,
 } from "./salon-plan-views";
 
 const appointmentsMetric: CommercialLimitMetric = {
@@ -172,12 +171,5 @@ describe("extraDetail", () => {
     expect(extraDetail(override({ moduleKey: null, metricKey: null, maxDelta: null }), null, metricByKey)).toBe(
       "Ajuste de límite"
     );
-  });
-});
-
-describe("round2", () => {
-  it("redondea a dos decimales", () => {
-    expect(round2(10.126)).toBe(10.13);
-    expect(round2(10)).toBe(10);
   });
 });

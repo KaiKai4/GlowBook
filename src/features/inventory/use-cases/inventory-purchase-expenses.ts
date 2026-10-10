@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 
 import { findInventoryPurchaseHistory } from "../data/inventory.repo";
@@ -12,10 +13,20 @@ export interface InventoryPurchaseExpenseHistoryItem {
   detail: string;
 }
 
+/** Dependencias de la lectura del historial de compras. Producción usa el repo; los tests inyectan fakes. */
+export interface InventoryPurchaseExpenseDeps {
+  findPurchaseHistory: typeof findInventoryPurchaseHistory;
+}
+
+const defaultInventoryPurchaseExpenseDeps: InventoryPurchaseExpenseDeps = {
+  findPurchaseHistory: findInventoryPurchaseHistory,
+};
+
 export async function getInventoryPurchaseExpenseHistory(
-  salonId: string
+  salonId: string,
+  deps: InventoryPurchaseExpenseDeps = defaultInventoryPurchaseExpenseDeps
 ): Promise<InventoryPurchaseExpenseHistoryItem[]> {
-  const purchases = await findInventoryPurchaseHistory(salonId);
+  const purchases = await deps.findPurchaseHistory(salonId);
 
   return purchases.map((purchase) => {
     const itemNames = (purchase.inventory_purchase_items ?? [])
@@ -29,7 +40,7 @@ export async function getInventoryPurchaseExpenseHistory(
     return {
       id: purchase.id,
       date: purchase.purchase_date,
-      amount: Number(purchase.total_cost ?? 0),
+      amount: toAmount(purchase.total_cost),
       commerceName: purchase.supplier_name,
       note: purchase.note,
       createdAt: purchase.created_at,

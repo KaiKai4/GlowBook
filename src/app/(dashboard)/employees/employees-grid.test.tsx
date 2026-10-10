@@ -125,7 +125,7 @@ describe("EmployeesGrid", () => {
     const badge = Array.from(mounted.container.querySelectorAll("span")).find(
       (node) => node.textContent === "Inactivo" && node.querySelector("svg")
     );
-    expect(badge).toBeDefined();
+    expect(badge?.textContent).toBe("Inactivo");
     expect(badge?.className).toContain("rounded-full");
   });
 

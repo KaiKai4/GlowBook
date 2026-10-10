@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "@/infra/result";
 import { createEmployee, updateEmployee } from "./employee-profile-commands";
 import { admitNewEmployee } from "./employee-admission";
-import { createEmployeeProfile, updateEmployeeProfile } from "./employee-profile";
-import { formDataOf } from "@/test/action-fixtures";
+import { createEmployeeProfile } from "./employee-profile-create";
+import { updateEmployeeProfile } from "./employee-profile-update";
 
-vi.mock("./employee-profile", () => ({
+vi.mock("./employee-profile-create", () => ({
   createEmployeeProfile: vi.fn(),
+}));
+vi.mock("./employee-profile-update", () => ({
   updateEmployeeProfile: vi.fn(),
 }));
 vi.mock("./employee-admission", async (importOriginal) => ({
@@ -24,8 +26,25 @@ const checks = {
   checkLoginLimit: vi.fn(async () => ok(undefined)),
 };
 
-const validForm = (extra: Record<string, string> = {}) =>
-  formDataOf({ idempotency_key: KEY, first_name: "Ana", last_name: "Pérez", ...extra });
+const data = {
+  first_name: "Ana",
+  last_name: "Pérez",
+  phone: "",
+  email: "",
+  specialty: "",
+  commission_percentage: 0,
+  service_ids: [],
+  category_ids: [],
+};
+
+const createInput = (extra: { rolesEnabled?: boolean; requestedRoleId?: string | null } = {}) => ({
+  salonId: SALON_ID,
+  rolesEnabled: extra.rolesEnabled ?? true,
+  checks,
+  requestedRoleId: extra.requestedRoleId ?? null,
+  idempotencyKey: KEY,
+  data,
+});
 
 describe("createEmployee", () => {
   beforeEach(() => {
@@ -34,75 +53,42 @@ describe("createEmployee", () => {
     vi.mocked(createEmployeeProfile).mockResolvedValue(ok({ id: EMPLOYEE_ID }));
   });
 
-  it("corta antes de validar la clave y el formulario si la admision falla", async () => {
+  it("corta sin crear el colaborador si la admision falla", async () => {
     vi.mocked(admitNewEmployee).mockResolvedValue(err("Límite de colaboradores alcanzado."));
 
-    const result = await createEmployee(
-      { salonId: SALON_ID, rolesEnabled: true, checks },
-      formDataOf({ first_name: "" })
-    );
+    const result = await createEmployee(createInput());
 
     expect(result).toEqual(err("Límite de colaboradores alcanzado."));
     expect(createEmployeeProfile).not.toHaveBeenCalled();
   });
 
-  it("pide la clave de idempotencia antes de leer el formulario", async () => {
-    const result = await createEmployee(
-      { salonId: SALON_ID, rolesEnabled: false, checks },
-      formDataOf({ first_name: "", last_name: "" })
-    );
-
-    expect(result).toEqual(err("Solicitud inválida. Recarga la página e inténtalo de nuevo."));
-    expect(createEmployeeProfile).not.toHaveBeenCalled();
-  });
-
-  it("devuelve el primer error del formulario sin crear el colaborador", async () => {
-    const result = await createEmployee(
-      { salonId: SALON_ID, rolesEnabled: false, checks },
-      validForm({ first_name: "" })
-    );
-
-    expect(result).toEqual(err("El nombre es obligatorio"));
-    expect(createEmployeeProfile).not.toHaveBeenCalled();
-  });
-
-  it("crea el colaborador con el rol admitido y la clave validada", async () => {
-    const result = await createEmployee(
-      { salonId: SALON_ID, rolesEnabled: true, checks },
-      validForm({ role_id: ROLE_ID })
-    );
+  it("crea el colaborador con el rol admitido y la clave recibida", async () => {
+    const result = await createEmployee(createInput({ requestedRoleId: ROLE_ID }));
 
     expect(admitNewEmployee).toHaveBeenCalledWith({ rolesEnabled: true, requestedRoleId: ROLE_ID, checks });
-    expect(createEmployeeProfile).toHaveBeenCalledWith(
-      SALON_ID,
-      expect.objectContaining({ first_name: "Ana", last_name: "Pérez" }),
-      ROLE_ID,
-      KEY
-    );
+    expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, data, ROLE_ID, KEY);
     expect(result).toEqual(ok({ id: EMPLOYEE_ID }));
   });
 
   it("no pasa rol cuando el salón no tiene roles habilitados", async () => {
-    await createEmployee({ salonId: SALON_ID, rolesEnabled: false, checks }, validForm({ role_id: ROLE_ID }));
+    await createEmployee(createInput({ rolesEnabled: false, requestedRoleId: ROLE_ID }));
 
     expect(admitNewEmployee).toHaveBeenCalledWith(expect.objectContaining({ requestedRoleId: ROLE_ID }));
-    expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null, KEY);
+    expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, data, null, KEY);
   });
 
   it("devuelve el error del caso de uso de alta", async () => {
     vi.mocked(createEmployeeProfile).mockResolvedValue(err("El email ya existe."));
 
-    expect(await createEmployee({ salonId: SALON_ID, rolesEnabled: false, checks }, validForm())).toEqual(
-      err("El email ya existe.")
-    );
+    expect(await createEmployee(createInput())).toEqual(err("El email ya existe."));
   });
 
   it("admitNewEmployee sigue siendo la fuente del rol efectivo", async () => {
     vi.mocked(admitNewEmployee).mockResolvedValue(ok({ roleId: null }));
 
-    await createEmployee({ salonId: SALON_ID, rolesEnabled: true, checks }, validForm({ role_id: ROLE_ID }));
+    await createEmployee(createInput({ requestedRoleId: ROLE_ID }));
 
-    expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null, KEY);
+    expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, data, null, KEY);
   });
 });
 
@@ -112,23 +98,18 @@ describe("updateEmployee", () => {
     vi.mocked(updateEmployeeProfile).mockResolvedValue(ok({}));
   });
 
-  it("válida la clave antes que el formulario", async () => {
-    const result = await updateEmployee(SALON_ID, EMPLOYEE_ID, formDataOf({ first_name: "" }));
+  it("escribe los datos recibidos con la clave y el salón", async () => {
+    const patch = { phone: "555" };
 
-    expect(result).toEqual(err("Solicitud inválida. Recarga la página e inténtalo de nuevo."));
-    expect(updateEmployeeProfile).not.toHaveBeenCalled();
+    const result = await updateEmployee(SALON_ID, EMPLOYEE_ID, patch, KEY);
+
+    expect(updateEmployeeProfile).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID, patch, KEY);
+    expect(result).toEqual(ok({}));
   });
 
-  it("rechaza un formulario de edicion inválido", async () => {
-    const result = await updateEmployee(SALON_ID, EMPLOYEE_ID, validForm({ email: "no-es-email" }));
+  it("devuelve el error del caso de uso de edicion", async () => {
+    vi.mocked(updateEmployeeProfile).mockResolvedValue(err("No encontrado."));
 
-    expect(result).toEqual(err("Email inválido"));
-    expect(updateEmployeeProfile).not.toHaveBeenCalled();
-  });
-
-  it("escribe solo los campos presentes con la clave validada", async () => {
-    await updateEmployee(SALON_ID, EMPLOYEE_ID, formDataOf({ idempotency_key: KEY, phone: "555" }));
-
-    expect(updateEmployeeProfile).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID, { phone: "555", service_ids: [], category_ids: [] }, KEY);
+    expect(await updateEmployee(SALON_ID, EMPLOYEE_ID, {}, KEY)).toEqual(err("No encontrado."));
   });
 });

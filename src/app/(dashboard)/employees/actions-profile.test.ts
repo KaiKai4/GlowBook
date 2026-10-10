@@ -1,15 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { changeEmployeeRole } from "@/features/employees/use-cases/employee-role";
 import { archiveEmployee } from "@/features/employees/use-cases/employee-lifecycle";
-import {
-  createEmployeeProfile,
-  updateEmployeeProfile,
-} from "@/features/employees/use-cases/employee-profile";
+import { createEmployeeProfile } from "@/features/employees/use-cases/employee-profile-create";
+import { updateEmployeeProfile } from "@/features/employees/use-cases/employee-profile-update";
 import { err, ok } from "@/infra/result";
 import { buildProfile, rolesDisabled, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fixtures";
 import { changeEmployeeRoleAction } from "./actions-access";
@@ -19,11 +16,12 @@ import {
   updateEmployeeAction,
 } from "./actions-profile";
 
+const { requireActiveProfile } = vi.hoisted(() => ({ requireActiveProfile: vi.fn() }));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", async () => {
   // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
   const { contextFromProfile } = await import("@/test/action-fixtures");
-  const requireActiveProfile = vi.fn();
   return {
     requireActiveProfile,
     requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
@@ -42,10 +40,14 @@ vi.mock("@/features/employees/use-cases/employee-lifecycle", () => ({
   archiveEmployee: vi.fn(),
   reactivateEmployee: vi.fn(),
 }));
-vi.mock("@/features/employees/use-cases/employee-profile", () => ({
+vi.mock("@/features/employees/use-cases/employee-profile-create", () => ({
   createEmployeeProfile: vi.fn(),
-  findArchivedEmployeeByEmail: vi.fn(),
+}));
+vi.mock("@/features/employees/use-cases/employee-profile-update", () => ({
   updateEmployeeProfile: vi.fn(),
+}));
+vi.mock("@/features/employees/use-cases/employee-profile-steps", () => ({
+  findArchivedEmployeeByEmail: vi.fn(),
 }));
 vi.mock("@/features/salon/use-cases/salon-scheduling-config", () => ({
   getSalonSchedulingConfig: vi.fn(),

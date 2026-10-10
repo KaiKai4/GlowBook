@@ -13,7 +13,7 @@ import {
   findArchivedCustomerByContactAction,
   reactivateCustomerAction,
 } from "./actions";
-import type { ArchivedCustomerMatch } from "@/features/customers/use-cases/customer-duplicates";
+import type { ArchivedCustomerMatch } from "@/features/customers";
 
 export function NewCustomerModal() {
   const router = useRouter();

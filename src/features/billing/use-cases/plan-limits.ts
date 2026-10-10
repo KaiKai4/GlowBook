@@ -1,4 +1,5 @@
 import "server-only";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { publishAuditEvent } from "@/features/audit";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { err, ok, type Result } from "@/infra/result";
@@ -9,6 +10,7 @@ import {
 } from "../data/salon-subscriptions.repo";
 import { checkLimitAction } from "../domain/commercial-plan";
 import type { PlanMetricKey } from "../domain/plan-keys";
+import { planLimitMessage } from "../messages";
 import { commercialPlanAudit } from "./billing-shared";
 import { getEffectiveSalonPlan } from "./plan-modules";
 
@@ -34,15 +36,20 @@ export async function checkPlanLimit(input: {
   });
 
   if (!check.allowed) {
+    const checkMessage = planLimitMessage(check.messageCode, {
+      metricName: limit.metric.name,
+      used: check.used,
+      maxValue: check.maxValue,
+    });
     await recordPlanAlertOnce({
       salonId: input.salonId,
       planId: activePlan.id,
       metricKey: input.metricKey,
       moduleKey: limit.metric.moduleKey,
       severity: "danger",
-      message: check.message,
+      message: checkMessage,
     });
-    return err(check.message);
+    return err(checkMessage);
   }
 
   if (limit.warningLevel === "near_limit" || limit.warningLevel === "over_limit") {
@@ -52,7 +59,11 @@ export async function checkPlanLimit(input: {
       metricKey: input.metricKey,
       moduleKey: limit.metric.moduleKey,
       severity: limit.warningLevel === "over_limit" ? "danger" : "warning",
-      message: limit.message,
+      message: planLimitMessage(limit.messageCode, {
+        metricName: limit.metric.name,
+        used: limit.used,
+        maxValue: limit.maxValue,
+      }),
     });
   }
 
@@ -73,12 +84,13 @@ async function recordPlanAlertOnce(values: Parameters<typeof recordPlanAlert>[0]
 }
 
 export async function resolveSalonPlanAlertConfig(
+  proof: PlatformAdminProof,
   alertId: string,
   salonId: string,
   actorUserId?: string | null
 ): Promise<Result<void>> {
   try {
-    await resolvePlanAlert(salonId, alertId);
+    await resolvePlanAlert(proof, salonId, alertId);
     const warnings = await publishAuditEvent("billing.plan_alert_resolved", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_alert_resolved" });
     return ok(undefined, warnings);
   } catch (error) {

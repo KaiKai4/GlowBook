@@ -8,17 +8,17 @@
     {
       "id": "app/(auth)",
       "kind": "internal",
-      "files": 12
+      "files": 16
     },
     {
       "id": "app/(dashboard)",
       "kind": "internal",
-      "files": 183
+      "files": 186
     },
     {
       "id": "app/(platform)",
       "kind": "internal",
-      "files": 45
+      "files": 44
     },
     {
       "id": "app/_composition",
@@ -38,7 +38,7 @@
     {
       "id": "components/forms",
       "kind": "internal",
-      "files": 6
+      "files": 7
     },
     {
       "id": "components/layout",
@@ -48,12 +48,12 @@
     {
       "id": "components/ui",
       "kind": "internal",
-      "files": 26
+      "files": 28
     },
     {
       "id": "features/access",
       "kind": "internal",
-      "files": 19
+      "files": 20
     },
     {
       "id": "features/appointments",
@@ -68,12 +68,12 @@
     {
       "id": "features/billing",
       "kind": "internal",
-      "files": 31
+      "files": 32
     },
     {
       "id": "features/customers",
       "kind": "internal",
-      "files": 11
+      "files": 12
     },
     {
       "id": "features/dashboard",
@@ -83,7 +83,7 @@
     {
       "id": "features/employees",
       "kind": "internal",
-      "files": 30
+      "files": 35
     },
     {
       "id": "features/expenses",
@@ -148,12 +148,12 @@
     {
       "id": "infra",
       "kind": "internal",
-      "files": 3
+      "files": 5
     },
     {
       "id": "infra/auth",
       "kind": "internal",
-      "files": 4
+      "files": 5
     },
     {
       "id": "infra/config",
@@ -168,7 +168,7 @@
     {
       "id": "infra/format",
       "kind": "internal",
-      "files": 2
+      "files": 4
     },
     {
       "id": "infra/http",
@@ -193,12 +193,12 @@
     {
       "id": "infra/supabase",
       "kind": "internal",
-      "files": 7
+      "files": 8
     },
     {
       "id": "infra/validation",
       "kind": "internal",
-      "files": 5
+      "files": 6
     },
     {
       "id": "npm/@supabase/ssr",
@@ -305,7 +305,7 @@
     {
       "from": "app/(auth)",
       "to": "npm/react",
-      "count": 5
+      "count": 6
     },
     {
       "from": "app/(dashboard)",
@@ -320,7 +320,7 @@
     {
       "from": "app/(dashboard)",
       "to": "components/forms",
-      "count": 18
+      "count": 24
     },
     {
       "from": "app/(dashboard)",
@@ -330,7 +330,7 @@
     {
       "from": "app/(dashboard)",
       "to": "components/ui",
-      "count": 244
+      "count": 248
     },
     {
       "from": "app/(dashboard)",
@@ -340,12 +340,12 @@
     {
       "from": "app/(dashboard)",
       "to": "features/appointments",
-      "count": 37
+      "count": 41
     },
     {
       "from": "app/(dashboard)",
       "to": "features/billing",
-      "count": 9
+      "count": 8
     },
     {
       "from": "app/(dashboard)",
@@ -385,7 +385,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/payments",
-      "count": 8
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
@@ -420,32 +420,32 @@
     {
       "from": "app/(dashboard)",
       "to": "infra",
-      "count": 19
+      "count": 20
     },
     {
       "from": "app/(dashboard)",
       "to": "infra/format",
-      "count": 38
+      "count": 65
     },
     {
       "from": "app/(dashboard)",
       "to": "infra/security",
-      "count": 10
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
       "to": "infra/validation",
-      "count": 8
+      "count": 14
     },
     {
       "from": "app/(dashboard)",
       "to": "npm/next",
-      "count": 35
+      "count": 33
     },
     {
       "from": "app/(dashboard)",
       "to": "npm/react",
-      "count": 59
+      "count": 61
     },
     {
       "from": "app/(platform)",
@@ -460,7 +460,7 @@
     {
       "from": "app/(platform)",
       "to": "components/forms",
-      "count": 4
+      "count": 6
     },
     {
       "from": "app/(platform)",
@@ -470,7 +470,7 @@
     {
       "from": "app/(platform)",
       "to": "features/billing",
-      "count": 42
+      "count": 34
     },
     {
       "from": "app/(platform)",
@@ -484,8 +484,13 @@
     },
     {
       "from": "app/(platform)",
+      "to": "infra/format",
+      "count": 7
+    },
+    {
+      "from": "app/(platform)",
       "to": "infra/validation",
-      "count": 2
+      "count": 4
     },
     {
       "from": "app/(platform)",
@@ -510,11 +515,16 @@
     {
       "from": "app/_composition",
       "to": "features/billing",
-      "count": 1
+      "count": 2
     },
     {
       "from": "app/_composition",
       "to": "features/salon",
+      "count": 1
+    },
+    {
+      "from": "app/_composition",
+      "to": "features/salon-features",
       "count": 1
     },
     {
@@ -525,7 +535,7 @@
     {
       "from": "app/_composition",
       "to": "infra/auth",
-      "count": 1
+      "count": 3
     },
     {
       "from": "app/_composition",
@@ -624,6 +634,11 @@
     },
     {
       "from": "components/forms",
+      "to": "infra/validation",
+      "count": 1
+    },
+    {
+      "from": "components/forms",
       "to": "npm/react",
       "count": 3
     },
@@ -675,7 +690,7 @@
     {
       "from": "components/ui",
       "to": "npm/react",
-      "count": 17
+      "count": 18
     },
     {
       "from": "components/ui",
@@ -685,7 +700,7 @@
     {
       "from": "features/access",
       "to": "features/salon-features",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/access",
@@ -755,17 +770,12 @@
     {
       "from": "features/appointments",
       "to": "infra",
-      "count": 16
+      "count": 21
     },
     {
       "from": "features/appointments",
       "to": "infra/format",
-      "count": 6
-    },
-    {
-      "from": "features/appointments",
-      "to": "infra/idempotency",
-      "count": 5
+      "count": 11
     },
     {
       "from": "features/appointments",
@@ -775,12 +785,12 @@
     {
       "from": "features/appointments",
       "to": "infra/supabase",
-      "count": 13
+      "count": 14
     },
     {
       "from": "features/appointments",
       "to": "infra/validation",
-      "count": 6
+      "count": 7
     },
     {
       "from": "features/appointments",
@@ -831,6 +841,16 @@
       "from": "features/billing",
       "to": "infra",
       "count": 11
+    },
+    {
+      "from": "features/billing",
+      "to": "infra/auth",
+      "count": 12
+    },
+    {
+      "from": "features/billing",
+      "to": "infra/format",
+      "count": 2
     },
     {
       "from": "features/billing",
@@ -890,7 +910,7 @@
     {
       "from": "features/customers",
       "to": "infra/validation",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/customers",
@@ -910,7 +930,7 @@
     {
       "from": "features/dashboard",
       "to": "infra/format",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/dashboard",
@@ -945,7 +965,7 @@
     {
       "from": "features/employees",
       "to": "infra",
-      "count": 16
+      "count": 17
     },
     {
       "from": "features/employees",
@@ -955,11 +975,6 @@
     {
       "from": "features/employees",
       "to": "infra/format",
-      "count": 1
-    },
-    {
-      "from": "features/employees",
-      "to": "infra/idempotency",
       "count": 2
     },
     {
@@ -970,7 +985,7 @@
     {
       "from": "features/employees",
       "to": "infra/supabase",
-      "count": 10
+      "count": 12
     },
     {
       "from": "features/employees",
@@ -985,12 +1000,12 @@
     {
       "from": "features/employees",
       "to": "npm/server-only",
-      "count": 13
+      "count": 15
     },
     {
       "from": "features/employees",
       "to": "types",
-      "count": 2
+      "count": 3
     },
     {
       "from": "features/expenses",
@@ -1005,6 +1020,11 @@
     {
       "from": "features/expenses",
       "to": "infra",
+      "count": 3
+    },
+    {
+      "from": "features/expenses",
+      "to": "infra/format",
       "count": 3
     },
     {
@@ -1056,6 +1076,11 @@
       "from": "features/inventory",
       "to": "infra",
       "count": 4
+    },
+    {
+      "from": "features/inventory",
+      "to": "infra/format",
+      "count": 3
     },
     {
       "from": "features/inventory",
@@ -1135,7 +1160,12 @@
     {
       "from": "features/platform",
       "to": "infra/auth",
-      "count": 1
+      "count": 2
+    },
+    {
+      "from": "features/platform",
+      "to": "infra/format",
+      "count": 3
     },
     {
       "from": "features/platform",
@@ -1150,7 +1180,7 @@
     {
       "from": "features/platform",
       "to": "infra/validation",
-      "count": 6
+      "count": 8
     },
     {
       "from": "features/platform",
@@ -1195,7 +1225,7 @@
     {
       "from": "features/reminders",
       "to": "infra/format",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/reminders",
@@ -1221,6 +1251,16 @@
       "from": "features/reminders",
       "to": "types",
       "count": 1
+    },
+    {
+      "from": "features/reports",
+      "to": "infra",
+      "count": 3
+    },
+    {
+      "from": "features/reports",
+      "to": "infra/format",
+      "count": 6
     },
     {
       "from": "features/reports",
@@ -1309,6 +1349,11 @@
     },
     {
       "from": "features/salon",
+      "to": "infra/format",
+      "count": 2
+    },
+    {
+      "from": "features/salon",
       "to": "infra/observability",
       "count": 5
     },
@@ -1335,7 +1380,7 @@
     {
       "from": "features/services",
       "to": "infra",
-      "count": 10
+      "count": 11
     },
     {
       "from": "features/services",
@@ -1365,7 +1410,7 @@
     {
       "from": "infra",
       "to": "infra/observability",
-      "count": 1
+      "count": 2
     },
     {
       "from": "infra/auth",
@@ -1444,8 +1489,13 @@
     },
     {
       "from": "infra/supabase",
-      "to": "infra/validation",
+      "to": "infra/idempotency",
       "count": 1
+    },
+    {
+      "from": "infra/supabase",
+      "to": "infra/validation",
+      "count": 2
     },
     {
       "from": "infra/supabase",
@@ -1470,7 +1520,7 @@
     {
       "from": "infra/supabase",
       "to": "types",
-      "count": 3
+      "count": 4
     },
     {
       "from": "src",

@@ -10,9 +10,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # GlowBook: reglas canónicas
 
-Este archivo es la **única fuente de reglas** para personas y agentes. `CLAUDE.md` solo importa este archivo. Cada regla indica el control que la comprueba: si una regla no tiene control, se marca como convención y se revisa en code review.
+Este archivo es el **índice canónico de reglas** para personas y agentes: enumera cada regla y enlaza a `DESIGN.md` (UI), `SECURITY.md` y `docs/security.md` (seguridad) y `docs/testing.md` (pruebas y verificador). `CLAUDE.md` solo importa este archivo. Cada regla indica el control que la comprueba: si una regla no tiene control, se marca como convención y se revisa en code review.
 
-Documentos relacionados: `CONTEXT.md` (vocabulario de dominio), `DESIGN.md` (UI), `SECURITY.md` (seguridad), `docs/README.md` (índice), `docs/testing.md` (pruebas y verificador), `docs/development-guide.md` (flujo local), `docs/runbooks/deploy.md` (despliegue y operación), `docs/adr/` (decisiones).
+Documentos relacionados: `CONTEXT.md` (vocabulario de dominio), `docs/README.md` (índice de la documentación vigente), `docs/development-guide.md` (única guía de setup y flujo diario), `docs/runbooks/deploy.md` (despliegue y operación), `docs/adr/` (decisiones).
 
 ## 1. Producto y stack
 
@@ -37,17 +37,19 @@ Server Actions: contexto -> permiso por clave -> rate limit -> validación -> UN
 Reglas (las comprueba `.dependency-cruiser.cjs` por patrón, sin listas de archivos ni excepciones):
 
 - `src/infra` no importa de `src/features`, `src/app`, `src/components`, React ni React-DOM (`infra-no-upward`; además `src/infra/architecture-boundaries.test.ts`).
-- `domain/` no importa `use-cases/`, `data/`, `src/app`, `src/components`, `src/infra/supabase`, Next, React, `@supabase/*` ni `server-only` (`domain-pure`).
+- `domain/` no importa `use-cases/`, `data/`, `src/app`, `src/components`, Next, React, `@supabase/*` ni `server-only`. De `src/infra` solo permite lo puro: `infra/format/`, `infra/public-error` e `infra/result` (`domain-pure`).
 - `data/` no importa `use-cases/`, `src/app`, `src/components` ni React (`data-no-upward`).
 - Un módulo importa de otro solo a través de su `index.ts` (`cross-module-via-index`).
-- `src/app` importa de `src/features/<módulo>` solo a través de su `index.ts`; quedan permitidos `schemas.ts`, `domain/` y los imports solo de tipos (`app-via-feature-index`).
+- `src/app` y `src/components` importan de `src/features/<módulo>` solo a través de su `index.ts`; quedan permitidos `schemas.ts`, `domain/` y, para el resto, los imports solo de tipos (`app-via-feature-index`). Los imports de `use-cases/` y `data/` desde `src/app` o `src/components` quedan prohibidos incluso de tipo: el tipo se exporta por el `index.ts` del módulo (`app-via-feature-index-no-type-exemption`).
 - `use-cases/` no importa React, componentes, rutas ni `next/navigation` (`use-cases-no-ui`).
+- `use-cases/` no importa `src/infra/supabase` ni `@supabase/*`: el acceso a datos pasa por `data/` (`use-cases-no-db`).
 - `app/` y `components/` solo importan Supabase como tipo (`presentation-no-runtime-db`); `src/app/_composition` queda fuera de la regla.
 - Los clientes `service_role` (`src/infra/supabase/admin.ts`, `auth-admin.ts`) solo se importan desde `src/infra` o `features/*/data` (`admin-client-boundary`, ADR 0010).
+- La prueba `PlatformAdminProof` (`src/infra/auth/platform-admin-proof.ts`, ADR 0028) solo la emite el composition root (`src/app/_composition`) mediante `requirePlatformAdminProof`. Fuera de `src/infra/auth` y `src/app/_composition` solo se puede importar como tipo (`platform-admin-proof-issuer`). Los repos de plataforma de billing la exigen como primer parámetro.
 - No hay dependencias circulares (`no-circular`). No hay violaciones conocidas: `npx depcruise src --config .dependency-cruiser.cjs` termina en cero, sin baseline.
 - Control: paso `architecture` (`scripts/check-architecture.mjs` y `dependency-cruiser`).
 
-Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por módulo, agrupado por capa) y `docs/code-map/graph.json` (el mismo grafo en JSON). Para ver quién depende de quién, consulta el mapa antes de rastrear imports. Se regenera con `node scripts/quality/code-map.mjs`; el paso `code-map` falla si está desactualizado.
+Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por módulo, agrupado por capa) y `docs/code-map/graph.json` (el mismo grafo en JSON). Para ver quién depende de quién, consulta el mapa antes de rastrear imports. Se regenera con `node scripts/quality/code-map.mjs`, que el hook `pre-commit` ejecuta (ADR 0031).
 
 ## 3. Multi-tenancy y RLS
 
@@ -69,7 +71,7 @@ Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por mód
 
 - No hay registro público. La plataforma emite invitaciones con la RPC `invite_salon` (ADR 0005).
 - El invitado abre `/invite/[token]`, se autentica y `accept_invitation` valida token y email y crea salón y owner de forma atómica.
-- Control: `src/features/platform/use-cases/accept-invitation.behavior.test.ts` (paso `unit`) y pruebas de integración de la RPC (paso `integration`).
+- Control: `src/features/platform/use-cases/accept-invitation.conducta.test.ts` (paso `unit`) y pruebas de integración de la RPC (paso `integration`).
 
 ## 6. Plataforma (super-admin)
 
@@ -98,7 +100,9 @@ Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por mód
 
 - Los mensajes que ve el usuario son explícitos (ADR 0018): `PublicError` lanzado a propósito desde un use-case, o un mensaje fijo revisado.
 - Cualquier otro error pasa por `toPublicErrorMessage(error, fallback)` y se registra con `captureError`. Nunca se muestra `error.message` de Postgres, PostgREST, red o trazas.
-- Control: `src/infra/errors.test.ts` y `src/infra/public-error.ts` (paso `unit`).
+- Los casos de uso (`src/features/*/use-cases/**`) devuelven siempre `Result` (`src/infra/result.ts`) y no lanzan (`throw`) hacia el llamador. `domain/` y `data/` sí pueden lanzar `PublicError` o errores técnicos; el caso de uso los convierte con `toResult(fn, { fallback, context })` (`src/infra/to-result.ts`), que aplica `toPublicErrorMessage` y `captureError` (ADR 0029, complementa ADR 0018).
+- Las invariantes internas del caso de uso se comprueban con `requireInvariant` (`src/infra/invariant.ts`), siempre dentro de un `toResult` del mismo caso de uso (ADR 0029).
+- Control: `src/infra/errors.test.ts`, `src/infra/public-error.ts`, `src/infra/to-result.test.ts`, `src/infra/invariant.test.ts` y `src/features/*/use-cases/*.failure.test.ts` (paso `unit`) y la regla ESLint `no-restricted-syntax` que prohíbe `ThrowStatement` en `src/features/*/use-cases/**` salvo `*.test.ts` (`eslint.config.mjs`).
 
 ## 10. Seguridad
 
@@ -143,22 +147,15 @@ Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por mód
 
 ## 15. Comandos
 
+Lista corta; el detalle de setup, base de datos local y uso diario está en `docs/development-guide.md` (sección 11) y `docs/testing.md`.
+
 ```bash
-npm ci                    # instalar dependencias (respeta package-lock.json)
-npm run dev               # servidor de desarrollo
-npm run verify:fast       # ciclo diario (tier fast)
-npm run verify:full       # definición de terminado (tier full)
-npm run test              # Vitest, proyecto unit
-npm run test:integration  # Vitest, proyecto integration (requiere BD local)
-npm run type-check        # TypeScript sin emitir
-npm run lint              # ESLint con cero avisos
-npm run db:start          # Supabase local
-npm run db:reset          # reconstruye la BD local desde las migraciones
-npm run db:test           # pgTAP
-npm run db:types          # regenera tipos desde la BD local
+npm run dev          # servidor de desarrollo
+npm run verify:fast  # ciclo diario
+npm run verify:full  # definición de terminado
 ```
 
-Los comandos `release:migrations`, `staging:migrations` y `bootstrap:admin` apuntan a entornos remotos. No forman parte de la verificación local y no se ejecutan desde pruebas ni agentes sin instrucción explícita de la persona responsable (`docs/environments.md`).
+Los comandos que apuntan a entornos remotos (`release:*`, `staging:*`, `bootstrap:admin`) no forman parte de la verificación local y no se ejecutan desde pruebas ni agentes sin instrucción explícita de la persona responsable (`docs/environments.md`).
 
 ## 16. Definición de terminado
 
@@ -167,16 +164,16 @@ Un cambio está terminado cuando se cumplen **las cuatro** condiciones:
 1. `npm run verify:full` sale con código 0 en un checkout limpio, con Docker en ejecución (control: el propio verificador, que es el mismo que CI).
 2. Hay pruebas de la conducta nueva y de la regresión que se corrige. Un bug corregido sin prueba que falle antes del cambio no está terminado.
 3. Si el cambio toma una decisión que no es obvia (contrato de BD, capa, dependencia, herramienta, excepción de seguridad o auditoría), hay un ADR nuevo en `docs/adr/` y está en el índice.
-4. La documentación afectada se actualiza en el mismo cambio. El paso `docs-links` comprueba que los enlaces y rutas citadas existen.
+4. La documentación afectada se actualiza en el mismo cambio. El paso `meta` comprueba que los enlaces y rutas citadas existen.
 
 Un cambio no se da por terminado con `verify:fast` solo, ni con CI en rojo, ni con un paso omitido.
 
 ## 17. Ramas, commits y revisión
 
 - Commits en español con formato `tipo(ámbito): mensaje` (por ejemplo `fix(citas): ...`).
-- Los hooks de Husky no se saltan (`--no-verify` prohibido): `pre-commit` ejecuta `secrets` y `lint`; `pre-push` ejecuta `verify:fast`.
+- Los hooks de Husky no se saltan (`--no-verify` prohibido): `pre-commit` ejecuta `secrets` y `lint` y regenera el mapa de código; `pre-push` ejecuta `verify:fast` (ADR 0031).
 - La plantilla de PR (`.github/pull_request_template.md`) pide evidencia de `verify:full`.
-- Control: `ci-parity` (CI y manifiesto de pasos coinciden) y `check-ci-parity.mjs`.
+- Control: paso `meta` (`check-ci-parity.mjs`: CI y manifiesto de pasos coinciden; `check-doc-links.mjs`).
 
 ## 18. Desarrollo y publicación
 

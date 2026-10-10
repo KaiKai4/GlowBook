@@ -21,7 +21,9 @@ Los dos clientes se eligen en `data/billing-db.ts`.
 | Plan efectivo del salón, módulos y límites del plan, overrides y asignación (columnas concedidas), alertas abiertas del salón | `billingSalonDb()` (sesión del usuario, RLS) | Datos del propio salón. La RLS es la autoridad (ADR 0024). |
 | Conteo de uso (`count_salon_usage`) | `billingSalonDb()` o `billingDb()` | RPC `security definer` con guarda por `salon_id` de la sesión o plataforma. |
 | Aviso de plan (`record_plan_alert`) | `billingSalonDb()` | RPC que crea la alerta solo en el salón de la sesión. |
-| Panel `/admin`: suscripciones, detalle, extras, pagos, notas, alta y edición de planes | `billingDb()` (`service_role`) | Columnas internas (motivo, notas, importes, regalos) y lecturas cross-tenant, tras `requirePlatformAdmin()`. |
-| Escrituras de plataforma sobre un salón (asignar plan, overrides, pagos, alertas) | `billingDb()` | Siempre filtradas por `salon_id`; deben afectar exactamente una fila (`expectOneUpdatedRow`). |
+| Panel `/admin`: suscripciones, detalle, extras, pagos, notas, alta y edición de planes | `platformDb(proof)` (`service_role`) | Columnas internas (motivo, notas, importes, regalos) y lecturas cross-tenant. `proof: PlatformAdminProof` es el primer parámetro, emitido solo por `requirePlatformAdminProof()` en el composition root (ADR 0028). |
+| Escrituras de plataforma sobre un salón (asignar plan, overrides, pagos, alertas) | `platformDb(proof)` | Siempre filtradas por `salon_id`; deben afectar exactamente una fila (`expectOneUpdatedRow`). |
 
 Las lecturas de plataforma no se hacen nunca desde el navegador.
+
+`billingDb()` queda solo para el alta por invitación sin sesión de admin (`findPlanWithChildrenAtAcceptance`, `assignSalonPlanAtAcceptance`, ADR 0005 y ADR 0028).

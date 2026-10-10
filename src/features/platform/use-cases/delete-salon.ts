@@ -12,13 +12,23 @@ export interface DeleteSalonInput {
   actorUserId?: string | null;
 }
 
-export async function deleteSalon({
-  salonId,
-  confirmation,
-  actorUserId,
-}: DeleteSalonInput): Promise<Result<void>> {
+/** Dependencias del caso de uso. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface DeleteSalonDeps {
+  deleteSalonCompletely: typeof deleteSalonCompletely;
+  publishAuditEvent: typeof publishAuditEvent;
+}
+
+const defaultDeleteSalonDeps: DeleteSalonDeps = {
+  deleteSalonCompletely,
+  publishAuditEvent,
+};
+
+export async function deleteSalon(
+  { salonId, confirmation, actorUserId }: DeleteSalonInput,
+  deps: DeleteSalonDeps = defaultDeleteSalonDeps
+): Promise<Result<void>> {
   if (confirmation !== salonId) {
-    await publishAuditEvent("platform.salon_deleted", {
+    await deps.publishAuditEvent("platform.salon_deleted", {
       actorUserId: actorUserId ?? null,
       action: "delete_salon",
       status: "failed",
@@ -32,8 +42,8 @@ export async function deleteSalon({
   }
 
   try {
-    await deleteSalonCompletely(salonId);
-    const warnings = await publishAuditEvent("platform.salon_deleted", {
+    await deps.deleteSalonCompletely(salonId);
+    const warnings = await deps.publishAuditEvent("platform.salon_deleted", {
       actorUserId: actorUserId ?? null,
       action: "delete_salon",
       status: "succeeded",
@@ -47,7 +57,7 @@ export async function deleteSalon({
       metadata: { salonId },
     });
     const message = error instanceof Error ? error.message : "Error desconocido";
-    await publishAuditEvent("platform.salon_deleted", {
+    await deps.publishAuditEvent("platform.salon_deleted", {
       actorUserId: actorUserId ?? null,
       action: "delete_salon",
       status: "failed",

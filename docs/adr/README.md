@@ -24,7 +24,7 @@ Para el vocabulario del dominio, leer antes `CONTEXT.md`.
 
 ## Índice
 
-Estado revisado a 2026-10-10: los 26 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. El ADR 0024 revisa la parte de billing del ADR 0010: las lecturas de billing del propio salón van por RLS y ya no por `service_role`. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021. ADR 0012 queda además parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
+Estado revisado a 2026-10-10: los 31 ADR están vigentes (ADR 0025 sustituida por ADR 0028; ADR 0031 modifica el manifiesto de ADR 0011 y la comprobación del mapa de ADR 0019), con las sustituciones parciales indicadas en cada estado. El ADR 0024 revisa la parte de billing del ADR 0010: las lecturas de billing del propio salón van por RLS y ya no por `service_role`. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021. ADR 0012 queda además parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
 
 | ADR | Título | Ámbito |
 |---|---|---|
@@ -52,8 +52,12 @@ Estado revisado a 2026-10-10: los 26 ADR están aceptados, con las sustituciones
 | [0022](0022-retiro-tooling-staging-pricing-readiness-stryker.md) | Retiro de tooling de staging, pricing, readiness y Stryker | Calidad y operación |
 | [0023](0023-rpc-transaccionales-roles-invitacion-cita.md) | RPC transaccionales para roles, invitación con plan y cita con cliente nuevo | Datos, citas y plataforma |
 | [0024](0024-lecturas-de-billing-de-inquilino-con-rls.md) | Lecturas de billing del inquilino con RLS y escrituras de plataforma acotadas (revisa parte de ADR 0010) | Datos, billing y seguridad |
-| [0025](0025-cuando-inyectar-dependencias.md) | Cuándo inyectar dependencias (DIP pragmático) | Arquitectura y pruebas |
+| [0025](0025-cuando-inyectar-dependencias.md) | Cuándo inyectar dependencias (DIP pragmático) (sustituida por ADR 0028) | Arquitectura y pruebas |
+| [0028](0028-inyeccion-en-comandos-con-logica.md) | Inyección de dependencias en comandos con lógica (sustituye a ADR 0025; modifica reglas de capas de ADR 0019) | Arquitectura y pruebas |
 | [0026](0026-runner-pgtap-propio-y-supabase-local-sin-analytics.md) | Runner pgTAP propio y Supabase local sin analytics | Calidad y datos |
 | [0027](0027-rate-limit-de-inicio-de-sesion.md) | Rate limit de inicio de sesión (global por IP y por IP con correo) | Seguridad |
+| [0029](0029-result-en-casos-de-uso.md) | Result en casos de uso, throw solo en domain y data (complementa 0018) | Errores y arquitectura |
+| [0030](0030-rate-limit-fail-closed-en-login.md) | Rate limit fail-closed en el inicio de sesión (matiza ADR 0017 y 0027) | Seguridad |
+| [0031](0031-poda-de-proceso.md) | Poda moderada de proceso y documentación (fusión de `docs-links` y `ci-parity` en `meta`; `code-map` se regenera en pre-commit) | Calidad y documentación |
 
 Las guías que aplican estas decisiones son `docs/testing.md`, `docs/database-contracts.md` y `docs/security.md`.

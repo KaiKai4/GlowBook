@@ -9,7 +9,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { zonedWallTimeToUtc } from "@/infra/format/dates";
 import type { AppointmentServiceRow } from "@/features/appointments/domain/wizard-availability";
-import type { AppointmentDetailViewModel } from "@/features/appointments/use-cases/get-appointment-detail";
+import type { AppointmentDetailViewModel } from "@/features/appointments";
 import { updateAppointmentScheduleAction } from "../../actions";
 
 interface UseAppointmentEditSubmitOptions {

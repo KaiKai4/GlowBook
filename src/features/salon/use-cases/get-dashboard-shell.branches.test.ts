@@ -17,6 +17,7 @@ vi.mock("../data/salon-settings.repo", () => ({
 vi.mock("@/features/billing", async () => ({
   evaluatePaymentStanding: (await import("@/features/billing/domain/payment-standing")).evaluatePaymentStanding,
   isActionableLimitWarning: (await import("@/features/billing/domain/commercial-plan")).isActionableLimitWarning,
+  planLimitMessage: (await import("@/features/billing/messages")).planLimitMessage,
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   getEffectiveSalonPlan: vi.fn(),
   readEffectivePlanOrNull: async (salonId: string, _action: string, load: (id: string) => Promise<unknown>) => {
@@ -57,7 +58,7 @@ function limit(overrides: Partial<EffectivePlanLimit>): EffectivePlanLimit {
     remaining: 90,
     percentage: 10,
     warningLevel: "none",
-    message: "",
+    messageCode: null,
     ...overrides,
   };
 }
@@ -241,16 +242,16 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       mockedEffectivePlan.mockResolvedValue(
         effectivePlan({
           limits: [
-            limit({ warningLevel: "near_limit", message: "Cerca del límite de citas" }),
-            limit({ warningLevel: "over_limit", message: "Superaste el límite", used: 150, maxValue: 100 }),
-            limit({ warningLevel: "none", message: "" }),
+            limit({ warningLevel: "near_limit", messageCode: "near_limit", used: 85 }),
+            limit({ warningLevel: "over_limit", messageCode: "exceeded", used: 150, maxValue: 100 }),
+            limit({ warningLevel: "none", messageCode: null }),
           ],
         })
       );
 
       expect(await getOwnerPlanLimitWarnings("salon-1")).toEqual([
-        { level: "warning", message: "Cerca del límite de citas" },
-        { level: "danger", message: "Superaste el límite" },
+        { level: "warning", message: "Citas: vas 85 de 100 en tu plan." },
+        { level: "danger", message: "Citas: superaste el límite de tu plan (150 de 100)." },
       ]);
     });
 
@@ -260,7 +261,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
           limits: [
             limit({
               warningLevel: "blocked",
-              message: "Al tope",
+              messageCode: "reached",
               countScope: "current",
               used: 5,
               maxValue: 5,

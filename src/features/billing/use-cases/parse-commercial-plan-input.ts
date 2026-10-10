@@ -11,10 +11,10 @@ import type {
 // la entrada del caso de uso y fija aquí los valores por defecto (estado draft,
 // modo warn, umbral 80, ambito current...). Sin I/O: se prueba directamente.
 
-export type SavePlanInput = Parameters<typeof saveCommercialPlanConfig>[0];
-export type SavePlanModulesInput = Parameters<typeof saveCommercialPlanModulesBatch>[0];
-export type SavePlanLimitsInput = Parameters<typeof saveCommercialPlanLimitsBatch>[0];
-export type SaveAddonInput = Parameters<typeof saveCommercialAddonConfig>[0];
+export type SavePlanInput = Parameters<typeof saveCommercialPlanConfig>[1];
+export type SavePlanModulesInput = Parameters<typeof saveCommercialPlanModulesBatch>[1];
+export type SavePlanLimitsInput = Parameters<typeof saveCommercialPlanLimitsBatch>[1];
+export type SaveAddonInput = Parameters<typeof saveCommercialAddonConfig>[1];
 
 /** Id vacio = alta: se normaliza a undefined. */
 function optionalText(value: unknown): string | undefined {

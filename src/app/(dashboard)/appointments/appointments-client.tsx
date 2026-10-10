@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useMemo, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import type { CalendarViewModel } from "@/features/appointments/view-models";
@@ -10,6 +10,7 @@ import { CalendarDays, Plus } from "lucide-react";
 import { AppointmentsDayView } from "./appointments-day-view";
 import { DateNav } from "./date-nav";
 import { buildAppointmentsHref } from "./calendar-url";
+import { SalonDisplayProvider } from "./salon-display-context";
 
 export function AppointmentsClient({
   initialCalendar,
@@ -20,7 +21,10 @@ export function AppointmentsClient({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const calendar = initialCalendar;
+  const salonDisplay = useMemo(
+    () => ({ tz: initialCalendar.timezone, salonName: initialCalendar.salonName }),
+    [initialCalendar.timezone, initialCalendar.salonName]
+  );
 
   function changeCalendar(next: { date: string; view: CalendarViewModel["view"] }) {
     startTransition(() => {
@@ -29,58 +33,58 @@ export function AppointmentsClient({
   }
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <CalendarDays className="h-6 w-6 text-brand-500" aria-hidden="true" />
-            Agenda
-          </span>
-        }
-        description={
-          <>
-            <span className="capitalize">{calendar.dateLabel}</span> ·{" "}
-            <span className="font-semibold text-brand-600">
-              {calendar.activeCount} citas activas
+    <SalonDisplayProvider value={salonDisplay}>
+      <div className="space-y-5">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <CalendarDays className="h-6 w-6 text-brand-500" aria-hidden="true" />
+              Agenda
             </span>
-          </>
-        }
-        actions={
-          <>
-            <DateNav
-              date={calendar.date}
-              view={calendar.view}
-              showWorkerView={calendar.showWorkerView}
-              loading={pending}
-              onChange={changeCalendar}
-            />
-            {canManage && (
-              <Link href="/appointments/new">
-                <Button variant="primary">
-                  <Plus className="h-4 w-4" />
-                  Nueva cita
-                </Button>
-              </Link>
-            )}
-          </>
-        }
-      />
-
-      <div className={pending ? "opacity-70 transition-opacity" : "transition-opacity"}>
-        <AppointmentsDayView
-          appointments={calendar.appointments}
-          tz={calendar.timezone}
-          canManage={canManage}
-          view={calendar.view}
-          weekDates={calendar.visibleWeekDates}
-          employees={calendar.employees}
-          businessStart={calendar.businessStart}
-          businessEnd={calendar.businessEnd}
-          salonName={calendar.salonName}
-          cancellationTemplate={calendar.cancellationTemplate}
-          paymentMethodOptions={calendar.paymentMethodOptions}
+          }
+          description={
+            <>
+              <span className="capitalize">{initialCalendar.dateLabel}</span> ·{" "}
+              <span className="font-semibold text-brand-600">
+                {initialCalendar.activeCount} citas activas
+              </span>
+            </>
+          }
+          actions={
+            <>
+              <DateNav
+                date={initialCalendar.date}
+                view={initialCalendar.view}
+                showWorkerView={initialCalendar.showWorkerView}
+                loading={pending}
+                onChange={changeCalendar}
+              />
+              {canManage && (
+                <Link href="/appointments/new">
+                  <Button variant="primary">
+                    <Plus className="h-4 w-4" />
+                    Nueva cita
+                  </Button>
+                </Link>
+              )}
+            </>
+          }
         />
+
+        <div className={pending ? "opacity-70 transition-opacity" : "transition-opacity"}>
+          <AppointmentsDayView
+            appointments={initialCalendar.appointments}
+            canManage={canManage}
+            view={initialCalendar.view}
+            weekDates={initialCalendar.visibleWeekDates}
+            employees={initialCalendar.employees}
+            businessStart={initialCalendar.businessStart}
+            businessEnd={initialCalendar.businessEnd}
+            cancellationTemplate={initialCalendar.cancellationTemplate}
+            paymentMethodOptions={initialCalendar.paymentMethodOptions}
+          />
+        </div>
       </div>
-    </div>
+    </SalonDisplayProvider>
   );
 }

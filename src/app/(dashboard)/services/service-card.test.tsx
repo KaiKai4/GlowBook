@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { click } from "@/test/ui-people-dom";
 import { buildService } from "@/test/ui-people-fixtures";

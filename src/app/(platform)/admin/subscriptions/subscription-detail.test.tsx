@@ -144,7 +144,7 @@ describe("SubscriptionDetail", () => {
   it("cambia el título y el botón del formulario según tenga o no asignación", () => {
     mounted = renderDetail();
     expect(mounted.container.textContent).toContain("Cambiar plan o estado");
-    expect(getButtonByText(mounted.container, "Guardar cambios")).toBeTruthy();
+    expect(getButtonByText(mounted.container, "Guardar cambios")?.textContent).toBe("Guardar cambios");
     mounted.unmount();
 
     mounted = renderDetail(makeDetail({ assignment: null, plan: null, limits: [], enabledModules: [] }));

@@ -70,7 +70,7 @@ describe("signInAction con límite por IP y por cuenta", () => {
   it("aplica el límite global por IP (100 cada 15 min) antes de tocar la autenticacion", async () => {
     await signInAction(INPUT);
 
-    expect(assertAnonymousRateLimit).toHaveBeenCalledWith("sign-in", { max: 100, windowMs: 900_000 });
+    expect(assertAnonymousRateLimit).toHaveBeenCalledWith("sign-in", { max: 100, windowMs: 900_000, failMode: "closed" });
   });
 
   it("aplica el límite por cuenta (10 cada 15 min) con el correo normalizado", async () => {
@@ -79,6 +79,7 @@ describe("signInAction con límite por IP y por cuenta", () => {
     expect(assertSubjectRateLimit).toHaveBeenCalledWith("sign-in", "ana@salonluna.com", {
       max: 10,
       windowMs: 900_000,
+      failMode: "closed",
     });
   });
 

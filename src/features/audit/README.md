@@ -23,4 +23,4 @@ Reglas importantes:
 - La lectura de la bitácora vive en `src/features/platform` (`data/platform-audit.repo.ts`); este módulo solo escribe.
 - La escritura usa `service_role` solo desde `data/` (ADR 0010).
 
-Tests: `publish-audit-event.test.ts`, `audit-event-writer.test.ts`, `data/audit-log.repo.behavior.test.ts`.
+Tests: `publish-audit-event.test.ts`, `audit-event-writer.test.ts`, `data/audit-log.repo.test.ts`.

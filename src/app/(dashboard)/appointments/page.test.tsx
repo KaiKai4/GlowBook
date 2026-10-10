@@ -53,7 +53,7 @@ describe("AppointmentsPage", () => {
 
   beforeEach(() => {
     calendarUseCase.getCalendarView.mockReset();
-    calendarUseCase.getCalendarView.mockResolvedValue(CALENDAR);
+    calendarUseCase.getCalendarView.mockResolvedValue({ ok: true, value: CALENDAR });
     session.requireProfile.mockReset();
   });
 
@@ -118,5 +118,15 @@ describe("AppointmentsPage", () => {
     await renderPage();
 
     expect(calendarUseCase.getCalendarView).toHaveBeenCalledWith(expect.objectContaining({ canViewAll: true }));
+  });
+
+  it("un fallo de carga del calendario llega al error boundary de la ruta", async () => {
+    session.requireProfile.mockResolvedValue(buildProfile({ permissions: [PERMISSIONS.APPOINTMENTS_VIEW] }));
+    calendarUseCase.getCalendarView.mockResolvedValue({
+      ok: false,
+      error: "No se pudo cargar el calendario de citas.",
+    });
+
+    await expect(renderPage()).rejects.toThrow("No se pudo cargar el calendario de citas.");
   });
 });

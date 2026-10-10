@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada. Supera parcialmente a ADR 0009 (reglas de capas y verificación), a ADR 0010 (mecanismo de control de importadores de `service_role`) y a ADR 0013 (trinquetes de tamaño, tokens y violaciones de grafo). Ver las secciones "Relación con otros ADR" y el índice de `docs/adr/README.md`.
+Aceptada. La parte de comprobación del mapa de código (paso `code-map --check`) queda superada por ADR 0031: el mapa se regenera en pre-commit y ya no es un control de CI. Modificada parcialmente por ADR 0028 (reglas de capas de la fase 2). Supera parcialmente a ADR 0009 (reglas de capas y verificación), a ADR 0010 (mecanismo de control de importadores de `service_role`) y a ADR 0013 (trinquetes de tamaño, tokens y violaciones de grafo). Ver las secciones "Relación con otros ADR" y el índice de `docs/adr/README.md`.
 
 ## Contexto
 
@@ -62,7 +62,7 @@ El grafo no admite ciclos entre módulos (`no-circular`). Los ciclos existentes 
 
 `scripts/quality/code-map.mjs` genera `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por módulo, agrupado por capa) y `docs/code-map/graph.json` (el mismo grafo reducido a módulos) a partir de `dependency-cruiser`.
 
-El paso `code-map` (`--check`) falla si los archivos versionados no coinciden con lo regenerado. Para consultar el mapa, leer `docs/code-map/modules.mmd` o `graph.json`; para regenerarlo, ejecutar `node scripts/quality/code-map.mjs`.
+Hasta ADR 0031, el paso `code-map` (`--check`) fallaba si los archivos versionados no coincidían con lo regenerado; ADR 0031 lo retiró del verificador. Para consultar el mapa, leer `docs/code-map/modules.mmd` o `graph.json`; para regenerarlo, ejecutar `node scripts/quality/code-map.mjs`.
 
 ### Controles absolutos
 
@@ -98,7 +98,7 @@ Costes y cuidados:
 
 - Cualquier refactor que mueva un archivo entre módulos debe usar `git mv` y actualizar los imports por el índice público. Para reescrituras masivas se usan codemods en `.quality/codemods/`, verificados con `tsc`.
 - Un archivo nuevo que supere 300 líneas falla el control de tamaño desde el primer commit. Hay que dividirlo por responsabilidad; no hay trinquete que lo absorba.
-- Si el grafo cambia (un módulo nuevo, un import nuevo), `docs/code-map/` debe regenerarse en el mismo cambio. El paso `code-map` lo exige.
+- Si el grafo cambia (un módulo nuevo, un import nuevo), `docs/code-map/` debe regenerarse en el mismo cambio. Lo regenera el hook pre-commit (ADR 0031).
 - El control de capas no sustituye a la revisión de diseño: una dependencia permitida por el patrón puede seguir siendo mala. La regla garantiza solo las fronteras que expresa.
 
 ## Relación con otros ADR

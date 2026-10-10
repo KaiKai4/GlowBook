@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
 import { err, ok } from "@/infra/result";
 import { definePublicAction } from "./define-public-action";
@@ -26,6 +26,15 @@ function action(run: () => Promise<unknown>) {
 beforeEach(() => {
   vi.clearAllMocks();
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
+});
+
+// Dentro de Vercel la IP del cliente se lee de x-real-ip (ver rate-limit.ts).
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("definePublicAction: límite por IP", () => {
