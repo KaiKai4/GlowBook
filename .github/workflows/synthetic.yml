@@ -1,6 +1,6 @@
 name: GlowBook Synthetic
 
-# Check sintetico de disponibilidad cada hora, en SOLO LECTURA, contra produccion y staging.
+# Check sintetico de disponibilidad cada hora, en SOLO LECTURA, contra produccion.
 # Si falla: avisos de Actions, issue synthetic-failure y webhook opcional.
 # Si falta un secreto el job FALLA con un mensaje explicito; ningun paso se salta en silencio.
 # Ver docs/runbooks/synthetic-checks.md.
@@ -22,14 +22,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [production, staging]
+        target: [production]
     concurrency:
       group: glowbook-synthetic-${{ matrix.target }}
       cancel-in-progress: false
     env:
       SYNTHETIC_TARGET: ${{ matrix.target }}
       SYNTHETIC_BASE_URL_PRODUCTION: ${{ secrets.SYNTHETIC_BASE_URL }}
-      SYNTHETIC_BASE_URL_STAGING: ${{ secrets.STAGING_BASE_URL }}
       ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
       SYNTHETIC_RESULT_FILE: .quality/synthetic-${{ matrix.target }}.json
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -54,10 +53,6 @@ jobs:
             production)
               base="$SYNTHETIC_BASE_URL_PRODUCTION"
               name="SYNTHETIC_BASE_URL"
-              ;;
-            staging)
-              base="$SYNTHETIC_BASE_URL_STAGING"
-              name="STAGING_BASE_URL"
               ;;
             *)
               echo "::error::Target desconocido: $SYNTHETIC_TARGET"

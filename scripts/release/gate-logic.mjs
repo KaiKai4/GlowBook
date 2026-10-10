@@ -15,10 +15,6 @@ export const REQUIRED_SECRETS = Object.freeze([
   "PRODUCTION_SUPABASE_URL",
   "PRODUCTION_PROJECT_REF",
   "SYNTHETIC_BASE_URL",
-  "STAGING_DB_URL",
-  "STAGING_SUPABASE_URL",
-  "STAGING_SUPABASE_ANON_KEY",
-  "STAGING_SUPABASE_SERVICE_ROLE_KEY",
 ]);
 
 /**
@@ -37,11 +33,10 @@ export const REQUIRED_CI_JOBS = Object.freeze([
 // La release genera checks propios que se excluyen de su gate.
 export const RELEASE_JOB_NAMES = Object.freeze([
   "Release gate",
-  "Validate staging",
   "Migrations (production)",
-  "Deploy staged",
-  "Smoke staged",
-  "Discard staged",
+  "Deploy candidate",
+  "Smoke candidate",
+  "Discard candidate",
   "Promote production",
   "Notify release failure",
 ]);

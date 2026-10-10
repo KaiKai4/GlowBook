@@ -40,7 +40,7 @@ Regla de alta de herramientas: una herramienta nueva necesita una razon escrita 
 
 Cada dependencia de calidad tiene un dueno funcional y se puede retirar si su paso desaparece.
 
-Herramientas que solo corren en nightly o en CI (Stryker, dependency drift, schema drift, sintetico) no ralentizan el ciclo diario del desarrollador.
+La programación Nightly queda sustituida por [ADR 0021](0021-deploy-sin-staging-remoto.md). Stryker sigue disponible manualmente; CI y el monitor sintético conservan los controles automáticos vigentes.
 
 Herramientas que requieren binarios externos (Docker para la BD local) quedan documentadas como requisito en `docs/testing.md`.
 

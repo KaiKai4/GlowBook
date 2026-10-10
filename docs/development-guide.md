@@ -16,7 +16,7 @@ Documentos relacionados: `AGENTS.md` (reglas), `docs/quality-guide.md` (verifica
 
 ## 2. Configuración Local
 
-1. Copia `.env.local.example` a `.env.local` y rellena solo lo que necesites para desarrollar. `.env.local` está en `.gitignore` y nunca se versiona.
+1. Copia `.env.local.example` a `.env.local` y rellena sus seis variables básicas. Los secretos de deploy van en GitHub, no en esta plantilla. `.env.local` está en `.gitignore` y nunca se versiona.
 2. Para verificar en local no hace falta `.env.local`: la BD local se obtiene del stack de Supabase local y el verificador no lee secretos de staging ni de producción.
 3. Nunca expongas `SUPABASE_SERVICE_ROLE_KEY` en variables `NEXT_PUBLIC_*` ni en código de navegador (ver `SECURITY.md`).
 

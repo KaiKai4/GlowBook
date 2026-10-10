@@ -2,19 +2,18 @@
 
 ## Objetivo
 
-Detectar pronto que el login de producción o staging deja de responder bien
+Detectar pronto que el login de producción deja de responder bien
 (estado, cabeceras de seguridad, `x-request-id`, latencia), sin esperar a que
 un salón lo reporte.
 
 ## Que Comprueba
 
 El workflow `.github/workflows/synthetic.yml` corre **cada hora** (minuto 23)
-y también manualmente (`workflow_dispatch`). Usa una matriz con dos destinos:
+y también manualmente (`workflow_dispatch`). Comprueba solo producción:
 
 | Target | Secreto de URL base | Notas |
 |---|---|---|
 | `production` | `SYNTHETIC_BASE_URL` | Solo lectura. |
-| `staging` | `STAGING_BASE_URL` | Solo lectura. |
 
 Cada ejecución hace un único `GET /login` (sin seguir redirecciones) y falla si:
 
@@ -34,8 +33,7 @@ cabeceras. Solo nombres de cabecera y resultados.
 El job **falla con mensaje explícito** si falta cualquiera de estos secretos
 (no se salta en silencio):
 
-- `SYNTHETIC_BASE_URL` (producción);
-- `STAGING_BASE_URL` (staging).
+- `SYNTHETIC_BASE_URL` (producción).
 
 `ALERT_WEBHOOK_URL` es opcional. Sin él se usan los avisos de GitHub Actions y
 los issues de incidentes.

@@ -1,6 +1,6 @@
 # ADR 0020: Release validada en staging y publicación explícita
 
-- **Estado**: Aceptada
+- **Estado**: Aceptada, con partes superadas por ADR 0021
 - **Fecha**: 2026-10-09
 
 ## Contexto
@@ -8,6 +8,8 @@
 Vercel podía publicar un push a main mientras CI fallaba y la release quedaba
 omitida. El gate aceptaba un subconjunto de checks. Un despliegue de producción
 sin dominio se llamaba staging, aunque usaba la base de producción.
+
+La exigencia de staging remoto queda sustituida por [ADR 0021](0021-deploy-sin-staging-remoto.md).
 
 ## Decisión
 

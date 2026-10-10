@@ -21,7 +21,7 @@ La comprobación `docs-links` (`scripts/quality/check-doc-links.mjs`) verifica q
 | `docs/quality-guide.md` | Verificador: cada paso, trinquetes y controles absolutos, y cómo añadir un control. |
 | `docs/code-map/modules.mmd` | Mapa de código por módulo (Mermaid, agrupado por capa). Generado desde el grafo de dependencias; `graph.json` tiene los mismos datos. Regenerar con `node scripts/quality/code-map.mjs`. |
 | `docs/testing.md` | Pruebas por tipo, BD local y paridad de CI en detalle. |
-| `docs/production-standard.md` | Workflows de CI, release, sintéticos y nightly; observabilidad y operación. |
+| `docs/production-standard.md` | Workflows de CI, release y sintéticos de producción; observabilidad y operación. |
 | `docs/security.md` | Detalle técnico de cabeceras, CSP, errores públicos, observabilidad, rate limit y auditoría. |
 | `docs/database-contracts.md` | Contrato de cada tabla, RPC y RLS por módulo. Revísalo antes de cambiar la BD. |
 | `docs/environments.md` | Entornos, variables obligatorias, quién puede migrar qué, guardas y rotación de secretos. |

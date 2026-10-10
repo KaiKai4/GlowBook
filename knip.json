@@ -26,6 +26,7 @@
     "e2e/global-setup.ts",
     "src/test/server-only.ts",
     "src/types/database.types.ts",
+    "scripts/quality/check-audit.mjs",
     "scripts/quality/check-ci-parity.mjs",
     "scripts/quality/check-coverage.mjs",
     "scripts/quality/check-db-types-drift.mjs",

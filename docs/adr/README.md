@@ -24,7 +24,7 @@ Para el vocabulario del dominio, leer antes `CONTEXT.md`.
 
 ## Índice
 
-Estado revisado a 2026-10-09: los 20 ADR están `Aceptada`. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas.
+Estado revisado a 2026-10-09: los 21 ADR están aceptados, con las sustituciones parciales indicadas en cada estado. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021.
 
 | ADR | Título | Ámbito |
 |---|---|---|
@@ -48,5 +48,6 @@ Estado revisado a 2026-10-09: los 20 ADR están `Aceptada`. Ninguno está supera
 | [0018](0018-errores-publicos-tipados.md) | Errores públicos tipados | Errores y seguridad |
 | [0019](0019-arquitectura-por-capas-verificada.md) | Arquitectura por capas verificada por herramienta | Arquitectura y calidad |
 | [0020](0020-release-validada-en-staging.md) | Release validada en staging y publicación explícita | Deploy y seguridad |
+| [0021](0021-deploy-sin-staging-remoto.md) | Deploy sin staging remoto obligatorio | Deploy y operación |
 
 Las guías que aplican estas decisiones son `docs/quality-guide.md`, `docs/database-contracts.md`, `docs/security.md` y `docs/testing.md`.
