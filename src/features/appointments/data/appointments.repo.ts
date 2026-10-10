@@ -58,7 +58,7 @@ export async function findAppointmentById(
     .maybeSingle();
 
   if (error) throw error;
-  return data as unknown as AppointmentWithDetails | null;
+  return data;
 }
 
 export async function findAppointmentsBySalon(
@@ -90,5 +90,5 @@ export async function findAppointmentsBySalon(
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as unknown as AppointmentWithDetails[];
+  return data ?? [];
 }

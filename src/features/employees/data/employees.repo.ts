@@ -85,7 +85,7 @@ export async function findEmployeeListRows(
     isActive
   );
   if (error) throw error;
-  return (data ?? []) as unknown as EmployeeListRow[];
+  return data ?? [];
 }
 
 export async function findActiveEmployeeNames(salonId: string): Promise<EmployeeNameRow[]> {

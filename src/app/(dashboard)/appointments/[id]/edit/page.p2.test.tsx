@@ -6,6 +6,7 @@ import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-
 import { PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
+import { partialDouble } from "@/test/partial-double";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EditAppointmentPage from "./page";
 
@@ -33,7 +34,7 @@ const APPOINTMENT_ID = "00000000-0000-4000-8000-0000000000a1";
 const NOT_UUID = "cita-1";
 
 function appointment(status: string): AppointmentDetailViewModel {
-  return { id: APPOINTMENT_ID, customerName: "Laura Gómez", status } as unknown as AppointmentDetailViewModel;
+  return partialDouble<AppointmentDetailViewModel>({ id: APPOINTMENT_ID, customerName: "Laura Gómez", status });
 }
 
 const WIZARD_DATA = {

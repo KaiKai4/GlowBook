@@ -109,7 +109,7 @@ export async function findEmployeeInvitationForJoin(
     .maybeSingle();
 
   return {
-    data: data as unknown as EmployeeInvitationForJoin | null,
+    data,
     error,
   };
 }

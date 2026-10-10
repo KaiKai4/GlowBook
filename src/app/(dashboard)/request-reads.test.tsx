@@ -85,10 +85,12 @@ function ownerProfile(): ProfileWithRole {
   return {
     id: "owner-1",
     salon_id: "salon-1",
+    role_id: null,
+    full_name: "Dueña",
     is_owner: true,
     is_active: true,
     salon: { disabled_features: [] },
-  } as unknown as ProfileWithRole;
+  };
 }
 
 describe("lecturas por request del dashboard", () => {

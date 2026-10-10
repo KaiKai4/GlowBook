@@ -23,7 +23,7 @@ export async function findRolesWithPermissions(salonId: string): Promise<RoleWit
     .eq("salon_id", salonId)
     .order("name", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as unknown as RoleWithPermissions[];
+  return data ?? [];
 }
 
 export async function findAllPermissions() {

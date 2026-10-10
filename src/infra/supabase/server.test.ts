@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  createServerClient: vi.fn(() => ({ fake: true })),
+  createServerClient: vi.fn<(url: string, key: string) => { fake: boolean }>(() => ({ fake: true })),
   cookieStore: {
     getAll: vi.fn(() => []),
     get: vi.fn(() => undefined),
@@ -37,9 +37,9 @@ describe("createSupabaseServerClient", () => {
 
     expect(client).toEqual({ fake: true });
     expect(mocks.createServerClient).toHaveBeenCalledTimes(1);
-    const [url, key] = mocks.createServerClient.mock.calls[0] as unknown as [string, string];
-    expect(url).toBe(URL_VALUE);
-    expect(key).toBe(ANON_VALUE);
+    const firstCall = mocks.createServerClient.mock.calls[0];
+    expect(firstCall?.[0]).toBe(URL_VALUE);
+    expect(firstCall?.[1]).toBe(ANON_VALUE);
   });
 
   it("lanza nombrando la variable ausente, sin valores", async () => {

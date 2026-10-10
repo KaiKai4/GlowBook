@@ -12,6 +12,7 @@ const DEMO_FILE = "src/features/demo/data/demo.repo.ts";
 const SUPABASE_MESSAGE =
   "Consulta Supabase sin error: desestructura { data, error } y lanza el error (if (error) throw error).";
 const SWALLOWED_CATCH_PREFIX = "Un .catch que no registra el error oculta fallos.";
+const DOUBLE_CAST_PREFIX = "Prohibido 'as unknown as'";
 
 const eslint = new ESLint({ cwd: ROOT });
 
@@ -54,4 +55,26 @@ test("sigue bloqueando un .catch que traga el error", async () => {
   );
   assert.equal(messages.length, 1);
   assert.ok(messages[0].startsWith(SWALLOWED_CATCH_PREFIX), messages[0]);
+});
+
+test("avisa de un doble cast 'as unknown as'", async () => {
+  const messages = await restrictedMessages(
+    `export function load(value) {
+  return value as unknown as { id: string };
+}
+`
+  );
+  assert.equal(messages.length, 1);
+  assert.ok(messages[0].startsWith(DOUBLE_CAST_PREFIX), messages[0]);
+});
+
+test("no avisa de un cast simple ni de 'as unknown' sin el segundo cast", async () => {
+  const messages = await restrictedMessages(
+    `export function load(value) {
+  const raw = value as unknown;
+  return raw as { id: string };
+}
+`
+  );
+  assert.deepEqual(messages, []);
 });

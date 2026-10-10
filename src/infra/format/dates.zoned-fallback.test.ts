@@ -6,7 +6,7 @@ import { getZonedTimeParts } from "./dates";
 function stubFormatter(parts: Array<{ type: string; value: string }>): void {
   vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function FakeDateTimeFormat() {
     return { formatToParts: () => parts };
-  } as unknown as typeof Intl.DateTimeFormat);
+  });
 }
 
 describe("getZonedTimeParts (respaldo de día de la semana)", () => {

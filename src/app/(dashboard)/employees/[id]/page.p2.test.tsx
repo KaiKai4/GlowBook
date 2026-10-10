@@ -5,6 +5,7 @@ import { getEmployeeDetail, type EmployeeDetailViewModel } from "@/features/empl
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getRolesEnabled, requireProfile } from "@/app/_composition/request-context";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
+import { partialDouble } from "@/test/partial-double";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EmployeeDetailPage from "./page";
 
@@ -40,7 +41,7 @@ const EMPLOYEE_ID = "00000000-0000-4000-8000-0000000000d1";
 const NOT_UUID = "colaborador-1";
 
 function view(overrides: Partial<EmployeeDetailViewModel> = {}): EmployeeDetailViewModel {
-  return {
+  return partialDouble<EmployeeDetailViewModel>({
     employee: {
       id: EMPLOYEE_ID,
       first_name: "Ana",
@@ -50,6 +51,7 @@ function view(overrides: Partial<EmployeeDetailViewModel> = {}): EmployeeDetailV
       commission_percentage: 30,
       is_active: true,
       profile_id: null,
+      specialty: "",
     },
     categories: [{ id: "cat-1", name: "Cabello" }],
     services: [{ id: "srv-1", name: "Corte" }],
@@ -60,7 +62,7 @@ function view(overrides: Partial<EmployeeDetailViewModel> = {}): EmployeeDetailV
     pendingInvitation: null,
     roleOptions: [],
     ...overrides,
-  } as unknown as EmployeeDetailViewModel;
+  });
 }
 
 describe("EmployeeDetailPage", () => {
@@ -146,13 +148,14 @@ describe("EmployeeDetailPage", () => {
           id: EMPLOYEE_ID,
           first_name: "Ana",
           last_name: "Pérez",
-          phone: null,
-          email: null,
+          phone: "",
+          email: "",
+          specialty: "",
           commission_percentage: 0,
           is_active: false,
           profile_id: null,
         },
-      } as unknown as Partial<EmployeeDetailViewModel>)
+      })
     );
 
     mounted = mountComponent(await EmployeeDetailPage({ params: Promise.resolve({ id: EMPLOYEE_ID }) }));

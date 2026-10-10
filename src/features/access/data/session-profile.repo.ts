@@ -16,7 +16,7 @@ export async function findSessionProfile(userId: string): Promise<ProfileWithRol
 
   if (error) throw error;
   if (!data) return null;
-  return data as unknown as ProfileWithRole;
+  return data;
 }
 
 /** Estado del salon (activo o no) o null si no existe. Un error de BD se lanza. */

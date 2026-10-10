@@ -64,7 +64,7 @@ function profile(overrides: Partial<ProfileWithRole> = {}): ProfileWithRole {
     salon: { disabled_features: [] },
     role: null,
     ...overrides,
-  } as unknown as ProfileWithRole;
+  };
 }
 
 function useServer(user: { id: string } | null, tables: Record<string, Result> = {}) {

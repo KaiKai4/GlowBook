@@ -6,6 +6,7 @@ import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission } from "@/features/access";
 import { getDashboardOverview } from "@/features/dashboard";
 import { formatCurrency } from "@/infra/format/dates";
+import { partialDouble } from "@/test/partial-double";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import DashboardPage from "./page";
 
@@ -41,17 +42,17 @@ type Profile = Awaited<ReturnType<typeof requireProfile>>;
 type NavItems = ReturnType<typeof getVisibleNavItems>;
 
 function navItem(href: string): NavItems[number] {
-  return { href, label: href, icon: () => null } as unknown as NavItems[number];
+  return partialDouble<NavItems[number]>({ href, label: href, icon: "dashboard" });
 }
 
 describe("DashboardPage redireccion del unico modulo visible", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireProfile).mockResolvedValue({
+    vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
       id: "user-1",
       salon_id: "salon-1",
       is_owner: false,
-    } as unknown as Profile);
+    }));
   });
 
   it("no redirige a '/' cuando el unico modulo visible es Inicio (evita bucle)", async () => {
@@ -88,11 +89,11 @@ describe("DashboardPage indicadores de dinero", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireProfile).mockResolvedValue({
+    vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
       id: "owner-1",
       salon_id: "salon-1",
       is_owner: true,
-    } as unknown as Profile);
+    }));
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/"), navItem("/appointments")]);
     vi.mocked(hasPermission).mockReturnValue(true);
     vi.mocked(getDashboardOverview).mockResolvedValue({
@@ -123,12 +124,12 @@ describe("DashboardPage indicadores de dinero", () => {
   });
 
   it("sin modulo retail el ingreso son las citas y la ganancia descuenta los gastos", async () => {
-    vi.mocked(requireProfile).mockResolvedValue({
+    vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
       id: "owner-1",
       salon_id: "salon-1",
       is_owner: true,
       salon: { disabled_features: ["retail"] },
-    } as unknown as Profile);
+    }));
 
     const container = await renderPage();
 
