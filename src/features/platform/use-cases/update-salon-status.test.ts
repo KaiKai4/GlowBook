@@ -61,8 +61,7 @@ describe("update salon status", () => {
       actorUserId,
     });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("database down");
+    expect(result).toEqual({ ok: false, error: "No se pudo actualizar el estado del salón." });
     expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_status_changed", {
       actorUserId,
       action: "set_salon_status",

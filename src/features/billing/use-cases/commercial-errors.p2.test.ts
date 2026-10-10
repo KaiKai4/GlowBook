@@ -9,6 +9,7 @@ import {
 } from "../data/commercial-addons.repo";
 import {
   archiveCommercialPlan,
+  countPlanAssignments,
   deleteCommercialPlan,
   savePlanLimit,
   savePlanModule,
@@ -17,7 +18,8 @@ import {
 import { publishAuditEvent } from "@/features/audit";
 import { removeCommercialAddonConfig, saveCommercialAddonConfig } from "./commercial-addons";
 import {
-  removeCommercialPlanConfig,
+  archivePlan,
+  deletePlan,
   saveCommercialPlanConfig,
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
@@ -44,6 +46,7 @@ vi.mock("../data/commercial-addons.repo", () => ({
 }));
 vi.mock("../data/commercial-plans.repo", () => ({
   archiveCommercialPlan: vi.fn(),
+  countPlanAssignments: vi.fn(),
   deleteCommercialPlan: vi.fn(),
   findPlanCatalog: vi.fn(),
   saveCommercialPlan: vi.fn(),
@@ -56,7 +59,6 @@ const ACTOR = "00000000-0000-4000-8000-0000000000ad";
 const PLAN_ID = "00000000-0000-4000-8000-0000000000b1";
 const ADDON_ID = "00000000-0000-4000-8000-000000000a01";
 
-const PLAN = { id: PLAN_ID } as never;
 const VALID_ADDON = { name: "Turbo", kind: "limit_boost" as const, metricKey: "appointments", limitDelta: 10, monthlyPrice: 5 };
 
 function pgError(code: string, message: string) {
@@ -178,20 +180,25 @@ describe("commercial plans: validacion y errores publicos", () => {
     expect(captureError).toHaveBeenCalledTimes(1);
   });
 
-  it("archiva el plan con asignaciones y lo elimina sin ellas", async () => {
-    expect(await removeCommercialPlanConfig(PLAN, true, ACTOR)).toEqual({ ok: true, value: undefined });
+  it("archiva el plan y audita la accion", async () => {
+    expect(await archivePlan(PLAN_ID, ACTOR)).toEqual({ ok: true, value: undefined });
     expect(archiveCommercialPlan).toHaveBeenCalledWith(PLAN_ID);
     expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_archived", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_archived", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
+  });
 
-    expect(await removeCommercialPlanConfig(PLAN, false, ACTOR)).toEqual({ ok: true, value: undefined });
+  it("elimina el plan sin asignaciones y audita la accion", async () => {
+    vi.mocked(countPlanAssignments).mockResolvedValueOnce(0);
+    expect(await deletePlan(PLAN_ID, ACTOR)).toEqual({ ok: true, value: undefined });
     expect(deleteCommercialPlan).toHaveBeenCalledWith(PLAN_ID);
     expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_deleted", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_deleted", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
+
   it("un mensaje de dominio (PublicError) del borrado del plan llega al usuario tal cual", async () => {
     vi.mocked(deleteCommercialPlan).mockRejectedValue(new PublicError("No se puede eliminar un plan activo."));
 
-    const result = await removeCommercialPlanConfig(PLAN, false, ACTOR);
+    vi.mocked(countPlanAssignments).mockResolvedValueOnce(0);
+    const result = await deletePlan(PLAN_ID, ACTOR);
 
     expect(result).toEqual({ ok: false, error: "No se puede eliminar un plan activo." });
     expect(captureError).not.toHaveBeenCalled();

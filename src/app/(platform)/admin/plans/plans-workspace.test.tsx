@@ -5,7 +5,7 @@ import { clickElement, getButtonByText } from "@/test/ui-admin-dom";
 import { makeMetric, makePlan } from "@/test/ui-admin-fixtures";
 import { PlansWorkspace } from "./plans-workspace";
 
-vi.mock("./actions", () => ({ removePlanAction: vi.fn() }));
+vi.mock("./actions", () => ({ archivePlanAction: vi.fn(), deletePlanAction: vi.fn() }));
 
 // Los editores de cada pestaña tienen su propio test: aquí solo se comprueba
 // qué editor recibe el plan seleccionado.

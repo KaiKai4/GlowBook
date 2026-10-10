@@ -20,7 +20,8 @@ vi.mock("next/link", async () => {
 });
 vi.mock("./actions", () => ({
   savePlanAction: vi.fn(),
-  removePlanAction: vi.fn(),
+  archivePlanAction: vi.fn(),
+  deletePlanAction: vi.fn(),
   savePlanModulesAction: vi.fn(),
   savePlanLimitsAction: vi.fn(),
   saveAddonAction: vi.fn(),

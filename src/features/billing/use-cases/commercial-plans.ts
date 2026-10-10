@@ -8,6 +8,7 @@ import type { CommercialPlan } from "../domain/commercial-plan";
 import type { CommercialAddon } from "../domain/salon-extras";
 import {
   archiveCommercialPlan,
+  countPlanAssignments,
   deleteCommercialPlan,
   findPlanCatalog,
   saveCommercialPlan,
@@ -126,17 +127,25 @@ export async function saveCommercialPlanConfig(
   }
 }
 
-export async function removeCommercialPlanConfig(
-  plan: CommercialPlan,
-  hasAssignments: boolean,
-  actorUserId?: string | null
-): Promise<Result<void>> {
+/** Archiva el plan: lo retira del catalogo sin tocar las asignaciones existentes. */
+export async function archivePlan(planId: string, actorUserId?: string | null): Promise<Result<void>> {
   try {
-    if (hasAssignments) await archiveCommercialPlan(plan.id);
-    else await deleteCommercialPlan(plan.id);
-    const warnings = hasAssignments
-      ? await publishAuditEvent("billing.plan_archived", { ...commercialPlanAudit(actorUserId, plan.id), action: "commercial_plan_archived" })
-      : await publishAuditEvent("billing.plan_deleted", { ...commercialPlanAudit(actorUserId, plan.id), action: "commercial_plan_deleted" });
+    await archiveCommercialPlan(planId);
+    const warnings = await publishAuditEvent("billing.plan_archived", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_archived" });
+    return ok(undefined, warnings);
+  } catch (error) {
+    return err(toPublicErrorMessage(error, "No se pudo archivar el plan."));
+  }
+}
+
+const PLAN_HAS_ASSIGNMENTS_MESSAGE = "El plan tiene salones asignados. Archívalo en lugar de eliminarlo.";
+
+/** Borra el plan solo si ningun salon lo tiene asignado; el conteo lo hace el servidor. */
+export async function deletePlan(planId: string, actorUserId?: string | null): Promise<Result<void>> {
+  try {
+    if ((await countPlanAssignments(planId)) > 0) return err(PLAN_HAS_ASSIGNMENTS_MESSAGE);
+    await deleteCommercialPlan(planId);
+    const warnings = await publishAuditEvent("billing.plan_deleted", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_deleted" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo eliminar el plan."));

@@ -6,11 +6,11 @@ import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedb
 import { updateSalonStatus } from "@/features/platform/use-cases/update-salon-status";
 import { removeCommercialAddonConfig, saveCommercialAddonConfig } from "@/features/billing/use-cases/commercial-addons";
 import {
-  removeCommercialPlanConfig,
+  archivePlan,
+  deletePlan,
   saveCommercialPlanConfig,
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
-  type CommercialPlan,
 } from "@/features/billing/use-cases/commercial-plans";
 import {
   assignSalonAddonConfig,
@@ -22,7 +22,7 @@ import {
 } from "@/features/billing/use-cases/salon-subscriptions";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { PLATFORM_PLAN_IDLE_STATE } from "./plans/action-state";
-import { removeAddonAction, removePlanAction, saveAddonAction, savePlanAction, savePlanLimitsAction, savePlanModulesAction } from "./plans/actions";
+import { archivePlanAction, deletePlanAction, removeAddonAction, saveAddonAction, savePlanAction, savePlanLimitsAction, savePlanModulesAction } from "./plans/actions";
 import { setFeedbackStatusAction } from "./reports/actions";
 import {
   assignPlanAction,
@@ -56,7 +56,8 @@ vi.mock("@/features/platform/use-cases/set-feedback-report-status", () => ({
   setFeedbackReportStatus: vi.fn(),
 }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
-  removeCommercialPlanConfig: vi.fn(),
+  archivePlan: vi.fn(),
+  deletePlan: vi.fn(),
   saveCommercialPlanConfig: vi.fn(),
   saveCommercialPlanLimitsBatch: vi.fn(),
   saveCommercialPlanModulesBatch: vi.fn(),
@@ -75,7 +76,6 @@ vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
 }));
 
 const ID = "00000000-0000-4000-8000-0000000000a1";
-const plan = { id: ID } as CommercialPlan;
 
 const USE_CASES = [
   inviteSalon,
@@ -84,7 +84,8 @@ const USE_CASES = [
   updateSalonStatus,
   setFeedbackReportStatus,
   saveCommercialPlanConfig,
-  removeCommercialPlanConfig,
+  archivePlan,
+  deletePlan,
   saveCommercialPlanModulesBatch,
   saveCommercialPlanLimitsBatch,
   saveCommercialAddonConfig,
@@ -104,7 +105,8 @@ const ACTIONS: Array<[string, () => Promise<unknown>]> = [
   ["updateSalonStatusAction", () => updateSalonStatusAction(ID, true)],
   ["setFeedbackStatusAction", () => setFeedbackStatusAction(new FormData())],
   ["savePlanAction", () => savePlanAction(PLATFORM_PLAN_IDLE_STATE, new FormData())],
-  ["removePlanAction", () => removePlanAction(plan, false)],
+  ["archivePlanAction", () => archivePlanAction(ID)],
+  ["deletePlanAction", () => deletePlanAction(ID)],
   ["savePlanModulesAction", () => savePlanModulesAction(PLATFORM_PLAN_IDLE_STATE, new FormData())],
   ["savePlanLimitsAction", () => savePlanLimitsAction(PLATFORM_PLAN_IDLE_STATE, new FormData())],
   ["saveAddonAction", () => saveAddonAction(PLATFORM_PLAN_IDLE_STATE, new FormData())],

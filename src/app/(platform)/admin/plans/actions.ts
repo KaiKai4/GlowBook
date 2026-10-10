@@ -4,11 +4,11 @@ import { definePlatformAction } from "@/app/_composition/define-platform-action"
 import { parseUuidField } from "@/app/_composition/define-action";
 import { ok } from "@/infra/result";
 import {
-  removeCommercialPlanConfig,
+  archivePlan,
+  deletePlan,
   saveCommercialPlanConfig,
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
-  type CommercialPlan,
 } from "@/features/billing/use-cases/commercial-plans";
 import {
   removeCommercialAddonConfig,
@@ -45,27 +45,35 @@ export async function savePlanAction(
   return toPlanActionState(await savePlanFlow(formData));
 }
 
-interface RemovePlanRaw {
-  plan: CommercialPlan;
-  hasAssignments: boolean;
-}
-
-const removePlanFlow = definePlatformAction<RemovePlanRaw, RemovePlanRaw, void>({
-  rateLimit: { scope: "admin:removePlanAction" },
-  parse: (raw) => {
-    const planId = parseUuidField(raw.plan.id);
-    return planId.ok ? ok(raw) : planId;
-  },
-  run: async ({ plan, hasAssignments }, session) => {
-    const result = await removeCommercialPlanConfig(plan, hasAssignments, session.userId);
+const archivePlanFlow = definePlatformAction<string, string, void>({
+  rateLimit: { scope: "admin:archivePlanAction" },
+  parse: parseUuidField,
+  run: async (planId, session) => {
+    const result = await archivePlan(planId, session.userId);
     return result.ok ? ok(undefined) : result;
   },
   revalidate: () => PLAN_PATHS,
 });
 
 /** Las acciones de borrado lanzan para que el cliente muestre el error. */
-export async function removePlanAction(plan: CommercialPlan, hasAssignments: boolean): Promise<void> {
-  const result = await removePlanFlow({ plan, hasAssignments });
+export async function archivePlanAction(planId: string): Promise<void> {
+  const result = await archivePlanFlow(planId);
+  if (!result.ok) throw new Error(result.error);
+}
+
+const deletePlanFlow = definePlatformAction<string, string, void>({
+  rateLimit: { scope: "admin:deletePlanAction" },
+  parse: parseUuidField,
+  run: async (planId, session) => {
+    const result = await deletePlan(planId, session.userId);
+    return result.ok ? ok(undefined) : result;
+  },
+  revalidate: () => PLAN_PATHS,
+});
+
+/** El servidor comprueba las asignaciones: el cliente solo envia el id del plan. */
+export async function deletePlanAction(planId: string): Promise<void> {
+  const result = await deletePlanFlow(planId);
   if (!result.ok) throw new Error(result.error);
 }
 

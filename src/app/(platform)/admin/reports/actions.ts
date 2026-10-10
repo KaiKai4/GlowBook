@@ -19,8 +19,9 @@ const setFeedbackStatusFlow = definePlatformAction<FormData, FeedbackStatusForm 
     return ok(parseUuid(form.id) ? form : null);
   },
   run: async (form, session) => {
-    if (form) await setFeedbackReportStatus({ ...form, actorUserId: session.userId });
-    return ok(undefined);
+    if (!form) return ok(undefined);
+    const result = await setFeedbackReportStatus({ ...form, actorUserId: session.userId });
+    return result.ok ? ok(undefined) : result;
   },
   revalidate: (_output, form) => (form ? ["/admin/reports"] : []),
 });

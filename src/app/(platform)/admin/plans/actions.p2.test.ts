@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import {
-  removeCommercialPlanConfig,
+  archivePlan,
+  deletePlan,
   saveCommercialPlanConfig,
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
-  type CommercialPlan,
 } from "@/features/billing/use-cases/commercial-plans";
 import {
   removeCommercialAddonConfig,
@@ -16,7 +16,8 @@ import { err, ok } from "@/infra/result";
 import { formDataOf } from "@/test/action-fixtures";
 import {
   removeAddonAction,
-  removePlanAction,
+  archivePlanAction,
+  deletePlanAction,
   saveAddonAction,
   savePlanAction,
   savePlanLimitsAction,
@@ -31,7 +32,8 @@ vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
-  removeCommercialPlanConfig: vi.fn(),
+  archivePlan: vi.fn(),
+  deletePlan: vi.fn(),
   saveCommercialPlanConfig: vi.fn(),
   saveCommercialPlanLimitsBatch: vi.fn(),
   saveCommercialPlanModulesBatch: vi.fn(),
@@ -48,7 +50,6 @@ const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a in
 const INVALID_ID = "Identificador inválido.";
 const PLAN_PATHS = ["/admin/plans", "/admin/subscriptions", "/"];
 
-const plan: CommercialPlan = { id: PLAN_ID } as CommercialPlan;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -114,30 +115,53 @@ describe("savePlanAction", () => {
   });
 });
 
-describe("removePlanAction", () => {
-  it("lanza el mensaje del rate limit sin eliminar", async () => {
+describe("archivePlanAction", () => {
+  it("lanza el mensaje del rate limit sin archivar", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
-    await expect(removePlanAction(plan, false)).rejects.toThrow(RATE_LIMIT_MESSAGE);
-    expect(removeCommercialPlanConfig).not.toHaveBeenCalled();
+    await expect(archivePlanAction(PLAN_ID)).rejects.toThrow(RATE_LIMIT_MESSAGE);
+    expect(archivePlan).not.toHaveBeenCalled();
   });
 
   it("rechaza un id de plan que no es UUID", async () => {
-    await expect(removePlanAction({ id: "abc" } as CommercialPlan, false)).rejects.toThrow(
-      INVALID_ID
-    );
-    expect(removeCommercialPlanConfig).not.toHaveBeenCalled();
+    await expect(archivePlanAction("abc")).rejects.toThrow(INVALID_ID);
+    expect(archivePlan).not.toHaveBeenCalled();
   });
 
-  it("elimina el plan y revalida; lanza el error del caso de uso si falla", async () => {
-    vi.mocked(removeCommercialPlanConfig).mockResolvedValueOnce(ok(undefined) as never);
+  it("archiva el plan y revalida; lanza el error del caso de uso si falla", async () => {
+    vi.mocked(archivePlan).mockResolvedValueOnce(ok(undefined) as never);
 
-    await expect(removePlanAction(plan, true)).resolves.toBeUndefined();
-    expect(removeCommercialPlanConfig).toHaveBeenCalledWith(plan, true, ADMIN_ID);
+    await expect(archivePlanAction(PLAN_ID)).resolves.toBeUndefined();
+    expect(archivePlan).toHaveBeenCalledWith(PLAN_ID, ADMIN_ID);
     for (const path of PLAN_PATHS) expect(revalidatePath).toHaveBeenCalledWith(path);
 
-    vi.mocked(removeCommercialPlanConfig).mockResolvedValueOnce(err("No se puede eliminar.") as never);
-    await expect(removePlanAction(plan, false)).rejects.toThrow("No se puede eliminar.");
+    vi.mocked(archivePlan).mockResolvedValueOnce(err("No se puede archivar.") as never);
+    await expect(archivePlanAction(PLAN_ID)).rejects.toThrow("No se puede archivar.");
+  });
+});
+
+describe("deletePlanAction", () => {
+  it("lanza el mensaje del rate limit sin eliminar", async () => {
+    rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
+
+    await expect(deletePlanAction(PLAN_ID)).rejects.toThrow(RATE_LIMIT_MESSAGE);
+    expect(deletePlan).not.toHaveBeenCalled();
+  });
+
+  it("rechaza un id de plan que no es UUID", async () => {
+    await expect(deletePlanAction("abc")).rejects.toThrow(INVALID_ID);
+    expect(deletePlan).not.toHaveBeenCalled();
+  });
+
+  it("elimina el plan solo a traves del caso de uso, que decide con el servidor", async () => {
+    vi.mocked(deletePlan).mockResolvedValueOnce(ok(undefined) as never);
+
+    await expect(deletePlanAction(PLAN_ID)).resolves.toBeUndefined();
+    expect(deletePlan).toHaveBeenCalledWith(PLAN_ID, ADMIN_ID);
+    for (const path of PLAN_PATHS) expect(revalidatePath).toHaveBeenCalledWith(path);
+
+    vi.mocked(deletePlan).mockResolvedValueOnce(err("El plan tiene salones asignados.") as never);
+    await expect(deletePlanAction(PLAN_ID)).rejects.toThrow("El plan tiene salones asignados.");
   });
 });
 

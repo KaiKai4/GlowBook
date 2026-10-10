@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
 import { captureError } from "@/infra/observability";
 import { updateSalonStatus } from "./update-salon-status";
+import { PublicError } from "@/infra/public-error";
 import { publishAuditEvent } from "@/features/audit";
 
 // Suspender o reactivar un salon: el id llega con espacios del formulario y
@@ -71,16 +72,17 @@ describe("updateSalonStatus input handling", () => {
 });
 
 describe("updateSalonStatus failures", () => {
-  it("includes the adapter detail in the message, logs it and audits the failed attempt", async () => {
-    const adapterError = new Error("Salon no encontrado.");
+  it("hides the adapter detail from the public message, logs it and audits the failed attempt", async () => {
+    const adapterError = new Error("relation salons violates constraint");
     mockedSetStatus.mockRejectedValue(adapterError);
 
     const result = await updateSalonStatus({ salonId: SALON_ID, isActive: false, actorUserId: ACTOR_ID });
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo actualizar el estado del salon. Detalle: Salon no encontrado.",
+      error: "No se pudo actualizar el estado del salón.",
     });
+    expect(JSON.stringify(result)).not.toContain("constraint");
     expect(mockedCaptureError).toHaveBeenCalledWith(adapterError, {
       module: "platform",
       action: "set_salon_status",
@@ -92,21 +94,30 @@ describe("updateSalonStatus failures", () => {
       status: "failed",
       targetSalonId: SALON_ID,
       metadata: { isActive: false },
-      errorMessage: "Salon no encontrado.",
+      errorMessage: "relation salons violates constraint",
     });
   });
 
-  it("uses a generic detail when the adapter rejects with a non-Error value", async () => {
+  it("uses the fixed message when the adapter rejects with a non-Error value", async () => {
     mockedSetStatus.mockRejectedValue({ code: 500 });
 
     const result = await updateSalonStatus({ salonId: SALON_ID, isActive: true });
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo actualizar el estado del salon. Detalle: Error desconocido",
+      error: "No se pudo actualizar el estado del salón.",
     });
     expect(mockedAudit).toHaveBeenCalledWith(
       "platform.salon_status_changed", expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
     );
+  });
+
+  it("shows the message of a PublicError thrown on purpose by the adapter", async () => {
+    mockedSetStatus.mockRejectedValue(new PublicError("Salón no encontrado."));
+
+    const result = await updateSalonStatus({ salonId: SALON_ID, isActive: false });
+
+    expect(result).toEqual({ ok: false, error: "Salón no encontrado." });
+    expect(mockedCaptureError).toHaveBeenCalled();
   });
 });

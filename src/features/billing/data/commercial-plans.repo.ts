@@ -12,7 +12,7 @@ import type {
   PlatformModule,
   UsageCounterKey,
 } from "../domain/commercial-plan";
-import { assertOk, billingDb, selectRows, selectWhere } from "./billing-db";
+import { assertOk, billingDb, countRows, selectRows, selectWhere } from "./billing-db";
 
 const MODULE_COLUMNS = "key, name, description, nav_href, icon_name, sort_order, is_active, is_archived";
 const METRIC_COLUMNS =
@@ -158,6 +158,14 @@ export async function saveCommercialPlan(values: {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("No se pudo crear el plan.");
   return data.id;
+}
+
+/** Numero de asignaciones de salon a este plan (cualquier estado). */
+export async function countPlanAssignments(planId: string): Promise<number> {
+  const supabase = billingDb();
+  return countRows(
+    supabase.from("salon_plan_assignments").select("id", { count: "exact", head: true }).eq("plan_id", planId)
+  );
 }
 
 export async function archiveCommercialPlan(planId: string) {

@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   archiveCommercialPlan,
+  countPlanAssignments,
   deleteCommercialPlan,
   saveCommercialPlan,
 } from "../data/commercial-plans.repo";
 import { publishAuditEvent } from "@/features/audit";
-import type { CommercialPlan } from "../domain/commercial-plan";
 import {
-  removeCommercialPlanConfig,
+  archivePlan,
+  deletePlan,
   saveCommercialPlanConfig,
 } from "./commercial-plans";
 
 vi.mock("../data/commercial-plans.repo", () => ({
   archiveCommercialPlan: vi.fn(),
+  countPlanAssignments: vi.fn(),
   deleteCommercialPlan: vi.fn(),
   findPlanCatalog: vi.fn(),
   saveCommercialPlan: vi.fn(),
@@ -36,24 +38,10 @@ vi.mock("@/features/audit", () => ({
 const saveCommercialPlanMock = vi.mocked(saveCommercialPlan);
 const archiveMock = vi.mocked(archiveCommercialPlan);
 const deleteMock = vi.mocked(deleteCommercialPlan);
+const countMock = vi.mocked(countPlanAssignments);
 const auditMock = vi.mocked(publishAuditEvent);
 
 const PLAN_ID = "11111111-1111-4111-8111-111111111111";
-
-const planFixture: CommercialPlan = {
-  id: PLAN_ID,
-  code: "pro",
-  name: "Pro",
-  description: "",
-  currency: "USD",
-  monthlyPrice: 10,
-  trialDays: 0,
-  status: "draft",
-  isPublic: false,
-  sortOrder: 0,
-  modules: [],
-  limits: [],
-};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -151,33 +139,58 @@ describe("saveCommercialPlanConfig", () => {
   });
 });
 
-describe("removeCommercialPlanConfig", () => {
-  it("archives a plan that still has assignments and audits it as archived", async () => {
-    const result = await removeCommercialPlanConfig(planFixture, true, "actor-1");
+describe("archivePlan", () => {
+  it("archives the plan and audits it as archived", async () => {
+    const result = await archivePlan(PLAN_ID, "actor-1");
 
     expect(result.ok).toBe(true);
     expect(archiveMock).toHaveBeenCalledWith(PLAN_ID);
     expect(deleteMock).not.toHaveBeenCalled();
-    expect(auditMock).toHaveBeenCalledWith("billing.plan_archived", 
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_archived",
       expect.objectContaining({ action: "commercial_plan_archived" })
     );
   });
 
-  it("hard-deletes a plan without assignments and audits it as deleted", async () => {
-    const result = await removeCommercialPlanConfig(planFixture, false, "actor-1");
+  it("reports archive failures with the archive message", async () => {
+    archiveMock.mockRejectedValueOnce(new Error("fk"));
+
+    const result = await archivePlan(PLAN_ID);
+
+    expect(result).toEqual({ ok: false, error: "No se pudo archivar el plan." });
+  });
+});
+
+describe("deletePlan", () => {
+  it("counts the assignments on the server and hard-deletes a plan without any", async () => {
+    countMock.mockResolvedValueOnce(0);
+
+    const result = await deletePlan(PLAN_ID, "actor-1");
 
     expect(result.ok).toBe(true);
+    expect(countMock).toHaveBeenCalledWith(PLAN_ID);
     expect(deleteMock).toHaveBeenCalledWith(PLAN_ID);
     expect(archiveMock).not.toHaveBeenCalled();
-    expect(auditMock).toHaveBeenCalledWith("billing.plan_deleted", 
+    expect(auditMock).toHaveBeenCalledWith("billing.plan_deleted",
       expect.objectContaining({ action: "commercial_plan_deleted" })
     );
   });
 
-  it("reports failures with the removal prefix", async () => {
+  it("refuses to delete a plan that still has assignments, without deleting or archiving it", async () => {
+    countMock.mockResolvedValueOnce(2);
+
+    const result = await deletePlan(PLAN_ID, "actor-1");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/archív/i);
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(archiveMock).not.toHaveBeenCalled();
+  });
+
+  it("reports failures of the delete with the delete message", async () => {
+    countMock.mockResolvedValueOnce(0);
     deleteMock.mockRejectedValueOnce(new Error("fk"));
 
-    const result = await removeCommercialPlanConfig(planFixture, false);
+    const result = await deletePlan(PLAN_ID);
 
     expect(result).toEqual({ ok: false, error: "No se pudo eliminar el plan." });
   });

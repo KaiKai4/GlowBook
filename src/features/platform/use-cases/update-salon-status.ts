@@ -2,6 +2,9 @@ import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
 import { captureError } from "@/infra/observability";
 import { ok, type Result } from "@/infra/result";
 import { publishAuditEvent } from "@/features/audit";
+import { PublicError } from "@/infra/public-error";
+
+const STATUS_FAILED_MESSAGE = "No se pudo actualizar el estado del salón.";
 
 export interface UpdateSalonStatusInput {
   salonId: string;
@@ -44,9 +47,10 @@ export async function updateSalonStatus({
       metadata: { isActive },
       errorMessage: message,
     });
+    // El detalle interno solo va al registro y a la auditoria (ADR 0018).
     return {
       ok: false,
-      error: `No se pudo actualizar el estado del salon. Detalle: ${message}`,
+      error: error instanceof PublicError ? error.message : STATUS_FAILED_MESSAGE,
     };
   }
 }

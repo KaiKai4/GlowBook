@@ -47,7 +47,7 @@ describe("delete salon", () => {
     });
   });
 
-  it("returns Adapter failure details for platform operators", async () => {
+  it("keeps adapter failure details out of the public message and audits them", async () => {
     mockedDeleteSalonCompletely.mockRejectedValue(new Error("Auth cleanup failed"));
 
     const result = await deleteSalon({
@@ -56,8 +56,7 @@ describe("delete salon", () => {
       actorUserId,
     });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("Auth cleanup failed");
+    expect(result).toEqual({ ok: false, error: "No se pudo eliminar el salón y sus datos." });
     expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_deleted", {
       actorUserId,
       action: "delete_salon",

@@ -10,7 +10,7 @@ import type {
   PlatformModule,
 } from "@/features/billing/use-cases/commercial-plans";
 import { cn } from "@/components/ui/cn";
-import { removePlanAction } from "./actions";
+import { archivePlanAction, deletePlanAction } from "./actions";
 import { PlanForm, PlanInfoEditor, PlanLimits, PlanModules, PlanSummary } from "./plan-sections";
 import { EmptyState, StatusPill } from "./workspace-ui";
 
@@ -143,7 +143,8 @@ export function PlansWorkspace({
                     </p>
                   </div>
                 </div>
-                <form action={removePlanAction.bind(null, selectedPlan, selectedAssignments > 0)}>
+                {/* hasAssignments solo elige el texto y la accion; el servidor vuelve a comprobarlo. */}
+                <form action={selectedAssignments > 0 ? archivePlanAction.bind(null, selectedPlan.id) : deletePlanAction.bind(null, selectedPlan.id)}>
                   <Button type="submit" variant="outline" className="border-danger-border text-danger hover:bg-danger-subtle">
                     <Archive className="h-4 w-4" />
                     {selectedAssignments > 0 ? "Archivar" : "Eliminar"}
