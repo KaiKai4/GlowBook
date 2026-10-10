@@ -1,8 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
-  cleanupSalonOwnerFixture,
   createIntegrationAdminClient,
-  createSalonOwnerFixture,
   createScheduledAppointmentFixture,
   getSupabaseIntegrationEnv,
   type AppointmentFixture,
@@ -13,11 +11,7 @@ import { expectNoSeriousA11yViolations } from "./support/a11y";
 import { selectCalendarDate } from "./support/calendar";
 import { isLocalTarget, skipUnlessReady } from "./support/env";
 import { loginWith } from "./support/login";
-import {
-  cleanupLimitedCollaboratorFixture,
-  createLimitedCollaboratorFixture,
-  type LimitedCollaboratorFixture,
-} from "./support/limited-collaborator";
+import type { LimitedCollaboratorFixture } from "./support/limited-collaborator";
 import { readLocalFixtures } from "./support/local-fixtures";
 import { LIMITED_SCREENS, OWNER_SCREENS, PLATFORM_SCREENS } from "./support/routes";
 
@@ -70,14 +64,12 @@ async function auditScreen(page: Page, path: string): Promise<void> {
   await expectNoSeriousA11yViolations(page);
 }
 
+// Owner y colaborador los crea global-setup una sola vez: cada worker creaba los suyos y
+// cada uno hacía un login real, lo que agotaba el límite de logins por IP.
 test.describe("accesibilidad: salón owner", () => {
   test.beforeAll(async () => {
     if (!isLocalTarget) return;
-    ownerFixture = await createSalonOwnerFixture(getAdmin(), "E2E a11y owner");
-  });
-
-  test.afterAll(async () => {
-    if (admin && ownerFixture) await cleanupSalonOwnerFixture(admin, ownerFixture);
+    ownerFixture = readLocalFixtures().accessibilityOwner;
   });
 
   test.beforeEach(async ({ page }) => {
@@ -128,13 +120,8 @@ test.describe("accesibilidad: salón owner", () => {
 test.describe("accesibilidad: colaborador con permisos limitados", () => {
   test.beforeAll(async () => {
     if (!isLocalTarget) return;
-    ownerFixture = await createSalonOwnerFixture(getAdmin(), "E2E a11y colaborador");
-    limited = await createLimitedCollaboratorFixture(getAdmin(), ownerFixture.salonId);
-  });
-
-  test.afterAll(async () => {
-    if (admin && limited) await cleanupLimitedCollaboratorFixture(admin, limited);
-    if (admin && ownerFixture) await cleanupSalonOwnerFixture(admin, ownerFixture);
+    const fixtures = readLocalFixtures();
+    limited = fixtures.accessibilityCollaborator;
   });
 
   test.beforeEach(async ({ page }) => {

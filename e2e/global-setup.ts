@@ -10,12 +10,19 @@ import {
 } from "../src/test/supabase-integration-fixtures";
 import { isLocalTarget } from "./support/env";
 import { LOCAL_FIXTURES_ENV, serializeLocalFixtures } from "./support/local-fixtures";
+import {
+  cleanupLimitedCollaboratorFixture,
+  createLimitedCollaboratorFixture,
+} from "./support/limited-collaborator";
+import { clearSessionCache } from "./support/session-cache";
 
 // Crea con el service role LOCAL los datos que requieren los specs:
 // dos salones (A y B), un owner por salón y un platform admin.
 // Solo corre en modo local; las credenciales son generadas por el test.
 export default async function globalSetup(): Promise<() => Promise<void>> {
   if (!isLocalTarget) return async () => {};
+  // Las sesiones cacheadas pertenecen a la BD de esta ejecución: se descartan al empezar.
+  await clearSessionCache();
 
   const admin = createIntegrationAdminClient(getSupabaseIntegrationEnv());
   const cleanups: Array<() => Promise<void>> = [];
@@ -30,6 +37,15 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     const salonOwnerMobile: SalonOwnerFixture = await createSalonOwnerFixture(admin, "E2E Tenant Mobile");
     cleanups.push(() => cleanupSalonOwnerFixture(admin, salonOwnerMobile));
 
+    const salonOwnerSignOut: SalonOwnerFixture = await createSalonOwnerFixture(admin, "E2E Cierre de sesión");
+    cleanups.push(() => cleanupSalonOwnerFixture(admin, salonOwnerSignOut));
+
+    const accessibilityOwner: SalonOwnerFixture = await createSalonOwnerFixture(admin, "E2E a11y");
+    cleanups.push(() => cleanupSalonOwnerFixture(admin, accessibilityOwner));
+
+    const accessibilityCollaborator = await createLimitedCollaboratorFixture(admin, accessibilityOwner.salonId);
+    cleanups.push(() => cleanupLimitedCollaboratorFixture(admin, accessibilityCollaborator));
+
     const platformAdmin: PlatformAdminFixture = await createPlatformAdminFixture(admin);
     cleanups.push(() => cleanupPlatformAdminFixture(admin, platformAdmin));
 
@@ -37,6 +53,9 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
       salonOwnerA,
       salonOwnerB,
       salonOwnerMobile,
+      salonOwnerSignOut,
+      accessibilityOwner,
+      accessibilityCollaborator,
       platformAdmin,
     });
     process.env.E2E_SALON_OWNER_EMAIL = salonOwnerA.email;

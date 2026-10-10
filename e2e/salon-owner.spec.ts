@@ -12,6 +12,7 @@ import {
 import { expectNoSeriousA11yViolations } from "./support/a11y";
 import { isLocalTarget, skipUnlessReady } from "./support/env";
 import { readLocalFixtures } from "./support/local-fixtures";
+import { loginWith } from "./support/login";
 import { futureDate, selectCalendarDate } from "./support/calendar";
 
 let credentials: AuthCredentials | null =
@@ -29,14 +30,6 @@ let credentials: AuthCredentials | null =
 
 let admin: TestSupabaseClient | null = null;
 let fixture: SalonOwnerFixture | null = null;
-
-async function login(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel(/Correo|Email/i).fill(credentials!.email);
-  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(credentials!.password);
-  await page.getByRole("button", { name: /Iniciar/i }).click();
-  await expect(page).not.toHaveURL(/\/login/);
-}
 
 // El Select del proyecto (src/components/ui/select.tsx) es un combobox: el disparador
 // es un botón etiquetado y las opciones son role="option" dentro de un listbox en portal.
@@ -82,7 +75,7 @@ test.describe("salon owner critical smoke", () => {
       !credentials,
       "Requires E2E_SALON_OWNER_* credentials or Supabase service role fixture env."
     );
-    await login(page);
+    await loginWith(page, credentials!.email, credentials!.password);
   });
 
   test("loads the dashboard shell and visible salon Modules", async ({ page }) => {
@@ -300,7 +293,16 @@ test.describe("salon owner critical smoke", () => {
     await expectNoSeriousA11yViolations(page);
   });
 
+});
+
+// signOut() es global (revoca todas las sesiones del usuario): va con un owner propio,
+// nunca con el de la caché del resto de specs.
+test.describe("cierre de sesión", () => {
   test("signs out and returns to login", async ({ page }) => {
+    skipUnlessReady(!isLocalTarget, "El cierre de sesión usa el owner local de global-setup.");
+    const owner = readLocalFixtures().salonOwnerSignOut;
+    await loginWith(page, owner.email, owner.password, { fresh: true });
+
     await page.getByRole("button", { name: /Cerrar sesi/i }).first().click();
 
     await expect(page).toHaveURL(/\/login/);

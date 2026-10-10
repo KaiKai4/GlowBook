@@ -10,6 +10,7 @@ import {
 } from "../src/test/supabase-integration-fixtures";
 import { skipUnlessReady } from "./support/env";
 import { readLocalFixtures } from "./support/local-fixtures";
+import { loginWith } from "./support/login";
 
 // Los salones A y B los crea global-setup (y su limpieza corre en el teardown global).
 let admin: TestSupabaseClient | null = null;
@@ -23,13 +24,7 @@ let tenantBTexts: string[] = [];
 const NOT_FOUND_TEXT = "Página no encontrada";
 
 async function loginAsSalonA(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel(/Correo|Email/i).fill(salonA!.email);
-  await page
-    .getByRole("textbox", { name: "Contraseña", exact: true })
-    .fill(salonA!.password);
-  await page.getByRole("button", { name: /Iniciar/i }).click();
-  await expect(page).not.toHaveURL(/\/login/);
+  await loginWith(page, salonA!.email, salonA!.password);
 }
 
 /**
