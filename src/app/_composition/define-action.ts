@@ -1,6 +1,8 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import type { ActionContext, Permission } from "@/features/access";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing";
+import type { SalonFeatureKey } from "@/features/salon-features";
 import { assertActionRateLimit, type RateLimitOptions } from "@/infra/security/rate-limit";
 import { err, ok, type Result } from "@/infra/result";
 import type { z } from "@/infra/validation/zod";
@@ -13,6 +15,9 @@ import { requireActionContext } from "./request-context";
 // caso de uso -> revalidacion. La accion solo orquesta: las reglas viven en los
 // casos de uso, y el permiso se pregunta por clave, nunca por nombre de rol.
 
+/** Ruta a revalidar: una ruta de pagina o un layout completo que cubre sus subrutas. */
+type RevalidateTarget = string | { path: string; type: "layout" };
+
 /**
  * Pipeline comun a la sesion de salon y a la de plataforma: rate limit,
  * validacion, UNA llamada a un caso de uso y revalidacion.
@@ -24,8 +29,8 @@ export interface FlowSpec<TRaw, TInput, TOutput, TSession extends { userId: stri
   parse: (raw: TRaw) => Result<TInput>;
   /** Unica llamada a un caso de uso. */
   run: (input: TInput, session: TSession) => Promise<Result<TOutput>>;
-  /** Rutas a revalidar cuando el caso de uso responde ok. */
-  revalidate?: (output: TOutput, input: TInput) => readonly string[];
+  /** Rutas o layouts a revalidar cuando el caso de uso responde ok. */
+  revalidate?: (output: TOutput, input: TInput) => readonly RevalidateTarget[];
 }
 
 export interface GuardedActionSpec<TRaw, TInput, TOutput>
@@ -35,7 +40,14 @@ export interface GuardedActionSpec<TRaw, TInput, TOutput>
    * que se devuelve si falta alguno.
    */
   permission?: { key: Permission | Permission[]; deniedMessage: string };
+  /**
+   * Modulo contratado del salón. Si no esta habilitado en el plan (o, sin plan,
+   * en las features heredadas) la accion responde con error antes del rate limit.
+   */
+  module?: SalonFeatureKey;
 }
+
+const MODULE_DISABLED_MESSAGE = "Este módulo no está incluido en el plan de este salón.";
 
 /** Indica si el contexto tiene todas las claves de permiso pedidas. */
 function hasAllPermissions(context: ActionContext, key: Permission | Permission[]): boolean {
@@ -62,8 +74,9 @@ export async function runActionFlow<TRaw, TInput, TOutput, TSession extends { us
 
   const result = await spec.run(parsed.value, session);
   if (result.ok && spec.revalidate) {
-    for (const path of spec.revalidate(result.value, parsed.value)) {
-      revalidatePath(path);
+    for (const target of spec.revalidate(result.value, parsed.value)) {
+      if (typeof target === "string") revalidatePath(target);
+      else revalidatePath(target.path, target.type);
     }
   }
   return result;
@@ -82,6 +95,13 @@ export function defineAction<TRaw, TInput, TOutput>(
 
     if (spec.permission && !hasAllPermissions(context, spec.permission.key)) {
       return err(spec.permission.deniedMessage);
+    }
+
+    if (spec.module) {
+      const scope = { salonId: context.salonId, disabledFeatures: context.disabledFeatures };
+      if (!(await isEffectiveSalonModuleEnabled(scope, spec.module))) {
+        return err(MODULE_DISABLED_MESSAGE);
+      }
     }
 
     return runActionFlow(spec, context, raw);

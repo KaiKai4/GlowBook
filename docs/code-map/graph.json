@@ -13,7 +13,7 @@
     {
       "id": "app/(dashboard)",
       "kind": "internal",
-      "files": 183
+      "files": 184
     },
     {
       "id": "app/(platform)",
@@ -83,7 +83,7 @@
     {
       "id": "features/employees",
       "kind": "internal",
-      "files": 36
+      "files": 35
     },
     {
       "id": "features/expenses",
@@ -345,7 +345,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/billing",
-      "count": 9
+      "count": 8
     },
     {
       "from": "app/(dashboard)",
@@ -360,7 +360,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/employees",
-      "count": 9
+      "count": 10
     },
     {
       "from": "app/(dashboard)",
@@ -420,7 +420,7 @@
     {
       "from": "app/(dashboard)",
       "to": "infra",
-      "count": 19
+      "count": 20
     },
     {
       "from": "app/(dashboard)",
@@ -430,17 +430,17 @@
     {
       "from": "app/(dashboard)",
       "to": "infra/security",
-      "count": 10
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
       "to": "infra/validation",
-      "count": 8
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
       "to": "npm/next",
-      "count": 35
+      "count": 33
     },
     {
       "from": "app/(dashboard)",
@@ -510,11 +510,16 @@
     {
       "from": "app/_composition",
       "to": "features/billing",
-      "count": 1
+      "count": 2
     },
     {
       "from": "app/_composition",
       "to": "features/salon",
+      "count": 1
+    },
+    {
+      "from": "app/_composition",
+      "to": "features/salon-features",
       "count": 1
     },
     {
@@ -685,7 +690,7 @@
     {
       "from": "features/access",
       "to": "features/salon-features",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/access",
@@ -955,7 +960,7 @@
     {
       "from": "features/employees",
       "to": "infra",
-      "count": 18
+      "count": 17
     },
     {
       "from": "features/employees",
@@ -985,7 +990,7 @@
     {
       "from": "features/employees",
       "to": "infra/validation",
-      "count": 4
+      "count": 3
     },
     {
       "from": "features/employees",

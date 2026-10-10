@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { archiveEmployee, reactivateEmployee } from "@/features/employees/use-cases/employee-lifecycle";
@@ -13,11 +12,12 @@ import { err, ok } from "@/infra/result";
 import { buildProfile, rolesDisabled, formDataOf, SALON_ID } from "@/test/action-fixtures";
 import { createEmployeeAction, findArchivedEmployeeByEmailAction, reactivateEmployeeAction, updateEmployeeAction, deleteEmployeeAction } from "./actions-profile";
 
+const { requireActiveProfile } = vi.hoisted(() => ({ requireActiveProfile: vi.fn() }));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", async () => {
   // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
   const { contextFromProfile } = await import("@/test/action-fixtures");
-  const requireActiveProfile = vi.fn();
   return {
     requireActiveProfile,
     requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),

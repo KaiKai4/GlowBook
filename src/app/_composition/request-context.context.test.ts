@@ -78,6 +78,7 @@ describe("requireActionContext", () => {
       permissions: expect.any(Array),
       requestId: expect.any(String),
       rolesEnabled: true,
+      disabledFeatures: [],
     });
   });
 

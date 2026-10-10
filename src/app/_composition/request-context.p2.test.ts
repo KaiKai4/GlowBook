@@ -6,7 +6,7 @@ import { getEffectiveDisabledSalonFeatures } from "@/features/billing";
 import {
   getProfile,
   isPlatformAdmin,
-  requireActiveProfile,
+  requireActionContext,
   requirePlatformAdmin,
   requirePlatformAdminProof,
   requireProfile,
@@ -135,7 +135,7 @@ describe("requireProfile", () => {
   });
 });
 
-describe("requireActiveProfile", () => {
+describe("requireActionContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue([]);
@@ -144,7 +144,7 @@ describe("requireActiveProfile", () => {
   it("redirects to /login when the profile is inactive", async () => {
     useServer({ id: USER_ID }, { profiles: { data: profile({ is_active: false }) } });
 
-    await expect(requireActiveProfile()).rejects.toThrow("NEXT_REDIRECT:/login");
+    await expect(requireActionContext()).rejects.toThrow("NEXT_REDIRECT:/login");
   });
 
   it("redirects to /login when the salón of the profile is not found", async () => {
@@ -153,7 +153,7 @@ describe("requireActiveProfile", () => {
       { profiles: { data: profile() }, salons: { data: null } }
     );
 
-    await expect(requireActiveProfile()).rejects.toThrow("NEXT_REDIRECT:/login");
+    await expect(requireActionContext()).rejects.toThrow("NEXT_REDIRECT:/login");
   });
 
   it("redirects to / when the salón is suspended", async () => {
@@ -162,7 +162,7 @@ describe("requireActiveProfile", () => {
       { profiles: { data: profile() }, salons: { data: { id: SALON_ID, is_active: false } } }
     );
 
-    await expect(requireActiveProfile()).rejects.toThrow("NEXT_REDIRECT:/");
+    await expect(requireActionContext()).rejects.toThrow("NEXT_REDIRECT:/");
     expect(navigationMock.redirect).toHaveBeenLastCalledWith("/");
   });
 
@@ -172,7 +172,7 @@ describe("requireActiveProfile", () => {
       { profiles: { data: profile() }, salons: { data: { id: SALON_ID, is_active: true } } }
     );
 
-    expect(await requireActiveProfile()).toMatchObject({ id: USER_ID, salon_id: SALON_ID });
+    expect(await requireActionContext()).toMatchObject({ userId: USER_ID, salonId: SALON_ID });
     expect(navigationMock.redirect).not.toHaveBeenCalled();
   });
 });

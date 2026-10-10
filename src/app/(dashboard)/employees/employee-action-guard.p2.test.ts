@@ -33,7 +33,7 @@ describe("politica de acciones de colaboradores", () => {
   });
 
   it("la puerta de roles usa el salón y el flag ya resuelto por el composition root", () => {
-    const context = { userId: "user-1", salonId: SALON_ID, permissions: [], requestId: "req-1" };
+    const context = { userId: "user-1", salonId: SALON_ID, permissions: [], requestId: "req-1", disabledFeatures: [] };
 
     expect(roleGateOf({ ...context, rolesEnabled: true })).toEqual({ salonId: SALON_ID, rolesEnabled: true });
     expect(roleGateOf({ ...context, rolesEnabled: false })).toEqual({ salonId: SALON_ID, rolesEnabled: false });

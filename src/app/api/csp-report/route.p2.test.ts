@@ -45,6 +45,15 @@ afterEach(() => {
   warnSpy.mockRestore();
 });
 
+// Dentro de Vercel la IP del cliente se lee de x-real-ip (ver rate-limit.ts).
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("POST /api/csp-report: tipo de contenido", () => {
   it("rechaza tipos no soportados con 415 y sin cache", async () => {
     const response = await POST(report("{}", "text/plain"));

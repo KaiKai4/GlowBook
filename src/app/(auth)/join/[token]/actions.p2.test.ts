@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
 import { acceptEmployeeInvitation } from "@/features/employees/use-cases/employee-invitations";
 import { err, ok } from "@/infra/result";
@@ -22,6 +22,15 @@ beforeEach(() => {
   vi.mocked(headers).mockResolvedValue(new Headers({ "x-real-ip": "192.0.2.10" }) as never);
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
   signIn.mockResolvedValue({ error: null });
+});
+
+// Dentro de Vercel la IP del cliente se lee de x-real-ip (ver rate-limit.ts).
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("acceptEmployeeInvitationAction (invitación de empleado, sin sesion)", () => {

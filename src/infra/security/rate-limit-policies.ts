@@ -7,6 +7,8 @@ export interface RateLimitPolicy {
   readonly max: number;
   /** Duracion de la ventana en milisegundos. */
   readonly windowMs: number;
+  /** Comportamiento si el almacen falla. Ausente equivale a "open". */
+  readonly failMode?: "open" | "closed";
 }
 
 export const RATE_LIMIT_POLICIES = {
@@ -18,11 +20,22 @@ export const RATE_LIMIT_POLICIES = {
 
 const SIGN_IN_WINDOW_MS = 15 * 60_000;
 
-/** Inicio de sesion por cuenta e IP (correo normalizado): 10 intentos cada 15 min. */
-export const SIGN_IN_ACCOUNT_POLICY = { max: 10, windowMs: SIGN_IN_WINDOW_MS } as const satisfies RateLimitPolicy;
+/**
+ * Inicio de sesion por cuenta e IP (correo normalizado): 10 intentos cada 15 min.
+ * Fail-closed (ADR 0030): si el almacen falla, no se permite probar contraseñas.
+ */
+export const SIGN_IN_ACCOUNT_POLICY = {
+  max: 10,
+  windowMs: SIGN_IN_WINDOW_MS,
+  failMode: "closed",
+} as const satisfies RateLimitPolicy;
 
 /**
  * Inicio de sesion por IP global: 100 intentos cada 15 min. Holgado a proposito:
  * una oficina con NAT compartida no debe quedar bloqueada entera.
  */
-export const SIGN_IN_IP_POLICY = { max: 100, windowMs: SIGN_IN_WINDOW_MS } as const satisfies RateLimitPolicy;
+export const SIGN_IN_IP_POLICY = {
+  max: 100,
+  windowMs: SIGN_IN_WINDOW_MS,
+  failMode: "closed",
+} as const satisfies RateLimitPolicy;

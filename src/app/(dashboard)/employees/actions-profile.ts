@@ -20,25 +20,35 @@ import {
   checkIds,
   EMPLOYEE_GUARD,
 } from "./employee-action-guard";
+import {
+  parseCreateEmployeeForm,
+  parseUpdateEmployeeForm,
+  type CreateEmployeeForm,
+  type UpdateEmployeeForm,
+  type UpdateEmployeeRaw,
+} from "./employee-form-input";
 
 // Acciones de ficha del colaborador: alta, busqueda de archivados, edicion, reactivacion y baja.
 // Cada accion es una especificacion de defineAction (permiso, limite, validacion,
 // un caso de uso y revalidacion). La exportacion publica solo adapta la firma.
+//
+// Orden del alta (cambio intencionado, fase 5): el formulario (clave de
+// idempotencia y campos) se valida en el borde, antes del caso de uso. Un
+// formulario invalido responde con su error sin consultar el plan. La admision
+// del plan (y el cupo de login) ocurre dentro del caso de uso, despues de validar.
 
-type UpdateEmployeeRaw = { employeeId: string; formData: FormData };
-
-const createEmployeeFlowAction = defineAction<FormData, FormData, CreateEmployeeResult>({
+const createEmployeeFlowAction = defineAction<FormData, CreateEmployeeForm, CreateEmployeeResult>({
   ...EMPLOYEE_GUARD,
-  parse: (formData) => ok(formData),
-  run: async (formData, session) =>
-    createEmployee(
-      {
-        salonId: session.salonId,
-        rolesEnabled: session.rolesEnabled,
-        checks: admissionChecks(session.salonId),
-      },
-      formData
-    ),
+  parse: parseCreateEmployeeForm,
+  run: async (form, session) =>
+    createEmployee({
+      salonId: session.salonId,
+      rolesEnabled: session.rolesEnabled,
+      checks: admissionChecks(session.salonId),
+      requestedRoleId: form.requestedRoleId,
+      idempotencyKey: form.idempotencyKey,
+      data: form.data,
+    }),
   revalidate: () => ["/employees"],
 });
 
@@ -59,11 +69,12 @@ const reactivateFlowAction = defineAction<string, string, void>({
   revalidate: (_out, employeeId) => ["/employees", `/employees/${employeeId}`, "/appointments/new"],
 });
 
-const updateEmployeeFlowAction = defineAction<UpdateEmployeeRaw, UpdateEmployeeRaw, EmployeeWriteResult>({
+const updateEmployeeFlowAction = defineAction<UpdateEmployeeRaw, UpdateEmployeeForm, EmployeeWriteResult>({
   ...EMPLOYEE_GUARD,
-  parse: (raw) => checkIds(raw, [raw.employeeId]),
-  run: (raw, session) => updateEmployee(session.salonId, raw.employeeId, raw.formData),
-  revalidate: (_out, raw) => ["/employees", `/employees/${raw.employeeId}`],
+  parse: parseUpdateEmployeeForm,
+  run: (form, session) =>
+    updateEmployee(session.salonId, form.employeeId, form.data, form.idempotencyKey),
+  revalidate: (_out, form) => ["/employees", `/employees/${form.employeeId}`],
 });
 
 const archiveFlowAction = defineAction<string, string, { outcome: "deleted" | "archived"; message: string }>({

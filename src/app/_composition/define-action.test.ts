@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { PERMISSIONS, type ActionContext } from "@/features/access";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { err, ok } from "@/infra/result";
 import { z } from "@/infra/validation/zod";
 import { requireActionContext } from "./request-context";
@@ -11,18 +12,20 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("./request-context", () => ({ requireActionContext: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
+vi.mock("@/features/billing", () => ({ isEffectiveSalonModuleEnabled: vi.fn() }));
 
 const SCHEMA = z.object({ name: z.string().min(2, "Nombre demasiado corto") });
 
 /** Contexto minimo de una sesion con los permisos indicados. */
 function contextWith(permissions: ActionContext["permissions"]): ActionContext {
-  return { userId: "user-1", salonId: "salon-1", permissions, requestId: "req-1", rolesEnabled: true };
+  return { userId: "user-1", salonId: "salon-1", permissions, requestId: "req-1", rolesEnabled: true, disabledFeatures: [] };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(requireActionContext).mockResolvedValue(contextWith([PERMISSIONS.EMPLOYEES_MANAGE]));
   vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
+  vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
 });
 
 describe("defineAction: permisos", () => {
@@ -172,5 +175,107 @@ describe("defineAction: flujo", () => {
 describe("parseWithSchema", () => {
   it("devuelve el valor parseado cuando el schema lo acepta", () => {
     expect(parseWithSchema(SCHEMA)({ name: "Ana" })).toEqual(ok({ name: "Ana" }));
+  });
+});
+
+describe("defineAction: guarda de módulo", () => {
+  const MODULE_DENIED = "Este módulo no está incluido en el plan de este salón.";
+
+  it("con el módulo deshabilitado responde error sin rate limit ni caso de uso", async () => {
+    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+    const run = vi.fn();
+    const action = defineAction({
+      module: "plantillas",
+      rateLimit: { scope: "plantillas", options: { max: 5, windowMs: 300_000 } },
+      parse: parseWithSchema(SCHEMA),
+      run,
+    });
+
+    expect(await action({ name: "Ana" })).toEqual(err(MODULE_DENIED));
+    expect(assertActionRateLimit).not.toHaveBeenCalled();
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("consulta el módulo con el ámbito del salón y las features heredadas del contexto", async () => {
+    vi.mocked(requireActionContext).mockResolvedValue({
+      ...contextWith([]),
+      disabledFeatures: ["plantillas"],
+    });
+    const action = defineAction({
+      module: "plantillas",
+      parse: parseWithSchema(SCHEMA),
+      run: vi.fn().mockResolvedValue(ok(undefined)),
+    });
+
+    await action({ name: "Ana" });
+
+    expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith(
+      { salonId: "salon-1", disabledFeatures: ["plantillas"] },
+      "plantillas"
+    );
+  });
+
+  it("con el módulo habilitado ejecuta el flujo completo", async () => {
+    const run = vi.fn().mockResolvedValue(ok("hecho"));
+    const action = defineAction({
+      module: "plantillas",
+      parse: parseWithSchema(SCHEMA),
+      run,
+    });
+
+    expect(await action({ name: "Ana" })).toEqual(ok("hecho"));
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it("sin módulo declarado no consulta el plan", async () => {
+    const action = defineAction({
+      parse: parseWithSchema(SCHEMA),
+      run: vi.fn().mockResolvedValue(ok(undefined)),
+    });
+
+    await action({ name: "Ana" });
+
+    expect(isEffectiveSalonModuleEnabled).not.toHaveBeenCalled();
+  });
+
+  it("el permiso se comprueba antes que el módulo: sin permiso no se consulta el plan", async () => {
+    vi.mocked(requireActionContext).mockResolvedValue(contextWith([]));
+    const action = defineAction({
+      module: "plantillas",
+      permission: { key: PERMISSIONS.EMPLOYEES_MANAGE, deniedMessage: "No tienes permiso." },
+      parse: parseWithSchema(SCHEMA),
+      run: vi.fn(),
+    });
+
+    expect(await action({ name: "Ana" })).toEqual(err("No tienes permiso."));
+    expect(isEffectiveSalonModuleEnabled).not.toHaveBeenCalled();
+  });
+});
+
+describe("defineAction: revalidación de layout", () => {
+  it("un destino { path, type: 'layout' } revalida el layout y no una ruta suelta", async () => {
+    const action = defineAction({
+      parse: parseWithSchema(SCHEMA),
+      run: vi.fn().mockResolvedValue(ok(undefined)),
+      revalidate: () => [{ path: "/", type: "layout" }, "/salon"],
+    });
+
+    await action({ name: "Ana" });
+
+    expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+    expect(revalidatePath).toHaveBeenCalledWith("/salon");
+    expect(revalidatePath).toHaveBeenCalledTimes(2);
+  });
+
+  it("si el caso de uso falla no revalida el layout", async () => {
+    const action = defineAction({
+      parse: parseWithSchema(SCHEMA),
+      run: vi.fn().mockResolvedValue(err("fallo")),
+      revalidate: () => [{ path: "/", type: "layout" }],
+    });
+
+    await action({ name: "Ana" });
+
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

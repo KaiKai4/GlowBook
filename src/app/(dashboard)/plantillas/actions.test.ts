@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
+import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, SALON_ID } from "@/test/action-fixtures";
 import { updateNotificationTemplateAction } from "./actions";
+
+const { requireActiveProfile } = vi.hoisted(() => ({ requireActiveProfile: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", async () => {
   // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
   const { contextFromProfile } = await import("@/test/action-fixtures");
-  const requireActiveProfile = vi.fn();
   return {
     requireActiveProfile,
     requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
@@ -22,6 +23,7 @@ vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));
+vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/notifications/use-cases/update-message-template", () => ({
   updateMessageTemplate: vi.fn(),
 }));
@@ -38,6 +40,7 @@ describe("updateNotificationTemplateAction", () => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(remindersSender);
     vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
+    vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
   });
 
   it("rechaza si el módulo de plantillas no está activo en el plan aunque tenga permiso", async () => {
@@ -45,8 +48,9 @@ describe("updateNotificationTemplateAction", () => {
 
     expect(await updateNotificationTemplateAction(null, formDataOf(validTemplate))).toEqual({
       ok: false,
-      error: permissionError,
+      error: "Este módulo no está incluido en el plan de este salón.",
     });
+    expect(assertActionRateLimit).not.toHaveBeenCalled();
     expect(updateMessageTemplate).not.toHaveBeenCalled();
   });
 

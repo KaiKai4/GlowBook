@@ -101,6 +101,10 @@ Reglas:
 - registrar acciones Platform sensibles en `platform_audit_log`;
 - no loguear tokens, cookies, passwords ni service role.
 
+## Privilegios De Anon
+
+`anon` no tiene privilegios de tabla, vista ni secuencia en `public` (migración `20240101000080_anon_table_privileges.sql`, prueba `supabase/tests/24_anon_table_privileges.sql`). Ninguna función de `public` es ejecutable por `anon` (migración `20240101000064_security_hardening.sql`). Las políticas RLS con `salon_id` aplican solo a `authenticated`. Así, un fallo de política no expone datos a un cliente sin sesión.
+
 ## Variables De Entorno
 
 Las variables de entorno se validan con Zod en `src/infra/config/env.ts` al usarse, no al importar el modulo, y no tienen valores por defecto. Si falta una variable requerida, el error indica cual falta sin mostrar su valor. Los secretos siguen fuera del repositorio.
@@ -163,7 +167,9 @@ El Adapter redacciona metadata sensible y también secretos conocidos dentro de 
 Implementado en Fase 2 (ADR 0017): contador compartido en Postgres
 (`rate_limit_buckets` + RPC `consume_rate_limit`, solo `service_role`), accedido
 solo desde `src/infra/security/rate-limit.ts`. Fallo del almacen: fail-open con
-`captureError`. La firma es asincrona:
+`captureError` por defecto. El inicio de sesion usa `failMode: "closed"` (ADR 0030):
+si el almacen falla, rechaza el intento con un mensaje fijo. El error se registra con
+`severity: "high"`. La firma es asincrona:
 
 ```ts
 await assertActionRateLimit(userId, scope, { max, windowMs });
@@ -203,6 +209,48 @@ Decision para lanzamiento amplio:
   los controles del proveedor no alcanzan;
 - registrar la decision en el ADR 0017 o en uno nuevo.
 
+
+## Excepcion CSP: atributos style con unsafe-inline
+
+`style-src` no usa `'unsafe-inline'` en produccion: los elementos `<style>` exigen
+nonce (`style-src 'self' 'nonce-...'`), el mismo patron que documenta la guia de
+Next (`node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md`,
+seccion "Nonces"). En desarrollo se anade `'unsafe-inline'` a `style-src` porque
+React Refresh puede inyectar `<style>` sin nonce.
+
+La excepcion es solo para los atributos `style="..."`: se gobiernan con
+`style-src-attr 'unsafe-inline'` (`src/infra/security/csp.ts`). Motivo concreto:
+React escribe esos atributos en tiempo de render (alturas calculadas, anchos de
+graficas, posiciones). La especificacion CSP no aplica nonces ni hashes a los
+atributos `style`, asi que con `style-src` sin `unsafe-inline` esos estilos se
+bloquearian. Usar hashes no es viable porque sus valores dependen de los datos.
+
+Lo que sigue bloqueado: `<style>` sin nonce y los estilos inyectados desde
+cadenas HTML o scripts sin nonce. El riesgo de ejecucion de codigo sigue en
+`script-src` (nonce + `strict-dynamic`, sin `unsafe-inline`).
+
+Pruebas: `src/infra/security/csp.test.ts` y `csp-policy.test.ts` (modo produccion y
+desarrollo). Verificar en staging que no hay informes CSP de `style-src` antes de
+cualquier cambio posterior.
+## Lectura de la IP del cliente
+
+El rate limit anonimo (`src/infra/security/rate-limit.ts`) obtiene la IP asi:
+
+Solo si `process.env.VERCEL` esta definido (ejecucion en Vercel) se confia en las
+cabeceras de la plataforma:
+
+1. `x-real-ip`: la fija la plataforma en cada peticion.
+2. `x-forwarded-for`: respaldo cuando falta `x-real-ip`. Se usa el ultimo valor de
+   la lista (el que añade el proxy mas cercano), nunca el primero, que el cliente
+   puede falsear.
+3. Sin ninguna de las dos: bucket compartido `ip:unknown` (limite mas laxo).
+
+Fuera de Vercel el codigo ignora ambas cabeceras y usa siempre `ip:unknown`: un
+cliente puede enviar cualquier `x-real-ip` o `x-forwarded-for`, asi que elegiria su
+propio bucket. Por eso el despliegue publico debe ir detras de Vercel. Pruebas:
+`src/infra/security/rate-limit-guards.test.ts` (casos con y sin `VERCEL`) y
+`rate-limit.p2.test.ts`. Las pruebas de rutas que dependen de `x-real-ip` fijan
+`VERCEL=1` en su setup.
 
 ## CSP Y Secrets
 

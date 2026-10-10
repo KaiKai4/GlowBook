@@ -14,7 +14,7 @@ describe("RATE_LIMIT_POLICIES", () => {
   });
 
   it("el límite de inicio de sesion por cuenta es más estricto que el global, con la misma ventana", () => {
-    expect(SIGN_IN_ACCOUNT_POLICY).toEqual({ max: 10, windowMs: 900_000 });
-    expect(SIGN_IN_IP_POLICY).toEqual({ max: 100, windowMs: 900_000 });
+    expect(SIGN_IN_ACCOUNT_POLICY).toEqual({ max: 10, windowMs: 900_000, failMode: "closed" });
+    expect(SIGN_IN_IP_POLICY).toEqual({ max: 100, windowMs: 900_000, failMode: "closed" });
   });
 });

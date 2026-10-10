@@ -59,6 +59,7 @@ const getRequestContext = cache(async (): Promise<RequestContext | null> => {
     // Los módulos deshabilitados ya salen del plan efectivo: el modulo de roles
     // esta activo si no figura en esa lista (mismo criterio que isEffectiveSalonModuleEnabled).
     rolesEnabled: !disabledFeatures.includes("roles"),
+    disabledFeatures,
   };
 });
 
@@ -92,14 +93,11 @@ async function requireActiveRequestContext(): Promise<RequestContext> {
   return context;
 }
 
-export async function requireActiveProfile(): Promise<ProfileWithRole> {
-  return (await requireActiveRequestContext()).profile;
-}
-
 /** Contexto minimo para los casos de uso de una accion de salon (sin perfil completo). */
 export async function requireActionContext(): Promise<ActionContext> {
-  const { userId, salonId, permissions, requestId, rolesEnabled } = await requireActiveRequestContext();
-  return { userId, salonId, permissions, requestId, rolesEnabled };
+  const { userId, salonId, permissions, requestId, rolesEnabled, disabledFeatures } =
+    await requireActiveRequestContext();
+  return { userId, salonId, permissions, requestId, rolesEnabled, disabledFeatures };
 }
 
 /** Si el plan del salón incluye el modulo de roles, leido del contexto memoizado de la request. */

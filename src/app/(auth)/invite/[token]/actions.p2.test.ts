@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
 import { acceptInvitation } from "@/features/platform/use-cases/accept-invitation";
 import { err, ok } from "@/infra/result";
@@ -28,10 +28,20 @@ function requestHeaders(values: Record<string, string>) {
 }
 
 beforeEach(() => {
+  vi.unstubAllEnvs();
   vi.clearAllMocks();
   requestHeaders({ "x-real-ip": "203.0.113.7" });
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
   signIn.mockResolvedValue({ error: null });
+});
+
+// Dentro de Vercel la IP del cliente se lee de x-real-ip (ver rate-limit.ts).
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("acceptInvitationAction (invitación de salon, sin sesion)", () => {
@@ -98,7 +108,8 @@ describe("acceptInvitationAction (invitación de salon, sin sesion)", () => {
     expect(result).toEqual(err("El enlace ha caducado."));
   });
 
-  it("cuando falta x-real-ip usa el último valor de x-forwarded-for, no el primero que el cliente puede falsear", async () => {
+  it("en Vercel, cuando falta x-real-ip usa el último valor de x-forwarded-for, no el primero que el cliente puede falsear", async () => {
+    vi.stubEnv("VERCEL", "1");
     requestHeaders({ "x-forwarded-for": "203.0.113.4, 198.51.100.4" });
     vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
 

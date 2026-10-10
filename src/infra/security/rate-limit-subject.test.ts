@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import { assertSubjectRateLimit } from "./rate-limit";
@@ -25,6 +25,15 @@ function requestHeaders(values: Record<string, string>) {
   const lower = new Map(Object.entries(values).map(([key, value]) => [key.toLowerCase(), value]));
   return { get: (name: string) => lower.get(name.toLowerCase()) ?? null };
 }
+
+// Dentro de Vercel la IP del cliente se lee de x-real-ip (ver rate-limit.ts).
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("assertSubjectRateLimit", () => {
   beforeEach(() => {

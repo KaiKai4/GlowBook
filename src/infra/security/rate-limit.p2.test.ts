@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
 import { captureError } from "@/infra/observability";
 import { createSupabaseAdminClient } from "@/infra/supabase/admin";
@@ -19,8 +19,18 @@ function setRequestHeaders(values: Record<string, string>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
   setRequestHeaders({});
+});
+
+// Dentro de Vercel la IP del cliente se lee de x-real-ip (ver rate-limit.ts).
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("assertActionRateLimit", () => {
@@ -97,7 +107,11 @@ describe("assertActionRateLimit", () => {
     expect(result).toEqual({ ok: true, value: undefined });
     expect(captureError).toHaveBeenCalledWith(
       expect.objectContaining({ message: "connection reset" }),
-      { module: "security", action: "rate-limit", metadata: { scope: "scope" } }
+      {
+        module: "security",
+        action: "rate-limit",
+        metadata: { scope: "scope", failMode: "open", severity: "high" },
+      }
     );
   });
 
@@ -148,7 +162,8 @@ describe("assertAnonymousRateLimit", () => {
     });
   });
 
-  it("si x-real-ip esta vacia usa el ultimo valor de x-forwarded-for (el que añade el proxy), no el primero falseable", async () => {
+  it("en Vercel, si x-real-ip esta vacia usa el ultimo valor de x-forwarded-for (el que añade el proxy), no el primero falseable", async () => {
+    vi.stubEnv("VERCEL", "1");
     setRequestHeaders({ "x-real-ip": "   ", "x-forwarded-for": "203.0.113.66, 198.51.100.9" });
 
     await assertAnonymousRateLimit("csp-report");
@@ -156,6 +171,18 @@ describe("assertAnonymousRateLimit", () => {
     expect(rpc).toHaveBeenCalledWith(
       "consume_rate_limit",
       expect.objectContaining({ p_key: "ip:198.51.100.9:csp-report" })
+    );
+  });
+
+  it("fuera de Vercel no usa x-forwarded-for aunque exista: cae al bucket 'unknown'", async () => {
+    vi.stubEnv("VERCEL", "");
+    setRequestHeaders({ "x-forwarded-for": "203.0.113.66, 198.51.100.9" });
+
+    await assertAnonymousRateLimit("csp-report");
+
+    expect(rpc).toHaveBeenCalledWith(
+      "consume_rate_limit",
+      expect.objectContaining({ p_key: "ip:unknown:csp-report" })
     );
   });
 
@@ -224,7 +251,11 @@ describe("assertAnonymousRateLimit", () => {
     expect(result).toEqual({ ok: true, value: undefined });
     expect(captureError).toHaveBeenCalledWith(
       expect.objectContaining({ message: "timeout" }),
-      { module: "security", action: "rate-limit", metadata: { scope: "join-invitation" } }
+      {
+        module: "security",
+        action: "rate-limit",
+        metadata: { scope: "join-invitation", failMode: "open", severity: "high" },
+      }
     );
   });
 });

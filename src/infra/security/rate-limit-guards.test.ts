@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 import { assertAnonymousRateLimit } from "./rate-limit";
 
@@ -39,7 +39,12 @@ describe("assertAnonymousRateLimit", () => {
     vi.mocked(createSupabaseAdminClient).mockReturnValue({ rpc: rpcMock } as never);
   });
 
-  it("limits by x-real-ip when the platform sets it", async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("limits by x-real-ip when running on Vercel", async () => {
+    vi.stubEnv("VERCEL", "1");
     headersMock.mockResolvedValue(
       requestHeaders({ "x-real-ip": "10.0.0.9", "x-forwarded-for": "10.0.0.1" })
     );
@@ -53,7 +58,23 @@ describe("assertAnonymousRateLimit", () => {
     });
   });
 
-  it("falls back to the last forwarded IP (the one the nearest proxy appends), trimmed", async () => {
+  it("outside Vercel ignores a client-sent x-real-ip and uses the shared unknown bucket", async () => {
+    vi.stubEnv("VERCEL", "");
+    headersMock.mockResolvedValue(requestHeaders({ "x-real-ip": "10.0.0.9" }));
+    rpcMock.mockResolvedValue({ data: [{ allowed: true, retry_after_seconds: 0 }], error: null });
+
+    await assertAnonymousRateLimit("invite", { max: 1, windowMs: 60_000 });
+
+    expect(rpcMock).toHaveBeenCalledWith("consume_rate_limit", expect.objectContaining({
+      p_key: "ip:unknown:invite",
+    }));
+    expect(rpcMock).not.toHaveBeenCalledWith("consume_rate_limit", expect.objectContaining({
+      p_key: "ip:10.0.0.9:invite",
+    }));
+  });
+
+  it("on Vercel falls back to the last forwarded IP (the one the nearest proxy appends), trimmed", async () => {
+    vi.stubEnv("VERCEL", "1");
     headersMock.mockResolvedValue(requestHeaders({ "x-forwarded-for": "203.0.113.9, 10.0.0.1 , 10.0.0.2 " }));
     fakeStore(2);
     const options = { max: 2, windowMs: 60_000 };
@@ -79,6 +100,22 @@ describe("assertAnonymousRateLimit", () => {
     }));
   });
 
+  it("outside Vercel ignores x-forwarded-for entirely and uses the shared unknown bucket", async () => {
+    vi.stubEnv("VERCEL", "");
+    headersMock.mockResolvedValue(requestHeaders({ "x-forwarded-for": "203.0.113.9, 10.0.0.2" }));
+    fakeStore(1);
+    const options = { max: 1, windowMs: 60_000 };
+
+    expect((await assertAnonymousRateLimit("invite", options)).ok).toBe(true);
+    expect((await assertAnonymousRateLimit("invite", options)).ok).toBe(false);
+    expect(rpcMock).toHaveBeenCalledWith("consume_rate_limit", expect.objectContaining({
+      p_key: "ip:unknown:invite",
+    }));
+    expect(rpcMock).not.toHaveBeenCalledWith("consume_rate_limit", expect.objectContaining({
+      p_key: "ip:10.0.0.2:invite",
+    }));
+  });
+
   it("treats a blank forwarded header as unknown", async () => {
     headersMock.mockResolvedValue(requestHeaders({ "x-forwarded-for": "   " }));
 
@@ -90,6 +127,7 @@ describe("assertAnonymousRateLimit", () => {
   });
 
   it("uses the default of 10 attempts per minute", async () => {
+    vi.stubEnv("VERCEL", "1");
     headersMock.mockResolvedValue(requestHeaders({ "x-real-ip": "10.0.0.5" }));
     rpcMock.mockResolvedValue({ data: [{ allowed: true, retry_after_seconds: 0 }], error: null });
 
