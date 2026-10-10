@@ -1,6 +1,20 @@
 import { Select } from "@/components/ui/select";
-import type { ReminderEmployee } from "@/features/reminders/view-models";
-import { PERIOD_OPTIONS, STATUS_OPTIONS, type Period } from "./reminder-rules";
+import type { ReminderEmployee } from "@/features/reminders";
+import type { Period } from "@/features/reminders/domain/reminder-rules";
+
+// Etiquetas de la barra de filtros: texto de interfaz, por eso viven en la capa de app.
+const PERIOD_OPTIONS: { value: Period; label: string }[] = [
+  { value: "pendientes_hoy", label: "Pendientes hoy" },
+  { value: "manana", label: "Mañana" },
+  { value: "48h", label: "Próximos 2 días" },
+  { value: "7dias", label: "Próximos 7 días" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "", label: "Todos los estados" },
+  { value: "scheduled", label: "Agendada" },
+  { value: "confirmed", label: "Confirmada" },
+];
 
 interface RemindersFilterBarProps {
   period: Period;

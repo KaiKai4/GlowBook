@@ -1,5 +1,5 @@
 import { formatCurrency } from "@/infra/format/dates";
-import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
+import type { OperationalReportViewModel } from "@/features/reports";
 import { MonthlyAreaChart } from "./report-area-chart";
 import { MetricGrid, type MetricCardData } from "./report-metric-grid";
 import { expenseSources } from "./report-presentation";

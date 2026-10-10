@@ -30,5 +30,10 @@ export async function findPendingConfirmationRows(
     .limit(limit);
 
   if (error) throw error;
-  return (data ?? []) as unknown as DashboardPendingConfirmationRow[];
+  // El cliente tipado deriva la forma de cada fila; solo se copian los campos que usa el dashboard.
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    start_time: row.start_time,
+    customer: row.customer,
+  }));
 }

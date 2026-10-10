@@ -1,4 +1,4 @@
-import { getReminderQueue } from "@/features/reminders/use-cases/get-reminder-queue";
+import { getReminderQueue } from "@/features/reminders";
 import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { PageHeader } from "@/components/ui/page-header";
 import { hasPermission, PERMISSIONS } from "@/features/access";

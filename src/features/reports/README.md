@@ -8,7 +8,8 @@ Interface principal:
 - `use-cases/get-operational-report.ts`
 - `domain/period.ts`
 - `domain/metrics.ts` (tipos del view model)
-- `domain/analytics.ts`
+- `domain/analytics.ts` (incluye `toLifetimeTotals`)
+- `domain/period.ts` (incluye `lastDayOfMonth`)
 - `data/reports.repo.ts`
 
 Autoridad final:

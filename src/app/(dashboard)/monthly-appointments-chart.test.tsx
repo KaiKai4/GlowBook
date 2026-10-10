@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import type { MonthlyAppointmentPoint } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import type { MonthlyAppointmentPoint } from "@/features/dashboard";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
 

@@ -1,4 +1,4 @@
-import type { ReportQueryInput } from "@/features/reports/schemas";
+import type { ReportQueryInput } from "@/features/reports";
 
 export interface ReportsHrefInput extends ReportQueryInput {
   /** Año del acumulado anual; el page lo valida contra los años disponibles. */

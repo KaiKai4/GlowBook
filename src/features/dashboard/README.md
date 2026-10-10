@@ -2,10 +2,15 @@
 
 Responsabilidad: read Module para la vista de inicio del Salon.
 
-Interface principal:
+Interface principal (`index.ts`):
 
 - `use-cases/get-dashboard-overview.ts`
+- `use-cases/get-onboarding-checklist.ts`
+- `domain/dashboard-money.ts` (puro)
 - `data/dashboard.repo.ts`
+
+Dominio con claves, no con textos: los textos, descripciones y rutas del checklist
+viven en `src/app/(dashboard)/onboarding-checklist-presentation.ts`.
 
 Autoridad final:
 

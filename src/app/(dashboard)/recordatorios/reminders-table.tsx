@@ -1,5 +1,5 @@
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "@/features/reminders";
 import {
   ReminderCustomerCell,
   ReminderDateCell,
@@ -8,7 +8,10 @@ import {
   ReminderStatusCell,
 } from "./reminder-cells";
 import { ReminderRowActions } from "./reminder-row-actions";
-import { toReminderTableRows, type ReminderTableRow } from "./reminders-table-rows";
+import {
+  toReminderTableRows,
+  type ReminderTableRow,
+} from "@/features/reminders/domain/reminders-table-rows";
 import type { ReminderActions } from "./use-reminder-actions";
 
 interface RemindersTableProps {
@@ -53,7 +56,7 @@ function buildColumns(tz: string, actions: ReminderActions): DataTableColumn<Rem
 
 // Tabla de recordatorios: una fila por cita filtrada, con estado del recordatorio y acciones.
 export function RemindersTable({ rows, tz, today, actions }: RemindersTableProps) {
-  const tableRows = toReminderTableRows(rows, actions, actions, today, tz);
+  const tableRows = toReminderTableRows({ appointments: rows, local: actions, busy: actions, today, tz });
 
   return (
     <DataTable

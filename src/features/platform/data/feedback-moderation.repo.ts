@@ -20,7 +20,16 @@ export async function findFeedbackReports(): Promise<FeedbackReportRow[]> {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as unknown as FeedbackReportRow[];
+  // El cliente tipado deriva la forma de cada fila; se copian los campos del listado de moderación.
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    category: row.category,
+    message: row.message,
+    status: row.status,
+    created_at: row.created_at,
+    salon: row.salon,
+    reporter: row.reporter,
+  }));
 }
 
 export async function setFeedbackStatus(id: string, status: "new" | "resolved"): Promise<void> {

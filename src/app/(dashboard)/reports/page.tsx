@@ -1,5 +1,4 @@
-import { parseReportFilters } from "@/features/reports/schemas";
-import { getOperationalReport } from "@/features/reports/use-cases/get-operational-report";
+import { getOperationalReport, parseReportFilters } from "@/features/reports";
 import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";

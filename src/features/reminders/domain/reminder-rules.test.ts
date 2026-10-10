@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "../view-models";
 import {
   countPendingTomorrow,
   filterReminders,
@@ -43,17 +43,17 @@ function ids(list: ReminderAppointment[]): string[] {
 
 describe("pendingReminders y countPendingTomorrow", () => {
   it("omite citas sin hora y las ya recordadas hoy", () => {
-    expect(ids(pendingReminders(ALL, {}, TODAY, TZ))).toEqual(["A", "B", "D"]);
+    expect(ids(pendingReminders({ appointments: ALL, manualSentAt: {}, today: TODAY, tz: TZ }))).toEqual(["A", "B", "D"]);
   });
 
   it("tiene en cuenta el envío registrado localmente en la sesión", () => {
-    const pending = pendingReminders(ALL, { A: "2026-06-12T16:00:00.000Z" }, TODAY, TZ);
+    const pending = pendingReminders({ appointments: ALL, manualSentAt: { A: "2026-06-12T16:00:00.000Z" }, today: TODAY, tz: TZ });
     expect(ids(pending)).toEqual(["B", "D"]);
   });
 
   it("cuenta solo los pendientes de mañana", () => {
-    const pending = pendingReminders(ALL, {}, TODAY, TZ);
-    expect(countPendingTomorrow(pending, TOMORROW, TZ)).toBe(1);
+    const pending = pendingReminders({ appointments: ALL, manualSentAt: {}, today: TODAY, tz: TZ });
+    expect(countPendingTomorrow({ pending, tomorrow: TOMORROW, tz: TZ })).toBe(1);
   });
 });
 
@@ -84,15 +84,15 @@ describe("filterReminders", () => {
 
 describe("reminderRowState", () => {
   it("no permite confirmar hasta que haya un recordatorio enviado o copiado", () => {
-    const row = reminderRowState(TODAY_PENDING, EMPTY_LOCAL, TODAY, TZ, false);
+    const row = reminderRowState({ appt: TODAY_PENDING, local: EMPTY_LOCAL, today: TODAY, tz: TZ, confirmBusy: false });
     expect(row.hasReminderContact).toBe(false);
     expect(row.canConfirm).toBe(false);
   });
 
   it("permite confirmar cuando hay contacto y la cita sigue agendada", () => {
     const local = { ...EMPTY_LOCAL, readyToConfirm: { A: true } };
-    expect(reminderRowState(TODAY_PENDING, local, TODAY, TZ, false).canConfirm).toBe(true);
-    expect(reminderRowState(TODAY_PENDING, local, TODAY, TZ, true).canConfirm).toBe(false);
+    expect(reminderRowState({ appt: TODAY_PENDING, local: local, today: TODAY, tz: TZ, confirmBusy: false }).canConfirm).toBe(true);
+    expect(reminderRowState({ appt: TODAY_PENDING, local: local, today: TODAY, tz: TZ, confirmBusy: true }).canConfirm).toBe(false);
   });
 
   it("usa el estado y el envío locales por encima de los del servidor", () => {
@@ -101,7 +101,7 @@ describe("reminderRowState", () => {
       manualStatus: { A: "confirmed" },
       manualSentAt: { A: "2026-06-12T16:00:00.000Z" },
     };
-    const row = reminderRowState(TODAY_PENDING, local, TODAY, TZ, false);
+    const row = reminderRowState({ appt: TODAY_PENDING, local: local, today: TODAY, tz: TZ, confirmBusy: false });
     expect(row.currentStatus).toBe("confirmed");
     expect(row.canConfirm).toBe(false);
     expect(row.sentAt).toBe("2026-06-12T16:00:00.000Z");
@@ -110,7 +110,7 @@ describe("reminderRowState", () => {
 
   it("indica si la cita tiene teléfono de contacto", () => {
     const noPhone = appt("F", { customer: { first_name: "Lucía", last_name: "Gómez", phone: null } });
-    expect(reminderRowState(noPhone, EMPTY_LOCAL, TODAY, TZ, false).hasPhone).toBe(false);
-    expect(reminderRowState(TODAY_PENDING, EMPTY_LOCAL, TODAY, TZ, false).hasPhone).toBe(true);
+    expect(reminderRowState({ appt: noPhone, local: EMPTY_LOCAL, today: TODAY, tz: TZ, confirmBusy: false }).hasPhone).toBe(false);
+    expect(reminderRowState({ appt: TODAY_PENDING, local: EMPTY_LOCAL, today: TODAY, tz: TZ, confirmBusy: false }).hasPhone).toBe(true);
   });
 });

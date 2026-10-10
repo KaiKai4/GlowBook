@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfileWithRole } from "@/types/app.types";
 import { getProfile, requireProfile } from "@/app/_composition/request-context";
 import { getDashboardShell, getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
-import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
-import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import { getOnboardingChecklist } from "@/features/dashboard";
+import { getDashboardOverview } from "@/features/dashboard";
 import DashboardLayout from "./layout";
 import DashboardPage from "./page";
 
@@ -37,10 +37,8 @@ vi.mock("@/features/salon/use-cases/get-dashboard-shell", () => ({
   getDashboardShell: vi.fn(),
   getOwnerPlanLimitWarnings: vi.fn(async () => []),
 }));
-vi.mock("@/features/dashboard/use-cases/get-onboarding-checklist", () => ({
+vi.mock("@/features/dashboard", () => ({
   getOnboardingChecklist: vi.fn(async () => null),
-}));
-vi.mock("@/features/dashboard/use-cases/get-dashboard-overview", () => ({
   getDashboardOverview: vi.fn(async () => ({
     metrics: null,
     topServices: [],

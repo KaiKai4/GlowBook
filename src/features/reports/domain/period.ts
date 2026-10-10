@@ -121,3 +121,10 @@ export function getReportPresetRange(
     }
   }
 }
+
+/** Último día (YYYY-MM-DD) de un mes dado como YYYY-MM. */
+export function lastDayOfMonth(monthKey: string): string {
+  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
+  const day = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${monthKey}-${String(day).padStart(2, "0")}`;
+}

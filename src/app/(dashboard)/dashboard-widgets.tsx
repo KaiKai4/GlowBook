@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import type {
   PendingAppointmentConfirmation,
   TopService,
-} from "@/features/dashboard/use-cases/get-dashboard-overview";
+} from "@/features/dashboard";
 
 export function PendingConfirmations({ pending }: { pending: PendingAppointmentConfirmation[] }) {
   return (

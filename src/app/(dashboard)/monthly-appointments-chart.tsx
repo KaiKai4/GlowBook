@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/components/ui/cn";
-import type { MonthlyAppointmentPoint } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import type { MonthlyAppointmentPoint } from "@/features/dashboard";
 
 const WIDTH = 720;
 const HEIGHT = 264;

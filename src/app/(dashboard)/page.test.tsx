@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission } from "@/features/access";
-import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import { getDashboardOverview } from "@/features/dashboard";
 import { formatCurrency } from "@/infra/format/dates";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import DashboardPage from "./page";
@@ -27,8 +27,11 @@ vi.mock("@/app/_composition/salon-readers", () => ({
 vi.mock("@/features/salon/use-cases/get-dashboard-shell", () => ({
   getOwnerPlanLimitWarnings: vi.fn(async () => []),
 }));
-vi.mock("@/features/dashboard/use-cases/get-dashboard-overview", () => ({ getDashboardOverview: vi.fn() }));
-vi.mock("@/features/dashboard/use-cases/get-onboarding-checklist", () => ({ getOnboardingChecklist: vi.fn() }));
+vi.mock("@/features/dashboard", async () => ({
+  getDashboardOverview: vi.fn(),
+  getOnboardingChecklist: vi.fn(),
+  selectDashboardMoney: (await import("@/features/dashboard/domain/dashboard-money")).selectDashboardMoney,
+}));
 vi.mock("@/components/layout/plan-limit-banner", () => ({ PlanLimitBanner: () => null }));
 vi.mock("@/components/layout/payment-standing-banner", () => ({ PaymentStandingBanner: () => null }));
 vi.mock("./onboarding-checklist-card", () => ({ OnboardingChecklistCard: () => null }));

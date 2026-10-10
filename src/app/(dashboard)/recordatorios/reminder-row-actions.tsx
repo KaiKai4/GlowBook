@@ -1,7 +1,7 @@
 import { CheckCircle2, Clipboard, MessageCircle, MoreHorizontal } from "lucide-react";
 import { cn } from "@/components/ui/cn";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
-import type { ReminderRowState } from "./reminder-rules";
+import type { ReminderAppointment } from "@/features/reminders";
+import type { ReminderRowState } from "@/features/reminders/domain/reminder-rules";
 import type { ReminderActions } from "./use-reminder-actions";
 
 interface ReminderRowActionsProps {

@@ -1,7 +1,7 @@
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Panel } from "@/components/ui/panel";
 import { STOCK_STATUS_BADGES, StatusBadge } from "@/components/ui/status-badge";
-import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
+import type { OperationalReportViewModel } from "@/features/reports";
 import { ProductSalesChart } from "./report-charts";
 import { UnavailableModule } from "./report-metric-grid";
 

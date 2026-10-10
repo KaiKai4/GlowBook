@@ -1,9 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ReminderAppointment, ReminderEmployee } from "@/features/reminders/view-models";
+import type { ReminderAppointment, ReminderEmployee } from "@/features/reminders";
 import { tomorrowStr, todayStr } from "./reminder-format";
-import { countPendingTomorrow, filterReminders, pendingReminders, type Period } from "./reminder-rules";
+import {
+  countPendingTomorrow,
+  filterReminders,
+  pendingReminders,
+  type Period,
+} from "@/features/reminders/domain/reminder-rules";
 import { RemindersSummary } from "./reminders-summary";
 import { RemindersFilterBar } from "./reminders-filter-bar";
 import { RemindersTable } from "./reminders-table";
@@ -33,11 +38,11 @@ export function RemindersView({
   const today = todayStr(tz);
   const tomorrow = tomorrowStr(tz);
   const pending = useMemo(
-    () => pendingReminders(appointments, manualSentAt, today, tz),
+    () => pendingReminders({ appointments, manualSentAt, today, tz }),
     [appointments, manualSentAt, today, tz]
   );
   const pendingTomorrowCount = useMemo(
-    () => countPendingTomorrow(pending, tomorrow, tz),
+    () => countPendingTomorrow({ pending, tomorrow, tz }),
     [pending, tomorrow, tz]
   );
 

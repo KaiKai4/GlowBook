@@ -15,8 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { type SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
-import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
-import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { getAdminHome } from "@/features/platform";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { buildAttentionList } from "./home-attention";
 import { AdminShortcut, HomeMetric } from "./home-widgets";
@@ -24,10 +23,7 @@ import { RegenerateInviteLink } from "./regenerate-invite-link";
 export default async function PlatformAdminPage() {
   await requirePlatformAdmin();
 
-  const [home, salonView] = await Promise.all([
-    getPlatformAdminHome(),
-    getPlatformSalonOverviews(),
-  ]);
+  const { home, salonView } = await getAdminHome();
   const billing = await getSubscriptionsPage(salonView.salons);
   // Salones dormidos (sin citas en 30 días) entran a la lista de atención:
   // son los candidatos a churn que conviene contactar antes de que cancelen.

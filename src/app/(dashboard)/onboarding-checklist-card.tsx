@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Check, ChevronRight, Rocket } from "lucide-react";
 import { cn } from "@/components/ui/cn";
-import type { OnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
+import type { OnboardingChecklist } from "@/features/dashboard";
+import { ONBOARDING_STEP_PRESENTATION } from "./onboarding-checklist-presentation";
 
 // Guia de arranque del owner: visible en el dashboard hasta completar los
 // cuatro pasos; despues no vuelve a aparecer.
@@ -29,10 +30,12 @@ export function OnboardingChecklistCard({ checklist }: { checklist: OnboardingCh
       </div>
 
       <div className="divide-y divide-brand-100/60">
-        {checklist.steps.map((step, index) => (
+        {checklist.steps.map((step, index) => {
+          const view = ONBOARDING_STEP_PRESENTATION[step.key];
+          return (
           <Link
             key={step.key}
-            href={step.href}
+            href={view.href}
             className={cn(
               "flex items-center gap-3 px-5 py-3 transition-colors",
               step.done ? "opacity-60" : "hover:bg-brand-50/60"
@@ -55,13 +58,14 @@ export function OnboardingChecklistCard({ checklist }: { checklist: OnboardingCh
                   step.done ? "text-fg-subtle line-through" : "text-fg-secondary"
                 )}
               >
-                {step.label}
+                {view.label}
               </p>
-              {!step.done && <p className="text-xs text-fg-subtle">{step.description}</p>}
+              {!step.done && <p className="text-xs text-fg-subtle">{view.description}</p>}
             </div>
             {!step.done && <ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />}
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

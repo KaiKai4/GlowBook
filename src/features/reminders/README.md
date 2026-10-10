@@ -1,11 +1,22 @@
 # Reminders Module
 
-Responsabilidad: read Module para cola operativa de recordatorios.
+Responsabilidad: cola operativa de recordatorios de citas (qué citas recordar, estado de cada fila y confirmación).
 
-Interface principal:
+Interface principal (`index.ts`):
 
-- `use-cases/get-reminder-queue.ts`
-- `view-models.ts`
+- `getReminderQueue` (`use-cases/get-reminder-queue.ts`): compone citas, empleados, salón y plantilla.
+- `recordManualReminder` (`use-cases/record-manual-reminder.ts`): registra un envío manual.
+- `parseManualReminderInput` / `parseConfirmReminderInput` (`use-cases/reminder-input.ts`): validación de entrada.
+- Tipos de `view-models.ts`.
+
+Dominio puro (`domain/`, sin acceso a Supabase ni a React):
+
+- `local-date.ts`: fechas locales del salón (`localDateStr`, `isSameLocalDay`).
+- `reminder-rules.ts`: periodos, `REMINDER_WINDOW_MS` (ventana de 48 h), pendientes, filtros y estado de fila.
+- `reminders-table-rows.ts`: filas de tabla con marcas de operación en curso.
+
+Componentes cliente de `src/app/(dashboard)/recordatorios/` importan del `domain/` directamente, porque
+el `index.ts` arrastra casos de uso marcados con `server-only`. Solo importan tipos desde `index.ts`.
 
 Autoridad final:
 
@@ -14,13 +25,13 @@ Autoridad final:
 
 Adapters externos:
 
-- No tiene data Adapter propio mientras no posea persistencia o integracion
-  externa propia.
-- Consume Adapters de otros Modules mediante su use-case.
+- `data/reminder-log.repo.ts`: persistencia del registro de recordatorios enviados.
+- Consume Adapters de otros Modules mediante su use-case o `index.ts`.
 
 Tests que protegen el Module:
 
-- `use-cases/get-reminder-queue.test.ts`
+- `use-cases/get-reminder-queue.test.ts`, `use-cases/record-manual-reminder.test.ts`, `use-cases/reminder-input.test.ts`.
+- `domain/reminder-rules.test.ts`, `domain/reminders-table-rows.test.ts`, `domain/local-date.test.ts`.
 
 No debe vivir aqui:
 

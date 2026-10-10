@@ -27,12 +27,6 @@ describe("getOnboardingChecklist", () => {
       ["customers", true],
       ["appointments", false],
     ]);
-    expect(checklist.steps.map((step) => step.href)).toEqual([
-      "/services",
-      "/employees",
-      "/customers",
-      "/appointments/new",
-    ]);
   });
 
   it("queda completo cuando todos los conteos son mayores que cero", async () => {

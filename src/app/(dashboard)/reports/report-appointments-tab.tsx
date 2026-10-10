@@ -1,4 +1,4 @@
-import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
+import type { OperationalReportViewModel } from "@/features/reports";
 import { BusyHoursChart } from "./report-charts";
 import { MonthlyAreaChart } from "./report-area-chart";
 import { MetricGrid } from "./report-metric-grid";

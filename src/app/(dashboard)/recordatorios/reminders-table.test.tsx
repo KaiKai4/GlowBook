@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { chooseOption } from "@/test/ui-appointments-dom";
 import { clickElement, requireElement } from "@/test/ui-shared-dom";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "@/features/reminders";
 import { RemindersView } from "./reminders-view";
 
 vi.mock("./actions", () => ({

@@ -1,9 +1,8 @@
-import { findSalonReportIdentity, findSalonTimezone } from "../data/reports.repo";
+import { findSalonReportIdentity } from "../data/reports.repo";
 import {
   fetchCommissionReport,
   fetchOperationalBreakdown,
   fetchPeriodTotals,
-  type PeriodTotals,
 } from "../data/rpc/reports-read-models.rpc";
 import {
   fetchBusyHours,
@@ -15,6 +14,7 @@ import {
 } from "../data/rpc/reports-history.rpc";
 import {
   busyHourLabel,
+  toLifetimeTotals,
   type HistoricalReportAnalytics,
   type LifetimeReportTotals,
   type ReportModuleAvailability,
@@ -25,6 +25,7 @@ import {
   availableReportYears,
   getReportPresetRange,
   getYearRange,
+  lastDayOfMonth,
   localDateString,
   localYear,
 } from "../domain/period";
@@ -81,26 +82,6 @@ function getMonthSequence(now: Date, timezone: string, count = 12): MonthLabel[]
   });
 }
 
-export function lastDayOfMonth(monthKey: string): string {
-  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
-  const day = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return `${monthKey}-${String(day).padStart(2, "0")}`;
-}
-
-/** Totales de periodo (report_period_totals) con la forma del acumulado. */
-export function toLifetimeTotals(totals: PeriodTotals): LifetimeReportTotals {
-  return {
-    appointmentRevenue: totals.revenue,
-    retailRevenue: totals.retailRevenue,
-    grossRevenue: totals.grossRevenue,
-    operationalExpenses: totals.manualExpenses,
-    inventoryPurchases: totals.inventoryPurchases,
-    totalExpenses: totals.totalExpenses,
-    estimatedProfit: totals.estimatedProfit,
-    completedAppointments: totals.completedCount,
-  };
-}
-
 export async function getOperationalReport({
   salonId,
   filters,
@@ -121,7 +102,6 @@ export async function getOperationalReport({
 
   const [period, analytics, yearly] = await Promise.all([
     getOperationalReportPeriod({
-      salonId,
       filters,
       modules,
       now,
@@ -153,18 +133,20 @@ async function getYearTotals({
   return toLifetimeTotals(totals);
 }
 
-interface GetOperationalReportPeriodInternalInput extends GetOperationalReportInput {
-  timezone?: string;
+interface GetOperationalReportPeriodInternalInput {
+  filters: ReportFilters;
+  modules: ReportModuleAvailability;
+  now: Date;
+  /** Zona del salón, ya resuelta por el caso de uso que llama. */
+  timezone: string;
 }
 
 async function getOperationalReportPeriod({
-  salonId,
   filters,
-  modules = { inventory: true, retail: true, expenses: true },
-  now = new Date(),
-  timezone: knownTimezone,
+  modules,
+  now,
+  timezone,
 }: GetOperationalReportPeriodInternalInput): Promise<OperationalReportPeriodViewModel> {
-  const timezone = knownTimezone ?? (await findSalonTimezone(salonId)) ?? DEFAULT_REPORT_TIMEZONE;
   const hasCustomRange = Boolean(filters.from && filters.to);
   const range = hasCustomRange
     ? { from: filters.from as string, to: filters.to as string }

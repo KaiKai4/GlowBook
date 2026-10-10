@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type {
   PendingAppointmentConfirmation,
   TopService,
-} from "@/features/dashboard/use-cases/get-dashboard-overview";
+} from "@/features/dashboard";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { PendingConfirmations, TopServices } from "./dashboard-widgets";
 

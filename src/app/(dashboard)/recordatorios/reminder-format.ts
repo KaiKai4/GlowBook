@@ -1,10 +1,7 @@
 import { formatTimeTz } from "@/infra/format/dates";
+import { localDateStr } from "@/features/reminders/domain/local-date";
 import { renderMessageTemplate } from "@/features/notifications/domain/templates";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
-
-export function localDateStr(isoStr: string, tz: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(isoStr));
-}
+import type { ReminderAppointment } from "@/features/reminders";
 
 export function todayStr(tz: string): string {
   return localDateStr(new Date().toISOString(), tz);
@@ -14,10 +11,6 @@ export function tomorrowStr(tz: string): string {
   const date = new Date();
   date.setDate(date.getDate() + 1);
   return localDateStr(date.toISOString(), tz);
-}
-
-export function isSameLocalDay(left: string | null, right: string, tz: string): boolean {
-  return !!left && localDateStr(left, tz) === right;
 }
 
 export function buildWhatsAppUrl(phone: string, message: string): string {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isEffectiveSalonModuleEnabled } from "@/features/billing";
-import { getReminderQueue } from "@/features/reminders/use-cases/get-reminder-queue";
+import { getReminderQueue } from "@/features/reminders";
 import { hasPermission } from "@/features/access";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import RecordatoriosPage from "./page";

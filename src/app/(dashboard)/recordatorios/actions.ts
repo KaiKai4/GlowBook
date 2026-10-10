@@ -4,14 +4,14 @@ import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import { confirmAppointment } from "@/features/appointments";
-import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
 import {
+  recordManualReminder,
   parseConfirmReminderInput,
   parseManualReminderInput,
   type ConfirmReminderFields,
   type ManualReminderFields,
   type ManualReminderInput,
-} from "@/features/reminders/use-cases/reminder-input";
+} from "@/features/reminders";
 import type { Result } from "@/infra/result";
 
 // El permiso reminders.send ya exige los modulos "recordatorios" y "plantillas"
