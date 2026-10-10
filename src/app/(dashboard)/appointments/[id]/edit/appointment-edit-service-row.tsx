@@ -3,7 +3,8 @@
 import { GripVertical, Trash2 } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/components/ui/cn";
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import type {
   AppointmentScheduleItem,
   AppointmentServiceRow,

@@ -26,6 +26,8 @@ export type SalonPlanAssignmentStatus = (typeof SALON_PLAN_ASSIGNMENT_STATUSES)[
 export type PlanEnforcementMode = (typeof PLAN_ENFORCEMENT_MODES)[number];
 export type PlanLimitCountScope = (typeof PLAN_LIMIT_COUNT_SCOPES)[number];
 type PlanWarningLevel = "none" | "near_limit" | "over_limit" | "blocked";
+/** Código aviso de límite; el texto visible lo produce billing/messages.ts. */
+export type PlanLimitMessageCode = "near_limit" | "exceeded" | "reached" | "action_blocked";
 
 export interface PlatformModule {
   key: SalonFeatureKey;
@@ -121,7 +123,7 @@ export interface EffectivePlanLimit {
   remaining: number | null;
   percentage: number | null;
   warningLevel: PlanWarningLevel;
-  message: string;
+  messageCode: PlanLimitMessageCode | null;
 }
 
 export interface EffectiveSalonPlan {
@@ -145,7 +147,7 @@ export interface PlanLimitCheck {
   used: number;
   maxValue: number | null;
   remaining: number | null;
-  message: string;
+  messageCode: PlanLimitMessageCode | null;
 }
 
 export function calculateLimitState(input: {
@@ -183,7 +185,7 @@ export function calculateLimitState(input: {
     remaining,
     percentage,
     warningLevel,
-    message: limitMessage(input.metric.name, input.used, input.maxValue, warningLevel),
+    messageCode: limitMessageCode(input.used, input.maxValue, warningLevel),
   };
 }
 
@@ -192,7 +194,7 @@ export function calculateLimitState(input: {
 // recursos ya se bloquea en el punto de accion. Consumos renovables (citas
 // por ciclo) si alertan al acercarse, porque se agotan dentro del periodo.
 export function isActionableLimitWarning(limit: EffectivePlanLimit): boolean {
-  if (limit.warningLevel === "none" || !limit.message) return false;
+  if (limit.warningLevel === "none" || !limit.messageCode) return false;
   if (limit.countScope !== "current") return true;
   return limit.maxValue !== null && limit.used > limit.maxValue;
 }
@@ -221,7 +223,7 @@ export function checkLimitAction(input: {
       used: input.used,
       maxValue: input.maxValue,
       remaining,
-      message: `${input.metricName} alcanzo el límite del plan (${input.maxValue}).`,
+      messageCode: "action_blocked",
     };
   }
 
@@ -244,19 +246,17 @@ function allowed(
     used: input.used,
     maxValue: input.maxValue,
     remaining,
-    message: "",
+    messageCode: null,
   };
 }
 
-function limitMessage(
-  metricName: string,
+function limitMessageCode(
   used: number,
   maxValue: number | null,
   warningLevel: PlanWarningLevel
-) {
-  if (warningLevel === "none") return "";
-  if (maxValue === null) return "";
-  if (warningLevel === "near_limit") return `${metricName}: vas ${used} de ${maxValue} en tu plan.`;
-  if (used > maxValue) return `${metricName}: superaste el límite de tu plan (${used} de ${maxValue}).`;
-  return `${metricName}: alcanzaste el límite de tu plan (${used} de ${maxValue}).`;
+): PlanLimitMessageCode | null {
+  if (warningLevel === "none") return null;
+  if (maxValue === null) return null;
+  if (warningLevel === "near_limit") return "near_limit";
+  return used > maxValue ? "exceeded" : "reached";
 }

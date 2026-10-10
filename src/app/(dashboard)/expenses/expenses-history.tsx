@@ -8,7 +8,7 @@ import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ExpenseHistoryItem } from "@/features/expenses/use-cases/expenses";
 import { isHttpsReceiptUrl } from "@/features/expenses/domain/receipt-url";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 
 type ExpenseTypeFilter = "all" | "manual" | "inventory_purchase";
 

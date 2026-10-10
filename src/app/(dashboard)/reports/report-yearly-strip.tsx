@@ -2,7 +2,7 @@
 // arranca sin movimientos). El selector permite consultar años anteriores; el
 // histórico completo sigue disponible en la exportación.
 
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { Select } from "@/components/ui/select";
 import type { OperationalReportViewModel } from "@/features/reports";
 

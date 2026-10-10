@@ -1,5 +1,6 @@
 "use client";
 
+import { toAmount } from "@/infra/format/money";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
@@ -10,12 +11,7 @@ import {
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
 import { cn } from "@/components/ui/cn";
-import {
-  calculateDiscountAmount,
-  calculateFinalChargedTotal,
-  clampDiscountPercentage,
-  roundCurrency,
-} from "@/features/appointments/domain/pricing";
+import { previewCompletionTotals } from "@/features/appointments/domain/pricing";
 import type { PaymentMethodOption } from "@/features/payments/domain/payment-methods";
 import { completeAppointmentAction } from "../actions";
 import { CheckCircle2 } from "lucide-react";
@@ -78,7 +74,7 @@ export function CompleteAppointmentDialog({
 
 function buildInitialItemPrices(appt: AppointmentForCompletion) {
   return Object.fromEntries(
-    appt.items.map((item) => [item.id, String(Number(item.price ?? 0))])
+    appt.items.map((item) => [item.id, String(toAmount(item.price))])
   );
 }
 
@@ -120,25 +116,19 @@ function CompleteAppointmentForm({
 
   // Vista previa: estos importes solo orientan al usuario antes de cobrar. El servidor
   // recalcula precios y descuentos al completar, y es su resultado el que cuenta.
-  const chargedItems = useMemo(
+  const preview = useMemo(
     () =>
-      appt.items.map((item) => {
-        const price = roundCurrency(Number(itemPrices[item.id] ?? item.price ?? 0));
-        const discountPercentage = clampDiscountPercentage(
-          parseFloat(itemDiscounts[item.id] || "0") || 0
-        );
-        const discountAmount = calculateDiscountAmount(price, discountPercentage);
-        const finalPrice = calculateFinalChargedTotal(price, discountAmount);
-        const isVariable = item.service?.category?.pricing_mode === "variable";
-        return { ...item, price, discountPercentage, discountAmount, finalPrice, isVariable };
-      }),
+      previewCompletionTotals(
+        appt.items.map((item) => ({
+          ...item,
+          price: toAmount(itemPrices[item.id] ?? item.price ?? 0),
+          discountPercentage: parseFloat(itemDiscounts[item.id] || "0") || 0,
+          isVariable: item.service?.category?.pricing_mode === "variable",
+        }))
+      ),
     [appt.items, itemDiscounts, itemPrices]
   );
-  const subtotal = roundCurrency(chargedItems.reduce((sum, item) => sum + item.price, 0));
-  const discountAmount = roundCurrency(
-    chargedItems.reduce((sum, item) => sum + item.discountAmount, 0)
-  );
-  const finalTotal = calculateFinalChargedTotal(subtotal, discountAmount);
+  const { items: chargedItems, subtotal, discountAmount, finalTotal } = preview;
 
   function handleComplete() {
     if (pending || completed) return;

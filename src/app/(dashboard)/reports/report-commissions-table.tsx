@@ -1,6 +1,6 @@
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Panel } from "@/components/ui/panel";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import type { OperationalReportViewModel } from "@/features/reports";
 
 type CommissionRow = OperationalReportViewModel["commissions"]["rows"][number];

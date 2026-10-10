@@ -2,16 +2,16 @@ import {
   findCustomerByEmail,
   findCustomerByPhone,
 } from "@/features/customers/data/customers.repo";
+import {
+  isPermanentCandidate,
+  pickArchivedMatch,
+  type ArchivedCustomerMatch,
+} from "@/features/customers/domain/duplicates";
 import type { CreateCustomerInput } from "@/features/customers/schemas";
 import type { Result } from "@/infra/result";
 import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 
-export interface ArchivedCustomerMatch {
-  id: string;
-  name: string;
-  phone: string | null;
-  email: string | null;
-}
+export type { ArchivedCustomerMatch } from "@/features/customers/domain/duplicates";
 
 export async function checkPermanentCustomerByPhone(
   salonId: string,
@@ -21,7 +21,7 @@ export async function checkPermanentCustomerByPhone(
   if (!trimmedPhone) return { exists: false };
 
   const existing = await findCustomerByPhone(salonId, trimmedPhone);
-  if (!existing || existing.is_temporary) return { exists: false };
+  if (!existing || !isPermanentCandidate(existing)) return { exists: false };
 
   return { exists: true, archived: !existing.is_active };
 }
@@ -40,17 +40,7 @@ export async function findArchivedCustomerByContact(
     trimmedEmail ? findCustomerByEmail(salonId, trimmedEmail) : Promise.resolve(null),
   ]);
 
-  const archived = matches.find((customer) =>
-    customer && !customer.is_active && !customer.is_temporary
-  );
-  if (!archived) return null;
-
-  return {
-    id: archived.id,
-    name: `${archived.first_name} ${archived.last_name}`.trim(),
-    phone: archived.phone,
-    email: archived.email,
-  };
+  return pickArchivedMatch(matches);
 }
 
 export async function rejectArchivedDuplicate(

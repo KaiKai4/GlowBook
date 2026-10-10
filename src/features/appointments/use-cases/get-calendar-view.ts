@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 
 import { findAppointmentsBySalon } from "../data/appointments.repo";
@@ -60,7 +61,7 @@ function toCalendarAppointment(appointment: Awaited<ReturnType<typeof findAppoin
       start_time: item.start_time,
       end_time: item.end_time,
       price: item.price,
-      discount_amount: Number(item.discount_amount ?? 0),
+      discount_amount: toAmount(item.discount_amount),
       service: item.service
         ? {
             ...item.service,

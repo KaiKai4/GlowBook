@@ -1,11 +1,10 @@
 import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deleteRole } from "../data/roles.repo";
+import { deleteRole, findRoleForDelete } from "../data/roles.repo";
 import {
   createRoleWithPermissionsRpc,
   replaceRolePermissionsRpc,
 } from "../data/rpc/role-permissions-rpc";
-import { PublicError } from "@/infra/public-error";
 import { createRoleWithPermissions } from "./create-role";
 import { deleteSalonRole } from "./delete-role";
 import { updateRolePermissions } from "./update-role-permissions";
@@ -17,6 +16,7 @@ vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 vi.mock("../data/roles.repo", () => ({
   deleteRole: vi.fn(),
+  findRoleForDelete: vi.fn(),
 }));
 
 vi.mock("../data/rpc/role-permissions-rpc", () => ({
@@ -28,6 +28,7 @@ const SALON_ID = "salon-1";
 const ROLE_ID = "00000000-0000-4000-8000-000000000001";
 
 const mockedDeleteRole = vi.mocked(deleteRole);
+const mockedFindRoleForDelete = vi.mocked(findRoleForDelete);
 const mockedCreateRpc = vi.mocked(createRoleWithPermissionsRpc);
 const mockedReplaceRpc = vi.mocked(replaceRolePermissionsRpc);
 
@@ -143,8 +144,8 @@ describe("deleteSalonRole outcomes", () => {
   });
 
   // delete-role.ts usa toPublicErrorMessage: solo PublicError llega a la UI.
-  it("devuelve error con el mensaje del fallo del adaptador", async () => {
-    mockedDeleteRole.mockRejectedValue(new PublicError("Los roles de sistema no se pueden eliminar."));
+  it("devuelve error si el rol es de sistema, sin llamar al borrado", async () => {
+    mockedFindRoleForDelete.mockResolvedValue({ is_system: true });
 
     const result = await deleteSalonRole(SALON_ID, ROLE_ID);
 
@@ -155,6 +156,7 @@ describe("deleteSalonRole outcomes", () => {
   });
 
   it("un fallo no Error usa el mensaje genérico de eliminación", async () => {
+    mockedFindRoleForDelete.mockResolvedValue({ is_system: false });
     mockedDeleteRole.mockRejectedValue({ code: "XX" });
 
     const result = await deleteSalonRole(SALON_ID, ROLE_ID);

@@ -1,12 +1,17 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import {
-  calculateDiscountAmount,
-  calculateFinalChargedTotal,
-  clampDiscountPercentage,
-  isPricingMode,
-  roundCurrency,
-} from "./pricing";
+import { roundCurrency } from "@/infra/format/money";
+import { calculateItemChargedPrice, isPricingMode, previewCompletionTotals } from "./pricing";
+
+/** Descuento en moneda de un item, leído de la vista previa pública del cobro. */
+const discountOf = (subtotal: number, pct: number): number =>
+  previewCompletionTotals([{ id: "x", price: subtotal, discountPercentage: pct }]).discountAmount;
+
+/** Porcentaje limpio de un item, leído de la vista previa pública del cobro. */
+const clampOf = (pct: number): number => {
+  const [line] = previewCompletionTotals([{ id: "x", price: 0, discountPercentage: pct }]).items;
+  return line?.discountPercentage ?? 0;
+};
 
 const money = fc.double({ min: 0, max: 100_000, noNaN: true, noDefaultInfinity: true });
 const percentage = fc.double({ min: 0, max: 100, noNaN: true, noDefaultInfinity: true });
@@ -22,27 +27,27 @@ describe("appointment pricing: casos de borde", () => {
   });
 
   it("trata porcentajes no finitos como descuento cero", () => {
-    expect(clampDiscountPercentage(Number.NaN)).toBe(0);
-    expect(clampDiscountPercentage(Number.POSITIVE_INFINITY)).toBe(0);
-    expect(clampDiscountPercentage(Number.NEGATIVE_INFINITY)).toBe(0);
+    expect(clampOf(Number.NaN)).toBe(0);
+    expect(clampOf(Number.POSITIVE_INFINITY)).toBe(0);
+    expect(clampOf(Number.NEGATIVE_INFINITY)).toBe(0);
   });
 
   it("no aplica descuento cuando el porcentaje no es finito", () => {
-    expect(calculateDiscountAmount(80, Number.NaN)).toBe(0);
-    expect(calculateDiscountAmount(80, Number.POSITIVE_INFINITY)).toBe(0);
+    expect(discountOf(80, Number.NaN)).toBe(0);
+    expect(discountOf(80, Number.POSITIVE_INFINITY)).toBe(0);
   });
 
   it("limita el descuento al 100% del subtotal", () => {
-    expect(calculateDiscountAmount(45.5, 250)).toBe(45.5);
+    expect(discountOf(45.5, 250)).toBe(45.5);
   });
 
   it("redondea el descuento a centavos antes de aplicarlo", () => {
     // 33.33 * 15% = 4.9995 -> 5.00 (redondeo half-up de centavos)
-    expect(calculateDiscountAmount(33.33, 15)).toBe(5);
+    expect(discountOf(33.33, 15)).toBe(5);
   });
 
   it("nunca cobra un total negativo aunque el descuento supere el subtotal", () => {
-    expect(calculateFinalChargedTotal(10, 25)).toBe(0);
+    expect(calculateItemChargedPrice(10, 25)).toBe(0);
   });
 
   it("redondea valores con medio centavo hacia arriba", () => {
@@ -54,7 +59,7 @@ describe("appointment pricing: propiedades", () => {
   it("el porcentaje limpio queda siempre dentro de 0 y 100", () => {
     fc.assert(
       fc.property(fc.double({ noNaN: false }), (value) => {
-        const clamped = clampDiscountPercentage(value);
+        const clamped = clampOf(value);
         expect(clamped).toBeGreaterThanOrEqual(0);
         expect(clamped).toBeLessThanOrEqual(100);
       })
@@ -64,8 +69,8 @@ describe("appointment pricing: propiedades", () => {
   it("limpiar un porcentaje ya limpio no lo cambia", () => {
     fc.assert(
       fc.property(percentage, (value) => {
-        expect(clampDiscountPercentage(clampDiscountPercentage(value))).toBe(
-          clampDiscountPercentage(value)
+        expect(clampOf(clampOf(value))).toBe(
+          clampOf(value)
         );
       })
     );
@@ -74,7 +79,7 @@ describe("appointment pricing: propiedades", () => {
   it("el descuento nunca supera el subtotal ni es negativo", () => {
     fc.assert(
       fc.property(money, fc.double({ min: -50, max: 200, noNaN: true }), (subtotal, pct) => {
-        const discount = calculateDiscountAmount(subtotal, pct);
+        const discount = discountOf(subtotal, pct);
         expect(discount).toBeGreaterThanOrEqual(0);
         expect(discount).toBeLessThanOrEqual(roundCurrency(subtotal));
       })
@@ -84,8 +89,8 @@ describe("appointment pricing: propiedades", () => {
   it("subtotal = total cobrado + descuento cuando el descuento no excede el subtotal", () => {
     fc.assert(
       fc.property(money, percentage, (subtotal, pct) => {
-        const discount = calculateDiscountAmount(subtotal, pct);
-        const total = calculateFinalChargedTotal(subtotal, discount);
+        const discount = discountOf(subtotal, pct);
+        const total = calculateItemChargedPrice(subtotal, discount);
         expect(total).toBeGreaterThanOrEqual(0);
         expect(roundCurrency(total + discount)).toBe(roundCurrency(subtotal));
       })
@@ -95,7 +100,7 @@ describe("appointment pricing: propiedades", () => {
   it("el total cobrado nunca es negativo, incluso con descuentos mayores al subtotal", () => {
     fc.assert(
       fc.property(money, money, (subtotal, discount) => {
-        expect(calculateFinalChargedTotal(subtotal, discount)).toBeGreaterThanOrEqual(0);
+        expect(calculateItemChargedPrice(subtotal, discount)).toBeGreaterThanOrEqual(0);
       })
     );
   });

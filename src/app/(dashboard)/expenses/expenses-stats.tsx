@@ -1,6 +1,6 @@
 import { MetricCard } from "@/components/ui/metric-card";
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 
 // Mensual + acumulado + la categoría que más pesa este mes: lo que un dueño
 // quiere saber de un vistazo sobre sus egresos.

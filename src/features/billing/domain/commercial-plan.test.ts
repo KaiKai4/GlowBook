@@ -59,7 +59,7 @@ describe("commercial plan limits", () => {
     });
 
     expect(result.warningLevel).toBe("none");
-    expect(result.message).toBe("");
+    expect(result.messageCode).toBeNull();
   });
 
   it("marks usage above a zero limit as exceeded", () => {

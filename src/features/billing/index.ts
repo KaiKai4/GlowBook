@@ -16,6 +16,7 @@ export {
 export { checkPlanLimit } from "./use-cases/plan-limits";
 export { readEffectivePlanOrNull } from "./use-cases/effective-plan-fallback";
 export { isActionableLimitWarning } from "./domain/commercial-plan";
+export { planLimitMessage } from "./messages";
 export { evaluatePaymentStanding } from "./domain/payment-standing";
 export type { PaymentStanding } from "./domain/payment-standing";
 

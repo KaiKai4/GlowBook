@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import type {
   BusyHourPoint,
   ProductMonthlySales,

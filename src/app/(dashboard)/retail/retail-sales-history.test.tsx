@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { RetailSalesHistory } from "./retail-sales-history";
 

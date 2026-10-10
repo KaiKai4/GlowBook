@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 import { captureError } from "@/infra/observability";
 
@@ -146,7 +147,7 @@ export async function getEmployeeDetail({
       phone: employee.phone ?? "",
       email: employee.email ?? "",
       specialty: employee.specialty ?? "",
-      commission_percentage: Number(employee.commission_percentage ?? 0),
+      commission_percentage: toAmount(employee.commission_percentage),
       profile_id: employee.profile_id,
       is_active: employee.is_active,
     },

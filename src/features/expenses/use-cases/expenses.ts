@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { err, ok, type Result } from "@/infra/result";
 import type { CreateExpenseInput } from "../schemas";
@@ -73,7 +74,7 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
     id: expense.id,
     type: "manual",
     date: expense.expense_date,
-    amount: Number(expense.amount ?? 0),
+    amount: toAmount(expense.amount),
     concept: expense.concept || expense.custom_category || "Gasto general",
     categoryLabel: expenseDisplayLabel(expense.category, expense.custom_category),
     commerceName: expense.vendor_name,

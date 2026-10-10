@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { cn } from "@/components/ui/cn";
 import { Check, User } from "lucide-react";
 import type {

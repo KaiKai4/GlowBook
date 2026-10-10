@@ -1,6 +1,6 @@
 import { Panel } from "@/components/ui/panel";
 import type { ExpensesPageView } from "@/features/expenses/use-cases/expenses";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 
 // Desglose de los gastos del mes por categoría: barra proporcional + monto.
 // Responde "¿en qué se me va el dinero este mes?" de un vistazo.

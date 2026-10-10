@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { SALON_TZ, WIZARD_EMPLOYEES, WIZARD_SERVICES } from "@/test/ui-appointments-fixtures";
 import { buttonWithText, click, fieldWithLabel, setFieldValue } from "@/test/ui-appointments-dom";

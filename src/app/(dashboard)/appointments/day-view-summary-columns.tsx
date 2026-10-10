@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency, toAmount } from "@/infra/format/money";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { DataTableColumn } from "@/components/ui/data-table";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
@@ -130,7 +131,7 @@ export function buildSummaryColumns(
       align: "right",
       cell: (appt) => (
         <span className="text-sm font-semibold text-fg-secondary">
-          {formatCurrency(Number(appt.total_price ?? 0))}
+          {formatCurrency(toAmount(appt.total_price))}
         </span>
       ),
     },

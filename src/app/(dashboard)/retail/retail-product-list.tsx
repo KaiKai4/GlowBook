@@ -1,6 +1,6 @@
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 
 export function RetailProductList({ products }: { products: RetailPageView["products"] }) {
   return (

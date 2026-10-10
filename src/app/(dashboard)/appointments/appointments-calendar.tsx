@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/components/ui/cn";
+import { isVisibleOnCalendar } from "@/features/appointments/domain/lifecycle";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import { DayColumn } from "./calendar-day-column";
 import { TimeGutter } from "./calendar-time-gutter";
@@ -34,7 +35,7 @@ export function AppointmentsCalendar({
   businessEnd?: number;
 }) {
   const today = todayISO();
-  const visible = appointments.filter((a) => a.status !== "cancelled" && a.start_time);
+  const visible = appointments.filter((a) => isVisibleOnCalendar(a.status) && a.start_time);
   const { calStart, calEnd } = computeRange(visible, tz, businessStart, businessEnd);
   const totalHours = calEnd - calStart;
 

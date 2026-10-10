@@ -2,7 +2,7 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Panel } from "@/components/ui/panel";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
 import { paymentMethodLabel } from "@/features/payments/domain/payment-methods";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency, toAmount } from "@/infra/format/money";
 
 type Sale = RetailPageView["recentSales"][number];
 
@@ -45,7 +45,7 @@ const SALE_COLUMNS: DataTableColumn<Sale>[] = [
     align: "right",
     cell: (sale) => (
       <span className="font-semibold text-success-fg">
-        {formatCurrency(Number(sale.total_amount ?? 0))}
+        {formatCurrency(toAmount(sale.total_amount))}
       </span>
     ),
   },

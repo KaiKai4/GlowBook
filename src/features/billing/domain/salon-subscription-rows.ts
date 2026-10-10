@@ -1,5 +1,5 @@
 import type { CommercialPlan, SalonPlanAssignmentStatus } from "./commercial-plan";
-import { round2 } from "./salon-plan-views";
+import { roundCurrency } from "@/infra/format/money";
 
 export interface SalonSubscriptionRow {
   salonId: string;
@@ -27,7 +27,7 @@ export function buildSubscriptionRow(input: {
 }): SalonSubscriptionRow {
   const { salon, assignment, plan, extras, openAlertCount } = input;
   const billable = assignment?.status === "active" || assignment?.status === "trialing" || assignment?.status === "past_due";
-  const extrasPrice = round2(extras.reduce((total, extra) => total + extra.monthlyPrice, 0));
+  const extrasPrice = roundCurrency(extras.reduce((total, extra) => total + extra.monthlyPrice, 0));
   const planPrice = billable && plan ? plan.monthlyPrice : 0;
 
   return {
@@ -42,14 +42,14 @@ export function buildSubscriptionRow(input: {
     trialEndsAt: assignment?.trial_ends_at ?? null,
     extrasCount: extras.length,
     extrasPrice,
-    monthlyTotal: round2(planPrice + extrasPrice),
+    monthlyTotal: roundCurrency(planPrice + extrasPrice),
     openAlertCount,
   };
 }
 
 /** MRR: suma del total mensual de las filas con asignación activa. */
 export function subscriptionMrr(rows: SalonSubscriptionRow[]): number {
-  return round2(
+  return roundCurrency(
     rows
       .filter((row) => row.status === "active")
       .reduce((total, row) => total + row.monthlyTotal, 0)

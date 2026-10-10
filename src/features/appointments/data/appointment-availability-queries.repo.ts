@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { getUtcDayBoundaries } from "@/infra/format/dates";
+import { getUtcDayBoundaries, noonProbeForLocalDate } from "@/infra/format/dates";
 import type { OccupiedSlot, WorkSchedule } from "../domain/types";
 import type { OccupiedByEmployee } from "./appointment-command-types";
 
@@ -134,14 +134,7 @@ export async function findOccupiedSlotsForSalonDate(
 
   const timezone = salonData?.timezone ?? "UTC";
 
-  let probe = new Date(`${date}T12:00:00.000Z`);
-  const probeLocal = new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(probe);
-  if (probeLocal !== date) {
-    const delta = probeLocal > date ? -12 : 12;
-    probe = new Date(probe.getTime() + delta * 60 * 60_000);
-  }
-
-  const { start, end } = getUtcDayBoundaries(probe, timezone);
+  const { start, end } = getUtcDayBoundaries(noonProbeForLocalDate(date, timezone), timezone);
   let query = supabase
     .from("appointment_items")
     .select("employee_id, start_time, end_time")

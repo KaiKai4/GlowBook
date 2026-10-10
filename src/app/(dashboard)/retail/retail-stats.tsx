@@ -1,10 +1,10 @@
 import { MetricCard } from "@/components/ui/metric-card";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency, toAmount } from "@/infra/format/money";
 import type { RetailPageView } from "@/features/retail/use-cases/retail-sales";
 
 export function RetailStats({ retail }: { retail: RetailPageView }) {
   const recentRevenue = retail.recentSales.reduce(
-    (sum, sale) => sum + Number(sale.total_amount ?? 0),
+    (sum, sale) => sum + toAmount(sale.total_amount),
     0
   );
 

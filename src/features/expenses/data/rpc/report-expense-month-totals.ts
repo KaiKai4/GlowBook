@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 
 import { createSupabaseServerClient } from "@/infra/supabase/server";
@@ -41,6 +42,6 @@ export async function reportExpenseMonthTotalsRpc(
   return rows.map((row) => ({
     category: row.category,
     customCategory: row.custom_category ?? null,
-    amount: Number(row.amount ?? 0),
+    amount: toAmount(row.amount),
   }));
 }

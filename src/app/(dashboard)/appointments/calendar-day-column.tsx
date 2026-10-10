@@ -1,5 +1,7 @@
-import { formatTimeTz, formatCurrency } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency, toAmount } from "@/infra/format/money";
 import { cn } from "@/components/ui/cn";
+import { isVisibleOnCalendar } from "@/features/appointments/domain/lifecycle";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import {
   assignColumns,
@@ -32,7 +34,7 @@ export function DayColumn({
   totalHours: number;
   compact?: boolean;
 }) {
-  const visible = appointments.filter((a) => a.status !== "cancelled" && a.start_time);
+  const visible = appointments.filter((a) => isVisibleOnCalendar(a.status) && a.start_time);
   const { items, totalCols } = assignColumns(visible, tz, calStart);
 
   return (
@@ -89,7 +91,7 @@ export function DayColumn({
               <p className="text-xs font-semibold opacity-90 mt-0.5">
                 {appt.start_time && formatTimeTz(new Date(appt.start_time), tz)}
                 {" · "}
-                {formatCurrency(Number(appt.total_price ?? 0))}
+                {formatCurrency(toAmount(appt.total_price))}
               </p>
             )}
             {compact && heightPx > 36 && (

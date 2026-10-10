@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import { PublicError } from "@/infra/public-error";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { deleteRole } from "../data/roles.repo";
 import { deleteSalonRole } from "./delete-role";
 
 vi.mock("server-only", () => ({}));
@@ -40,18 +38,22 @@ beforeEach(() => {
 });
 
 describe("roles: permisos y borrado con errores de dominio", () => {
-  it("borrar un rol inexistente lanza 'Rol no encontrado.'", async () => {
+  it("borrar un rol inexistente devuelve 'Rol no encontrado.' y no borra", async () => {
     useSupabase({ roles: [{ data: null, error: null }] });
 
-    await expect(deleteRole(ROLE, SALON)).rejects.toThrow("Rol no encontrado.");
+    await expect(deleteSalonRole(SALON, ROLE)).resolves.toEqual({
+      ok: false,
+      error: "Rol no encontrado.",
+    });
   });
 
-  it("borrar un rol de sistema lanza 'Los roles de sistema no se pueden eliminar.'", async () => {
+  it("borrar un rol de sistema devuelve 'Los roles de sistema no se pueden eliminar.'", async () => {
     useSupabase({ roles: [{ data: { is_system: true }, error: null }] });
 
-    await expect(deleteRole(ROLE, SALON)).rejects.toThrow(
-      new PublicError("Los roles de sistema no se pueden eliminar.")
-    );
+    await expect(deleteSalonRole(SALON, ROLE)).resolves.toEqual({
+      ok: false,
+      error: "Los roles de sistema no se pueden eliminar.",
+    });
   });
 });
 

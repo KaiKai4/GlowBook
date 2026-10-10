@@ -1,7 +1,9 @@
 "use client";
 
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency, toAmount } from "@/infra/format/money";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { isVisibleOnCalendar } from "@/features/appointments/domain/lifecycle";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import { appointmentStatusPresentation } from "./appointment-status";
 
@@ -31,7 +33,7 @@ export function MobileAgenda({
   onApptClick: (appt: CalendarAppointment) => void;
 }) {
   const visible = appointments
-    .filter((appt) => appt.status !== "cancelled" && appt.start_time)
+    .filter((appt) => isVisibleOnCalendar(appt.status) && appt.start_time)
     .sort((a, b) => new Date(a.start_time!).getTime() - new Date(b.start_time!).getTime());
 
   if (visible.length === 0) {
@@ -92,7 +94,7 @@ export function MobileAgenda({
                   </p>
                 </div>
                 <p className="shrink-0 text-sm font-semibold text-fg-secondary">
-                  {formatCurrency(Number(appt.total_price ?? 0))}
+                  {formatCurrency(toAmount(appt.total_price))}
                 </p>
               </button>
             ))}

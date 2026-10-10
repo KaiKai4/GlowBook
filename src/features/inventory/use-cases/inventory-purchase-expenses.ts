@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import "server-only";
 
 import { findInventoryPurchaseHistory } from "../data/inventory.repo";
@@ -29,7 +30,7 @@ export async function getInventoryPurchaseExpenseHistory(
     return {
       id: purchase.id,
       date: purchase.purchase_date,
-      amount: Number(purchase.total_cost ?? 0),
+      amount: toAmount(purchase.total_cost),
       commerceName: purchase.supplier_name,
       note: purchase.note,
       createdAt: purchase.created_at,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deleteRole } from "../data/roles.repo";
+import { deleteRole, findRoleForDelete } from "../data/roles.repo";
 import {
   createRoleWithPermissionsRpc,
   replaceRolePermissionsRpc,
@@ -10,6 +10,7 @@ import { updateRolePermissions } from "./update-role-permissions";
 
 vi.mock("../data/roles.repo", () => ({
   deleteRole: vi.fn(),
+  findRoleForDelete: vi.fn(),
 }));
 
 vi.mock("../data/rpc/role-permissions-rpc", () => ({
@@ -18,6 +19,7 @@ vi.mock("../data/rpc/role-permissions-rpc", () => ({
 }));
 
 const mockedDeleteRole = vi.mocked(deleteRole);
+const mockedFindRoleForDelete = vi.mocked(findRoleForDelete);
 const mockedCreateRpc = vi.mocked(createRoleWithPermissionsRpc);
 const mockedReplaceRpc = vi.mocked(replaceRolePermissionsRpc);
 
@@ -85,12 +87,34 @@ describe("role use-cases", () => {
   });
 
   it("deletes roles through the roles adapter", async () => {
+    mockedFindRoleForDelete.mockResolvedValue({ is_system: false });
     mockedDeleteRole.mockResolvedValue(undefined);
 
     await expect(deleteSalonRole("salon-1", "role-1")).resolves.toEqual({
       ok: true,
       value: undefined,
     });
+    expect(mockedFindRoleForDelete).toHaveBeenCalledWith("role-1", "salon-1");
     expect(mockedDeleteRole).toHaveBeenCalledWith("role-1", "salon-1");
+  });
+
+  it("does not delete system roles and reports the domain message", async () => {
+    mockedFindRoleForDelete.mockResolvedValue({ is_system: true });
+
+    await expect(deleteSalonRole("salon-1", "role-1")).resolves.toEqual({
+      ok: false,
+      error: "Los roles de sistema no se pueden eliminar.",
+    });
+    expect(mockedDeleteRole).not.toHaveBeenCalled();
+  });
+
+  it("does not delete a role that does not exist in the salon", async () => {
+    mockedFindRoleForDelete.mockResolvedValue(null);
+
+    await expect(deleteSalonRole("salon-1", "role-1")).resolves.toEqual({
+      ok: false,
+      error: "Rol no encontrado.",
+    });
+    expect(mockedDeleteRole).not.toHaveBeenCalled();
   });
 });

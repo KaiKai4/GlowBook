@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { cn } from "@/components/ui/cn";
 import type { ReportMonthPoint } from "@/features/reports/domain/analytics";
 import { compactNumber } from "./chart-format";

@@ -5,7 +5,7 @@ import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission } from "@/features/access";
 import { getDashboardOverview } from "@/features/dashboard";
-import { formatCurrency } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { partialDouble } from "@/test/partial-double";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import DashboardPage from "./page";

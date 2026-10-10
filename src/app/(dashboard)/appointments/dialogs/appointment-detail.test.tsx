@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
 import { confirmAppointmentAction } from "@/app/(dashboard)/appointments/actions";
-import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
+import { formatTimeTz } from "@/infra/format/dates";
+import { formatCurrency } from "@/infra/format/money";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { SALON_TZ } from "@/test/ui-appointments-fixtures";
 import { buttonWithText, click, clickAndSettle } from "@/test/ui-appointments-dom";

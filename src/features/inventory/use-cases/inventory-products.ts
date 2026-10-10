@@ -1,3 +1,4 @@
+import { toAmount } from "@/infra/format/money";
 import { captureError } from "@/infra/observability";
 import "server-only";
 
@@ -77,8 +78,8 @@ export async function getInventoryPage(salonId: string): Promise<InventoryPageVi
   const productViews = products.map((product) => {
     const stock = INVENTORY_LOCATIONS.map((location) => {
       const row = product.inventory_stock_locations?.find((item) => item.location === location);
-      const quantity = Number(row?.quantity ?? 0);
-      const minimumQuantity = Number(row?.minimum_quantity ?? 0);
+      const quantity = toAmount(row?.quantity);
+      const minimumQuantity = toAmount(row?.minimum_quantity);
       return {
         location,
         label: LOCATION_LABELS[location],
@@ -92,8 +93,8 @@ export async function getInventoryPage(salonId: string): Promise<InventoryPageVi
       id: product.id,
       name: product.name,
       category: product.category ?? "",
-      costPrice: Number(product.cost_price ?? 0),
-      salePrice: Number(product.sale_price ?? 0),
+      costPrice: toAmount(product.cost_price),
+      salePrice: toAmount(product.sale_price),
       isRetailEnabled: Boolean(product.is_retail_enabled),
       isActive: product.is_active,
       totalQuantity: stock.reduce((sum, item) => sum + item.quantity, 0),
@@ -111,8 +112,8 @@ export async function getInventoryPage(salonId: string): Promise<InventoryPageVi
       productName: productNameFromRelation(movement.product),
       location: movement.location,
       movementType: movement.movement_type,
-      quantityDelta: Number(movement.quantity_delta ?? 0),
-      quantityAfter: Number(movement.quantity_after ?? 0),
+      quantityDelta: toAmount(movement.quantity_delta),
+      quantityAfter: toAmount(movement.quantity_after),
       note: movement.note ?? "",
       createdAt: movement.created_at,
     })),
