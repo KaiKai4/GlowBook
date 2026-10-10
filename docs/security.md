@@ -175,6 +175,13 @@ a cada `assertActionRateLimit(...)` (actions.ts de appointments, customers,
 employees, expenses, feedback, inventory, retail, salon, services). Sin `await`,
 `result.ok` no existe y TypeScript lo rechaza.
 
+Politica de inicio de sesion (ADR 0027), en `src/infra/security/rate-limit-policies.ts`:
+
+- limite global por IP: 100 intentos cada 15 minutos (`SIGN_IN_IP_POLICY`), holgado para no bloquear redes con NAT compartido;
+- limite por IP y correo normalizado (hash SHA-256 en la clave): 10 intentos cada 15 minutos (`SIGN_IN_ACCOUNT_POLICY`).
+
+Se comprueba primero el global, despues la validacion y despues el limite por correo. No hay limite solo por correo, para que nadie pueda bloquear la cuenta de otra persona.
+
 El texto siguiente es la decision original del MVP, conservada como historia:
 
 Decision actual para MVP:

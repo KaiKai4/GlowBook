@@ -4,7 +4,7 @@ Este documento define la estrategia de pruebas de GlowBook, qué comprueba cada 
 
 La fuente de verdad de los pasos es `scripts/quality/steps.mjs` (`STEPS`). Si este documento y el manifiesto no coinciden, manda el manifiesto.
 
-Decisiones relacionadas: ADR 0008 (pruebas como red de seguridad), ADR 0011 (verificador local igual a CI), ADR 0012 (toolchain de calidad), ADR 0013 (trinquetes de deuda), ADR 0014 (BD de pruebas local), ADR 0015 (excepciones de auditoría), ADR 0019 (arquitectura verificada), ADR 0023 (runner pgTAP propio), ADR 0026 (cuándo inyectar dependencias).
+Decisiones relacionadas: ADR 0008 (pruebas como red de seguridad), ADR 0011 (verificador local igual a CI), ADR 0012 (toolchain de calidad), ADR 0013 (trinquetes de deuda), ADR 0014 (BD de pruebas local), ADR 0015 (excepciones de auditoría), ADR 0019 (arquitectura verificada), ADR 0026 (runner pgTAP propio), ADR 0025 (cuándo inyectar dependencias).
 
 ## Definición De Terminado
 
@@ -37,7 +37,7 @@ No hace falta `.env.local` para verificar. La base local se obtiene del stack de
 |---|---|---|
 | Unitarias | `src/**/*.test.ts(x)`, excepto `*.rpc.test.ts` y `*.integration.test.ts` | `npm run test` |
 | Integración (BD local) | `src/**/*.rpc.test.ts`, `src/**/*.integration.test.ts` | `npm run test:integration` |
-| pgTAP | `supabase/tests/*.sql` | `npm run db:test` (runner `scripts/quality/run-pgtap.mjs`, ADR 0023; no usa `supabase test db`) |
+| pgTAP | `supabase/tests/*.sql` | `npm run db:test` (runner `scripts/quality/run-pgtap.mjs`, ADR 0026; no usa `supabase test db`) |
 | Scripts | `scripts/**/*.test.mjs` con `node:test` | `node --test <archivo>` (el paso `scripts-tests` ejecuta la lista completa) |
 | E2E | `e2e/*.spec.ts` (Playwright, con axe para accesibilidad) | `npm run test:e2e` |
 | Cobertura | Vitest con v8 | `npm run test:coverage` |
@@ -127,7 +127,7 @@ Todos son del job `static`, salvo `unit` y `scripts-tests`, que corren en el job
 | `sbom` | sbom | SBOM CycloneDX de producción en `.quality/sbom.json` (artefacto local, ignorado por git). |
 | `migrations-lint` | db | squawk y reglas forward-only de `scripts/quality/migration-rules.mjs` (bloqueantes) sobre las migraciones posteriores al corte `20240101000063`. Las reglas de `DROP POLICY` y `DROP CONSTRAINT` exigen un contrato (ADR 0016). |
 | `db-reset` | db | Reconstruye la BD local desde cero con todas las migraciones (requiere Docker). |
-| `db-tests` | db | Pruebas pgTAP de `supabase/tests` con `scripts/quality/run-pgtap.mjs` (ADR 0023). Cubren RLS, aislamiento por salón, permisos, `create_appointment`, idempotencia y privilegios. |
+| `db-tests` | db | Pruebas pgTAP de `supabase/tests` con `scripts/quality/run-pgtap.mjs` (ADR 0026). Cubren RLS, aislamiento por salón, permisos, `create_appointment`, idempotencia y privilegios. |
 | `types-drift` | db | `src/types/database.types.ts` coincide con los tipos que genera la BD local. No regenera nada. |
 | `integration` | db | Vitest, proyecto `integration`. Falla si falta la BD local; no se salta. |
 | `coverage` | db | Cobertura global frente al trinquete y cobertura de las líneas cambiadas frente a `main`. |

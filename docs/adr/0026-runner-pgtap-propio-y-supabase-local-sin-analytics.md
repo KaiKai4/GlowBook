@@ -1,4 +1,4 @@
-# ADR 0023: Runner pgTAP propio y Supabase local sin analytics
+# ADR 0026: Runner pgTAP propio y Supabase local sin analytics
 
 - **Estado**: Aceptada
 - **Fecha**: 2026-10-10

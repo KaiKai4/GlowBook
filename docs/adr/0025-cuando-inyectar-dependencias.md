@@ -1,4 +1,4 @@
-# ADR 0026: Cuándo inyectar dependencias (DIP pragmático)
+# ADR 0025: Cuándo inyectar dependencias (DIP pragmático)
 
 - **Estado**: Aceptada.
 - **Fecha**: 2026-10-10

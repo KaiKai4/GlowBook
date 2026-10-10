@@ -20,8 +20,11 @@ Esta política describe cómo reportar una vulnerabilidad en GlowBook. Los contr
 
 ## Plazos
 
-- Recibirás acuse de recibo y se coordinará la corrección antes de cualquier divulgación.
-- Los plazos concretos de acuse, triaje y corrección están pendientes de fijar por la persona responsable del repositorio. Hasta entonces, una vulnerabilidad confirmada en producción se trata como incidente según `docs/runbooks/incident.md`.
+- Acuse de recibo en 3 días hábiles desde la recepción del reporte.
+- Triaje y asignación de severidad en 7 días.
+- Corrección o mitigación en 30 días para vulnerabilidades críticas y en 60 días para las altas.
+- Al publicar la corrección, se comunica el resultado al informante. La divulgación pública se coordina con él antes de esa fecha.
+- Una vulnerabilidad confirmada en producción se trata además como incidente según `docs/runbooks/incident.md`.
 
 ## Versiones Soportadas
 

@@ -1,4 +1,4 @@
-# ADR 0024: RPC transaccionales para roles, invitación con plan y cita con cliente nuevo
+# ADR 0023: RPC transaccionales para roles, invitación con plan y cita con cliente nuevo
 
 - **Estado**: Aceptada
 - **Fecha**: 2026-10-10

@@ -53,8 +53,8 @@ Procedimientos paso a paso en `docs/runbooks/`:
 - `docs/adr/0019-arquitectura-por-capas-verificada.md`: capas, reglas por patrón, composition root, índices públicos y controles absolutos sin baseline.
 - `docs/adr/0021-deploy-sin-staging-remoto.md`: el despliegue no requiere staging remoto.
 - `docs/adr/0022-retiro-tooling-staging-pricing-readiness-stryker.md`: retiro de staging, pricing, readiness y Stryker.
-- `docs/adr/0023-runner-pgtap-propio-y-supabase-local-sin-analytics.md`: runner pgTAP propio.
-- `docs/adr/0026-cuando-inyectar-dependencias.md`: cuándo inyectar dependencias en pruebas y código.
+- `docs/adr/0026-runner-pgtap-propio-y-supabase-local-sin-analytics.md`: runner pgTAP propio.
+- `docs/adr/0025-cuando-inyectar-dependencias.md`: cuándo inyectar dependencias en pruebas y código.
 
 ## Verificacion
 

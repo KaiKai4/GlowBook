@@ -1,6 +1,6 @@
 # Billing
 
-Módulo de planes comerciales, extras (addons), límites y módulos por salón, y pagos de plan. Reglas de acceso en `docs/database-contracts.md` (sección "Billing Tenant Contracts") y en ADR 0025.
+Módulo de planes comerciales, extras (addons), límites y módulos por salón, y pagos de plan. Reglas de acceso en `docs/database-contracts.md` (sección "Billing Tenant Contracts") y en ADR 0024.
 
 ## Responsabilidades
 
@@ -18,7 +18,7 @@ Los dos clientes se eligen en `data/billing-db.ts`.
 
 | Operación | Cliente | Motivo |
 |---|---|---|
-| Plan efectivo del salón, módulos y límites del plan, overrides y asignación (columnas concedidas), alertas abiertas del salón | `billingSalonDb()` (sesión del usuario, RLS) | Datos del propio salón. La RLS es la autoridad (ADR 0025). |
+| Plan efectivo del salón, módulos y límites del plan, overrides y asignación (columnas concedidas), alertas abiertas del salón | `billingSalonDb()` (sesión del usuario, RLS) | Datos del propio salón. La RLS es la autoridad (ADR 0024). |
 | Conteo de uso (`count_salon_usage`) | `billingSalonDb()` o `billingDb()` | RPC `security definer` con guarda por `salon_id` de la sesión o plataforma. |
 | Aviso de plan (`record_plan_alert`) | `billingSalonDb()` | RPC que crea la alerta solo en el salón de la sesión. |
 | Panel `/admin`: suscripciones, detalle, extras, pagos, notas, alta y edición de planes | `billingDb()` (`service_role`) | Columnas internas (motivo, notas, importes, regalos) y lecturas cross-tenant, tras `requirePlatformAdmin()`. |

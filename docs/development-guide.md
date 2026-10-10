@@ -27,7 +27,7 @@ Variables principales: `GLOWBOOK_ENV`, `APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `N
 ```text
 npm run db:start     # levanta Supabase local (idempotente)
 npm run db:reset     # reconstruye la BD desde supabase/migrations y supabase/seed.sql
-npm run db:test      # pruebas pgTAP de supabase/tests (runner scripts/quality/run-pgtap.mjs, ADR 0023)
+npm run db:test      # pruebas pgTAP de supabase/tests (runner scripts/quality/run-pgtap.mjs, ADR 0026)
 npm run db:types     # regenera src/types/database.types.ts desde la BD local
 ```
 
@@ -71,7 +71,7 @@ Antes de crear carpetas nuevas, usa los nombres de `CONTEXT.md`.
 - **Flujos de acción** (el pipeline de `defineAction`): viven en los `actions*.ts` de `src/app`, con su nombre de módulo. No se crean archivos `*-flow.ts` aparte.
 - **Parseo de entrada** (FormData o campos crudos): `parse-*-input.ts` o `*-input.ts`, con funciones `parse*`.
 - **Variables**: `result` para un valor `Result<T>` y `formData` para un `FormData`. No uses `res`, `r`, `outcome`, `fd` ni `form` para estos tipos.
-- **Inyección de dependencias**: cuándo pasar `deps` y cuándo usar `vi.mock` se decide en [ADR 0026](adr/0026-cuando-inyectar-dependencias.md).
+- **Inyección de dependencias**: cuándo pasar `deps` y cuándo usar `vi.mock` se decide en [ADR 0025](adr/0025-cuando-inyectar-dependencias.md).
 - **Unidades de tiempo**: nombres completos (`hours`, `minutes`, `seconds`), nunca una letra (`h`, `m`, `s`).
 
 ## 6. Pruebas

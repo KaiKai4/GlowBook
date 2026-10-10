@@ -1,4 +1,4 @@
-# ADR 0025: Lecturas de billing del inquilino con RLS y escrituras de plataforma acotadas
+# ADR 0024: Lecturas de billing del inquilino con RLS y escrituras de plataforma acotadas
 
 - **Estado**: Aceptada. Revisa y acota la parte de billing de ADR 0010.
 - **Fecha**: 2026-10-10
