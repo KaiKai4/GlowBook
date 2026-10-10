@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { assertAnonymousRateLimit } from "@/infra/security/rate-limit";
+import { assertAnonymousRateLimit, assertSubjectRateLimit } from "@/infra/security/rate-limit";
 import { signInWithPassword } from "@/infra/auth/password-auth";
 import { err, ok } from "@/infra/result";
 import { signInAction } from "./actions";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/infra/security/rate-limit", () => ({ assertAnonymousRateLimit: vi.fn() }));
+vi.mock("@/infra/security/rate-limit", () => ({
+  assertAnonymousRateLimit: vi.fn(),
+  assertSubjectRateLimit: vi.fn(),
+}));
 vi.mock("@/infra/auth/password-auth", () => ({ signInWithPassword: vi.fn() }));
 
 const SIGN_IN_ERROR = "No pudimos iniciar sesión con esos datos.";
@@ -13,6 +16,7 @@ const INPUT = { email: "ana@salonluna.com", password: "clave-segura-1", remember
 
 beforeEach(() => {
   vi.mocked(assertAnonymousRateLimit).mockResolvedValue(ok(undefined));
+  vi.mocked(assertSubjectRateLimit).mockResolvedValue(ok(undefined));
   vi.clearAllMocks();
   vi.mocked(signInWithPassword).mockResolvedValue({ error: null });
 });
@@ -62,11 +66,29 @@ describe("signInAction", () => {
   });
 });
 
-describe("signInAction con límite por IP", () => {
-  it("aplica el límite de inicio de sesión por IP antes de tocar la autenticacion", async () => {
+describe("signInAction con límite por IP y por cuenta", () => {
+  it("aplica el límite global por IP (100 cada 15 min) antes de tocar la autenticacion", async () => {
     await signInAction(INPUT);
 
-    expect(assertAnonymousRateLimit).toHaveBeenCalledWith("sign-in", { max: 20, windowMs: 900_000 });
+    expect(assertAnonymousRateLimit).toHaveBeenCalledWith("sign-in", { max: 100, windowMs: 900_000 });
+  });
+
+  it("aplica el límite por cuenta (10 cada 15 min) con el correo normalizado", async () => {
+    await signInAction({ ...INPUT, email: "  Ana@SalonLuna.com " });
+
+    expect(assertSubjectRateLimit).toHaveBeenCalledWith("sign-in", "ana@salonluna.com", {
+      max: 10,
+      windowMs: 900_000,
+    });
+  });
+
+  it("si el límite por cuenta bloquea no intenta iniciar sesion", async () => {
+    vi.mocked(assertSubjectRateLimit).mockResolvedValue(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
+
+    const result = await signInAction(INPUT);
+
+    expect(result).toEqual(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
+    expect(signInWithPassword).not.toHaveBeenCalled();
   });
 
   it("si el límite bloquea no intenta iniciar sesión y devuelve el aviso de límite", async () => {

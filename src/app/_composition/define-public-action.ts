@@ -1,15 +1,27 @@
 import "server-only";
-import { assertAnonymousRateLimit, type RateLimitOptions } from "@/infra/security/rate-limit";
+import {
+  assertAnonymousRateLimit,
+  assertSubjectRateLimit,
+  type RateLimitOptions,
+} from "@/infra/security/rate-limit";
 import type { Result } from "@/infra/result";
 
 // Variante de defineAction para las server actions sin sesion (login, recuperar
-// contrasena, aceptar invitaciones). No hay contexto ni permiso: el limite es por
-// IP y el pipeline es limite -> validacion -> UNA llamada a un caso de uso. Sin
-// revalidacion: ninguna vista autenticada depende de estas acciones.
+// contrasena, aceptar invitaciones). No hay contexto ni permiso. El pipeline es
+// limite por IP -> validacion -> limite por sujeto (opcional) -> UNA llamada a un
+// caso de uso. Sin revalidacion: ninguna vista autenticada depende de estas acciones.
 
 export interface PublicActionSpec<TRaw, TInput, TOutput> {
-  /** Ambito del limite por IP. Sin opciones se aplica el limite anonimo por defecto. */
-  rateLimit: { scope: string; options?: RateLimitOptions };
+  rateLimit: {
+    /** Ambito del limite por IP. Sin opciones se aplica el limite anonimo por defecto. */
+    scope: string;
+    options?: RateLimitOptions;
+    /**
+     * Segundo limite por IP y sujeto (p. ej. correo normalizado), aplicado tras
+     * validar la entrada. El sujeto se hashea antes de guardarse en la clave.
+     */
+    subject?: { options: RateLimitOptions; keyFrom: (input: TInput) => string };
+  };
   /** Lee y valida la entrada. Un fallo corta antes del caso de uso. */
   parse: (raw: TRaw) => Result<TInput>;
   /** Unica llamada a un caso de uso. */
@@ -29,6 +41,16 @@ export function definePublicAction<TRaw, TInput, TOutput>(
 
     const parsed = spec.parse(raw);
     if (!parsed.ok) return parsed;
+
+    const subject = spec.rateLimit.subject;
+    if (subject) {
+      const bySubject = await assertSubjectRateLimit(
+        spec.rateLimit.scope,
+        subject.keyFrom(parsed.value),
+        subject.options
+      );
+      if (!bySubject.ok) return bySubject;
+    }
 
     return spec.run(parsed.value);
   };

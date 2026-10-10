@@ -110,6 +110,22 @@ function warnUnknownIp(scope: string): void {
 }
 
 /**
+ * Guarda para un sujeto concreto (por ejemplo el correo normalizado) dentro de
+ * la IP del cliente. El sujeto se envia como SHA-256: el dato personal nunca
+ * aparece en claro en la clave. Sin IP usa el bucket "ip:unknown" con las
+ * mismas opciones (no hay multiplicador: el sujeto ya acota el contador).
+ */
+export async function assertSubjectRateLimit(
+  scope: string,
+  subject: string,
+  options: RateLimitOptions
+): Promise<Result<void>> {
+  const ip = (await clientIp()) ?? UNKNOWN_IP;
+  const digest = createHash("sha256").update(subject).digest("hex");
+  return consumeRateLimit(`ip:${ip}:${scope}:subject:${digest}`, scope, options);
+}
+
+/**
  * Guarda para endpoints sin sesion (aceptacion de invitaciones, reportes CSP):
  * limita por IP.
  */
