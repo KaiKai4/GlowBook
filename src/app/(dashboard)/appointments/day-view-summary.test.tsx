@@ -2,8 +2,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
-import { mountComponent, type MountedComponent } from "@/test/render-dom";
-import { buildCalendarAppointment, SALON_TZ } from "@/test/ui-appointments-fixtures";
+import { type MountedComponent } from "@/test/render-dom";
+import { mountWithSalon } from "@/test/ui-salon-display";
+import { buildCalendarAppointment } from "@/test/ui-appointments-fixtures";
 import { buttonWithText, byAriaLabel, click } from "@/test/ui-appointments-dom";
 import { AppointmentsSummary } from "./day-view-summary";
 
@@ -32,10 +33,9 @@ function renderSummary(
   appointments: CalendarAppointment[],
   overrides: Partial<Parameters<typeof AppointmentsSummary>[0]> = {}
 ) {
-  return mountComponent(
+  return mountWithSalon(
     <AppointmentsSummary
       appointments={appointments}
-      tz={SALON_TZ}
       canManage
       onComplete={vi.fn()}
       onCancel={vi.fn()}

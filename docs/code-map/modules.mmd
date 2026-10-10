@@ -2,17 +2,17 @@
 flowchart LR
   subgraph g_app["app"]
     app["app (3)"]
-    app__auth_["app/(auth) (12)"]
-    app__dashboard_["app/(dashboard) (184)"]
+    app__auth_["app/(auth) (16)"]
+    app__dashboard_["app/(dashboard) (186)"]
     app__platform_["app/(platform) (45)"]
     app__composition["app/_composition (5)"]
     app_api["app/api (4)"]
   end
   subgraph g_components["components"]
     components_brand["components/brand (1)"]
-    components_forms["components/forms (6)"]
+    components_forms["components/forms (7)"]
     components_layout["components/layout (15)"]
-    components_ui["components/ui (26)"]
+    components_ui["components/ui (28)"]
   end
   subgraph g_features["features"]
     features_access["features/access (20)"]
@@ -139,6 +139,7 @@ flowchart LR
   components_brand --> npm_next
   components_forms --> components_ui
   components_forms --> infra_idempotency
+  components_forms --> infra_validation
   components_forms --> npm_react
   components_layout --> components_brand
   components_layout --> components_ui

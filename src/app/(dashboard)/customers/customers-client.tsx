@@ -20,12 +20,11 @@ export function CustomersClient({
   const [queryInput, setQueryInput] = useState(initialView.query);
   const [pending, startTransition] = useTransition();
   const pageBeforeSearch = useRef(initialView.page);
-  const view = initialView;
   const firstVisibleCustomer =
-    view.total === 0 ? 0 : (view.page - 1) * view.pageSize + 1;
+    initialView.total === 0 ? 0 : (initialView.page - 1) * initialView.pageSize + 1;
   const lastVisibleCustomer = Math.min(
-    view.page * view.pageSize,
-    view.total,
+    initialView.page * initialView.pageSize,
+    initialView.total,
   );
 
   function loadCustomers(next: { q?: string; page?: number }) {
@@ -41,7 +40,7 @@ export function CustomersClient({
     const query = queryInput.trim();
 
     if (query) {
-      if (!view.query) pageBeforeSearch.current = view.page;
+      if (!initialView.query) pageBeforeSearch.current = initialView.page;
       loadCustomers({ q: query, page: 1 });
       return;
     }
@@ -54,9 +53,9 @@ export function CustomersClient({
       <PageHeader
         title="Clientes"
         description={
-          view.query
-            ? `${view.total} ${view.total === 1 ? "resultado" : "resultados"}`
-            : `${view.total} clientes activos`
+          initialView.query
+            ? `${initialView.total} ${initialView.total === 1 ? "resultado" : "resultados"}`
+            : `${initialView.total} clientes activos`
         }
         actions={<NewCustomerModal />}
       />
@@ -69,7 +68,7 @@ export function CustomersClient({
             const nextQuery = event.target.value;
             setQueryInput(nextQuery);
 
-            if (!nextQuery.trim() && view.query) {
+            if (!nextQuery.trim() && initialView.query) {
               loadCustomers({ q: "", page: pageBeforeSearch.current });
             }
           }}
@@ -91,38 +90,38 @@ export function CustomersClient({
             : "space-y-2 transition-opacity"
         }
       >
-        {view.customers.length === 0 ? (
+        {initialView.customers.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
               <p className="text-fg-subtle">
-                {view.query
+                {initialView.query
                   ? "No se encontraron clientes."
                   : "Aún no hay clientes."}
               </p>
             </CardContent>
           </Card>
         ) : (
-          <CustomersList customers={view.customers} mode={view.mode} />
+          <CustomersList customers={initialView.customers} mode={initialView.mode} />
         )}
       </div>
 
-      {view.totalPages > 1 && (
+      {initialView.totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
           <div>
             <p className="text-sm font-medium text-fg-secondary">
-              {firstVisibleCustomer}-{lastVisibleCustomer} de {view.total}
+              {firstVisibleCustomer}-{lastVisibleCustomer} de {initialView.total}
             </p>
             <p className="text-xs text-fg-subtle">
-              Página {view.page} de {view.totalPages}
+              Página {initialView.page} de {initialView.totalPages}
             </p>
           </div>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() =>
-                loadCustomers({ q: view.query, page: view.page - 1 })
+                loadCustomers({ q: initialView.query, page: initialView.page - 1 })
               }
-              disabled={pending || view.page === 1}
+              disabled={pending || initialView.page === 1}
               className="flex min-h-9 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-fg-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface disabled:text-fg-disabled"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
@@ -131,9 +130,9 @@ export function CustomersClient({
             <button
               type="button"
               onClick={() =>
-                loadCustomers({ q: view.query, page: view.page + 1 })
+                loadCustomers({ q: initialView.query, page: initialView.page + 1 })
               }
-              disabled={pending || view.page === view.totalPages}
+              disabled={pending || initialView.page === initialView.totalPages}
               className="flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface disabled:text-fg-disabled"
             >
               Siguiente

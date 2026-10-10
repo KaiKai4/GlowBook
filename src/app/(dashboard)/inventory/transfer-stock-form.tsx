@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { parseOption } from "@/components/forms/parse-option";
+import { z } from "@/infra/validation/zod";
+import { INVENTORY_LOCATIONS } from "@/features/inventory/domain/stock";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +20,8 @@ type TransferStockFormProps = {
   pending: boolean;
   onTransfer: (formData: FormData) => void;
 };
+
+const INVENTORY_LOCATION_SCHEMA = z.enum(INVENTORY_LOCATIONS);
 
 export function TransferStockForm({ products, pending, onTransfer }: TransferStockFormProps) {
   const [productId, setProductId] = useState(products[0]?.id ?? "");
@@ -54,7 +59,7 @@ export function TransferStockForm({ products, pending, onTransfer }: TransferSto
               name="to_location"
               label="Hacia"
               value={destination}
-              onChange={(event) => setDestination(event.target.value as InventoryLocation)}
+              onChange={(event) => setDestination(parseOption(INVENTORY_LOCATION_SCHEMA, event.target.value, destination))}
             >
               {destinations.map((location) => (
                 <option key={location} value={location}>

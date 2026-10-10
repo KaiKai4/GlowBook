@@ -1,4 +1,5 @@
 import { formatTimeTz } from "@/infra/format/dates";
+import { useSalonDisplay } from "./salon-display-context";
 import { formatCurrency, toAmount } from "@/infra/format/money";
 import { cn } from "@/components/ui/cn";
 import { isVisibleOnCalendar } from "@/features/appointments/domain/lifecycle";
@@ -25,15 +26,15 @@ const STATUS_DOT: Record<string, string> = {
 };
 
 export function DayColumn({
-  appointments, tz, onApptClick, calStart, totalHours, compact = false,
+  appointments, onApptClick, calStart, totalHours, compact = false,
 }: {
   appointments: CalendarAppointment[];
-  tz: string;
   onApptClick: (appt: CalendarAppointment) => void;
   calStart: number;
   totalHours: number;
   compact?: boolean;
 }) {
+  const { tz } = useSalonDisplay();
   const visible = appointments.filter((a) => isVisibleOnCalendar(a.status) && a.start_time);
   const { items, totalCols } = assignColumns(visible, tz, calStart);
 

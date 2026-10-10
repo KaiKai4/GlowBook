@@ -1,5 +1,6 @@
 import { CreditCard, MessageCircle, Phone, Timer, User } from "lucide-react";
 import { formatTimeTz } from "@/infra/format/dates";
+import { useSalonDisplay } from "../salon-display-context";
 import { formatCurrency, toAmount } from "@/infra/format/money";
 import { calculateItemChargedPrice } from "@/features/appointments/domain/pricing";
 
@@ -75,12 +76,11 @@ export function ClientCard({
 export function ServiceItemsList({
   items,
   accentClass,
-  tz,
 }: {
   items: ApptItem[];
   accentClass: string;
-  tz: string;
 }) {
+  const { tz } = useSalonDisplay();
   return (
     <div className="space-y-2.5">
       {items.map((item) => (

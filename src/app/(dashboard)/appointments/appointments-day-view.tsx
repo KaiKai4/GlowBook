@@ -17,19 +17,17 @@ export type ApptFull = CalendarAppointment;
 type Employee = CalendarEmployee;
 
 export function AppointmentsDayView({
-  appointments, tz, canManage,
+  appointments, canManage,
   view = "diaria", weekDates, employees = [],
-  businessStart, businessEnd, salonName, cancellationTemplate, paymentMethodOptions,
+  businessStart, businessEnd, cancellationTemplate, paymentMethodOptions,
 }: {
   appointments: ApptFull[];
-  tz: string;
   canManage: boolean;
   view?: CalView;
   weekDates?: string[];
   employees?: Employee[];
   businessStart?: number;
   businessEnd?: number;
-  salonName: string;
   cancellationTemplate: string;
   paymentMethodOptions: PaymentMethodOption[];
 }) {
@@ -67,7 +65,6 @@ export function AppointmentsDayView({
       <div className="hidden sm:block">
         <AppointmentsCalendar
           appointments={calendarAppts}
-          tz={tz}
           onApptClick={setDetailAppt}
           mode={view === "semanal" ? "semanal" : "diaria"}
           weekDates={view === "semanal" ? weekDates : undefined}
@@ -77,12 +74,11 @@ export function AppointmentsDayView({
         />
       </div>
       <div className="sm:hidden">
-        <MobileAgenda appointments={calendarAppts} tz={tz} onApptClick={setDetailAppt} />
+        <MobileAgenda appointments={calendarAppts} onApptClick={setDetailAppt} />
       </div>
 
       <AppointmentsSummary
         appointments={appointments}
-        tz={tz}
         canManage={canManage}
         onComplete={setCompleteAppt}
         onCancel={setCancelAppt}
@@ -91,7 +87,6 @@ export function AppointmentsDayView({
       {detailAppt && (
         <AppointmentDetailDialog
           appt={detailAppt}
-          tz={tz}
           open={!!detailAppt}
           onClose={() => setDetailAppt(null)}
           canManage={canManage}
@@ -116,8 +111,6 @@ export function AppointmentsDayView({
           appt={cancelAppt}
           open={!!cancelAppt}
           onClose={() => setCancelAppt(null)}
-          tz={tz}
-          salonName={salonName}
           template={cancellationTemplate}
         />
       )}

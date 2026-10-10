@@ -4,7 +4,8 @@ import { createElement, type AnchorHTMLAttributes, type ReactNode } from "react"
 import { confirmAppointmentAction } from "@/app/(dashboard)/appointments/actions";
 import { formatTimeTz } from "@/infra/format/dates";
 import { formatCurrency } from "@/infra/format/money";
-import { mountComponent, type MountedComponent } from "@/test/render-dom";
+import { type MountedComponent } from "@/test/render-dom";
+import { mountWithSalon } from "@/test/ui-salon-display";
 import { SALON_TZ } from "@/test/ui-appointments-fixtures";
 import { buttonWithText, click, clickAndSettle } from "@/test/ui-appointments-dom";
 import { flushAsync } from "@/test/ui-shared-dom";
@@ -85,10 +86,9 @@ describe("AppointmentDetailDialog", () => {
 
   function render(props: Partial<Parameters<typeof AppointmentDetailDialog>[0]> = {}) {
     const onClose = vi.fn();
-    mounted = mountComponent(
+    mounted = mountWithSalon(
       <AppointmentDetailDialog
         appt={buildDetail()}
-        tz={SALON_TZ}
         open
         onClose={onClose}
         canManage

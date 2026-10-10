@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { formatTimeTz } from "@/infra/format/dates";
 import { formatCurrency } from "@/infra/format/money";
-import { mountComponent, type MountedComponent } from "@/test/render-dom";
+import { type MountedComponent } from "@/test/render-dom";
+import { mountWithSalon } from "@/test/ui-salon-display";
 import { buildCalendarAppointment, SALON_TZ } from "@/test/ui-appointments-fixtures";
 import { MobileAgenda } from "./mobile-agenda";
 
@@ -15,20 +16,20 @@ describe("MobileAgenda", () => {
   });
 
   it("indica que no hay citas cuando la lista está vacía", () => {
-    mounted = mountComponent(<MobileAgenda appointments={[]} tz={SALON_TZ} onApptClick={vi.fn()} />);
+    mounted = mountWithSalon(<MobileAgenda appointments={[]} onApptClick={vi.fn()} />);
 
     expect(mounted.container.textContent).toContain("Sin citas programadas.");
     expect(mounted.container.querySelectorAll("button")).toHaveLength(0);
   });
 
   it("omite las citas canceladas y las que aún no tienen hora de inicio", () => {
-    mounted = mountComponent(
+    mounted = mountWithSalon(
       <MobileAgenda
         appointments={[
           buildCalendarAppointment({ id: "cancelada", status: "cancelled" }),
           buildCalendarAppointment({ id: "sin-hora", start_time: null, end_time: null }),
         ]}
-        tz={SALON_TZ}
+       
         onApptClick={vi.fn()}
       />
     );
@@ -37,7 +38,7 @@ describe("MobileAgenda", () => {
   });
 
   it("agrupa por día en la zona del salón y dice cuántas citas hay en cada día", () => {
-    mounted = mountComponent(
+    mounted = mountWithSalon(
       <MobileAgenda
         appointments={[
           buildCalendarAppointment({ id: "a" }),
@@ -58,7 +59,7 @@ describe("MobileAgenda", () => {
             end_time: "2026-10-14T10:00:00-05:00",
           }),
         ]}
-        tz={SALON_TZ}
+       
         onApptClick={vi.fn()}
       />
     );
@@ -73,7 +74,7 @@ describe("MobileAgenda", () => {
   });
 
   it("ordena cronológicamente las citas dentro de cada día", () => {
-    mounted = mountComponent(
+    mounted = mountWithSalon(
       <MobileAgenda
         appointments={[
           buildCalendarAppointment({
@@ -89,7 +90,7 @@ describe("MobileAgenda", () => {
             end_time: "2026-10-12T10:00:00-05:00",
           }),
         ]}
-        tz={SALON_TZ}
+       
         onApptClick={vi.fn()}
       />
     );
@@ -133,7 +134,7 @@ describe("MobileAgenda", () => {
         },
       ],
     });
-    mounted = mountComponent(<MobileAgenda appointments={[appt]} tz={SALON_TZ} onApptClick={vi.fn()} />);
+    mounted = mountWithSalon(<MobileAgenda appointments={[appt]} onApptClick={vi.fn()} />);
 
     const text = mounted.container.querySelector("button")?.textContent ?? "";
     expect(text).toContain(formatTimeTz(new Date("2026-10-12T14:00:00-05:00"), SALON_TZ));
@@ -143,8 +144,8 @@ describe("MobileAgenda", () => {
   });
 
   it("usa el estado de la cita como descripción cuando no hay servicios con nombre", () => {
-    mounted = mountComponent(
-      <MobileAgenda appointments={[buildCalendarAppointment({ status: "confirmed", items: [] })]} tz={SALON_TZ} onApptClick={vi.fn()} />
+    mounted = mountWithSalon(
+      <MobileAgenda appointments={[buildCalendarAppointment({ status: "confirmed", items: [] })]} onApptClick={vi.fn()} />
     );
 
     expect(mounted.container.querySelector("button")?.textContent).toContain("Confirmada");
@@ -153,7 +154,7 @@ describe("MobileAgenda", () => {
   it("entrega la cita tocada al manejador para abrir su detalle", () => {
     const onApptClick = vi.fn();
     const appt = buildCalendarAppointment({ id: "appt-tocada" });
-    mounted = mountComponent(<MobileAgenda appointments={[appt]} tz={SALON_TZ} onApptClick={onApptClick} />);
+    mounted = mountWithSalon(<MobileAgenda appointments={[appt]} onApptClick={onApptClick} />);
 
     mounted.container.querySelector<HTMLButtonElement>("button")?.click();
 

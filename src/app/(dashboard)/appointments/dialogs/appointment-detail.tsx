@@ -18,10 +18,9 @@ import {
 import { useAppointmentConfirm } from "./use-appointment-confirm";
 
 export function AppointmentDetailDialog({
-  appt, tz, open, onClose, canManage, onComplete, onCancel,
+  appt, open, onClose, canManage, onComplete, onCancel,
 }: {
   appt: ApptForDetail;
-  tz: string;
   open: boolean;
   onClose: () => void;
   canManage: boolean;
@@ -74,7 +73,7 @@ export function AppointmentDetailDialog({
           whatsappPhone={whatsappPhone}
         />
 
-        <ServiceItemsList items={appt.items} accentClass={accentClass} tz={tz} />
+        <ServiceItemsList items={appt.items} accentClass={accentClass} />
 
         <TotalsBox
           subtotal={subtotal}

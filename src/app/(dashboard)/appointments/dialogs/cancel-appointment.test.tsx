@@ -4,7 +4,8 @@ import { act, createElement, type AnchorHTMLAttributes, type ReactNode } from "r
 import { cancelAppointmentAction } from "@/app/(dashboard)/appointments/actions";
 import { formatTimeTz } from "@/infra/format/dates";
 import { ToastProvider } from "@/components/ui/toast";
-import { mountComponent, type MountedComponent } from "@/test/render-dom";
+import { type MountedComponent } from "@/test/render-dom";
+import { mountWithSalon } from "@/test/ui-salon-display";
 import { SALON_TZ } from "@/test/ui-appointments-fixtures";
 import { buttonContainingText, buttonWithText, clickAndSettle, click } from "@/test/ui-appointments-dom";
 import { flushAsync } from "@/test/ui-shared-dom";
@@ -88,14 +89,12 @@ describe("CancelAppointmentDialog con intención idempotente", () => {
   });
 
   function mountCancel(onClose = vi.fn()): MountedComponent {
-    return mountComponent(
+    return mountWithSalon(
       <ToastProvider>
         <CancelAppointmentDialog
           appt={buildAppt()}
           open
           onClose={onClose}
-          tz={SALON_TZ}
-          salonName="Salón Prueba"
           template={TEMPLATE}
         />
       </ToastProvider>
@@ -164,14 +163,12 @@ describe("CancelAppointmentDialog", () => {
 
   function render(props: Partial<Parameters<typeof CancelAppointmentDialog>[0]> = {}) {
     const onClose = vi.fn();
-    mounted = mountComponent(
+    mounted = mountWithSalon(
       <ToastProvider>
         <CancelAppointmentDialog
           appt={buildAppt()}
           open
           onClose={onClose}
-          tz={SALON_TZ}
-          salonName="Salón Prueba"
           template={TEMPLATE}
           {...props}
         />

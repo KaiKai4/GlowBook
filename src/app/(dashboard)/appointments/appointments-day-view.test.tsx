@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type AnchorHTMLAttributes, type ReactNode } from "react";
 import { act } from "react";
 import { formatCurrency } from "@/infra/format/money";
-import { mountComponent, type MountedComponent } from "@/test/render-dom";
+import { type MountedComponent } from "@/test/render-dom";
+import { mountWithSalon } from "@/test/ui-salon-display";
 import {
   buildCalendarAppointment,
   buildEmployees,
   PAYMENT_OPTIONS,
-  SALON_TZ,
 } from "@/test/ui-appointments-fixtures";
 import { buttonWithText, click } from "@/test/ui-appointments-dom";
 import { AppointmentsDayView } from "./appointments-day-view";
@@ -66,17 +66,15 @@ const NO_SHOW = buildCalendarAppointment({
 function renderDayView(
   overrides: Partial<Parameters<typeof AppointmentsDayView>[0]> = {}
 ): MountedComponent {
-  return mountComponent(
+  return mountWithSalon(
     <AppointmentsDayView
       appointments={[SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW]}
-      tz={SALON_TZ}
       canManage
       view="diaria"
       weekDates={[]}
       employees={buildEmployees()}
       businessStart={8}
       businessEnd={18}
-      salonName="Salón Prueba"
       cancellationTemplate="Hola {cliente}"
       paymentMethodOptions={PAYMENT_OPTIONS}
       {...overrides}

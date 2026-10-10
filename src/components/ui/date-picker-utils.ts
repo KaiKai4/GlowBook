@@ -30,12 +30,9 @@ export function getCalendarDays(month: Date): Date[] {
   const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
   const days: Date[] = [];
 
-  for (let date = start; date <= end; date = addDays(date, 1)) {
+  // Rellena hasta 6 semanas (42 días) desde el inicio de la rejilla.
+  for (let date = start; date <= end || days.length < 42; date = addDays(date, 1)) {
     days.push(date);
-  }
-
-  while (days.length < 42) {
-    days.push(addDays(days.at(-1)!, 1));
   }
 
   return days;

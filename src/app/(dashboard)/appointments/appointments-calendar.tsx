@@ -12,12 +12,12 @@ import {
   getLocalDate,
   todayISO,
 } from "./calendar-geometry";
+import { useSalonDisplay } from "./salon-display-context";
 
 export type ApptCalItem = CalendarAppointment;
 
 export function AppointmentsCalendar({
   appointments,
-  tz,
   onApptClick,
   mode = "diaria",
   weekDates,
@@ -26,7 +26,6 @@ export function AppointmentsCalendar({
   businessEnd = DEFAULT_END,
 }: {
   appointments: ApptCalItem[];
-  tz: string;
   onApptClick: (appt: ApptCalItem) => void;
   mode?: "diaria" | "semanal";
   weekDates?: string[];
@@ -34,6 +33,7 @@ export function AppointmentsCalendar({
   businessStart?: number;
   businessEnd?: number;
 }) {
+  const { tz } = useSalonDisplay();
   const today = todayISO();
   const visible = appointments.filter((a) => isVisibleOnCalendar(a.status) && a.start_time);
   const { calStart, calEnd } = computeRange(visible, tz, businessStart, businessEnd);
@@ -116,8 +116,7 @@ export function AppointmentsCalendar({
                   )}
                 >
                   <DayColumn
-                    appointments={byDate[d] ?? []}
-                    tz={tz}
+                    appointments={byDate[d] ?? []}
                     onApptClick={onApptClick}
                     calStart={calStart}
                     totalHours={totalHours}
@@ -150,8 +149,7 @@ export function AppointmentsCalendar({
         />
         <div className="flex-1">
           <DayColumn
-            appointments={appointments}
-            tz={tz}
+            appointments={appointments}
             onApptClick={onApptClick}
             calStart={calStart}
             totalHours={totalHours}

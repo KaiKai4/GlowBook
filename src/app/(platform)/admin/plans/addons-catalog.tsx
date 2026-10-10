@@ -13,6 +13,9 @@ import type {
   PlatformModule,
 } from "@/features/billing";
 import { cn } from "@/components/ui/cn";
+import { parseOption } from "@/components/forms/parse-option";
+import { z } from "@/infra/validation/zod";
+import { COMMERCIAL_ADDON_KINDS } from "@/features/billing/domain/salon-extras";
 import { removeAddonAction, saveAddonAction } from "./actions";
 import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";
 import { InlineState, Panel, StatusPill, SubmitButton } from "./workspace-ui";
@@ -22,6 +25,8 @@ interface AddonsCatalogData {
   modules: PlatformModule[];
   metrics: CommercialLimitMetric[];
 }
+
+const ADDON_KIND_SCHEMA = z.enum(COMMERCIAL_ADDON_KINDS);
 
 export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
   const [selectedId, setSelectedId] = useState<string>(data.addons[0]?.id ?? "__new");
@@ -156,7 +161,7 @@ function AddonForm({
         <Textarea name="description" label="Descripción" rows={2} defaultValue={addon?.description ?? ""} />
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Select name="kind" label="Tipo de extra" value={kind} onChange={(event) => setKind(event.target.value as CommercialAddon["kind"])}>
+          <Select name="kind" label="Tipo de extra" value={kind} onChange={(event) => setKind(parseOption(ADDON_KIND_SCHEMA, event.target.value, kind))}>
             <option value="module">Activa un módulo</option>
             <option value="limit_boost">Aumenta un límite</option>
           </Select>

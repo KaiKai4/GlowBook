@@ -1,6 +1,10 @@
 import { Search } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import type { ServiceStatusFilter } from "./services-types";
+import { parseOption } from "@/components/forms/parse-option";
+import { z } from "@/infra/validation/zod";
+
+const SERVICE_STATUS_FILTER_SCHEMA = z.enum(["all", "active", "inactive"]) satisfies z.ZodType<ServiceStatusFilter>;
 
 export function ServicesFilters({
   query,
@@ -27,7 +31,7 @@ export function ServicesFilters({
       <div className="min-w-[180px]">
         <Select
           value={statusFilter}
-          onChange={(event) => onStatusFilterChange(event.target.value as ServiceStatusFilter)}
+          onChange={(event) => onStatusFilterChange(parseOption(SERVICE_STATUS_FILTER_SCHEMA, event.target.value, statusFilter))}
         >
           <option value="all">Todos los estados</option>
           <option value="active">Activos</option>

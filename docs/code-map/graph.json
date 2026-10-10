@@ -8,12 +8,12 @@
     {
       "id": "app/(auth)",
       "kind": "internal",
-      "files": 12
+      "files": 16
     },
     {
       "id": "app/(dashboard)",
       "kind": "internal",
-      "files": 184
+      "files": 186
     },
     {
       "id": "app/(platform)",
@@ -38,7 +38,7 @@
     {
       "id": "components/forms",
       "kind": "internal",
-      "files": 6
+      "files": 7
     },
     {
       "id": "components/layout",
@@ -48,7 +48,7 @@
     {
       "id": "components/ui",
       "kind": "internal",
-      "files": 26
+      "files": 28
     },
     {
       "id": "features/access",
@@ -305,7 +305,7 @@
     {
       "from": "app/(auth)",
       "to": "npm/react",
-      "count": 5
+      "count": 6
     },
     {
       "from": "app/(dashboard)",
@@ -320,7 +320,7 @@
     {
       "from": "app/(dashboard)",
       "to": "components/forms",
-      "count": 18
+      "count": 24
     },
     {
       "from": "app/(dashboard)",
@@ -330,7 +330,7 @@
     {
       "from": "app/(dashboard)",
       "to": "components/ui",
-      "count": 244
+      "count": 248
     },
     {
       "from": "app/(dashboard)",
@@ -385,7 +385,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/payments",
-      "count": 8
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
@@ -435,7 +435,7 @@
     {
       "from": "app/(dashboard)",
       "to": "infra/validation",
-      "count": 9
+      "count": 14
     },
     {
       "from": "app/(dashboard)",
@@ -445,7 +445,7 @@
     {
       "from": "app/(dashboard)",
       "to": "npm/react",
-      "count": 59
+      "count": 61
     },
     {
       "from": "app/(platform)",
@@ -460,7 +460,7 @@
     {
       "from": "app/(platform)",
       "to": "components/forms",
-      "count": 4
+      "count": 6
     },
     {
       "from": "app/(platform)",
@@ -470,7 +470,7 @@
     {
       "from": "app/(platform)",
       "to": "features/billing",
-      "count": 33
+      "count": 34
     },
     {
       "from": "app/(platform)",
@@ -485,7 +485,7 @@
     {
       "from": "app/(platform)",
       "to": "infra/validation",
-      "count": 2
+      "count": 4
     },
     {
       "from": "app/(platform)",
@@ -629,6 +629,11 @@
     },
     {
       "from": "components/forms",
+      "to": "infra/validation",
+      "count": 1
+    },
+    {
+      "from": "components/forms",
       "to": "npm/react",
       "count": 3
     },
@@ -680,7 +685,7 @@
     {
       "from": "components/ui",
       "to": "npm/react",
-      "count": 17
+      "count": 18
     },
     {
       "from": "components/ui",

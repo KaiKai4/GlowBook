@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
 import { cancelAppointmentAction } from "../actions";
@@ -10,6 +11,7 @@ import { MessageCircle, UserX, UserCheck } from "lucide-react";
 import { cn } from "@/components/ui/cn";
 import { buildWhatsAppUrl, type TemporaryCustomerChoice } from "@/features/appointments/domain/cancellation-message";
 import { buildCancellationMessage } from "./cancellation-message";
+import { useSalonDisplay } from "../salon-display-context";
 
 interface ApptForCancel {
   id: string;
@@ -28,15 +30,14 @@ interface ApptForCancel {
 }
 
 export function CancelAppointmentDialog({
-  appt, open, onClose, tz, salonName, template,
+  appt, open, onClose, template,
 }: {
   appt: ApptForCancel;
   open: boolean;
   onClose: () => void;
-  tz: string;
-  salonName: string;
   template: string;
 }) {
+  const { tz, salonName } = useSalonDisplay();
   const router = useRouter();
   const { submit } = useSubmissionIntent({ procedure: "appointments.cancel" });
   const isTemp = appt.customer?.is_temporary ?? false;
@@ -99,20 +100,18 @@ export function CancelAppointmentDialog({
       <div className="space-y-5">
         {/* Only show customer disposition when the customer was created just for this appointment */}
         {isTemp && (
-          <div className="rounded-xl border border-warning-border bg-warning-subtle p-4 space-y-3">
-            <p className="text-sm font-semibold text-warning-strong">
-              ¿Guardar los datos del cliente?
-            </p>
+          <Alert variant="warning" title="¿Guardar los datos del cliente?" className="rounded-xl p-4 space-y-3">
             <p className="text-xs text-warning-fg">
               Este cliente aún no está registrado. Puedes guardarlo o descartarlo.
             </p>
 
             <div className="space-y-2">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setSaveChoice("save")}
                 className={cn(
-                  "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
+                  "h-auto w-full justify-start items-start gap-3 rounded-lg border-2 p-3 text-left font-normal transition-all",
                   saveChoice === "save"
                     ? "border-brand-400 bg-surface"
                     : "border-transparent bg-surface/60 hover:bg-surface"
@@ -133,13 +132,14 @@ export function CancelAppointmentDialog({
                     Quedará registrado y podrá usarse en futuras citas.
                   </p>
                 </div>
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setSaveChoice("discard")}
                 className={cn(
-                  "w-full flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
+                  "h-auto w-full justify-start items-start gap-3 rounded-lg border-2 p-3 text-left font-normal transition-all",
                   saveChoice === "discard"
                     ? "border-warning bg-surface"
                     : "border-transparent bg-surface/60 hover:bg-surface"
@@ -160,21 +160,17 @@ export function CancelAppointmentDialog({
                     No se guardará ningún registro del cliente.
                   </p>
                 </div>
-              </button>
+              </Button>
             </div>
-          </div>
+          </Alert>
         )}
 
-        {error && (
-          <div className="rounded-lg bg-danger-subtle border border-danger-border px-3 py-2 text-sm text-danger-strong">
-            {error}
-          </div>
-        )}
+        {error && <Alert variant="danger">{error}</Alert>}
 
         {warning && (
-          <div role="status" className="rounded-lg bg-warning-subtle border border-warning-border px-3 py-2 text-sm text-warning-strong">
+          <Alert variant="warning" role="status">
             {warning}
-          </div>
+          </Alert>
         )}
 
         {warning ? (

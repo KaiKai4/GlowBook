@@ -25,7 +25,7 @@ export function CompleteAppointmentPaymentFields({
       <Select
         label="Método de pago"
         value={payment}
-        onChange={(event) => onPaymentChange(event.target.value as PaymentMethod)}
+        onChange={(event) => onPaymentChange(event.target.value)}
       >
         {paymentMethodOptions.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>

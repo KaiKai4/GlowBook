@@ -7,6 +7,7 @@ import type { DataTableColumn } from "@/components/ui/data-table";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
 import { appointmentStatusPresentation } from "./appointment-status";
 import { isClosedStatus } from "@/features/appointments/domain/lifecycle";
+import { useSalonDisplay } from "./salon-display-context";
 
 function formatAppointmentDayTz(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("es-PA", {
@@ -24,7 +25,8 @@ export interface SummaryActions {
   onCancel: (appt: CalendarAppointment) => void;
 }
 
-function WhenCell({ appt, tz }: { appt: CalendarAppointment; tz: string }) {
+function WhenCell({ appt }: { appt: CalendarAppointment }) {
+  const { tz } = useSalonDisplay();
   return (
     <>
       {appt.start_time && (
@@ -96,7 +98,6 @@ function ActionsCell({
 
 /** Columnas del resumen de citas para DataTable (el orden define el móvil: nombre, luego datos secundarios). */
 export function buildSummaryColumns(
-  tz: string,
   canManage: boolean,
   actions: SummaryActions,
 ): DataTableColumn<CalendarAppointment>[] {
@@ -117,7 +118,7 @@ export function buildSummaryColumns(
       id: "when",
       header: "Fecha y hora",
       secondary: true,
-      cell: (appt) => <WhenCell appt={appt} tz={tz} />,
+      cell: (appt) => <WhenCell appt={appt} />,
     },
     {
       id: "status",

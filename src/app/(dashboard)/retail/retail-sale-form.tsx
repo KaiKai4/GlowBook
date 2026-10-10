@@ -18,8 +18,12 @@ import {
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
 import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
+import { parseOption } from "@/components/forms/parse-option";
+import { z } from "@/infra/validation/zod";
 import { formatCurrency } from "@/infra/format/money";
 import { createRetailSaleAction } from "./actions";
+
+const INVENTORY_LOCATION_SCHEMA = z.enum(INVENTORY_LOCATIONS);
 
 export function RetailSaleForm({
   retail,
@@ -104,7 +108,7 @@ export function RetailSaleForm({
               name="location"
               label="Origen"
               value={location}
-              onChange={(event) => setLocation(event.target.value as InventoryLocation)}
+              onChange={(event) => setLocation(parseOption(INVENTORY_LOCATION_SCHEMA, event.target.value, location))}
             >
               {INVENTORY_LOCATIONS.map((item) => (
                 <option key={item} value={item}>
