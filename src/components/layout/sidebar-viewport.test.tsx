@@ -3,6 +3,7 @@ import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, requireElement } from "@/test/ui-shared-dom";
+import { getVisibleNavGroups } from "./nav-items";
 import { Sidebar } from "./sidebar";
 
 vi.mock("next/navigation", () => ({
@@ -84,7 +85,7 @@ function toggleButton(): HTMLButtonElement {
 
 function renderSidebar(): MountedComponent {
   return mountComponent(
-    <Sidebar salonName="Salón Aurora" userPermissions={[]} isOwner={true} disabledFeatures={[]} />
+    <Sidebar salonName="Salón Aurora" groups={getVisibleNavGroups({ permissions: [], isOwner: true })} />
   );
 }
 

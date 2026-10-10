@@ -3,19 +3,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Select } from "@/components/ui/select";
 import { TimePicker } from "@/components/ui/time-picker";
-import { formatTimeTz } from "@/infra/format/dates";
-import { cn } from "@/components/ui/cn";
-import { GripVertical, Plus, Scissors, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Scissors } from "lucide-react";
 import type {
   AppointmentScheduleItem,
-  AppointmentServiceRow,
+  AppointmentServiceRow as ServiceRow,
   CategoryOption,
   EmployeeOption,
   SalonWindow,
   ServiceOption,
 } from "./appointment-wizard-types";
+import { AppointmentServiceRow } from "./appointment-service-row";
 
 export function AppointmentServicesStep({
   date,
@@ -61,7 +59,7 @@ export function AppointmentServicesStep({
     start: Date | null,
     end: Date | null
   ) => EmployeeOption[];
-  updateRow: (key: string, patch: Partial<AppointmentServiceRow>) => void;
+  updateRow: (key: string, patch: Partial<ServiceRow>) => void;
   addRow: () => void;
   removeRow: (key: string) => void;
   reorder: (from: number, to: number) => void;
@@ -130,132 +128,23 @@ export function AppointmentServicesStep({
               Arrastra para cambiar el orden de los servicios
             </p>
 
-            {schedule.map((item, index) => {
-              const filteredServices = item.row.categoryId
-                ? services.filter((service) => service.category_id === item.row.categoryId)
-                : [];
-              const eligibleEmployees = item.row.serviceId
-                ? getEligibleEmployees(item.row.serviceId, item.start, item.end)
-                : [];
-              const selectedStillEligible =
-                !item.row.employeeId ||
-                eligibleEmployees.some((employee) => employee.id === item.row.employeeId);
-
-              return (
-                <div
-                  key={item.row.key}
-                  draggable
-                  onDragStart={() => setDragIndex(index)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={() => {
-                    if (dragIndex !== null) reorder(dragIndex, index);
-                    setDragIndex(null);
-                  }}
-                  className={cn(
-                    "rounded-xl border bg-surface p-4 transition-all",
-                    dragIndex === index
-                      ? "border-brand-400 shadow-focus"
-                      : "border-brand-100 shadow-hairline"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="cursor-grab text-fg-disabled hover:text-fg-subtle transition-colors">
-                        <GripVertical className="h-4 w-4" />
-                      </div>
-                      <span className="text-sm font-semibold text-fg-secondary">
-                        Servicio {index + 1}
-                      </span>
-                      {item.start && (
-                        <span className="text-xs font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
-                          {formatTimeTz(item.start, timezone)}
-                          {item.end && ` - ${formatTimeTz(item.end, timezone)}`}
-                        </span>
-                      )}
-                    </div>
-                    {rowsCount > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeRow(item.row.key)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-subtle hover:bg-danger-subtle hover:text-danger transition-colors"
-                        aria-label="Quitar servicio"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <Select
-                      label="Categoria"
-                      value={item.row.categoryId}
-                      onChange={(event) =>
-                        updateRow(item.row.key, {
-                          categoryId: event.target.value,
-                          serviceId: "",
-                          employeeId: "",
-                        })
-                      }
-                    >
-                      <option value="" disabled hidden>Selecciona categoria...</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </Select>
-
-                    <Select
-                      label="Servicio"
-                      value={item.row.serviceId}
-                      onChange={(event) =>
-                        updateRow(item.row.key, {
-                          serviceId: event.target.value,
-                          employeeId: "",
-                        })
-                      }
-                      disabled={!item.row.categoryId}
-                    >
-                      <option value="" disabled hidden>
-                        {!item.row.categoryId
-                          ? "Elige categoria primero"
-                          : filteredServices.length
-                            ? "Selecciona servicio..."
-                            : "Sin servicios"}
-                      </option>
-                      {filteredServices.map((service) => (
-                        <option key={service.id} value={service.id}>
-                          {service.name} ({service.duration_minutes}min)
-                        </option>
-                      ))}
-                    </Select>
-
-                    <Select
-                      label="Profesional"
-                      value={item.row.employeeId}
-                      onChange={(event) =>
-                        updateRow(item.row.key, { employeeId: event.target.value })
-                      }
-                      disabled={!item.row.serviceId}
-                      error={!selectedStillEligible ? "Ya no disponible" : undefined}
-                    >
-                      <option value="" disabled hidden>
-                        {!item.row.serviceId
-                          ? "Elige servicio primero"
-                          : eligibleEmployees.length
-                            ? "Selecciona profesional..."
-                            : "Nadie disponible"}
-                      </option>
-                      {eligibleEmployees.map((employee) => (
-                        <option key={employee.id} value={employee.id}>
-                          {employee.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                </div>
-              );
-            })}
+            {schedule.map((item, index) => (
+              <AppointmentServiceRow
+                key={item.row.key}
+                item={item}
+                index={index}
+                rowsCount={rowsCount}
+                categories={categories}
+                services={services}
+                timezone={timezone}
+                dragIndex={dragIndex}
+                setDragIndex={setDragIndex}
+                getEligibleEmployees={getEligibleEmployees}
+                updateRow={updateRow}
+                removeRow={removeRow}
+                reorder={reorder}
+              />
+            ))}
 
             <Button variant="outline" size="sm" onClick={addRow} className="w-full border-dashed">
               <Plus className="h-4 w-4" /> Agregar otro servicio

@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Gift, HandHeart, ShoppingCart, XCircle } from "lucide-react";
+import { Gift, ShoppingCart } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { CommercialAddon } from "@/features/billing/use-cases/commercial-addons";
@@ -12,7 +11,9 @@ import type { SalonExtraView } from "@/features/billing/use-cases/salon-subscrip
 import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";
-import { cancelExtraAction, giveAddonAction, giveManualExtraAction } from "./actions";
+import { giveAddonAction } from "./actions";
+import { ActiveExtrasList } from "./active-extras-list";
+import { GiveCourtesyForm } from "./give-courtesy-form";
 
 export function ExtrasPanel({
   salonId,
@@ -58,61 +59,6 @@ export function ExtrasPanel({
         />
       </div>
     </div>
-  );
-}
-
-function ActiveExtrasList({ salonId, extras }: { salonId: string; extras: SalonExtraView[] }) {
-  return (
-    <Panel
-      icon={<Gift className="h-4 w-4" />}
-      title="Extras vigentes"
-      description="Modulos y aumentos de límite activos para este salon, vendidos o regalados."
-    >
-      {extras.length === 0 ? (
-        <p className="text-sm text-fg-subtle">Este salon no tiene extras vigentes.</p>
-      ) : (
-        <div className="space-y-2">
-          {extras.map((extra) => (
-            <div
-              key={extra.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-surface px-3 py-2.5"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-fg-strong">
-                    {extra.name}
-                    {extra.quantity > 1 ? ` × ${extra.quantity}` : ""}
-                  </p>
-                  {extra.isGift ? (
-                    <span className="rounded-lg bg-accent-subtle px-2 py-0.5 text-xs font-semibold text-accent-strong">Regalo</span>
-                  ) : (
-                    <span className="rounded-lg bg-success-subtle px-2 py-0.5 text-xs font-semibold text-success-fg">
-                      USD {extra.monthlyPrice.toFixed(2)}/mes
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 truncate text-xs text-fg-subtle">
-                  {extra.detail}
-                  {extra.endsAt ? ` · vence ${extra.endsAt}` : ""}
-                  {extra.reason ? ` · ${extra.reason}` : ""}
-                </p>
-              </div>
-              <form action={cancelExtraAction.bind(null, extra.id, salonId)}>
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="icon"
-                  className="border-danger-border text-danger hover:bg-danger-subtle"
-                  aria-label={`Cancelar ${extra.name}`}
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          ))}
-        </div>
-      )}
-    </Panel>
   );
 }
 
@@ -186,66 +132,3 @@ function GiveAddonForm({
   );
 }
 
-function GiveCourtesyForm({
-  salonId,
-  metrics,
-  modules,
-  initialMetricKey = null,
-}: {
-  salonId: string;
-  metrics: CommercialLimitMetric[];
-  modules: SubscriptionsPageData["modules"];
-  initialMetricKey?: string | null;
-}) {
-  const [state, action] = useActionState(giveManualExtraAction, PLATFORM_PLAN_IDLE_STATE);
-  const [targetType, setTargetType] = useState<"metric" | "module">("metric");
-
-  return (
-    <Panel
-      icon={<HandHeart className="h-4 w-4" />}
-      title="Cortesia personalizada"
-      description="Regalo puntual sin catalogo: util cuando un salon esta llegando a su límite y quieres darle margen."
-    >
-      <form action={action} className="space-y-4">
-        <input type="hidden" name="salonId" value={salonId} />
-        <input type="hidden" name="targetType" value={targetType} />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Select
-            name="__targetType"
-            label="Tipo de cortesia"
-            value={targetType}
-            onChange={(event) => setTargetType(event.target.value as "metric" | "module")}
-          >
-            <option value="metric">Aumentar un límite</option>
-            <option value="module">Activar un modulo</option>
-          </Select>
-          {targetType === "metric" ? (
-            <Select name="metricKey" label="Límite" defaultValue={initialMetricKey ?? ""} required>
-              <option value="">Selecciona un límite</option>
-              {metrics.map((metric) => (
-                <option key={metric.key} value={metric.key}>{metric.name}</option>
-              ))}
-            </Select>
-          ) : (
-            <Select name="moduleKey" label="Modulo" defaultValue="" required>
-              <option value="">Selecciona un modulo</option>
-              {modules.map((module) => (
-                <option key={module.key} value={module.key}>{module.name}</option>
-              ))}
-            </Select>
-          )}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {targetType === "metric" ? (
-            <Input name="maxDelta" label="Cuanto agregar" type="number" min="1" placeholder="100" required />
-          ) : null}
-          <Input name="startsAt" label="Inicio (opcional)" type="date" />
-          <Input name="endsAt" label="Vence (opcional)" type="date" />
-        </div>
-        <Input name="reason" label="Motivo / nota" placeholder="Ej. llego al límite de citas este mes" />
-        <SubmitButton label="Regalar cortesia" />
-        <InlineState state={state} block />
-      </form>
-    </Panel>
-  );
-}

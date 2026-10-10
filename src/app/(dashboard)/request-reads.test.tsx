@@ -46,11 +46,15 @@ vi.mock("@/features/dashboard", () => ({
     pending: [],
   })),
 }));
+const { NAV_STUB } = vi.hoisted(() => ({
+  NAV_STUB: [
+    { href: "/", label: "Inicio", icon: "dashboard" },
+    { href: "/appointments", label: "Citas", icon: "calendar" },
+  ],
+}));
 vi.mock("@/components/layout/nav-items", () => ({
-  getVisibleNavItems: vi.fn(() => [
-    { href: "/", label: "Inicio", icon: () => null },
-    { href: "/appointments", label: "Citas", icon: () => null },
-  ]),
+  getVisibleNavGroups: vi.fn(() => [{ items: NAV_STUB }]),
+  getVisibleNavItems: vi.fn(() => NAV_STUB),
 }));
 vi.mock("@/components/layout/sidebar", () => ({ Sidebar: () => null }));
 vi.mock("@/components/layout/feedback-bubble", () => ({ FeedbackBubble: () => null }));

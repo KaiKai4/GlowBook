@@ -23,11 +23,11 @@ export default async function DashboardPage() {
   const profile = await requireProfile();
   // El perfil ya lleva los modulos efectivos del plan (los resuelve request-context).
   const disabledFeatures = getDisabledSalonFeatures(profile);
-  const visibleNav = getVisibleNavItems(
-    getPermissions(profile),
-    profile.is_owner,
-    disabledFeatures
-  );
+  const visibleNav = getVisibleNavItems({
+    permissions: getPermissions(profile),
+    isOwner: profile.is_owner,
+    disabledFeatures,
+  });
 
   const [onlyNavItem] = visibleNav;
   if (!profile.is_owner && visibleNav.length === 1 && onlyNavItem && onlyNavItem.href !== "/") redirect(onlyNavItem.href);

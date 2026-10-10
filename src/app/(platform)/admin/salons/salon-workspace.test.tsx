@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, getButtonByText } from "@/test/ui-admin-dom";
 import { CATALOG_MODULES, makeDetail, makeLimit, makeRow } from "@/test/ui-admin-fixtures";
-import { SalonWorkspace, type SalonWorkspaceSalon } from "./salon-workspace";
+import { SalonWorkspace } from "./salon-workspace";
+import type { SalonWorkspaceSalon } from "./salon-workspace-types";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("next/link", async () => {

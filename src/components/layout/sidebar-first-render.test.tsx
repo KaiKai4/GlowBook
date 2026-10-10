@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { requireElement } from "@/test/ui-shared-dom";
+import { getVisibleNavGroups } from "./nav-items";
 import { Sidebar } from "./sidebar";
 
 vi.mock("next/navigation", () => ({
@@ -30,9 +31,7 @@ function serverRender(): HTMLElement {
   const html = renderToStaticMarkup(
     createElement(Sidebar, {
       salonName: "Salón Aurora",
-      userPermissions: [],
-      isOwner: true,
-      disabledFeatures: [],
+      groups: getVisibleNavGroups({ permissions: [], isOwner: true, disabledFeatures: [] }),
     }),
   );
   const container = document.createElement("div");
