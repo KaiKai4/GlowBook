@@ -1,9 +1,9 @@
 import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { updateSalonTheme as updateSalonThemeRow } from "../data/salon.repo";
+import { updateSalonTheme as updateSalonThemeRow } from "../data/salon-appearance.repo";
 import { updateSalonTheme } from "./update-salon-theme";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-appearance.repo", () => ({
   updateSalonTheme: vi.fn(),
 }));
 

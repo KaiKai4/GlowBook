@@ -17,7 +17,7 @@ import {
   findArchivedCustomerByContact,
   type ArchivedCustomerMatch,
 } from "@/features/customers/use-cases/customer-duplicates";
-import { createCustomerGuarded } from "@/features/customers/use-cases/create-customer-guarded";
+import { createCustomerProfile } from "@/features/customers/use-cases/customer-profile";
 import { updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import { err, ok, type Result } from "@/infra/result";
@@ -46,7 +46,7 @@ const createCustomerFlow = defineAction<FormData, CreateCustomerInput, string>({
   permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
   rateLimit: CUSTOMERS_RATE_LIMIT,
   parse: (formData) => parseCreateCustomer(Object.fromEntries(formData)),
-  run: (input, session) => createCustomerGuarded(session.salonId, input),
+  run: (input, session) => createCustomerProfile(session.salonId, input),
   revalidate: () => CUSTOMER_PATHS,
 });
 

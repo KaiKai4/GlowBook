@@ -1,6 +1,7 @@
 import "server-only";
 
-import { findAppointmentSalonConfig, findBusinessHours } from "../data/salon.repo";
+import { findAppointmentSalonConfig } from "../data/salon-settings.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 import type { SalonBusinessHour } from "./salon-business-hours";
 
 // Forma estructural de la configuracion de agenda: la consume el modulo

@@ -15,11 +15,11 @@ describe("category service options", () => {
         id: "category-1",
         name: "Cabello",
         services: [
-          { id: "service-1", name: "Corte" },
-          { id: "service-2", name: "Color" },
+          { id: "service-1", name: "Corte", is_active: true },
+          { id: "service-2", name: "Color", is_active: true },
         ],
       },
-    ] as Awaited<ReturnType<typeof findCategoriesWithServices>>);
+    ] as unknown as Awaited<ReturnType<typeof findCategoriesWithServices>>);
 
     await expect(getCategoryServiceOptions("salon-1")).resolves.toEqual([
       {
@@ -30,6 +30,23 @@ describe("category service options", () => {
           { id: "service-2", name: "Color" },
         ],
       },
+    ]);
+  });
+
+  it("no ofrece servicios inactivos en los selectores de asignacion", async () => {
+    mockedFindCategoriesWithServices.mockResolvedValue([
+      {
+        id: "category-1",
+        name: "Cabello",
+        services: [
+          { id: "service-1", name: "Corte", is_active: true },
+          { id: "service-archivado", name: "Permanente antigua", is_active: false },
+        ],
+      },
+    ] as unknown as Awaited<ReturnType<typeof findCategoriesWithServices>>);
+
+    await expect(getCategoryServiceOptions("salon-1")).resolves.toEqual([
+      { id: "category-1", name: "Cabello", services: [{ id: "service-1", name: "Corte" }] },
     ]);
   });
 });

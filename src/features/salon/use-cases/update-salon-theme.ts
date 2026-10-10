@@ -2,7 +2,7 @@ import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { updateSalonTheme as updateSalonThemeRow } from "../data/salon.repo";
+import { updateSalonTheme as updateSalonThemeRow } from "../data/salon-appearance.repo";
 import { SALON_THEMES, type SalonTheme } from "../schemas";
 
 export async function updateSalonTheme(

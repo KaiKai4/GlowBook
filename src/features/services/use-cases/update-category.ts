@@ -1,5 +1,6 @@
 import "server-only";
 
+import { captureError } from "@/infra/observability";
 import type { Result } from "@/infra/result";
 import { updateCategory } from "../data/services.repo";
 import type { UpdateCategoryInput } from "../schemas";
@@ -18,6 +19,7 @@ export async function updateServiceCategory(
       return { ok: false, error: "Ya existe una categoria con ese nombre." };
     }
 
+    captureError(error, { module: "services", action: "update-category" });
     return { ok: false, error: "Error al actualizar la categoria." };
   }
 }

@@ -1,9 +1,9 @@
 import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { updateSalonName } from "../data/salon.repo";
+import { updateSalonName } from "../data/salon-settings.repo";
 import { updateSalonInfo } from "./update-salon-info";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   updateSalonName: vi.fn(),
 }));
 

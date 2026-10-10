@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { findSalonIdentity } from "../data/salon.repo";
+import { findSalonIdentity } from "../data/salon-settings.repo";
 import { getSalonIdentity } from "./salon-identity";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findSalonIdentity: vi.fn(),
 }));
 

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findBusinessHours } from "../data/salon.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 import { getSalonBusinessHours } from "./salon-business-hours";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-business-hours.repo", () => ({
   findBusinessHours: vi.fn(),
 }));
 

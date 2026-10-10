@@ -1,6 +1,6 @@
 import "server-only";
 
-import { findBusinessHours } from "../data/salon.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 
 /** Horario de apertura del salon por dia (0=Lunes ... 6=Domingo). */
 export interface SalonBusinessHour {

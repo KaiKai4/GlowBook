@@ -7,10 +7,10 @@ import type {
 } from "@/features/billing/domain/commercial-plan";
 import { getEffectiveSalonPlan } from "@/features/billing";
 import { plan } from "@/test/billing-plan-fixtures";
-import { findDashboardShellSalon } from "../data/salon.repo";
+import { findDashboardShellSalon } from "../data/salon-settings.repo";
 import { getDashboardShell, getOwnerPlanLimitWarnings } from "./get-dashboard-shell";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findDashboardShellSalon: vi.fn(),
 }));
 

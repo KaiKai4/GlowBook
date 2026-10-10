@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findAppointmentSalonConfig, findBusinessHours } from "../data/salon.repo";
+import { findAppointmentSalonConfig } from "../data/salon-settings.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 import { getSalonSchedulingConfig } from "./salon-scheduling-config";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findAppointmentSalonConfig: vi.fn(),
+}));
+
+vi.mock("../data/salon-business-hours.repo", () => ({
   findBusinessHours: vi.fn(),
 }));
 

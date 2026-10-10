@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfileWithRole } from "@/types/app.types";
-import { findDashboardShellSalon } from "../data/salon.repo";
+import { findDashboardShellSalon } from "../data/salon-settings.repo";
 import { getDashboardShell } from "./get-dashboard-shell";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findDashboardShellSalon: vi.fn(),
 }));
 

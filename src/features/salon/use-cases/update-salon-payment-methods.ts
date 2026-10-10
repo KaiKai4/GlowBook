@@ -3,7 +3,7 @@ import "server-only";
 
 import type { Result } from "@/infra/result";
 import { normalizePaymentMethods } from "@/features/payments";
-import { updateSalonPaymentMethods as updateSalonPaymentMethodsRepo } from "../data/salon.repo";
+import { updateSalonPaymentMethods as updateSalonPaymentMethodsRepo } from "../data/salon-settings.repo";
 import type { SalonPaymentMethodsInput } from "../schemas";
 
 // Mensaje fijo para el usuario. El detalle tecnico (p. ej. una migracion

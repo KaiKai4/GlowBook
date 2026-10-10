@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { readSessionUserId, isPlatformAdminUser } from "@/infra/auth/session";
 import { getRequestId } from "@/infra/observability/request-context";
-import { getPermissions, type RequestContext } from "@/features/access";
+import { getPermissions, withDisabledFeatures, type RequestContext } from "@/features/access";
 import {
   loadSalonAccessState,
   loadSessionProfile,
@@ -30,7 +30,7 @@ const getRequestContext = cache(async (): Promise<RequestContext | null> => {
   // a salons.disabled_features si no hay plan): hasPermission y la navegacion
   // deben decidir con la misma fuente, no con la columna legacy a secas.
   const disabledFeatures = await getEffectiveDisabledSalonFeatures(salonModuleScopeFromProfile(row));
-  const profile: ProfileWithRole = { ...row, salon: { disabled_features: disabledFeatures } };
+  const profile = withDisabledFeatures(row, disabledFeatures);
 
   return {
     userId,

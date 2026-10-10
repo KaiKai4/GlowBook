@@ -1,10 +1,10 @@
 import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { upsertBusinessHours } from "../data/salon.repo";
+import { upsertBusinessHours } from "../data/salon-business-hours.repo";
 import { updateBusinessHours } from "./update-business-hours";
 import type { BusinessDayInput } from "../schemas";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-business-hours.repo", () => ({
   upsertBusinessHours: vi.fn(),
 }));
 

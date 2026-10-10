@@ -8,6 +8,7 @@ import {
   archiveCategory,
   createCategory,
   createService,
+  findActiveServiceCategory,
   findCategoriesWithServices,
   findServicesCatalog,
   updateCategory,
@@ -120,17 +121,11 @@ describe("services.repo", () => {
     });
   });
 
-  describe("servicios", () => {
-    it("createService verifica que la categoria pertenezca al salon antes de insertar", async () => {
-      const db = useDb({
-        service_categories: { data: { id: "cat-1" }, error: null },
-        services: { data: { id: "svc-1" }, error: null },
-      });
+  describe("consulta de categoria activa", () => {
+    it("findActiveServiceCategory consulta solo categorias activas del salon", async () => {
+      const db = useDb({ service_categories: { data: { id: "cat-1" }, error: null } });
 
-      expect(
-        await createService(SALON_ID, { name: "Corte", category_id: "cat-1", duration_minutes: 30, price: 10 })
-      ).toEqual({ id: "svc-1" });
-
+      expect(await findActiveServiceCategory(SALON_ID, "cat-1")).toEqual({ id: "cat-1" });
       expect(operationsOn(db, "service_categories")).toEqual([
         { target: "service_categories", method: "select", args: ["id"] },
         { target: "service_categories", method: "eq", args: ["id", "cat-1"] },
@@ -138,20 +133,28 @@ describe("services.repo", () => {
         { target: "service_categories", method: "eq", args: ["is_active", true] },
         { target: "service_categories", method: "maybeSingle", args: [] },
       ]);
+    });
+
+    it("findActiveServiceCategory devuelve null si la categoria es ajena o inactiva", async () => {
+      useDb({ service_categories: { data: null, error: null } });
+
+      expect(await findActiveServiceCategory(SALON_ID, "cat-ajena")).toBeNull();
+    });
+  });
+
+  describe("servicios", () => {
+    it("createService inserta sin revisar la categoria: la regla vive en validateServiceCategory", async () => {
+      const db = useDb({ services: { data: { id: "svc-1" }, error: null } });
+
+      expect(
+        await createService(SALON_ID, { name: "Corte", category_id: "cat-1", duration_minutes: 30, price: 10 })
+      ).toEqual({ id: "svc-1" });
+      expect(operationsOn(db, "service_categories")).toEqual([]);
       expect(operationsOn(db, "services")).toContainEqual({
         target: "services",
         method: "insert",
         args: [{ name: "Corte", category_id: "cat-1", duration_minutes: 30, price: 10, salon_id: SALON_ID }],
       });
-    });
-
-    it("createService rechaza categorias de otro salon o inactivas sin insertar el servicio", async () => {
-      const db = useDb({ service_categories: { data: null, error: null } });
-
-      await expect(
-        createService(SALON_ID, { name: "Corte", category_id: "cat-ajena", duration_minutes: 30, price: 10 })
-      ).rejects.toThrow("La categoría no pertenece al salón.");
-      expect(operationsOn(db, "services")).toEqual([]);
     });
 
     it("createService propaga el error de insercion del servicio", async () => {
@@ -178,35 +181,6 @@ describe("services.repo", () => {
         { target: "services", method: "select", args: [] },
         { target: "services", method: "single", args: [] },
       ]);
-    });
-
-    it("updateService valida que la nueva categoria este activa y sea del salon", async () => {
-      const db = useDb({
-        service_categories: { data: { id: "cat-2" }, error: null },
-        services: { data: { id: "svc-1" }, error: null },
-      });
-
-      await updateService("svc-1", SALON_ID, { category_id: "cat-2" });
-
-      expect(operationsOn(db, "service_categories")).toContainEqual({
-        target: "service_categories",
-        method: "eq",
-        args: ["salon_id", SALON_ID],
-      });
-      expect(operationsOn(db, "service_categories")).toContainEqual({
-        target: "service_categories",
-        method: "eq",
-        args: ["is_active", true],
-      });
-    });
-
-    it("updateService rechaza una categoria nueva inexistente, ajena o inactiva", async () => {
-      const db = useDb({ service_categories: { data: null, error: null } });
-
-      await expect(updateService("svc-1", SALON_ID, { category_id: "cat-x" })).rejects.toThrow(
-        "La categoría no pertenece al salón o está inactiva."
-      );
-      expect(operationsOn(db, "services").some((op) => op.method === "update")).toBe(false);
     });
 
     it("updateService propaga el error de actualizacion", async () => {

@@ -6,16 +6,12 @@ import {
 } from "@/test/small-features-supabase";
 import {
   findAppointmentSalonConfig,
-  findBusinessHours,
   findDashboardShellSalon,
   findSalonIdentity,
   findSalonSettings,
-  updateSalonBackground,
   updateSalonName,
   updateSalonPaymentMethods,
-  updateSalonTheme,
-  upsertBusinessHours,
-} from "./salon.repo";
+} from "./salon-settings.repo";
 
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
 vi.mock("@/infra/supabase/server", () => ({
@@ -33,7 +29,7 @@ function useDb(script: Parameters<typeof createSupabaseDouble>[0] = {}): Supabas
 // Error que la BD devuelve cuando la columna payment_methods aun no existe.
 const MISSING_PAYMENT_COLUMN = { code: "42703", message: 'column "payment_methods" does not exist' };
 
-describe("salon.repo", () => {
+describe("salon-settings.repo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     serverClient.current = null;
@@ -184,32 +180,9 @@ describe("salon.repo", () => {
     });
   });
 
-  describe("findBusinessHours", () => {
-    it("lista el horario del salon ordenado por dia y devuelve lista vacia sin datos", async () => {
-      const db = useDb({ salon_business_hours: { data: [{ day_of_week: 1, is_open: true, open_time: "09:00", close_time: "18:00" }], error: null } });
-
-      expect(await findBusinessHours(SALON_ID)).toEqual([
-        { day_of_week: 1, is_open: true, open_time: "09:00", close_time: "18:00" },
-      ]);
-      expect(operationsOn(db, "salon_business_hours")).toEqual([
-        { target: "salon_business_hours", method: "select", args: ["day_of_week, is_open, open_time, close_time"] },
-        { target: "salon_business_hours", method: "eq", args: ["salon_id", SALON_ID] },
-        { target: "salon_business_hours", method: "order", args: ["day_of_week", { ascending: true }] },
-      ]);
-
-      useDb({ salon_business_hours: { data: null, error: null } });
-      expect(await findBusinessHours(SALON_ID)).toEqual([]);
-
-      useDb({ salon_business_hours: { data: null, error: { message: "horario caido" } } });
-      await expect(findBusinessHours(SALON_ID)).rejects.toEqual({ message: "horario caido" });
-    });
-  });
-
-  describe("updates del salon", () => {
+  describe("updates de nombre y metodos de pago", () => {
     it.each([
       ["nombre", () => updateSalonName(SALON_ID, "Nuevo"), { name: "Nuevo" }],
-      ["tema", () => updateSalonTheme(SALON_ID, "dark"), { theme: "dark" }],
-      ["fondo", () => updateSalonBackground(SALON_ID, "dots"), { bg_style: "dots" }],
       ["metodos de pago", () => updateSalonPaymentMethods(SALON_ID, ["cash", "card"]), { payment_methods: ["cash", "card"] }],
     ])("actualiza %s del salon indicado", async (_label, run, payload) => {
       const db = useDb({ salons: { data: null, error: null } });
@@ -227,28 +200,6 @@ describe("salon.repo", () => {
       useDb({ salons: { data: null, error: dbError } });
 
       await expect(updateSalonName(SALON_ID, "Nuevo")).rejects.toBe(dbError);
-    });
-  });
-
-  describe("upsertBusinessHours", () => {
-    it("hace upsert de las filas de horario usando salon_id+day_of_week como conflicto", async () => {
-      const db = useDb({ salon_business_hours: { data: null, error: null } });
-      const rows = [
-        { salon_id: SALON_ID, day_of_week: 0, is_open: false, open_time: null, close_time: null },
-      ];
-
-      await upsertBusinessHours(rows);
-
-      expect(operationsOn(db, "salon_business_hours")).toEqual([
-        { target: "salon_business_hours", method: "upsert", args: [rows, { onConflict: "salon_id,day_of_week" }] },
-      ]);
-    });
-
-    it("propaga el error del upsert", async () => {
-      const dbError = { message: "fallo" };
-      useDb({ salon_business_hours: { data: null, error: dbError } });
-
-      await expect(upsertBusinessHours([])).rejects.toBe(dbError);
     });
   });
 });

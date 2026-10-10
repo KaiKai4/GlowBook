@@ -1,6 +1,5 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import type { Database } from "@/types/database.types";
 
 export interface SalonSettings {
   id: string;
@@ -31,16 +30,6 @@ export interface AppointmentSalonConfig {
   allow_off_hours_bookings: boolean;
   timezone: string;
 }
-
-export interface BusinessHourRow {
-  day_of_week: number;
-  is_open: boolean;
-  open_time: string | null;
-  close_time: string | null;
-}
-
-export type UpsertBusinessHourRow =
-  Database["public"]["Tables"]["salon_business_hours"]["Insert"];
 
 function isMissingPaymentMethodsColumn(error: { code?: string; message?: string } | null): boolean {
   return (
@@ -128,43 +117,11 @@ export async function findAppointmentSalonConfig(
   return data ?? null;
 }
 
-export async function findBusinessHours(salonId: string): Promise<BusinessHourRow[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("salon_business_hours")
-    .select("day_of_week, is_open, open_time, close_time")
-    .eq("salon_id", salonId)
-    .order("day_of_week", { ascending: true });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
 export async function updateSalonName(salonId: string, name: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("salons")
     .update({ name })
-    .eq("id", salonId);
-
-  if (error) throw error;
-}
-
-export async function updateSalonTheme(salonId: string, theme: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("salons")
-    .update({ theme })
-    .eq("id", salonId);
-
-  if (error) throw error;
-}
-
-export async function updateSalonBackground(salonId: string, bgStyle: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("salons")
-    .update({ bg_style: bgStyle })
     .eq("id", salonId);
 
   if (error) throw error;
@@ -179,15 +136,6 @@ export async function updateSalonPaymentMethods(
     .from("salons")
     .update({ payment_methods: paymentMethods })
     .eq("id", salonId);
-
-  if (error) throw error;
-}
-
-export async function upsertBusinessHours(rows: UpsertBusinessHourRow[]): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("salon_business_hours")
-    .upsert(rows, { onConflict: "salon_id,day_of_week" });
 
   if (error) throw error;
 }

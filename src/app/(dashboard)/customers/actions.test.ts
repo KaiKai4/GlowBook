@@ -74,20 +74,19 @@ describe("customers actions", () => {
       expect(createCustomerProfile).not.toHaveBeenCalled();
     });
 
-    it("propaga el rechazo del módulo y del límite del plan", async () => {
-      vi.mocked(checkPlanModuleAccess).mockResolvedValue(err("Módulo no incluido en tu plan."));
+    it("devuelve el rechazo del caso de uso (módulo o cupo del plan) tal cual", async () => {
+      vi.mocked(createCustomerProfile).mockResolvedValueOnce(err("Módulo no incluido en tu plan."));
       expect(await createCustomerAction(null, formDataOf(validCustomer))).toEqual({
         ok: false,
         error: "Módulo no incluido en tu plan.",
       });
 
-      vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
-      vi.mocked(checkPlanLimit).mockResolvedValue(err("Límite de clientes alcanzado."));
+      vi.mocked(createCustomerProfile).mockResolvedValueOnce(err("Límite de clientes alcanzado."));
       expect(await createCustomerAction(null, formDataOf(validCustomer))).toEqual({
         ok: false,
         error: "Límite de clientes alcanzado.",
       });
-      expect(createCustomerProfile).not.toHaveBeenCalled();
+      expect(revalidatePath).not.toHaveBeenCalled();
     });
 
     it("devuelve el primer issue de Zod sin persistir", async () => {

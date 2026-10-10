@@ -4,8 +4,7 @@ import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPermanentCustomerByPhone, findArchivedCustomerByContact } from "@/features/customers/use-cases/customer-duplicates";
-import { createCustomerGuarded } from "@/features/customers/use-cases/create-customer-guarded";
-import { updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
+import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID, USER_ID } from "@/test/action-fixtures";
@@ -22,12 +21,14 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/billing", () => ({ checkPlanLimit: vi.fn(), checkPlanModuleAccess: vi.fn() }));
-vi.mock("@/features/customers/use-cases/create-customer-guarded", () => ({ createCustomerGuarded: vi.fn() }));
 vi.mock("@/features/customers/use-cases/customer-duplicates", () => ({
   checkPermanentCustomerByPhone: vi.fn(),
   findArchivedCustomerByContact: vi.fn(),
 }));
-vi.mock("@/features/customers/use-cases/customer-profile", () => ({ updateCustomerProfile: vi.fn() }));
+vi.mock("@/features/customers/use-cases/customer-profile", () => ({
+  createCustomerProfile: vi.fn(),
+  updateCustomerProfile: vi.fn(),
+}));
 vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
   archiveCustomer: vi.fn(),
   reactivateCustomer: vi.fn(),
@@ -52,7 +53,7 @@ describe("customers actions: rate limit por accion", () => {
 
   it("createCustomerAction devuelve el rechazo sin crear el cliente", async () => {
     expect(await createCustomerAction(null, formDataOf({ first_name: "Ana" }))).toEqual(LIMITED);
-    expect(createCustomerGuarded).not.toHaveBeenCalled();
+    expect(createCustomerProfile).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 

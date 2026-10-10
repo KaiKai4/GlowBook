@@ -2,7 +2,7 @@ import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { upsertBusinessHours } from "../data/salon.repo";
+import { upsertBusinessHours } from "../data/salon-business-hours.repo";
 import type { BusinessDayInput } from "../schemas";
 
 export async function updateBusinessHours(

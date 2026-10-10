@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { createCustomer, updateCustomer } from "@/features/customers/data/customers.repo";
 import type { CreateCustomerInput, UpdateCustomerInput } from "@/features/customers/schemas";
+import { err, ok } from "@/infra/result";
 import { rejectArchivedDuplicate } from "./customer-duplicates";
 import { createCustomerProfile, updateCustomerProfile } from "./customer-profile";
 
@@ -16,6 +18,11 @@ vi.mock("./customer-duplicates", () => ({
 
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
+}));
+
+vi.mock("@/features/billing", () => ({
+  checkPlanLimit: vi.fn(),
+  checkPlanModuleAccess: vi.fn(),
 }));
 
 const mockedCreateCustomer = vi.mocked(createCustomer);
@@ -58,6 +65,8 @@ describe("customer-profile", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedRejectArchived.mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
+    vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
   });
 
   describe("createCustomerProfile", () => {
@@ -163,5 +172,42 @@ describe("customer-profile", () => {
         error: "Ya existe un cliente con ese email.",
       });
     });
+  });
+});
+
+describe("createCustomerProfile: plan y cupo", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedRejectArchived.mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
+    vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
+    mockedCreateCustomer.mockResolvedValue(customerRow);
+  });
+
+  it("consulta el módulo de clientes y el cupo de clientes activos del salón", async () => {
+    await createCustomerProfile(SALON_ID, createInput());
+
+    expect(checkPlanModuleAccess).toHaveBeenCalledWith({ salonId: SALON_ID, moduleKey: "customers" });
+    expect(checkPlanLimit).toHaveBeenCalledWith({ salonId: SALON_ID, metricKey: "customers.active" });
+  });
+
+  it("da de alta el cliente en el salón cuando el plan lo permite", async () => {
+    expect(await createCustomerProfile(SALON_ID, createInput())).toEqual(ok("cust-1"));
+    expect(mockedCreateCustomer).toHaveBeenCalledTimes(1);
+  });
+
+  it("si el módulo no está en el plan devuelve su error sin crear", async () => {
+    vi.mocked(checkPlanModuleAccess).mockResolvedValue(err("Módulo no incluido en tu plan."));
+
+    expect(await createCustomerProfile(SALON_ID, createInput())).toEqual(err("Módulo no incluido en tu plan."));
+    expect(checkPlanLimit).not.toHaveBeenCalled();
+    expect(mockedCreateCustomer).not.toHaveBeenCalled();
+  });
+
+  it("si no queda cupo de clientes devuelve el error del plan sin crear", async () => {
+    vi.mocked(checkPlanLimit).mockResolvedValue(err("Límite de clientes alcanzado."));
+
+    expect(await createCustomerProfile(SALON_ID, createInput())).toEqual(err("Límite de clientes alcanzado."));
+    expect(mockedCreateCustomer).not.toHaveBeenCalled();
   });
 });

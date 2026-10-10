@@ -7,12 +7,3 @@ export function isUniqueConstraintError(error: unknown): boolean {
   const message = errorMessage(error).toLowerCase();
   return code === "23505" || message.includes("unique") || message.includes("duplicate");
 }
-
-export function isCategoryOwnershipError(error: unknown): boolean {
-  const message = errorMessage(error).toLowerCase();
-  return (
-    message.includes("categoria") ||
-    message.includes("categoría") ||
-    message.includes("pertenece")
-  );
-}

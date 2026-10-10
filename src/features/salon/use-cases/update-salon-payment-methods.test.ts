@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import { updateSalonPaymentMethods as updateSalonPaymentMethodsRepo } from "../data/salon.repo";
+import { updateSalonPaymentMethods as updateSalonPaymentMethodsRepo } from "../data/salon-settings.repo";
 import { updateSalonPaymentMethods } from "./update-salon-payment-methods";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   updateSalonPaymentMethods: vi.fn(),
 }));
 

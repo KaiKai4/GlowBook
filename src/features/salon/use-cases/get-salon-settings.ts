@@ -1,6 +1,7 @@
 import "server-only";
 
-import { findBusinessHours, findSalonSettings } from "../data/salon.repo";
+import { findSalonSettings } from "../data/salon-settings.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 import {
   paymentMethodsOrDefaults,
   paymentMethodOptionsFor,

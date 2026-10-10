@@ -1,9 +1,14 @@
 import "server-only";
 
-import { getDisabledSalonFeatures, getPermissions, type Permission } from "@/features/access";
+import {
+  getDisabledSalonFeatures,
+  getPermissions,
+  withDisabledFeatures,
+  type Permission,
+} from "@/features/access";
 import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "@/features/salon-features";
-import { findDashboardShellSalon } from "../data/salon.repo";
+import { findDashboardShellSalon } from "../data/salon-settings.repo";
 import {
   evaluatePaymentStanding,
   getEffectiveSalonPlan,
@@ -66,20 +71,14 @@ export async function getDashboardShell(
   const salon = await findDashboardShellSalon(profile.salon_id);
   if (!salon) return null;
 
-  const profileWithSalonFeatures: ProfileWithRole = {
-    ...profile,
-    salon: { disabled_features: salon.disabled_features },
-  };
+  const profileWithSalonFeatures = withDisabledFeatures(profile, salon.disabled_features);
 
   const effectivePlan = await readEffectivePlanOrNull(profile.salon_id, "dashboard-shell", getEffectiveSalonPlan);
   const disabledFeatures = effectivePlan?.plan
     ? effectivePlan.disabledModules
     : getDisabledSalonFeatures(profileWithSalonFeatures);
 
-  const profileForAccess: ProfileWithRole = {
-    ...profile,
-    salon: { disabled_features: disabledFeatures },
-  };
+  const profileForAccess = withDisabledFeatures(profile, disabledFeatures);
 
   const paymentStanding = await getSalonPaymentStanding(profile.salon_id);
   return {

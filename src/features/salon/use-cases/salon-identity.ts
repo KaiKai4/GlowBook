@@ -1,6 +1,6 @@
 import "server-only";
 
-import { findSalonIdentity } from "../data/salon.repo";
+import { findSalonIdentity } from "../data/salon-settings.repo";
 
 export interface SalonIdentityView {
   name: string;

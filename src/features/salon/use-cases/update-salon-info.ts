@@ -2,7 +2,7 @@ import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { updateSalonName } from "../data/salon.repo";
+import { updateSalonName } from "../data/salon-settings.repo";
 import type { SalonInfoInput } from "../schemas";
 
 export async function updateSalonInfo(
