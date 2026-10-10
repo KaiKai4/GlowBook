@@ -1,3 +1,4 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   findInventoryProducts,
@@ -350,5 +351,17 @@ describe("inventory-products", () => {
         error: "Error al eliminar el producto.",
       });
     });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de eliminacion", () => {
+  it("registra con captureError el fallo al eliminar el producto", async () => {
+    const dbError = new Error("caida");
+    mockedSoftDelete.mockRejectedValue(dbError);
+
+    expect(await deleteInventoryProduct("prod-1", "salon-1")).toEqual({ ok: false, error: "Error al eliminar el producto." });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "inventory", action: "delete_product" });
   });
 });

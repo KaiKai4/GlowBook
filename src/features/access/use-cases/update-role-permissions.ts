@@ -1,3 +1,4 @@
+import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
@@ -20,7 +21,8 @@ export async function updateRolePermissions(
   try {
     await setRolePermissions(input.role_id, salonId, permissionKeys);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (error) {
+    captureError(error, { module: "access", action: "update_role_permissions" });
     return { ok: false, error: "Error al actualizar permisos." };
   }
 }

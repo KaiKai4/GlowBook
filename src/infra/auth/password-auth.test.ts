@@ -129,6 +129,34 @@ describe("establishRecoverySession", () => {
 
     await expect(establishRecoverySession({ kind: "session" })).resolves.toBe(false);
   });
+
+  it("JWT invalido (401) reporta fallo sin lanzar, para mandar a login", async () => {
+    const authError = Object.assign(new Error("invalid JWT"), { name: "AuthApiError", status: 401 });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: authError });
+
+    await expect(establishRecoverySession({ kind: "session" })).resolves.toBe(false);
+  });
+
+  it("un 500 del servicio de auth se lanza", async () => {
+    const serverError = Object.assign(new Error("internal"), { name: "AuthApiError", status: 500 });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: serverError });
+
+    await expect(establishRecoverySession({ kind: "session" })).rejects.toBe(serverError);
+  });
+
+  it("sin sesion abierta (AuthSessionMissingError) reporta fallo sin lanzar", async () => {
+    const missing = Object.assign(new Error("Auth session missing!"), { name: "AuthSessionMissingError", status: 400 });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: missing });
+
+    await expect(establishRecoverySession({ kind: "session" })).resolves.toBe(false);
+  });
+
+  it("propaga el error de red al comprobar la sesion en vez de reportar fallo", async () => {
+    const networkError = Object.assign(new Error("fetch failed"), { name: "AuthRetryableFetchError" });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: networkError });
+
+    await expect(establishRecoverySession({ kind: "session" })).rejects.toBe(networkError);
+  });
 });
 
 describe("updateCurrentPassword y signOutCurrentSession", () => {

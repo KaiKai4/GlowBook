@@ -136,7 +136,7 @@ describe("services.repo", () => {
         { target: "service_categories", method: "eq", args: ["id", "cat-1"] },
         { target: "service_categories", method: "eq", args: ["salon_id", SALON_ID] },
         { target: "service_categories", method: "eq", args: ["is_active", true] },
-        { target: "service_categories", method: "single", args: [] },
+        { target: "service_categories", method: "maybeSingle", args: [] },
       ]);
       expect(operationsOn(db, "services")).toContainEqual({
         target: "services",

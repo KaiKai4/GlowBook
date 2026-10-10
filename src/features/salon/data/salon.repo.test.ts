@@ -157,8 +157,11 @@ describe("salon.repo", () => {
       expect(await findDashboardShellSalon(SALON_ID)).toEqual(shell);
       expect(operationsOn(db, "salons")).toContainEqual({ target: "salons", method: "eq", args: ["id", SALON_ID] });
 
-      useDb({ salons: { data: null, error: { message: "ignorado" } } });
+      useDb({ salons: { data: null, error: null } });
       expect(await findDashboardShellSalon(SALON_ID)).toBeNull();
+
+      useDb({ salons: { data: null, error: { message: "caido" } } });
+      await expect(findDashboardShellSalon(SALON_ID)).rejects.toEqual({ message: "caido" });
     });
 
     it("devuelve la configuracion de agenda del salon o null", async () => {
@@ -175,6 +178,9 @@ describe("salon.repo", () => {
 
       useDb({ salons: { data: null, error: null } });
       expect(await findAppointmentSalonConfig(SALON_ID)).toBeNull();
+
+      useDb({ salons: { data: null, error: { message: "caido" } } });
+      await expect(findAppointmentSalonConfig(SALON_ID)).rejects.toEqual({ message: "caido" });
     });
   });
 
@@ -193,6 +199,9 @@ describe("salon.repo", () => {
 
       useDb({ salon_business_hours: { data: null, error: null } });
       expect(await findBusinessHours(SALON_ID)).toEqual([]);
+
+      useDb({ salon_business_hours: { data: null, error: { message: "horario caido" } } });
+      await expect(findBusinessHours(SALON_ID)).rejects.toEqual({ message: "horario caido" });
     });
   });
 

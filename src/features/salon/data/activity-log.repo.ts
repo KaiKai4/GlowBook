@@ -13,16 +13,18 @@ export interface ActivityLogRow {
   created_at: string;
 }
 
-// Lectura con el cliente del usuario: la RLS garantiza que solo ve la
-// actividad de su propio salon y solo con permiso salon.manage.
-export async function findSalonActivity(limit = 150): Promise<ActivityLogRow[]> {
+// Lectura con el cliente del usuario. La RLS limita el acceso a la actividad de
+// su salon (con permiso salon.manage); el filtro explicito por salon_id es la
+// regla de la casa (AGENTS.md §3) y no se confia solo en la RLS.
+export async function findSalonActivity(salonId: string, limit = 150): Promise<ActivityLogRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("salon_activity_log")
     .select("id, actor_id, actor_email, table_name, action, record_id, record_label, created_at")
+    .eq("salon_id", salonId)
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw new Error(error.message);
+  if (error) throw error;
   return (data ?? []) as ActivityLogRow[];
 }

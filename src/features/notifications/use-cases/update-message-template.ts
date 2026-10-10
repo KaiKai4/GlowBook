@@ -1,3 +1,5 @@
+import { captureError } from "@/infra/observability";
+import { toPublicErrorMessage } from "@/infra/errors";
 import "server-only";
 
 import type { Result } from "@/infra/result";
@@ -18,7 +20,8 @@ export async function updateMessageTemplate(
     });
 
     return { ok: true, value: undefined };
-  } catch {
-    return { ok: false, error: "No se pudo guardar la plantilla." };
+  } catch (error) {
+    captureError(error, { module: "notifications", action: "update_template" });
+    return { ok: false, error: toPublicErrorMessage(error, "No se pudo guardar la plantilla.") };
   }
 }

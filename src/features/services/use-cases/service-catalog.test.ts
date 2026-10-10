@@ -1,3 +1,4 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { archiveCategory, createCategory, createService, updateService } from "../data/services.repo";
 import { archiveServiceCategory } from "./archive-category";
@@ -105,5 +106,20 @@ describe("service catalog use-cases", () => {
       name: "Corte premium",
       price: 25,
     });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de archivado", () => {
+  it("registra con captureError el fallo al archivar la categoria", async () => {
+    const dbError = new Error("caida");
+    mockedArchiveCategory.mockRejectedValue(dbError);
+
+    expect(await archiveServiceCategory("cat-1", "salon-1")).toEqual({
+      ok: false,
+      error: "No se pudo archivar la categoria.",
+    });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "services", action: "archive_category" });
   });
 });

@@ -98,19 +98,20 @@ export async function findEmployeeById(id: string, salonId: string) {
     `)
     .eq("id", id)
     .eq("salon_id", salonId)
-    .single();
-  if (error) return null;
+    .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
 export async function findEmployeeByEmail(email: string, salonId: string) {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("employees")
     .select("*")
     .eq("salon_id", salonId)
     .ilike("email", email)
     .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
@@ -242,7 +243,7 @@ export async function findLatestEmployeeInvitation(
   salonId: string
 ): Promise<EmployeeInvitationRow | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("employee_invitations")
     .select("id, email, role_id, expires_at, accepted_at")
     .eq("employee_id", employeeId)
@@ -250,5 +251,6 @@ export async function findLatestEmployeeInvitation(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (error) throw error;
   return (data ?? null) as EmployeeInvitationRow | null;
 }

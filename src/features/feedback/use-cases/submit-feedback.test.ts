@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { captureError } from "@/infra/observability";
 import { createFeedbackReport } from "../data/feedback.repo";
 import { submitFeedback } from "./submit-feedback";
 
 vi.mock("../data/feedback.repo", () => ({
   createFeedbackReport: vi.fn(),
+}));
+
+vi.mock("@/infra/observability", () => ({
+  captureError: vi.fn(),
 }));
 
 const mockedCreateFeedbackReport = vi.mocked(createFeedbackReport);
@@ -30,8 +35,9 @@ describe("submit feedback", () => {
     });
   });
 
-  it("returns a business error when the adapter fails", async () => {
-    mockedCreateFeedbackReport.mockRejectedValue(new Error("insert failed"));
+  it("registra el fallo del adaptador con captureError y devuelve el error de negocio", async () => {
+    const insertError = new Error("insert failed");
+    mockedCreateFeedbackReport.mockRejectedValue(insertError);
 
     const result = await submitFeedback(
       { salonId: "salon-1", createdBy: "profile-1" },
@@ -42,5 +48,6 @@ describe("submit feedback", () => {
       ok: false,
       error: "No se pudo enviar el reporte. Intenta de nuevo.",
     });
+    expect(captureError).toHaveBeenCalledWith(insertError, { module: "feedback", action: "submit" });
   });
 });

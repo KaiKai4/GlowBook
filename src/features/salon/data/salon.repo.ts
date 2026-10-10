@@ -102,12 +102,13 @@ export async function findDashboardShellSalon(
   salonId: string
 ): Promise<DashboardShellSalon | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("salons")
     .select("name, is_active, theme, bg_style, disabled_features")
     .eq("id", salonId)
-    .single();
+    .maybeSingle();
 
+  if (error) throw error;
   return data ?? null;
 }
 
@@ -115,24 +116,27 @@ export async function findAppointmentSalonConfig(
   salonId: string
 ): Promise<AppointmentSalonConfig | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("salons")
     .select(
       "min_booking_notice_minutes, min_appointment_duration_minutes, allow_off_hours_bookings, timezone"
     )
     .eq("id", salonId)
-    .single();
+    .maybeSingle();
 
+  if (error) throw error;
   return data ?? null;
 }
 
 export async function findBusinessHours(salonId: string): Promise<BusinessHourRow[]> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("salon_business_hours")
     .select("day_of_week, is_open, open_time, close_time")
     .eq("salon_id", salonId)
     .order("day_of_week", { ascending: true });
+
+  if (error) throw error;
   return data ?? [];
 }
 

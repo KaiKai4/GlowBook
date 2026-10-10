@@ -19,7 +19,7 @@ export default async function SalonActivityPage() {
     );
   }
 
-  const view = await getSalonActivity();
+  const view = await getSalonActivity(profile.salon_id);
   const groups = groupByDate(view.entries);
 
   return (

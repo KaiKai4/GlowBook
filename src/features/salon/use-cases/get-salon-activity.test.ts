@@ -37,7 +37,7 @@ describe("getSalonActivity", () => {
       activityRow({ id: "5", action: "insert", table_name: "tabla_desconocida" }),
     ]);
 
-    const view = await getSalonActivity();
+    const view = await getSalonActivity("salon-1");
 
     expect(view.entries.map((entry) => entry.actionLabel)).toEqual([
       "Creo una cita",
@@ -51,7 +51,7 @@ describe("getSalonActivity", () => {
   it("describe los cambios de configuracion del salon con una frase propia", async () => {
     mockedFindSalonActivity.mockResolvedValue([activityRow({ action: "update", table_name: "salons" })]);
 
-    const [entry] = (await getSalonActivity()).entries;
+    const [entry] = (await getSalonActivity("salon-1")).entries;
 
     expect(entry?.actionLabel).toBe("Actualizo la configuración del salon");
   });
@@ -62,7 +62,7 @@ describe("getSalonActivity", () => {
       activityRow({ id: "b", actor_email: "ana@example.com", record_label: "Venta" }),
     ]);
 
-    const view = await getSalonActivity();
+    const view = await getSalonActivity("salon-1");
 
     expect(view.entries[0]).toMatchObject({
       id: "a",
@@ -75,7 +75,7 @@ describe("getSalonActivity", () => {
   it("formatea fecha y hora en espanol a partir de la marca de creacion", async () => {
     mockedFindSalonActivity.mockResolvedValue([activityRow({})]);
 
-    const [entry] = (await getSalonActivity()).entries;
+    const [entry] = (await getSalonActivity("salon-1")).entries;
 
     expect(entry?.dateLabel).toContain("2026");
     expect(entry?.dateLabel).toContain("junio");
@@ -85,6 +85,6 @@ describe("getSalonActivity", () => {
   it("devuelve una vista vacia cuando no hay actividad", async () => {
     mockedFindSalonActivity.mockResolvedValue([]);
 
-    expect(await getSalonActivity()).toEqual({ entries: [] });
+    expect(await getSalonActivity("salon-1")).toEqual({ entries: [] });
   });
 });

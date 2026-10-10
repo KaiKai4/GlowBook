@@ -167,15 +167,15 @@ describe("employees repo", () => {
         ["id", EMPLOYEE_ID],
         ["salon_id", SALON_ID],
       ]);
-      expect(db.callsFor("employees").map((call) => call.method)).toContain("single");
+      expect(db.callsFor("employees").map((call) => call.method)).toContain("maybeSingle");
     });
 
-    it("devuelve null cuando la consulta falla o no encuentra al colaborador", async () => {
-      useTables({ employees: [{ error: { message: "no encontrado" } }] });
-      await expect(findEmployeeById(EMPLOYEE_ID, SALON_ID)).resolves.toBeNull();
-
+    it("devuelve null cuando no encuentra al colaborador y propaga errores de la consulta", async () => {
       useTables({ employees: [{ data: null }] });
       await expect(findEmployeeById(EMPLOYEE_ID, SALON_ID)).resolves.toBeNull();
+
+      useTables({ employees: [{ error: { message: "no encontrado" } }] });
+      await expect(findEmployeeById(EMPLOYEE_ID, SALON_ID)).rejects.toEqual({ message: "no encontrado" });
     });
   });
 
@@ -196,6 +196,12 @@ describe("employees repo", () => {
       useTables({ employees: [{ data: null }] });
 
       await expect(findEmployeeByEmail("nadie@salon.test", SALON_ID)).resolves.toBeNull();
+    });
+
+    it("propaga el error de la consulta en vez de devolver null", async () => {
+      useTables({ employees: [{ error: { message: "caido" } }] });
+
+      await expect(findEmployeeByEmail("ana@salon.test", SALON_ID)).rejects.toEqual({ message: "caido" });
     });
   });
 
@@ -414,6 +420,12 @@ describe("employees repo", () => {
       useTables({ employee_invitations: [{ data: null }] });
 
       await expect(findLatestEmployeeInvitation(EMPLOYEE_ID, SALON_ID)).resolves.toBeNull();
+    });
+
+    it("propaga el error de la consulta en vez de devolver null", async () => {
+      useTables({ employee_invitations: [{ error: { message: "caido" } }] });
+
+      await expect(findLatestEmployeeInvitation(EMPLOYEE_ID, SALON_ID)).rejects.toEqual({ message: "caido" });
     });
   });
 });

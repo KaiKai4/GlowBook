@@ -54,12 +54,13 @@ export async function findCustomerByPhone(
   phone: string
 ): Promise<CustomerRow | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("customers")
     .select("*")
     .eq("salon_id", salonId)
     .eq("phone", phone)
     .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
@@ -68,12 +69,13 @@ export async function findCustomerByEmail(
   email: string
 ): Promise<CustomerRow | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("customers")
     .select("*")
     .eq("salon_id", salonId)
     .ilike("email", email)
     .maybeSingle();
+  if (error) throw error;
   return data;
 }
 

@@ -1,3 +1,4 @@
+import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
@@ -171,6 +172,7 @@ export async function createInventoryProduct(
 
     return { ok: true, value: undefined };
   } catch (error) {
+    if (!isUniqueViolation(error)) captureError(error, { module: "inventory", action: "create_product" });
     const message = isUniqueViolation(error)
       ? "Ya existe un producto con ese nombre."
       : "Error al crear el producto.";
@@ -191,7 +193,8 @@ export async function updateInventoryProductProfile(
       { location: "storage", minimum_quantity: input.storage_minimum },
     ]);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (error) {
+    captureError(error, { module: "inventory", action: "update_product" });
     return { ok: false, error: "Error al actualizar el producto." };
   }
 }
@@ -203,7 +206,8 @@ export async function deleteInventoryProduct(
   try {
     await softDeleteInventoryProduct(productId, salonId);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (error) {
+    captureError(error, { module: "inventory", action: "delete_product" });
     return { ok: false, error: "Error al eliminar el producto." };
   }
 }

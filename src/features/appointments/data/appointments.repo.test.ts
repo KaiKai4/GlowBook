@@ -35,7 +35,7 @@ describe("findAppointmentById", () => {
     expect(result).toEqual(row);
     const calls = double.callsFor("appointments");
     expect(calls).toContainEqual({ method: "eq", args: ["id", appointmentId] });
-    expect(calls).toContainEqual({ method: "single", args: [] });
+    expect(calls).toContainEqual({ method: "maybeSingle", args: [] });
     const select = calls.find((call) => call.method === "select")?.args[0];
     expect(String(select)).toContain("customer:customers(");
     expect(String(select)).toContain("items:appointment_items(");
@@ -43,14 +43,16 @@ describe("findAppointmentById", () => {
     expect(String(select)).toContain("employee:employees(");
   });
 
-  it("devuelve null cuando la consulta falla o no encuentra la cita", async () => {
+  it("devuelve null cuando no encuentra la cita y propaga los errores de la consulta", async () => {
+    useDouble(createAppointmentsSupabaseDouble({ appointments: { data: null, error: null } }));
+    expect(await findAppointmentById(appointmentId, salonId)).toBeNull();
+
     useDouble(
       createAppointmentsSupabaseDouble({
-        appointments: { data: null, error: { message: "no rows" } },
+        appointments: { data: null, error: { message: "query failed" } },
       })
     );
-
-    expect(await findAppointmentById(appointmentId, salonId)).toBeNull();
+    await expect(findAppointmentById(appointmentId, salonId)).rejects.toEqual({ message: "query failed" });
   });
 
   it("filtra explícitamente por salon_id además del id de la cita", async () => {

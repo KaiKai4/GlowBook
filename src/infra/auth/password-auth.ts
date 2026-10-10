@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import type { AuthError } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { SESSION_ONLY_COOKIE } from "@/infra/supabase/session-persistence";
+import { isAuthInfrastructureError } from "./session";
 
 // Primitivas de autenticacion con contraseña para las acciones de (auth).
 // Sin reglas de negocio ni mensajes para el usuario: eso vive en cada accion.
@@ -78,7 +79,8 @@ export async function establishRecoverySession(link: RecoveryLink): Promise<bool
     return error === null;
   }
 
-  const { data } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+  if (isAuthInfrastructureError(error)) throw error;
   return data.user !== null;
 }
 

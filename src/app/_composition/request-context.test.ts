@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requireActiveProfile } from "./request-context";
+import { requireActiveProfile, requireProfile } from "./request-context";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 
 vi.mock("next/navigation", () => ({
@@ -46,7 +46,7 @@ function supabaseMock({
       return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: profile }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: profile, error: null }),
       };
     }
 
@@ -99,5 +99,42 @@ describe("requireActiveProfile", () => {
     mockedCreateSupabaseServerClient.mockResolvedValue(supabaseMock({ salon: null }) as never);
 
     await expect(requireActiveProfile()).rejects.toThrow("REDIRECT:/login");
+  });
+});
+
+describe("requireProfile ante errores de BD", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("propaga el error de BD al cargar el perfil y no redirige a login", async () => {
+    const dbError = Object.assign(new Error("connection reset"), { code: "08006" });
+    const from = vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: dbError }),
+      single: vi.fn().mockResolvedValue({ data: null, error: dbError }),
+    }));
+    mockedCreateSupabaseServerClient.mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }) },
+      from,
+    } as never);
+
+    await expect(requireProfile()).rejects.toBe(dbError);
+  });
+
+  it("redirige a login solo cuando no hay filas de perfil", async () => {
+    const from = vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }));
+    mockedCreateSupabaseServerClient.mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }) },
+      from,
+    } as never);
+
+    await expect(requireProfile()).rejects.toThrow("REDIRECT:/login");
   });
 });

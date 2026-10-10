@@ -1,3 +1,4 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { updateSalonTheme as updateSalonThemeRow } from "../data/salon.repo";
 import { updateSalonTheme } from "./update-salon-theme";
@@ -42,5 +43,17 @@ describe("updateSalonTheme", () => {
     const result = await updateSalonTheme("salon-1", "violet");
 
     expect(result).toEqual({ ok: false, error: "Error al guardar la gama de colores." });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de tema", () => {
+  it("registra con captureError el fallo de persistencia", async () => {
+    const dbError = new Error("caida");
+    mockedUpdateTheme.mockRejectedValue(dbError);
+
+    expect(await updateSalonTheme("salon-1", "violet")).toEqual({ ok: false, error: "Error al guardar la gama de colores." });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "salon", action: "update_theme" });
   });
 });

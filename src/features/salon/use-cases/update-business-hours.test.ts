@@ -1,3 +1,4 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { upsertBusinessHours } from "../data/salon.repo";
 import { updateBusinessHours } from "./update-business-hours";
@@ -50,5 +51,17 @@ describe("update business hours", () => {
       ok: false,
       error: "Error al guardar los horarios.",
     });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de horario", () => {
+  it("registra con captureError el fallo del upsert y devuelve el error de negocio", async () => {
+    const dbError = new Error("database unavailable");
+    mockedUpsertBusinessHours.mockRejectedValue(dbError);
+
+    expect(await updateBusinessHours("salon-1", [])).toEqual({ ok: false, error: "Error al guardar los horarios." });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "salon", action: "update_business_hours" });
   });
 });

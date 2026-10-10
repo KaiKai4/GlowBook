@@ -235,3 +235,25 @@ describe("customers.repo", () => {
     });
   });
 });
+
+describe("customers.repo: errores de consulta", () => {
+  beforeEach(() => {
+    serverClient.current = null;
+  });
+
+  it("findCustomerByPhone devuelve null sin fila y propaga el error de BD", async () => {
+    useDb({ customers: { data: null, error: null } });
+    await expect(findCustomerByPhone(SALON_ID, "+50761234567")).resolves.toBeNull();
+
+    useDb({ customers: { data: null, error: { message: "caido" } } });
+    await expect(findCustomerByPhone(SALON_ID, "+50761234567")).rejects.toEqual({ message: "caido" });
+  });
+
+  it("findCustomerByEmail devuelve null sin fila y propaga el error de BD", async () => {
+    useDb({ customers: { data: null, error: null } });
+    await expect(findCustomerByEmail(SALON_ID, "ana@example.com")).resolves.toBeNull();
+
+    useDb({ customers: { data: null, error: { message: "caido" } } });
+    await expect(findCustomerByEmail(SALON_ID, "ana@example.com")).rejects.toEqual({ message: "caido" });
+  });
+});

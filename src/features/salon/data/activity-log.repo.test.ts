@@ -23,7 +23,7 @@ describe("activity-log.repo", () => {
     serverClient.current = null;
   });
 
-  it("lista la actividad mas reciente con limite por defecto de 150 sin filtrar por salon (lo hace la RLS)", async () => {
+  it("lista la actividad mas reciente del salon con limite por defecto de 150", async () => {
     const row = {
       id: "log-1",
       actor_id: "user-1",
@@ -36,13 +36,14 @@ describe("activity-log.repo", () => {
     };
     const db = useDb({ salon_activity_log: { data: [row], error: null } });
 
-    expect(await findSalonActivity()).toEqual([row]);
+    expect(await findSalonActivity("salon-1")).toEqual([row]);
     expect(operationsOn(db, "salon_activity_log")).toEqual([
       {
         target: "salon_activity_log",
         method: "select",
         args: ["id, actor_id, actor_email, table_name, action, record_id, record_label, created_at"],
       },
+      { target: "salon_activity_log", method: "eq", args: ["salon_id", "salon-1"] },
       { target: "salon_activity_log", method: "order", args: ["created_at", { ascending: false }] },
       { target: "salon_activity_log", method: "limit", args: [150] },
     ]);
@@ -51,7 +52,7 @@ describe("activity-log.repo", () => {
   it("respeta el limite indicado y devuelve lista vacia sin datos", async () => {
     const db = useDb({ salon_activity_log: { data: null, error: null } });
 
-    expect(await findSalonActivity(10)).toEqual([]);
+    expect(await findSalonActivity("salon-1", 10)).toEqual([]);
     expect(operationsOn(db, "salon_activity_log")).toContainEqual({
       target: "salon_activity_log",
       method: "limit",
@@ -59,9 +60,10 @@ describe("activity-log.repo", () => {
     });
   });
 
-  it("convierte el error de la consulta en Error", async () => {
-    useDb({ salon_activity_log: { data: null, error: { message: "sin permiso" } } });
+  it("lanza el error original de la consulta sin reenvolverlo", async () => {
+    const dbError = { message: "sin permiso", code: "42501" };
+    useDb({ salon_activity_log: { data: null, error: dbError } });
 
-    await expect(findSalonActivity()).rejects.toBeInstanceOf(Error);
+    await expect(findSalonActivity("salon-1")).rejects.toBe(dbError);
   });
 });

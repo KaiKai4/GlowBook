@@ -1,3 +1,4 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRole, deleteRole, setRolePermissions } from "../data/roles.repo";
 import { PublicError } from "@/infra/public-error";
@@ -175,5 +176,20 @@ describe("updateRolePermissions outcomes", () => {
     });
 
     expect(result).toEqual({ ok: false, error: "Error al actualizar permisos." });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de permisos de rol", () => {
+  it("registra con captureError el fallo al guardar permisos", async () => {
+    const dbError = new Error("caida");
+    vi.mocked(setRolePermissions).mockRejectedValue(dbError);
+
+    expect(await updateRolePermissions("salon-1", { role_id: "role-1", permission_keys: [] })).toEqual({
+      ok: false,
+      error: "Error al actualizar permisos.",
+    });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "access", action: "update_role_permissions" });
   });
 });
