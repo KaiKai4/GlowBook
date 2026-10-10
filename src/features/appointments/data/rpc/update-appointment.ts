@@ -2,8 +2,10 @@ import "server-only";
 
 import { toCanonicalPayload } from "@/infra/idempotency/canonical-json";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { errorMessageOf } from "./error-message";
+import { toPublicErrorMessage } from "@/infra/errors";
+import { APPOINTMENT_MESSAGES } from "../../domain/messages";
 import type { CreateAppointmentRpcPayload } from "./create-appointment";
+import { classifyAppointmentRpcFailure, type AppointmentRpcFailureReason } from "./rpc-failure-reason";
 
 export interface UpdateAppointmentRpcPayload {
   appointment_id: string;
@@ -20,6 +22,8 @@ export interface UpdateAppointmentRpcInput {
 export interface UpdateAppointmentRpcResult {
   ok: boolean;
   errorMessage?: string;
+  /** Causa tipada del fallo (solo si ok es false). */
+  reason?: AppointmentRpcFailureReason;
 }
 
 /** Reemplaza los items de la cita (agenda) en una transaccion. Los fallos llegan como ok:false. */
@@ -36,6 +40,10 @@ export async function updateAppointmentWithRpc(
     if (error) throw error;
     return { ok: true };
   } catch (error) {
-    return { ok: false, errorMessage: errorMessageOf(error) };
+    return {
+      ok: false,
+      reason: classifyAppointmentRpcFailure(error),
+      errorMessage: toPublicErrorMessage(error, APPOINTMENT_MESSAGES.updateFailed),
+    };
   }
 }

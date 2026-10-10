@@ -142,7 +142,7 @@ describe("InviteSalonForm", () => {
   it("explica que el salón nace con el plan elegido", () => {
     mounted = mountComponent(<InviteSalonForm plans={[]} />);
 
-    expect(mounted.container.textContent).toContain("Al aceptar la invitacion, el salon nace con este plan");
+    expect(mounted.container.textContent).toContain("Al aceptar la invitación, el salón nace con este plan");
     expect(getFieldByName<HTMLInputElement>(mounted.container, "planId").value).toBe("");
   });
 });

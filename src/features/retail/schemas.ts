@@ -5,8 +5,8 @@ import { normalizePaymentMethod } from "@/features/payments";
 const PaymentMethodSchema = z
   .string()
   .trim()
-  .min(1, "El metodo de pago es obligatorio.")
-  .max(64, "El metodo de pago no puede superar 64 caracteres.")
+  .min(1, "El método de pago es obligatorio.")
+  .max(64, "El método de pago no puede superar 64 caracteres.")
   .transform(normalizePaymentMethod);
 
 export const RetailSaleSchema = z.object({
@@ -15,7 +15,7 @@ export const RetailSaleSchema = z.object({
   location: InventoryLocationSchema.default("retail"),
   quantity: z.coerce
     .number()
-    .int("La cantidad debe ser un numero entero.")
+    .int("La cantidad debe ser un número entero.")
     .positive("La cantidad debe ser mayor que 0."),
   unit_price: z.coerce.number().min(0, "El precio no puede ser negativo."),
   payment_method: PaymentMethodSchema.default("cash"),

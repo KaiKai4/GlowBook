@@ -1,4 +1,4 @@
-// Catalogo de categorias de gasto de un salon. Funciones puras: sin I/O.
+// Catálogo de categorias de gasto de un salón. Funciones puras: sin I/O.
 // "other" es el comodin para gastos que no encajan; admite un texto libre
 // (custom_category) que la UI muestra en vez de la etiqueta generica.
 

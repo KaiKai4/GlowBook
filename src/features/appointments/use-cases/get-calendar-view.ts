@@ -129,7 +129,7 @@ export async function getCalendarView({
     visibleWeekDates,
     businessStart,
     businessEnd,
-    salonName: salon?.name ?? "tu salon",
+    salonName: salon?.name ?? "tu salón",
     cancellationTemplate: cancellationTemplate.bodyText,
     paymentMethodOptions: paymentMethods.options,
   };

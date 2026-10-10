@@ -1,7 +1,7 @@
 import { CheckCircle2, Clipboard, MessageCircle, MoreHorizontal } from "lucide-react";
 import { cn } from "@/components/ui/cn";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
-import type { ReminderRowState } from "./reminder-rules";
+import type { ReminderAppointment } from "@/features/reminders";
+import type { ReminderRowState } from "@/features/reminders/domain/reminder-rules";
 import type { ReminderActions } from "./use-reminder-actions";
 
 interface ReminderRowActionsProps {
@@ -13,7 +13,7 @@ interface ReminderRowActionsProps {
 }
 
 function confirmTitle(row: ReminderRowState): string | undefined {
-  if (row.currentStatus === "confirmed") return "La cita ya esta confirmada";
+  if (row.currentStatus === "confirmed") return "La cita ya está confirmada";
   if (row.hasReminderContact) return undefined;
   return "Copia el mensaje o envialo por WhatsApp antes de confirmar la cita.";
 }

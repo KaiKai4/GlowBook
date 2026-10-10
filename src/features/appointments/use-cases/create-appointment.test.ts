@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   findAppointmentCreationResources,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
 } from "../data/appointment-commands.repo";
 import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
 import { createAppointment } from "./create-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/create-appointment", () => ({
   createAppointmentWithRpc: vi.fn(),
@@ -21,9 +21,9 @@ vi.mock("../data/rpc/create-appointment", () => ({
 const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
 const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
-const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findEmployeeWorkSchedulesForCommand);
-const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findEmployeeExceptionDatesForCommand);
-const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findEmployeeOccupiedSlotsForCommand);
+const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findWorkSchedulesByEmployeeForCommand);
+const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findExceptionDatesByEmployeeForCommand);
+const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
 const mockedCreateAppointmentWithRpc = vi.mocked(createAppointmentWithRpc);
 
 const salonId = "00000000-0000-0000-0000-000000000001";
@@ -78,9 +78,9 @@ function mockValidResources() {
       },
     ],
   });
-  mockedFindEmployeeWorkSchedulesForCommand.mockResolvedValue(workAllWeek);
-  mockedFindEmployeeExceptionDatesForCommand.mockResolvedValue([]);
-  mockedFindEmployeeOccupiedSlotsForCommand.mockResolvedValue([]);
+  mockedFindEmployeeWorkSchedulesForCommand.mockResolvedValue(new Map([[employeeId, workAllWeek]]));
+  mockedFindEmployeeExceptionDatesForCommand.mockResolvedValue(new Map());
+  mockedFindEmployeeOccupiedSlotsForCommand.mockResolvedValue(new Map());
   mockedCreateAppointmentWithRpc.mockResolvedValue({
     ok: true,
     appointmentId: "appointment-1",
@@ -135,7 +135,7 @@ describe("create appointment command", () => {
     });
   });
 
-  it("stops before scheduling when the customer does not belong to the salon", async () => {
+  it("stops before scheduling when the customer does not belong to the salón", async () => {
     mockedFindAppointmentCreationResources.mockResolvedValue({
       customerExists: false,
       salonConfig: null,
@@ -164,7 +164,7 @@ describe("create appointment command", () => {
   it("maps RPC overlap errors to the user-facing scheduling message", async () => {
     mockedCreateAppointmentWithRpc.mockResolvedValue({
       ok: false,
-      errorMessage: "violates no_overlap_per_employee",
+      reason: "slot_taken",
     });
 
     const result = await createAppointment(
@@ -182,5 +182,45 @@ describe("create appointment command", () => {
       ok: false,
       error: "El profesional ya tiene una cita en ese horario. Elige otro horario.",
     });
+  });
+
+  it("devuelve el aviso de cliente inactivo cuando la causa es inactive_customer", async () => {
+    mockedCreateAppointmentWithRpc.mockResolvedValue({ ok: false, reason: "inactive_customer" });
+
+    const result = await createAppointment(
+      {
+        customer_id: customerId,
+        start_time: startTime,
+        notes: "",
+        assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
+      },
+      { salonId, userId, idempotencyKey }
+    );
+
+    expect(result).toMatchObject({ ok: false });
+    expect(result.ok === false && result.error).toContain("no está disponible para nuevas citas");
+  });
+
+  it("decide solo por la causa: un texto de solape sin causa tipada devuelve el error genérico", async () => {
+    mockedCreateAppointmentWithRpc.mockResolvedValue({
+      ok: false,
+      errorMessage: "violates no_overlap_per_employee",
+      reason: "unknown",
+    });
+
+    const result = await createAppointment(
+      {
+        customer_id: customerId,
+        start_time: startTime,
+        notes: "",
+        assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
+      },
+      { salonId, userId, idempotencyKey }
+    );
+
+    expect(result.ok === false && result.error).not.toContain("ya tiene una cita");
+    expect(result.ok).toBe(false);
   });
 });

@@ -12,11 +12,9 @@ import {
   assignSalonPlan,
   findAssignmentForPayment,
   findAssignmentStartsAt,
-  findEffectivePlanRows,
+  findEffectivePlanRowsForPlatform,
   findOpenSalonAlerts,
   findSalonPayments,
-  hasOpenPlanAlert,
-  recordPlanAlert,
   recordSalonPlanPayment,
   resolvePlanAlert,
   saveSalonPlanOverride,
@@ -107,7 +105,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
+describe("findEffectivePlanRowsForPlatform: aislamiento y filtros del salón", () => {
   function baseTables(overrides: TableMap = {}): TableMap {
     return {
       commercial_limit_metrics: {
@@ -130,7 +128,7 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     const fake = createBillingSupabaseFake({ tables: baseTables() });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     const assignmentQuery = firstQueryOn(fake, "salon_plan_assignments");
     expect(argsOf(assignmentQuery, "eq")).toEqual(["salon_id", SALON_ID]);
@@ -181,7 +179,7 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRows(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(rows.overrides.map((override) => override.id)).toEqual([
       "vigente",
@@ -198,7 +196,7 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRows(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(rows.assignment).toBeNull();
     expect(rows.plan).toBeNull();
@@ -220,7 +218,7 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRows(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(argsOf(firstQueryOn(fake, "commercial_plans"), "eq")).toEqual(["id", "plan-1"]);
     expect(usageCall(fake)?.p_salon_id).toBe(SALON_ID);
@@ -235,7 +233,7 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRows(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(rows.usage).toEqual({ appointments_monthly: 3, employees_active: 0 });
   });
@@ -246,7 +244,7 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     });
     useFake(fake);
 
-    const rows = await findEffectivePlanRows(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(rows.usage).toEqual({});
     expect(queriesOn(fake, "rpc:count_salon_usage")).toHaveLength(0);
@@ -259,7 +257,7 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     });
     useFake(fake);
 
-    await expect(findEffectivePlanRows(SALON_ID)).rejects.toBeInstanceOf(Error);
+    await expect(findEffectivePlanRowsForPlatform(SALON_ID)).rejects.toBeInstanceOf(Error);
   });
 
   it("lanza el error de la consulta de asignación", async () => {
@@ -268,11 +266,11 @@ describe("findEffectivePlanRows: aislamiento y filtros del salón", () => {
     });
     useFake(fake);
 
-    await expect(findEffectivePlanRows(SALON_ID)).rejects.toBeInstanceOf(Error);
+    await expect(findEffectivePlanRowsForPlatform(SALON_ID)).rejects.toBeInstanceOf(Error);
   });
 });
 
-describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
+describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC", () => {
   it("cuenta el mes calendario en UTC para alcances mensuales", async () => {
     const fake = createBillingSupabaseFake({
       tables: {
@@ -285,7 +283,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toEqual({
       key: "appointments_monthly",
@@ -307,7 +305,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(countersByKey(fake).employees_active).toMatchObject({ from: null, to: null });
   });
@@ -338,12 +336,12 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({ from: null, to: null });
   });
 
-  it("usa el periodo pagado como ventana de ciclo cuando la plataforma registró un pago", async () => {
+  it("usa el período pagado como ventana de ciclo cuando la plataforma registró un pago", async () => {
     const fake = createBillingSupabaseFake({
       tables: {
         commercial_limit_metrics: {
@@ -362,7 +360,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2026-10-05T00:00:00.000Z",
@@ -370,7 +368,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
   });
 
-  it("ancla el ciclo de facturación al día de inicio cuando no hay periodo pagado", async () => {
+  it("ancla el ciclo de facturación al día de inicio cuando no hay período pagado", async () => {
     const fake = createBillingSupabaseFake({
       tables: {
         commercial_limit_metrics: {
@@ -382,7 +380,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     // Hoy 9 de octubre es antes del día 15: el ciclo vigente arranco el 15 de septiembre.
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
@@ -404,7 +402,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2026-10-15T00:00:00.000Z",
@@ -425,7 +423,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2025-12-20T00:00:00.000Z",
@@ -445,7 +443,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     // Día ancla 31: en septiembre (30 días) cae el 30; el siguiente corte es el 31 de octubre.
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
@@ -466,7 +464,7 @@ describe("findEffectivePlanRows: ventanas de conteo enviadas a la RPC", () => {
     });
     useFake(fake);
 
-    await findEffectivePlanRows(SALON_ID);
+    await findEffectivePlanRowsForPlatform(SALON_ID);
 
     expect(countersByKey(fake).appointments_monthly).toMatchObject({
       from: "2026-10-01T00:00:00.000Z",
@@ -491,7 +489,7 @@ describe("lecturas por salón", () => {
     expect(await findAssignmentStartsAt(OTHER_SALON_ID)).toBeNull();
   });
 
-  it("findAssignmentForPayment devuelve plan y fin de periodo del salón indicado", async () => {
+  it("findAssignmentForPayment devuelve plan y fin de período del salón indicado", async () => {
     const fake = createBillingSupabaseFake({
       tables: {
         salon_plan_assignments: {
@@ -562,12 +560,23 @@ describe("lecturas por salón", () => {
   });
 
   it("findOpenSalonAlerts pide solo alertas abiertas del salón, las 20 más recientes", async () => {
+    const alertRow = {
+      id: "al-1",
+      salon_id: SALON_ID,
+      plan_id: null,
+      metric_key: "appointments_monthly",
+      module_key: "appointments",
+      severity: "warning",
+      message: "Cerca del límite",
+      status: "open",
+      created_at: "2026-10-01T00:00:00.000Z",
+    };
     const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { data: [{ id: "al-1" }], error: null } },
+      tables: { salon_plan_alerts: { data: [alertRow], error: null } },
     });
     useFake(fake);
 
-    expect(await findOpenSalonAlerts(SALON_ID)).toEqual([{ id: "al-1" }]);
+    expect(await findOpenSalonAlerts(SALON_ID)).toEqual([alertRow]);
     const query = firstQueryOn(fake, "salon_plan_alerts");
     expect(argsOf(query, "eq")).toEqual(["salon_id", SALON_ID]);
     expect(argsOf(query, "order")).toEqual(["created_at", { ascending: false }]);
@@ -584,28 +593,6 @@ describe("lecturas por salón", () => {
       })
     );
     await expect(findOpenSalonAlerts(SALON_ID)).rejects.toBeInstanceOf(Error);
-  });
-
-  it("hasOpenPlanAlert cuenta alertas abiertas del salón y métrica", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { count: 1, error: null } },
-    });
-    useFake(fake);
-
-    expect(await hasOpenPlanAlert(SALON_ID, "appointments_monthly")).toBe(true);
-    const query = firstQueryOn(fake, "salon_plan_alerts");
-    expect(argsOf(query, "eq")).toEqual(["salon_id", SALON_ID]);
-    expect(query.calls.filter((call) => call.method === "eq").map((call) => call.args)).toEqual([
-      ["salon_id", SALON_ID],
-      ["metric_key", "appointments_monthly"],
-      ["status", "open"],
-    ]);
-  });
-
-  it("hasOpenPlanAlert devuelve false sin alertas abiertas", async () => {
-    useFake(createBillingSupabaseFake({ tables: { salon_plan_alerts: { count: 0, error: null } } }));
-
-    expect(await hasOpenPlanAlert(SALON_ID, "appointments_monthly")).toBe(false);
   });
 });
 
@@ -652,7 +639,7 @@ describe("escrituras por salón", () => {
     expect(argsOf(query, "eq")).toEqual(["salon_id", SALON_ID]);
   });
 
-  it("recordSalonPlanPayment inserta el pago con el salón y el periodo cubierto", async () => {
+  it("recordSalonPlanPayment inserta el pago con el salón y el período cubierto", async () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 
@@ -724,50 +711,59 @@ describe("escrituras por salón", () => {
     });
   });
 
-  it("updateSalonPlanOverrideStatus cambia el estado de una sola sobreescritura por id", async () => {
-    const fake = createBillingSupabaseFake();
+  it("updateSalonPlanOverrideStatus cambia el estado de una sola sobreescritura del salón", async () => {
+    const fake = createBillingSupabaseFake({
+      tables: { salon_plan_overrides: { data: [{ id: "ov-1" }], error: null } },
+    });
     useFake(fake);
 
-    await updateSalonPlanOverrideStatus("ov-1", "paused");
+    await updateSalonPlanOverrideStatus(SALON_ID, "ov-1", "paused");
 
     const query = firstQueryOn(fake, "salon_plan_overrides");
     expect(argsOf(query, "update")).toEqual([{ status: "paused" }]);
-    expect(argsOf(query, "eq")).toEqual(["id", "ov-1"]);
+    expect(query.calls.filter((call) => call.method === "eq").map((call) => call.args)).toEqual([
+      ["id", "ov-1"],
+      ["salon_id", SALON_ID],
+    ]);
+    expect(argsOf(query, "select")).toEqual(["id"]);
   });
 
-  it("recordPlanAlert inserta la alerta con el salón y la métrica", async () => {
-    const fake = createBillingSupabaseFake();
-    useFake(fake);
+  it("updateSalonPlanOverrideStatus falla si no afecta exactamente una sobreescritura", async () => {
+    useFake(createBillingSupabaseFake({ tables: { salon_plan_overrides: { data: [], error: null } } }));
+    await expect(updateSalonPlanOverrideStatus(SALON_ID, "ov-otro", "paused")).rejects.toThrow(
+      "Se esperaba actualizar 1 extra del plan y se actualizaron 0."
+    );
 
-    await recordPlanAlert({
-      salonId: SALON_ID,
-      planId: "plan-1",
-      metricKey: "employees_active",
-      moduleKey: "employees",
-      severity: "danger",
-      message: "Límite superado",
-    });
-
-    const query = firstQueryOn(fake, "salon_plan_alerts");
-    expect(argsOf(query, "insert")?.[0]).toEqual({
-      salon_id: SALON_ID,
-      plan_id: "plan-1",
-      metric_key: "employees_active",
-      module_key: "employees",
-      severity: "danger",
-      message: "Límite superado",
-    });
+    useFake(
+      createBillingSupabaseFake({
+        tables: { salon_plan_overrides: { data: [{ id: "ov-1" }, { id: "ov-1" }], error: null } },
+      })
+    );
+    await expect(updateSalonPlanOverrideStatus(SALON_ID, "ov-1", "paused")).rejects.toThrow(
+      "se actualizaron 2"
+    );
   });
 
-  it("resolvePlanAlert marca la alerta como resuelta por id", async () => {
-    const fake = createBillingSupabaseFake();
+  it("resolvePlanAlert marca la alerta como resuelta solo dentro del salón indicado", async () => {
+    const fake = createBillingSupabaseFake({
+      tables: { salon_plan_alerts: { data: [{ id: "al-1" }], error: null } },
+    });
     useFake(fake);
 
-    await resolvePlanAlert("al-1");
+    await resolvePlanAlert(SALON_ID, "al-1");
 
     const query = firstQueryOn(fake, "salon_plan_alerts");
     expect(argsOf(query, "update")).toEqual([{ status: "resolved" }]);
-    expect(argsOf(query, "eq")).toEqual(["id", "al-1"]);
+    expect(query.calls.filter((call) => call.method === "eq").map((call) => call.args)).toEqual([
+      ["id", "al-1"],
+      ["salon_id", SALON_ID],
+    ]);
+  });
+
+  it("resolvePlanAlert falla si la alerta no pertenece al salón (cero filas)", async () => {
+    useFake(createBillingSupabaseFake({ tables: { salon_plan_alerts: { data: [], error: null } } }));
+
+    await expect(resolvePlanAlert(SALON_ID, "al-ajena")).rejects.toThrow("se actualizaron 0");
   });
 
   it("propaga los errores de escritura de cada operación", async () => {
@@ -806,17 +802,7 @@ describe("escrituras por salón", () => {
       })
     ).rejects.toBeInstanceOf(Error);
     await expect(
-      updateSalonPlanOverrideStatus("ov-1", "canceled")
-    ).rejects.toBeInstanceOf(Error);
-    await expect(
-      recordPlanAlert({
-        salonId: SALON_ID,
-        planId: null,
-        metricKey: null,
-        moduleKey: null,
-        severity: "info",
-        message: "x",
-      })
+      updateSalonPlanOverrideStatus(SALON_ID, "ov-1", "canceled")
     ).rejects.toBeInstanceOf(Error);
   });
 });

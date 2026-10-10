@@ -1,6 +1,6 @@
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { getCustomersPage } from "@/features/customers/use-cases/get-customers-page";
+import { getCustomersPage } from "@/features/customers";
 import { CustomersClient } from "./customers-client";
 
 export default async function CustomersPage({

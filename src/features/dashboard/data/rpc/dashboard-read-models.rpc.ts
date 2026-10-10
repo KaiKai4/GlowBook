@@ -5,7 +5,7 @@ import { z } from "@/infra/validation/zod";
 
 // Adaptadores tipados de las funciones SQL de lectura del dashboard
 // (supabase/migrations/20240101000066_read_models.sql). Devuelven agregados ya calculados
-// en la base; aqui solo se invoca la funcion y se valida la forma del resultado.
+// en la base; aquí solo se invoca la funcion y se valida la forma del resultado.
 
 const dashboardMetricsSchema = z.object({
   todayAppointments: z.number(),

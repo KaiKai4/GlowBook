@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
+import { getPermissions, PERMISSIONS, type ActionContext } from "@/features/access";
+import { requireActionContext } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { createExpense, createInventoryPurchaseExpense } from "@/features/expenses/use-cases/expenses";
 import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fixtures";
+import type { ProfileWithRole } from "@/types/app.types";
 import { createExpenseAction, createInventoryPurchaseExpenseAction } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requireActionContext: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));
@@ -25,6 +27,17 @@ const expensesManager = buildProfile({ permissions: [PERMISSIONS.EXPENSES_MANAGE
 const fullManager = buildProfile({
   permissions: [PERMISSIONS.EXPENSES_MANAGE, PERMISSIONS.INVENTORY_MANAGE],
 });
+// Contexto minimo que el composition root entrega a los casos de uso.
+function asContext(profile: ProfileWithRole): ActionContext {
+  return {
+    userId: profile.id,
+    salonId: profile.salon_id,
+    permissions: getPermissions(profile),
+    requestId: "req-1",
+    rolesEnabled: true,
+  };
+}
+
 const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000c1";
 const validExpense = {
   expense_date: "2026-10-01",
@@ -45,7 +58,7 @@ const validPurchase = {
 describe("expenses actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireActiveProfile).mockResolvedValue(fullManager);
+    vi.mocked(requireActionContext).mockResolvedValue(asContext(fullManager));
     vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
     vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
     vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
@@ -53,7 +66,7 @@ describe("expenses actions", () => {
 
   describe("createExpenseAction", () => {
     it("rechaza a un perfil sin permiso de gastos", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
+      vi.mocked(requireActionContext).mockResolvedValue(asContext(buildProfile()));
 
       expect(await createExpenseAction(null, formDataOf(validExpense))).toEqual({
         ok: false,
@@ -149,17 +162,17 @@ describe("expenses actions", () => {
     });
 
     it("exige además permiso de inventario para registrar compras", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(expensesManager);
+      vi.mocked(requireActionContext).mockResolvedValue(asContext(expensesManager));
 
       expect(await createInventoryPurchaseExpenseAction(null, formDataOf(validPurchase))).toEqual({
         ok: false,
-        error: "No tienes permiso para registrar compras de inventario.",
+        error: "No tienes permiso para registrar compras de inventario y gastos.",
       });
       expect(createInventoryPurchaseExpense).not.toHaveBeenCalled();
     });
 
     it("rechaza a un perfil sin permiso de gastos", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
+      vi.mocked(requireActionContext).mockResolvedValue(asContext(buildProfile()));
 
       expect((await createInventoryPurchaseExpenseAction(null, formDataOf(validPurchase))).ok).toBe(false);
       expect(createInventoryPurchaseExpense).not.toHaveBeenCalled();

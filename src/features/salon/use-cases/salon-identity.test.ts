@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
-import { findSalonIdentity } from "../data/salon.repo";
+import { findSalonIdentity } from "../data/salon-settings.repo";
 import { getSalonIdentity } from "./salon-identity";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findSalonIdentity: vi.fn(),
 }));
 
 const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
 
-describe("salon identity", () => {
-  it("returns the salon identity through a narrow read Module", async () => {
+describe("salón identity", () => {
+  it("returns the salón identity through a narrow read Module", async () => {
     mockedFindSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "America/Panama",

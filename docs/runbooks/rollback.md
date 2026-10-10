@@ -22,11 +22,7 @@ Volver a una version estable cuando un deploy rompe flujo critico.
    - revisar SQL aplicado;
    - confirmar si es reversible;
    - no ejecutar SQL manual sin backup.
-5. Validar:
-
-```text
-npm run test:e2e:staging
-```
+5. Validar con el check sintético (`synthetic.yml`, `workflow_dispatch` sobre producción) y revisar su resultado.
 
 6. En production, probar login y flujo afectado.
 

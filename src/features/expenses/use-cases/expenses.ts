@@ -6,6 +6,7 @@ import {
   findLifetimeExpenseTotals,
   insertExpense,
 } from "../data/expenses.repo";
+import { reportExpenseMonthTotalsRpc } from "../data/rpc/report-expense-month-totals";
 import {
   EXPENSE_CATEGORY_LABELS,
   expenseDisplayLabel,
@@ -26,7 +27,7 @@ export interface ExpensesPageView {
   history: ExpenseHistoryItem[];
   /** Egresos del mes calendario en curso. */
   monthTotal: number;
-  /** Egresos acumulados de toda la vida del salon (manuales + compras). */
+  /** Egresos acumulados de toda la vida del salón (manuales + compras). */
   lifetimeTotal: number;
   /** Desglose por categoria del mes en curso (mayor a menor). */
   categoryTotals: CategoryTotal[];
@@ -49,19 +50,24 @@ export interface ExpenseHistoryItem {
   detail: string;
 }
 
-function isInCurrentMonth(dateIso: string, now: Date): boolean {
-  const date = new Date(`${dateIso}T12:00:00`);
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+/** Primer y ultimo dia (YYYY-MM-DD) del mes calendario de `now`. */
+function currentMonthRange(now: Date): { from: string; to: string } {
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const prefix = `${year}-${pad(month + 1)}`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return { from: `${prefix}-01`, to: `${prefix}-${pad(lastDay)}` };
 }
 
 export async function getExpensesPage(salonId: string): Promise<ExpensesPageView> {
-  const [expenses, inventoryPurchaseExpenses, lifetimeTotals] = await Promise.all([
+  const monthRange = currentMonthRange(new Date());
+  const [expenses, inventoryPurchaseExpenses, lifetimeTotals, monthRows] = await Promise.all([
     findExpenses(salonId),
     getInventoryPurchaseExpenseHistory(salonId),
     findLifetimeExpenseTotals(salonId),
+    reportExpenseMonthTotalsRpc({ salonId, ...monthRange }),
   ]);
-
-  const now = new Date();
 
   const manualHistory: ExpenseHistoryItem[] = expenses.map((expense) => ({
     id: expense.id,
@@ -97,29 +103,14 @@ export async function getExpensesPage(salonId: string): Promise<ExpensesPageView
     return b.createdAt.localeCompare(a.createdAt);
   });
 
-  const monthTotal = history.reduce(
-    (sum, expense) => (isInCurrentMonth(expense.date, now) ? sum + expense.amount : sum),
-    0
-  );
-
-  // Desglose por categoria del mes: gastos manuales con su categoria + las
-  // compras de inventario agrupadas bajo "Productos e insumos".
-  const monthCategoryInput = [
-    ...expenses
-      .filter((expense) => isInCurrentMonth(expense.expense_date, now))
-      .map((expense) => ({
-        category: expense.category as ExpenseCategory,
-        customCategory: expense.custom_category,
-        amount: Number(expense.amount ?? 0),
-      })),
-    ...inventoryPurchaseExpenses
-      .filter((purchase) => isInCurrentMonth(purchase.date, now))
-      .map((purchase) => ({
-        category: "products" as ExpenseCategory,
-        customCategory: null,
-        amount: purchase.amount,
-      })),
-  ];
+  // Totales del mes calculados en la base (sin el limite de la lista visible).
+  // Incluyen los gastos manuales y las compras de inventario como "products".
+  const monthCategoryInput = monthRows.map((row) => ({
+    category: row.category as ExpenseCategory,
+    customCategory: row.customCategory,
+    amount: row.amount,
+  }));
+  const monthTotal = monthCategoryInput.reduce((sum, row) => sum + row.amount, 0);
   const categoryTotals = aggregateByCategory(monthCategoryInput);
 
   return {

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfileWithRole } from "@/types/app.types";
-import { findDashboardShellSalon } from "../data/salon.repo";
+import { findDashboardShellSalon } from "../data/salon-settings.repo";
 import { getDashboardShell } from "./get-dashboard-shell";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findDashboardShellSalon: vi.fn(),
 }));
 
@@ -25,7 +25,7 @@ describe("get dashboard shell", () => {
     vi.resetAllMocks();
   });
 
-  it("returns shell access and applies salon feature flags", async () => {
+  it("returns shell access and applies salón feature flags", async () => {
     mockedFindDashboardShellSalon.mockResolvedValue({
       name: "Glow Studio",
       is_active: true,
@@ -47,7 +47,7 @@ describe("get dashboard shell", () => {
     expect(view?.permissions).not.toContain("reports.view");
   });
 
-  it("returns null when the salon cannot be loaded", async () => {
+  it("returns null when the salón cannot be loaded", async () => {
     mockedFindDashboardShellSalon.mockResolvedValue(null);
 
     await expect(getDashboardShell(profile)).resolves.toBeNull();

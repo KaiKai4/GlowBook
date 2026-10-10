@@ -89,7 +89,7 @@ export function CategoryServicePicker({
               <div key={category.id}>
                 <p className="text-xs font-semibold uppercase tracking-wide text-brand-400">{category.name}</p>
                 {category.services.length === 0 ? (
-                  <p className="mt-1 text-xs text-fg-subtle">Sin servicios en esta categoria.</p>
+                  <p className="mt-1 text-xs text-fg-subtle">Sin servicios en esta categoría.</p>
                 ) : (
                   <div className="mt-1 space-y-1">
                     {category.services.map((service) => (

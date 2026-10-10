@@ -11,7 +11,7 @@ export async function deleteSalonCompletely(salonId: string): Promise<void> {
     .eq("id", salonId)
     .maybeSingle();
   if (salonError) throw salonError;
-  if (!salon) throw new Error("Salon no encontrado.");
+  if (!salon) throw new Error("Salón no encontrado.");
 
   const { data: deletedUsers, error } = await admin.rpc("delete_salon_completely", {
     p_salon_id: salonId,
@@ -28,7 +28,7 @@ export async function deleteSalonCompletely(salonId: string): Promise<void> {
 
   if (authCleanupErrors.length > 0) {
     throw new Error(
-      `Los datos del salon fueron eliminados, pero no se pudieron borrar ${authCleanupErrors.length} cuenta(s) Auth: ${authCleanupErrors.join("; ")}`
+      `Los datos del salón fueron eliminados, pero no se pudieron borrar ${authCleanupErrors.length} cuenta(s) Auth: ${authCleanupErrors.join("; ")}`
     );
   }
 }

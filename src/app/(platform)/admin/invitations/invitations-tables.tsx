@@ -45,7 +45,7 @@ const PENDING_COLUMNS: DataTableColumn<PendingInvitation>[] = [
   },
   {
     id: "action",
-    header: "Accion",
+    header: "Acción",
     cell: (invitation) => <RegenerateInviteLink invitationId={invitation.id} />,
   },
 ];
@@ -95,7 +95,7 @@ export function AcceptedInvitationsTable({ rows }: { rows: AcceptedInvitation[] 
       columns={ACCEPTED_COLUMNS}
       rows={rows}
       getRowId={(invitation) => invitation.id}
-      emptyMessage="Cuando alguien acepte una invitacion aparecera aqui con su salon y plan."
+      emptyMessage="Cuando alguien acepte una invitación aparecerá aquí con su salón y plan."
     />
   );
 }

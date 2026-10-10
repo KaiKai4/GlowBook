@@ -27,7 +27,7 @@ describe("CategoryDialog", () => {
 
     const dialog = mounted.container.querySelector('[role="dialog"]');
     expect(dialog?.getAttribute("aria-modal")).toBe("true");
-    expect(dialog?.querySelector("h2")?.textContent).toBe("Nueva categoria");
+    expect(dialog?.querySelector("h2")?.textContent).toBe("Nueva categoría");
     expect(fieldByName(mounted.container, "name").required).toBe(true);
     expect(fieldByName(mounted.container, "description").required).toBe(false);
     expect(mounted.container.textContent).toContain("Precio variable al completar");
@@ -80,7 +80,7 @@ describe("CategoryDialog", () => {
       <CategoryDialog open pending error={null} onClose={vi.fn()} onSubmit={vi.fn()} />
     );
 
-    const submit = buttonWithText(mounted.container, "Crear categoria");
+    const submit = buttonWithText(mounted.container, "Crear categoría");
     expect(submit.disabled).toBe(true);
     expect(submit.querySelector("svg.animate-spin")).not.toBeNull();
   });

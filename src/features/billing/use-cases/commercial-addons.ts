@@ -36,7 +36,7 @@ const AddonSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.kind === "module" && !value.moduleKey) {
-      ctx.addIssue({ code: "custom", message: "Selecciona el modulo que activa este extra." });
+      ctx.addIssue({ code: "custom", message: "Selecciona el módulo que activa este extra." });
     }
     if (value.kind === "limit_boost" && !value.metricKey) {
       ctx.addIssue({ code: "custom", message: "Selecciona el límite que aumenta este extra." });

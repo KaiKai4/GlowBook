@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appointment-detail";
-import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
+import { getAppointmentDetail, getAppointmentWizardData, isClosedStatus } from "@/features/appointments";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { PageHeader } from "@/components/ui/page-header";
@@ -26,14 +25,16 @@ export default async function EditAppointmentPage({
     );
   }
 
-  const [appointment, wizardData] = await Promise.all([
-    getAppointmentDetail({ appointmentId: id, salonId: profile.salon_id }),
-    getAppointmentWizardData(profile.salon_id),
-  ]);
-
+  const appointment = await getAppointmentDetail({ appointmentId: id, salonId: profile.salon_id });
   if (!appointment) notFound();
 
-  const isClosed = ["completed", "cancelled", "no_show"].includes(appointment.status);
+  // La cita puede tener servicios que se desactivaron después: se ofrecen para no forzar un cambio.
+  const wizardData = await getAppointmentWizardData(
+    profile.salon_id,
+    appointment.items.map((item) => item.serviceId)
+  );
+
+  const isClosed = isClosedStatus(appointment.status);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

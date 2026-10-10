@@ -24,7 +24,7 @@ export interface ReportMonthlyHistoryRpcInput {
   timezone: string;
 }
 
-/** Historico mensual de gastos y compras del salon (lectura). Un resultado vacio devuelve {}. */
+/** Historico mensual de gastos y compras del salón (lectura). Un resultado vacio devuelve {}. */
 export async function reportMonthlyHistoryRpc(
   input: ReportMonthlyHistoryRpcInput
 ): Promise<NonNullable<MonthlyHistoryPayload>> {

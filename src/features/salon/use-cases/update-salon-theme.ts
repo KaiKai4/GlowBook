@@ -1,7 +1,8 @@
+import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { updateSalonTheme as updateSalonThemeRow } from "../data/salon.repo";
+import { updateSalonTheme as updateSalonThemeRow } from "../data/salon-appearance.repo";
 import { SALON_THEMES, type SalonTheme } from "../schemas";
 
 export async function updateSalonTheme(
@@ -15,7 +16,8 @@ export async function updateSalonTheme(
   try {
     await updateSalonThemeRow(salonId, theme);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (error) {
+    captureError(error, { module: "salon", action: "update_theme" });
     return { ok: false, error: "Error al guardar la gama de colores." };
   }
 }

@@ -49,23 +49,14 @@ La regla se evalua con `analyzeMigration` en `scripts/quality/migration-rules.mj
    Si es contract, incluir `_contract_` en el nombre y `-- contract-of: <id>` como
    primera linea.
 2. Revisar SQL manualmente.
-3. Verificar si staging tiene migraciones pendientes:
-
-```text
-npm run staging:migrations
-```
-
-Si el comando bloquea (salida 2 o 1), no se aplica nada a mano: las migraciones
-remotas solo las aplica `.github/workflows/release.yml` (ver seccion siguiente).
-
-4. Regenerar tipos:
+3. Regenerar tipos:
 
 ```text
 npm run db:types
 ```
 
-5. Añadir o actualizar pgTAP para RLS, RPC y constraints tocados.
-6. Correr:
+4. Añadir o actualizar pgTAP para RLS, RPC y constraints tocados.
+5. Correr:
 
 ```text
 npm run type-check
@@ -73,15 +64,15 @@ npm run test
 npm run verify:full
 ```
 
-7. Actualizar `docs/database-contracts.md`.
-8. Antes de production, verificar migraciones pendientes:
+6. Actualizar `docs/database-contracts.md`.
+7. Antes de production, verificar migraciones pendientes:
 
 ```text
 npm run release:migrations
 ```
 
-9. Aplicar en production solo despues de staging verde, con aprobacion explicita y
-   mediante la automatizacion de release. Nunca editar produccion a mano.
+8. Aplicar en production solo tras CI verde, con aprobacion explicita y mediante la
+   automatizacion de release (`docs/runbooks/deploy.md`). Nunca editar produccion a mano.
 
 ## Guardia De Destino
 
@@ -115,8 +106,6 @@ No hay comando manual para aplicar migraciones remotas (ver ADR 0022).
 
 `npm run release:migrations` compara las migraciones locales en `supabase/migrations`
 contra el historial remoto de la base indicada por `PRODUCTION_DATABASE_URL`.
-
-`npm run staging:migrations` hace lo mismo contra `STAGING_DATABASE_URL`.
 
 Reglas:
 

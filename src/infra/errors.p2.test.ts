@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe("PublicError", () => {
-  it("conserva el mensaje y el codigo opcional, y se identifica por nombre", () => {
+  it("conserva el mensaje y el código opcional, y se identifica por nombre", () => {
     const error = new PublicError("Rol no encontrado.", { code: "ROLE_NOT_FOUND" });
 
     expect(error).toBeInstanceOf(Error);
@@ -27,7 +27,7 @@ describe("PublicError", () => {
     expect(error.name).toBe("PublicError");
   });
 
-  it("sin opciones el codigo queda indefinido", () => {
+  it("sin opciones el código queda indefinido", () => {
     const error = new PublicError("Sin código.");
 
     expect(error.code).toBeUndefined();
@@ -122,13 +122,13 @@ describe("toPublicErrorMessage: RAISE propios (P0001, 22023, 42501)", () => {
     expect(captureError).toHaveBeenCalledTimes(1);
   });
 
-  it("no muestra mensajes de mas de 300 caracteres", () => {
+  it("no muestra mensajes de más de 300 caracteres", () => {
     const message = toPublicErrorMessage(dbError("P0001", "a".repeat(301)), FALLBACK);
 
     expect(message).toBe(FALLBACK);
   });
 
-  it("muestra un mensaje justo en el limite de 300 caracteres", () => {
+  it("muestra un mensaje justo en el límite de 300 caracteres", () => {
     const limit = "b".repeat(300);
 
     expect(toPublicErrorMessage(dbError("P0001", limit), FALLBACK)).toBe(limit);
@@ -154,7 +154,7 @@ describe("toPublicErrorMessage: otros errores", () => {
     expect(captureError).toHaveBeenCalledTimes(2);
   });
 
-  it("un codigo que no es texto se ignora", () => {
+  it("un código que no es texto se ignora", () => {
     expect(toPublicErrorMessage({ code: 23505, message: "x" }, FALLBACK)).toBe(FALLBACK);
   });
 
@@ -169,7 +169,7 @@ describe("toPublicErrorMessage: otros errores", () => {
     ["una cadena", "boom"],
     ["null", null],
     ["undefined", undefined],
-    ["un numero", 42],
+    ["un número", 42],
   ])("un valor no-objeto (%s) usa el fallback", (_label, value) => {
     expect(toPublicErrorMessage(value, FALLBACK)).toBe(FALLBACK);
     expect(captureError).toHaveBeenCalledWith(value, CONTEXT);

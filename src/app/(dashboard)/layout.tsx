@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getProfile, isPlatformAdmin } from "@/app/_composition/request-context";
 import { getCachedDashboardShell } from "@/app/_composition/salon-readers";
 import { Sidebar } from "@/components/layout/sidebar";
-import { getVisibleNavItems } from "@/components/layout/nav-items";
+import { getVisibleNavGroups } from "@/components/layout/nav-items";
 import { FeedbackBubble } from "@/components/layout/feedback-bubble";
 import { UnsavedChangesProvider } from "@/components/layout/unsaved-changes";
 import { ToastProvider } from "@/components/ui/toast";
@@ -31,7 +31,9 @@ export default async function DashboardLayout({
 
   const permissions = shell.permissions;
   const disabledFeatures = shell.disabledFeatures;
-  const visibleNav = getVisibleNavItems(permissions, profile.is_owner, disabledFeatures);
+  // Los módulos visibles se calculan aquí (servidor); el sidebar solo los pinta.
+  const navGroups = getVisibleNavGroups({ permissions, isOwner: profile.is_owner, disabledFeatures });
+  const visibleNavCount = navGroups.reduce((total, group) => total + group.items.length, 0);
   const theme = shell.theme;
   const bgStyle = shell.bgStyle;
 
@@ -52,7 +54,7 @@ export default async function DashboardLayout({
   }
 
   // Suspension automatica por impago: vencido el periodo pagado (o el trial)
-  // y agotada la ventana de gracia, el salon queda bloqueado hasta registrar
+  // y agotada la ventana de gracia, el salón queda bloqueado hasta registrar
   // el pago. Se evalua al acceder; no requiere ningun job programado.
   if (shell.paymentStanding.state === "suspended") {
     return (
@@ -73,7 +75,7 @@ export default async function DashboardLayout({
 
   // Single-module collaborators (e.g. view-only stylists) don't need a sidebar —
   // show a slim top bar with branding + logout and let the content fill the screen.
-  const minimalChrome = !profile.is_owner && visibleNav.length <= 1;
+  const minimalChrome = !profile.is_owner && visibleNavCount <= 1;
 
   if (minimalChrome) {
     return (
@@ -113,12 +115,7 @@ export default async function DashboardLayout({
         data-bg={bgStyle}
         className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-surface-muted"
       >
-        <Sidebar
-          salonName={shell.salonName}
-          userPermissions={permissions}
-          isOwner={profile.is_owner}
-          disabledFeatures={disabledFeatures}
-        />
+        <Sidebar salonName={shell.salonName} groups={navGroups} />
         <main tabIndex={0} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="w-full px-6 py-8">{children}</div>
         </main>

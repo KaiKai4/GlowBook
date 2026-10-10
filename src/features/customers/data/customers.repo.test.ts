@@ -6,14 +6,13 @@ import {
 } from "@/test/small-features-supabase";
 import {
   createCustomer,
-  deleteCustomer,
   findCustomerByEmail,
   findCustomerByPhone,
   findCustomers,
   updateCustomer,
 } from "./customers.repo";
 
-// Todas las consultas de clientes deben quedar acotadas al salon indicado:
+// Todas las consultas de clientes deben quedar acotadas al salón indicado:
 // la RLS lo garantiza en BD, pero el repositorio tambien lo pide explicitamente.
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
 vi.mock("@/infra/supabase/server", () => ({
@@ -46,7 +45,7 @@ describe("customers.repo", () => {
   });
 
   describe("findCustomers", () => {
-    it("filtra por salon, excluye temporales y pagina con range", async () => {
+    it("filtra por salón, excluye temporales y página con range", async () => {
       const db = useDb({ customers: { data: [customerRow], error: null, count: 1 } });
 
       const result = await findCustomers(SALON_ID, { page: 3, perPage: 5 });
@@ -59,7 +58,7 @@ describe("customers.repo", () => {
       expect(ops).toContainEqual({ target: "customers", method: "select", args: ["*", { count: "exact" }] });
     });
 
-    it("usa por defecto la primera pagina de 10 filas", async () => {
+    it("usa por defecto la primera página de 10 filas", async () => {
       const db = useDb({ customers: { data: [], error: null, count: 0 } });
 
       await findCustomers(SALON_ID);
@@ -151,7 +150,7 @@ describe("customers.repo", () => {
   });
 
   describe("findCustomerByPhone / findCustomerByEmail", () => {
-    it("busca por telefono dentro del salon y devuelve el cliente encontrado", async () => {
+    it("busca por teléfono dentro del salón y devuelve el cliente encontrado", async () => {
       const db = useDb({ customers: { data: customerRow, error: null } });
 
       expect(await findCustomerByPhone(SALON_ID, "+50761234567")).toEqual(customerRow);
@@ -163,13 +162,13 @@ describe("customers.repo", () => {
       ]);
     });
 
-    it("devuelve null cuando no hay cliente con ese telefono", async () => {
+    it("devuelve null cuando no hay cliente con ese teléfono", async () => {
       useDb({ customers: { data: null, error: null } });
 
       expect(await findCustomerByPhone(SALON_ID, "000")).toBeNull();
     });
 
-    it("busca por email sin distinguir mayusculas y dentro del salon", async () => {
+    it("busca por email sin distinguir mayusculas y dentro del salón", async () => {
       const db = useDb({ customers: { data: customerRow, error: null } });
 
       expect(await findCustomerByEmail(SALON_ID, "ANA@example.com")).toEqual(customerRow);
@@ -189,30 +188,8 @@ describe("customers.repo", () => {
     });
   });
 
-  describe("deleteCustomer", () => {
-    it("solo borra clientes temporales del salon indicado", async () => {
-      const db = useDb({ customers: { data: null, error: null } });
-
-      await deleteCustomer("cust-1", SALON_ID);
-
-      expect(operationsOn(db, "customers")).toEqual([
-        { target: "customers", method: "delete", args: [] },
-        { target: "customers", method: "eq", args: ["id", "cust-1"] },
-        { target: "customers", method: "eq", args: ["salon_id", SALON_ID] },
-        { target: "customers", method: "eq", args: ["is_temporary", true] },
-      ]);
-    });
-
-    it("propaga el error de borrado", async () => {
-      const dbError = { message: "bloqueado" };
-      useDb({ customers: { data: null, error: dbError } });
-
-      await expect(deleteCustomer("cust-1", SALON_ID)).rejects.toBe(dbError);
-    });
-  });
-
   describe("updateCustomer", () => {
-    it("actualiza solo la fila del salon y devuelve el registro actualizado", async () => {
+    it("actualiza solo la fila del salón y devuelve el registro actualizado", async () => {
       const db = useDb({ customers: { data: { ...customerRow, notes: "VIP" }, error: null } });
 
       const updated = await updateCustomer("cust-1", SALON_ID, { notes: "VIP" });
@@ -227,11 +204,33 @@ describe("customers.repo", () => {
       ]);
     });
 
-    it("propaga el error de actualizacion", async () => {
+    it("propaga el error de actualización", async () => {
       const dbError = { message: "sin permiso" };
       useDb({ customers: { data: null, error: dbError } });
 
       await expect(updateCustomer("cust-1", SALON_ID, { notes: "x" })).rejects.toBe(dbError);
     });
+  });
+});
+
+describe("customers.repo: errores de consulta", () => {
+  beforeEach(() => {
+    serverClient.current = null;
+  });
+
+  it("findCustomerByPhone devuelve null sin fila y propaga el error de BD", async () => {
+    useDb({ customers: { data: null, error: null } });
+    await expect(findCustomerByPhone(SALON_ID, "+50761234567")).resolves.toBeNull();
+
+    useDb({ customers: { data: null, error: { message: "caido" } } });
+    await expect(findCustomerByPhone(SALON_ID, "+50761234567")).rejects.toEqual({ message: "caido" });
+  });
+
+  it("findCustomerByEmail devuelve null sin fila y propaga el error de BD", async () => {
+    useDb({ customers: { data: null, error: null } });
+    await expect(findCustomerByEmail(SALON_ID, "ana@example.com")).resolves.toBeNull();
+
+    useDb({ customers: { data: null, error: { message: "caido" } } });
+    await expect(findCustomerByEmail(SALON_ID, "ana@example.com")).rejects.toEqual({ message: "caido" });
   });
 });

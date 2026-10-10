@@ -1,10 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAppointmentAction, getOccupiedSlotsForDate } from "@/app/(dashboard)/appointments/actions";
-import {
-  checkCustomerPhoneAction,
-  findOrCreateCustomerAction,
-} from "@/app/(dashboard)/customers/actions";
+import { checkCustomerPhoneAction } from "@/app/(dashboard)/customers/actions";
 import { phoneValidationMessage } from "@/infra/format/phone";
 import { ToastProvider } from "@/components/ui/toast";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
@@ -32,7 +29,6 @@ vi.mock("@/app/(dashboard)/appointments/actions", () => ({
 }));
 vi.mock("@/app/(dashboard)/customers/actions", () => ({
   checkCustomerPhoneAction: vi.fn(),
-  findOrCreateCustomerAction: vi.fn(),
 }));
 
 const CUSTOMER_ID = "cust-1";
@@ -46,7 +42,6 @@ describe("AppointmentWizard", () => {
     router.refresh.mockReset();
     vi.mocked(getOccupiedSlotsForDate).mockResolvedValue({});
     vi.mocked(checkCustomerPhoneAction).mockResolvedValue({ exists: false });
-    vi.mocked(findOrCreateCustomerAction).mockResolvedValue({ ok: true, value: "cust-temp" });
     vi.mocked(createAppointmentAction).mockResolvedValue({ ok: true, value: "appt-new" });
   });
 
@@ -73,7 +68,7 @@ describe("AppointmentWizard", () => {
 
   /** Completa una fila válida: corte de cabello con Lucía Gómez a las 09:00. */
   function fillValidRow(container: HTMLElement) {
-    chooseOption(container, "Categoria", "Cabello");
+    chooseOption(container, "Categoría", "Cabello");
     chooseOption(container, "Servicio", "Corte (60min)");
     chooseOption(container, "Profesional", "Lucía Gómez");
   }
@@ -127,7 +122,7 @@ describe("AppointmentWizard", () => {
 
       expect(checkCustomerPhoneAction).toHaveBeenCalledWith("61234567");
       expect(container.textContent).toContain(
-        "Este numero ya esta registrado. Buscalo en Cliente existente."
+        "Este número ya está registrado. Búscalo en Cliente existente."
       );
       expect(fieldWithLabel(container, "Nombre")).toBeInstanceOf(HTMLInputElement);
     });
@@ -176,7 +171,7 @@ describe("AppointmentWizard", () => {
 
       await setFieldValueAndSettle(byAriaLabel<HTMLInputElement>(container, "Fecha"), "2026-10-18");
 
-      expect(container.textContent).toContain("El salon esta cerrado ese día.");
+      expect(container.textContent).toContain("El salón está cerrado ese día.");
       expect(buttonWithText(container, "Continuar").disabled).toBe(true);
     });
 
@@ -258,7 +253,7 @@ describe("AppointmentWizard", () => {
       expect(router.refresh).not.toHaveBeenCalled();
     });
 
-    it("crea primero el cliente nuevo y usa su id en la cita", async () => {
+    it("envía el cliente nuevo dentro de la cita en una sola acción", async () => {
       const container = render({ customers: [] });
       setFieldValue(fieldWithLabel(container, "Nombre"), "Luis");
       setFieldValue(fieldWithLabel(container, "Apellido"), "Soto");
@@ -270,12 +265,14 @@ describe("AppointmentWizard", () => {
       await clickAndSettle(buttonWithText(container, "Confirmar cita"));
       await vi.waitFor(() => expect(createAppointmentAction).toHaveBeenCalledTimes(1));
 
-      expect(findOrCreateCustomerAction).toHaveBeenCalledWith("Luis", "Soto", undefined);
-      expect(vi.mocked(createAppointmentAction).mock.calls[0]?.[1]?.get("customer_id")).toBe("cust-temp");
+      const form = vi.mocked(createAppointmentAction).mock.calls[0]?.[1];
+      expect(JSON.parse(String(form?.get("new_customer")))).toEqual({ first_name: "Luis", last_name: "Soto" });
+      expect(form?.has("customer_id")).toBe(false);
+      expect(router.push).toHaveBeenCalledWith("/appointments");
     });
 
-    it("no crea la cita si no se pudo registrar el cliente nuevo", async () => {
-      vi.mocked(findOrCreateCustomerAction).mockResolvedValue({ ok: false, error: "No tienes permiso para crear clientes." });
+    it("muestra el error de la cita y no navega si el servidor rechaza el cliente nuevo", async () => {
+      vi.mocked(createAppointmentAction).mockResolvedValue({ ok: false, error: "No tienes permiso para crear clientes." });
       const container = render({ customers: [] });
       setFieldValue(fieldWithLabel(container, "Nombre"), "Luis");
       setFieldValue(fieldWithLabel(container, "Apellido"), "Soto");
@@ -287,7 +284,7 @@ describe("AppointmentWizard", () => {
       await clickAndSettle(buttonWithText(container, "Confirmar cita"));
 
       await vi.waitFor(() => expect(container.textContent).toContain("No tienes permiso para crear clientes."));
-      expect(createAppointmentAction).not.toHaveBeenCalled();
+      expect(createAppointmentAction).toHaveBeenCalledTimes(1);
       expect(router.push).not.toHaveBeenCalled();
     });
   });

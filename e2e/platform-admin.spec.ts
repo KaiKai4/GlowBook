@@ -10,6 +10,7 @@ import {
 } from "../src/test/supabase-integration-fixtures";
 import { expectNoSeriousA11yViolations } from "./support/a11y";
 import { skipUnlessReady } from "./support/env";
+import { loginWith } from "./support/login";
 
 let credentials: AuthCredentials | null =
   process.env.E2E_PLATFORM_ADMIN_EMAIL && process.env.E2E_PLATFORM_ADMIN_PASSWORD
@@ -24,11 +25,7 @@ let fixture: PlatformAdminFixture | null = null;
 
 async function loginPlatformAdmin(page: Page) {
   const activeCredentials = credentials!;
-
-  await page.goto("/login");
-  await page.getByLabel(/Correo|Email/i).fill(activeCredentials.email);
-  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(activeCredentials.password);
-  await page.getByRole("button", { name: /Iniciar/i }).click();
+  await loginWith(page, activeCredentials.email, activeCredentials.password);
 }
 
 test.describe("platform admin critical smoke", () => {

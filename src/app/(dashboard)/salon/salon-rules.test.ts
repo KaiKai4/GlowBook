@@ -24,21 +24,21 @@ describe("firstHoursError", () => {
 
 describe("validateNewPaymentMethod", () => {
   it("rechaza un valor vacío o solo con espacios", () => {
-    expect(validateNewPaymentMethod("   ", [])).toEqual({ ok: false, error: "Escribe un metodo de pago." });
+    expect(validateNewPaymentMethod("   ", [])).toEqual({ ok: false, error: "Escribe un método de pago." });
   });
 
   it("acepta hasta 64 caracteres y rechaza más", () => {
     expect(validateNewPaymentMethod("a".repeat(64), []).ok).toBe(true);
     expect(validateNewPaymentMethod("a".repeat(65), [])).toEqual({
       ok: false,
-      error: "El metodo de pago no puede superar 64 caracteres.",
+      error: "El método de pago no puede superar 64 caracteres.",
     });
   });
 
   it("rechaza duplicados sin distinguir mayúsculas", () => {
     expect(validateNewPaymentMethod("ZINLI", ["zinli"])).toEqual({
       ok: false,
-      error: "Ese metodo de pago ya esta en la lista.",
+      error: "Ese método de pago ya esta en la lista.",
     });
   });
 

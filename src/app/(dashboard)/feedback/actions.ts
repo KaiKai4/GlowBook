@@ -1,6 +1,6 @@
 "use server";
 
-import { submitFeedback } from "@/features/feedback/use-cases/submit-feedback";
+import { submitFeedback } from "@/features/feedback";
 import { SubmitFeedbackSchema, type SubmitFeedbackInput } from "@/features/feedback/schemas";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import type { Result } from "@/infra/result";

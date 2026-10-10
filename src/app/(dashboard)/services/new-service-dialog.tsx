@@ -26,7 +26,7 @@ export function NewServiceDialog({
   return (
     <Dialog open={open} onClose={onClose} title="Nuevo servicio">
       <form action={onSubmit} className="space-y-4">
-        <Select name="category_id" label="Categoria" defaultValue={defaultCategory} required>
+        <Select name="category_id" label="Categoría" defaultValue={defaultCategory} required>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -44,7 +44,7 @@ export function NewServiceDialog({
           defaultValue={0}
           required
         />
-        <Textarea name="description" label="Descripcion (opcional)" />
+        <Textarea name="description" label="Descripción (opcional)" />
         {error && <p className="rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>

@@ -30,7 +30,7 @@ export function InventoryMovementsList({ movements }: InventoryMovementsListProp
           </div>
         ))}
         {movements.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm text-fg-subtle">Sin movimientos todavia.</p>
+          <p className="px-4 py-8 text-center text-sm text-fg-subtle">Sin movimientos todavía.</p>
         )}
       </div>
     </section>

@@ -16,15 +16,9 @@ import type { CommercialAddon } from "../domain/salon-extras";
 import { publishAuditEvent } from "@/features/audit";
 import { plan } from "@/test/billing-plan-fixtures";
 import { err, ok } from "@/infra/result";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  autoAssignPlanOnAcceptance,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "./salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
+import { assignSalonCommercialPlanConfig, autoAssignPlanOnAcceptance, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "./plan-limits";
 
 // Mutaciones de suscripciones: cada caso de uso valida, deriva fechas y datos
 // por salón, persiste y audita. Los rechazos no deben escribir nada.
@@ -120,7 +114,7 @@ describe("resolveSalonPlanAlertConfig", () => {
     const result = await resolveSalonPlanAlertConfig("alert-1", SALON_ID, ACTOR_ID);
 
     expect(result).toEqual(ok(undefined));
-    expect(resolveAlertMock).toHaveBeenCalledWith("alert-1");
+    expect(resolveAlertMock).toHaveBeenCalledWith(SALON_ID, "alert-1");
     expect(auditMock).toHaveBeenCalledWith("billing.plan_alert_resolved", 
       expect.objectContaining({
         actorUserId: ACTOR_ID,
@@ -151,7 +145,7 @@ describe("autoAssignPlanOnAcceptance", () => {
       acceptedByUserId: ACTOR_ID,
     });
 
-    expect(result).toEqual(err("El plan de la invitacion ya no existe."));
+    expect(result).toEqual(err("El plan de la invitación ya no existe."));
     expect(assignPlanMock).not.toHaveBeenCalled();
     expect(auditMock).not.toHaveBeenCalled();
   });
@@ -173,7 +167,7 @@ describe("autoAssignPlanOnAcceptance", () => {
       startsAt: "2026-10-09",
       endsAt: null,
       trialEndsAt: "2026-10-23",
-      notes: "Asignado automaticamente al aceptar la invitacion.",
+      notes: "Asignado automaticamente al aceptar la invitación.",
     });
     expect(auditMock).toHaveBeenCalledWith("billing.plan_assigned", 
       expect.objectContaining({
@@ -204,7 +198,7 @@ describe("autoAssignPlanOnAcceptance", () => {
       acceptedByUserId: ACTOR_ID,
     });
 
-    expect(result).toEqual(err(expect.stringContaining("No se pudo asignar el plan de la invitacion.")));
+    expect(result).toEqual(err(expect.stringContaining("No se pudo asignar el plan de la invitación.")));
     expect(auditMock).not.toHaveBeenCalled();
   });
 });
@@ -214,7 +208,7 @@ describe("cancelSalonExtraConfig", () => {
     const result = await cancelSalonExtraConfig("ov-1", SALON_ID, ACTOR_ID);
 
     expect(result).toEqual(ok(undefined));
-    expect(updateOverrideStatusMock).toHaveBeenCalledWith("ov-1", "canceled");
+    expect(updateOverrideStatusMock).toHaveBeenCalledWith(SALON_ID, "ov-1", "canceled");
     expect(auditMock).toHaveBeenCalledWith("billing.plan_extra_canceled", 
       expect.objectContaining({
         action: "commercial_plan_extra_canceled",
@@ -238,7 +232,7 @@ describe("assignSalonCommercialPlanConfig", () => {
   it("rechaza un salón inválido antes de consultar el plan", async () => {
     const result = await assignSalonCommercialPlanConfig({ salonId: "no-uuid", planId: PLAN_ID });
 
-    expect(result).toEqual(err("Selecciona un salon."));
+    expect(result).toEqual(err("Selecciona un salón."));
     expect(findPlanMock).not.toHaveBeenCalled();
     expect(assignPlanMock).not.toHaveBeenCalled();
   });
@@ -310,7 +304,7 @@ describe("registerSalonPlanPaymentConfig", () => {
 
     const result = await registerSalonPlanPaymentConfig({ salonId: SALON_ID, amount: 20 });
 
-    expect(result).toEqual(err("Este salon no tiene plan asignado. Asignale un plan primero."));
+    expect(result).toEqual(err("Este salón no tiene plan asignado. Asígnale un plan primero."));
     expect(recordPaymentMock).not.toHaveBeenCalled();
     expect(activatePeriodMock).not.toHaveBeenCalled();
   });
@@ -342,7 +336,7 @@ describe("registerSalonPlanPaymentConfig", () => {
     );
   });
 
-  it("encadena el nuevo mes al periodo vigente cuando el pago llega por adelantado", async () => {
+  it("encadena el nuevo mes al período vigente cuando el pago llega por adelantado", async () => {
     findAssignmentPaymentMock.mockResolvedValueOnce({ plan_id: PLAN_ID, current_period_end: "2026-11-05" });
     findPlanMock.mockResolvedValueOnce(plan({ id: PLAN_ID, currency: "EUR" }));
 
@@ -376,7 +370,7 @@ describe("assignSalonAddonConfig", () => {
   it("rechaza un extra inexistente sin sobreescribir al salón", async () => {
     const result = await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID });
 
-    expect(result).toEqual(err("El extra del catalogo no existe."));
+    expect(result).toEqual(err("El extra del catálogo no existe."));
     expect(saveOverrideMock).not.toHaveBeenCalled();
   });
 
@@ -385,7 +379,7 @@ describe("assignSalonAddonConfig", () => {
 
     const result = await assignSalonAddonConfig({ salonId: SALON_ID, addonId: ADDON_ID });
 
-    expect(result).toEqual(err("Este extra no esta activo en el catalogo."));
+    expect(result).toEqual(err("Este extra no está activo en el catálogo."));
     expect(saveOverrideMock).not.toHaveBeenCalled();
   });
 
@@ -460,7 +454,7 @@ describe("assignSalonAddonConfig", () => {
   it("rechaza un identificador de extra que no es uuid", async () => {
     const result = await assignSalonAddonConfig({ salonId: SALON_ID, addonId: "extra-x" });
 
-    expect(result).toEqual(err("Selecciona un extra del catalogo."));
+    expect(result).toEqual(err("Selecciona un extra del catálogo."));
     expect(findAddonMock).not.toHaveBeenCalled();
   });
 
@@ -479,7 +473,7 @@ describe("saveSalonManualExtraConfig", () => {
   it("exige un módulo o un límite antes de tocar la base", async () => {
     const result = await saveSalonManualExtraConfig({ salonId: SALON_ID });
 
-    expect(result).toEqual(err("Selecciona un modulo o un límite para el extra."));
+    expect(result).toEqual(err("Selecciona un módulo o un límite para el extra."));
     expect(saveOverrideMock).not.toHaveBeenCalled();
   });
 

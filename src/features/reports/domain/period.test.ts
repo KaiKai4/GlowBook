@@ -71,7 +71,7 @@ describe("report period", () => {
     expect(getYearRange(2026)).toEqual({ from: "2026-01-01", to: "2026-12-31" });
   });
 
-  it("lists years from the current one back to the salon's first year", () => {
+  it("lists years from the current one back to the salón's first year", () => {
     expect(availableReportYears(2024, 2026)).toEqual([2026, 2025, 2024]);
     expect(availableReportYears(2026, 2026)).toEqual([2026]);
     // Si el dato más antiguo fuera posterior al año actual (reloj raro), no rompe.

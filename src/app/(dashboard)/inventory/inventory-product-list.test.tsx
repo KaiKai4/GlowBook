@@ -36,7 +36,7 @@ describe("InventoryProductList", () => {
   it("indica que no hay productos registrados cuando la lista está vacía", () => {
     mounted = mountComponent(<InventoryProductList products={[]} {...handlers()} />);
 
-    expect(mounted.container.textContent).toContain("Aun no hay productos registrados.");
+    expect(mounted.container.textContent).toContain("Aún no hay productos registrados.");
   });
 
   it("muestra la categoría del producto cuando la tiene", () => {
@@ -44,12 +44,12 @@ describe("InventoryProductList", () => {
 
     expect(mounted.container.textContent).toContain("Shampoo");
     expect(mounted.container.textContent).toContain("Cabello");
-    expect(mounted.container.textContent).not.toContain("Sin categoria");
+    expect(mounted.container.textContent).not.toContain("Sin categoría");
   });
 
-  it("usa 'Sin categoria' cuando el producto no tiene categoría", () => {
+  it("usa 'Sin categoría' cuando el producto no tiene categoría", () => {
     mounted = mountComponent(<InventoryProductList products={[product({ category: "" })]} {...handlers()} />);
 
-    expect(mounted.container.textContent).toContain("Sin categoria");
+    expect(mounted.container.textContent).toContain("Sin categoría");
   });
 });

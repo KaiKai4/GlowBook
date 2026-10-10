@@ -3,7 +3,7 @@ import { findSalonOverviews } from "@/features/platform/data/salon-overviews.rep
 type PlatformSalonOverviewItem = Awaited<ReturnType<typeof findSalonOverviews>>[number];
 import { getPlatformSalonOverviews } from "./get-platform-salon-overviews";
 
-// Metricas de salud de la plataforma: un salon activo sin citas en mas de 30
+// Metricas de salud de la plataforma: un salón activo sin citas en mas de 30
 // dias cuenta como dormido (riesgo de churn). La referencia es su ultima cita
 // o, si nunca agendo, la fecha de creacion. Los salones inactivos no cuentan.
 
@@ -53,7 +53,7 @@ afterEach(() => {
 });
 
 describe("getPlatformSalonOverviews dormant salons", () => {
-  it("flags an active salon whose last appointment is older than 30 days", async () => {
+  it("flags an active salón whose last appointment is older than 30 days", async () => {
     mockedFindOverviews.mockResolvedValue([
       salon({ id: "dormido", name: "Dormido", last_appointment_at: daysBefore(45) }),
       salon({ id: "activo", name: "Activo", last_appointment_at: daysBefore(2) }),
@@ -65,7 +65,7 @@ describe("getPlatformSalonOverviews dormant salons", () => {
     expect(view.metrics.dormantSalons).toBe(1);
   });
 
-  it("does not flag a salon whose last appointment is exactly 30 days old", async () => {
+  it("does not flag a salón whose last appointment is exactly 30 days old", async () => {
     mockedFindOverviews.mockResolvedValue([salon({ last_appointment_at: daysBefore(30) })]);
 
     const view = await getPlatformSalonOverviews();
@@ -97,7 +97,7 @@ describe("getPlatformSalonOverviews dormant salons", () => {
 });
 
 describe("getPlatformSalonOverviews metrics", () => {
-  it("returns the salon rows unchanged alongside the aggregated metrics", async () => {
+  it("returns the salón rows unchanged alongside the aggregated metrics", async () => {
     const rows = [
       salon({ id: "a", appointment_count: 40, is_active: true }),
       salon({ id: "b", appointment_count: 2, is_active: false }),

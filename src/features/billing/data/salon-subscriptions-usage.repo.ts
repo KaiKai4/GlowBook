@@ -1,20 +1,21 @@
 import "server-only";
 
+import type { Json } from "@/types/database.types";
 import type {
   CommercialLimitMetric,
   CommercialPlan,
   SalonPlanUsageByMetric,
 } from "../domain/commercial-plan";
 import { scopeWindow } from "../domain/usage-windows";
-import type { UntypedSupabase } from "./billing-db";
-import type { AssignmentRow } from "./salon-subscriptions.rows";
+import type { BillingDb } from "./billing-db";
+import type { AssignmentTenantRow } from "./salon-subscriptions.rows";
 
 export async function calculateSalonUsage(
-  supabase: UntypedSupabase,
+  supabase: BillingDb,
   salonId: string,
   metrics: CommercialLimitMetric[],
   plan: CommercialPlan | null,
-  assignment: AssignmentRow | null
+  assignment: AssignmentTenantRow | null
 ): Promise<SalonPlanUsageByMetric> {
   if (metrics.length === 0) return {};
 
@@ -33,8 +34,13 @@ export async function calculateSalonUsage(
     p_salon_id: salonId,
     p_counters: counters,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw error;
 
-  const counts = (data ?? {}) as Record<string, number>;
-  return Object.fromEntries(metrics.map((metric) => [metric.key, Number(counts[metric.key] ?? 0)]));
+  return Object.fromEntries(metrics.map((metric) => [metric.key, countFromRpc(data, metric.key)]));
+}
+
+/** Extrae el conteo de una clave del JSON devuelto por la RPC; ausente o no numérico cuenta como 0. */
+function countFromRpc(data: Json, key: string): number {
+  if (typeof data !== "object" || data === null || Array.isArray(data)) return 0;
+  return Number(data[key] ?? 0);
 }

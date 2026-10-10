@@ -5,7 +5,7 @@ import { RefreshCw } from "lucide-react";
 import { regenerateSalonInvitationAction } from "./actions";
 import { InviteLinkReveal } from "./invite-link-reveal";
 
-// El enlace de una invitacion pendiente no puede volver a mostrarse (la DB
+// El enlace de una invitación pendiente no puede volver a mostrarse (la DB
 // solo guarda el hash): regenerar emite un token nuevo e inválida el anterior.
 export function RegenerateInviteLink({ invitationId }: { invitationId: string }) {
   const [token, setToken] = useState<string | null>(null);
@@ -15,9 +15,9 @@ export function RegenerateInviteLink({ invitationId }: { invitationId: string })
   function handleRegenerate() {
     setError(null);
     startTransition(async () => {
-      const res = await regenerateSalonInvitationAction(invitationId);
-      if (res.ok) setToken(res.value);
-      else setError(res.error);
+      const result = await regenerateSalonInvitationAction(invitationId);
+      if (result.ok) setToken(result.value);
+      else setError(result.error);
     });
   }
 

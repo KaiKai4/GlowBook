@@ -5,17 +5,27 @@ import type {
   EffectivePlanLimit,
   EffectiveSalonPlan,
 } from "@/features/billing/domain/commercial-plan";
-import { getEffectiveSalonPlan } from "@/features/billing/use-cases/commercial-plans";
+import { getEffectiveSalonPlan } from "@/features/billing";
 import { plan } from "@/test/billing-plan-fixtures";
-import { findDashboardShellSalon } from "../data/salon.repo";
+import { findDashboardShellSalon } from "../data/salon-settings.repo";
 import { getDashboardShell, getOwnerPlanLimitWarnings } from "./get-dashboard-shell";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findDashboardShellSalon: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", async () => ({
+  evaluatePaymentStanding: (await import("@/features/billing/domain/payment-standing")).evaluatePaymentStanding,
+  isActionableLimitWarning: (await import("@/features/billing/domain/commercial-plan")).isActionableLimitWarning,
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   getEffectiveSalonPlan: vi.fn(),
+  readEffectivePlanOrNull: async (salonId: string, _action: string, load: (id: string) => Promise<unknown>) => {
+    try {
+      return await load(salonId);
+    } catch {
+      return null;
+    }
+  },
 }));
 
 const mockedFindShellSalon = vi.mocked(findDashboardShellSalon);
@@ -105,7 +115,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
   });
 
   describe("getDashboardShell", () => {
-    it("usa los modulos deshabilitados del plan efectivo cuando el salon tiene plan asignado", async () => {
+    it("usa los módulos deshabilitados del plan efectivo cuando el salón tiene plan asignado", async () => {
       mockedEffectivePlan.mockResolvedValue(
         effectivePlan({
           plan: plan(),
@@ -116,11 +126,11 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       const view = await getDashboardShell(ownerProfile);
 
       expect(view?.disabledFeatures).toEqual(["retail"]);
-      // El owner conserva todos los permisos (cortocircuito); el plan solo decide modulos.
+      // El owner conserva todos los permisos (cortocircuito); el plan solo decide módulos.
       expect(view?.permissions).toContain("reports.view");
     });
 
-    it("usa las banderas del salon cuando no hay plan efectivo asignado", async () => {
+    it("usa las banderas del salón cuando no hay plan efectivo asignado", async () => {
       mockedEffectivePlan.mockResolvedValue(effectivePlan({ plan: null, disabledModules: ["retail"] }));
 
       const view = await getDashboardShell(ownerProfile);
@@ -128,7 +138,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       expect(view?.disabledFeatures).toEqual(["reports"]);
     });
 
-    it("usa las banderas del salon cuando la consulta del plan falla", async () => {
+    it("usa las banderas del salón cuando la consulta del plan falla", async () => {
       mockedEffectivePlan.mockRejectedValue(new Error("sin plan"));
 
       const view = await getDashboardShell(ownerProfile);
@@ -160,7 +170,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       expect(view?.disabledFeatures).toEqual([]);
     });
 
-    it("pasa el salon del perfil al repositorio y devuelve null si el salon no existe", async () => {
+    it("pasa el salón del perfil al repositorio y devuelve null si el salón no existe", async () => {
       mockedFindShellSalon.mockResolvedValue(null);
 
       expect(await getDashboardShell(ownerProfile)).toBeNull();
@@ -168,7 +178,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       expect(mockedEffectivePlan).not.toHaveBeenCalled();
     });
 
-    it("refleja un salon inactivo sin ocultar su nombre", async () => {
+    it("refleja un salón inactivo sin ocultar su nombre", async () => {
       mockedFindShellSalon.mockResolvedValue({ ...shellSalon, is_active: false });
 
       expect(await getDashboardShell(ownerProfile)).toMatchObject({
@@ -179,7 +189,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
   });
 
   describe("getSalonPaymentStanding", () => {
-    it("esta al dia cuando el periodo pagado no ha vencido", async () => {
+    it("esta al día cuando el período pagado no ha vencido", async () => {
       mockedEffectivePlan.mockResolvedValue(
         effectivePlan({ assignmentStatus: "active", currentPeriodEnd: "2026-07-01" })
       );
@@ -191,7 +201,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       });
     });
 
-    it("entra en periodo de gracia al vencer el periodo pagado", async () => {
+    it("entra en período de gracia al vencer el período pagado", async () => {
       mockedEffectivePlan.mockResolvedValue(
         effectivePlan({ assignmentStatus: "active", currentPeriodEnd: "2026-06-10" })
       );
@@ -203,7 +213,7 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       });
     });
 
-    it("suspende el salon cuando agota la gracia del trial vencido", async () => {
+    it("suspende el salón cuando agota la gracia del trial vencido", async () => {
       mockedEffectivePlan.mockResolvedValue(
         effectivePlan({ assignmentStatus: "trialing", trialEndsAt: "2026-06-01", currentPeriodEnd: "2026-12-31" })
       );
@@ -231,16 +241,16 @@ describe("get-dashboard-shell (ramas de plan y estado de pago)", () => {
       mockedEffectivePlan.mockResolvedValue(
         effectivePlan({
           limits: [
-            limit({ warningLevel: "near_limit", message: "Cerca del limite de citas" }),
-            limit({ warningLevel: "over_limit", message: "Superaste el limite", used: 150, maxValue: 100 }),
+            limit({ warningLevel: "near_limit", message: "Cerca del límite de citas" }),
+            limit({ warningLevel: "over_limit", message: "Superaste el límite", used: 150, maxValue: 100 }),
             limit({ warningLevel: "none", message: "" }),
           ],
         })
       );
 
       expect(await getOwnerPlanLimitWarnings("salon-1")).toEqual([
-        { level: "warning", message: "Cerca del limite de citas" },
-        { level: "danger", message: "Superaste el limite" },
+        { level: "warning", message: "Cerca del límite de citas" },
+        { level: "danger", message: "Superaste el límite" },
       ]);
     });
 

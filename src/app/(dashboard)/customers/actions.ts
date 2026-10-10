@@ -1,10 +1,14 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import {
+  ArchivedCustomerLookupSchema,
   CreateCustomerSchema,
+  CustomerPhoneLookupSchema,
   UpdateCustomerSchema,
+  type ArchivedCustomerLookupInput,
   type CreateCustomerInput,
   type UpdateCustomerInput,
 } from "@/features/customers/schemas";
@@ -12,30 +16,26 @@ import {
   checkPermanentCustomerByPhone,
   findArchivedCustomerByContact,
   type ArchivedCustomerMatch,
-} from "@/features/customers/use-cases/customer-duplicates";
-import { createCustomerGuarded } from "@/features/customers/use-cases/create-customer-guarded";
-import { updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
-import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
-import {
-  deleteTemporaryCustomer,
-  findOrCreateTemporaryCustomer,
-  promoteCustomer,
-} from "@/features/customers/use-cases/customer-temporary";
+} from "@/features/customers";
+import { createCustomerProfile } from "@/features/customers";
+import { updateCustomerProfile } from "@/features/customers";
+import { archiveCustomer, reactivateCustomer } from "@/features/customers";
 import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
 
 // Las acciones solo orquestan: contexto, permiso por clave, rate limit, validacion
 // y UNA llamada a un caso de uso (defineAction). Las reglas viven en los casos de uso.
 
-const CUSTOMERS_RATE_LIMIT = { scope: "customers", options: { max: 60, windowMs: 60_000 } };
+const CUSTOMERS_RATE_LIMIT = { scope: "customers", options: RATE_LIMIT_POLICIES.write };
 const CUSTOMERS_DENIED = "No tienes permiso para gestionar clientes.";
-const CUSTOMERS_DENIED_LIFECYCLE = "Sin permiso para gestionar clientes.";
 const INVALID_ID_MESSAGE = "Identificador inválido.";
 const CUSTOMER_PATHS = ["/customers"] as const;
 const CUSTOMER_FLOW_PATHS = ["/customers", "/appointments/new"] as const;
 
 const parseCreateCustomer = parseWithSchema(CreateCustomerSchema);
 const parseUpdateCustomer = parseWithSchema(UpdateCustomerSchema);
+const parseCustomerPhone = parseWithSchema(CustomerPhoneLookupSchema);
+const parseArchivedLookup = parseWithSchema(ArchivedCustomerLookupSchema);
 
 function parseCustomerId(customerId: string): Result<string> {
   const id = parseUuid(customerId);
@@ -46,25 +46,25 @@ const createCustomerFlow = defineAction<FormData, CreateCustomerInput, string>({
   permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
   rateLimit: CUSTOMERS_RATE_LIMIT,
   parse: (formData) => parseCreateCustomer(Object.fromEntries(formData)),
-  run: (input, session) => createCustomerGuarded(session.salonId, input),
+  run: (input, session) => createCustomerProfile(session.salonId, input),
   revalidate: () => CUSTOMER_PATHS,
 });
 
 const checkCustomerPhoneFlow = defineAction<string, string, { exists: boolean; archived?: boolean }>({
   permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
   rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: (phone) => ok(phone),
+  parse: parseCustomerPhone,
   run: async (phone, session) => ok(await checkPermanentCustomerByPhone(session.salonId, phone)),
 });
 
 const findArchivedCustomerFlow = defineAction<
   { phone?: string; email?: string },
-  { phone?: string; email?: string },
+  ArchivedCustomerLookupInput,
   ArchivedCustomerMatch | null
 >({
   permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
   rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: (raw) => ok(raw),
+  parse: parseArchivedLookup,
   run: async ({ phone, email }, session) =>
     ok(await findArchivedCustomerByContact(session.salonId, phone, email)),
 });
@@ -75,38 +75,6 @@ const reactivateCustomerFlow = defineAction<string, string, void>({
   parse: parseCustomerId,
   run: (customerId, session) => reactivateCustomer(customerId, session.salonId),
   revalidate: () => CUSTOMER_FLOW_PATHS,
-});
-
-const findOrCreateCustomerFlow = defineAction<
-  { firstName: string; lastName: string; phone?: string },
-  { firstName: string; lastName: string; phone?: string },
-  string
->({
-  permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
-  rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: (raw) => ok(raw),
-  run: (raw, session) =>
-    findOrCreateTemporaryCustomer({
-      salonId: session.salonId,
-      firstName: raw.firstName,
-      lastName: raw.lastName,
-      phone: raw.phone,
-    }),
-});
-
-const promoteCustomerFlow = defineAction<string, string, void>({
-  permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED_LIFECYCLE },
-  rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: parseCustomerId,
-  run: (customerId, session) => promoteCustomer(customerId, session.salonId),
-  revalidate: () => CUSTOMER_PATHS,
-});
-
-const deleteTemporaryCustomerFlow = defineAction<string, string, void>({
-  permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED_LIFECYCLE },
-  rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: parseCustomerId,
-  run: (customerId, session) => deleteTemporaryCustomer(customerId, session.salonId),
 });
 
 const updateCustomerFlow = defineAction<
@@ -160,27 +128,6 @@ export async function findArchivedCustomerByContactAction(
 
 export async function reactivateCustomerAction(customerId: string): Promise<Result<void>> {
   return reactivateCustomerFlow(customerId);
-}
-
-// Creates a temporary customer for appointment booking.
-// The customer is invisible in all lists until promoted (on complete or cancel+save).
-export async function findOrCreateCustomerAction(
-  firstName: string,
-  lastName: string,
-  phone?: string
-): Promise<Result<string>> {
-  return findOrCreateCustomerFlow({ firstName, lastName, phone });
-}
-
-// Promotes a temporary customer to permanent (visible in customer list, active).
-export async function promoteCustomerAction(customerId: string): Promise<Result<void>> {
-  return promoteCustomerFlow(customerId);
-}
-
-// Hard-deletes a temporary customer so the phone number is freed for future bookings.
-// Only works if the customer is still marked is_temporary=true.
-export async function deleteTemporaryCustomerAction(customerId: string): Promise<Result<void>> {
-  return deleteTemporaryCustomerFlow(customerId);
 }
 
 export async function updateCustomerAction(

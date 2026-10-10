@@ -1,17 +1,16 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   findInventoryProducts,
   findRecentInventoryMovements,
-  insertInventoryMovement,
-  insertInventoryProduct,
-  insertStockLocations,
   softDeleteInventoryProduct,
-  updateInventoryProduct,
-  updateStockMinimums,
   type InventoryMovementRow,
   type InventoryProductRow,
-  type InventoryStockRow,
 } from "../data/inventory.repo";
+import {
+  createInventoryProductWithStockRpc,
+  updateInventoryProductProfileRpc,
+} from "../data/rpc/inventory-product-rpc";
 import type { CreateInventoryProductInput, UpdateInventoryProductInput } from "../schemas";
 import {
   createInventoryProduct,
@@ -23,22 +22,21 @@ import {
 vi.mock("../data/inventory.repo", () => ({
   findInventoryProducts: vi.fn(),
   findRecentInventoryMovements: vi.fn(),
-  insertInventoryMovement: vi.fn(),
-  insertInventoryProduct: vi.fn(),
-  insertStockLocations: vi.fn(),
   softDeleteInventoryProduct: vi.fn(),
-  updateInventoryProduct: vi.fn(),
-  updateStockMinimums: vi.fn(),
+}));
+
+vi.mock("../data/rpc/inventory-product-rpc", () => ({
+  createInventoryProductWithStockRpc: vi.fn(),
+  updateInventoryProductProfileRpc: vi.fn(),
 }));
 
 const mockedFindProducts = vi.mocked(findInventoryProducts);
 const mockedFindMovements = vi.mocked(findRecentInventoryMovements);
-const mockedInsertProduct = vi.mocked(insertInventoryProduct);
-const mockedInsertStock = vi.mocked(insertStockLocations);
-const mockedInsertMovement = vi.mocked(insertInventoryMovement);
-const mockedUpdateProduct = vi.mocked(updateInventoryProduct);
-const mockedUpdateMinimums = vi.mocked(updateStockMinimums);
+const mockedCreateRpc = vi.mocked(createInventoryProductWithStockRpc);
+const mockedUpdateRpc = vi.mocked(updateInventoryProductProfileRpc);
 const mockedSoftDelete = vi.mocked(softDeleteInventoryProduct);
+
+type InventoryStockRow = NonNullable<InventoryProductRow["inventory_stock_locations"]>[number];
 
 const SALON_ID = "salon-1";
 const PRODUCT_ID = "product-1";
@@ -127,7 +125,7 @@ describe("inventory-products", () => {
   });
 
   describe("getInventoryPage", () => {
-    it("calcula estado y total de stock por ubicacion y marca los productos con stock bajo", async () => {
+    it("calcula estado y total de stock por ubicación y marca los productos con stock bajo", async () => {
       mockedFindProducts.mockResolvedValue([
         productRow({
           id: "p-ok",
@@ -218,7 +216,7 @@ describe("inventory-products", () => {
       expect(view.recentMovements[2]).toMatchObject({ note: "", quantityDelta: 0, quantityAfter: 0 });
     });
 
-    it("consulta productos y movimientos del salon indicado", async () => {
+    it("consulta productos y movimientos del salón indicado", async () => {
       mockedFindProducts.mockResolvedValue([]);
       mockedFindMovements.mockResolvedValue([]);
 
@@ -230,55 +228,47 @@ describe("inventory-products", () => {
   });
 
   describe("createInventoryProduct", () => {
-    it("crea el producto, sus tres ubicaciones y un movimiento inicial solo donde hay stock", async () => {
-      mockedInsertProduct.mockResolvedValue(productRow({ id: PRODUCT_ID }));
-      mockedInsertStock.mockResolvedValue([
-        stockRow(PRODUCT_ID, "retail", 2, 1),
-        stockRow(PRODUCT_ID, "internal", 0, 0),
-        stockRow(PRODUCT_ID, "storage", 5, 3),
-      ]);
+    it("envia el producto con sus cantidades y minimos por ubicacion a la RPC del salon", async () => {
+      mockedCreateRpc.mockResolvedValue(PRODUCT_ID);
 
       expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({ ok: true, value: undefined });
 
-      expect(mockedInsertProduct).toHaveBeenCalledWith(SALON_ID, {
+      expect(mockedCreateRpc).toHaveBeenCalledTimes(1);
+      expect(mockedCreateRpc).toHaveBeenCalledWith({
+        salonId: SALON_ID,
         name: "Tinte",
         category: "Color",
-        cost_price: 4,
-        sale_price: 9,
-        is_retail_enabled: true,
+        costPrice: 4,
+        salePrice: 9,
+        isRetailEnabled: true,
+        retailQuantity: 2,
+        retailMinimum: 1,
+        internalQuantity: 0,
+        internalMinimum: 0,
+        storageQuantity: 5,
+        storageMinimum: 3,
       });
-      expect(mockedInsertStock).toHaveBeenCalledWith(SALON_ID, PRODUCT_ID, [
-        { location: "retail", quantity: 2, minimum_quantity: 1 },
-        { location: "internal", quantity: 0, minimum_quantity: 0 },
-        { location: "storage", quantity: 5, minimum_quantity: 3 },
-      ]);
-      expect(mockedInsertMovement).toHaveBeenCalledTimes(2);
-      expect(mockedInsertMovement).toHaveBeenCalledWith(SALON_ID, {
-        product_id: PRODUCT_ID,
-        location: "retail",
-        movement_type: "initial",
-        quantity_delta: 2,
-        quantity_after: 2,
-        note: "Stock inicial",
-      });
-      expect(mockedInsertMovement).toHaveBeenCalledWith(
-        SALON_ID,
-        expect.objectContaining({ location: "storage", quantity_delta: 5 })
-      );
+    });
+
+    it("envia categoria nula cuando viene vacia", async () => {
+      mockedCreateRpc.mockResolvedValue(PRODUCT_ID);
+
+      await createInventoryProduct(SALON_ID, createInput({ category: "" }));
+
+      expect(mockedCreateRpc).toHaveBeenCalledWith(expect.objectContaining({ category: null }));
     });
 
     it("informa nombre duplicado cuando el error de BD es una violación de unicidad (SQLSTATE 23505)", async () => {
-      mockedInsertProduct.mockRejectedValue(Object.assign(new Error("duplicate key value"), { code: "23505" }));
+      mockedCreateRpc.mockRejectedValue(Object.assign(new Error("duplicate key value"), { code: "23505" }));
 
       expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
         ok: false,
         error: "Ya existe un producto con ese nombre.",
       });
-      expect(mockedInsertStock).not.toHaveBeenCalled();
     });
 
     it("no deduce duplicado por el texto del mensaje si el SQLSTATE no es 23505", async () => {
-      mockedInsertProduct.mockRejectedValue(new Error("duplicate unique constraint"));
+      mockedCreateRpc.mockRejectedValue(new Error("duplicate unique constraint"));
 
       expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
         ok: false,
@@ -287,13 +277,13 @@ describe("inventory-products", () => {
     });
 
     it("devuelve error generico para otros fallos, incluido un error que no es Error", async () => {
-      mockedInsertProduct.mockRejectedValue(new Error("caida"));
+      mockedCreateRpc.mockRejectedValue(new Error("caida"));
       expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
         ok: false,
         error: "Error al crear el producto.",
       });
 
-      mockedInsertProduct.mockRejectedValue("texto");
+      mockedCreateRpc.mockRejectedValue("texto");
       expect(await createInventoryProduct(SALON_ID, createInput())).toEqual({
         ok: false,
         error: "Error al crear el producto.",
@@ -302,42 +292,46 @@ describe("inventory-products", () => {
   });
 
   describe("updateInventoryProductProfile", () => {
-    it("actualiza el producto y luego los minimos de cada ubicacion", async () => {
+    it("envia el producto y los minimos de cada ubicacion en una sola llamada a la RPC", async () => {
+      mockedUpdateRpc.mockResolvedValue(undefined);
+
       expect(await updateInventoryProductProfile(PRODUCT_ID, SALON_ID, updateInput())).toEqual({
         ok: true,
         value: undefined,
       });
 
-      expect(mockedUpdateProduct).toHaveBeenCalledWith(PRODUCT_ID, SALON_ID, updateInput());
-      expect(mockedUpdateMinimums).toHaveBeenCalledWith(SALON_ID, PRODUCT_ID, [
-        { location: "retail", minimum_quantity: 1 },
-        { location: "internal", minimum_quantity: 2 },
-        { location: "storage", minimum_quantity: 3 },
-      ]);
+      expect(mockedUpdateRpc).toHaveBeenCalledTimes(1);
+      expect(mockedUpdateRpc).toHaveBeenCalledWith({
+        salonId: SALON_ID,
+        productId: PRODUCT_ID,
+        name: "Tinte",
+        category: "Color",
+        costPrice: 4,
+        salePrice: 9,
+        isRetailEnabled: true,
+        isActive: true,
+        retailMinimum: 1,
+        internalMinimum: 2,
+        storageMinimum: 3,
+      });
     });
 
-    it("no toca los minimos si la actualizacion del producto falla", async () => {
-      mockedUpdateProduct.mockRejectedValue(new Error("caida"));
+    it("devuelve error generico si la RPC falla y registra el error", async () => {
+      mockedUpdateRpc.mockRejectedValue(new Error("caida"));
 
       expect(await updateInventoryProductProfile(PRODUCT_ID, SALON_ID, updateInput())).toEqual({
         ok: false,
         error: "Error al actualizar el producto.",
       });
-      expect(mockedUpdateMinimums).not.toHaveBeenCalled();
-    });
-
-    it("reporta error si falla el guardado de minimos", async () => {
-      mockedUpdateMinimums.mockRejectedValue(new Error("caida"));
-
-      expect(await updateInventoryProductProfile(PRODUCT_ID, SALON_ID, updateInput())).toEqual({
-        ok: false,
-        error: "Error al actualizar el producto.",
+      expect(captureError).toHaveBeenCalledWith(expect.any(Error), {
+        module: "inventory",
+        action: "update_product",
       });
     });
   });
 
   describe("deleteInventoryProduct", () => {
-    it("aplica borrado logico del producto del salon", async () => {
+    it("aplica borrado logico del producto del salón", async () => {
       expect(await deleteInventoryProduct(PRODUCT_ID, SALON_ID)).toEqual({ ok: true, value: undefined });
       expect(mockedSoftDelete).toHaveBeenCalledWith(PRODUCT_ID, SALON_ID);
     });
@@ -350,5 +344,17 @@ describe("inventory-products", () => {
         error: "Error al eliminar el producto.",
       });
     });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de eliminación", () => {
+  it("registra con captureError el fallo al eliminar el producto", async () => {
+    const dbError = new Error("caida");
+    mockedSoftDelete.mockRejectedValue(dbError);
+
+    expect(await deleteInventoryProduct("prod-1", "salon-1")).toEqual({ ok: false, error: "Error al eliminar el producto." });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "inventory", action: "delete_product" });
   });
 });

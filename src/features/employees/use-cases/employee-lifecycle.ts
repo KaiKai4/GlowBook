@@ -3,7 +3,9 @@ import {
   findEmployeeById,
   updateEmployee,
 } from "@/features/employees/data/employees.repo";
-import { revokeEmployeeAccessForArchive } from "./employee-access";
+import { clearEmployeeInvitations } from "./employee-invitation-issue";
+import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount } from "./employee-revocation";
+import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
 import type { Result } from "@/infra/result";
 
 export async function reactivateEmployee(
@@ -29,28 +31,39 @@ export async function archiveEmployee(
   const employee = await findEmployeeById(employeeId, salonId);
   if (!employee) return { ok: false, error: "Colaborador no encontrado." };
 
-  const accessRevoked = await revokeEmployeeAccessForArchive({
-    employeeId,
-    salonId,
-    profileId: employee.profile_id,
-  });
-  if (!accessRevoked.ok) return accessRevoked;
+  // 1) Validaciones previas (owner, perfil existente): no escriben nada.
+  if (employee.profile_id) {
+    const access = await checkEmployeeAccessRevocable(employee.profile_id, salonId);
+    if (!access.ok) return access;
+  }
 
+  // 2) Escritura en BD: invitaciones y desactivacion. Si falla, la cuenta de Auth sigue intacta.
   try {
+    const cleared = await clearEmployeeInvitations(employeeId, salonId);
+    if (!cleared.ok) return cleared;
+
     await updateEmployee(employeeId, salonId, {
       is_active: false,
       profile_id: null,
     });
-
-    return {
-      ok: true,
-      value: {
-        outcome: "archived",
-        message: "Colaborador archivado conservando su información para trazabilidad.",
-      },
-    };
   } catch (err) {
     captureError(err, { module: "employees", action: "lifecycle" });
     return { ok: false, error: "No se pudo archivar el colaborador." };
   }
+
+  // 3) Efecto en Auth. El archivado ya esta confirmado: si falla, se avisa en vez de fallar.
+  const warnings: string[] = [];
+  if (employee.profile_id) {
+    const deleted = await deleteEmployeeAuthAccount(employee.profile_id);
+    if (!deleted.ok) warnings.push(OLD_ACCOUNT_NOT_DELETED_WARNING);
+  }
+
+  return {
+    ok: true,
+    value: {
+      outcome: "archived",
+      message: "Colaborador archivado conservando su información para trazabilidad.",
+    },
+    ...(warnings.length > 0 ? { warnings } : {}),
+  };
 }

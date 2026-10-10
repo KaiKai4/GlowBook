@@ -89,16 +89,6 @@ export async function createService(
 ) {
   const supabase = await createSupabaseServerClient();
 
-  const { data: category } = await supabase
-    .from("service_categories")
-    .select("id")
-    .eq("id", input.category_id!)
-    .eq("salon_id", salonId)
-    .eq("is_active", true)
-    .single();
-
-  if (!category) throw new Error("La categoría no pertenece al salón.");
-
   const { data, error } = await supabase
     .from("services")
     .insert({ ...input, salon_id: salonId })
@@ -116,18 +106,6 @@ export async function updateService(
 ) {
   const supabase = await createSupabaseServerClient();
 
-  if (input.category_id) {
-    const { data: category } = await supabase
-      .from("service_categories")
-      .select("id")
-      .eq("id", input.category_id)
-      .eq("salon_id", salonId)
-      .eq("is_active", true)
-      .single();
-
-    if (!category) throw new Error("La categoría no pertenece al salón o está inactiva.");
-  }
-
   const { data, error } = await supabase
     .from("services")
     .update(input)
@@ -138,4 +116,25 @@ export async function updateService(
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Consulta la categoria activa del salón. Solo lee: la regla de negocio que
+ * decide si la categoria sirve para un servicio vive en validate-service-category.
+ */
+export async function findActiveServiceCategory(
+  salonId: string,
+  categoryId: string
+): Promise<{ id: string } | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("service_categories")
+    .select("id")
+    .eq("id", categoryId)
+    .eq("salon_id", salonId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ?? null;
 }

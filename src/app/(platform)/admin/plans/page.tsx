@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Blocks, CreditCard, Gauge, Gift, Layers3, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/page-header";
-import { getCommercialPlansPage } from "@/features/billing/use-cases/commercial-plans";
+import { getCommercialPlansPage } from "@/features/billing";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { cn } from "@/components/ui/cn";
 import { AddonsCatalog } from "./addons-catalog";
@@ -26,8 +26,8 @@ export default async function PlatformPlansPage({
         title="Planes y extras"
         description={
           view === "plans"
-            ? "Crea planes comerciales, activa modulos y define límites maximos por plan."
-            : "Define el catalogo de extras: modulos sueltos y bloques de límite para vender o regalar."
+            ? "Crea planes comerciales, activa módulos y define límites maximos por plan."
+            : "Define el catálogo de extras: módulos sueltos y bloques de límite para vender o regalar."
         }
         actions={
           <>

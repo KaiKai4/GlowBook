@@ -27,7 +27,7 @@ describe("getServiceCatalog (ramas)", () => {
     vi.clearAllMocks();
   });
 
-  it("marca como variable solo las categorias con precio variable y el resto como fijas", async () => {
+  it("marca como variable solo las categorías con precio variable y el resto como fijas", async () => {
     mockedFindServicesCatalog.mockResolvedValue([
       { id: "c1", name: "Color", pricing_mode: "variable", services: [] },
       { id: "c2", name: "Corte", pricing_mode: "fixed", services: [] },
@@ -44,7 +44,7 @@ describe("getServiceCatalog (ramas)", () => {
     expect(catalog[2]?.services).toEqual([]);
   });
 
-  it("convierte el precio a numero y mantiene la descripcion nula", async () => {
+  it("convierte el precio a número y mantiene la descripción nula", async () => {
     mockedFindServicesCatalog.mockResolvedValue([
       { id: "c1", name: "Corte", pricing_mode: "fixed", services: [service()] },
     ]);
@@ -90,7 +90,7 @@ describe("getServiceCatalog (ramas)", () => {
     ]);
   });
 
-  it("devuelve lista vacia cuando el salon no tiene categorias", async () => {
+  it("devuelve lista vacia cuando el salón no tiene categorías", async () => {
     mockedFindServicesCatalog.mockResolvedValue([]);
 
     expect(await getServiceCatalog("salon-1")).toEqual([]);

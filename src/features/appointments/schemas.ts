@@ -1,11 +1,12 @@
 import { z } from "@/infra/validation/zod";
+import { isValidOptionalPhone, phoneValidationMessage } from "@/infra/format/phone";
 import { normalizePaymentMethod } from "@/features/payments";
 
 const PaymentMethodSchema = z
   .string()
   .trim()
-  .min(1, "El metodo de pago es obligatorio.")
-  .max(64, "El metodo de pago no puede superar 64 caracteres.")
+  .min(1, "El método de pago es obligatorio.")
+  .max(64, "El método de pago no puede superar 64 caracteres.")
   .transform(normalizePaymentMethod);
 
 const AssignmentSchema = z.object({
@@ -15,15 +16,36 @@ const AssignmentSchema = z.object({
 
 const IdempotencyKeySchema = z.string().uuid("La clave de idempotencia debe ser un uuid.");
 
-export const CreateAppointmentSchema = z.object({
-  customer_id: z.string().uuid("ID de cliente inválido"),
-  start_time: z.string().datetime("Fecha/hora inválida"),
-  notes: z.string().max(1000).optional().default(""),
-  assignments: z
-    .array(AssignmentSchema)
-    .min(1, "Selecciona al menos un servicio"),
-  idempotency_key: IdempotencyKeySchema,
+/** Cliente nuevo de la propia cita: se da de alta en la misma transaccion que la cita (ADR de citas). */
+const NewCustomerSchema = z.object({
+  first_name: z.string().trim().min(1, "El nombre es obligatorio").max(100),
+  last_name: z.string().trim().min(1, "El apellido es obligatorio").max(100),
+  phone: z
+    .string()
+    .trim()
+    .max(30)
+    .optional()
+    .refine(isValidOptionalPhone, phoneValidationMessage()),
 });
+
+const CLIENT_CHOICE_MESSAGE = "Indica un cliente existente o un cliente nuevo, no ambos ni ninguno.";
+
+// Exactamente uno: un cliente existente (customer_id) o un cliente nuevo (new_customer).
+export const CreateAppointmentSchema = z
+  .object({
+    customer_id: z.string().uuid("ID de cliente inválido").optional(),
+    new_customer: NewCustomerSchema.optional(),
+    start_time: z.string().datetime("Fecha/hora inválida"),
+    notes: z.string().max(1000).optional().default(""),
+    assignments: z
+      .array(AssignmentSchema)
+      .min(1, "Selecciona al menos un servicio"),
+    idempotency_key: IdempotencyKeySchema,
+  })
+  .refine((value) => (value.customer_id !== undefined) !== (value.new_customer !== undefined), {
+    message: CLIENT_CHOICE_MESSAGE,
+    path: ["customer_id"],
+  });
 
 export const UpdateAppointmentScheduleSchema = z.object({
   appointment_id: z.string().uuid("ID de cita inválido"),
@@ -39,6 +61,13 @@ export const UpdateAppointmentScheduleSchema = z.object({
 export const AppointmentLifecycleSchema = z.object({
   appointment_id: z.string().uuid("ID de cita inválido"),
   idempotency_key: IdempotencyKeySchema,
+});
+
+/** Qué hacer con un cliente temporal al cancelar: conservarlo tal cual, guardarlo o descartarlo. */
+const CustomerDispositionSchema = z.enum(["keep", "promote", "discard"]);
+
+export const CancelAppointmentSchema = AppointmentLifecycleSchema.extend({
+  customer_disposition: CustomerDispositionSchema.default("keep"),
 });
 
 export const CompleteAppointmentSchema = z.object({

@@ -1,3 +1,5 @@
+import { captureError } from "@/infra/observability";
+import { toPublicErrorMessage } from "@/infra/errors";
 import "server-only";
 
 import type { Result } from "@/infra/result";
@@ -22,7 +24,8 @@ export async function submitFeedback(
     });
 
     return { ok: true, value: undefined };
-  } catch {
-    return { ok: false, error: "No se pudo enviar el reporte. Intenta de nuevo." };
+  } catch (error) {
+    captureError(error, { module: "feedback", action: "submit" });
+    return { ok: false, error: toPublicErrorMessage(error, "No se pudo enviar el reporte. Intenta de nuevo.") };
   }
 }

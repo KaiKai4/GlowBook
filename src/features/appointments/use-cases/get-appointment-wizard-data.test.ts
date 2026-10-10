@@ -83,6 +83,15 @@ describe("get appointment wizard data", () => {
     expect(view.ready).toBe(true);
   });
 
+  it("en edición pide también los servicios que la cita ya tiene, aunque estén inactivos", async () => {
+    mockedGetServiceSchedulingOptions.mockResolvedValue({ categories: [], services: [] });
+    mockedGetEmployeeSchedulingOptions.mockResolvedValue([]);
+
+    await getAppointmentWizardData("salon-1", ["service-kept"]);
+
+    expect(mockedGetServiceSchedulingOptions).toHaveBeenCalledWith("salon-1", ["service-kept"]);
+  });
+
   it("returns not ready when there are no active services", async () => {
     mockedGetServiceSchedulingOptions.mockResolvedValue({
       categories: [{ id: "category-nails", name: "Unas" }],

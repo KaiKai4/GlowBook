@@ -3,7 +3,7 @@
 import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
-import { APPOINTMENT_STATUS_BADGE } from "./appointment-status";
+import { appointmentStatusPresentation } from "./appointment-status";
 
 // Agenda en lista para pantallas pequeñas: la grilla horaria del calendario
 // no es usable en un teléfono. Misma data, mismos diálogos al tocar una cita.
@@ -85,7 +85,7 @@ export function MobileAgenda({
                     {appt.customer?.first_name} {appt.customer?.last_name}
                   </p>
                   <div className="mt-1">
-                    <StatusBadge {...APPOINTMENT_STATUS_BADGE[appt.status]} />
+                    <StatusBadge {...appointmentStatusPresentation(appt.status)} />
                   </div>
                   <p className="mt-0.5 truncate text-xs text-fg-subtle">
                     {appt.items.map((item) => item.service?.name).filter(Boolean).join(", ")}

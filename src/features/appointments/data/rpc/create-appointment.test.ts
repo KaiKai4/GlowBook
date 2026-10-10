@@ -4,6 +4,7 @@ import {
   installSupabaseDouble,
 } from "@/test/appointments-feature-supabase";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
+import { APPOINTMENT_MESSAGES } from "../../domain/messages";
 import { createAppointmentWithRpc, type CreateAppointmentRpcPayload } from "./create-appointment";
 
 vi.mock("@/infra/supabase/server", () => ({
@@ -68,12 +69,24 @@ describe("createAppointmentWithRpc", () => {
     expect(double.rpc.mock.calls[0]).toEqual(double.rpc.mock.calls[1]);
   });
 
-  it("devuelve ok false con el mensaje de la base cuando el profesional se solapa", async () => {
+  it("devuelve ok false con causa slot_taken cuando el profesional se solapa", async () => {
     installSupabaseDouble(createAppointmentsSupabaseDouble({}, { data: null, error: failure }), mockedCreateClient);
 
     const result = await createAppointmentWithRpc({ payload, idempotencyKey: KEY });
 
-    expect(result).toEqual({ ok: false, errorMessage: failure.message });
+    expect(result).toEqual({ ok: false, reason: "slot_taken", errorMessage: APPOINTMENT_MESSAGES.createFailed });
+  });
+
+  it("devuelve causa inactive_customer cuando el cliente no puede recibir citas", async () => {
+    const inactive = {
+      message:
+        "Este cliente no está disponible para nuevas citas. Restáuralo desde Clientes para conservar su historial.",
+    };
+    installSupabaseDouble(createAppointmentsSupabaseDouble({}, { data: null, error: inactive }), mockedCreateClient);
+
+    const result = await createAppointmentWithRpc({ payload, idempotencyKey: KEY });
+
+    expect(result).toMatchObject({ ok: false, reason: "inactive_customer" });
   });
 
   it("devuelve ok false si la base responde algo que no es un uuid", async () => {

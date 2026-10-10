@@ -155,7 +155,7 @@ Owner:
 1. Revisar errores en Vercel Logs.
 2. Revisar Supabase RPC `create_appointment`.
 3. Confirmar si afecta un Salon o todos.
-4. Ejecutar E2E de cita en staging si hay tiempo.
+4. Ejecutar el E2E de citas en local (`npm run test:e2e`) si hay tiempo.
 5. Si empezo despues de deploy, evaluar rollback.
 
 ### Incidente: Supabase Lento
@@ -192,13 +192,9 @@ Owner:
 - [ ] Verificación con check sintético
 - [ ] Postmortem programado (SEV1/SEV2)
 
-## Readiness
+## Verificación De Soporte
 
-Antes de activar `SCALE_SUPPORT_CONFIRMED=true`, ejecutar:
-
-```text
-npm run support:readiness
-```
+Antes de declarar el soporte listo, revisa la lista de `docs/launch-support.md` con el responsable de soporte.
 
 Para lanzamiento amplio con canales reales:
 

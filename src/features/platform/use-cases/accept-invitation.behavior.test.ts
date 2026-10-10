@@ -11,12 +11,12 @@ import {
   findPlatformOwnerAuthUserByEmail,
   updatePlatformOwnerAuthUser,
 } from "@/features/platform/data/platform-auth.repo";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
+import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-plan-assignment";
 import { captureError } from "@/infra/observability";
 import { acceptInvitation, type AcceptInvitationInput } from "./accept-invitation";
 import { publishAuditEvent } from "@/features/audit";
 
-// Conducta de aceptacion de invitacion: cada rama de validacion, de cuenta
+// Conducta de aceptacion de invitación: cada rama de validacion, de cuenta
 // existente y de rollback debe dejar la base consistente. Se afirma el mensaje
 // de dominio que ve el invitado, nunca el texto crudo de la base.
 
@@ -33,7 +33,7 @@ vi.mock("@/features/platform/data/platform-auth.repo", () => ({
   updatePlatformOwnerAuthUser: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 
@@ -61,15 +61,15 @@ const SALON_ID = "00000000-0000-4000-8000-000000000001";
 const NEW_USER_ID = "00000000-0000-4000-8000-0000000000aa";
 const EXISTING_USER_ID = "00000000-0000-4000-8000-0000000000ab";
 const DUPLICATE_MESSAGE =
-  "Este correo ya pertenece a una cuenta de otro salon en GlowBook. " +
-  "Cada cuenta puede pertenecer a un solo salon: usa un correo distinto para crear el nuevo salon.";
+  "Este correo ya pertenece a una cuenta de otro salón en GlowBook. " +
+  "Cada cuenta puede pertenecer a un solo salón: usa un correo distinto para crear el nuevo salón.";
 const GENERIC_CREATE_ERROR = "No se pudo crear la cuenta. Intentalo de nuevo en unos momentos.";
 
 const validInput: AcceptInvitationInput = {
   token: "token-1",
   email: "owner@example.com",
   password: "password123",
-  salon_name: "Glow Salon",
+  salon_name: "Glow Salón",
   full_name: "Ana Owner",
 };
 
@@ -110,20 +110,20 @@ describe("accept invitation input validation", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "La contrasena debe tener al menos 8 caracteres",
+      error: "La contraseña debe tener al menos 8 caracteres",
     });
     expect(mockedFindInvitation).not.toHaveBeenCalled();
     expect(mockedCreateUser).not.toHaveBeenCalled();
   });
 
-  it("rejects a blank salon name", async () => {
+  it("rejects a blank salón name", async () => {
     const result = await acceptInvitation({ ...validInput, salon_name: "" });
 
-    expect(result).toEqual({ ok: false, error: "El nombre del salon es obligatorio" });
+    expect(result).toEqual({ ok: false, error: "El nombre del salón es obligatorio" });
     expect(mockedCreateUser).not.toHaveBeenCalled();
   });
 
-  it("rejects a salon name longer than 120 characters", async () => {
+  it("rejects a salón name longer than 120 characters", async () => {
     const result = await acceptInvitation({ ...validInput, salon_name: "x".repeat(121) });
 
     expect(result.ok).toBe(false);
@@ -145,7 +145,7 @@ describe("accept invitation token state", () => {
 
     const result = await acceptInvitation(validInput);
 
-    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitacion." });
+    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitación." });
     expect(mockedCaptureError).toHaveBeenCalledWith(lookupError, {
       module: "platform",
       action: "accept_invitation_lookup",
@@ -158,13 +158,13 @@ describe("accept invitation token state", () => {
     mockedFindInvitation.mockResolvedValue(null);
     expect(await acceptInvitation(validInput)).toEqual({
       ok: false,
-      error: "Invitacion inválida o ya utilizada.",
+      error: "Invitación inválida o ya utilizada.",
     });
 
     mockedFindInvitation.mockResolvedValue(pendingInvitation({ status: "accepted" }));
     expect(await acceptInvitation(validInput)).toEqual({
       ok: false,
-      error: "Invitacion inválida o ya utilizada.",
+      error: "Invitación inválida o ya utilizada.",
     });
     expect(mockedCreateUser).not.toHaveBeenCalled();
   });
@@ -174,7 +174,7 @@ describe("accept invitation token state", () => {
 
     const result = await acceptInvitation(validInput);
 
-    expect(result).toEqual({ ok: false, error: "La invitacion expiro." });
+    expect(result).toEqual({ ok: false, error: "La invitación expiro." });
     expect(mockedCreateUser).not.toHaveBeenCalled();
   });
 
@@ -189,7 +189,7 @@ describe("accept invitation token state", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Esta invitacion fue emitida para otro correo.",
+      error: "Esta invitación fue emitida para otro correo.",
     });
     expect(mockedCreateUser).not.toHaveBeenCalled();
   });
@@ -228,7 +228,7 @@ describe("accept invitation new owner account", () => {
     expect(mockedAcceptAsAdmin).not.toHaveBeenCalled();
   });
 
-  it("records the invitation as accepted with the new owner, salon and plan context", async () => {
+  it("records the invitation as accepted with the new owner, salón and plan context", async () => {
     mockedFindInvitation.mockResolvedValue(pendingInvitation({ plan_id: PLAN_ID }));
 
     await acceptInvitation(validInput);
@@ -237,7 +237,7 @@ describe("accept invitation new owner account", () => {
       token: "token-1",
       userId: NEW_USER_ID,
       email: "owner@example.com",
-      salonName: "Glow Salon",
+      salonName: "Glow Salón",
       fullName: "Ana Owner",
     });
     expect(mockedPublishAuditEvent).toHaveBeenCalledWith("salon.invitation_accepted", {
@@ -262,8 +262,8 @@ describe("accept invitation new owner account", () => {
 });
 
 describe("accept invitation rollback of a new owner", () => {
-  it("deletes the freshly created owner when the salon cannot be created", async () => {
-    mockedAcceptAsAdmin.mockRejectedValue(new Error("salon insert failed"));
+  it("deletes the freshly created owner when the salón cannot be created", async () => {
+    mockedAcceptAsAdmin.mockRejectedValue(new Error("salón insert failed"));
 
     await acceptInvitation(validInput);
 
@@ -271,7 +271,7 @@ describe("accept invitation rollback of a new owner", () => {
   });
 
   it("ignores a 404 when the rollback target is already gone", async () => {
-    mockedAcceptAsAdmin.mockRejectedValue(new Error("salon insert failed"));
+    mockedAcceptAsAdmin.mockRejectedValue(new Error("salón insert failed"));
     mockedDeleteUser.mockResolvedValue({
       data: null,
       error: new AuthApiError("User not found", 404, "user_not_found"),
@@ -284,7 +284,7 @@ describe("accept invitation rollback of a new owner", () => {
   });
 
   it("reports a rollback failure but still returns the original business error", async () => {
-    const acceptError = new Error("salon insert failed");
+    const acceptError = new Error("salón insert failed");
     const rollbackError = new AuthApiError("locked", 423, "locked");
     mockedAcceptAsAdmin.mockRejectedValue(acceptError);
     mockedDeleteUser.mockResolvedValue({ data: null, error: rollbackError });
@@ -293,7 +293,7 @@ describe("accept invitation rollback of a new owner", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo crear el salon. Intentalo de nuevo o solicita una nueva invitacion.",
+      error: "No se pudo crear el salón. Intentalo de nuevo o solicita una nueva invitación.",
     });
     expect(mockedCaptureError).toHaveBeenCalledWith(rollbackError, {
       module: "platform",
@@ -312,13 +312,13 @@ describe("accept invitation rollback of a new owner", () => {
   });
 
   it("passes through invitation-specific RPC messages so the invitee sees why it failed", async () => {
-    mockedAcceptAsAdmin.mockRejectedValue(new Error("La invitacion expiro al momento de crear el salon."));
+    mockedAcceptAsAdmin.mockRejectedValue(new Error("La invitación expiro al momento de crear el salón."));
 
     const result = await acceptInvitation(validInput);
 
     expect(result).toEqual({
       ok: false,
-      error: "La invitacion expiro al momento de crear el salon.",
+      error: "La invitación expiro al momento de crear el salón.",
     });
   });
 
@@ -329,7 +329,7 @@ describe("accept invitation rollback of a new owner", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo crear el salon. Intentalo de nuevo o solicita una nueva invitacion.",
+      error: "No se pudo crear el salón. Intentalo de nuevo o solicita una nueva invitación.",
     });
   });
 
@@ -340,7 +340,7 @@ describe("accept invitation rollback of a new owner", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo crear el salon. Intentalo de nuevo o solicita una nueva invitacion.",
+      error: "No se pudo crear el salón. Intentalo de nuevo o solicita una nueva invitación.",
     });
   });
 });
@@ -374,7 +374,7 @@ describe("accept invitation with an existing account", () => {
     expect(mockedUpdateUser).not.toHaveBeenCalled();
   });
 
-  it("reports a failure when checking whether the existing account already has a salon", async () => {
+  it("reports a failure when checking whether the existing account already has a salón", async () => {
     const profileError = new Error("profiles unavailable");
     mockedProfileExists.mockRejectedValue(profileError);
 
@@ -389,7 +389,7 @@ describe("accept invitation with an existing account", () => {
     expect(mockedAcceptAsAdmin).not.toHaveBeenCalled();
   });
 
-  it("refuses an account that already owns a salon", async () => {
+  it("refuses an account that already owns a salón", async () => {
     mockedProfileExists.mockResolvedValue(true);
 
     const result = await acceptInvitation(validInput);
@@ -428,7 +428,7 @@ describe("accept invitation with an existing account", () => {
   });
 
   it("never deletes a pre-existing account when accepting fails", async () => {
-    mockedAcceptAsAdmin.mockRejectedValue(new Error("salon insert failed"));
+    mockedAcceptAsAdmin.mockRejectedValue(new Error("salón insert failed"));
 
     await acceptInvitation(validInput);
 
@@ -457,7 +457,7 @@ describe("accept invitation with an existing account", () => {
 });
 
 describe("accept invitation plan assignment", () => {
-  it("assigns the invitation plan to the new salon as the accepting user", async () => {
+  it("assigns the invitation plan to the new salón as the accepting user", async () => {
     mockedFindInvitation.mockResolvedValue(pendingInvitation({ plan_id: PLAN_ID }));
 
     await acceptInvitation(validInput);

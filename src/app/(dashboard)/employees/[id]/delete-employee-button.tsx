@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { deleteEmployeeAction } from "../actions";
+import { deleteEmployeeAction } from "../actions-profile";
 
 interface Props {
   employeeId: string;
@@ -22,15 +22,15 @@ export function DeleteEmployeeButton({ employeeId, employeeName }: Props) {
   function handleDelete() {
     setError(null);
     startTransition(async () => {
-      const res = await deleteEmployeeAction(employeeId);
-      if (!res.ok) {
-        setError(res.error ?? "No se pudo eliminar el colaborador.");
+      const result = await deleteEmployeeAction(employeeId);
+      if (!result.ok) {
+        setError(result.error ?? "No se pudo eliminar el colaborador.");
         return;
       }
 
-      if (res.value.outcome === "archived") {
+      if (result.value.outcome === "archived") {
         setConfirmOpen(false);
-        setArchivedMessage(res.value.message);
+        setArchivedMessage([result.value.message, ...(result.warnings ?? [])].join(" "));
         return;
       }
 

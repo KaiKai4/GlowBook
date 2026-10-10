@@ -17,7 +17,7 @@ describe("adaptador zod", () => {
     expect(z.config().jitless).toBe(true);
   });
 
-  it("los errores de validacion son instancias de ZodError del adaptador", () => {
+  it("los errores de validación son instancias de ZodError del adaptador", () => {
     const result = z.string().safeParse(42);
 
     expect(result.success).toBe(false);

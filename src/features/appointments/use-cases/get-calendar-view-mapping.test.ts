@@ -292,7 +292,7 @@ describe("getCalendarView: vistas, zona y textos del salón", () => {
 
     const model = await getCalendarView({ salonId: SALON_ID, canViewAll: false, date: WEDNESDAY, view: "diaria" });
 
-    expect(model).toMatchObject({ timezone: "America/Panama", salonName: "tu salon" });
+    expect(model).toMatchObject({ timezone: "America/Panama", salonName: "tu salón" });
   });
 
   it("usa la zona horaria del salón para la fecha inicial cuando no se indica fecha", async () => {

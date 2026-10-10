@@ -50,12 +50,12 @@ describe("customer-duplicates (ramas)", () => {
   });
 
   describe("checkPermanentCustomerByPhone", () => {
-    it("no consulta cuando el telefono normalizado queda vacio", async () => {
+    it("no consulta cuando el teléfono normalizado queda vacio", async () => {
       expect(await checkPermanentCustomerByPhone(SALON_ID, "abc")).toEqual({ exists: false });
       expect(mockedFindByPhone).not.toHaveBeenCalled();
     });
 
-    it("busca el telefono normalizado dentro del salon", async () => {
+    it("busca el teléfono normalizado dentro del salón", async () => {
       await checkPermanentCustomerByPhone(SALON_ID, "+507 6123-4567");
 
       expect(mockedFindByPhone).toHaveBeenCalledWith(SALON_ID, "61234567");
@@ -68,7 +68,7 @@ describe("customer-duplicates (ramas)", () => {
       expect(await checkPermanentCustomerByPhone(SALON_ID, "61234567")).toEqual({ exists: false });
     });
 
-    it("existe y no esta archivado cuando el cliente permanente esta activo", async () => {
+    it("existe y no esta archivado cuando el cliente permanente está activo", async () => {
       mockedFindByPhone.mockResolvedValue(customer());
 
       expect(await checkPermanentCustomerByPhone(SALON_ID, "61234567")).toEqual({
@@ -77,7 +77,7 @@ describe("customer-duplicates (ramas)", () => {
       });
     });
 
-    it("existe y esta archivado cuando el cliente permanente esta inactivo", async () => {
+    it("existe y esta archivado cuando el cliente permanente está inactivo", async () => {
       mockedFindByPhone.mockResolvedValue(customer({ is_active: false }));
 
       expect(await checkPermanentCustomerByPhone(SALON_ID, "61234567")).toEqual({
@@ -88,14 +88,14 @@ describe("customer-duplicates (ramas)", () => {
   });
 
   describe("findArchivedCustomerByContact", () => {
-    it("devuelve null sin consultar cuando no hay telefono ni correo", async () => {
+    it("devuelve null sin consultar cuando no hay teléfono ni correo", async () => {
       expect(await findArchivedCustomerByContact(SALON_ID)).toBeNull();
       expect(await findArchivedCustomerByContact(SALON_ID, "", "   ")).toBeNull();
       expect(mockedFindByPhone).not.toHaveBeenCalled();
       expect(mockedFindByEmail).not.toHaveBeenCalled();
     });
 
-    it("encuentra un archivado por telefono y devuelve su identidad con nombre recortado", async () => {
+    it("encuentra un archivado por teléfono y devuelve su identidad con nombre recortado", async () => {
       mockedFindByPhone.mockResolvedValue(
         customer({ id: "arch-1", first_name: "Ana ", last_name: "", is_active: false })
       );
@@ -110,7 +110,7 @@ describe("customer-duplicates (ramas)", () => {
       expect(mockedFindByEmail).toHaveBeenCalledTimes(0);
     });
 
-    it("busca por correo recortado cuando no se indica telefono", async () => {
+    it("busca por correo recortado cuando no se indica teléfono", async () => {
       mockedFindByEmail.mockResolvedValue(customer({ id: "arch-2", is_active: false }));
 
       const match = await findArchivedCustomerByContact(SALON_ID, undefined, "  ana@example.com ");
@@ -127,7 +127,7 @@ describe("customer-duplicates (ramas)", () => {
       expect(await findArchivedCustomerByContact(SALON_ID, "61234567", "ana@example.com")).toBeNull();
     });
 
-    it("prefiere el archivado por correo cuando el telefono coincide con un cliente activo", async () => {
+    it("prefiere el archivado por correo cuando el teléfono coincide con un cliente activo", async () => {
       mockedFindByPhone.mockResolvedValue(customer({ id: "activo", is_active: true }));
       mockedFindByEmail.mockResolvedValue(customer({ id: "archivado", is_active: false }));
 
@@ -154,7 +154,7 @@ describe("customer-duplicates (ramas)", () => {
       });
     });
 
-    it("usa el correo como criterio cuando el alta no trae telefono", async () => {
+    it("usa el correo como criterio cuando el alta no trae teléfono", async () => {
       mockedFindByEmail.mockResolvedValue(customer({ is_active: false }));
 
       const result = await rejectArchivedDuplicate(SALON_ID, { phone: null, email: "ana@example.com" });

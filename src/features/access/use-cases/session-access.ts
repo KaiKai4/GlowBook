@@ -7,7 +7,7 @@ export async function loadSessionProfile(userId: string): Promise<ProfileWithRol
   return findSessionProfile(userId);
 }
 
-/** Estado del salon del perfil: null si el salon no existe. */
+/** Estado del salón del perfil: null si el salón no existe. */
 export async function loadSalonAccessState(
   salonId: string
 ): Promise<{ id: string; is_active: boolean } | null> {

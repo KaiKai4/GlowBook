@@ -49,13 +49,13 @@ describe("MonthlyAreaChart", () => {
 
   it("expone el título, la descripción y la leyenda de cada serie", () => {
     mounted = mountComponent(
-      <MonthlyAreaChart title="Ingresos del periodo" description="Por mes" points={months} series={revenueSeries} />
+      <MonthlyAreaChart title="Ingresos del período" description="Por mes" points={months} series={revenueSeries} />
     );
 
-    expect(mounted.container.textContent).toContain("Ingresos del periodo");
+    expect(mounted.container.textContent).toContain("Ingresos del período");
     expect(mounted.container.textContent).toContain("Ingresos");
     const group = mounted.container.querySelector('[role="group"]');
-    expect(group?.getAttribute("aria-label")).toBe("Ingresos del periodo. Por mes");
+    expect(group?.getAttribute("aria-label")).toBe("Ingresos del período. Por mes");
   });
 
   it("muestra el detalle del mes al enfocarlo y lo oculta al salir", () => {

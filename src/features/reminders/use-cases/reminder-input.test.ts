@@ -44,7 +44,7 @@ describe("parseManualReminderInput", () => {
 });
 
 describe("parseConfirmReminderInput", () => {
-  it("valida la cita y la clave en ese orden", () => {
+  it("válida la cita y la clave en ese orden", () => {
     expect(parseConfirmReminderInput({ appointmentId: "x", idempotencyKey: "y" })).toEqual(err(INVALID_ID_MESSAGE));
     expect(parseConfirmReminderInput({ appointmentId: APPOINTMENT_ID, idempotencyKey: "y" })).toEqual(
       err(INVALID_KEY_MESSAGE)

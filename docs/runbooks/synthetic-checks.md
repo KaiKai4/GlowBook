@@ -67,8 +67,6 @@ los issues de incidentes.
      de frontend con `vercel rollback`.
    - Latencia alta sin errores: revisar duración de funciones en Vercel y
      advisors/logs de Supabase. Severidad SEV3 si el login responde.
-   - Target `staging` solamente: revisar primero el despliegue de staging
-     antes de tratarlo como incidente de producción.
 4. **Triage con `x-request-id`**: si el fallo viene de una petición real,
    usar el UUID de la cabecera para buscar la traza en Vercel Logs y en los
    logs de Supabase.

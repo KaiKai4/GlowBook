@@ -15,7 +15,7 @@ import {
   createEmployeeAction,
   findArchivedEmployeeByEmailAction,
   reactivateEmployeeAction,
-} from "./actions";
+} from "./actions-profile";
 import type {
   ArchivedEmployeeMatch,
   CreateEmployeeResult,
@@ -61,14 +61,14 @@ export function EmployeeCreateForm({
   function handleCreate(formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const res: Result<CreateEmployeeResult> = await submit(formDataEntries(formData), (idempotencyKey) =>
+      const result: Result<CreateEmployeeResult> = await submit(formDataEntries(formData), (idempotencyKey) =>
         createEmployeeAction(null, withIdempotencyKey(formData, idempotencyKey))
       );
-      if (res.ok) {
-        if (res.value.inviteToken) onCreatedWithInvite(res.value);
+      if (result.ok) {
+        if (result.value.inviteToken) onCreatedWithInvite(result.value);
         else onCreated();
       } else {
-        setError(res.error);
+        setError(result.error);
       }
     });
   }
@@ -81,13 +81,13 @@ export function EmployeeCreateForm({
   function handleReactivateEmployee(employeeId: string) {
     setReactivatingId(employeeId);
     startTransition(async () => {
-      const res = await reactivateEmployeeAction(employeeId);
+      const result = await reactivateEmployeeAction(employeeId);
       setReactivatingId(null);
-      if (res.ok) {
+      if (result.ok) {
         onCreated();
         router.refresh();
       } else {
-        setError(res.error ?? "No se pudo reactivar el colaborador.");
+        setError(result.error ?? "No se pudo reactivar el colaborador.");
       }
     });
   }
@@ -118,7 +118,7 @@ export function EmployeeCreateForm({
         <div>
           <label className="mb-1.5 block text-xs font-medium text-fg-muted">Rol</label>
           {roles.length === 0 ? (
-            <p className="pt-1 text-xs text-fg-subtle">Roles no disponibles para este salon.</p>
+            <p className="pt-1 text-xs text-fg-subtle">Roles no disponibles para este salón.</p>
           ) : (
             <Select name="role_id" className="w-full">
               <option value="">Sin rol por ahora</option>

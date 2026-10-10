@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assertSalonPaymentMethodEnabled } from "@/features/salon";
 import { findAppointmentForCommand } from "../data/appointment-commands.repo";
 import { cancelAppointmentRpc } from "../data/rpc/cancel-appointment";
 import { completeAppointmentRpc } from "../data/rpc/complete-appointment";
@@ -6,6 +7,10 @@ import { confirmAppointmentRpc } from "../data/rpc/confirm-appointment";
 import { cancelAppointment } from "./cancel-appointment";
 import { completeAppointment } from "./complete-appointment";
 import { confirmAppointment } from "./confirm-appointment";
+
+vi.mock("@/features/salon", () => ({
+  assertSalonPaymentMethodEnabled: vi.fn(async () => true),
+}));
 
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentForCommand: vi.fn(),
@@ -52,6 +57,7 @@ describe("appointment lifecycle commands", () => {
     mockedConfirmRpc.mockResolvedValue({ appointment_id: appointmentId, status: "confirmed" });
     mockedCancelRpc.mockResolvedValue({ appointment_id: appointmentId, status: "cancelled" });
     mockedCompleteRpc.mockResolvedValue(SUMMARY);
+    vi.mocked(assertSalonPaymentMethodEnabled).mockResolvedValue(true);
   });
 
   it("confirms a scheduled appointment through the transactional RPC", async () => {
@@ -62,7 +68,7 @@ describe("appointment lifecycle commands", () => {
   });
 
   it("cancels through a single RPC that also releases the calendar", async () => {
-    const result = await cancelAppointment(appointmentId, salonId, idempotencyKey);
+    const result = await cancelAppointment({ appointmentId, salonId, idempotencyKey, customerDisposition: "keep" });
 
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedCancelRpc).toHaveBeenCalledTimes(1);
@@ -70,26 +76,26 @@ describe("appointment lifecycle commands", () => {
   });
 
   it("completes through one RPC with item charges, note and idempotency key", async () => {
-    const result = await completeAppointment(
+    const result = await completeAppointment({
       appointmentId,
       salonId,
-      "cash",
-      [
+      paymentMethod: "cash",
+      itemCharges: [
         { id: "item-fixed", price: 20, discountPercentage: 20 },
         { id: "item-variable", price: 40, discountPercentage: 0 },
       ],
-      "  Diseno adicional  ",
-      idempotencyKey
-    );
+      completionPriceNote: "  Diseno adicional  ",
+      idempotencyKey,
+    });
 
-    expect(result).toEqual({ ok: true, value: undefined });
+    expect(result).toEqual({ ok: true, value: expect.objectContaining({ status: "completed", total_price: 56 }) });
     expect(mockedCompleteRpc).toHaveBeenCalledWith({
       appointmentId,
       paymentMethod: "cash",
       completionPriceNote: "Diseno adicional",
       itemCharges: [
-        { id: "item-fixed", price: 20, discount_percentage: 20 },
-        { id: "item-variable", price: 40, discount_percentage: 0 },
+        { id: "item-fixed", price: 20, discountPercentage: 20 },
+        { id: "item-variable", price: 40, discountPercentage: 0 },
       ],
       idempotencyKey,
     });
@@ -101,7 +107,7 @@ describe("appointment lifecycle commands", () => {
       message: "Solo puedes cambiar el precio de servicios con precio variable.",
     });
 
-    const result = await completeAppointment(appointmentId, salonId, "cash", [{ id: "item-fixed", price: 25 }], "", idempotencyKey);
+    const result = await completeAppointment({ appointmentId, salonId, paymentMethod: "cash", itemCharges: [{ id: "item-fixed", price: 25 }], idempotencyKey });
 
     expect(result).toEqual({
       ok: false,
@@ -117,7 +123,7 @@ describe("appointment lifecycle commands", () => {
       customer_id: "customer-1",
     });
 
-    const result = await completeAppointment(appointmentId, salonId, "cash", [], "", idempotencyKey);
+    const result = await completeAppointment({ appointmentId, salonId, paymentMethod: "cash", idempotencyKey });
 
     expect(result.ok).toBe(false);
     expect(mockedCompleteRpc).not.toHaveBeenCalled();

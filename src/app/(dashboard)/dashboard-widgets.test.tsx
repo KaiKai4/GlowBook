@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type {
   PendingAppointmentConfirmation,
   TopService,
-} from "@/features/dashboard/use-cases/get-dashboard-overview";
+} from "@/features/dashboard";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { PendingConfirmations, TopServices } from "./dashboard-widgets";
 
@@ -60,7 +60,7 @@ describe("TopServices", () => {
     expect(mounted.container.querySelector('[role="img"]')).toBeNull();
   });
 
-  it("dibuja la gráfica accesible con el periodo en la cabecera", () => {
+  it("dibuja la gráfica accesible con el período en la cabecera", () => {
     mounted = mountComponent(<TopServices services={[service]} />);
 
     expect(mounted.container.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe(

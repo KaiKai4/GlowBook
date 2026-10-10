@@ -3,14 +3,9 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
-import {
-  deleteTemporaryCustomer,
-  findOrCreateTemporaryCustomer,
-  promoteCustomer,
-} from "@/features/customers/use-cases/customer-temporary";
 import {
   checkPermanentCustomerByPhone,
   findArchivedCustomerByContact,
@@ -22,17 +17,23 @@ import {
   checkCustomerPhoneAction,
   findArchivedCustomerByContactAction,
   reactivateCustomerAction,
-  findOrCreateCustomerAction,
-  promoteCustomerAction,
-  deleteTemporaryCustomerAction,
   updateCustomerAction,
   deleteCustomerAction,
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));
@@ -43,11 +44,6 @@ vi.mock("@/features/customers/use-cases/customer-profile", () => ({
 vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
   archiveCustomer: vi.fn(),
   reactivateCustomer: vi.fn(),
-}));
-vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
-  deleteTemporaryCustomer: vi.fn(),
-  findOrCreateTemporaryCustomer: vi.fn(),
-  promoteCustomer: vi.fn(),
 }));
 vi.mock("@/features/customers/use-cases/customer-duplicates", () => ({
   checkPermanentCustomerByPhone: vi.fn(),
@@ -86,20 +82,19 @@ describe("customers actions", () => {
       expect(createCustomerProfile).not.toHaveBeenCalled();
     });
 
-    it("propaga el rechazo del módulo y del límite del plan", async () => {
-      vi.mocked(checkPlanModuleAccess).mockResolvedValue(err("Módulo no incluido en tu plan."));
+    it("devuelve el rechazo del caso de uso (módulo o cupo del plan) tal cual", async () => {
+      vi.mocked(createCustomerProfile).mockResolvedValueOnce(err("Módulo no incluido en tu plan."));
       expect(await createCustomerAction(null, formDataOf(validCustomer))).toEqual({
         ok: false,
         error: "Módulo no incluido en tu plan.",
       });
 
-      vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
-      vi.mocked(checkPlanLimit).mockResolvedValue(err("Límite de clientes alcanzado."));
+      vi.mocked(createCustomerProfile).mockResolvedValueOnce(err("Límite de clientes alcanzado."));
       expect(await createCustomerAction(null, formDataOf(validCustomer))).toEqual({
         ok: false,
         error: "Límite de clientes alcanzado.",
       });
-      expect(createCustomerProfile).not.toHaveBeenCalled();
+      expect(revalidatePath).not.toHaveBeenCalled();
     });
 
     it("devuelve el primer issue de Zod sin persistir", async () => {
@@ -162,6 +157,23 @@ describe("customers actions", () => {
       );
       expect(revalidatePath).toHaveBeenCalledWith("/customers");
     });
+
+    // Regresión F02-3: archivar, reactivar o convertir temporal no se hace editando.
+    it("no envía is_active ni is_temporary al caso de uso aunque el formulario los incluya", async () => {
+      vi.mocked(updateCustomerProfile).mockResolvedValue(ok(undefined));
+
+      const result = await updateCustomerAction(
+        RECORD_ID,
+        null,
+        formDataOf({ first_name: "Lucía", is_active: "false", is_temporary: "true" })
+      );
+
+      expect(result).toEqual({ ok: true, value: undefined });
+      expect(updateCustomerProfile).toHaveBeenCalledTimes(1);
+      const data: object = vi.mocked(updateCustomerProfile).mock.calls[0]?.[2] ?? {};
+      expect(data).not.toHaveProperty("is_active");
+      expect(data).not.toHaveProperty("is_temporary");
+    });
   });
 
   describe("consultas de duplicados y contacto", () => {
@@ -191,6 +203,21 @@ describe("customers actions", () => {
     });
   });
 
+  describe("entrada inválida en consultas de contacto", () => {
+    it("checkCustomerPhoneAction no consulta con un teléfono inválido", async () => {
+      expect(await checkCustomerPhoneAction("2123-4567")).toEqual({ exists: false });
+      expect(await checkCustomerPhoneAction("")).toEqual({ exists: false });
+      expect(checkPermanentCustomerByPhone).not.toHaveBeenCalled();
+    });
+
+    it("findArchivedCustomerByContactAction no consulta con un teléfono o email inválido", async () => {
+      expect(await findArchivedCustomerByContactAction("2123-4567")).toBeNull();
+      expect(await findArchivedCustomerByContactAction(undefined, "no-es-correo")).toBeNull();
+      expect(findArchivedCustomerByContact).not.toHaveBeenCalled();
+    });
+
+  });
+
   describe("ciclo de vida", () => {
     it("reactivateCustomerAction rechaza sin permiso y revalida al reactivar", async () => {
       vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
@@ -218,59 +245,6 @@ describe("customers actions", () => {
       vi.mocked(archiveCustomer).mockResolvedValue(err("No encontrado."));
       expect(await deleteCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No encontrado." });
       expect(revalidatePath).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("clientes temporales", () => {
-    it("findOrCreateCustomerAction rechaza sin permiso y delega el alta temporal", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-      expect(await findOrCreateCustomerAction("Ana", "Pérez")).toEqual({ ok: false, error: noPermissionError });
-      expect(findOrCreateTemporaryCustomer).not.toHaveBeenCalled();
-
-      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
-      vi.mocked(findOrCreateTemporaryCustomer).mockResolvedValue(ok("cust-temp"));
-      expect(await findOrCreateCustomerAction("Ana", "Pérez", "61234567")).toEqual({
-        ok: true,
-        value: "cust-temp",
-      });
-      expect(findOrCreateTemporaryCustomer).toHaveBeenCalledWith({
-        salonId: SALON_ID,
-        firstName: "Ana",
-        lastName: "Pérez",
-        phone: "61234567",
-      });
-    });
-
-    it("promoteCustomerAction promueve y revalida /customers", async () => {
-      vi.mocked(promoteCustomer).mockResolvedValue(ok(undefined));
-
-      expect(await promoteCustomerAction(RECORD_ID)).toEqual({ ok: true, value: undefined });
-      expect(promoteCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
-      expect(revalidatePath).toHaveBeenCalledWith("/customers");
-    });
-
-    it("promoteCustomerAction devuelve el error de permiso específico y no promueve", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-
-      expect(await promoteCustomerAction(RECORD_ID)).toEqual({
-        ok: false,
-        error: "Sin permiso para gestionar clientes.",
-      });
-      expect(promoteCustomer).not.toHaveBeenCalled();
-    });
-
-    it("deleteTemporaryCustomerAction borra solo con permiso", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-      expect(await deleteTemporaryCustomerAction(RECORD_ID)).toEqual({
-        ok: false,
-        error: "Sin permiso para gestionar clientes.",
-      });
-      expect(deleteTemporaryCustomer).not.toHaveBeenCalled();
-
-      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
-      vi.mocked(deleteTemporaryCustomer).mockResolvedValue(ok(undefined));
-      expect(await deleteTemporaryCustomerAction(RECORD_ID)).toEqual({ ok: true, value: undefined });
-      expect(deleteTemporaryCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
     });
   });
 });

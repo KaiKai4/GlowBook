@@ -43,10 +43,12 @@ describe("captureError when the emission itself fails", () => {
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
     const logged = String(errorSpy.mock.calls[0]?.[0]);
-    expect(JSON.parse(logged)).toEqual({
+    expect(JSON.parse(logged)).toMatchObject({
       event: "observability_emit_failed",
       module: "reports",
       action: "export",
+      emitError: expect.any(Object),
+      originalError: { name: "Error", message: "contacto [email]" },
     });
     expect(logged).not.toContain("ana@salon.test");
   });

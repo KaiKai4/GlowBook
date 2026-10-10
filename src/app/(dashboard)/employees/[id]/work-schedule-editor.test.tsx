@@ -9,10 +9,10 @@ import {
   formOf,
   submitForm,
 } from "@/test/ui-people-dom";
-import { addWorkScheduleAction, deleteWorkScheduleAction } from "../actions";
+import { addWorkScheduleAction, deleteWorkScheduleAction } from "../actions-schedule";
 import { WorkScheduleEditor } from "./work-schedule-editor";
 
-vi.mock("../actions", () => ({
+vi.mock("../actions-schedule", () => ({
   addWorkScheduleAction: vi.fn(),
   deleteWorkScheduleAction: vi.fn(),
 }));

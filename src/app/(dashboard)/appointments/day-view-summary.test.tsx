@@ -52,7 +52,7 @@ describe("AppointmentsSummary (tabla del resumen)", () => {
     mounted = null;
   });
 
-  it("pagina el resumen de 10 en 10 y avanza a la página siguiente", () => {
+  it("página el resumen de 10 en 10 y avanza a la página siguiente", () => {
     mounted = renderSummary(upcomingAppointments(12));
 
     expect(bodyRows(mounted.container)).toHaveLength(10);

@@ -9,7 +9,7 @@ import {
   type FakeSupabase,
 } from "@/test/platform-feedback-notifications-supabase";
 
-// Borrado destructivo de un salon: primero se confirma que existe, luego la
+// Borrado destructivo de un salón: primero se confirma que existe, luego la
 // RPC borra sus datos y devuelve los usuarios afectados, y por ultimo se
 // limpian sus cuentas Auth. Un 404 en Auth cuenta como ya borrado.
 
@@ -48,15 +48,15 @@ beforeEach(() => {
 });
 
 describe("deleteSalonCompletely", () => {
-  it("refuses to run the destructive RPC when the salon does not exist", async () => {
+  it("refuses to run the destructive RPC when the salón does not exist", async () => {
     const admin = adminWithSalon({ data: null, error: null });
 
-    await expect(deleteSalonCompletely(SALON_ID)).rejects.toThrow("Salon no encontrado.");
+    await expect(deleteSalonCompletely(SALON_ID)).rejects.toThrow("Salón no encontrado.");
     expect(admin.rpc).not.toHaveBeenCalled();
     expect(mockedDeleteAuthUser).not.toHaveBeenCalled();
   });
 
-  it("looks the salon up by its id before deleting", async () => {
+  it("looks the salón up by its id before deleting", async () => {
     const admin = adminWithSalon({ data: { id: SALON_ID }, error: null });
 
     await deleteSalonCompletely(SALON_ID);
@@ -120,7 +120,7 @@ describe("deleteSalonCompletely", () => {
       .mockResolvedValueOnce({ data: null, error: new AuthApiError("locked", 423, "locked") });
 
     await expect(deleteSalonCompletely(SALON_ID)).rejects.toThrow(
-      "Los datos del salon fueron eliminados, pero no se pudieron borrar 2 cuenta(s) Auth: user-1: boom; user-3: locked"
+      "Los datos del salón fueron eliminados, pero no se pudieron borrar 2 cuenta(s) Auth: user-1: boom; user-3: locked"
     );
   });
 

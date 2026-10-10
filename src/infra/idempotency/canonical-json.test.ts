@@ -35,4 +35,27 @@ describe("canonicalJson", () => {
       z: [1, { y: 2 }],
     });
   });
+
+  it("rechaza objetos que no son planos (Date, Map, Set, instancias de clase)", () => {
+    class Cita {
+      constructor(public readonly id: string) {}
+    }
+
+    expect(() => canonicalJson({ when: new Date(0) })).toThrow(TypeError);
+    expect(() => canonicalJson({ when: new Date(0) })).toThrow(/\$\.when/);
+    expect(() => canonicalJson({ tags: new Map([["a", 1]]) })).toThrow(/Objeto no plano/);
+    expect(() => canonicalJson({ tags: new Set(["a"]) })).toThrow(/Objeto no plano/);
+    expect(() => canonicalJson({ cita: new Cita("c1") })).toThrow(/\$\.cita/);
+  });
+
+  it("acepta objetos sin prototipo (Object.create(null))", () => {
+    const plain = Object.assign(Object.create(null), { b: 2, a: 1 }) as Record<string, unknown>;
+
+    expect(canonicalJson(plain)).toBe('{"a":1,"b":2}');
+  });
+
+  it("ordena las claves por unidades UTF-16 (Array.prototype.sort)", () => {
+    // El emoji (surrogate pair D83D) ordena antes que U+FF5E en UTF-16, aunque su codepoint sea mayor.
+    expect(canonicalJson({ "～": 1, "\u{1F600}": 2 })).toBe('{"\u{1F600}":2,"～":1}');
+  });
 });

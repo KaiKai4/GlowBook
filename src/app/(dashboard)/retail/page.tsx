@@ -1,5 +1,5 @@
-import { getRetailPage } from "@/features/retail/use-cases/retail-sales";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { getRetailPage } from "@/features/retail";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { PageHeader } from "@/components/ui/page-header";
@@ -8,7 +8,7 @@ import { RetailManager } from "./retail-manager";
 
 export default async function RetailPage() {
   const profile = await requireProfile();
-  const retailEnabled = await isEffectiveSalonModuleEnabled(profile, "retail");
+  const retailEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "retail");
 
   if (!retailEnabled || !hasPermission(profile, PERMISSIONS.RETAIL_MANAGE)) {
     return (

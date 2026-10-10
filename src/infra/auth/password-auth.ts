@@ -3,17 +3,18 @@ import { cookies } from "next/headers";
 import type { AuthError } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import { SESSION_ONLY_COOKIE } from "@/infra/supabase/session-persistence";
+import { isAuthInfrastructureError } from "./session";
 
 // Primitivas de autenticacion con contraseña para las acciones de (auth).
 // Sin reglas de negocio ni mensajes para el usuario: eso vive en cada accion.
-// Las cookies de sesion se escriben aqui, en el servidor, nunca desde el browser.
+// Las cookies de sesion se escriben aquí, en el servidor, nunca desde el browser.
 
 export interface AuthOutcome {
   error: AuthError | null;
 }
 
 /**
- * Marca o limpia el modo "solo esta sesion" (recordarme desmarcado). Debe
+ * Marca o limpia el modo "solo esta sesión" (recordarme desmarcado). Debe
  * escribirse antes del sign-in para que las cookies de auth nazcan con la
  * persistencia correcta. Mismo formato que el marcador del browser.
  */
@@ -78,7 +79,8 @@ export async function establishRecoverySession(link: RecoveryLink): Promise<bool
     return error === null;
   }
 
-  const { data } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+  if (isAuthInfrastructureError(error)) throw error;
   return data.user !== null;
 }
 

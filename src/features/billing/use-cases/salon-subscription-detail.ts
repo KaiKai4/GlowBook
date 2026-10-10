@@ -2,7 +2,7 @@ import "server-only";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
 import { findPlanCatalog } from "../data/commercial-plans.repo";
 import {
-  findEffectivePlanRows,
+  findEffectivePlanRowsForPlatform,
   findOpenSalonAlerts,
   findSalonPayments,
 } from "../data/salon-subscriptions.repo";
@@ -79,7 +79,7 @@ export interface SalonSubscriptionDetail {
 
 export async function getSalonSubscriptionDetail(salonId: string): Promise<SalonSubscriptionDetail> {
   const [rows, addons, modules, payments, openAlerts] = await Promise.all([
-    findEffectivePlanRows(salonId),
+    findEffectivePlanRowsForPlatform(salonId),
     findCommercialAddons(),
     findPlanCatalog().then((catalog) => catalog.modules),
     findSalonPayments(salonId),

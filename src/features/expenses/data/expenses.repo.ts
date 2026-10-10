@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { ExpenseCategory } from "../schemas";
 import { reportMonthlyHistoryRpc } from "./rpc/report-monthly-history";
 
+const DEFAULT_EXPENSES_LIMIT = 40;
+
 export interface ExpenseRow {
   id: string;
   expense_date: string;
@@ -30,7 +32,7 @@ const UNIQUE_VIOLATION = "23505";
 
 /**
  * Inserta el gasto usando idempotencyKey como id de la fila: un reenvio con la misma
- * clave no duplica el gasto. Si la fila ya existe en este salon se trata como exito.
+ * clave no duplica el gasto. Si la fila ya existe en este salón se trata como exito.
  */
 export async function insertExpense(
   salonId: string,
@@ -47,7 +49,7 @@ export async function insertExpense(
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
   // custom_category solo guarda el texto libre del caso "other"; para las demas
-  // categorias la etiqueta sale del catalogo, no de un texto guardado.
+  // categorias la etiqueta sale del catálogo, no de un texto guardado.
   const customCategory = input.category === "other" ? input.concept?.trim() || null : null;
 
   const { error } = await supabase.from("expenses").insert({
@@ -66,7 +68,7 @@ export async function insertExpense(
   if (!error) return;
   if (error.code !== UNIQUE_VIOLATION) throw error;
 
-  // Reenvio: la fila ya existe. Solo cuenta como replay si pertenece a este salon.
+  // Reenvio: la fila ya existe. Solo cuenta como replay si pertenece a este salón.
   const { data, error: readError } = await supabase
     .from("expenses")
     .select("id")
@@ -78,7 +80,7 @@ export async function insertExpense(
   if (!data) throw error;
 }
 
-export async function findExpenses(salonId: string, limit = 40): Promise<ExpenseRow[]> {
+export async function findExpenses(salonId: string, limit = DEFAULT_EXPENSES_LIMIT): Promise<ExpenseRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("expenses")

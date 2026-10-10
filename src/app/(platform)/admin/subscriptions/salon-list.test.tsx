@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
+import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { SalonSubscriptionList } from "./salon-list";
 

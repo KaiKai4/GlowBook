@@ -32,13 +32,13 @@ describe("getCustomersPage (normalizacion de parametros)", () => {
   });
 
   it.each([
-    ["sin pagina", undefined, 1],
-    ["pagina no numerica", "abc", 1],
-    ["pagina cero", "0", 1],
-    ["pagina negativa", "-4", 1],
-    ["pagina fraccionaria", "2.5", 1],
-    ["pagina valida", "3", 3],
-  ])("normaliza la pagina: %s", async (_label, rawPage, expectedPage) => {
+    ["sin página", undefined, 1],
+    ["página no numerica", "abc", 1],
+    ["página cero", "0", 1],
+    ["página negativa", "-4", 1],
+    ["página fraccionaria", "2.5", 1],
+    ["página válida", "3", 3],
+  ])("normaliza la página: %s", async (_label, rawPage, expectedPage) => {
     const view = await getCustomersPage({ salonId: "salon-1", page: rawPage });
 
     expect(view.page).toBe(expectedPage);
@@ -75,7 +75,7 @@ describe("getCustomersPage (normalizacion de parametros)", () => {
     expect(mockedFindCustomers).toHaveBeenCalledWith("salon-1", expect.objectContaining({ q: "" }));
   });
 
-  it("calcula paginas totales con minimo de una pagina", async () => {
+  it("calcula páginas totales con mínimo de una página", async () => {
     mockedFindCustomers.mockResolvedValueOnce({ data: [], total: 0 });
     expect((await getCustomersPage({ salonId: "salon-1" })).totalPages).toBe(1);
 
@@ -86,7 +86,7 @@ describe("getCustomersPage (normalizacion de parametros)", () => {
     expect((await getCustomersPage({ salonId: "salon-1" })).totalPages).toBe(2);
   });
 
-  it("devuelve los clientes y el total de la consulta junto al tamano de pagina", async () => {
+  it("devuelve los clientes y el total de la consulta junto al tamano de página", async () => {
     mockedFindCustomers.mockResolvedValue({ data: [customerRow], total: 25 });
 
     const view = await getCustomersPage({ salonId: "salon-1", page: "2" });

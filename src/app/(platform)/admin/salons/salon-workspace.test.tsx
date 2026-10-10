@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, getButtonByText } from "@/test/ui-admin-dom";
 import { CATALOG_MODULES, makeDetail, makeLimit, makeRow } from "@/test/ui-admin-fixtures";
-import { SalonWorkspace, type SalonWorkspaceSalon } from "./salon-workspace";
+import { SalonWorkspace } from "./salon-workspace";
+import type { SalonWorkspaceSalon } from "./salon-workspace-types";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("next/link", async () => {
@@ -125,16 +126,16 @@ describe("SalonWorkspace", () => {
     mounted = renderWorkspace();
 
     const link = mounted.container.querySelector<HTMLAnchorElement>('a[href="/admin/subscriptions?salon=salon-1"]');
-    expect(link?.textContent).toContain("Gestionar suscripcion y extras");
+    expect(link?.textContent).toContain("Gestionar suscripción y extras");
   });
 
-  it("muestra la fecha pagada hasta cuando el periodo está vigente", () => {
+  it("muestra la fecha pagada hasta cuando el período está vigente", () => {
     mounted = renderWorkspace();
 
     expect(mounted.container.textContent).toContain("Pagado hasta");
   });
 
-  it("muestra el fin del trial cuando el salón aún no tiene periodo pagado", () => {
+  it("muestra el fin del trial cuando el salón aún no tiene período pagado", () => {
     mounted = renderWorkspace({
       detail: {
         assignment: {
@@ -184,7 +185,7 @@ describe("SalonWorkspace", () => {
 
     clickTab(mounted.container, "Plan y uso");
 
-    expect(mounted.container.textContent).toContain("Asignar un plan a este salon");
+    expect(mounted.container.textContent).toContain("Asignar un plan a este salón");
     expect(mounted.container.textContent).toContain("Asigna un plan para ver el consumo de límites");
   });
 
@@ -193,7 +194,7 @@ describe("SalonWorkspace", () => {
 
     clickTab(mounted.container, "Acciones");
 
-    expect(mounted.container.textContent).toContain("Estado del salon");
+    expect(mounted.container.textContent).toContain("Estado del salón");
     expect(mounted.container.textContent).toContain("Zona de peligro");
     expect(getButtonByText(mounted.container, "Suspender").textContent).toContain("Suspender");
     expect(getButtonByText(mounted.container, "Eliminar").textContent).toContain("Eliminar");

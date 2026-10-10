@@ -37,7 +37,7 @@ describe("reports read-model rpc adapters", () => {
   });
 
   describe("fetchPeriodTotals", () => {
-    it("invoca report_period_totals con dias locales, zona y modulos", async () => {
+    it("invoca report_period_totals con días locales, zona y módulos", async () => {
       rpc.mockResolvedValue({ data: VALID_TOTALS, error: null });
 
       const totals = await fetchPeriodTotals({ ...RANGE, modules: MODULES });
@@ -65,7 +65,7 @@ describe("reports read-model rpc adapters", () => {
       });
     });
 
-    it("rechaza un resultado con cifras que no son numeros", async () => {
+    it("rechaza un resultado con cifras que no son números", async () => {
       rpc.mockResolvedValue({ data: { ...VALID_TOTALS, revenue: "175" }, error: null });
 
       await expect(fetchPeriodTotals({ ...RANGE, modules: MODULES })).rejects.toThrow();
@@ -80,7 +80,7 @@ describe("reports read-model rpc adapters", () => {
   });
 
   describe("fetchOperationalBreakdown", () => {
-    it("valida estados, empleados y servicios del desglose", async () => {
+    it("válida estados, empleados y servicios del desglose", async () => {
       rpc.mockResolvedValue({
         data: {
           statusBreakdown: [{ status: "completed", count: 2, pct: 50 }],

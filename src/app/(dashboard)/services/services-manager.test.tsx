@@ -99,7 +99,7 @@ describe("ServicesManager", () => {
   it("muestra el estado vacío y deshabilita Nuevo servicio cuando no hay categorías", () => {
     mounted = mountComponent(<ServicesManager categories={[]} />);
 
-    expect(mounted.container.textContent).toContain("Crea tu primera categoria para empezar.");
+    expect(mounted.container.textContent).toContain("Crea tu primera categoría para empezar.");
     expect(buttonWithText(mounted.container, "Nuevo servicio").disabled).toBe(true);
     expect(sectionHeadings(mounted.container)).toEqual([]);
   });
@@ -141,12 +141,12 @@ describe("ServicesManager", () => {
     expect(sectionHeadings(mounted.container)).toEqual(["Uñas"]);
   });
 
-  it("pagina las categorías de tres en tres y permite avanzar y retroceder", () => {
+  it("página las categorías de tres en tres y permite avanzar y retroceder", () => {
     mounted = mountComponent(<ServicesManager categories={[CABELLO, UNAS, MASAJES, CEJAS]} />);
 
     expect(sectionHeadings(mounted.container)).toEqual(["Cabello", "Uñas", "Masajes"]);
     expect(mounted.container.textContent).toContain("1-3 de 4");
-    expect(mounted.container.textContent).toContain("Pagina 1 de 2");
+    expect(mounted.container.textContent).toContain("Página 1 de 2");
     expect(buttonWithText(mounted.container, "Anterior").disabled).toBe(true);
 
     click(buttonWithText(mounted.container, "Siguiente"));
@@ -169,7 +169,7 @@ describe("ServicesManager", () => {
     setFieldValue(search, "e");
 
     expect(sectionHeadings(mounted.container)).toEqual(["Cabello", "Masajes", "Cejas"]);
-    expect(mounted.container.textContent).not.toContain("Pagina");
+    expect(mounted.container.textContent).not.toContain("Página");
   });
 
   it("crea una categoría y cierra el diálogo cuando la acción responde ok", async () => {
@@ -261,9 +261,9 @@ describe("ServicesManager", () => {
     mounted = mountComponent(<ServicesManager categories={[CABELLO, UNAS]} />);
 
     click(sidebarRow(mounted.container, "Cabello"));
-    click(buttonWithAriaLabel(mounted.container, "Archivar categoria Cabello"));
+    click(buttonWithAriaLabel(mounted.container, "Archivar categoría Cabello"));
     expect(document.body.textContent).toContain('Vas a archivar "Cabello".');
-    click(buttonWithText(document.body, "Archivar categoria"));
+    click(buttonWithText(document.body, "Archivar categoría"));
     await flushAsync();
 
     expect(archiveCategoryAction).toHaveBeenCalledWith("cat-1");
@@ -275,8 +275,8 @@ describe("ServicesManager", () => {
     vi.mocked(archiveCategoryAction).mockResolvedValue({ ok: false, error: "No se puede archivar una categoría con citas activas" });
     mounted = mountComponent(<ServicesManager categories={[CABELLO]} />);
 
-    click(buttonWithAriaLabel(mounted.container, "Archivar categoria Cabello"));
-    click(buttonWithText(document.body, "Archivar categoria"));
+    click(buttonWithAriaLabel(mounted.container, "Archivar categoría Cabello"));
+    click(buttonWithText(document.body, "Archivar categoría"));
     await flushAsync();
 
     expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
@@ -328,7 +328,7 @@ describe("ServicesManager", () => {
     setFieldValue(search, "zzz");
 
     expect(sectionHeadings(mounted.container)).toEqual(["Cabello"]);
-    expect(mounted.container.textContent).toContain("Sin servicios en esta categoria.");
+    expect(mounted.container.textContent).toContain("Sin servicios en esta categoría.");
   });
 
   it("usa la primera categoría como destino de Nuevo servicio cuando se ven todas", () => {
@@ -342,9 +342,9 @@ describe("ServicesManager", () => {
   it("abre la creación de categoría desde el estado vacío", () => {
     mounted = mountComponent(<ServicesManager categories={[]} />);
 
-    click(buttonWithText(mounted.container, "Nueva categoria"));
+    click(buttonWithText(mounted.container, "Nueva categoría"));
 
-    expect(document.body.querySelector("[role=\"dialog\"] h2")?.textContent).toBe("Nueva categoria");
+    expect(document.body.querySelector("[role=\"dialog\"] h2")?.textContent).toBe("Nueva categoría");
   });
 
   it("cierra los diálogos de categoría y de servicio al cancelar", () => {
@@ -374,8 +374,8 @@ describe("ServicesManager", () => {
     vi.mocked(archiveCategoryAction).mockReturnValue(new Promise<never>(() => undefined));
     mounted = mountComponent(<ServicesManager categories={[CABELLO]} />);
 
-    click(buttonWithAriaLabel(mounted.container, "Archivar categoria Cabello"));
-    click(buttonWithText(document.body, "Archivar categoria"));
+    click(buttonWithAriaLabel(mounted.container, "Archivar categoría Cabello"));
+    click(buttonWithText(document.body, "Archivar categoría"));
     click(buttonWithAriaLabel(document.body, "Cerrar"));
 
     expect(document.body.textContent).toContain('Vas a archivar "Cabello".');
@@ -385,8 +385,8 @@ describe("ServicesManager", () => {
     vi.mocked(archiveCategoryAction).mockResolvedValue({ ok: true, value: undefined });
     mounted = mountComponent(<ServicesManager categories={[CABELLO, UNAS]} />);
 
-    click(buttonWithAriaLabel(mounted.container, "Archivar categoria Uñas"));
-    click(buttonWithText(document.body, "Archivar categoria"));
+    click(buttonWithAriaLabel(mounted.container, "Archivar categoría Uñas"));
+    click(buttonWithText(document.body, "Archivar categoría"));
     await flushAsync();
 
     expect(archiveCategoryAction).toHaveBeenCalledWith("cat-2");

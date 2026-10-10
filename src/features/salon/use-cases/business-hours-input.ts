@@ -2,7 +2,7 @@ import { err, ok, type Result } from "@/infra/result";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 import { BusinessHoursSchema, type BusinessDayInput } from "../schemas";
 
-const INVALID_JSON_MESSAGE = "Datos de horario invalidos.";
+const INVALID_JSON_MESSAGE = "Datos de horario inválidos.";
 
 // Lee el horario que llega serializado desde el formulario y lo valida contra el
 // esquema (7 dias, horas coherentes). Sin I/O: el caso de uso solo persiste.

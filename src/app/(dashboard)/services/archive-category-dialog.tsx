@@ -22,8 +22,8 @@ export function ArchiveCategoryDialog({
     <Dialog
       open={category !== null}
       onClose={pending ? () => undefined : onClose}
-      title="Archivar categoria"
-      description="La categoria dejara de estar disponible para nuevas citas."
+      title="Archivar categoría"
+      description="La categoría dejara de estar disponible para nuevas citas."
       className="max-w-lg"
     >
       <div className="space-y-5">
@@ -35,20 +35,20 @@ export function ArchiveCategoryDialog({
             <p className="text-sm font-semibold">
               {category
                 ? `Vas a archivar "${category.name}".`
-                : "Vas a archivar esta categoria."}
+                : "Vas a archivar esta categoría."}
             </p>
             <p className="mt-1 text-sm leading-6 text-warning-strong">
               {serviceCount > 0
                 ? `Sus ${serviceCount} servicios no apareceran al crear nuevas citas. Las citas, cobros y reportes historicos se conservaran.`
-                : "No tiene servicios asociados. El historial del salon se conservara igual."}
+                : "No tiene servicios asociados. El historial del salón se conservara igual."}
             </p>
           </div>
         </div>
 
         <div className="rounded-xl border border-border bg-surface p-4">
-          <p className="text-sm font-semibold text-fg">Despues podras crear otra categoria con el mismo nombre.</p>
+          <p className="text-sm font-semibold text-fg">Después podras crear otra categoría con el mismo nombre.</p>
           <p className="mt-1 text-sm leading-6 text-fg-subtle">
-            Sera una categoria nueva y no se mezclara con la categoria archivada.
+            Será una categoría nueva y no se mezclará con la categoría archivada.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ export function ArchiveCategoryDialog({
             Cancelar
           </Button>
           <Button type="button" variant="destructive" loading={pending} onClick={onConfirm}>
-            Archivar categoria
+            Archivar categoría
           </Button>
         </div>
       </div>

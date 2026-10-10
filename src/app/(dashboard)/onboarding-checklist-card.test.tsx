@@ -1,16 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import type { OnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
+import type { OnboardingChecklist } from "@/features/dashboard";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { OnboardingChecklistCard } from "./onboarding-checklist-card";
 
 function checklist(doneKeys: string[]): OnboardingChecklist {
-  const steps = [
-    { key: "services", label: "Crea tus servicios", description: "Define lo que ofreces", href: "/services" },
-    { key: "employees", label: "Agrega colaboradores", description: "Quién atiende", href: "/employees" },
-    { key: "customers", label: "Registra clientes", description: "Tu base de clientes", href: "/customers" },
-    { key: "appointments", label: "Agenda tu primera cita", description: "Empieza a operar", href: "/appointments" },
-  ].map((step) => ({ ...step, done: doneKeys.includes(step.key) })) as OnboardingChecklist["steps"];
+  const steps = (["services", "employees", "customers", "appointments"] as const).map((key) => ({
+    key,
+    done: doneKeys.includes(key),
+  }));
   return { steps, doneCount: doneKeys.length, complete: doneKeys.length === steps.length };
 }
 
@@ -40,7 +38,7 @@ describe("OnboardingChecklistCard", () => {
       "/services",
       "/employees",
       "/customers",
-      "/appointments",
+      "/appointments/new",
     ]);
   });
 
@@ -56,10 +54,10 @@ describe("OnboardingChecklistCard", () => {
 
     const [done, pending] = Array.from(mounted.container.querySelectorAll<HTMLAnchorElement>("a"));
     expect(done?.textContent).toBe("Crea tus servicios");
-    expect(done?.textContent).not.toContain("Define lo que ofreces");
+    expect(done?.textContent).not.toContain("Define qué ofreces, su duración y precio.");
     expect(done?.querySelector("p")?.className).toContain("line-through");
-    expect(pending?.textContent).toContain("Agrega colaboradores");
-    expect(pending?.textContent).toContain("Quién atiende");
+    expect(pending?.textContent).toContain("Agrega tus colaboradores");
+    expect(pending?.textContent).toContain("Tu equipo, sus horarios y los servicios que realizan.");
     expect(pending?.querySelector("p")?.className).not.toContain("line-through");
   });
 

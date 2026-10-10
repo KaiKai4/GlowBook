@@ -1,31 +1,20 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { isValidOptionalPhone, phoneValidationMessage } from "@/infra/format/phone";
-import { getOccupiedSlotsForDate } from "../actions";
-import { checkCustomerPhoneAction } from "../../customers/actions";
-import { useCreateAppointment } from "./use-create-appointment";
+import { useState } from "react";
 import { AppointmentCustomerStep } from "./appointment-customer-step";
 import { AppointmentServicesStep } from "./appointment-services-step";
 import { AppointmentStepper } from "./appointment-stepper";
 import { AppointmentSummaryStep } from "./appointment-summary-step";
-import {
-  buildSequentialSchedule,
-  createAppointmentRow,
-  findEligibleEmployees,
-  salonWindowFor,
-} from "@/features/appointments/domain/wizard-availability";
-import type {
-  AppointmentServiceRow,
-  AppointmentWizardProps,
-  OccupiedByEmployee,
-} from "./appointment-wizard-types";
+import { useCreateAppointment } from "./use-create-appointment";
+import { useCustomerStep } from "./use-customer-step";
+import { useAvailability } from "./use-availability";
+import { useServiceRows } from "./use-service-rows";
+import { useScheduleValidation } from "../use-schedule-validation";
+import type { AppointmentWizardProps } from "./appointment-wizard-types";
 
 const STEPS = ["Cliente", "Servicios", "Resumen"] as const;
 
-let rowSeq = 0;
-const newRow = (): AppointmentServiceRow => createAppointmentRow(rowSeq++);
-
+/** Asistente de nueva cita: compone los pasos y los hooks de cada responsabilidad. */
 export function AppointmentWizard({
   customers,
   categories,
@@ -35,157 +24,45 @@ export function AppointmentWizard({
   businessHours,
 }: AppointmentWizardProps) {
   const [step, setStep] = useState(1);
-
-  const [mode, setMode] = useState<"existing" | "new">(customers.length ? "existing" : "new");
-  const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [newFirst, setNewFirst] = useState("");
-  const [newLast, setNewLast] = useState("");
-  const [newPhone, setNewPhone] = useState("");
-  const [checkingPhone, startCheckPhone] = useTransition();
-  const [customerError, setCustomerError] = useState<string | null>(null);
-
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("09:00");
-  const [rows, setRows] = useState<AppointmentServiceRow[]>([newRow()]);
-  const [occupied, setOccupied] = useState<OccupiedByEmployee>({});
-  const [loadingAvailability, startAvailability] = useTransition();
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-
   const [notes, setNotes] = useState("");
+
+  const customer = useCustomerStep({
+    customers,
+    onValid: (name) => {
+      setCustomerName(name);
+      setStep(2);
+    },
+  });
+  const availability = useAvailability({ timezone: salonConfig.timezone, businessHours });
+  const serviceRows = useServiceRows();
   const { confirm, submitting, submitError } = useCreateAppointment();
 
-  const serviceMap = useMemo(
-    () => new Map(services.map((service) => [service.id, service])),
-    [services]
-  );
-
-  const selectedWindow = useMemo(
-    () => salonWindowFor(date, salonConfig.timezone, businessHours),
-    [date, salonConfig.timezone, businessHours]
-  );
-
-  const schedule = useMemo(
-    () => buildSequentialSchedule({ rows, date, time, timeZone: salonConfig.timezone, serviceMap }),
-    [rows, date, time, salonConfig.timezone, serviceMap]
-  );
-
-  const isClosedDay = !!date && selectedWindow === null;
-  const validRows = rows.filter((row) => row.serviceId && row.employeeId);
-  const total = validRows.reduce(
-    (sum, row) => sum + (serviceMap.get(row.serviceId)?.price ?? 0),
-    0
-  );
-
-  function getEligibleEmployees(serviceId: string, start: Date | null, end: Date | null) {
-    return findEligibleEmployees({
-      serviceId,
-      start,
-      end,
-      employees,
-      serviceMap,
-      salonConfig,
-      businessHours,
-      occupied,
-    });
-  }
-
-  const assignmentsStillValid = schedule.length > 0 && schedule.every((item) => {
-    if (!item.row.serviceId || !item.row.employeeId || !item.start || !item.end) return false;
-    return getEligibleEmployees(item.row.serviceId, item.start, item.end)
-      .some((employee) => employee.id === item.row.employeeId);
+  const { date, time, occupied, loadingAvailability } = availability;
+  const validation = useScheduleValidation({
+    date,
+    time,
+    rows: serviceRows.rows,
+    services,
+    employees,
+    salonConfig,
+    businessHours,
+    occupied,
   });
-
-  const canContinueFromServices =
-    assignmentsStillValid && !!date && !!time && !isClosedDay && !loadingAvailability;
-
-  function clearCustomerError() {
-    setCustomerError(null);
-  }
-
-  function continueFromCustomer() {
-    setCustomerError(null);
-
-    if (mode === "existing") {
-      if (!customerId) return;
-      setCustomerName(customers.find((customer) => customer.id === customerId)?.name ?? "");
-      setStep(2);
-      return;
-    }
-
-    if (!newFirst.trim() || !newLast.trim()) {
-      setCustomerError("Nombre y apellido son obligatorios.");
-      return;
-    }
-
-    if (!newPhone.trim()) {
-      setCustomerName(`${newFirst} ${newLast}`);
-      setStep(2);
-      return;
-    }
-
-    if (!isValidOptionalPhone(newPhone)) {
-      setCustomerError(phoneValidationMessage());
-      return;
-    }
-
-    startCheckPhone(async () => {
-      const { exists, archived } = await checkCustomerPhoneAction(newPhone);
-      if (exists) {
-        setCustomerError(
-          archived
-            ? "Este numero pertenece a un cliente existente. Restauralo desde Clientes para conservar su historial."
-            : "Este numero ya esta registrado. Buscalo en Cliente existente."
-        );
-        return;
-      }
-
-      setCustomerName(`${newFirst} ${newLast}`);
-      setStep(2);
-    });
-  }
-
-  function loadAvailability(nextDate: string) {
-    if (!nextDate) return;
-
-    const windowForDate = salonWindowFor(nextDate, salonConfig.timezone, businessHours);
-    if (windowForDate && (time < windowForDate.open || time >= windowForDate.close)) {
-      setTime(windowForDate.open);
-    }
-
-    startAvailability(async () => {
-      const slots = await getOccupiedSlotsForDate(nextDate);
-      setOccupied(slots);
-    });
-  }
-
-  function updateRow(key: string, patch: Partial<AppointmentServiceRow>) {
-    setRows((prev) => prev.map((row) => (row.key === key ? { ...row, ...patch } : row)));
-  }
-
-  function addRow() {
-    setRows((prev) => [...prev, newRow()]);
-  }
-
-  function removeRow(key: string) {
-    setRows((prev) => prev.filter((row) => row.key !== key));
-  }
-
-  function reorder(from: number, to: number) {
-    if (from === to) return;
-    setRows((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      if (moved === undefined) return prev;
-      next.splice(to, 0, moved);
-      return next;
-    });
-  }
+  const canContinueFromServices = validation.isScheduleValid && !loadingAvailability;
 
   function handleConfirm() {
     confirm({
-      mode, customerId, newFirst, newLast, newPhone, date, time,
-      timezone: salonConfig.timezone, rows, notes,
+      mode: customer.mode,
+      customerId: customer.customerId,
+      newFirst: customer.newFirst,
+      newLast: customer.newLast,
+      newPhone: customer.newPhone,
+      date,
+      time,
+      timezone: salonConfig.timezone,
+      rows: serviceRows.rows,
+      notes,
     });
   }
 
@@ -196,45 +73,45 @@ export function AppointmentWizard({
       {step === 1 && (
         <AppointmentCustomerStep
           customers={customers}
-          mode={mode}
-          setMode={setMode}
-          customerId={customerId}
-          setCustomerId={setCustomerId}
-          newFirst={newFirst}
-          setNewFirst={setNewFirst}
-          newLast={newLast}
-          setNewLast={setNewLast}
-          newPhone={newPhone}
-          setNewPhone={setNewPhone}
-          error={customerError}
-          checkingPhone={checkingPhone}
-          onContinue={continueFromCustomer}
-          clearError={clearCustomerError}
+          mode={customer.mode}
+          setMode={customer.setMode}
+          customerId={customer.customerId}
+          setCustomerId={customer.setCustomerId}
+          newFirst={customer.newFirst}
+          setNewFirst={customer.setNewFirst}
+          newLast={customer.newLast}
+          setNewLast={customer.setNewLast}
+          newPhone={customer.newPhone}
+          setNewPhone={customer.setNewPhone}
+          error={customer.customerError}
+          checkingPhone={customer.checkingPhone}
+          onContinue={customer.continueFromCustomer}
+          clearError={customer.clearCustomerError}
         />
       )}
 
       {step === 2 && (
         <AppointmentServicesStep
           date={date}
-          setDate={setDate}
+          setDate={availability.setDate}
           time={time}
-          setTime={setTime}
-          selectedWindow={selectedWindow}
-          isClosedDay={isClosedDay}
+          setTime={availability.setTime}
+          selectedWindow={validation.selectedWindow}
+          isClosedDay={validation.isClosedDay}
           loadingAvailability={loadingAvailability}
-          schedule={schedule}
-          rowsCount={rows.length}
+          schedule={validation.schedule}
+          rowsCount={serviceRows.rows.length}
           categories={categories}
           services={services}
           timezone={salonConfig.timezone}
-          dragIndex={dragIndex}
-          setDragIndex={setDragIndex}
-          getEligibleEmployees={getEligibleEmployees}
-          updateRow={updateRow}
-          addRow={addRow}
-          removeRow={removeRow}
-          reorder={reorder}
-          onLoadAvailability={loadAvailability}
+          dragIndex={serviceRows.dragIndex}
+          setDragIndex={serviceRows.setDragIndex}
+          getEligibleEmployees={validation.getEligibleEmployees}
+          updateRow={serviceRows.updateRow}
+          addRow={serviceRows.addRow}
+          removeRow={serviceRows.removeRow}
+          reorder={serviceRows.reorder}
+          onLoadAvailability={availability.loadAvailability}
           onBack={() => setStep(1)}
           onContinue={() => setStep(3)}
           canContinue={canContinueFromServices}
@@ -244,10 +121,10 @@ export function AppointmentWizard({
       {step === 3 && (
         <AppointmentSummaryStep
           customerName={customerName}
-          schedule={schedule}
+          schedule={validation.schedule}
           employees={employees}
           timezone={salonConfig.timezone}
-          total={total}
+          total={validation.total}
           notes={notes}
           setNotes={setNotes}
           submitError={submitError}

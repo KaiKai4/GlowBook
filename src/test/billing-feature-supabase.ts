@@ -1,9 +1,10 @@
 // Doble encadenable del cliente Supabase para los tests de repositorios de billing.
-// Implementa el contrato UntypedSupabase de billing-db y registra cada llamada
-// (from, select, eq, in, order, limit, insert, update, upsert, delete, rpc...)
-// para que el test afirme filtros, columnas y tabla pedida.
+// Reproduce el subconjunto de PostgREST que usan los repos (from, select, eq, in,
+// order, limit, insert, update, upsert, delete, maybeSingle, single y rpc) y
+// registra cada llamada para que el test afirme filtros, columnas y tabla pedida.
+// No es un tipo de Supabase: el repo lo recibe a través del mock de la factoría admin.
+import { PostgrestError } from "@supabase/supabase-js";
 import { vi, type Mock } from "vitest";
-import type { UntypedQuery, UntypedSupabase } from "@/features/billing/data/billing-db";
 
 interface BillingQueryError {
   message: string;
@@ -16,6 +17,18 @@ interface BillingQueryResult {
   count?: number | null;
 }
 
+/** Convierte el error simulado en un PostgrestError real, como el que lanza el cliente. */
+function toPostgrestError(error: BillingQueryError | null | undefined): PostgrestError | null {
+  if (!error) return null;
+  return new PostgrestError({ message: error.message, details: "", hint: "", code: "" });
+}
+
+interface BillingNormalizedResult {
+  data: unknown;
+  error: PostgrestError | null;
+  count: number | null;
+}
+
 interface BillingRecordedCall {
   method: string;
   args: unknown[];
@@ -26,13 +39,26 @@ export interface BillingRecordedQuery {
   calls: BillingRecordedCall[];
 }
 
-type TableResponse =
-  | BillingQueryResult
-  | ((query: BillingRecordedQuery) => BillingQueryResult);
+/** Constructor encadenable: cada método registra la llamada y devuelve el mismo constructor. */
+interface BillingQueryBuilder extends PromiseLike<BillingNormalizedResult> {
+  select: (...args: unknown[]) => BillingQueryBuilder;
+  insert: (...args: unknown[]) => BillingQueryBuilder;
+  update: (...args: unknown[]) => BillingQueryBuilder;
+  upsert: (...args: unknown[]) => BillingQueryBuilder;
+  delete: (...args: unknown[]) => BillingQueryBuilder;
+  eq: (...args: unknown[]) => BillingQueryBuilder;
+  in: (...args: unknown[]) => BillingQueryBuilder;
+  order: (...args: unknown[]) => BillingQueryBuilder;
+  limit: (...args: unknown[]) => BillingQueryBuilder;
+  maybeSingle: () => Promise<BillingNormalizedResult>;
+  single: () => Promise<BillingNormalizedResult>;
+}
 
-export interface BillingSupabaseFake extends UntypedSupabase {
-  from: Mock<(table: string) => UntypedQuery>;
-  rpc: Mock<UntypedSupabase["rpc"]>;
+type TableResponse = BillingQueryResult | ((query: BillingRecordedQuery) => BillingQueryResult);
+
+export interface BillingSupabaseFake {
+  from: Mock<(table: string) => BillingQueryBuilder>;
+  rpc: Mock<(fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: PostgrestError | null }>>;
   /** Todas las consultas creadas (y las RPC), en orden. */
   queries: BillingRecordedQuery[];
 }
@@ -44,20 +70,12 @@ export interface BillingSupabaseFakeOptions {
   rpc?: BillingQueryResult;
 }
 
-interface NormalizedResult {
-  data: unknown;
-  error: BillingQueryError | null;
-  count: number | null;
-}
-
-export function createBillingSupabaseFake(
-  options: BillingSupabaseFakeOptions = {}
-): BillingSupabaseFake {
+export function createBillingSupabaseFake(options: BillingSupabaseFakeOptions = {}): BillingSupabaseFake {
   const queries: BillingRecordedQuery[] = [];
   const tables = options.tables ?? {};
   const rpcResult = options.rpc ?? { data: {}, error: null };
 
-  const resolve = (query: BillingRecordedQuery): NormalizedResult => {
+  const resolve = (query: BillingRecordedQuery): BillingNormalizedResult => {
     const response = tables[query.table];
     const raw: BillingQueryResult =
       response === undefined
@@ -67,47 +85,44 @@ export function createBillingSupabaseFake(
           : response;
     return {
       data: raw.data ?? null,
-      error: raw.error ?? null,
+      error: toPostgrestError(raw.error),
       count: raw.count ?? null,
     };
   };
 
-  const createBuilder = (query: BillingRecordedQuery): UntypedQuery => {
-    const record = (method: string, args: unknown[]): UntypedQuery => {
+  const createBuilder = (query: BillingRecordedQuery): BillingQueryBuilder => {
+    const record = (method: string, args: unknown[]): BillingQueryBuilder => {
       query.calls.push({ method, args });
       return builder;
     };
+    const terminal = (method: string, single: boolean): Promise<BillingNormalizedResult> => {
+      query.calls.push({ method, args: [] });
+      const result = resolve(query);
+      // maybeSingle/single devuelven una fila (u null), no una lista.
+      if (!single) return Promise.resolve(result);
+      const data = Array.isArray(result.data) ? (result.data[0] ?? null) : result.data;
+      return Promise.resolve({ ...result, data });
+    };
 
-    const builder: UntypedQuery = {
+    const builder: BillingQueryBuilder = {
       select: (...args) => record("select", args),
       insert: (...args) => record("insert", args),
       update: (...args) => record("update", args),
       upsert: (...args) => record("upsert", args),
       delete: (...args) => record("delete", args),
       eq: (...args) => record("eq", args),
-      gte: (...args) => record("gte", args),
-      lt: (...args) => record("lt", args),
       in: (...args) => record("in", args),
       order: (...args) => record("order", args),
       limit: (...args) => record("limit", args),
-      maybeSingle: <T>() => {
-        query.calls.push({ method: "maybeSingle", args: [] });
-        return Promise.resolve(resolve(query) as { data: T | null; error: BillingQueryError | null });
-      },
-      single: <T>() => {
-        query.calls.push({ method: "single", args: [] });
-        return Promise.resolve(resolve(query) as { data: T | null; error: BillingQueryError | null });
-      },
-      then: <TResult1 = unknown, TResult2 = never>(
-        onFulfilled?: ((value: unknown) => TResult1 | PromiseLike<TResult1>) | null,
-        onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
-      ) => Promise.resolve(resolve(query)).then(onFulfilled, onRejected),
+      maybeSingle: () => terminal("maybeSingle", true),
+      single: () => terminal("single", true),
+      then: (onFulfilled, onRejected) => Promise.resolve(resolve(query)).then(onFulfilled, onRejected),
     };
 
     return builder;
   };
 
-  const from = vi.fn((table: string): UntypedQuery => {
+  const from = vi.fn((table: string): BillingQueryBuilder => {
     const query: BillingRecordedQuery = { table, calls: [] };
     queries.push(query);
     return createBuilder(query);
@@ -115,7 +130,7 @@ export function createBillingSupabaseFake(
 
   const rpc = vi.fn(async (fn: string, args: Record<string, unknown>) => {
     queries.push({ table: `rpc:${fn}`, calls: [{ method: "rpc", args: [args] }] });
-    return { data: rpcResult.data ?? null, error: rpcResult.error ?? null };
+    return { data: rpcResult.data ?? null, error: toPostgrestError(rpcResult.error) };
   });
 
   return { from, rpc, queries };

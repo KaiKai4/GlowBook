@@ -1,7 +1,8 @@
+import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { upsertBusinessHours } from "../data/salon.repo";
+import { upsertBusinessHours } from "../data/salon-business-hours.repo";
 import type { BusinessDayInput } from "../schemas";
 
 export async function updateBusinessHours(
@@ -19,7 +20,8 @@ export async function updateBusinessHours(
   try {
     await upsertBusinessHours(rows);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (error) {
+    captureError(error, { module: "salon", action: "update_business_hours" });
     return { ok: false, error: "Error al guardar los horarios." };
   }
 }

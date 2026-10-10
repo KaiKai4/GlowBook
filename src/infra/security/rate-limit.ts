@@ -1,3 +1,4 @@
+import { RATE_LIMIT_POLICIES } from "./rate-limit-policies";
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { captureError } from "@/infra/observability";
@@ -11,16 +12,16 @@ import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 //
 // Politica ante fallo del almacen: fail-open. Si la RPC falla, la operacion se
 // permite y el error se registra con captureError. La fuerza bruta de tokens
-// de invitacion queda cubierta por la entropia del token, no por este limite.
+// de invitación queda cubierta por la entropia del token, no por este limite.
 
 export interface RateLimitOptions {
-  /** Maximo de intentos dentro de la ventana. */
+  /** Máximo de intentos dentro de la ventana. */
   max: number;
   /** Duración de la ventana en milisegundos. */
   windowMs: number;
 }
 
-const DEFAULT_ACTION_LIMIT: RateLimitOptions = { max: 60, windowMs: 60_000 };
+const DEFAULT_ACTION_LIMIT: RateLimitOptions = RATE_LIMIT_POLICIES.write;
 const DEFAULT_ANONYMOUS_LIMIT: RateLimitOptions = { max: 10, windowMs: 60_000 };
 
 const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a intentarlo.";
@@ -84,15 +85,44 @@ export function assertActionRateLimit(
  * IP del cliente. En Vercel la plataforma fija x-real-ip, por eso se prefiere.
  * Como respaldo se usa el ÚLTIMO valor de x-forwarded-for: es el que añade el
  * proxy más cercano; el primero lo escribe el cliente y es falseable fuera de
- * Vercel. Sin IP, la clave es el bucket compartido "ip:unknown".
+ * Vercel. Devuelve null si no hay ninguna de las dos cabeceras.
  */
-async function clientIp(): Promise<string> {
+async function clientIp(): Promise<string | null> {
   const headerList = await headers();
   const realIp = headerList.get("x-real-ip")?.trim();
   if (realIp) return realIp;
 
   const forwardedFor = headerList.get("x-forwarded-for")?.split(",").at(-1)?.trim();
-  return forwardedFor || "unknown";
+  return forwardedFor || null;
+}
+
+/**
+ * Sin IP, todos los clientes sin cabecera comparten el bucket "ip:unknown". Para
+ * no bloquearlos entre si se aplica un maximo mayor (multiplicador sobre la
+ * politica). Es un limite mas laxo, no una exencion.
+ */
+const UNKNOWN_IP_LIMIT_MULTIPLIER = 10;
+const UNKNOWN_IP = "unknown";
+
+function warnUnknownIp(scope: string): void {
+  // Solo ambito (no personal): nunca la cabecera ni la IP.
+  console.warn(JSON.stringify({ event: "rate_limit_unknown_ip", scope }));
+}
+
+/**
+ * Guarda para un sujeto concreto (por ejemplo el correo normalizado) dentro de
+ * la IP del cliente. El sujeto se envia como SHA-256: el dato personal nunca
+ * aparece en claro en la clave. Sin IP usa el bucket "ip:unknown" con las
+ * mismas opciones (no hay multiplicador: el sujeto ya acota el contador).
+ */
+export async function assertSubjectRateLimit(
+  scope: string,
+  subject: string,
+  options: RateLimitOptions
+): Promise<Result<void>> {
+  const ip = (await clientIp()) ?? UNKNOWN_IP;
+  const digest = createHash("sha256").update(subject).digest("hex");
+  return consumeRateLimit(`ip:${ip}:${scope}:subject:${digest}`, scope, options);
 }
 
 /**
@@ -104,5 +134,9 @@ export async function assertAnonymousRateLimit(
   options: RateLimitOptions = DEFAULT_ANONYMOUS_LIMIT
 ): Promise<Result<void>> {
   const ip = await clientIp();
-  return consumeRateLimit(`ip:${ip}:${scope}`, scope, options);
+  if (ip) return consumeRateLimit(`ip:${ip}:${scope}`, scope, options);
+
+  warnUnknownIp(scope);
+  const relaxed = { ...options, max: options.max * UNKNOWN_IP_LIMIT_MULTIPLIER };
+  return consumeRateLimit(`ip:${UNKNOWN_IP}:${scope}`, scope, relaxed);
 }

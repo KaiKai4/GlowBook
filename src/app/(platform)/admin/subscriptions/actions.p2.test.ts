@@ -1,14 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "@/features/billing/use-cases/salon-plan-extras";
+import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "@/features/billing/use-cases/salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "@/features/billing/use-cases/plan-limits";
 import { err, ok } from "@/infra/result";
 import { formDataOf } from "@/test/action-fixtures";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
@@ -27,13 +22,17 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-extras", () => ({
   assignSalonAddonConfig: vi.fn(),
-  assignSalonCommercialPlanConfig: vi.fn(),
   cancelSalonExtraConfig: vi.fn(),
-  registerSalonPlanPaymentConfig: vi.fn(),
-  resolveSalonPlanAlertConfig: vi.fn(),
   saveSalonManualExtraConfig: vi.fn(),
+}));
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
+  assignSalonCommercialPlanConfig: vi.fn(),
+  registerSalonPlanPaymentConfig: vi.fn(),
+}));
+vi.mock("@/features/billing/use-cases/plan-limits", () => ({
+  resolveSalonPlanAlertConfig: vi.fn(),
 }));
 
 const ADMIN_ID = "00000000-0000-4000-8000-0000000000ad";
@@ -51,7 +50,7 @@ beforeEach(() => {
 });
 
 describe("subscription actions: rate limit", () => {
-  it("bloquea cada accion de estado con el mensaje del rate limit", async () => {
+  it("bloquea cada acción de estado con el mensaje del rate limit", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
     const state = await assignPlanAction(PLATFORM_PLAN_IDLE_STATE, new FormData());
@@ -124,7 +123,7 @@ describe("giveAddonAction", () => {
       expect.objectContaining({ isGift: true, priceOverride: "", quantity: "1" }),
       ADMIN_ID
     );
-    expect(state).toEqual({ ok: true, message: "Extra regalado al salon." });
+    expect(state).toEqual({ ok: true, message: "Extra regalado al salón." });
   });
 
   it("una asignacion de pago conserva el precio indicado", async () => {
@@ -139,7 +138,7 @@ describe("giveAddonAction", () => {
       expect.objectContaining({ isGift: false, priceOverride: "49.9", quantity: "2" }),
       ADMIN_ID
     );
-    expect(state).toEqual({ ok: true, message: "Extra asignado al salon." });
+    expect(state).toEqual({ ok: true, message: "Extra asignado al salón." });
   });
 
   it("devuelve el error del caso de uso sin revalidar", async () => {
@@ -153,7 +152,7 @@ describe("giveAddonAction", () => {
 });
 
 describe("giveManualExtraAction", () => {
-  it("con targetType 'module' envia moduleKey y habilita el modulo", async () => {
+  it("con targetType 'module' envia moduleKey y habilita el módulo", async () => {
     vi.mocked(saveSalonManualExtraConfig).mockResolvedValue(ok(undefined) as never);
 
     const state = await giveManualExtraAction(
@@ -175,7 +174,7 @@ describe("giveManualExtraAction", () => {
     expect(state).toEqual({ ok: true, message: "Cortesia guardada." });
   });
 
-  it("por defecto (metric) envia metricKey y delta sin tocar modulos", async () => {
+  it("por defecto (metric) envia metricKey y delta sin tocar módulos", async () => {
     vi.mocked(saveSalonManualExtraConfig).mockResolvedValue(ok(undefined) as never);
 
     await giveManualExtraAction(
@@ -219,7 +218,7 @@ describe("registerPaymentAction", () => {
       ADMIN_ID
     );
     expect(state.ok).toBe(true);
-    expect(state.message).toBe("Pago registrado. La suscripcion quedo activa con su mes de uso.");
+    expect(state.message).toBe("Pago registrado. La suscripción quedó activa con su mes de uso.");
     for (const path of SUBSCRIPTION_PATHS) expect(revalidatePath).toHaveBeenCalledWith(path);
   });
 
@@ -243,19 +242,19 @@ describe("registerPaymentAction", () => {
     const state = await registerPaymentAction(PLATFORM_PLAN_IDLE_STATE, formDataOf({ amount: "30" }));
     expect(state).toMatchObject({
       ok: true,
-      message: "Pago registrado. La suscripcion quedo activa con su mes de uso.",
+      message: "Pago registrado. La suscripción quedó activa con su mes de uso.",
       warnings: ["La auditoria no se registro."],
     });
   });
 });
 
 describe("resolveAlertAction", () => {
-  it("rechaza un id de alerta invalido", async () => {
+  it("rechaza un id de alerta inválido", async () => {
     await expect(resolveAlertAction("alerta", SALON_ID)).rejects.toThrow(INVALID_ID);
     expect(resolveSalonPlanAlertConfig).not.toHaveBeenCalled();
   });
 
-  it("rechaza un salonId invalido", async () => {
+  it("rechaza un salonId inválido", async () => {
     await expect(resolveAlertAction(ALERT_ID, "salon")).rejects.toThrow(INVALID_ID);
     expect(resolveSalonPlanAlertConfig).not.toHaveBeenCalled();
   });
@@ -273,7 +272,7 @@ describe("resolveAlertAction", () => {
 });
 
 describe("cancelExtraAction", () => {
-  it("rechaza un id de extra o de salon invalido", async () => {
+  it("rechaza un id de extra o de salón inválido", async () => {
     await expect(cancelExtraAction("extra", SALON_ID)).rejects.toThrow(INVALID_ID);
     await expect(cancelExtraAction(OVERRIDE_ID, "salon")).rejects.toThrow(INVALID_ID);
     expect(cancelSalonExtraConfig).not.toHaveBeenCalled();

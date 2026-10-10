@@ -4,7 +4,7 @@
 
 import { formatCurrency } from "@/infra/format/dates";
 import { Select } from "@/components/ui/select";
-import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
+import type { OperationalReportViewModel } from "@/features/reports";
 
 export function YearlyTotalsStrip({
   report,

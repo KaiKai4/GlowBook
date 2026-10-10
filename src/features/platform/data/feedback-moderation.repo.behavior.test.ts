@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 describe("findFeedbackReports", () => {
-  it("reads reports newest first with the salon and reporter embedded", async () => {
+  it("reads reports newest first with the salón and reporter embedded", async () => {
     const admin = createFakeSupabase();
     clients.admin = admin;
 
@@ -55,12 +55,12 @@ describe("findFeedbackReports", () => {
     await expect(findFeedbackReports()).resolves.toEqual(rows);
   });
 
-  it("keeps reports whose salon or reporter was removed as null embeds", async () => {
+  it("keeps reports whose salón or reporter was removed as null embeds", async () => {
     const rows = [
       {
         id: REPORT_ID,
         category: "other",
-        message: "Sin salon",
+        message: "Sin salón",
         status: "new",
         created_at: "2026-06-01T10:00:00.000Z",
         salon: null,

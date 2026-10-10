@@ -3,7 +3,7 @@ import { History, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import type { PlatformAuditLogViewModel } from "@/features/platform/use-cases/get-platform-audit-log";
-import { getPlatformAuditLog } from "@/features/platform/use-cases/get-platform-audit-log";
+import { getPlatformAuditLog } from "@/features/platform";
 import { AuditTable } from "./audit-table";
 
 function filterHref({

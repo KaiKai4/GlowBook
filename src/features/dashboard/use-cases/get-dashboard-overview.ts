@@ -11,6 +11,9 @@ import {
   type MonthlyAppointmentSeriesRow,
 } from "../data/rpc/dashboard-read-models.rpc";
 
+/** Meses de la serie mensual del panel. */
+const MONTHS_IN_SERIES = 12;
+
 export interface TopService {
   name: string;
   count: number;
@@ -79,7 +82,7 @@ function getMonthStart(now: Date, timezone: string): Date {
   return getUtcDayBoundaries(probe, timezone).start;
 }
 
-function getMonthSequence(monthStart: Date, timezone: string, count = 12) {
+function getMonthSequence(monthStart: Date, timezone: string, count = MONTHS_IN_SERIES) {
   const currentMonthKey = formatLocalDateISO(monthStart, timezone).slice(0, 7);
   const [currentYear = NaN, currentMonth = NaN] = currentMonthKey.split("-").map(Number);
   const formatter = new Intl.DateTimeFormat("es-PA", {

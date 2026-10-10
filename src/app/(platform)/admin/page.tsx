@@ -13,9 +13,9 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getSubscriptionsPage, type SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
-import { getPlatformAdminHome } from "@/features/platform/use-cases/get-platform-admin-home";
-import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { getSubscriptionsPage } from "@/features/billing";
+import { type SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
+import { getAdminHome } from "@/features/platform";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { buildAttentionList } from "./home-attention";
 import { AdminShortcut, HomeMetric } from "./home-widgets";
@@ -23,10 +23,7 @@ import { RegenerateInviteLink } from "./regenerate-invite-link";
 export default async function PlatformAdminPage() {
   await requirePlatformAdmin();
 
-  const [home, salonView] = await Promise.all([
-    getPlatformAdminHome(),
-    getPlatformSalonOverviews(),
-  ]);
+  const { home, salonView } = await getAdminHome();
   const billing = await getSubscriptionsPage(salonView.salons);
   // Salones dormidos (sin citas en 30 días) entran a la lista de atención:
   // son los candidatos a churn que conviene contactar antes de que cancelen.
@@ -61,7 +58,7 @@ export default async function PlatformAdminPage() {
           className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-surface shadow-sm transition hover:bg-brand-700"
         >
           <MailOpen className="h-4 w-4" />
-          Invitar salon
+          Invitar salón
         </Link>
       </div>
 
@@ -197,7 +194,7 @@ export default async function PlatformAdminPage() {
               href="/admin/plans"
               icon={<CreditCard className="h-4 w-4 text-brand-600" />}
               title="Planes y extras"
-              detail="Catalogo comercial, modulos y límites"
+              detail="Catálogo comercial, módulos y límites"
             />
             <AdminShortcut
               href="/admin/audit"

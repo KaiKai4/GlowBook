@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createCategory,
   createService,
+  findActiveServiceCategory,
   updateCategory,
   updateService,
 } from "../data/services.repo";
@@ -13,6 +14,7 @@ import { updateCatalogService } from "./update-service";
 vi.mock("../data/services.repo", () => ({
   createCategory: vi.fn(),
   createService: vi.fn(),
+  findActiveServiceCategory: vi.fn(),
   updateCategory: vi.fn(),
   updateService: vi.fn(),
 }));
@@ -21,6 +23,7 @@ const mockedCreateCategory = vi.mocked(createCategory);
 const mockedUpdateCategory = vi.mocked(updateCategory);
 const mockedCreateService = vi.mocked(createService);
 const mockedUpdateService = vi.mocked(updateService);
+const mockedFindActiveCategory = vi.mocked(findActiveServiceCategory);
 
 const SALON_ID = "salon-1";
 const CATEGORY_ID = "00000000-0000-4000-8000-000000000011";
@@ -28,13 +31,14 @@ const SERVICE_ID = "00000000-0000-4000-8000-000000000022";
 
 const UNIQUE_VIOLATION = { code: "23505", message: "duplicate key value" };
 
-describe("mutaciones del catalogo de servicios", () => {
+describe("mutaciones del catálogo de servicios", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedFindActiveCategory.mockResolvedValue({ id: CATEGORY_ID });
   });
 
   describe("createServiceCategory", () => {
-    it("crea la categoria con modo de precio 'fixed' por defecto y devuelve su id", async () => {
+    it("crea la categoría con modo de precio 'fixed' por defecto y devuelve su id", async () => {
       mockedCreateCategory.mockResolvedValue({ id: "cat-1" } as Awaited<ReturnType<typeof createCategory>>);
 
       const result = await createServiceCategory(SALON_ID, {
@@ -68,7 +72,7 @@ describe("mutaciones del catalogo de servicios", () => {
 
       expect(await createServiceCategory(SALON_ID, { name: "Corte" })).toEqual({
         ok: false,
-        error: "Ya existe una categoria con ese nombre.",
+        error: "Ya existe una categoría con ese nombre.",
       });
     });
 
@@ -77,13 +81,13 @@ describe("mutaciones del catalogo de servicios", () => {
 
       expect(await createServiceCategory(SALON_ID, { name: "Corte" })).toEqual({
         ok: false,
-        error: "Error al crear la categoria.",
+        error: "Error al crear la categoría.",
       });
     });
   });
 
   describe("updateServiceCategory", () => {
-    it("actualiza la categoria del salon con los campos recibidos", async () => {
+    it("actualiza la categoría del salón con los campos recibidos", async () => {
       mockedUpdateCategory.mockResolvedValue({} as Awaited<ReturnType<typeof updateCategory>>);
 
       expect(await updateServiceCategory(CATEGORY_ID, SALON_ID, { name: "Color", is_active: false })).toEqual({
@@ -100,13 +104,13 @@ describe("mutaciones del catalogo de servicios", () => {
       mockedUpdateCategory.mockRejectedValueOnce(UNIQUE_VIOLATION);
       expect(await updateServiceCategory(CATEGORY_ID, SALON_ID, { name: "Corte" })).toEqual({
         ok: false,
-        error: "Ya existe una categoria con ese nombre.",
+        error: "Ya existe una categoría con ese nombre.",
       });
 
       mockedUpdateCategory.mockRejectedValueOnce(new Error("caida"));
       expect(await updateServiceCategory(CATEGORY_ID, SALON_ID, { name: "Corte" })).toEqual({
         ok: false,
-        error: "Error al actualizar la categoria.",
+        error: "Error al actualizar la categoría.",
       });
     });
   });
@@ -120,7 +124,7 @@ describe("mutaciones del catalogo de servicios", () => {
       price: 20,
     };
 
-    it("crea el servicio en la categoria indicada y devuelve su id", async () => {
+    it("crea el servicio en la categoría indicada y devuelve su id", async () => {
       mockedCreateService.mockResolvedValue({ id: SERVICE_ID } as Awaited<ReturnType<typeof createService>>);
 
       expect(await createCatalogService(SALON_ID, input)).toEqual({ ok: true, value: SERVICE_ID });
@@ -136,12 +140,12 @@ describe("mutaciones del catalogo de servicios", () => {
       });
     });
 
-    it("informa que la categoria no pertenece al salon cuando el repositorio lo rechaza", async () => {
-      mockedCreateService.mockRejectedValue(new Error("La categoría no pertenece al salón."));
+    it("informa que la categoría no pertenece al salón y no crea el servicio", async () => {
+      mockedFindActiveCategory.mockResolvedValueOnce(null);
 
       expect(await createCatalogService(SALON_ID, input)).toEqual({
         ok: false,
-        error: "La categoria no pertenece al salon o esta inactiva.",
+        error: "La categoría no pertenece al salón o está inactiva.",
       });
     });
 
@@ -156,7 +160,7 @@ describe("mutaciones del catalogo de servicios", () => {
   });
 
   describe("updateCatalogService", () => {
-    it("actualiza el servicio del salon con los campos recibidos", async () => {
+    it("actualiza el servicio del salón con los campos recibidos", async () => {
       mockedUpdateService.mockResolvedValue({} as Awaited<ReturnType<typeof updateService>>);
 
       expect(await updateCatalogService(SERVICE_ID, SALON_ID, { price: 25 })).toEqual({
@@ -166,19 +170,17 @@ describe("mutaciones del catalogo de servicios", () => {
       expect(mockedUpdateService).toHaveBeenCalledWith(SERVICE_ID, SALON_ID, { price: 25 });
     });
 
-    it("mapea duplicados, categoria no valida y error generico", async () => {
+    it("mapea duplicados, categoría no válida y error generico", async () => {
       mockedUpdateService.mockRejectedValueOnce(UNIQUE_VIOLATION);
       expect(await updateCatalogService(SERVICE_ID, SALON_ID, { name: "x" })).toEqual({
         ok: false,
         error: "Ya existe un servicio con ese nombre.",
       });
 
-      mockedUpdateService.mockRejectedValueOnce(
-        new Error("La categoría no pertenece al salón o está inactiva.")
-      );
+      mockedFindActiveCategory.mockResolvedValueOnce(null);
       expect(await updateCatalogService(SERVICE_ID, SALON_ID, { category_id: CATEGORY_ID })).toEqual({
         ok: false,
-        error: "La categoria no pertenece al salon o esta inactiva.",
+        error: "La categoría no pertenece al salón o está inactiva.",
       });
 
       mockedUpdateService.mockRejectedValueOnce(new Error("caida"));

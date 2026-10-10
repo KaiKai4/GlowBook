@@ -9,7 +9,7 @@ import {
 import { firstOf } from "@/test/platform-feedback-notifications-helpers";
 
 // Lectura cross-tenant de salones desde la plataforma (cliente admin). El
-// contacto visible cae al correo de la invitacion aceptada cuando el salon
+// contacto visible cae al correo de la invitación aceptada cuando el salón
 // no tiene correo propio, y las funciones desactivadas se normalizan.
 
 const clients = vi.hoisted(() => ({ admin: null as FakeSupabase | null }));
@@ -38,7 +38,7 @@ beforeEach(() => {
 });
 
 describe("findAllSalons", () => {
-  it("lists every salon newest first with the platform columns", async () => {
+  it("lists every salón newest first with the platform columns", async () => {
     const admin = createFakeSupabase({ tables: { salons: { data: [salonRow], error: null } } });
     clients.admin = admin;
 
@@ -51,7 +51,7 @@ describe("findAllSalons", () => {
     expect(argsOf(query, "order")).toEqual([["created_at", { ascending: false }]]);
   });
 
-  it("falls back to the accepted invitation email when the salon has no own email", async () => {
+  it("falls back to the accepted invitation email when the salón has no own email", async () => {
     clients.admin = createFakeSupabase({
       tables: {
         salons: { data: [salonRow], error: null },
@@ -67,7 +67,7 @@ describe("findAllSalons", () => {
     expect(salon.contact_email).toBe("owner@example.com");
   });
 
-  it("prefers the salon's own email over the invitation email", async () => {
+  it("prefers the salón's own email over the invitation email", async () => {
     clients.admin = createFakeSupabase({
       tables: {
         salons: { data: [{ ...salonRow, email: "salon@example.com" }], error: null },
@@ -111,7 +111,7 @@ describe("findAllSalons", () => {
     expect(admin.queries.map((entry) => entry.table)).toEqual(["salons"]);
   });
 
-  it("throws salon read errors", async () => {
+  it("throws salón read errors", async () => {
     const readError = { message: "denied" };
     clients.admin = createFakeSupabase({ tables: { salons: { data: null, error: readError } } });
 
@@ -166,7 +166,7 @@ describe("findSalonNamesByIds", () => {
 });
 
 describe("setSalonActiveStatus", () => {
-  it("updates only the is_active flag of the target salon", async () => {
+  it("updates only the is_active flag of the target salón", async () => {
     const admin = createFakeSupabase({
       tables: { salons: { data: { id: SALON_A }, error: null } },
     });
@@ -180,12 +180,12 @@ describe("setSalonActiveStatus", () => {
     expect(argsOf(query, "select")).toEqual([["id"]]);
   });
 
-  it("fails when no salon matches, so a missing salon is never reported as updated", async () => {
+  it("fails when no salón matches, so a missing salón is never reported as updated", async () => {
     clients.admin = createFakeSupabase({
       tables: { salons: { data: null, error: null } },
     });
 
-    await expect(setSalonActiveStatus(SALON_A, true)).rejects.toThrow("Salon no encontrado.");
+    await expect(setSalonActiveStatus(SALON_A, true)).rejects.toThrow("Salón no encontrado.");
   });
 
   it("throws update errors", async () => {

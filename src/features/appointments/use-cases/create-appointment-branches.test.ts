@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
   type AppointmentCreationResources,
 } from "../data/appointment-commands.repo";
 import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
@@ -13,9 +13,9 @@ import { createAppointment } from "./create-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/create-appointment", () => ({
   createAppointmentWithRpc: vi.fn(),
@@ -36,9 +36,9 @@ const startIso = "2030-01-01T14:00:00.000Z";
 
 const mockedResources = vi.mocked(findAppointmentCreationResources);
 const mockedRpc = vi.mocked(createAppointmentWithRpc);
-const mockedSchedules = vi.mocked(findEmployeeWorkSchedulesForCommand);
-const mockedExceptions = vi.mocked(findEmployeeExceptionDatesForCommand);
-const mockedOccupied = vi.mocked(findEmployeeOccupiedSlotsForCommand);
+const mockedSchedules = vi.mocked(findWorkSchedulesByEmployeeForCommand);
+const mockedExceptions = vi.mocked(findExceptionDatesByEmployeeForCommand);
+const mockedOccupied = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
 const mockedCaptureError = vi.mocked(captureError);
 
 type Assignment = AppointmentCreationResources["assignments"][number];
@@ -100,11 +100,11 @@ describe("createAppointment: payload del RPC", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedResources.mockResolvedValue(resourcesFor([assignment(serviceA, employeeA)]));
-    mockedSchedules.mockResolvedValue([
+    mockedSchedules.mockResolvedValue(new Map([[employeeA, [
       { day_of_week: 1, is_active: true, start_time: "08:00", end_time: "18:00" },
-    ]);
-    mockedExceptions.mockResolvedValue([]);
-    mockedOccupied.mockResolvedValue([]);
+    ]]]));
+    mockedExceptions.mockResolvedValue(new Map());
+    mockedOccupied.mockResolvedValue(new Map());
     mockedRpc.mockResolvedValue({ ok: true, appointmentId: "appointment-1" });
   });
 
@@ -147,14 +147,16 @@ describe("createAppointment: payload del RPC", () => {
   it("consulta turnos, excepciones y agenda del profesional con la zona horaria del salón", async () => {
     await createAppointment(input(), deps);
 
-    expect(mockedSchedules).toHaveBeenCalledWith(employeeA);
-    expect(mockedExceptions).toHaveBeenCalledWith(employeeA);
-    expect(mockedOccupied).toHaveBeenCalledWith({
-      salonId,
-      employeeId: employeeA,
-      date: new Date(startIso),
-      timezone: "America/Panama",
-    });
+    expect(mockedSchedules).toHaveBeenCalledWith(expect.objectContaining({ employeeIds: [employeeA] }));
+    expect(mockedExceptions).toHaveBeenCalledWith(expect.objectContaining({ employeeIds: [employeeA] }));
+    expect(mockedOccupied).toHaveBeenCalledWith(
+      expect.objectContaining({
+        salonId,
+        employeeIds: [employeeA],
+        date: new Date(startIso),
+        timezone: "America/Panama",
+      })
+    );
   });
 
   it("encadena dos servicios del mismo profesional y consulta sus turnos una sola vez", async () => {
@@ -197,27 +199,29 @@ describe("createAppointment: payload del RPC", () => {
       deps
     );
 
-    expect(mockedSchedules).toHaveBeenCalledTimes(2);
-    expect(mockedOccupied).toHaveBeenCalledWith(expect.objectContaining({ employeeId: employeeB }));
+    expect(mockedSchedules).toHaveBeenCalledTimes(1);
+    expect(mockedSchedules).toHaveBeenCalledWith(expect.objectContaining({ employeeIds: [employeeA, employeeB] }));
+    expect(mockedOccupied).toHaveBeenCalledTimes(1);
+    expect(mockedOccupied).toHaveBeenCalledWith(expect.objectContaining({ employeeIds: [employeeA, employeeB] }));
   });
 });
 
 describe("createAppointment: reglas de dominio antes del RPC", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedSchedules.mockResolvedValue([
+    mockedSchedules.mockResolvedValue(new Map([[employeeA, [
       { day_of_week: 1, is_active: true, start_time: "00:00", end_time: "23:59" },
-    ]);
-    mockedExceptions.mockResolvedValue([]);
-    mockedOccupied.mockResolvedValue([]);
+    ]]]));
+    mockedExceptions.mockResolvedValue(new Map());
+    mockedOccupied.mockResolvedValue(new Map());
     mockedRpc.mockResolvedValue({ ok: true, appointmentId: "appointment-1" });
   });
 
   it("rechaza una cita que choca con otra del profesional sin llamar al RPC", async () => {
     mockedResources.mockResolvedValue(resourcesFor([assignment(serviceA, employeeA)]));
-    mockedOccupied.mockResolvedValue([
+    mockedOccupied.mockResolvedValue(new Map([[employeeA, [
       { start_time: "2030-01-01T14:10:00.000Z", end_time: "2030-01-01T14:20:00.000Z" },
-    ]);
+    ]]]));
 
     expect(await createAppointment(input(), deps)).toEqual({
       ok: false,
@@ -228,7 +232,7 @@ describe("createAppointment: reglas de dominio antes del RPC", () => {
 
   it("rechaza el día libre puntual del profesional usando la fecha local del salón", async () => {
     mockedResources.mockResolvedValue(resourcesFor([assignment(serviceA, employeeA)]));
-    mockedExceptions.mockResolvedValue(["2030-01-01"]);
+    mockedExceptions.mockResolvedValue(new Map([[employeeA, ["2030-01-01"]]]));
 
     expect(await createAppointment(input(), deps)).toEqual({
       ok: false,
@@ -256,7 +260,7 @@ describe("createAppointment: reglas de dominio antes del RPC", () => {
 
     expect(await createAppointment(input(), deps)).toEqual({
       ok: false,
-      error: "La duración minima es 15 minutos.",
+      error: "La duración mínima es 15 minutos.",
     });
     expect(mockedRpc).not.toHaveBeenCalled();
   });
@@ -267,7 +271,7 @@ describe("createAppointment: reglas de dominio antes del RPC", () => {
     const lateStart = "2030-01-01T23:00:00.000Z"; // 18:00 en Panamá, al cierre.
     expect(await createAppointment(input({ start_time: lateStart }), deps)).toEqual({
       ok: false,
-      error: "El horario esta fuera del horario de atención del salon.",
+      error: "El horario esta fuera del horario de atención del salón.",
     });
     expect(mockedRpc).not.toHaveBeenCalled();
   });
@@ -277,11 +281,11 @@ describe("createAppointment: errores del RPC", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedResources.mockResolvedValue(resourcesFor([assignment(serviceA, employeeA)]));
-    mockedSchedules.mockResolvedValue([
+    mockedSchedules.mockResolvedValue(new Map([[employeeA, [
       { day_of_week: 1, is_active: true, start_time: "08:00", end_time: "18:00" },
-    ]);
-    mockedExceptions.mockResolvedValue([]);
-    mockedOccupied.mockResolvedValue([]);
+    ]]]));
+    mockedExceptions.mockResolvedValue(new Map());
+    mockedOccupied.mockResolvedValue(new Map());
   });
 
   it("si el RPC lanza una excepción devuelve error genérico y registra el fallo", async () => {

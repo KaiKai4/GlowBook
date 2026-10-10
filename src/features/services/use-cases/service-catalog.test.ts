@@ -1,5 +1,11 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { archiveCategory, createCategory, createService, updateService } from "../data/services.repo";
+import {
+  archiveCategory,
+  createCategory,
+  findActiveServiceCategory,
+  updateService,
+} from "../data/services.repo";
 import { archiveServiceCategory } from "./archive-category";
 import { createServiceCategory } from "./create-category";
 import { createCatalogService } from "./create-service";
@@ -9,17 +15,19 @@ vi.mock("../data/services.repo", () => ({
   archiveCategory: vi.fn(),
   createCategory: vi.fn(),
   createService: vi.fn(),
+  findActiveServiceCategory: vi.fn(),
   updateService: vi.fn(),
 }));
 
 const mockedArchiveCategory = vi.mocked(archiveCategory);
 const mockedCreateCategory = vi.mocked(createCategory);
-const mockedCreateService = vi.mocked(createService);
 const mockedUpdateService = vi.mocked(updateService);
+const mockedFindActiveCategory = vi.mocked(findActiveServiceCategory);
 
 describe("service catalog use-cases", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockedFindActiveCategory.mockResolvedValue({ id: "00000000-0000-0000-0000-000000000001" });
   });
 
   it("creates a category through the Supabase adapter and returns its id", async () => {
@@ -51,7 +59,7 @@ describe("service catalog use-cases", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Ya existe una categoria con ese nombre.",
+      error: "Ya existe una categoría con ese nombre.",
     });
   });
 
@@ -71,12 +79,12 @@ describe("service catalog use-cases", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo archivar la categoria.",
+      error: "No se pudo archivar la categoría.",
     });
   });
 
-  it("keeps service category ownership errors out of the action", async () => {
-    mockedCreateService.mockRejectedValue(new Error("La categoria no pertenece al salon."));
+  it("informa que la categoría no pertenece al salón y no crea el servicio", async () => {
+    mockedFindActiveCategory.mockResolvedValueOnce(null);
 
     const result = await createCatalogService("salon-1", {
       category_id: "00000000-0000-0000-0000-000000000001",
@@ -88,7 +96,7 @@ describe("service catalog use-cases", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "La categoria no pertenece al salon o esta inactiva.",
+      error: "La categoría no pertenece al salón o está inactiva.",
     });
   });
 
@@ -105,5 +113,20 @@ describe("service catalog use-cases", () => {
       name: "Corte premium",
       price: 25,
     });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de archivado", () => {
+  it("registra con captureError el fallo al archivar la categoría", async () => {
+    const dbError = new Error("caida");
+    mockedArchiveCategory.mockRejectedValue(dbError);
+
+    expect(await archiveServiceCategory("cat-1", "salon-1")).toEqual({
+      ok: false,
+      error: "No se pudo archivar la categoría.",
+    });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "services", action: "archive_category" });
   });
 });

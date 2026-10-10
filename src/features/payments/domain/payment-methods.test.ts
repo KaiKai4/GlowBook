@@ -105,7 +105,7 @@ describe("paymentMethodOptionsFor", () => {
     ]);
   });
 
-  it("returns the default options when the salon has no configuration", () => {
+  it("returns the default options when the salón has no configuration", () => {
     expect(paymentMethodOptionsFor(null)).toEqual(DEFAULT_PAYMENT_METHOD_OPTIONS);
   });
 });

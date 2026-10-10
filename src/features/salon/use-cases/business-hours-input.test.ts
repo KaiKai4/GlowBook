@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { err, ok } from "@/infra/result";
 import { parseBusinessHoursJson } from "./business-hours-input";
 
-const INVALID_JSON = "Datos de horario invalidos.";
+const INVALID_JSON = "Datos de horario inválidos.";
 
 function week(openDay: { day_of_week: number; open_time: string; close_time: string }) {
   return Array.from({ length: 7 }, (_, day) =>

@@ -16,30 +16,25 @@ import { autoAssignPlanOnAcceptance } from "@/features/billing";
 import { publishAuditEvent } from "@/features/audit";
 import { z } from "@/infra/validation/zod";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
+import {
+  DUPLICATE_OWNER_MESSAGE,
+  invitationRejection,
+  isAlreadyRegisteredError,
+  planToAssign,
+  translateAcceptError,
+} from "@/features/platform/domain/invitation-rules";
 
 const AcceptSchema = z.object({
   token: z.string().min(1, "Token inválido"),
   email: z.string().email("Email inválido"),
-  password: z.string().min(8, "La contrasena debe tener al menos 8 caracteres"),
-  salon_name: z.string().min(1, "El nombre del salon es obligatorio").max(120),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  salon_name: z.string().min(1, "El nombre del salón es obligatorio").max(120),
   full_name: personNameField("Tu nombre es obligatorio", "Tu nombre"),
 });
 
 export type AcceptInvitationInput = z.infer<typeof AcceptSchema>;
 
-// Translates raw Postgres / RPC errors into messages a non-technical user can act on.
-function translateAcceptError(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes("profiles_pkey") || m.includes("duplicate key")) {
-    return (
-      "Este correo ya pertenece a una cuenta de otro salon en GlowBook. " +
-      "Cada cuenta puede pertenecer a un solo salon: usa un correo distinto para crear el nuevo salon."
-    );
-  }
-  // The RPC already raises user-facing Spanish messages (token inválido/expirado).
-  if (m.includes("invitaci")) return message;
-  return "No se pudo crear el salon. Intentalo de nuevo o solicita una nueva invitacion.";
-}
+const ACCOUNT_CREATE_FAILED = "No se pudo crear la cuenta. Intentalo de nuevo en unos momentos.";
 
 async function rollbackCreatedOwner(userId: string): Promise<void> {
   const { error } = await deletePlatformOwnerAuthUser(userId);
@@ -50,6 +45,76 @@ async function rollbackCreatedOwner(userId: string): Promise<void> {
       metadata: { userId },
     });
   }
+}
+
+// Reutiliza la cuenta existente del correo, si no tiene salón todavía, y le fija la contraseña nueva.
+async function reuseExistingOwner(
+  email: string,
+  password: string,
+  emailDomain: string
+): Promise<Result<string>> {
+  const existing = await findPlatformOwnerAuthUserByEmail(email);
+  if (existing.error || !existing.data) return err(ACCOUNT_CREATE_FAILED);
+
+  let hasProfile = false;
+  try {
+    hasProfile = await profileExists(existing.data.id);
+  } catch (error) {
+    captureError(error, {
+      module: "platform",
+      action: "accept_invitation_existing_profile",
+      metadata: { emailDomain },
+    });
+    return err("No se pudo verificar la cuenta existente.");
+  }
+  if (hasProfile) return err(DUPLICATE_OWNER_MESSAGE);
+
+  const updated = await updatePlatformOwnerAuthUser(existing.data.id, { password, emailConfirm: true });
+  if (updated.error) {
+    return err("No se pudo actualizar la cuenta. Intentalo de nuevo en unos momentos.");
+  }
+  return ok(existing.data.id);
+}
+
+// Crea la cuenta del owner con el correo confirmado, o reutiliza una existente sin salón.
+// Devuelve el id de usuario y si se creó en esta operación (para poder revertirla).
+async function resolveOwnerAccount(
+  email: string,
+  password: string,
+  emailDomain: string
+): Promise<Result<{ userId: string; createdNewUser: boolean }>> {
+  const { data: created, error: createError } = await createPlatformOwnerAuthUser({
+    email,
+    password,
+    emailConfirm: true,
+  });
+
+  if (createError || !created) {
+    if (!isAlreadyRegisteredError(createError?.message)) return err(ACCOUNT_CREATE_FAILED);
+    const reused = await reuseExistingOwner(email, password, emailDomain);
+    if (!reused.ok) return reused;
+    return ok({ userId: reused.value, createdNewUser: false });
+  }
+  return ok({ userId: created.id, createdNewUser: true });
+}
+
+// Asigna el plan elegido en la invitación. Si falla no se revierte el onboarding:
+// la plataforma puede asignarlo manualmente desde Suscripciones.
+async function assignInvitedPlan(
+  salonId: string,
+  planId: string,
+  userId: string
+): Promise<string[]> {
+  const assigned = await autoAssignPlanOnAcceptance({ salonId, planId, acceptedByUserId: userId });
+  if (!assigned.ok) {
+    captureError(new Error(assigned.error), {
+      module: "platform",
+      action: "accept_invitation_assign_plan",
+      metadata: { salonId, planId },
+    });
+    return [];
+  }
+  return assigned.warnings ?? [];
 }
 
 // Server-side acceptance: creates the owner account (email pre-confirmed) and the
@@ -70,63 +135,15 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
       action: "accept_invitation_lookup",
       metadata: { emailDomain },
     });
-    return err("No se pudo verificar la invitacion.");
+    return err("No se pudo verificar la invitación.");
   }
 
-  if (!invitation || invitation.status !== "pending") {
-    return err("Invitacion inválida o ya utilizada.");
-  }
-  if (new Date(invitation.expires_at) < new Date()) return err("La invitacion expiro.");
-  if (invitation.email.toLowerCase() !== email.toLowerCase()) {
-    return err("Esta invitacion fue emitida para otro correo.");
-  }
+  const rejection = invitationRejection({ invitation, email, now: new Date() });
+  if (rejection || !invitation) return err(rejection ?? "Invitación inválida o ya utilizada.");
 
-  let userId: string;
-  let createdNewUser = false;
-  const { data: created, error: createError } = await createPlatformOwnerAuthUser({
-    email,
-    password,
-    emailConfirm: true,
-  });
-
-  if (createError || !created) {
-    if (!createError?.message?.toLowerCase().includes("already")) {
-      return err("No se pudo crear la cuenta. Intentalo de nuevo en unos momentos.");
-    }
-
-    const existing = await findPlatformOwnerAuthUserByEmail(email);
-    if (existing.error || !existing.data) {
-      return err("No se pudo crear la cuenta. Intentalo de nuevo en unos momentos.");
-    }
-
-    let hasProfile = false;
-    try {
-      hasProfile = await profileExists(existing.data.id);
-    } catch (error) {
-      captureError(error, {
-        module: "platform",
-        action: "accept_invitation_existing_profile",
-        metadata: { emailDomain },
-      });
-      return err("No se pudo verificar la cuenta existente.");
-    }
-
-    if (hasProfile) {
-      return err(
-        "Este correo ya pertenece a una cuenta de otro salon en GlowBook. " +
-          "Cada cuenta puede pertenecer a un solo salon: usa un correo distinto para crear el nuevo salon."
-      );
-    }
-
-    userId = existing.data.id;
-    const updated = await updatePlatformOwnerAuthUser(userId, { password, emailConfirm: true });
-    if (updated.error) {
-      return err("No se pudo actualizar la cuenta. Intentalo de nuevo en unos momentos.");
-    }
-  } else {
-    userId = created.id;
-    createdNewUser = true;
-  }
+  const owner = await resolveOwnerAccount(email, password, emailDomain);
+  if (!owner.ok) return owner;
+  const { userId, createdNewUser } = owner.value;
 
   let salonId: string;
   try {
@@ -148,26 +165,9 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     return err(translateAcceptError(message));
   }
 
-  // El salon ya existe: asignar el plan elegido en la invitacion y dejar
-  // rastro en auditoria. Si algo falla aqui no se revierte el onboarding;
-  // la plataforma puede asignar el plan manualmente desde Suscripciones.
   const warnings: string[] = [];
-  if (invitation.plan_id) {
-    const assigned = await autoAssignPlanOnAcceptance({
-      salonId,
-      planId: invitation.plan_id,
-      acceptedByUserId: userId,
-    });
-    if (!assigned.ok) {
-      captureError(new Error(assigned.error), {
-        module: "platform",
-        action: "accept_invitation_assign_plan",
-        metadata: { salonId, planId: invitation.plan_id },
-      });
-    } else {
-      warnings.push(...(assigned.warnings ?? []));
-    }
-  }
+  const planId = planToAssign(invitation);
+  if (planId) warnings.push(...(await assignInvitedPlan(salonId, planId, userId)));
 
   const auditWarnings = await publishAuditEvent("salon.invitation_accepted", {
     actorUserId: userId,
@@ -175,7 +175,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
     status: "succeeded",
     targetSalonId: salonId,
     targetResourceType: "salon_invitation",
-    metadata: { emailDomain, planId: invitation.plan_id ?? null },
+    metadata: { emailDomain, planId: planId },
   });
   warnings.push(...auditWarnings);
 

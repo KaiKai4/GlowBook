@@ -128,7 +128,7 @@ describe("getPlatformFeedbackReports report view", () => {
     expect(byId.get("listo")).toMatchObject({ resolved: true, toggleStatus: "new" });
   });
 
-  it("names the salon and reporter, falling back when either was removed", async () => {
+  it("names the salón and reporter, falling back when either was removed", async () => {
     mockedFind.mockResolvedValue([
       report({ id: "completo", salon: { name: "Glow" }, reporter: { full_name: "Ana" } }),
       report({ id: "sin-salon", salon: null, reporter: { full_name: "Luis" } }),

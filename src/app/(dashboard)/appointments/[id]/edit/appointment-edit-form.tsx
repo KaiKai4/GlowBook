@@ -12,13 +12,11 @@ import { AppointmentEditScheduleCard } from "./appointment-edit-schedule-card";
 import { AppointmentEditServiceRow } from "./appointment-edit-service-row";
 import { useAppointmentEditSubmit } from "./use-appointment-edit-submit";
 import { localTime, rowKey } from "./appointment-edit-helpers";
-import {
-  buildSequentialSchedule,
-  findEligibleEmployees,
-  salonWindowFor,
-  type AppointmentServiceRow,
-  type OccupiedByEmployee,
+import type {
+  AppointmentServiceRow,
+  OccupiedByEmployee,
 } from "@/features/appointments/domain/wizard-availability";
+import { useScheduleValidation } from "../../use-schedule-validation";
 import type { AppointmentDetailViewModel } from "@/features/appointments/use-cases/get-appointment-detail";
 import type { AppointmentWizardProps } from "../../new/appointment-wizard-types";
 import { getOccupiedSlotsForEditDate } from "../../actions";
@@ -76,39 +74,19 @@ export function AppointmentEditForm({
     });
   }, [appointment.id, date]);
 
-  const selectedWindow = useMemo(
-    () => salonWindowFor(date, salonConfig.timezone, businessHours),
-    [date, salonConfig.timezone, businessHours]
-  );
-
-  const schedule = useMemo(
-    () => buildSequentialSchedule({ rows, date, time, timeZone: salonConfig.timezone, serviceMap }),
-    [rows, date, time, salonConfig.timezone, serviceMap]
-  );
-
-  const isClosedDay = !!date && selectedWindow === null;
-  const total = rows.reduce((sum, row) => sum + (serviceMap.get(row.serviceId)?.price ?? 0), 0);
-
-  function eligibleEmployees(serviceId: string, start: Date | null, end: Date | null) {
-    return findEligibleEmployees({
-      serviceId,
-      start,
-      end,
+  const { selectedWindow, isClosedDay, schedule, total, getEligibleEmployees, isScheduleValid } =
+    useScheduleValidation({
+      date,
+      time,
+      rows,
+      services,
       employees,
-      serviceMap,
       salonConfig,
       businessHours,
       occupied,
     });
-  }
 
-  const rowsValid = schedule.length > 0 && schedule.every((item) => {
-    if (!item.row.serviceId || !item.row.employeeId || !item.start || !item.end) return false;
-    return eligibleEmployees(item.row.serviceId, item.start, item.end)
-      .some((employee) => employee.id === item.row.employeeId);
-  });
-
-  const canSubmit = !!date && !!time && rowsValid && !isClosedDay && !loadingAvailability;
+  const canSubmit = isScheduleValid && !loadingAvailability;
 
   function updateRow(key: string, patch: Partial<AppointmentServiceRow>) {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
@@ -190,7 +168,7 @@ export function AppointmentEditForm({
                 item={item}
                 categories={categories}
                 services={services}
-                candidates={eligibleEmployees(row.serviceId, item?.start ?? null, item?.end ?? null)}
+                candidates={getEligibleEmployees(row.serviceId, item?.start ?? null, item?.end ?? null)}
                 timezone={salonConfig.timezone}
                 isDragging={dragIndex === index}
                 canRemove={rows.length > 1}

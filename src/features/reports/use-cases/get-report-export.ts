@@ -9,13 +9,13 @@ import {
   type MonthlySeriesRow,
 } from "../data/rpc/reports-history.rpc";
 import {
+  toLifetimeTotals,
   trimMonthlyRows,
   type LifetimeReportTotals,
   type MonthlyExportRow,
   type ReportModuleAvailability,
 } from "../domain/analytics";
-import { getYearRange, localDateString, localYear } from "../domain/period";
-import { lastDayOfMonth, toLifetimeTotals } from "./get-operational-report";
+import { getYearRange, lastDayOfMonth, localDateString, localYear } from "../domain/period";
 
 const DEFAULT_REPORT_TIMEZONE = "America/Panama";
 // Historico completo: la base agrega en la ventana amplia y los meses sin movimientos
@@ -137,7 +137,7 @@ function withMonthFallback(
 
 /**
  * Datos listos para exportar segun el alcance: filas por mes (serie continua)
- * + totales, respetando los modulos activos del plan. Para el alcance mensual
+ * + totales, respetando los módulos activos del plan. Para el alcance mensual
  * la "serie" es ese unico mes y los totales son los de ese mes.
  */
 export async function getReportExportData(

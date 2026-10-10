@@ -50,19 +50,19 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
       return;
     }
     setError(null);
-    const fd = new FormData();
-    fd.set("first_name", firstName.trim());
-    fd.set("last_name", lastName.trim());
-    if (phone.trim()) fd.set("phone", phone.trim());
-    if (email.trim()) fd.set("email", email.trim());
-    fd.set("notes", notes.trim());
+    const formData = new FormData();
+    formData.set("first_name", firstName.trim());
+    formData.set("last_name", lastName.trim());
+    if (phone.trim()) formData.set("phone", phone.trim());
+    if (email.trim()) formData.set("email", email.trim());
+    formData.set("notes", notes.trim());
     start(async () => {
-      const res = await updateCustomerAction(customer.id, null, fd);
-      if (res.ok) {
+      const result = await updateCustomerAction(customer.id, null, formData);
+      if (result.ok) {
         handleClose();
         router.refresh();
       } else {
-        setError(res.error ?? "Error al actualizar el cliente.");
+        setError(result.error ?? "Error al actualizar el cliente.");
       }
     });
   }
@@ -76,10 +76,10 @@ export function EditCustomerModal({ customer, open, onClose }: EditCustomerModal
   function handleConfirmDelete() {
     setArchiveError(null);
     startDelete(async () => {
-      const res = await deleteCustomerAction(customer.id);
-      if (!res.ok) {
+      const result = await deleteCustomerAction(customer.id);
+      if (!result.ok) {
         // El error se muestra dentro de la confirmación: el diálogo de edición queda debajo.
-        setArchiveError(res.error ?? "Error al eliminar el cliente.");
+        setArchiveError(result.error ?? "Error al eliminar el cliente.");
         return;
       }
 

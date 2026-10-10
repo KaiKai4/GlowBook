@@ -85,7 +85,7 @@ export async function fetchMonthlySeries({
   return monthlySeriesSchema.parse(data);
 }
 
-/** Citas por hora local del salon (excluye canceladas y no-show), orden ascendente. */
+/** Citas por hora local del salón (excluye canceladas y no-show), orden ascendente. */
 export async function fetchBusyHours({ from, to, timezone }: ReportDayRangeInput): Promise<BusyHourRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("report_busy_hours", {

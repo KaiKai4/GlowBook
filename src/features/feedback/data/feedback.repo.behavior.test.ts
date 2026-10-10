@@ -7,9 +7,9 @@ import {
   type FakeSupabase,
 } from "@/test/platform-feedback-notifications-supabase";
 
-// Escritura desde el salon: el cliente de sesion inserta el reporte con el
+// Escritura desde el salón: el cliente de sesion inserta el reporte con el
 // salon y el autor indicados; RLS es quien garantiza que coincidan con el
-// usuario autenticado, aqui solo fijamos las columnas enviadas.
+// usuario autenticado, aquí solo fijamos las columnas enviadas.
 
 const clients = vi.hoisted(() => ({ server: null as FakeSupabase | null }));
 
@@ -27,7 +27,7 @@ beforeEach(() => {
 });
 
 describe("createFeedbackReport", () => {
-  it("inserts the report with the salon, author, category and message", async () => {
+  it("inserts the report with the salón, author, category and message", async () => {
     const server = createFakeSupabase();
     clients.server = server;
 

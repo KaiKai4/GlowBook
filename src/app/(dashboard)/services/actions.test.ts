@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { archiveServiceCategory } from "@/features/services/use-cases/archive-category";
 import { createServiceCategory } from "@/features/services/use-cases/create-category";
 import { createCatalogService } from "@/features/services/use-cases/create-service";
@@ -20,9 +20,18 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));
@@ -174,7 +183,7 @@ describe("services actions", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
+        error: "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.",
       });
       expect(createCatalogService).not.toHaveBeenCalled();
     });
@@ -188,7 +197,7 @@ describe("services actions", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
+        error: "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.",
       });
       expect(createCatalogService).not.toHaveBeenCalled();
     });
@@ -265,7 +274,7 @@ describe("services actions", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
+        error: "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.",
       });
       expect(updateCatalogService).not.toHaveBeenCalled();
     });

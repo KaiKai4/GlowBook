@@ -19,7 +19,15 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 vi.mock("@/features/salon/use-cases/update-business-hours", () => ({ updateBusinessHours: vi.fn() }));
 vi.mock("@/features/salon/use-cases/update-salon-background", () => ({ updateSalonBackground: vi.fn() }));
@@ -30,7 +38,7 @@ vi.mock("@/features/salon/use-cases/update-salon-payment-methods", () => ({
 vi.mock("@/features/salon/use-cases/update-salon-theme", () => ({ updateSalonTheme: vi.fn() }));
 
 const salonAdmin = buildProfile({ permissions: [PERMISSIONS.SALON_MANAGE] });
-const permissionError = "No tienes permiso para editar el salon.";
+const permissionError = "No tienes permiso para editar el salón.";
 
 type DayHours = {
   day_of_week: number;
@@ -49,7 +57,7 @@ function closedWeek(): DayHours[] {
   }));
 }
 
-describe("salon actions", () => {
+describe("salón actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(salonAdmin);
@@ -111,7 +119,7 @@ describe("salon actions", () => {
     it("rechaza un horario que no es JSON válido", async () => {
       expect(await updateBusinessHoursAction("{no-json")).toEqual({
         ok: false,
-        error: "Datos de horario invalidos.",
+        error: "Datos de horario inválidos.",
       });
       expect(updateBusinessHours).not.toHaveBeenCalled();
     });
@@ -153,7 +161,7 @@ describe("salon actions", () => {
     it("rechaza un método de pago vacío", async () => {
       expect(await updateSalonPaymentMethodsAction(["cash", "   "])).toEqual({
         ok: false,
-        error: "El metodo de pago es obligatorio.",
+        error: "El método de pago es obligatorio.",
       });
       expect(updateSalonPaymentMethods).not.toHaveBeenCalled();
     });

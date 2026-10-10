@@ -69,10 +69,12 @@ describe("setFeedbackStatusAction", () => {
     expect(setFeedbackReportStatus).toHaveBeenCalledWith(expect.objectContaining({ status: "new" }));
   });
 
-  it("como antes, no propaga el error del caso de uso y revalida igualmente", async () => {
+  it("si el caso de uso falla, lanza su error y no revalida el panel", async () => {
     vi.mocked(setFeedbackReportStatus).mockResolvedValue(err("Reporte inválido."));
 
-    await expect(setFeedbackStatusAction(formDataOf({ id: REPORT_ID, status: "new" }))).resolves.toBeUndefined();
-    expect(revalidatePath).toHaveBeenCalledWith("/admin/reports");
+    await expect(setFeedbackStatusAction(formDataOf({ id: REPORT_ID, status: "new" }))).rejects.toThrow(
+      "Reporte inválido."
+    );
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

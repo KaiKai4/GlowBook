@@ -14,9 +14,18 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
 }));
@@ -80,7 +89,12 @@ describe("appointments actions: identificadores inválidos", () => {
     vi.mocked(cancelAppointment).mockResolvedValue(ok(undefined));
 
     expect(await cancelAppointmentAction(lifecycleForm(RECORD_ID))).toEqual(ok(undefined));
-    expect(cancelAppointment).toHaveBeenCalledWith(RECORD_ID, manager.salon_id, KEY);
+    expect(cancelAppointment).toHaveBeenCalledWith({
+      appointmentId: RECORD_ID,
+      salonId: manager.salon_id,
+      idempotencyKey: KEY,
+      customerDisposition: "keep",
+    });
   });
 
   it("confirmAppointmentAction rechaza un identificador inválido sin confirmar", async () => {

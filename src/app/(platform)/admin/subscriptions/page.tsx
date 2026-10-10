@@ -1,11 +1,9 @@
 import { AlertTriangle, BadgeDollarSign, Building2, Hourglass } from "lucide-react";
 
-import {
-  getSalonSubscriptionDetail,
-  getSubscriptionsPage,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import { getSalonSubscriptionDetail } from "@/features/billing";
+import { getSubscriptionsPage } from "@/features/billing";
 import { PageHeader } from "@/components/ui/page-header";
-import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { getPlatformSalonOverviews } from "@/features/platform";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { SalonSubscriptionList } from "./salon-list";
 import { SubscriptionDetail } from "./subscription-detail";
@@ -79,7 +77,7 @@ export default async function PlatformSubscriptionsPage({
           ) : (
             <div className="flex items-center justify-center p-8">
               <p className="max-w-sm text-center text-sm leading-6 text-fg-subtle">
-                No hay salones registrados todavia. Invita un salon desde Invitaciones para asignarle un plan.
+                No hay salones registrados todavía. Invita un salón desde Invitaciones para asignarle un plan.
               </p>
             </div>
           )}

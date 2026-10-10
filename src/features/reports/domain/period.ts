@@ -1,5 +1,10 @@
 import type { ReportPreset } from "../schemas";
 
+/** Días hacia atrás que cubre la ventana de 30 días (incluye hoy). */
+const LAST_30_DAYS_OFFSET = 29;
+/** Días hacia atrás que cubre la ventana de 90 días (incluye hoy). */
+const LAST_90_DAYS_OFFSET = 89;
+
 const DAY_MS = 86_400_000;
 
 const WEEKDAY_TO_MONDAY_OFFSET: Record<string, number> = {
@@ -111,13 +116,20 @@ export function getReportPresetRange(
       return previousMonthRange(today);
 
     case "30dias": {
-      const fromDate = new Date(now.getTime() - 29 * DAY_MS);
+      const fromDate = new Date(now.getTime() - LAST_30_DAYS_OFFSET * DAY_MS);
       return { from: localDateString(fromDate, timezone), to: today };
     }
 
     case "90dias": {
-      const fromDate = new Date(now.getTime() - 89 * DAY_MS);
+      const fromDate = new Date(now.getTime() - LAST_90_DAYS_OFFSET * DAY_MS);
       return { from: localDateString(fromDate, timezone), to: today };
     }
   }
+}
+
+/** Último día (YYYY-MM-DD) de un mes dado como YYYY-MM. */
+export function lastDayOfMonth(monthKey: string): string {
+  const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
+  const day = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${monthKey}-${String(day).padStart(2, "0")}`;
 }

@@ -8,6 +8,7 @@ import type { CommercialPlan } from "../domain/commercial-plan";
 import type { CommercialAddon } from "../domain/salon-extras";
 import {
   archiveCommercialPlan,
+  countPlanAssignments,
   deleteCommercialPlan,
   findPlanCatalog,
   saveCommercialPlan,
@@ -18,16 +19,6 @@ import { findCommercialAddons } from "../data/commercial-addons.repo";
 import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
 import { commercialPlanAudit, normalizeKey } from "./billing-shared";
 import { publishAuditEvent } from "@/features/audit";
-
-// Re-exports: las actions del dashboard y el shell consultan el plan efectivo
-// a traves de este modulo.
-export {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  getEffectiveDisabledSalonFeatures,
-  getEffectiveSalonPlan,
-  isEffectiveSalonModuleEnabled,
-} from "./salon-subscriptions";
 
 export type {
   CommercialLimitMetric,
@@ -71,7 +62,7 @@ export interface CommercialPlansPageData {
   assignmentsByPlan: Record<string, number>;
 }
 
-/** Catalogo minimo de planes para otros features (ej. invitaciones). */
+/** Catálogo minimo de planes para otros features (ej. invitaciones). */
 export async function getPlanCatalogSummary(): Promise<
   Array<Pick<CommercialPlan, "id" | "name" | "currency" | "monthlyPrice" | "trialDays" | "status">>
 > {
@@ -126,17 +117,25 @@ export async function saveCommercialPlanConfig(
   }
 }
 
-export async function removeCommercialPlanConfig(
-  plan: CommercialPlan,
-  hasAssignments: boolean,
-  actorUserId?: string | null
-): Promise<Result<void>> {
+/** Archiva el plan: lo retira del catálogo sin tocar las asignaciones existentes. */
+export async function archivePlan(planId: string, actorUserId?: string | null): Promise<Result<void>> {
   try {
-    if (hasAssignments) await archiveCommercialPlan(plan.id);
-    else await deleteCommercialPlan(plan.id);
-    const warnings = hasAssignments
-      ? await publishAuditEvent("billing.plan_archived", { ...commercialPlanAudit(actorUserId, plan.id), action: "commercial_plan_archived" })
-      : await publishAuditEvent("billing.plan_deleted", { ...commercialPlanAudit(actorUserId, plan.id), action: "commercial_plan_deleted" });
+    await archiveCommercialPlan(planId);
+    const warnings = await publishAuditEvent("billing.plan_archived", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_archived" });
+    return ok(undefined, warnings);
+  } catch (error) {
+    return err(toPublicErrorMessage(error, "No se pudo archivar el plan."));
+  }
+}
+
+const PLAN_HAS_ASSIGNMENTS_MESSAGE = "El plan tiene salones asignados. Archívalo en lugar de eliminarlo.";
+
+/** Borra el plan solo si ningun salon lo tiene asignado; el conteo lo hace el servidor. */
+export async function deletePlan(planId: string, actorUserId?: string | null): Promise<Result<void>> {
+  try {
+    if ((await countPlanAssignments(planId)) > 0) return err(PLAN_HAS_ASSIGNMENTS_MESSAGE);
+    await deleteCommercialPlan(planId);
+    const warnings = await publishAuditEvent("billing.plan_deleted", { ...commercialPlanAudit(actorUserId, planId), action: "commercial_plan_deleted" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo eliminar el plan."));
@@ -146,7 +145,7 @@ export async function removeCommercialPlanConfig(
 const PlanModulesBatchSchema = z.object({
   planId: z.string().uuid("Selecciona un plan."),
   enabledModuleKeys: z.array(z.string().trim().min(1)).default([]),
-  allModuleKeys: z.array(z.string().trim().min(1)).min(1, "No hay modulos para guardar."),
+  allModuleKeys: z.array(z.string().trim().min(1)).min(1, "No hay módulos para guardar."),
 });
 
 export async function saveCommercialPlanModulesBatch(
@@ -165,7 +164,7 @@ export async function saveCommercialPlanModulesBatch(
     const warnings = await publishAuditEvent("billing.plan_module_saved", { ...commercialPlanAudit(actorUserId, parsed.data.planId), action: "commercial_plan_module_saved" });
     return ok(undefined, warnings);
   } catch (error) {
-    return err(toPublicErrorMessage(error, "No se pudieron guardar los modulos del plan."));
+    return err(toPublicErrorMessage(error, "No se pudieron guardar los módulos del plan."));
   }
 }
 

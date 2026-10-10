@@ -30,6 +30,7 @@ export function getSidebarPreference(): SidebarPreference {
     if (raw === "false") return "expanded";
     return "auto";
   } catch {
+    // localStorage no disponible (modo privado o almacenamiento bloqueado): se usa el modo automatico.
     return "auto";
   }
 }
@@ -58,6 +59,7 @@ export function setSidebarCollapsed(collapsed: boolean): boolean {
   try {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
   } catch {
+    // localStorage no disponible: la preferencia no se guarda y no se avisa a los suscriptores.
     return false;
   }
   notify();
@@ -65,7 +67,7 @@ export function setSidebarCollapsed(collapsed: boolean): boolean {
 }
 
 /**
- * Suscripcion compatible con useSyncExternalStore: reacciona a cambios locales,
+ * Suscripción compatible con useSyncExternalStore: reacciona a cambios locales,
  * a cambios hechos en otra pestaña (evento "storage") y a cruces del punto md.
  */
 export function subscribeSidebarCollapsed(listener: SidebarListener): () => void {

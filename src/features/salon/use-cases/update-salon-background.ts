@@ -1,7 +1,8 @@
+import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { updateSalonBackground as updateSalonBackgroundRow } from "../data/salon.repo";
+import { updateSalonBackground as updateSalonBackgroundRow } from "../data/salon-appearance.repo";
 import { SALON_BG_STYLES, type SalonBgStyle } from "../schemas";
 
 export async function updateSalonBackground(
@@ -15,7 +16,8 @@ export async function updateSalonBackground(
   try {
     await updateSalonBackgroundRow(salonId, bgStyle);
     return { ok: true, value: undefined };
-  } catch {
+  } catch (error) {
+    captureError(error, { module: "salon", action: "update_background" });
     return { ok: false, error: "Error al guardar el fondo." };
   }
 }

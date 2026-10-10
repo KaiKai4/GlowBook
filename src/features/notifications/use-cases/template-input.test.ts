@@ -11,7 +11,7 @@ describe("parseNotificationTemplateInput", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("recorta el cuerpo y valida la longitud mínima", () => {
+  it("recorta el cuerpo y válida la longitud mínima", () => {
     expect(
       parseNotificationTemplateInput({ event: "appointment_reminder", body_text: "   corto  ", is_active: true })
     ).toEqual(err("La plantilla debe tener al menos 10 caracteres."));

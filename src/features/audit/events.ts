@@ -15,7 +15,7 @@ export type AuditEventPayload<TAction extends PlatformAuditAction = PlatformAudi
   errorMessage?: string | null;
 };
 
-// Catalogo tipado de eventos. Cada evento corresponde a exactamente una accion
+// Catálogo tipado de eventos. Cada evento corresponde a exactamente una accion
 // de la bitacora; añadir un evento obliga a tocar el manejador y su test.
 export type AuditEventMap = {
   "platform.salon_invited": AuditEventPayload<"invite_salon">;

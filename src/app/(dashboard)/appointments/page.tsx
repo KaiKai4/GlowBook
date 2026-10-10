@@ -1,4 +1,4 @@
-import { getCalendarView } from "@/features/appointments/use-cases/get-calendar-view";
+import { getCalendarView } from "@/features/appointments";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
 import { AppointmentsClient } from "./appointments-client";

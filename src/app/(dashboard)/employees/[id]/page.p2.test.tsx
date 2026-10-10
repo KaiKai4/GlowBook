@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { notFound } from "next/navigation";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
 import { getEmployeeDetail, type EmployeeDetailViewModel } from "@/features/employees/use-cases/get-employee-detail";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { requireProfile } from "@/app/_composition/request-context";
+import { getRolesEnabled, requireProfile } from "@/app/_composition/request-context";
 import { buildProfile, SALON_ID } from "@/test/action-fixtures";
+import { partialDouble } from "@/test/partial-double";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import EmployeeDetailPage from "./page";
 
@@ -14,13 +14,13 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   }),
 }));
-vi.mock("@/app/_composition/request-context", () => ({ requireProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requireProfile: vi.fn(), getRolesEnabled: vi.fn() }));
 vi.mock("@/features/access", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/access")>()),
   hasPermission: vi.fn(),
 }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
-  isEffectiveSalonModuleEnabled: vi.fn(),
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
 }));
 vi.mock("@/features/employees/use-cases/get-employee-detail", () => ({
   getEmployeeDetail: vi.fn(),
@@ -41,7 +41,7 @@ const EMPLOYEE_ID = "00000000-0000-4000-8000-0000000000d1";
 const NOT_UUID = "colaborador-1";
 
 function view(overrides: Partial<EmployeeDetailViewModel> = {}): EmployeeDetailViewModel {
-  return {
+  return partialDouble<EmployeeDetailViewModel>({
     employee: {
       id: EMPLOYEE_ID,
       first_name: "Ana",
@@ -51,6 +51,7 @@ function view(overrides: Partial<EmployeeDetailViewModel> = {}): EmployeeDetailV
       commission_percentage: 30,
       is_active: true,
       profile_id: null,
+      specialty: "",
     },
     categories: [{ id: "cat-1", name: "Cabello" }],
     services: [{ id: "srv-1", name: "Corte" }],
@@ -61,7 +62,7 @@ function view(overrides: Partial<EmployeeDetailViewModel> = {}): EmployeeDetailV
     pendingInvitation: null,
     roleOptions: [],
     ...overrides,
-  } as unknown as EmployeeDetailViewModel;
+  });
 }
 
 describe("EmployeeDetailPage", () => {
@@ -72,7 +73,7 @@ describe("EmployeeDetailPage", () => {
     vi.clearAllMocks();
     vi.mocked(requireProfile).mockResolvedValue(manager);
     vi.mocked(hasPermission).mockReturnValue(true);
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(true);
+    vi.mocked(getRolesEnabled).mockResolvedValue(true);
     vi.mocked(getEmployeeDetail).mockResolvedValue(view());
   });
 
@@ -128,12 +129,12 @@ describe("EmployeeDetailPage", () => {
   });
 
   it("oculta la sección de acceso cuando el módulo de roles está deshabilitado", async () => {
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
+    vi.mocked(getRolesEnabled).mockResolvedValue(false);
     vi.mocked(getEmployeeDetail).mockResolvedValue(view());
 
     mounted = mountComponent(await EmployeeDetailPage({ params: Promise.resolve({ id: EMPLOYEE_ID }) }));
 
-    expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith(manager, "roles");
+    expect(getRolesEnabled).toHaveBeenCalled();
     expect(getEmployeeDetail).toHaveBeenCalledWith(expect.objectContaining({ rolesEnabled: false }));
     expect(mounted.container.textContent).not.toContain("Acceso al sistema");
   });
@@ -147,13 +148,14 @@ describe("EmployeeDetailPage", () => {
           id: EMPLOYEE_ID,
           first_name: "Ana",
           last_name: "Pérez",
-          phone: null,
-          email: null,
+          phone: "",
+          email: "",
+          specialty: "",
           commission_percentage: 0,
           is_active: false,
           profile_id: null,
         },
-      } as unknown as Partial<EmployeeDetailViewModel>)
+      })
     );
 
     mounted = mountComponent(await EmployeeDetailPage({ params: Promise.resolve({ id: EMPLOYEE_ID }) }));

@@ -440,19 +440,19 @@ select is((select count(*)::int from pg_proc p
 select is((select count(*)::int from pg_proc p cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
   where p.pronamespace = 'public'::regnamespace and p.proname like 'report\_%' and p.proname <> 'report_monthly_history' and a.grantee = 0 and a.privilege_type = 'EXECUTE'), 0,
   'grants: PUBLIC sin EXECUTE');
--- T72: las 14 funciones son ejecutables por authenticated
+-- T72: las 15 funciones son ejecutables por authenticated
 select is((select count(*)::int from pg_proc p
   where p.pronamespace = 'public'::regnamespace and p.proname like 'report\_%' and p.proname <> 'report_monthly_history'
-    and has_function_privilege('authenticated', p.oid, 'EXECUTE')), 14,
-  'grants: 14 funciones de lectura ejecutables por authenticated');
+    and has_function_privilege('authenticated', p.oid, 'EXECUTE')), 15,
+  'grants: 15 funciones de lectura ejecutables por authenticated');
 -- T73: ninguna es SECURITY DEFINER
 select is((select count(*)::int from pg_proc p
   where p.pronamespace = 'public'::regnamespace and p.proname like 'report\_%' and p.proname <> 'report_monthly_history' and p.prosecdef), 0,
   'seguridad: ninguna funcion de lectura es SECURITY DEFINER');
--- T74: search_path fijo en las 14
+-- T74: search_path fijo en las 15
 select is((select count(*)::int from pg_proc p
   where p.pronamespace = 'public'::regnamespace and p.proname like 'report\_%' and p.proname <> 'report_monthly_history'
-    and array_to_string(p.proconfig, ',') like '%search_path=public, pg_temp%'), 14,
+    and array_to_string(p.proconfig, ',') like '%search_path=public, pg_temp%'), 15,
   'seguridad: search_path fijo en todas las funciones');
 
 -- K. Indices de soporte

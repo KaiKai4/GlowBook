@@ -33,22 +33,6 @@ Antes de lanzamiento se debe crear (ninguno de estos ficheros existe hoy):
 
 Debe usarse `appointment_reminder_log` para registrar intentos y errores.
 
-## Gate Operativo
+## Verificación Manual
 
-Ejecutar:
-
-```text
-npm run reminders:readiness
-```
-
-El gate valida que la decision manual siga vigente y que no exista codigo de
-envio automatico en `src/features/reminders`.
-
-Si el producto decide prometer envio automatico, activar:
-
-```text
-GLOWBOOK_REMINDERS_AUTOMATIC_CONFIRMED=true
-```
-
-Con esa variable, el gate exige los use-cases y Adapter de envio real antes de
-permitir cerrar la fase.
+Antes del lanzamiento, confirma que la decisión manual sigue vigente y que no existe código de envío automático en `src/features/reminders` (búsqueda en el repositorio).

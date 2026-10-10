@@ -131,7 +131,7 @@ describe("TimePicker (comportamiento del panel)", () => {
     expect(onChange).toHaveBeenCalledWith("21:00");
   });
 
-  it("muestra AM como periodo activo cuando la hora de la mañana está dentro del horario", () => {
+  it("muestra AM como período activo cuando la hora de la mañana está dentro del horario", () => {
     mounted = mountComponent(
       <TimePicker value="09:00" label="Inicio" min="08:00" max="10:00" onChange={vi.fn()} />
     );
@@ -171,7 +171,7 @@ describe("TimePicker (comportamiento del panel)", () => {
     expect(button("Guardar").disabled).toBe(true);
   });
 
-  it("el periodo fuera de rango se deshabilita y no puede elegirse", () => {
+  it("el período fuera de rango se deshabilita y no puede elegirse", () => {
     mounted = mountComponent(
       <TimePicker value="09:00" label="Inicio" min="08:00" max="10:00" onChange={vi.fn()} />
     );

@@ -18,10 +18,10 @@ import {
 } from "../schemas";
 
 // Validacion de entrada de los casos de uso de servicios. Las acciones solo
-// adaptan el formulario y delegan aqui; el orden de validacion se conserva.
+// adaptan el formulario y delegan aquí; el orden de validacion se conserva.
 
 const INVALID_ID_MESSAGE = "Identificador inválido.";
-const DURATION_MESSAGE = "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.";
+const DURATION_MESSAGE = "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.";
 
 export type PricingMode = "fixed" | "variable";
 

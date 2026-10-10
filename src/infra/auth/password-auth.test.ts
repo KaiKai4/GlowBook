@@ -32,7 +32,7 @@ beforeEach(() => {
 });
 
 describe("marcador de recordarme (setRememberSession dentro de signInWithPassword)", () => {
-  it("con recordarme borra el marcador de solo sesion", async () => {
+  it("con recordarme borra el marcador de solo sesión", async () => {
     await signInWithPassword({ email: "a@b.com", password: "clave-1", remember: true });
 
     expect(cookieSet).toHaveBeenCalledWith("gb-session-only", "", {
@@ -54,7 +54,7 @@ describe("marcador de recordarme (setRememberSession dentro de signInWithPasswor
 });
 
 describe("signInWithPassword", () => {
-  it("escribe el marcador y abre el cliente en modo solo sesion cuando no se quiere recordar", async () => {
+  it("escribe el marcador y abre el cliente en modo solo sesión cuando no se quiere recordar", async () => {
     await signInWithPassword({ email: "a@b.com", password: "clave-1", remember: false });
 
     expect(cookieSet).toHaveBeenCalledWith("gb-session-only", "1", expect.any(Object));
@@ -96,12 +96,12 @@ describe("requestPasswordReset", () => {
 });
 
 describe("establishRecoverySession", () => {
-  it("canjea el codigo PKCE y reporta exito", async () => {
+  it("canjea el código PKCE y reporta éxito", async () => {
     await expect(establishRecoverySession({ kind: "code", code: "c1" })).resolves.toBe(true);
     expect(auth.exchangeCodeForSession).toHaveBeenCalledWith("c1");
   });
 
-  it("reporta fallo cuando el codigo no se puede canjear", async () => {
+  it("reporta fallo cuando el código no se puede canjear", async () => {
     auth.exchangeCodeForSession.mockResolvedValue({ data: {}, error: { message: "expired" } });
 
     await expect(establishRecoverySession({ kind: "code", code: "c1" })).resolves.toBe(false);
@@ -118,7 +118,7 @@ describe("establishRecoverySession", () => {
     await expect(establishRecoverySession({ kind: "token_hash", tokenHash: "t1" })).resolves.toBe(false);
   });
 
-  it("sin parametros reporta la sesion abierta si hay usuario", async () => {
+  it("sin parametros reporta la sesión abierta si hay usuario", async () => {
     auth.getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
 
     await expect(establishRecoverySession({ kind: "session" })).resolves.toBe(true);
@@ -128,6 +128,34 @@ describe("establishRecoverySession", () => {
     auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
     await expect(establishRecoverySession({ kind: "session" })).resolves.toBe(false);
+  });
+
+  it("JWT invalido (401) reporta fallo sin lanzar, para mandar a login", async () => {
+    const authError = Object.assign(new Error("invalid JWT"), { name: "AuthApiError", status: 401 });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: authError });
+
+    await expect(establishRecoverySession({ kind: "session" })).resolves.toBe(false);
+  });
+
+  it("un 500 del servicio de auth se lanza", async () => {
+    const serverError = Object.assign(new Error("internal"), { name: "AuthApiError", status: 500 });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: serverError });
+
+    await expect(establishRecoverySession({ kind: "session" })).rejects.toBe(serverError);
+  });
+
+  it("sin sesion abierta (AuthSessionMissingError) reporta fallo sin lanzar", async () => {
+    const missing = Object.assign(new Error("Auth session missing!"), { name: "AuthSessionMissingError", status: 400 });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: missing });
+
+    await expect(establishRecoverySession({ kind: "session" })).resolves.toBe(false);
+  });
+
+  it("propaga el error de red al comprobar la sesión en vez de reportar fallo", async () => {
+    const networkError = Object.assign(new Error("fetch failed"), { name: "AuthRetryableFetchError" });
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: networkError });
+
+    await expect(establishRecoverySession({ kind: "session" })).rejects.toBe(networkError);
   });
 });
 
@@ -142,7 +170,7 @@ describe("updateCurrentPassword y signOutCurrentSession", () => {
     expect(outcome.error).toBe(error);
   });
 
-  it("cierra la sesion en el servidor", async () => {
+  it("cierra la sesión en el servidor", async () => {
     await signOutCurrentSession();
 
     expect(auth.signOut).toHaveBeenCalledOnce();

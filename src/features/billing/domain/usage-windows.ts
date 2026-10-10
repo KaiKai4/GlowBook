@@ -7,7 +7,7 @@ export interface UsageCycleAssignment {
   current_period_end: string | null;
 }
 
-// Las ventanas de ciclo se calculan aqui (logica de negocio con casos como el
+// Las ventanas de ciclo se calculan aquí (logica de negocio con casos como el
 // periodo pagado o el día ancla); la RPC count_salon_usage solo ejecuta todos
 // los counts en un unico round-trip a la base.
 export function scopeWindow(

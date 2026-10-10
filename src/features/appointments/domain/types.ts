@@ -50,7 +50,7 @@ export interface RangeEvaluationInput {
   businessHours: BusinessHour[];
   workSchedules?: WorkSchedule[];
   occupiedSlots?: OccupiedSlot[];
-  /** Días libres del profesional (YYYY-MM-DD en la zona del salon). */
+  /** Días libres del profesional (YYYY-MM-DD en la zona del salón). */
   employeeExceptionDates?: string[];
   excludeAppointmentId?: string;
   enforceSalonSchedule?: boolean;
@@ -85,3 +85,6 @@ export interface AppointmentItemPayload {
   price: number;
   ordering: number;
 }
+
+/** Ocupación de la agenda por profesional (clave: id del empleado). Definición única del dominio. */
+export type OccupiedByEmployee = Record<string, OccupiedSlot[]>;

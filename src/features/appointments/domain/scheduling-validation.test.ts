@@ -115,7 +115,7 @@ describe("buildItemPayloads: validación de asignaciones", () => {
     ).toThrow("El profesional seleccionado no atiende esa categoría.");
   });
 
-  it("valida el servicio antes que el horario: no consulta la agenda si la asignación es inválida", () => {
+  it("válida el servicio antes que el horario: no consulta la agenda si la asignación es inválida", () => {
     const getOccupiedSlots = vi.fn(() => []);
     expect(() =>
       buildItemPayloads(
@@ -216,5 +216,38 @@ describe("buildItemPayloads: cursor secuencial", () => {
         }
       )
     );
+  });
+});
+
+describe("buildItemPayloads: servicios inactivos en actualizaciones", () => {
+  const inactiveService = { is_active: false };
+
+  it("acepta un servicio inactivo que la cita ya tenía asignado", () => {
+    const items = buildItemPayloads(
+      salonId,
+      mondayNineAm,
+      [assignment({ service: inactiveService })],
+      context({ allowedInactiveServiceIds: new Set(["service-1"]) })
+    );
+
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ service_id: "service-1", ordering: 1 });
+  });
+
+  it("rechaza un servicio inactivo nuevo aunque la cita tenga otro inactivo permitido", () => {
+    expect(() =>
+      buildItemPayloads(
+        salonId,
+        mondayNineAm,
+        [assignment({ service: inactiveService })],
+        context({ allowedInactiveServiceIds: new Set(["service-9"]) })
+      )
+    ).toThrow("El servicio no está activo.");
+  });
+
+  it("rechaza un servicio inactivo al crear (sin conjunto de permitidos)", () => {
+    expect(() =>
+      buildItemPayloads(salonId, mondayNineAm, [assignment({ service: inactiveService })], context())
+    ).toThrow("El servicio no está activo.");
   });
 });

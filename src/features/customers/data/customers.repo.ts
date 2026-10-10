@@ -2,6 +2,8 @@ import "server-only";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { Database } from "@/types/database.types";
 
+const DEFAULT_CUSTOMERS_PER_PAGE = 10;
+
 type CustomerRow = Database["public"]["Tables"]["customers"]["Row"];
 
 export async function findCustomers(
@@ -9,7 +11,7 @@ export async function findCustomers(
   options: { q?: string; page?: number; perPage?: number; isActive?: boolean } = {}
 ) {
   const supabase = await createSupabaseServerClient();
-  const { q = "", page = 1, perPage = 10, isActive } = options;
+  const { q = "", page = 1, perPage = DEFAULT_CUSTOMERS_PER_PAGE, isActive } = options;
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
   const searchTerm = q.trim().replace(/[%_(),]/g, "");
@@ -54,12 +56,13 @@ export async function findCustomerByPhone(
   phone: string
 ): Promise<CustomerRow | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("customers")
     .select("*")
     .eq("salon_id", salonId)
     .eq("phone", phone)
     .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
@@ -68,24 +71,14 @@ export async function findCustomerByEmail(
   email: string
 ): Promise<CustomerRow | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("customers")
     .select("*")
     .eq("salon_id", salonId)
     .ilike("email", email)
     .maybeSingle();
-  return data;
-}
-
-export async function deleteCustomer(id: string, salonId: string): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("customers")
-    .delete()
-    .eq("id", id)
-    .eq("salon_id", salonId)
-    .eq("is_temporary", true);
   if (error) throw error;
+  return data;
 }
 
 export async function updateCustomer(
@@ -103,4 +96,17 @@ export async function updateCustomer(
     .single();
   if (error) throw error;
   return data;
+}
+
+/** Indica si el cliente es temporal (creado para una cita). Null si no existe en el salón. */
+export async function findCustomerTemporaryFlag(id: string, salonId: string): Promise<boolean | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("customers")
+    .select("is_temporary")
+    .eq("id", id)
+    .eq("salon_id", salonId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? data.is_temporary : null;
 }

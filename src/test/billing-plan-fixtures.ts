@@ -1,5 +1,5 @@
 import type { ProfileWithRole } from "@/types/app.types";
-import type { findEffectivePlanRows } from "@/features/billing/data/salon-subscriptions.repo";
+import type { findEffectivePlanRowsForPlatform } from "@/features/billing/data/salon-subscriptions.repo";
 import type {
   CommercialLimitMetric,
   CommercialPlan,
@@ -79,7 +79,7 @@ export function override(partial: Partial<SalonPlanOverride>): SalonPlanOverride
   return {
     id: "ov-1",
     salonId: "salon-1",
-    salonName: "Salon",
+    salonName: "Salón",
     moduleKey: null,
     metricKey: null,
     moduleEnabled: null,
@@ -107,8 +107,11 @@ function assignment(status: SalonPlanAssignmentStatus | null) {
     plan_id: "plan-basic",
     status,
     starts_at: "2026-01-01",
+    ends_at: null,
+    current_period_start: null,
     current_period_end: "2026-10-31",
     trial_ends_at: null,
+    notes: "",
     created_at: "2026-01-01T00:00:00.000Z",
   };
 }
@@ -118,7 +121,7 @@ export function rows(input: {
   plan?: CommercialPlan | null;
   overrides?: SalonPlanOverride[];
   usage?: Record<string, number>;
-}) {
+}): Awaited<ReturnType<typeof findEffectivePlanRowsForPlatform>> {
   const status = input.status === undefined ? "active" : input.status;
   return {
     metrics,
@@ -126,7 +129,7 @@ export function rows(input: {
     plan: input.plan === undefined ? plan() : input.plan,
     overrides: input.overrides ?? [],
     usage: input.usage ?? {},
-  } as unknown as Awaited<ReturnType<typeof findEffectivePlanRows>>;
+  };
 }
 
 export function legacyProfile(disabledFeatures: string[] | null): ProfileWithRole {

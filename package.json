@@ -22,7 +22,7 @@
     "db:types": "node scripts/quality/generate-db-types.mjs",
     "db:start": "node scripts/quality/db-up.mjs",
     "db:reset": "supabase db reset --local",
-    "db:test": "supabase test db",
+    "db:test": "node scripts/quality/run-pgtap.mjs",
     "bootstrap:admin": "node --env-file=.env.local scripts/bootstrap-platform-admin.mjs",
     "prepare": "husky",
     "lighthouse:ci": "node scripts/quality/run-lighthouse.mjs",

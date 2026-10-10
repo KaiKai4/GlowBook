@@ -2,11 +2,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buttonWithText, chooseSelectOptionByCurrentText, click, flushAsync } from "@/test/ui-people-dom";
-import { generateEmployeeInviteAction } from "../actions";
+import { generateEmployeeInviteAction } from "../actions-access";
 import { PendingEmployeeAccessPanel } from "./pending-employee-access-panel";
 import type { PendingEmployeeInvitation, RoleOption } from "../types";
 
-vi.mock("../actions", () => ({
+vi.mock("../actions-access", () => ({
   generateEmployeeInviteAction: vi.fn(),
 }));
 

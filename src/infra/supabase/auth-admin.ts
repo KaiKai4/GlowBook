@@ -1,5 +1,5 @@
 import "server-only";
-import type { AuthError, User } from "@supabase/supabase-js";
+import { AuthError, type User } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "./admin";
 
 export interface CreateAuthUserInput {
@@ -54,22 +54,18 @@ export async function updateAuthUser(
   return { data: data.user ?? null, error };
 }
 
+/**
+ * Busca un usuario de Auth por email en una sola consulta (RPC find_auth_user_id_by_email, con
+ * normalizacion lower/trim en la base). Sin coincidencia devuelve data null y sin error.
+ */
 export async function findAuthUserByEmail(
   email: string
 ): Promise<AuthAdminResponse<User>> {
   const admin = createSupabaseAdminClient();
-  const needle = email.trim().toLowerCase();
-  const perPage = 1000;
+  const { data: userId, error } = await admin.rpc("find_auth_user_id_by_email", { p_email: email });
+  if (error) return { data: null, error: new AuthError(error.message, 500, error.code) };
+  if (!userId) return { data: null, error: null };
 
-  for (let page = 1; page <= 50; page += 1) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) return { data: null, error };
-
-    const users = data.users ?? [];
-    const match = users.find((user) => user.email?.toLowerCase() === needle);
-    if (match) return { data: match, error: null };
-    if (users.length < perPage) break;
-  }
-
-  return { data: null, error: null };
+  const { data, error: getError } = await admin.auth.admin.getUserById(userId);
+  return { data: data.user ?? null, error: getError };
 }

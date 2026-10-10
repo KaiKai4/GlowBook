@@ -13,7 +13,7 @@ describe("getOnboardingChecklist", () => {
     vi.clearAllMocks();
   });
 
-  it("consulta los conteos del salon y marca como hechos solo los pasos con datos", async () => {
+  it("consulta los conteos del salón y marca como hechos solo los pasos con datos", async () => {
     mockedFindCounts.mockResolvedValue({ services: 3, employees: 0, customers: 5, appointments: 0 });
 
     const checklist = await getOnboardingChecklist("salon-1");
@@ -27,12 +27,6 @@ describe("getOnboardingChecklist", () => {
       ["customers", true],
       ["appointments", false],
     ]);
-    expect(checklist.steps.map((step) => step.href)).toEqual([
-      "/services",
-      "/employees",
-      "/customers",
-      "/appointments/new",
-    ]);
   });
 
   it("queda completo cuando todos los conteos son mayores que cero", async () => {
@@ -43,7 +37,7 @@ describe("getOnboardingChecklist", () => {
     expect(checklist).toMatchObject({ doneCount: 4, complete: true });
   });
 
-  it("muestra todos los pasos pendientes cuando el salon esta vacio", async () => {
+  it("muestra todos los pasos pendientes cuando el salón esta vacio", async () => {
     mockedFindCounts.mockResolvedValue({ services: 0, employees: 0, customers: 0, appointments: 0 });
 
     const checklist = await getOnboardingChecklist("salon-1");

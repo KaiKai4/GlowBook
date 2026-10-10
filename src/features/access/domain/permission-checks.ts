@@ -2,6 +2,7 @@ import type { ProfileWithRole } from "@/types/app.types";
 import {
   isSalonFeatureDisabled,
   normalizeDisabledSalonFeatures,
+  salonFeaturesForPermission,
   type SalonFeatureKey,
 } from "@/features/salon-features";
 
@@ -23,20 +24,18 @@ export const PERMISSIONS = {
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
-const PERMISSION_FEATURES: Partial<Record<Permission, SalonFeatureKey>> = {
-  [PERMISSIONS.SALON_MANAGE]: "salon",
-  [PERMISSIONS.ROLES_MANAGE]: "roles",
-  [PERMISSIONS.EMPLOYEES_MANAGE]: "employees",
-  [PERMISSIONS.SERVICES_MANAGE]: "services",
-  [PERMISSIONS.INVENTORY_MANAGE]: "inventory",
-  [PERMISSIONS.RETAIL_MANAGE]: "retail",
-  [PERMISSIONS.EXPENSES_MANAGE]: "expenses",
-  [PERMISSIONS.CUSTOMERS_MANAGE]: "customers",
-  [PERMISSIONS.APPOINTMENTS_VIEW]: "appointments",
-  [PERMISSIONS.APPOINTMENTS_MANAGE]: "appointments",
-  [PERMISSIONS.APPOINTMENTS_VIEW_ALL]: "appointments",
-  [PERMISSIONS.REPORTS_VIEW]: "reports",
-};
+/**
+ * Permiso -> módulos que lo requieren. Se deriva de SALON_FEATURES (cada modulo
+ * declara sus permisos). null = el permiso no depende de ningun modulo. Un permiso
+ * solo esta activo si TODOS sus módulos están activos en el salón.
+ */
+const PERMISSION_FEATURES: Record<Permission, SalonFeatureKey[] | null> =
+  Object.fromEntries(
+    (Object.values(PERMISSIONS) as Permission[]).map((permission) => {
+      const features = salonFeaturesForPermission(permission);
+      return [permission, features.length > 0 ? features : null];
+    })
+  ) as Record<Permission, SalonFeatureKey[] | null>;
 
 export function getDisabledSalonFeatures(profile: ProfileWithRole): SalonFeatureKey[] {
   return normalizeDisabledSalonFeatures(profile.salon?.disabled_features);
@@ -50,8 +49,8 @@ function hasSalonFeature(
 }
 
 function isPermissionEnabled(profile: ProfileWithRole, permission: Permission): boolean {
-  const feature = PERMISSION_FEATURES[permission];
-  return !feature || hasSalonFeature(profile, feature);
+  const features = PERMISSION_FEATURES[permission];
+  return !features || features.every((feature) => hasSalonFeature(profile, feature));
 }
 
 export function hasPermission(

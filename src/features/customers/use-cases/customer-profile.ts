@@ -1,4 +1,5 @@
 import { captureError } from "@/infra/observability";
+import { checkPlanModuleAccess } from "@/features/billing";
 import {
   createCustomer,
   updateCustomer,
@@ -7,9 +8,10 @@ import type {
   CreateCustomerInput,
   UpdateCustomerInput,
 } from "@/features/customers/schemas";
-import type { Result } from "@/infra/result";
+import { err, type Result } from "@/infra/result";
 import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 import { rejectArchivedDuplicate } from "./customer-duplicates";
+import { assertCustomerQuotaAvailable } from "./customer-quota";
 
 function mapCustomerConstraintError(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
@@ -25,10 +27,20 @@ function mapCustomerConstraintError(error: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * Da de alta el cliente solo si el plan del salón incluye el modulo de clientes y
+ * queda cupo de clientes activos.
+ */
 export async function createCustomerProfile(
   salonId: string,
   input: CreateCustomerInput
 ): Promise<Result<string>> {
+  const moduleAccess = await checkPlanModuleAccess({ salonId, moduleKey: "customers" });
+  if (!moduleAccess.ok) return err(moduleAccess.error);
+
+  const limit = await assertCustomerQuotaAvailable(salonId);
+  if (!limit.ok) return err(limit.error);
+
   const normalizedInput = normalizeCustomerPhone(input);
   const duplicate = await rejectArchivedDuplicate(salonId, normalizedInput);
   if (!duplicate.ok) return duplicate;

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
-import { reactivateEmployeeAction } from "./actions";
+import { reactivateEmployeeAction } from "./actions-profile";
 import type { EmployeeListItem } from "./types";
 
 interface EmployeesGridProps {
@@ -35,13 +35,13 @@ export function EmployeesGrid({
   function handleReactivateEmployee(employeeId: string) {
     setReactivatingId(employeeId);
     startReactivation(async () => {
-      const res = await reactivateEmployeeAction(employeeId);
+      const result = await reactivateEmployeeAction(employeeId);
       setReactivatingId(null);
-      if (res.ok) {
+      if (result.ok) {
         toast.success("Colaborador reactivado.");
         router.refresh();
       } else {
-        setReactivateError(res.error ?? "No se pudo reactivar el colaborador.");
+        setReactivateError(result.error ?? "No se pudo reactivar el colaborador.");
       }
     });
   }
@@ -53,7 +53,7 @@ export function EmployeesGrid({
           <Users className="h-5 w-5 text-brand-400" />
         </div>
         <p className="mt-3 text-sm font-medium text-fg-subtle">
-          {totalEmployees === 0 ? "Aun no hay colaboradores." : "No hay coincidencias."}
+          {totalEmployees === 0 ? "Aún no hay colaboradores." : "No hay coincidencias."}
         </p>
         {hasActiveFilters ? (
           <button onClick={onClearFilters} className="mt-2 text-xs text-brand-600 hover:underline">

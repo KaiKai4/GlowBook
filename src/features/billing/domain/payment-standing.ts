@@ -1,8 +1,8 @@
 import type { SalonPlanAssignmentStatus } from "./commercial-plan";
 
-// Estado de pago del salon, evaluado al momento de acceder (lazy): no requiere
+// Estado de pago del salón, evaluado al momento de acceder (lazy): no requiere
 // cron. Vencido el periodo pagado (o el trial), corre una ventana de gracia en
-// la que el owner ve un aviso; agotada la gracia, el salon queda suspendido
+// la que el owner ve un aviso; agotada la gracia, el salón queda suspendido
 // hasta que la plataforma registre el pago.
 type PaymentStandingState = "ok" | "grace" | "suspended";
 

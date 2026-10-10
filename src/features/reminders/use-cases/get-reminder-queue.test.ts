@@ -154,7 +154,7 @@ describe("get reminder queue", () => {
     });
   });
 
-  it("falls back to Panama timezone and generic salon name when identity is missing", async () => {
+  it("falls back to Panama timezone and generic salón name when identity is missing", async () => {
     mockedGetSalonIdentity.mockResolvedValue(null);
     mockedGetRemindableAppointments.mockResolvedValue([]);
 
@@ -168,7 +168,7 @@ describe("get reminder queue", () => {
       startDate: "2026-05-28T05:00:00.000Z",
       endDate: "2026-05-30T04:59:59.999Z",
     });
-    expect(result.salonName).toBe("tu salon");
+    expect(result.salonName).toBe("tu salón");
     expect(result.timezone).toBe("America/Panama");
   });
 });

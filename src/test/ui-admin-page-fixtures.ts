@@ -1,7 +1,7 @@
 // Fixtures para tests de páginas server de /admin (salons, subscriptions, plans).
 import type { SalonOverview } from "@/features/platform/data/salon-overviews.repo";
 import type { PlatformSalonOverviewsViewModel } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions";
+import type { SubscriptionsPageData } from "@/features/billing/use-cases/salon-subscriptions-page";
 import type { CommercialPlansPageData } from "@/features/billing/use-cases/commercial-plans";
 import { makeAddon, makeMetric, makeModule, makePlan, makeRow } from "./ui-admin-fixtures";
 

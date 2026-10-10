@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { assignSalonAddonConfig, assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig, saveSalonManualExtraConfig } from "./salon-subscriptions";
+import { assignSalonAddonConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
+import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
 import { assignSalonPlan, recordSalonPlanPayment, saveSalonPlanOverride } from "../data/salon-subscriptions.repo";
 import { err } from "@/infra/result";
 
@@ -44,7 +45,7 @@ describe("suscripciones de salón: validación de entrada", () => {
 
   it("asignar plan exige salón y plan válidos sin escribir", async () => {
     expect(await assignSalonCommercialPlanConfig({ salonId: "x", planId: PLAN_ID })).toEqual(
-      err("Selecciona un salon.")
+      err("Selecciona un salón.")
     );
     expect(await assignSalonCommercialPlanConfig({ salonId: SALON_ID, planId: "x" })).toEqual(
       err("Selecciona un plan.")
@@ -61,13 +62,13 @@ describe("suscripciones de salón: validación de entrada", () => {
 
   it("asignar un extra exige un extra válido del catálogo", async () => {
     expect(await assignSalonAddonConfig({ salonId: SALON_ID, addonId: "x" })).toEqual(
-      err("Selecciona un extra del catalogo.")
+      err("Selecciona un extra del catálogo.")
     );
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
 
   it("el extra manual exige un salón válido antes de calcular overrides", async () => {
-    expect(await saveSalonManualExtraConfig({ salonId: "x" })).toEqual(err("Selecciona un salon."));
+    expect(await saveSalonManualExtraConfig({ salonId: "x" })).toEqual(err("Selecciona un salón."));
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
 });

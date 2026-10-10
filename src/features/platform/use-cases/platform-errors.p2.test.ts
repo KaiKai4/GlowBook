@@ -21,7 +21,7 @@ vi.mock("../data/platform-auth.repo", () => ({
   findPlatformOwnerAuthUserByEmail: vi.fn(),
   updatePlatformOwnerAuthUser: vi.fn(),
 }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 
@@ -43,7 +43,7 @@ beforeEach(() => {
   isAdmin = true;
 });
 
-describe("invitar salon: validaciones y errores", () => {
+describe("invitar salón: validaciones y errores", () => {
   it("un usuario que no es administrador de plataforma no puede invitar", async () => {
     isAdmin = false;
 
@@ -53,21 +53,21 @@ describe("invitar salon: validaciones y errores", () => {
     expect(createSalonInvitation).not.toHaveBeenCalled();
   });
 
-  it("un email invalido devuelve el primer mensaje de validacion", async () => {
+  it("un email inválido devuelve el primer mensaje de validación", async () => {
     const result = await inviteSalon({ ...VALID_INVITE, email: "no-es-email", actorIsPlatformAdmin: isAdmin });
 
     expect(result).toEqual({ ok: false, error: "Email inválido" });
     expect(createSalonInvitation).not.toHaveBeenCalled();
   });
 
-  it("sin plan valido no se crea la invitacion", async () => {
+  it("sin plan válido no se crea la invitación", async () => {
     const result = await inviteSalon({ ...VALID_INVITE, planId: "plan", actorIsPlatformAdmin: isAdmin });
 
-    expect(result).toEqual({ ok: false, error: "Selecciona el plan que tendra el salon." });
+    expect(result).toEqual({ ok: false, error: "Selecciona el plan que tendrá el salón." });
     expect(createSalonInvitation).not.toHaveBeenCalled();
   });
 
-  it("crea la invitacion, audita y devuelve el token en claro", async () => {
+  it("crea la invitación, audita y devuelve el token en claro", async () => {
     vi.mocked(createSalonInvitation).mockResolvedValue("token-en-claro");
 
     const result = await inviteSalon({ ...VALID_INVITE, actorIsPlatformAdmin: isAdmin });
@@ -78,7 +78,7 @@ describe("invitar salon: validaciones y errores", () => {
     );
   });
 
-  it("si la creacion falla registra el error y la auditoria de fallo", async () => {
+  it("si la creación falla registra el error y la auditoria de fallo", async () => {
     const failure = new PublicError("Ya existe una invitación pendiente.");
     vi.mocked(createSalonInvitation).mockRejectedValue(failure);
 
@@ -95,36 +95,36 @@ describe("invitar salon: validaciones y errores", () => {
   });
 });
 
-describe("aceptar invitacion: validaciones y errores", () => {
-  it("un token vacio devuelve 'Token inválido' sin consultar la invitacion", async () => {
+describe("aceptar invitación: validaciones y errores", () => {
+  it("un token vacio devuelve 'Token inválido' sin consultar la invitación", async () => {
     const result = await acceptInvitation({ ...VALID_ACCEPT, token: "" });
 
     expect(result).toEqual({ ok: false, error: "Token inválido" });
     expect(findSalonInvitationForAcceptance).not.toHaveBeenCalled();
   });
 
-  it("una contraseña corta devuelve su mensaje de validacion", async () => {
+  it("una contraseña corta devuelve su mensaje de validación", async () => {
     const result = await acceptInvitation({ ...VALID_ACCEPT, password: "corta" });
 
     expect(result).toEqual({
       ok: false,
-      error: "La contrasena debe tener al menos 8 caracteres",
+      error: "La contraseña debe tener al menos 8 caracteres",
     });
   });
 
-  it("un email invalido devuelve el mensaje del esquema", async () => {
+  it("un email inválido devuelve el mensaje del esquema", async () => {
     const result = await acceptInvitation({ ...VALID_ACCEPT, email: "x" });
 
     expect(result).toEqual({ ok: false, error: "Email inválido" });
   });
 
-  it("si no se puede verificar la invitacion informa del fallo y registra el error", async () => {
+  it("si no se puede verificar la invitación informa del fallo y registra el error", async () => {
     const failure = new Error("timeout");
     vi.mocked(findSalonInvitationForAcceptance).mockRejectedValue(failure);
 
     const result = await acceptInvitation(VALID_ACCEPT);
 
-    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitacion." });
+    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitación." });
     expect(captureError).toHaveBeenCalledWith(failure, {
       module: "platform",
       action: "accept_invitation_lookup",

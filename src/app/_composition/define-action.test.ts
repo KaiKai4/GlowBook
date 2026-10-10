@@ -1,35 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { hasPermission, PERMISSIONS } from "@/features/access";
+import { PERMISSIONS, type ActionContext } from "@/features/access";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { err, ok } from "@/infra/result";
 import { z } from "@/infra/validation/zod";
-import type { ProfileWithRole } from "@/types/app.types";
-import { requireActiveProfile } from "./request-context";
+import { requireActionContext } from "./request-context";
 import { defineAction, parseWithSchema } from "./define-action";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("./request-context", () => ({ requireActiveProfile: vi.fn() }));
-vi.mock("@/features/access", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/access")>()),
-  hasPermission: vi.fn(),
-}));
+vi.mock("./request-context", () => ({ requireActionContext: vi.fn() }));
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
 
-const PROFILE = { id: "user-1", salon_id: "salon-1" } as unknown as ProfileWithRole;
 const SCHEMA = z.object({ name: z.string().min(2, "Nombre demasiado corto") });
+
+/** Contexto minimo de una sesion con los permisos indicados. */
+function contextWith(permissions: ActionContext["permissions"]): ActionContext {
+  return { userId: "user-1", salonId: "salon-1", permissions, requestId: "req-1", rolesEnabled: true };
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireActiveProfile).mockResolvedValue(PROFILE);
-  vi.mocked(hasPermission).mockReturnValue(true);
+  vi.mocked(requireActionContext).mockResolvedValue(contextWith([PERMISSIONS.EMPLOYEES_MANAGE]));
   vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
 });
 
-describe("defineAction", () => {
-  it("sin permiso devuelve el mensaje de denegacion sin tocar el caso de uso", async () => {
-    vi.mocked(hasPermission).mockReturnValue(false);
+describe("defineAction: permisos", () => {
+  it("sin el permiso devuelve el mensaje de denegacion sin tocar el caso de uso", async () => {
+    vi.mocked(requireActionContext).mockResolvedValue(contextWith([]));
     const run = vi.fn();
     const action = defineAction({
       permission: { key: PERMISSIONS.EMPLOYEES_MANAGE, deniedMessage: "No tienes permiso." },
@@ -39,12 +37,11 @@ describe("defineAction", () => {
 
     const result = await action({ name: "Ana" });
 
-    expect(hasPermission).toHaveBeenCalledWith(PROFILE, PERMISSIONS.EMPLOYEES_MANAGE);
     expect(result).toEqual(err("No tienes permiso."));
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("con permiso ejecuta el caso de uso una vez con la sesion y el dato validado", async () => {
+  it("con el permiso ejecuta el caso de uso una vez con el contexto mínimo y el dato validado", async () => {
     const run = vi.fn().mockResolvedValue(ok("creado"));
     const action = defineAction({
       permission: { key: PERMISSIONS.EMPLOYEES_MANAGE, deniedMessage: "No tienes permiso." },
@@ -54,14 +51,49 @@ describe("defineAction", () => {
 
     const result = await action({ name: "Ana" });
 
-    expect(run).toHaveBeenCalledTimes(1);
-    expect(run).toHaveBeenCalledWith(
-      { name: "Ana" },
-      { userId: "user-1", salonId: "salon-1", profile: PROFILE }
-    );
     expect(result).toEqual(ok("creado"));
+    expect(run).toHaveBeenCalledTimes(1);
+    // El caso de uso recibe el contexto minimo: nunca el perfil completo.
+    expect(run).toHaveBeenCalledWith({ name: "Ana" }, contextWith([PERMISSIONS.EMPLOYEES_MANAGE]));
+    expect(run.mock.calls[0]?.[1]).not.toHaveProperty("profile");
   });
 
+  it("con varias claves exige todas: faltar una basta para denegar", async () => {
+    vi.mocked(requireActionContext).mockResolvedValue(contextWith([PERMISSIONS.EXPENSES_MANAGE]));
+    const run = vi.fn();
+    const action = defineAction({
+      permission: {
+        key: [PERMISSIONS.EXPENSES_MANAGE, PERMISSIONS.INVENTORY_MANAGE],
+        deniedMessage: "Falta un permiso.",
+      },
+      parse: parseWithSchema(SCHEMA),
+      run,
+    });
+
+    expect(await action({ name: "Ana" })).toEqual(err("Falta un permiso."));
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("con varias claves y todas presentes ejecuta el caso de uso", async () => {
+    vi.mocked(requireActionContext).mockResolvedValue(
+      contextWith([PERMISSIONS.EXPENSES_MANAGE, PERMISSIONS.INVENTORY_MANAGE])
+    );
+    const run = vi.fn().mockResolvedValue(ok("hecho"));
+    const action = defineAction({
+      permission: {
+        key: [PERMISSIONS.EXPENSES_MANAGE, PERMISSIONS.INVENTORY_MANAGE],
+        deniedMessage: "Falta un permiso.",
+      },
+      parse: parseWithSchema(SCHEMA),
+      run,
+    });
+
+    expect(await action({ name: "Ana" })).toEqual(ok("hecho"));
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("defineAction: flujo", () => {
   it("aplica el rate limit con el id del usuario y el ambito indicado", async () => {
     const action = defineAction({
       rateLimit: { scope: "feedback", options: { max: 5, windowMs: 300_000 } },
@@ -74,7 +106,7 @@ describe("defineAction", () => {
     expect(assertActionRateLimit).toHaveBeenCalledWith("user-1", "feedback", { max: 5, windowMs: 300_000 });
   });
 
-  it("si el rate limit bloquea no valida ni ejecuta el caso de uso", async () => {
+  it("si el rate limit bloquea no válida ni ejecuta el caso de uso", async () => {
     vi.mocked(assertActionRateLimit).mockResolvedValue(err("Demasiados intentos."));
     const run = vi.fn();
     const action = defineAction({
@@ -89,7 +121,7 @@ describe("defineAction", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("un dato invalido devuelve el primer mensaje del schema sin ejecutar el caso de uso", async () => {
+  it("un dato inválido devuelve el primer mensaje del schema sin ejecutar el caso de uso", async () => {
     const run = vi.fn();
     const action = defineAction({ parse: parseWithSchema(SCHEMA), run });
 
@@ -127,8 +159,8 @@ describe("defineAction", () => {
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("sin contexto de sesion el error de requireActiveProfile se propaga", async () => {
-    vi.mocked(requireActiveProfile).mockRejectedValue(new Error("NEXT_REDIRECT:/login"));
+  it("sin sesión el error de requireActionContext se propaga", async () => {
+    vi.mocked(requireActionContext).mockRejectedValue(new Error("NEXT_REDIRECT:/login"));
     const run = vi.fn();
     const action = defineAction({ parse: parseWithSchema(SCHEMA), run });
 

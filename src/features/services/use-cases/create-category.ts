@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Result } from "@/infra/result";
+import { captureError } from "@/infra/observability";
 import { createCategory } from "../data/services.repo";
 import type { CreateCategoryInput } from "../schemas";
 import { isUniqueConstraintError } from "./errors";
@@ -17,9 +18,10 @@ export async function createServiceCategory(
     return { ok: true, value: category.id };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      return { ok: false, error: "Ya existe una categoria con ese nombre." };
+      return { ok: false, error: "Ya existe una categoría con ese nombre." };
     }
 
-    return { ok: false, error: "Error al crear la categoria." };
+    captureError(error, { module: "services", action: "create-category" });
+    return { ok: false, error: "Error al crear la categoría." };
   }
 }

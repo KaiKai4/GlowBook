@@ -1,3 +1,4 @@
+import { ok } from "@/infra/result";
 import { captureError } from "@/infra/observability";
 import { toPublicErrorMessage } from "@/infra/errors";
 import {
@@ -7,12 +8,10 @@ import {
   updateEmployeeProfileRecord,
 } from "@/features/employees/data/employees.repo";
 import { validateEmployeeAssignments } from "@/features/employees/use-cases/employee-assignments";
-import {
-  generateEmployeeInvitation,
-  replacePendingEmployeeInvitation,
-  revokeEmployeeAuthAccess,
-} from "./employee-access";
-import { findLatestPendingEmployeeInvitationRole } from "@/features/employees/data/employee-access.repo";
+import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount } from "./employee-revocation";
+import { replacePendingEmployeeInvitation } from "./employee-invitation-issue";
+import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
+import { findLatestPendingEmployeeInvitationRole } from "@/features/employees/data/employee-invitations.repo";
 import type { UpdateEmployeeProfileRpcFields } from "@/features/employees/data/rpc/update-employee-rpc";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@/features/employees/schemas";
 import type { Result } from "@/infra/result";
@@ -103,7 +102,7 @@ export async function createEmployeeProfile(
     );
 
     if (email && roleId) {
-      const invite = await generateEmployeeInvitation({
+      const invite = await replacePendingEmployeeInvitation({
         employeeId: created.id,
         salonId,
         email,
@@ -140,7 +139,7 @@ export async function updateEmployeeProfile(
   idempotencyKey: string
 ): Promise<Result<EmployeeWriteResult>> {
   try {
-    // Lectura previa a cualquier escritura: estado actual, invitacion pendiente y validaciones.
+    // Lectura previa a cualquier escritura: estado actual, invitación pendiente y validaciones.
     const currentEmployee = await findEmployeeById(employeeId, salonId);
     if (!currentEmployee) return { ok: false, error: "Colaborador no encontrado." };
 
@@ -152,6 +151,7 @@ export async function updateEmployeeProfile(
     const emailChanged = nextEmail.toLowerCase() !== currentEmail.toLowerCase();
     let inviteRoleId: string | null = null;
     let unlinkProfile = false;
+    let revokedProfileId: string | null = null;
 
     if (emailChanged && currentEmployee.profile_id) {
       if (!nextEmail) {
@@ -161,18 +161,20 @@ export async function updateEmployeeProfile(
         };
       }
 
-      const revoked = await revokeEmployeeAuthAccess(employeeId, salonId, currentEmployee.profile_id);
-      if (!revoked.ok) return { ok: false, error: revoked.error };
-      inviteRoleId = revoked.value.roleId;
+      // Validacion previa (owner, perfil existente): no escribe nada.
+      const access = await checkEmployeeAccessRevocable(currentEmployee.profile_id, salonId);
+      if (!access.ok) return { ok: false, error: access.error };
+      inviteRoleId = access.value.roleId;
       unlinkProfile = true;
+      revokedProfileId = currentEmployee.profile_id;
     } else if (emailChanged && !currentEmployee.profile_id && nextEmail) {
-      // La invitacion pendiente se lee ANTES de escribir: la RPC la invalida al cambiar el email.
+      // La invitación pendiente se lee ANTES de escribir: la RPC la invalida al cambiar el email.
       const { data: latestInvite, error: latestInviteError } =
         await findLatestPendingEmployeeInvitationRole(employeeId, salonId);
 
       if (latestInviteError) {
         captureError(latestInviteError, { module: "employees", action: "profile" });
-        return { ok: false, error: "No se pudo verificar la invitacion pendiente." };
+        return { ok: false, error: "No se pudo verificar la invitación pendiente." };
       }
       inviteRoleId = latestInvite?.role_id ?? null;
     }
@@ -185,6 +187,13 @@ export async function updateEmployeeProfile(
       idempotencyKey,
     });
 
+    // Efectos posteriores a la escritura confirmada: si fallan, se avisa en vez de fallar.
+    const warnings: string[] = [];
+    if (revokedProfileId) {
+      const deleted = await deleteEmployeeAuthAccount(revokedProfileId);
+      if (!deleted.ok) warnings.push(OLD_ACCOUNT_NOT_DELETED_WARNING);
+    }
+
     if (emailChanged && nextEmail) {
       const invite = await replacePendingEmployeeInvitation({
         employeeId,
@@ -192,10 +201,10 @@ export async function updateEmployeeProfile(
         email: nextEmail,
         roleId: inviteRoleId,
       });
-      if (!invite.ok) return { ok: true, value: { warnings: [invite.error] } };
+      if (!invite.ok) warnings.push(invite.error);
     }
 
-    return { ok: true, value: {} };
+    return ok({}, warnings);
   } catch (err) {
     return {
       ok: false,

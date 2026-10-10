@@ -65,6 +65,15 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+// Resultado de la RPC: el total del servidor (999) no coincide con ninguna vista previa local.
+const SERVER_RESULT = {
+  appointment_id: "appt-1",
+  status: "completed" as const,
+  subtotal: 999,
+  discount_amount: 0,
+  total_price: 999,
+};
+
 describe("CompleteAppointmentDialog con cobro en curso", () => {
   let mounted: MountedComponent | null = null;
 
@@ -205,10 +214,10 @@ describe("CompleteAppointmentDialog", () => {
   });
 
   it("cobra con el método de pago elegido y envía los cargos por servicio", async () => {
-    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: SERVER_RESULT });
     const { container } = render();
 
-    chooseOption(container, "Metodo de pago", "Tarjeta");
+    chooseOption(container, "Método de pago", "Tarjeta");
     setFieldValue(numberFields(container)[1]!, "10");
     setFieldValue(container.querySelector("textarea")!, "Promo de temporada");
     await clickAndSettle(buttonWithText(container, "Cobrar y completar"));
@@ -228,7 +237,7 @@ describe("CompleteAppointmentDialog", () => {
   });
 
   it("usa el primer método de pago disponible por defecto", async () => {
-    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: SERVER_RESULT });
     const { container } = render({
       paymentMethodOptions: [
         { value: "transfer", label: "Transferencia" },
@@ -264,12 +273,14 @@ describe("CompleteAppointmentDialog", () => {
   });
 
   it("al completar con éxito marca la cita, refresca la agenda, lanza confeti y cierra el diálogo", async () => {
-    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: SERVER_RESULT });
     const { container, onClose } = render();
 
     await clickAndSettle(buttonWithText(container, "Cobrar y completar"));
 
     expect(buttonWithText(container, "Cita completada").disabled).toBe(true);
+    // Tras completar muestra el total final que devuelve el servidor, no la vista previa.
+    expect(container.textContent).toContain(formatCurrency(999));
     expect(router.refresh).toHaveBeenCalledTimes(1);
     expect(confetti).toHaveBeenCalledTimes(1);
     expect(confetti.mock.calls[0]?.[0]).toMatchObject({ particleCount: 90, disableForReducedMotion: true });
@@ -284,7 +295,7 @@ describe("CompleteAppointmentDialog", () => {
 
   it("no lanza confeti si el usuario prefiere movimiento reducido", async () => {
     vi.mocked(window.matchMedia).mockReturnValue({ matches: true } as MediaQueryList);
-    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: undefined });
+    vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: SERVER_RESULT });
     const { container } = render();
 
     await clickAndSettle(buttonWithText(container, "Cobrar y completar"));
@@ -295,7 +306,7 @@ describe("CompleteAppointmentDialog", () => {
   });
 
   it("no envía un segundo cobro mientras el primero está en curso", async () => {
-    const pending = deferred<{ ok: true; value: undefined }>();
+    const pending = deferred<{ ok: true; value: typeof SERVER_RESULT }>();
     vi.mocked(completeAppointmentAction).mockReturnValue(pending.promise);
     const { container } = render();
 
@@ -307,7 +318,7 @@ describe("CompleteAppointmentDialog", () => {
     expect(buttonWithText(container, "Cancelar").disabled).toBe(true);
 
     await act(async () => {
-      pending.resolve({ ok: true, value: undefined });
+      pending.resolve({ ok: true, value: SERVER_RESULT });
     });
   });
 

@@ -69,7 +69,7 @@ async function createFixture(admin: Db, salonId: string): Promise<Fixture> {
   });
 
   if (!businessHour || !businessHour.open_time || !businessHour.close_time) {
-    throw new Error("El test RPC necesita al menos un día abierto de 30 minutos en el salon de prueba.");
+    throw new Error("El test RPC necesita al menos un día abierto de 30 minutos en el salón de prueba.");
   }
 
   const dayOfWeek = businessHour.day_of_week;
@@ -250,7 +250,7 @@ describe(
         message: "Selecciona al menos un servicio",
       },
       {
-        name: "shorter than salon minimum duration",
+        name: "shorter than salón minimum duration",
         payload: {
           customer_id: fixture.customerId,
           items: [
@@ -263,10 +263,10 @@ describe(
             },
           ],
         },
-        message: "duracion minima",
+        message: "duración mínima",
       },
       {
-        name: "outside salon business hours",
+        name: "outside salón business hours",
         payload: {
           customer_id: fixture.customerId,
           items: [
@@ -384,7 +384,7 @@ describe(
           ],
         },
       });
-      expect(customerError?.message).toContain("Cliente invalido");
+      expect(customerError?.message).toContain("Cliente inválido");
 
       const { error: serviceError } = await user.rpc("create_appointment", {
         payload: {
@@ -401,7 +401,7 @@ describe(
           ],
         },
       });
-      expect(serviceError?.message).toContain("Servicio invalido");
+      expect(serviceError?.message).toContain("Servicio inválido");
 
       const { count, error: countError } = await admin
         .from("appointments")

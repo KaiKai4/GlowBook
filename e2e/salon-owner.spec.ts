@@ -12,6 +12,7 @@ import {
 import { expectNoSeriousA11yViolations } from "./support/a11y";
 import { isLocalTarget, skipUnlessReady } from "./support/env";
 import { readLocalFixtures } from "./support/local-fixtures";
+import { loginWith } from "./support/login";
 import { futureDate, selectCalendarDate } from "./support/calendar";
 
 let credentials: AuthCredentials | null =
@@ -30,14 +31,6 @@ let credentials: AuthCredentials | null =
 let admin: TestSupabaseClient | null = null;
 let fixture: SalonOwnerFixture | null = null;
 
-async function login(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel(/Correo|Email/i).fill(credentials!.email);
-  await page.getByRole("textbox", { name: "Contraseña", exact: true }).fill(credentials!.password);
-  await page.getByRole("button", { name: /Iniciar/i }).click();
-  await expect(page).not.toHaveURL(/\/login/);
-}
-
 // El Select del proyecto (src/components/ui/select.tsx) es un combobox: el disparador
 // es un botón etiquetado y las opciones son role="option" dentro de un listbox en portal.
 async function selectFirstRealOption(page: Page, label: string | RegExp) {
@@ -48,7 +41,7 @@ async function selectFirstRealOption(page: Page, label: string | RegExp) {
   await expect(trigger).not.toHaveText(/^Selecciona/i);
 }
 
-test.describe("salon owner critical smoke", () => {
+test.describe("salón owner critical smoke", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeAll(async ({}, workerInfo) => {
@@ -82,10 +75,10 @@ test.describe("salon owner critical smoke", () => {
       !credentials,
       "Requires E2E_SALON_OWNER_* credentials or Supabase service role fixture env."
     );
-    await login(page);
+    await loginWith(page, credentials!.email, credentials!.password);
   });
 
-  test("loads the dashboard shell and visible salon Modules", async ({ page }) => {
+  test("loads the dashboard shell and visible salón Modules", async ({ page }) => {
     await expect(page.getByText("GlowBook").first()).toBeVisible();
 
     const modules = [
@@ -96,7 +89,7 @@ test.describe("salon owner critical smoke", () => {
       { label: "Reportes", path: "/reports" },
       { label: "Roles", path: "/roles" },
       { label: "Plantillas", path: "/plantillas" },
-      { label: "Salon", path: "/salon" },
+      { label: "Salón", path: "/salon" },
     ];
 
     for (const feature of modules) {
@@ -156,22 +149,67 @@ test.describe("salon owner critical smoke", () => {
       .getByRole("option", { name: "00", exact: true })
       .click();
     await page
-      .getByRole("radiogroup", { name: "Periodo" })
+      .getByRole("radiogroup", { name: "Período" })
       .getByRole("radio", { name: "AM", exact: true })
       .click();
     await timeDialog.getByRole("button", { name: "Guardar" }).click();
-    await selectFirstRealOption(page, "Categoria");
+    await selectFirstRealOption(page, "Categoría");
     await selectFirstRealOption(page, "Servicio");
     await selectFirstRealOption(page, "Profesional");
     await page.getByRole("button", { name: /Continuar/i }).click();
 
     await expect(page.getByRole("heading", { name: /Confirmar cita/i })).toBeVisible();
-    await page.getByLabel(/Notas/i).fill("E2E cita valida");
+    await page.getByLabel(/Notas/i).fill("E2E cita válida");
     await page.getByRole("button", { name: /Confirmar cita/i }).click();
 
     await expect(page).toHaveURL(/\/appointments$/);
     await expect(page.getByRole("heading", { name: /Agenda/i })).toBeVisible();
     await expectNoSeriousA11yViolations(page);
+  });
+
+  test("creates an appointment with a new customer from the browser flow", async ({ page }) => {
+    const appointmentsLink = page.getByRole("link", { name: /Citas/i });
+    skipUnlessReady(
+      (await appointmentsLink.count()) === 0,
+      "Appointments Module is not visible for this user."
+    );
+
+    await page.goto("/appointments/new");
+    await expect(page.getByRole("heading", { name: /Seleccionar cliente/i })).toBeVisible();
+
+    const uniqueName = `E2E Nuevo ${Date.now()}`;
+    await page.getByRole("button", { name: "Cliente nuevo" }).click();
+    await page.getByLabel("Nombre").fill(uniqueName);
+    await page.getByLabel("Apellido").fill("Prueba");
+    await page.getByRole("button", { name: /Continuar/i }).click();
+
+    await selectCalendarDate(page, "Fecha", futureDate());
+    await page.getByLabel("Hora de inicio").click();
+    const timeDialog = page.getByRole("dialog", { name: "Seleccionar hora" });
+    await expect(timeDialog).toBeVisible();
+    await page
+      .getByRole("listbox", { name: "Hora" })
+      .getByRole("option", { name: "11", exact: true })
+      .click();
+    await page
+      .getByRole("listbox", { name: "Minutos" })
+      .getByRole("option", { name: "00", exact: true })
+      .click();
+    await page
+      .getByRole("radiogroup", { name: "Período" })
+      .getByRole("radio", { name: "AM", exact: true })
+      .click();
+    await timeDialog.getByRole("button", { name: "Guardar" }).click();
+    await selectFirstRealOption(page, "Categoría");
+    await selectFirstRealOption(page, "Servicio");
+    await selectFirstRealOption(page, "Profesional");
+    await page.getByRole("button", { name: /Continuar/i }).click();
+
+    await expect(page.getByRole("heading", { name: /Confirmar cita/i })).toBeVisible();
+    await page.getByRole("button", { name: /Confirmar cita/i }).click();
+
+    await expect(page).toHaveURL(/\/appointments$/);
+    await expect(page.getByRole("heading", { name: /Agenda/i })).toBeVisible();
   });
 
   test("completes an appointment from the agenda with success feedback", async ({ page }) => {
@@ -255,7 +293,16 @@ test.describe("salon owner critical smoke", () => {
     await expectNoSeriousA11yViolations(page);
   });
 
+});
+
+// signOut() es global (revoca todas las sesiones del usuario): va con un owner propio,
+// nunca con el de la caché del resto de specs.
+test.describe("cierre de sesión", () => {
   test("signs out and returns to login", async ({ page }) => {
+    skipUnlessReady(!isLocalTarget, "El cierre de sesión usa el owner local de global-setup.");
+    const owner = readLocalFixtures().salonOwnerSignOut;
+    await loginWith(page, owner.email, owner.password, { fresh: true });
+
     await page.getByRole("button", { name: /Cerrar sesi/i }).first().click();
 
     await expect(page).toHaveURL(/\/login/);

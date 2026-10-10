@@ -5,12 +5,12 @@ import { getCachedDashboardShell } from "@/app/_composition/salon-readers";
 import { getDisabledSalonFeatures, getPermissions, hasPermission, PERMISSIONS } from "@/features/access";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { isSalonFeatureDisabled } from "@/features/salon-features";
-import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
-import { selectDashboardMoney } from "@/features/dashboard/domain/dashboard-money";
-import { getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
+import { getDashboardOverview } from "@/features/dashboard";
+import { selectDashboardMoney } from "@/features/dashboard";
+import { getOwnerPlanLimitWarnings } from "@/features/salon";
 import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
 import { PaymentStandingBanner } from "@/components/layout/payment-standing-banner";
-import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
+import { getOnboardingChecklist } from "@/features/dashboard";
 import { OnboardingChecklistCard } from "./onboarding-checklist-card";
 import { formatCurrency, formatDate } from "@/infra/format/dates";
 import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
@@ -21,23 +21,23 @@ import { AlertCircle, CalendarDays, ChevronRight, Users } from "lucide-react";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  // El perfil ya lleva los modulos efectivos del plan (los resuelve request-context).
+  // El perfil ya lleva los módulos efectivos del plan (los resuelve request-context).
   const disabledFeatures = getDisabledSalonFeatures(profile);
-  const visibleNav = getVisibleNavItems(
-    getPermissions(profile),
-    profile.is_owner,
-    disabledFeatures
-  );
+  const visibleNav = getVisibleNavItems({
+    permissions: getPermissions(profile),
+    isOwner: profile.is_owner,
+    disabledFeatures,
+  });
 
   const [onlyNavItem] = visibleNav;
   if (!profile.is_owner && visibleNav.length === 1 && onlyNavItem && onlyNavItem.href !== "/") redirect(onlyNavItem.href);
 
   // Los avisos del plan (límites y pago vencido) y la guia de arranque solo
-  // viven aqui: el owner los ve al entrar, sin perseguirlo por los modulos.
-  const [planWarnings, paymentStanding, onboarding] = profile.is_owner
+  // viven aquí: el owner los ve al entrar, sin perseguirlo por los módulos.
+  const [planWarnings, paymentGrace, onboarding] = profile.is_owner
     ? await Promise.all([
         getOwnerPlanLimitWarnings(profile.salon_id),
-        getCachedDashboardShell(profile).then((shell) => shell?.paymentStanding ?? null),
+        getCachedDashboardShell(profile).then((shell) => shell?.paymentGrace ?? null),
         getOnboardingChecklist(profile.salon_id),
       ])
     : [[], null, null];
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {paymentStanding ? <PaymentStandingBanner standing={paymentStanding} /> : null}
+      {paymentGrace ? <PaymentStandingBanner notice={paymentGrace} /> : null}
       <PlanLimitBanner warnings={planWarnings} />
 
       <PageHeader title="Bienvenido" description={formatDate(new Date())} />

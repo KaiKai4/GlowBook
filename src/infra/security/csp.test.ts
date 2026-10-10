@@ -8,7 +8,7 @@ import {
 
 describe("content security policy", () => {
   it("signs scripts with the nonce and never allows unsafe-inline scripts", () => {
-    const csp = buildContentSecurityPolicy("abc123", false);
+    const csp = buildContentSecurityPolicy({ nonce: "abc123", mode: "production" });
 
     expect(csp).toContain("script-src 'self' 'nonce-abc123' 'strict-dynamic'");
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
@@ -17,13 +17,13 @@ describe("content security policy", () => {
   });
 
   it("only allows eval in development", () => {
-    expect(buildContentSecurityPolicy("n", true)).toContain("'unsafe-eval'");
-    expect(buildContentSecurityPolicy("n", false)).not.toContain("'unsafe-eval'");
+    expect(buildContentSecurityPolicy({ nonce: "n", mode: "development" })).toContain("'unsafe-eval'");
+    expect(buildContentSecurityPolicy({ nonce: "n", mode: "production" })).not.toContain("'unsafe-eval'");
   });
 
   it("upgrades insecure requests only in production", () => {
-    expect(buildContentSecurityPolicy("n", false)).toContain("upgrade-insecure-requests");
-    expect(buildContentSecurityPolicy("n", true)).not.toContain("upgrade-insecure-requests");
+    expect(buildContentSecurityPolicy({ nonce: "n", mode: "production" })).toContain("upgrade-insecure-requests");
+    expect(buildContentSecurityPolicy({ nonce: "n", mode: "development" })).not.toContain("upgrade-insecure-requests");
   });
 
   it("generates unique base64 nonces", () => {
@@ -35,7 +35,7 @@ describe("content security policy", () => {
   });
 
   it("sends violation reports to the report endpoint in both report-uri and report-to", () => {
-    const csp = buildContentSecurityPolicy("n", false);
+    const csp = buildContentSecurityPolicy({ nonce: "n", mode: "production" });
 
     expect(csp).toContain(`report-uri ${CSP_REPORT_PATH}`);
     expect(csp).toContain("report-to csp-endpoint");

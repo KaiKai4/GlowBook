@@ -4,6 +4,7 @@ import {
   findAppointmentsBySalon,
   type AppointmentWithDetails,
 } from "../data/appointments.repo";
+import { REMINDABLE_APPOINTMENT_STATUSES } from "../domain/lifecycle";
 
 export type RemindableAppointment = Pick<
   AppointmentWithDetails,
@@ -15,7 +16,7 @@ export interface RemindableAppointmentsRange {
   endDate: string;
 }
 
-const REMINDABLE_STATUSES = new Set(["scheduled", "confirmed"]);
+const REMINDABLE_STATUSES: ReadonlySet<string> = new Set(REMINDABLE_APPOINTMENT_STATUSES);
 
 export async function getRemindableAppointments(
   salonId: string,

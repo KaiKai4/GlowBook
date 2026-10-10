@@ -1,14 +1,14 @@
 import { MessageSquareText } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireProfile } from "@/app/_composition/request-context";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { getTemplateSettings } from "@/features/notifications/use-cases/get-template-settings";
+import { getTemplateSettings } from "@/features/notifications";
 import { TemplatesManager } from "./templates-manager";
 
 export default async function PlantillasPage() {
   const profile = await requireProfile();
-  const templatesEnabled = await isEffectiveSalonModuleEnabled(profile, "plantillas");
+  const templatesEnabled = await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "plantillas");
 
   if (!templatesEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
     return (

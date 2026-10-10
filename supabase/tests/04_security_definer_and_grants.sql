@@ -7,7 +7,7 @@
 --   * triggers: ningun rol cliente (se disparan sin comprobar EXECUTE).
 -- Las funciones de extensiones instaladas en public (gbt_*, *_dist) se excluyen del recuento.
 begin;
-select plan(12);
+select plan(14);
 
 -- (e) search_path fijado en todas las SECURITY DEFINER de public
 select is(
@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  31,
-  'authenticated tiene EXECUTE exactamente en 31 funciones de public (28 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores)'
+  39,
+  'authenticated tiene EXECUTE exactamente en 39 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores + 2 RPC de roles + count_salon_usage y record_plan_alert de F05 + 2 RPC de inventario atomico + discard_temporary_customer)'
 );
 
 select ok(
@@ -93,7 +93,7 @@ select ok(
       'public.complete_appointment(jsonb)',
       'public.cancel_appointment(jsonb)',
       'public.mark_no_show(jsonb)',
-      'public.invite_salon(text)',
+      'public.invite_salon(text,uuid)',
       'public.record_retail_sale(uuid,uuid,uuid,text,numeric,numeric,text,text,uuid)',
       'public.record_inventory_transfer(uuid,uuid,text,text,numeric,text,uuid)',
       'public.record_inventory_purchase(uuid,text,date,uuid,numeric,numeric,text,uuid)',
@@ -112,11 +112,40 @@ select ok(
       'public.report_expense_concepts(date,date,jsonb,boolean,integer)',
       'public.report_product_sales(text,text,text,jsonb,integer)',
       'public.report_inventory_alerts(jsonb)',
+      'public.report_expense_month_totals(uuid,date,date)',
       'public.create_employee_with_assignments(jsonb)',
-      'public.update_employee_profile(jsonb)'
+      'public.update_employee_profile(jsonb)',
+      'public.create_role_with_permissions(text,text[])',
+      'public.replace_role_permissions(uuid,text[])',
+      'public.count_salon_usage(uuid,jsonb)',
+      'public.record_plan_alert(uuid,text,text,text,text)',
+      'public.create_inventory_product_with_stock(uuid,text,text,numeric,numeric,boolean,numeric,numeric,numeric,numeric,numeric,numeric)',
+      'public.update_inventory_product_profile(uuid,uuid,text,text,numeric,numeric,boolean,boolean,numeric,numeric,numeric)',
+      'public.discard_temporary_customer(uuid)'
     ]) as sig
   ),
-  'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita)'
+  'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita y las de billing de F05)'
+);
+
+-- (f2b) anon no ejecuta count_salon_usage ni record_plan_alert (F05)
+select ok(
+  not has_function_privilege('anon', 'public.count_salon_usage(uuid,jsonb)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.record_plan_alert(uuid,text,text,text,text)', 'EXECUTE'),
+  'anon no puede ejecutar count_salon_usage ni record_plan_alert'
+);
+
+-- (f2c) count_salon_usage es SECURITY DEFINER con search_path fijado (F05-C2a)
+select ok(
+  (
+    select p.prosecdef
+      and exists (
+        select 1 from unnest(coalesce(p.proconfig, '{}'::text[])) cfg
+        where cfg like 'search_path=%'
+      )
+    from pg_proc p
+    where p.oid = 'public.count_salon_usage(uuid,jsonb)'::regprocedure
+  ),
+  'count_salon_usage es SECURITY DEFINER y fija search_path'
 );
 
 -- (f3) service_role ejecuta exactamente la lista admin (+ consume_rate_limit)
@@ -132,8 +161,8 @@ select is(
       )
       and has_function_privilege('service_role', p.oid, 'EXECUTE')
   ),
-  5,
-  'service_role tiene EXECUTE exactamente en 5 funciones de public'
+  6,
+  'service_role tiene EXECUTE exactamente en 6 funciones de public'
 );
 
 select ok(
@@ -144,7 +173,8 @@ select ok(
       'public.platform_salon_overviews()',
       'public.accept_invitation_admin(text,uuid,text,text,text)',
       'public.count_salon_usage(uuid,jsonb)',
-      'public.consume_rate_limit(text,integer,integer)'
+      'public.consume_rate_limit(text,integer,integer)',
+      'public.find_auth_user_id_by_email(text)'
     ]) as sig
   ),
   'service_role puede ejecutar las RPC de cliente admin y consume_rate_limit'

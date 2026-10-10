@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findBusinessHours, findSalonSettings } from "../data/salon.repo";
+import { findSalonSettings } from "../data/salon-settings.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 import { getSalonSettings } from "./get-salon-settings";
 
-vi.mock("../data/salon.repo", () => ({
-  findBusinessHours: vi.fn(),
+vi.mock("../data/salon-settings.repo", () => ({
   findSalonSettings: vi.fn(),
+}));
+
+vi.mock("../data/salon-business-hours.repo", () => ({
+  findBusinessHours: vi.fn(),
 }));
 
 const mockedFindBusinessHours = vi.mocked(findBusinessHours);
 const mockedFindSalonSettings = vi.mocked(findSalonSettings);
 
-describe("get salon settings", () => {
+describe("get salón settings", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -53,7 +57,7 @@ describe("get salon settings", () => {
     });
   });
 
-  it("returns stable defaults when the salon row is missing", async () => {
+  it("returns stable defaults when the salón row is missing", async () => {
     mockedFindSalonSettings.mockResolvedValue(null);
     mockedFindBusinessHours.mockResolvedValue([]);
 

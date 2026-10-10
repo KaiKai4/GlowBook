@@ -40,7 +40,7 @@ export function ServicesCategorySection({
               ? "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
               : "border-border bg-surface-muted text-fg-muted hover:bg-surface-sunken"
           )}
-          title="Cambiar modo de precio de la categoria"
+          title="Cambiar modo de precio de la categoría"
         >
           <Tags className="h-3 w-3" />
           {category.pricing_mode === "variable" ? "Precio variable" : "Precio fijo"}
@@ -59,14 +59,14 @@ export function ServicesCategorySection({
           onClick={() => onArchiveCategory(category)}
           disabled={deleting}
           className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-fg-subtle transition-colors hover:bg-danger-subtle hover:text-danger-strong disabled:cursor-not-allowed disabled:opacity-50"
-          title="Archivar categoria"
-          aria-label={`Archivar categoria ${category.name}`}
+          title="Archivar categoría"
+          aria-label={`Archivar categoría ${category.name}`}
         >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
       {category.services.length === 0 ? (
-        <p className="text-sm text-fg-subtle">Sin servicios en esta categoria.</p>
+        <p className="text-sm text-fg-subtle">Sin servicios en esta categoría.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {category.services.map((service) => (

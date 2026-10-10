@@ -26,7 +26,7 @@ describe("retail.repo", () => {
   });
 
   describe("findRecentRetailSales", () => {
-    it("lista las ventas recientes del salon con cliente y limite por defecto de 8", async () => {
+    it("lista las ventas recientes del salón con cliente y límite por defecto de 8", async () => {
       const db = useDb({ retail_sales: { data: [{ id: "s1" }], error: null } });
 
       expect(await findRecentRetailSales(SALON_ID)).toEqual([{ id: "s1" }]);

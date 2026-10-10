@@ -4,11 +4,19 @@ Responsabilidad: administracion global de plataforma, invitaciones de Salon,
 moderacion de feedback, overview cross-tenant, audit log de acciones Platform y
 borrado completo de Salon.
 
-Interface principal:
+Interface principal (`index.ts`): `getAdminHome`, la composicion del inicio del admin.
+
+Dominio puro (`domain/`):
+
+- `invitation-rules.ts`: validación de la invitación (estado, caducidad, correo), plan a asignar
+  y traducción de errores de aceptación.
+- `salon-health.ts`: salones dormidos.
+
+Interface por casos de uso:
 
 - `use-cases/invite-salon.ts`
 - `use-cases/accept-invitation.ts`
-- `use-cases/get-platform-admin-home.ts`
+- `use-cases/get-platform-admin-home.ts` (lo compone `get-admin-home.ts`)
 - `use-cases/get-platform-audit-log.ts`
 - `use-cases/get-platform-invitations.ts`
 - `use-cases/get-platform-salon-overviews.ts`

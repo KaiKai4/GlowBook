@@ -8,7 +8,7 @@ describe("selectedMonth", () => {
 });
 
 describe("monthRange", () => {
-  it("devuelve el primer y ultimo dia del mes", () => {
+  it("devuelve el primer y último día del mes", () => {
     expect(monthRange("2026-10")).toEqual({ from: "2026-10-01", to: "2026-10-31" });
   });
 

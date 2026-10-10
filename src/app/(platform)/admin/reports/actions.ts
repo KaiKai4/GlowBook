@@ -6,8 +6,8 @@ import { parseUuid } from "@/infra/validation/route-id";
 import {
   readFeedbackStatusForm,
   type FeedbackStatusForm,
-} from "@/features/platform/use-cases/set-feedback-status-form";
-import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedback-report-status";
+} from "@/features/platform";
+import { setFeedbackReportStatus } from "@/features/platform";
 
 // Form action: toggle a report between 'new' and 'resolved'. Returns void
 // (React form actions must), authorization enforced by requirePlatformAdmin.
@@ -19,8 +19,9 @@ const setFeedbackStatusFlow = definePlatformAction<FormData, FeedbackStatusForm 
     return ok(parseUuid(form.id) ? form : null);
   },
   run: async (form, session) => {
-    if (form) await setFeedbackReportStatus({ ...form, actorUserId: session.userId });
-    return ok(undefined);
+    if (!form) return ok(undefined);
+    const result = await setFeedbackReportStatus({ ...form, actorUserId: session.userId });
+    return result.ok ? ok(undefined) : result;
   },
   revalidate: (_output, form) => (form ? ["/admin/reports"] : []),
 });

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { BarChart3 } from "lucide-react";
 import { cn } from "@/components/ui/cn";
-import type { OperationalReportViewModel } from "@/features/reports/use-cases/get-operational-report";
+import type { OperationalReportViewModel } from "@/features/reports";
 import { buildReportsHref } from "./report-url";
 import { DatePicker } from "@/components/ui/date-picker";
 import { PageHeader } from "@/components/ui/page-header";

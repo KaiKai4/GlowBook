@@ -3,8 +3,8 @@ import { isDormantSalon } from "./salon-health";
 
 const now = new Date("2026-06-11T12:00:00.000Z");
 
-describe("salon health", () => {
-  it("marks a salon dormant when its last appointment is older than the threshold", () => {
+describe("salón health", () => {
+  it("marks a salón dormant when its last appointment is older than the threshold", () => {
     expect(
       isDormantSalon({
         isActive: true,
@@ -15,7 +15,7 @@ describe("salon health", () => {
     ).toBe(true);
   });
 
-  it("keeps a salon healthy with recent activity", () => {
+  it("keeps a salón healthy with recent activity", () => {
     expect(
       isDormantSalon({
         isActive: true,
@@ -26,7 +26,7 @@ describe("salon health", () => {
     ).toBe(false);
   });
 
-  it("uses the creation date when the salon never booked", () => {
+  it("uses the creation date when the salón never booked", () => {
     expect(
       isDormantSalon({
         isActive: true,

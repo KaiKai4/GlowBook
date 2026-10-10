@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { plan } from "@/test/billing-plan-fixtures";
 import { buildSubscriptionRow, subscriptionMrr, type SalonSubscriptionRow } from "./salon-subscription-rows";
 
-const salon = { id: "salon-1", name: "Salon Uno", is_active: true };
+const salon = { id: "salon-1", name: "Salón Uno", is_active: true };
 
 describe("buildSubscriptionRow", () => {
   it("cobra el plan y los extras cuando la asignación está activa", () => {
@@ -16,7 +16,7 @@ describe("buildSubscriptionRow", () => {
     });
     expect(row).toEqual({
       salonId: "salon-1",
-      salonName: "Salon Uno",
+      salonName: "Salón Uno",
       salonIsActive: true,
       planId: "plan-basic",
       planName: "Basico",

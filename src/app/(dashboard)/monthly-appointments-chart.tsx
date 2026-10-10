@@ -1,14 +1,12 @@
 "use client";
 
-import { useId, useState } from "react";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { useId } from "react";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/components/ui/cn";
-import type { MonthlyAppointmentPoint } from "@/features/dashboard/use-cases/get-dashboard-overview";
-
-const WIDTH = 720;
-const HEIGHT = 264;
-const PADDING = { top: 22, right: 18, bottom: 38, left: 50 };
+import type { MonthlyAppointmentPoint } from "@/features/dashboard";
+import { HEIGHT, PADDING, WIDTH } from "./monthly-chart-geometry";
+import { ChartTooltip, TrendBadge } from "./monthly-chart-parts";
+import { useMonthlyChart } from "./use-monthly-chart";
 
 export function MonthlyAppointmentsChart({
   points,
@@ -16,12 +14,7 @@ export function MonthlyAppointmentsChart({
   points: MonthlyAppointmentPoint[];
 }) {
   const gradientId = useId().replaceAll(":", "");
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const chart = buildAreaChart(points);
-  const latest = points.at(-1);
-  const previous = points.at(-2);
-  const delta = latest && previous ? latest.total - previous.total : 0;
-  const activePoint = activeIndex === null ? null : chart.points[activeIndex];
+  const { chart, delta, activeIndex, activePoint, setActiveIndex } = useMonthlyChart(points);
 
   return (
     <Panel
@@ -163,119 +156,4 @@ export function MonthlyAppointmentsChart({
       )}
     </Panel>
   );
-}
-
-function TrendBadge({ delta }: { delta: number }) {
-  const label =
-    delta === 0
-      ? "Sin cambios"
-      : `${delta > 0 ? "+" : ""}${delta} vs. mes anterior`;
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
-        delta > 0 && "bg-success-subtle text-success-fg",
-        delta < 0 && "bg-danger-subtle text-danger-strong",
-        delta === 0 && "bg-surface-sunken text-fg-muted"
-      )}
-    >
-      {delta > 0 && <TrendingUp className="h-3.5 w-3.5" />}
-      {delta < 0 && <TrendingDown className="h-3.5 w-3.5" />}
-      {label}
-    </span>
-  );
-}
-
-function ChartTooltip({ point }: { point: ChartPoint }) {
-  const width = 122;
-  const height = 54;
-  const x = Math.min(
-    Math.max(point.x - width / 2, PADDING.left),
-    WIDTH - PADDING.right - width
-  );
-  const y = Math.max(PADDING.top, point.y - height - 14);
-
-  return (
-    <g className="pointer-events-none">
-      <rect x={x} y={y} width={width} height={height} rx="8" fill="var(--color-fg)" opacity="0.96" />
-      <text x={x + 12} y={y + 20} className="fill-border-strong text-xs font-medium uppercase">
-        {point.label}
-      </text>
-      <text x={x + 12} y={y + 40} className="fill-surface text-sm font-semibold">
-        {point.total} {point.total === 1 ? "cita" : "citas"}
-      </text>
-      {point.delta !== 0 && (
-        <text
-          x={x + width - 10}
-          y={y + 40}
-          textAnchor="end"
-          className={cn(
-            "text-xs font-semibold",
-            point.delta > 0 ? "fill-success" : "fill-danger-border"
-          )}
-        >
-          {point.delta > 0 ? "+" : ""}
-          {point.delta}
-        </text>
-      )}
-    </g>
-  );
-}
-
-interface ChartPoint extends MonthlyAppointmentPoint {
-  x: number;
-  y: number;
-}
-
-function buildAreaChart(points: MonthlyAppointmentPoint[]) {
-  const innerWidth = WIDTH - PADDING.left - PADDING.right;
-  const innerHeight = HEIGHT - PADDING.top - PADDING.bottom;
-  const rawMax = Math.max(...points.map((point) => point.total), 1);
-  const step = Math.max(1, Math.ceil(rawMax / 4));
-  const max = step * 4;
-
-  const chartPoints: ChartPoint[] = points.map((point, index) => ({
-    ...point,
-    x:
-      PADDING.left +
-      (points.length === 1
-        ? innerWidth / 2
-        : (index / (points.length - 1)) * innerWidth),
-    y: PADDING.top + innerHeight - (point.total / max) * innerHeight,
-  }));
-
-  const ticks = Array.from({ length: 5 }, (_, index) => {
-    const value = step * index;
-    return {
-      value,
-      y: PADDING.top + innerHeight - (value / max) * innerHeight,
-    };
-  });
-
-  if (chartPoints.length === 0) {
-    return { points: chartPoints, path: "", areaPath: "", ticks, innerWidth, innerHeight };
-  }
-
-  const path = chartPoints.reduce((result, point, index) => {
-    if (index === 0) return `M ${point.x} ${point.y}`;
-    const previous = chartPoints[index - 1];
-    if (!previous) throw new Error("Invariante de gráfico: punto previo ausente.");
-    const control = (point.x - previous.x) * 0.42;
-    return `${result} C ${previous.x + control} ${previous.y}, ${point.x - control} ${point.y}, ${point.x} ${point.y}`;
-  }, "");
-
-  const baseline = HEIGHT - PADDING.bottom;
-  const first = chartPoints[0];
-  const last = chartPoints.at(-1);
-  if (!first || !last) throw new Error("Invariante de gráfico: se esperaban puntos.");
-
-  return {
-    points: chartPoints,
-    path,
-    areaPath: `${path} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`,
-    ticks,
-    innerWidth,
-    innerHeight,
-  };
 }

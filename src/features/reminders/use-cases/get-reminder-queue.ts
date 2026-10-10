@@ -75,7 +75,7 @@ export async function getReminderQueue({
     appointments: pendingAppointments,
     employees,
     timezone,
-    salonName: salon?.name ?? "tu salon",
+    salonName: salon?.name ?? "tu salón",
     template: reminderTemplate.bodyText,
     templateId: reminderTemplate.id,
   };

@@ -1,7 +1,8 @@
+import { captureError } from "@/infra/observability";
 import "server-only";
 
 import type { Result } from "@/infra/result";
-import { updateSalonName } from "../data/salon.repo";
+import { updateSalonName } from "../data/salon-settings.repo";
 import type { SalonInfoInput } from "../schemas";
 
 export async function updateSalonInfo(
@@ -11,7 +12,8 @@ export async function updateSalonInfo(
   try {
     await updateSalonName(salonId, input.name);
     return { ok: true, value: undefined };
-  } catch {
-    return { ok: false, error: "Error al guardar el nombre del salon." };
+  } catch (error) {
+    captureError(error, { module: "salon", action: "update_info" });
+    return { ok: false, error: "Error al guardar el nombre del salón." };
   }
 }

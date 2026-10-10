@@ -41,3 +41,4 @@ Reglas:
 - La decisión fail-open implica que una caída de la base elimina el límite mientras dure. Queda registrada en observabilidad (`module: security`, `action: rate-limit`).
 - Los llamadores existentes deben añadir `await` (ver lista en `docs/security.md`). Sin él, `result.ok` es `undefined` y TypeScript lo rechaza en compilación.
 - `count` es `bigint`: squawk exige `bigint` en tablas nuevas (`prefer-bigint-over-int`).
+- Si la IP no llega (cabecera ausente), la clave es `ip:unknown`. Todas esas peticiones comparten un bucket, así que el límite propio para esa clave es un máximo ×10 del límite pedido, para no dejar sin límite a los clientes sin IP ni bloquear a todos a la vez. Cada caso emite un aviso estructurado `rate_limit_unknown_ip` (`console.warn` en JSON) para detectar si la cabecera de IP falla en producción.

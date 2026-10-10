@@ -8,11 +8,8 @@ import type {
   PlatformModule,
 } from "@/features/billing/domain/commercial-plan";
 import type { CommercialAddon } from "@/features/billing/domain/salon-extras";
-import type {
-  SalonExtraView,
-  SalonSubscriptionDetail,
-  SalonSubscriptionRow,
-} from "@/features/billing/use-cases/salon-subscriptions";
+import type { SalonExtraView, SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
+import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 import type { SalonFeatureKey } from "@/features/salon-features";
 
 export function makePlan(overrides: Partial<CommercialPlan> = {}): CommercialPlan {

@@ -1,12 +1,14 @@
 import { captureError } from "@/infra/observability";
 import {
   findAssignableEmployeeRole,
-  findEmployeeInvitationForJoin,
   insertEmployeeProfile,
   linkEmployeeProfile,
+} from "@/features/employees/data/employee-access.repo";
+import {
+  findEmployeeInvitationForJoin,
   markEmployeeInvitationAccepted,
   type EmployeeInvitationForJoin,
-} from "@/features/employees/data/employee-access.repo";
+} from "@/features/employees/data/employee-invitations.repo";
 import {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,
@@ -54,7 +56,7 @@ export async function getEmployeeInvitationJoinView(
     token,
     email: invitation.email,
     employeeName: employeeName(invitation),
-    salonName: invitation.salons?.name ?? "tu salon",
+    salonName: invitation.salons?.name ?? "tu salón",
   };
 }
 
@@ -73,16 +75,16 @@ export async function acceptEmployeeInvitation({
   password: string;
 }): Promise<Result<void>> {
   if (!password || password.length < 8) {
-    return { ok: false, error: "La contrasena debe tener al menos 8 caracteres." };
+    return { ok: false, error: "La contraseña debe tener al menos 8 caracteres." };
   }
 
   const { data: invitation, error } = await findEmployeeInvitationForJoin(token);
   if (error) {
     captureError(error, { module: "employees", action: "join" });
-    return { ok: false, error: "No se pudo verificar la invitacion." };
+    return { ok: false, error: "No se pudo verificar la invitación." };
   }
 
-  if (!invitation) return { ok: false, error: "El enlace no es valido." };
+  if (!invitation) return { ok: false, error: "El enlace no es válido." };
   if (invitation.accepted_at) return { ok: false, error: "Este enlace ya fue utilizado." };
   if (isExpired(invitation.expires_at)) {
     return { ok: false, error: "Este enlace ha expirado. Solicita uno nuevo al administrador." };
@@ -98,7 +100,7 @@ export async function acceptEmployeeInvitation({
 
     if (roleError) {
       captureError(roleError, { module: "employees", action: "join" });
-      return { ok: false, error: "No se pudo verificar el rol de la invitacion." };
+      return { ok: false, error: "No se pudo verificar el rol de la invitación." };
     }
 
     if (!role) {
@@ -149,11 +151,11 @@ export async function acceptEmployeeInvitation({
     return { ok: false, error: "Error al vincular el colaborador. Intenta de nuevo." };
   }
 
-  const { error: acceptedError } = await markEmployeeInvitationAccepted(invitation.id);
+  const { error: acceptedError } = await markEmployeeInvitationAccepted(invitation.id, invitation.salon_id);
   if (acceptedError) {
     captureError(acceptedError, { module: "employees", action: "join" });
     await rollbackAuthUser(user.id, "accepted");
-    return { ok: false, error: "Error al confirmar la invitacion. Solicita un enlace nuevo." };
+    return { ok: false, error: "Error al confirmar la invitación. Solicita un enlace nuevo." };
   }
 
   return { ok: true, value: undefined };

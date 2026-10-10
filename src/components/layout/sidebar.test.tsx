@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Permission } from "@/features/access";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { clickElement, findButtonByText, requireElement } from "@/test/ui-shared-dom";
+import { getVisibleNavGroups } from "./nav-items";
 import { Sidebar } from "./sidebar";
 import { UnsavedChangesProvider, useUnsavedChanges } from "./unsaved-changes";
 
@@ -60,16 +61,14 @@ function DirtyForm() {
 function renderSidebar(
   permissions: Permission[] = [],
   isOwner = false,
-  options: { guarded?: boolean; disabledFeatures?: Parameters<typeof Sidebar>[0]["disabledFeatures"] } = {}
+  options: { guarded?: boolean; disabledFeatures?: string[] } = {}
 ): MountedComponent {
-  const sidebar = (
-    <Sidebar
-      salonName="Salón Aurora"
-      userPermissions={permissions}
-      isOwner={isOwner}
-      disabledFeatures={options.disabledFeatures ?? []}
-    />
-  );
+  const groups = getVisibleNavGroups({
+    permissions,
+    isOwner,
+    disabledFeatures: options.disabledFeatures ?? [],
+  });
+  const sidebar = <Sidebar salonName="Salón Aurora" groups={groups} />;
   return mountComponent(
     options.guarded ? (
       <UnsavedChangesProvider>
@@ -105,7 +104,7 @@ describe("Sidebar", () => {
     expect(mounted.container.textContent).toContain("Salón Aurora");
     expect(linkTo("Citas").getAttribute("href")).toBe("/appointments");
     expect(linkTo("Reportes").getAttribute("href")).toBe("/reports");
-    expect(linkTo("Salon").getAttribute("href")).toBe("/salon");
+    expect(linkTo("Salón").getAttribute("href")).toBe("/salon");
   });
 
   it("agrupa los módulos con su encabezado de sección cuando está expandida", () => {

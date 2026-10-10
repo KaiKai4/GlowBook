@@ -1,103 +1,25 @@
 import { captureError } from "@/infra/observability";
 import {
-  createCustomer,
-  deleteCustomer,
-  findCustomerByPhone,
+  findCustomerTemporaryFlag,
   updateCustomer,
 } from "@/features/customers/data/customers.repo";
-import {
-  isValidOptionalPhone,
-  normalizeOptionalPhoneInput,
-  phoneValidationMessage,
-} from "@/infra/format/phone";
+import { discardTemporaryCustomerRpc } from "@/features/customers/data/rpc/discard-temporary-customer";
 import type { Result } from "@/infra/result";
+import { assertCustomerQuotaAvailable } from "./customer-quota";
 
-function databaseErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error ?? "");
-}
+/** Mensajes públicos fijos por SQLSTATE de discard_temporary_customer (ADR 0018). */
+const DISCARD_MESSAGES: Readonly<Record<string, string>> = {
+  "42501": "No tienes permiso para descartar clientes.",
+  P0002: "El cliente no existe en este salón.",
+  "22023": "El cliente no se puede descartar: tiene citas activas o completadas.",
+};
+const DISCARD_FALLBACK = "Error al descartar el cliente.";
 
-function databaseErrorCode(error: unknown): string | undefined {
-  return typeof error === "object" && error !== null && "code" in error
-    ? String((error as { code?: unknown }).code ?? "")
-    : undefined;
-}
-
-function isPhoneUniquenessError(error: unknown): boolean {
-  const message = databaseErrorMessage(error);
-  return (
-    databaseErrorCode(error) === "23505" ||
-    message.includes("uq_customer_phone_per_salon")
-  );
-}
-
-function normalizeOptionalPhone(phone: string | undefined): string | null {
-  const trimmed = phone?.trim();
-  if (!trimmed) return null;
-  return normalizeOptionalPhoneInput(trimmed);
-}
-
-export async function findOrCreateTemporaryCustomer({
-  salonId,
-  firstName,
-  lastName,
-  phone,
-}: {
-  salonId: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-}): Promise<Result<string>> {
-  if (!isValidOptionalPhone(phone)) {
-    return { ok: false, error: phoneValidationMessage() };
+function sqlStateOf(error: unknown): string | null {
+  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string") {
+    return error.code;
   }
-
-  const normalizedPhone = normalizeOptionalPhone(phone);
-  const cleanFirstName = firstName.trim();
-  const cleanLastName = lastName.trim();
-
-  try {
-    const customer = await createCustomer(salonId, {
-      first_name: cleanFirstName,
-      last_name: cleanLastName,
-      phone: normalizedPhone,
-      is_temporary: true,
-      is_active: false,
-    });
-
-    return { ok: true, value: customer.id };
-  } catch (error) {
-    if (!isPhoneUniquenessError(error) || !normalizedPhone) {
-      captureError(error, { module: "customers", action: "temporary-create" });
-      return { ok: false, error: "Error al crear el cliente." };
-    }
-
-    const existing = await findCustomerByPhone(salonId, normalizedPhone);
-    if (!existing) {
-      return { ok: false, error: "Ya existe un cliente con ese teléfono." };
-    }
-
-    if (existing.is_temporary) {
-      try {
-        const updated = await updateCustomer(existing.id, salonId, {
-          first_name: cleanFirstName,
-          last_name: cleanLastName,
-        });
-        return { ok: true, value: updated.id };
-      } catch (updateError) {
-        captureError(updateError, { module: "customers", action: "temporary-update-existing" });
-        return { ok: false, error: "Error al actualizar el cliente temporal." };
-      }
-    }
-
-    if (!existing.is_active) {
-      return {
-        ok: false,
-        error: "Este cliente no esta disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.",
-      };
-    }
-
-    return { ok: true, value: existing.id };
-  }
+  return null;
 }
 
 export async function promoteCustomer(
@@ -105,6 +27,10 @@ export async function promoteCustomer(
   salonId: string
 ): Promise<Result<void>> {
   try {
+    // El cupo se comprueba antes de escribir: promover un temporal activa un cliente.
+    const limit = await assertCustomerQuotaAvailable(salonId);
+    if (!limit.ok) return limit;
+
     await updateCustomer(customerId, salonId, {
       is_temporary: false,
       is_active: true,
@@ -117,15 +43,26 @@ export async function promoteCustomer(
   }
 }
 
-export async function deleteTemporaryCustomer(
-  customerId: string,
-  salonId: string
-): Promise<Result<void>> {
+/**
+ * Descarta un cliente temporal con sus citas canceladas o no presentadas (RPC transaccional).
+ * El salón lo fija el claim del JWT dentro de la RPC, no se pasa desde aquí.
+ */
+export async function deleteTemporaryCustomer(customerId: string): Promise<Result<void>> {
   try {
-    await deleteCustomer(customerId, salonId);
+    await discardTemporaryCustomerRpc(customerId);
     return { ok: true, value: undefined };
   } catch (error) {
-    captureError(error, { module: "customers", action: "temporary" });
-    return { ok: false, error: "Error al descartar el cliente." };
+    const sqlState = sqlStateOf(error);
+    const publicMessage = sqlState === null ? undefined : DISCARD_MESSAGES[sqlState];
+    if (publicMessage === undefined) {
+      captureError(error, { module: "customers", action: "temporary" });
+      return { ok: false, error: DISCARD_FALLBACK };
+    }
+    return { ok: false, error: publicMessage };
   }
+}
+
+/** Un cliente es temporal si existe en el salón con la marca. Un cliente inexistente no lo es. */
+export async function isTemporaryCustomer(customerId: string, salonId: string): Promise<boolean> {
+  return (await findCustomerTemporaryFlag(customerId, salonId)) === true;
 }

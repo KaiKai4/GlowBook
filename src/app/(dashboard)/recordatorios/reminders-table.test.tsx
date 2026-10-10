@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { chooseOption } from "@/test/ui-appointments-dom";
 import { clickElement, requireElement } from "@/test/ui-shared-dom";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "@/features/reminders";
 import { RemindersView } from "./reminders-view";
 
 vi.mock("./actions", () => ({
@@ -81,7 +81,7 @@ describe("RemindersView con tabla DataTable", () => {
     expect(badge?.querySelector("svg")).not.toBeNull();
   });
 
-  it("pagina de 10 en 10 y vuelve a la página 1 al cambiar un filtro", () => {
+  it("página de 10 en 10 y vuelve a la página 1 al cambiar un filtro", () => {
     const appointments = Array.from({ length: 12 }, (_, index) => appointment(index + 1));
     const { container } = renderView(appointments);
 

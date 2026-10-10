@@ -16,7 +16,9 @@ export async function getCategoryServiceOptions(
   return categories.map((category) => ({
     id: category.id,
     name: category.name,
-    services: (category.services ?? []).map((service) => ({
+    services: (category.services ?? [])
+      .filter((service) => service.is_active)
+      .map((service) => ({
       id: service.id,
       name: service.name,
     })),

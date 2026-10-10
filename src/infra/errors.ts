@@ -2,13 +2,16 @@ import { captureError } from "@/infra/observability";
 // PublicError vive en @/infra/public-error (modulo puro usable desde el dominio).
 import { PublicError } from "@/infra/public-error";
 
-// Mensajes fijos para SQLSTATE conocidos de Postgres/PostgREST. Nunca se
-// devuelve el mensaje original de la base de datos para estos codigos.
-const SQLSTATE_MESSAGES: Readonly<Record<string, string>> = {
+// Mensajes fijos para codigos conocidos de Postgres (SQLSTATE) y PostgREST
+// (PGRST...). Nunca se devuelve el mensaje original de la base de datos para
+// estos codigos. PGRST116 aparece al pedir una fila con .single() cuando hay
+// cero o varias filas.
+const ERROR_CODE_MESSAGES: Readonly<Record<string, string>> = {
   "23505": "Ya existe un registro con esos datos.",
   "23503": "La operación hace referencia a un registro inexistente.",
   "23P01": "Ese horario se cruza con otra cita.",
   "22P02": "Identificador inválido.",
+  PGRST116: "No se encontró el registro solicitado.",
 };
 
 // RAISE EXCEPTION redactados en español dentro de nuestras migraciones. Su
@@ -24,13 +27,14 @@ const INTERNAL_DETAIL_PATTERN =
 
 const MAX_PUBLIC_MESSAGE_LENGTH = 300;
 
-// Un SQLSTATE son cinco caracteres alfanumericos en mayusculas (clase + codigo).
-const SQLSTATE_PATTERN = /^[0-9A-Z]{5}$/;
+// Un SQLSTATE son cinco caracteres alfanumericos en mayusculas (clase + codigo);
+// los codigos de PostgREST tienen la forma PGRST + tres digitos.
+const ERROR_CODE_PATTERN = /^(?:[0-9A-Z]{5}|PGRST\d{3})$/;
 
-function sqlStateOf(error: unknown): string | null {
+function errorCodeOf(error: unknown): string | null {
   if (typeof error !== "object" || error === null || !("code" in error)) return null;
   const { code } = error as { code: unknown };
-  return typeof code === "string" && SQLSTATE_PATTERN.test(code) ? code : null;
+  return typeof code === "string" && ERROR_CODE_PATTERN.test(code) ? code : null;
 }
 
 function rawMessageOf(error: unknown): string | null {
@@ -58,13 +62,13 @@ function isSafeToShow(message: string): boolean {
 export function toPublicErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof PublicError) return error.message;
 
-  const sqlState = sqlStateOf(error);
-  if (sqlState) {
-    const mapped = SQLSTATE_MESSAGES[sqlState];
+  const errorCode = errorCodeOf(error);
+  if (errorCode) {
+    const mapped = ERROR_CODE_MESSAGES[errorCode];
     if (mapped) return mapped;
 
     const message = rawMessageOf(error);
-    if (PASSTHROUGH_SQLSTATES.has(sqlState) && message && isSafeToShow(message)) {
+    if (PASSTHROUGH_SQLSTATES.has(errorCode) && message && isSafeToShow(message)) {
       return message;
     }
   }

@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  findAssignableEmployeeRole,
-  findEmployeeInvitationForJoin,
-  insertEmployeeProfile,
-  linkEmployeeProfile,
-  markEmployeeInvitationAccepted,
-} from "../data/employee-access.repo";
+import { findAssignableEmployeeRole, insertEmployeeProfile, linkEmployeeProfile } from "../data/employee-access.repo";
+import { findEmployeeInvitationForJoin, markEmployeeInvitationAccepted } from "../data/employee-invitations.repo";
 import {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,
@@ -14,9 +9,12 @@ import { acceptEmployeeInvitation } from "./employee-invitations";
 
 vi.mock("../data/employee-access.repo", () => ({
   findAssignableEmployeeRole: vi.fn(),
-  findEmployeeInvitationForJoin: vi.fn(),
   insertEmployeeProfile: vi.fn(),
   linkEmployeeProfile: vi.fn(),
+}));
+
+vi.mock("../data/employee-invitations.repo", () => ({
+  findEmployeeInvitationForJoin: vi.fn(),
   markEmployeeInvitationAccepted: vi.fn(),
 }));
 
@@ -43,7 +41,7 @@ function pendingInvitation() {
     expires_at: "2099-01-01T00:00:00.000Z",
     accepted_at: null,
     employees: { first_name: "Ana", last_name: "Staff" },
-    salons: { name: "Glow Salon" },
+    salons: { name: "Glow Salón" },
   };
 }
 
@@ -88,7 +86,7 @@ describe("employee invitations", () => {
       role_id: "role-1",
     });
     expect(mockedLinkEmployeeProfile).toHaveBeenCalledWith("employee-1", "salon-1", "user-1");
-    expect(mockedMarkEmployeeInvitationAccepted).toHaveBeenCalledWith("invitation-1");
+    expect(mockedMarkEmployeeInvitationAccepted).toHaveBeenCalledWith("invitation-1", "salon-1");
   });
 
   it("rolls back the Auth user when profile creation fails", async () => {

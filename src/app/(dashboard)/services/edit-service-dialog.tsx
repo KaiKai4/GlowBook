@@ -28,10 +28,10 @@ export function EditServiceDialog({
       open={true}
       onClose={onClose}
       title="Editar servicio"
-      description="Actualiza precio, duración, categoria y estado."
+      description="Actualiza precio, duración, categoría y estado."
     >
       <form action={onSubmit} className="space-y-4">
-        <Select name="category_id" label="Categoria" defaultValue={service.category_id} required>
+        <Select name="category_id" label="Categoría" defaultValue={service.category_id} required>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -55,7 +55,7 @@ export function EditServiceDialog({
         </Select>
         <Textarea
           name="description"
-          label="Descripcion (opcional)"
+          label="Descripción (opcional)"
           defaultValue={service.description ?? ""}
         />
         {error && <p className="rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-strong">{error}</p>}

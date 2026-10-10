@@ -48,7 +48,7 @@ describe("definePlatformAction", () => {
     expect(assertActionRateLimit).toHaveBeenCalledWith(ADMIN_ID, "admin:x", { max: 5, windowMs: 1000 });
   });
 
-  it("sin opciones de rate limit delega el limite por defecto en assertActionRateLimit", async () => {
+  it("sin opciones de rate limit delega el límite por defecto en assertActionRateLimit", async () => {
     const action = definePlatformAction({
       rateLimit: { scope: "admin:x" },
       parse: parseWithSchema(SCHEMA),
@@ -60,7 +60,7 @@ describe("definePlatformAction", () => {
     expect(assertActionRateLimit).toHaveBeenCalledWith(ADMIN_ID, "admin:x", undefined);
   });
 
-  it("si el rate limit bloquea no valida ni ejecuta el caso de uso", async () => {
+  it("si el rate limit bloquea no válida ni ejecuta el caso de uso", async () => {
     vi.mocked(assertActionRateLimit).mockResolvedValue(err("Demasiados intentos."));
     const run = vi.fn();
     const action = definePlatformAction({
@@ -86,7 +86,7 @@ describe("definePlatformAction", () => {
     expect(result).toEqual(ok("creado"));
   });
 
-  it("un dato invalido devuelve el primer mensaje del schema sin ejecutar el caso de uso", async () => {
+  it("un dato inválido devuelve el primer mensaje del schema sin ejecutar el caso de uso", async () => {
     const run = vi.fn();
     const action = definePlatformAction({ parse: parseWithSchema(SCHEMA), run });
 

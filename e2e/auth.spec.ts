@@ -13,7 +13,7 @@ test("login page renders the public authentication Interface", async ({ page }) 
   await expectNoSeriousA11yViolations(page);
 });
 
-test("protected salon routes redirect anonymous users to login", async ({ page }) => {
+test("protected salón routes redirect anonymous users to login", async ({ page }) => {
   await page.goto("/appointments");
 
   await expect(page).toHaveURL(/\/login/);

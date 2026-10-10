@@ -16,8 +16,8 @@ export interface SalonActivityViewModel {
   entries: SalonActivityEntry[];
 }
 
-export async function getSalonActivity(): Promise<SalonActivityViewModel> {
-  const rows = await findSalonActivity();
+export async function getSalonActivity(salonId: string): Promise<SalonActivityViewModel> {
+  const rows = await findSalonActivity(salonId);
 
   return {
     entries: rows.map((row) => {

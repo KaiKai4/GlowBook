@@ -2,6 +2,7 @@ import type {
   PlatformAdminFixture,
   SalonOwnerFixture,
 } from "../../src/test/supabase-integration-fixtures";
+import type { LimitedCollaboratorFixture } from "./limited-collaborator";
 
 /**
  * Variable de entorno con los fixtures creados por global-setup (JSON).
@@ -15,6 +16,11 @@ export interface LocalE2eFixtures {
   salonOwnerB: SalonOwnerFixture;
   // Salón propio del proyecto "mobile": no comparte datos mutados por el proyecto de escritorio.
   salonOwnerMobile: SalonOwnerFixture;
+  // Usuario propio del test de cierre de sesión: signOut() revoca todas las sesiones del usuario.
+  salonOwnerSignOut: SalonOwnerFixture;
+  // Owner y colaborador limitado de la auditoría de accesibilidad (compartidos por worker y proyecto).
+  accessibilityOwner: SalonOwnerFixture;
+  accessibilityCollaborator: LimitedCollaboratorFixture;
   platformAdmin: PlatformAdminFixture;
 }
 
@@ -43,6 +49,16 @@ function toSalonOwner(value: unknown, label: string): SalonOwnerFixture {
     customerId: requireString(record, "customerId"),
     employeeId: requireString(record, "employeeId"),
     serviceId: requireString(record, "serviceId"),
+  };
+}
+
+function toLimitedCollaborator(value: unknown): LimitedCollaboratorFixture {
+  const record = requireRecord(value, "accessibilityCollaborator");
+  return {
+    email: requireString(record, "email"),
+    password: requireString(record, "password"),
+    userId: requireString(record, "userId"),
+    roleId: requireString(record, "roleId"),
   };
 }
 
@@ -79,6 +95,9 @@ export function readLocalFixtures(): LocalE2eFixtures {
     salonOwnerA: toSalonOwner(record.salonOwnerA, "salonOwnerA"),
     salonOwnerB: toSalonOwner(record.salonOwnerB, "salonOwnerB"),
     salonOwnerMobile: toSalonOwner(record.salonOwnerMobile, "salonOwnerMobile"),
+    salonOwnerSignOut: toSalonOwner(record.salonOwnerSignOut, "salonOwnerSignOut"),
+    accessibilityOwner: toSalonOwner(record.accessibilityOwner, "accessibilityOwner"),
+    accessibilityCollaborator: toLimitedCollaborator(record.accessibilityCollaborator),
     platformAdmin: toPlatformAdmin(record.platformAdmin),
   };
 }

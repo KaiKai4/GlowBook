@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { getOccupiedSlotsForSalonDate } from "@/features/appointments/use-cases/appointment-availability";
 import { cancelAppointment } from "@/features/appointments/use-cases/cancel-appointment";
 import { completeAppointment } from "@/features/appointments/use-cases/complete-appointment";
@@ -24,9 +24,18 @@ import {
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));
@@ -58,6 +67,13 @@ const validComplete = {
   payment_method: "cash",
   item_charges: JSON.stringify([{ id: SERVICE_ID, price: 150 }]),
   idempotency_key: KEY,
+};
+const completedResult = {
+  appointment_id: RECORD_ID,
+  status: "completed" as const,
+  subtotal: 150,
+  discount_amount: 0,
+  total_price: 150,
 };
 const lifecycleForm = () => formDataOf({ appointment_id: RECORD_ID, idempotency_key: KEY });
 
@@ -133,7 +149,7 @@ describe("appointments actions", () => {
     it("rechaza servicios que no son JSON válido", async () => {
       expect(
         await createAppointmentAction(null, formDataOf({ ...validCreate, assignments: "{no-json" }))
-      ).toEqual({ ok: false, error: "Datos de servicios invalidos." });
+      ).toEqual({ ok: false, error: "Datos de servicios inválidos." });
       expect(createAppointment).not.toHaveBeenCalled();
     });
 
@@ -189,7 +205,7 @@ describe("appointments actions", () => {
     it("rechaza servicios que no son JSON válido", async () => {
       expect(
         await updateAppointmentScheduleAction(null, formDataOf({ ...validUpdate, assignments: "[" }))
-      ).toEqual({ ok: false, error: "Datos de servicios invalidos." });
+      ).toEqual({ ok: false, error: "Datos de servicios inválidos." });
     });
 
     it("devuelve el primer issue de Zod cuando no hay servicios", async () => {
@@ -239,8 +255,38 @@ describe("appointments actions", () => {
       vi.mocked(requireActiveProfile).mockResolvedValue(manager);
       vi.mocked(cancelAppointment).mockResolvedValue(ok(undefined));
       expect(await cancelAppointmentAction(lifecycleForm())).toEqual({ ok: true, value: undefined });
-      expect(cancelAppointment).toHaveBeenCalledWith(RECORD_ID, SALON_ID, KEY);
+      expect(cancelAppointment).toHaveBeenCalledWith({
+        appointmentId: RECORD_ID,
+        salonId: SALON_ID,
+        idempotencyKey: KEY,
+        customerDisposition: "keep",
+      });
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
+    });
+
+    it("cancelAppointmentAction pasa la decisión sobre el cliente temporal y acepta solo valores válidos", async () => {
+      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
+      vi.mocked(cancelAppointment).mockResolvedValue(ok(undefined));
+
+      await cancelAppointmentAction(formDataOf({ appointment_id: RECORD_ID, idempotency_key: KEY, customer_disposition: "promote" }));
+      expect(cancelAppointment).toHaveBeenLastCalledWith(expect.objectContaining({ customerDisposition: "promote" }));
+
+      const invalid = await cancelAppointmentAction(
+        formDataOf({ appointment_id: RECORD_ID, idempotency_key: KEY, customer_disposition: "borrar" })
+      );
+      expect(invalid.ok).toBe(false);
+      expect(cancelAppointment).toHaveBeenCalledTimes(1);
+    });
+
+    it("cancelAppointmentAction devuelve los avisos del caso de uso sin fallar", async () => {
+      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
+      vi.mocked(cancelAppointment).mockResolvedValue({ ok: true, value: undefined, warnings: ["Aviso de cliente."] });
+
+      expect(await cancelAppointmentAction(lifecycleForm())).toEqual({
+        ok: true,
+        value: undefined,
+        warnings: ["Aviso de cliente."],
+      });
     });
 
     it("confirmAppointmentAction rechaza sin permiso, y confirma y revalida con permiso", async () => {
@@ -275,7 +321,7 @@ describe("appointments actions", () => {
     it("rechaza los cobros que no son JSON válido", async () => {
       expect(
         await completeAppointmentAction(null, formDataOf({ ...validComplete, item_charges: "[" }))
-      ).toEqual({ ok: false, error: "Cobros de servicios invalidos." });
+      ).toEqual({ ok: false, error: "Cobros de servicios inválidos." });
     });
 
     it("devuelve el primer issue de Zod cuando la cita no tiene cobros", async () => {
@@ -288,31 +334,20 @@ describe("appointments actions", () => {
       expect(completeAppointment).not.toHaveBeenCalled();
     });
 
-    it("rechaza un método de pago no habilitado para el salón", async () => {
-      vi.mocked(assertSalonPaymentMethodEnabled).mockResolvedValue(false);
-
-      expect(await completeAppointmentAction(null, formDataOf(validComplete))).toEqual({
-        ok: false,
-        error: "Ese metodo de pago no esta habilitado para este salon.",
-      });
-      expect(assertSalonPaymentMethodEnabled).toHaveBeenCalledWith(SALON_ID, "cash");
-      expect(completeAppointment).not.toHaveBeenCalled();
-    });
-
     it("completa la cita con los cobros parseados y revalida citas y clientes", async () => {
-      vi.mocked(completeAppointment).mockResolvedValue(ok(undefined));
+      vi.mocked(completeAppointment).mockResolvedValue(ok(completedResult));
 
       const result = await completeAppointmentAction(null, formDataOf(validComplete));
 
-      expect(result).toEqual({ ok: true, value: undefined });
-      expect(completeAppointment).toHaveBeenCalledWith(
-        RECORD_ID,
-        SALON_ID,
-        "cash",
-        [{ id: SERVICE_ID, price: 150, discountPercentage: 0 }],
-        "",
-        KEY
-      );
+      expect(result).toEqual({ ok: true, value: completedResult });
+      expect(completeAppointment).toHaveBeenCalledWith({
+        appointmentId: RECORD_ID,
+        salonId: SALON_ID,
+        paymentMethod: "cash",
+        itemCharges: [{ id: SERVICE_ID, price: 150, discountPercentage: 0 }],
+        completionPriceNote: "",
+        idempotencyKey: KEY,
+      });
       expect(revalidatePath).toHaveBeenCalledWith("/appointments");
       expect(revalidatePath).toHaveBeenCalledWith("/customers");
     });

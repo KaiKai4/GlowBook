@@ -4,7 +4,8 @@ import { getAssignableRoleOptions } from "@/features/access/use-cases/role-optio
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
 import { findUpcomingEmployeeExceptions } from "../data/employee-exceptions.repo";
-import { findEmployeeById, findLatestEmployeeInvitation } from "../data/employees.repo";
+import { findEmployeeById } from "../data/employees.repo";
+import { findLatestEmployeeInvitation } from "../data/employee-invitations.repo";
 import { getEmployeeDetail } from "./get-employee-detail";
 
 // Ramas de la ficha del colaborador que el test principal no recorre: fallos de
@@ -17,6 +18,9 @@ vi.mock("@/infra/observability", () => ({
 
 vi.mock("../data/employees.repo", () => ({
   findEmployeeById: vi.fn(),
+}));
+
+vi.mock("../data/employee-invitations.repo", () => ({
   findLatestEmployeeInvitation: vi.fn(),
 }));
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Building2, Search } from "lucide-react";
 
-import type { SalonSubscriptionRow } from "@/features/billing/use-cases/salon-subscriptions";
+import type { SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 import { cn } from "@/components/ui/cn";
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
@@ -42,7 +42,7 @@ export function SalonSubscriptionList({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar salon o plan..."
+            placeholder="Buscar salón o plan..."
             className="h-10 w-full rounded-xl border border-brand-100 bg-surface pl-9 pr-3 text-sm text-fg-secondary placeholder:text-fg-subtle focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </label>

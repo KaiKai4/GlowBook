@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedback-report-status";
+import { ok } from "@/infra/result";
 import { formDataOf } from "@/test/action-fixtures";
 import { setFeedbackStatusAction } from "./actions";
 
@@ -22,7 +23,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(requirePlatformAdmin).mockResolvedValue(ADMIN_ID);
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
-  vi.mocked(setFeedbackReportStatus).mockResolvedValue(undefined as never);
+  vi.mocked(setFeedbackReportStatus).mockResolvedValue(ok(undefined));
 });
 
 describe("setFeedbackStatusAction", () => {
@@ -35,7 +36,7 @@ describe("setFeedbackStatusAction", () => {
     expect(setFeedbackReportStatus).not.toHaveBeenCalled();
   });
 
-  it("marca el reporte como resuelto y revalida la pagina de reportes", async () => {
+  it("marca el reporte como resuelto y revalida la página de reportes", async () => {
     await setFeedbackStatusAction(formDataOf({ id: REPORT_ID, status: "resolved" }));
 
     expect(setFeedbackReportStatus).toHaveBeenCalledWith({

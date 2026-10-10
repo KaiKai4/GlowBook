@@ -10,6 +10,7 @@ import {
 } from "../src/test/supabase-integration-fixtures";
 import { skipUnlessReady } from "./support/env";
 import { readLocalFixtures } from "./support/local-fixtures";
+import { loginWith } from "./support/login";
 
 // Los salones A y B los crea global-setup (y su limpieza corre en el teardown global).
 let admin: TestSupabaseClient | null = null;
@@ -23,13 +24,7 @@ let tenantBTexts: string[] = [];
 const NOT_FOUND_TEXT = "Página no encontrada";
 
 async function loginAsSalonA(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel(/Correo|Email/i).fill(salonA!.email);
-  await page
-    .getByRole("textbox", { name: "Contraseña", exact: true })
-    .fill(salonA!.password);
-  await page.getByRole("button", { name: /Iniciar/i }).click();
-  await expect(page).not.toHaveURL(/\/login/);
+  await loginWith(page, salonA!.email, salonA!.password);
 }
 
 /**
@@ -87,19 +82,19 @@ test.describe("multi-tenant isolation", () => {
     await loginAsSalonA(page);
   });
 
-  test("denies direct access to another Salon employee detail", async ({ page }) => {
+  test("denies direct access to another Salón employee detail", async ({ page }) => {
     await page.goto(`/employees/${salonB!.employeeId}`);
 
     await expectNotFoundWithoutTenantBData(page);
   });
 
-  test("denies direct access to another Salon appointment edit screen", async ({ page }) => {
+  test("denies direct access to another Salón appointment edit screen", async ({ page }) => {
     await page.goto(`/appointments/${salonBAppointment!.appointmentId}/edit`);
 
     await expectNotFoundWithoutTenantBData(page);
   });
 
-  test("RLS hides the Salon B rows from the Salon A owner session", async () => {
+  test("RLS hides the Salón B rows from the Salón A owner session", async () => {
     const owner = salonA;
     const other = salonB;
     if (!owner || !other) throw new Error("Fixtures E2E de salones A/B ausentes para RLS.");
@@ -137,7 +132,7 @@ test.describe("multi-tenant isolation", () => {
     // Sin signOut(): revocaría todas las sesiones del owner A, que otros specs usan en paralelo.
   });
 
-  test("keeps Platform admin routes unavailable to a Salon owner", async ({ page }) => {
+  test("keeps Platform admin routes unavailable to a Salón owner", async ({ page }) => {
     await page.goto("/admin");
 
     await expect(page).not.toHaveURL(/\/admin$/);

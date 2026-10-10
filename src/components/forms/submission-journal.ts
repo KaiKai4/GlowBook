@@ -35,6 +35,7 @@ export function readSubmissionJournal(now: number = Date.now()): SubmissionJourn
       .filter((entry) => now - entry.startedAt < SUBMISSION_INTENT_TTL_MS)
       .map(({ procedure, key, dataHash, startedAt }) => ({ procedure, key, dataHash, startedAt }));
   } catch {
+    // sessionStorage no disponible (modo privado o almacenamiento bloqueado): sin diario no hay nada que deduplicar.
     return [];
   }
 }

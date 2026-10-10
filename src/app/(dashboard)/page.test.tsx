@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission } from "@/features/access";
-import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import { getDashboardOverview } from "@/features/dashboard";
 import { formatCurrency } from "@/infra/format/dates";
+import { partialDouble } from "@/test/partial-double";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import DashboardPage from "./page";
 
@@ -27,8 +28,11 @@ vi.mock("@/app/_composition/salon-readers", () => ({
 vi.mock("@/features/salon/use-cases/get-dashboard-shell", () => ({
   getOwnerPlanLimitWarnings: vi.fn(async () => []),
 }));
-vi.mock("@/features/dashboard/use-cases/get-dashboard-overview", () => ({ getDashboardOverview: vi.fn() }));
-vi.mock("@/features/dashboard/use-cases/get-onboarding-checklist", () => ({ getOnboardingChecklist: vi.fn() }));
+vi.mock("@/features/dashboard", async () => ({
+  getDashboardOverview: vi.fn(),
+  getOnboardingChecklist: vi.fn(),
+  selectDashboardMoney: (await import("@/features/dashboard/domain/dashboard-money")).selectDashboardMoney,
+}));
 vi.mock("@/components/layout/plan-limit-banner", () => ({ PlanLimitBanner: () => null }));
 vi.mock("@/components/layout/payment-standing-banner", () => ({ PaymentStandingBanner: () => null }));
 vi.mock("./onboarding-checklist-card", () => ({ OnboardingChecklistCard: () => null }));
@@ -38,17 +42,17 @@ type Profile = Awaited<ReturnType<typeof requireProfile>>;
 type NavItems = ReturnType<typeof getVisibleNavItems>;
 
 function navItem(href: string): NavItems[number] {
-  return { href, label: href, icon: () => null } as unknown as NavItems[number];
+  return partialDouble<NavItems[number]>({ href, label: href, icon: "dashboard" });
 }
 
-describe("DashboardPage redireccion del unico modulo visible", () => {
+describe("DashboardPage redireccion del unico módulo visible", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireProfile).mockResolvedValue({
+    vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
       id: "user-1",
       salon_id: "salon-1",
       is_owner: false,
-    } as unknown as Profile);
+    }));
   });
 
   it("no redirige a '/' cuando el unico modulo visible es Inicio (evita bucle)", async () => {
@@ -58,7 +62,7 @@ describe("DashboardPage redireccion del unico modulo visible", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it("redirige al modulo unico cuando su ruta es distinta de '/'", async () => {
+  it("redirige al módulo unico cuando su ruta es distinta de '/'", async () => {
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/appointments")]);
 
     await expect(DashboardPage()).rejects.toThrow("REDIRECT:/appointments");
@@ -85,11 +89,11 @@ describe("DashboardPage indicadores de dinero", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireProfile).mockResolvedValue({
+    vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
       id: "owner-1",
       salon_id: "salon-1",
       is_owner: true,
-    } as unknown as Profile);
+    }));
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/"), navItem("/appointments")]);
     vi.mocked(hasPermission).mockReturnValue(true);
     vi.mocked(getDashboardOverview).mockResolvedValue({
@@ -119,13 +123,13 @@ describe("DashboardPage indicadores de dinero", () => {
     expect(container.textContent).toContain(formatCurrency(35.5));
   });
 
-  it("sin modulo retail el ingreso son las citas y la ganancia descuenta los gastos", async () => {
-    vi.mocked(requireProfile).mockResolvedValue({
+  it("sin módulo retail el ingreso son las citas y la ganancia descuenta los gastos", async () => {
+    vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
       id: "owner-1",
       salon_id: "salon-1",
       is_owner: true,
       salon: { disabled_features: ["retail"] },
-    } as unknown as Profile);
+    }));
 
     const container = await renderPage();
 

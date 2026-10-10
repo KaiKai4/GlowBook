@@ -1,17 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import {
   checkPermanentCustomerByPhone,
   findArchivedCustomerByContact,
 } from "@/features/customers/use-cases/customer-duplicates";
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
-import {
-  deleteTemporaryCustomer,
-  findOrCreateTemporaryCustomer,
-  promoteCustomer,
-} from "@/features/customers/use-cases/customer-temporary";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
@@ -21,18 +16,24 @@ import {
   checkCustomerPhoneAction,
   createCustomerAction,
   deleteCustomerAction,
-  deleteTemporaryCustomerAction,
   findArchivedCustomerByContactAction,
-  findOrCreateCustomerAction,
-  promoteCustomerAction,
   reactivateCustomerAction,
   updateCustomerAction,
 } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
 }));
@@ -47,11 +48,6 @@ vi.mock("@/features/customers/use-cases/customer-profile", () => ({
 vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
   archiveCustomer: vi.fn(),
   reactivateCustomer: vi.fn(),
-}));
-vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
-  deleteTemporaryCustomer: vi.fn(),
-  findOrCreateTemporaryCustomer: vi.fn(),
-  promoteCustomer: vi.fn(),
 }));
 
 const INVALID = { ok: false, error: "Identificador inválido." } as const;
@@ -135,60 +131,6 @@ describe("customers actions: guardas de identificador y límite", () => {
 
     expect(await reactivateCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No encontrado." });
     expect(revalidatePath).not.toHaveBeenCalled();
-  });
-
-  it("findOrCreateCustomerAction rechaza sin permiso y no crea el temporal", async () => {
-    vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-
-    expect(await findOrCreateCustomerAction("Ana", "Pérez")).toEqual({
-      ok: false,
-      error: "No tienes permiso para gestionar clientes.",
-    });
-    expect(findOrCreateTemporaryCustomer).not.toHaveBeenCalled();
-  });
-
-  it("findOrCreateCustomerAction delega en el cliente temporal del salón", async () => {
-    vi.mocked(findOrCreateTemporaryCustomer).mockResolvedValue(ok("tmp-1"));
-
-    expect(await findOrCreateCustomerAction("Ana", "Pérez", "+507 6000-0000")).toEqual(ok("tmp-1"));
-    expect(findOrCreateTemporaryCustomer).toHaveBeenCalledWith({
-      salonId: SALON_ID,
-      firstName: "Ana",
-      lastName: "Pérez",
-      phone: "+507 6000-0000",
-    });
-  });
-
-  it("promoteCustomerAction rechaza un identificador inválido", async () => {
-    expect(await promoteCustomerAction("cliente")).toEqual(INVALID);
-    expect(promoteCustomer).not.toHaveBeenCalled();
-  });
-
-  it("promoteCustomerAction promueve y revalida el listado", async () => {
-    vi.mocked(promoteCustomer).mockResolvedValue(ok(undefined));
-
-    expect(await promoteCustomerAction(RECORD_ID)).toEqual(ok(undefined));
-    expect(promoteCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
-    expect(revalidatePath).toHaveBeenCalledWith("/customers");
-  });
-
-  it("promoteCustomerAction no revalida cuando la promoción falla", async () => {
-    vi.mocked(promoteCustomer).mockResolvedValue(err("No es temporal."));
-
-    expect(await promoteCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No es temporal." });
-    expect(revalidatePath).not.toHaveBeenCalled();
-  });
-
-  it("deleteTemporaryCustomerAction rechaza un identificador inválido", async () => {
-    expect(await deleteTemporaryCustomerAction("cliente")).toEqual(INVALID);
-    expect(deleteTemporaryCustomer).not.toHaveBeenCalled();
-  });
-
-  it("deleteTemporaryCustomerAction elimina el temporal del salón", async () => {
-    vi.mocked(deleteTemporaryCustomer).mockResolvedValue(ok(undefined));
-
-    expect(await deleteTemporaryCustomerAction(RECORD_ID)).toEqual(ok(undefined));
-    expect(deleteTemporaryCustomer).toHaveBeenCalledWith(RECORD_ID, SALON_ID);
   });
 
   it("updateCustomerAction rechaza un identificador inválido sin validar el formulario", async () => {

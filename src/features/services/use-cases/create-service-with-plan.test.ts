@@ -45,7 +45,7 @@ describe("createServiceWithPlan", () => {
     expect(createCatalogService).not.toHaveBeenCalled();
   });
 
-  it("valida la duración después de las puertas del plan", async () => {
+  it("válida la duración después de las puertas del plan", async () => {
     const plan = gate({ checkServiceLimit: vi.fn(async () => err("Límite alcanzado.")) });
     const invalid = { ...validRaw, duration: { hours: 0, minutes: 0 } };
 

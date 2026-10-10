@@ -13,7 +13,8 @@ export async function findAppointmentCreationResources({
   assignments,
 }: {
   salonId: string;
-  customerId: string;
+  /** Ausente con cliente nuevo: todavía no existe y la RPC lo da de alta. */
+  customerId?: string;
   assignments: AppointmentCreationAssignmentRequest[];
 }): Promise<AppointmentCreationResources> {
   const supabase = await createSupabaseServerClient();
@@ -22,12 +23,14 @@ export async function findAppointmentCreationResources({
 
   const [customerResult, salonResult, businessHoursResult, servicesResult, employeesResult] =
     await Promise.all([
-      supabase
-        .from("customers")
-        .select("id")
-        .eq("id", customerId)
-        .eq("salon_id", salonId)
-        .maybeSingle(),
+      customerId === undefined
+        ? Promise.resolve({ data: null, error: null })
+        : supabase
+            .from("customers")
+            .select("id")
+            .eq("id", customerId)
+            .eq("salon_id", salonId)
+            .maybeSingle(),
       supabase
         .from("salons")
         .select(
@@ -57,9 +60,12 @@ export async function findAppointmentCreationResources({
   if (servicesResult.error) throw servicesResult.error;
   if (employeesResult.error) throw employeesResult.error;
 
-  if (!customerResult.data || !salonResult.data) {
+  // Cortocircuito solo si falta el salón o si se pidió un cliente concreto que no existe.
+  // Con cliente nuevo no hay fila que comprobar y los servicios y profesionales sí se cargan.
+  const customerMissing = customerId !== undefined && !customerResult.data;
+  if (customerMissing || !salonResult.data) {
     return {
-      customerExists: Boolean(customerResult.data),
+      customerExists: customerId !== undefined && Boolean(customerResult.data),
       salonConfig: (salonResult.data as SalonConfig | null) ?? null,
       businessHours: (businessHoursResult.data ?? []) as BusinessHour[],
       assignments: [],
@@ -125,7 +131,7 @@ export async function findAppointmentCreationResources({
   );
 
   return {
-    customerExists: true,
+    customerExists: customerId !== undefined,
     salonConfig: salonResult.data as SalonConfig,
     businessHours: (businessHoursResult.data ?? []) as BusinessHour[],
     assignments: assignments.map((assignment) => ({

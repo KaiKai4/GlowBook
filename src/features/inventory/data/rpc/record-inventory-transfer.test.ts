@@ -21,7 +21,7 @@ describe("recordInventoryTransferRpc", () => {
     serverClient.current = null;
   });
 
-  it("invoca la RPC con el salon, la clave y nota nula si viene vacia", async () => {
+  it("invoca la RPC con el salón, la clave y nota nula si viene vacia", async () => {
     const db = useDb({ record_inventory_transfer: { data: null, error: null } });
 
     await recordInventoryTransferRpc({

@@ -2683,6 +2683,30 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            create_inventory_product_with_stock: {
+                Args: {
+                    p_category: string;
+                    p_cost_price: number;
+                    p_internal_minimum: number;
+                    p_internal_quantity: number;
+                    p_is_retail_enabled: boolean;
+                    p_name: string;
+                    p_retail_minimum: number;
+                    p_retail_quantity: number;
+                    p_sale_price: number;
+                    p_salon_id: string;
+                    p_storage_minimum: number;
+                    p_storage_quantity: number;
+                };
+                Returns: string;
+            };
+            create_role_with_permissions: {
+                Args: {
+                    p_name: string;
+                    p_permission_keys: string[];
+                };
+                Returns: string;
+            };
             create_salon_with_owner: {
                 Args: {
                     p_full_name: string;
@@ -2711,6 +2735,18 @@ export type Database = {
                     user_id: string;
                 }[];
             };
+            discard_temporary_customer: {
+                Args: {
+                    p_customer_id: string;
+                };
+                Returns: undefined;
+            };
+            find_auth_user_id_by_email: {
+                Args: {
+                    p_email: string;
+                };
+                Returns: string;
+            };
             has_permission: {
                 Args: {
                     perm: string;
@@ -2736,6 +2772,7 @@ export type Database = {
             invite_salon: {
                 Args: {
                     p_email: string;
+                    p_plan_id?: string;
                 };
                 Returns: string;
             };
@@ -2799,6 +2836,16 @@ export type Database = {
                 };
                 Returns: undefined;
             };
+            record_plan_alert: {
+                Args: {
+                    p_message: string;
+                    p_metric_key: string;
+                    p_module_key: string;
+                    p_plan_id: string;
+                    p_severity: string;
+                };
+                Returns: string;
+            };
             record_retail_sale: {
                 Args: {
                     p_customer_id: string;
@@ -2816,6 +2863,13 @@ export type Database = {
             replace_employee_assignments: {
                 Args: {
                     payload: Json;
+                };
+                Returns: undefined;
+            };
+            replace_role_permissions: {
+                Args: {
+                    p_permission_keys: string[];
+                    p_role_id: string;
                 };
                 Returns: undefined;
             };
@@ -2895,6 +2949,18 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            report_expense_month_totals: {
+                Args: {
+                    p_from: string;
+                    p_salon_id: string;
+                    p_to: string;
+                };
+                Returns: {
+                    amount: number;
+                    category: string;
+                    custom_category: string;
+                }[];
+            };
             report_inventory_alerts: {
                 Args: {
                     p_modules?: Json;
@@ -2947,6 +3013,13 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            resolve_new_customer: {
+                Args: {
+                    p_data: Json;
+                    p_salon: string;
+                };
+                Returns: string;
+            };
             salon_id: {
                 Args: Record<PropertyKey, never>;
                 Returns: string;
@@ -2962,6 +3035,22 @@ export type Database = {
                     payload: Json;
                 };
                 Returns: Json;
+            };
+            update_inventory_product_profile: {
+                Args: {
+                    p_category: string;
+                    p_cost_price: number;
+                    p_internal_minimum: number;
+                    p_is_active: boolean;
+                    p_is_retail_enabled: boolean;
+                    p_name: string;
+                    p_product_id: string;
+                    p_retail_minimum: number;
+                    p_sale_price: number;
+                    p_salon_id: string;
+                    p_storage_minimum: number;
+                };
+                Returns: undefined;
             };
         };
         Enums: {

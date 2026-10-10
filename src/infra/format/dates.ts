@@ -88,11 +88,11 @@ export function getUtcDayBoundaries(
     hour12: false,
   }).formatToParts(date);
 
-  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-  const s = parseInt(parts.find((p) => p.type === "second")?.value ?? "0", 10);
+  const hours = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const minutes = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  const seconds = parseInt(parts.find((p) => p.type === "second")?.value ?? "0", 10);
 
-  const secondsFromMidnight = (h === 24 ? 0 : h) * 3600 + m * 60 + s;
+  const secondsFromMidnight = (hours === 24 ? 0 : hours) * 3600 + minutes * 60 + seconds;
   const startMs =
     date.getTime() - secondsFromMidnight * 1_000 - date.getUTCMilliseconds();
 
@@ -153,6 +153,6 @@ function zoneOffsetMs(instantMs: number, timeZone: string): number {
 }
 
 export function timeToMinutes(time: string): number {
-  const [h = NaN, m = NaN] = time.split(":").map(Number);
-  return h * 60 + m;
+  const [hours = NaN, minutes = NaN] = time.split(":").map(Number);
+  return hours * 60 + minutes;
 }

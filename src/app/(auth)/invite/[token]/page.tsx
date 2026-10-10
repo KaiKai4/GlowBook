@@ -91,7 +91,7 @@ export default function InvitePage() {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      const res = await acceptInvitationAction({
+      const result = await acceptInvitationAction({
         token,
         email: email.trim(),
         password,
@@ -99,14 +99,14 @@ export default function InvitePage() {
         full_name: fullName.trim(),
       });
 
-      if (!res.ok) {
-        assignServerError(res.error);
+      if (!result.ok) {
+        assignServerError(result.error);
         return;
       }
 
       setDone(true);
 
-      if (!res.value.signedIn) {
+      if (!result.value.signedIn) {
         setTimeout(() => router.push("/login"), 1800);
         return;
       }

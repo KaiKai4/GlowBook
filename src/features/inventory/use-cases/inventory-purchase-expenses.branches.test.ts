@@ -75,7 +75,7 @@ describe("getInventoryPurchaseExpenseHistory (ramas)", () => {
     expect(entry).toMatchObject({ amount: 0, commerceName: null, detail: "Compra de productos" });
   });
 
-  it("devuelve lista vacia cuando el salon no tiene compras", async () => {
+  it("devuelve lista vacia cuando el salón no tiene compras", async () => {
     mockedFindHistory.mockResolvedValue([]);
 
     expect(await getInventoryPurchaseExpenseHistory("salon-1")).toEqual([]);

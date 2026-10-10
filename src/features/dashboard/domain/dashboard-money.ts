@@ -1,5 +1,5 @@
-// Totales de dinero que muestra el dashboard, segun los modulos activos del salon.
-// Los agregados llegan ya calculados desde report_dashboard_metrics; aqui solo se
+// Totales de dinero que muestra el dashboard, segun los módulos activos del salón.
+// Los agregados llegan ya calculados desde report_dashboard_metrics; aquí solo se
 // elige la combinacion visible (sin recalcular sumas).
 
 export interface DashboardMoneyFigures {

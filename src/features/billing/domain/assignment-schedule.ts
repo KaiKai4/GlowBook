@@ -5,7 +5,7 @@ export interface AssignmentScheduleInput {
   trialDays: number;
   /** Fecha de referencia (hoy) en formato YYYY-MM-DD. */
   today: string;
-  /** Inicio ya existente, si el salon ya tenia el plan asignado. */
+  /** Inicio ya existente, si el salón ya tenia el plan asignado. */
   existingStartsAt?: string | null;
 }
 
@@ -15,7 +15,7 @@ export interface AssignmentSchedule {
 }
 
 /**
- * Deriva las fechas de una suscripcion a partir del plan y el estado.
+ * Deriva las fechas de una suscripción a partir del plan y el estado.
  * Los planes son mensuales y se renuevan solos, por eso no se calcula un
  * "fin de ciclo": solo el inicio y, cuando aplica, el fin del trial.
  *
@@ -47,7 +47,7 @@ export interface PaymentPeriod {
 
 /**
  * Deriva el mes de uso que cubre un pago.
- * Si el salon todavia tiene periodo vigente (pago por adelantado), el nuevo
+ * Si el salón todavía tiene periodo vigente (pago por adelantado), el nuevo
  * mes encadena al final del periodo actual; si ya vencio o nunca pago,
  * el mes corre desde la fecha del pago.
  */

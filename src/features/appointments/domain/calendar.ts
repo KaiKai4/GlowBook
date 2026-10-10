@@ -1,5 +1,9 @@
 import { shouldBlockCalendar, type AppointmentStatus } from "./lifecycle";
 
+/** Horario visible del calendario cuando el salón no tiene días abiertos. */
+const DEFAULT_BUSINESS_START_HOUR = 8;
+const DEFAULT_BUSINESS_END_HOUR = 21;
+
 export type CalendarView = "diaria" | "semanal" | "trabajador";
 
 interface CalendarCountAppointment {
@@ -68,7 +72,7 @@ export function getBusinessHourRange(
       : []
   );
 
-  if (openDays.length === 0) return { businessStart: 8, businessEnd: 21 };
+  if (openDays.length === 0) return { businessStart: DEFAULT_BUSINESS_START_HOUR, businessEnd: DEFAULT_BUSINESS_END_HOUR };
 
   return {
     businessStart: Math.min(

@@ -1,21 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  checkPlanLimit,
-  checkPlanModuleAccess,
-  isEffectiveSalonModuleEnabled,
-} from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess, isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { PERMISSIONS } from "@/features/access";
 import { ok } from "@/infra/result";
-import { buildProfile, SALON_ID } from "@/test/action-fixtures";
-import { admissionChecks, EMPLOYEE_GUARD, rolesEnabledOf } from "./employee-action-guard";
+import { SALON_ID } from "@/test/action-fixtures";
+import { admissionChecks, EMPLOYEE_GUARD, roleGateOf } from "./employee-action-guard";
 
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
   checkPlanLimit: vi.fn(),
   checkPlanModuleAccess: vi.fn(),
 }));
 
-const manager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
 
 describe("politica de acciones de colaboradores", () => {
   beforeEach(() => {
@@ -36,15 +32,14 @@ describe("politica de acciones de colaboradores", () => {
     expect(EMPLOYEE_GUARD.rateLimit).toEqual({ scope: "employees", options: { max: 30, windowMs: 60_000 } });
   });
 
-  it("consulta el modulo de roles del perfil y devuelve su valor", async () => {
-    expect(await rolesEnabledOf(manager)).toBe(true);
-    expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith(manager, "roles");
+  it("la puerta de roles usa el salón y el flag ya resuelto por el composition root", () => {
+    const context = { userId: "user-1", salonId: SALON_ID, permissions: [], requestId: "req-1" };
 
-    vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
-    expect(await rolesEnabledOf(manager)).toBe(false);
+    expect(roleGateOf({ ...context, rolesEnabled: true })).toEqual({ salonId: SALON_ID, rolesEnabled: true });
+    expect(roleGateOf({ ...context, rolesEnabled: false })).toEqual({ salonId: SALON_ID, rolesEnabled: false });
   });
 
-  it("construye los chequeos de admision con el salon de la sesion", async () => {
+  it("construye los chequeos de admision con el salón de la sesión", async () => {
     const checks = admissionChecks(SALON_ID);
 
     await checks.checkModuleAccess();

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { captureError } from "@/infra/observability";
 import type { Result } from "@/infra/result";
 import { updateCategory } from "../data/services.repo";
 import type { UpdateCategoryInput } from "../schemas";
@@ -15,9 +16,10 @@ export async function updateServiceCategory(
     return { ok: true, value: undefined };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      return { ok: false, error: "Ya existe una categoria con ese nombre." };
+      return { ok: false, error: "Ya existe una categoría con ese nombre." };
     }
 
-    return { ok: false, error: "Error al actualizar la categoria." };
+    captureError(error, { module: "services", action: "update-category" });
+    return { ok: false, error: "Error al actualizar la categoría." };
   }
 }

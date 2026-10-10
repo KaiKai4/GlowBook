@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import type { MonthlyAppointmentPoint } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import type { MonthlyAppointmentPoint } from "@/features/dashboard";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { MonthlyAppointmentsChart } from "./monthly-appointments-chart";
 
@@ -50,7 +50,7 @@ describe("MonthlyAppointmentsChart", () => {
     expect(path?.match(/ C /g)).toHaveLength(2);
   });
 
-  it("presenta el título como h2 de una sección con la leyenda y el periodo", () => {
+  it("presenta el título como h2 de una sección con la leyenda y el período", () => {
     mounted = mountComponent(<MonthlyAppointmentsChart points={[point("2026-05", 7)]} />);
 
     const section = mounted.container.querySelector("section");

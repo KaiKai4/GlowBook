@@ -4,7 +4,7 @@ import {
   normalizeDisabledSalonFeatures,
 } from "./salon-features";
 
-describe("salon features", () => {
+describe("salón features", () => {
   it("normalizes disabled feature keys and drops unknown values", () => {
     expect(
       normalizeDisabledSalonFeatures(["roles", "plantillas", "roles", "unknown"])

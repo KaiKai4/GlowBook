@@ -50,6 +50,7 @@ export function TransferStockForm({ products, pending, onTransfer }: TransferSto
           </div>
           {selectedProduct?.isRetailEnabled ? (
             <Select
+              id="hacia"
               name="to_location"
               label="Hacia"
               value={destination}
@@ -104,7 +105,7 @@ function ProductSelect({
   onChange: (productId: string) => void;
 }) {
   return (
-    <Select name="product_id" label="Producto" value={value} onChange={(event) => onChange(event.target.value)} required>
+    <Select id="producto" name="product_id" label="Producto" value={value} onChange={(event) => onChange(event.target.value)} required>
       <option value="">Selecciona producto...</option>
       {products.map((product) => (
         <option key={product.id} value={product.id}>

@@ -10,7 +10,7 @@ import type {
   PlatformModule,
 } from "@/features/billing/use-cases/commercial-plans";
 import { cn } from "@/components/ui/cn";
-import { removePlanAction } from "./actions";
+import { archivePlanAction, deletePlanAction } from "./actions";
 import { PlanForm, PlanInfoEditor, PlanLimits, PlanModules, PlanSummary } from "./plan-sections";
 import { EmptyState, StatusPill } from "./workspace-ui";
 
@@ -24,8 +24,8 @@ interface PlansWorkspaceData {
 }
 
 const PLAN_TABS: Array<{ key: PlanEditorTab; label: string }> = [
-  { key: "info", label: "Informacion" },
-  { key: "modules", label: "Modulos" },
+  { key: "info", label: "Información" },
+  { key: "modules", label: "Módulos" },
   { key: "limits", label: "Límites" },
   { key: "summary", label: "Resumen" },
 ];
@@ -134,16 +134,17 @@ export function PlansWorkspace({
                       </span>
                       {selectedAssignments > 0 ? (
                         <span className="rounded-lg bg-warning-subtle px-2 py-1 text-xs font-semibold text-warning-fg">
-                          {selectedAssignments} {selectedAssignments === 1 ? "salon asignado" : "salones asignados"}
+                          {selectedAssignments} {selectedAssignments === 1 ? "salón asignado" : "salones asignados"}
                         </span>
                       ) : null}
                     </div>
                     <p className="mt-1 text-sm text-fg-subtle">
-                      {selectedPlan.description || "Configura informacion, modulos y límites de este plan."}
+                      {selectedPlan.description || "Configura información, módulos y límites de este plan."}
                     </p>
                   </div>
                 </div>
-                <form action={removePlanAction.bind(null, selectedPlan, selectedAssignments > 0)}>
+                {/* hasAssignments solo elige el texto y la accion; el servidor vuelve a comprobarlo. */}
+                <form action={selectedAssignments > 0 ? archivePlanAction.bind(null, selectedPlan.id) : deletePlanAction.bind(null, selectedPlan.id)}>
                   <Button type="submit" variant="outline" className="border-danger-border text-danger hover:bg-danger-subtle">
                     <Archive className="h-4 w-4" />
                     {selectedAssignments > 0 ? "Archivar" : "Eliminar"}

@@ -19,7 +19,7 @@ const NEGATIVE_PROFIT: DashboardMoneyFigures = {
 };
 
 describe("selectDashboardMoney", () => {
-  it("usa el beneficio de la base cuando retail y gastos estan activos", () => {
+  it("usa el beneficio de la base cuando retail y gastos están activos", () => {
     expect(selectDashboardMoney(WITH_DECIMALS, { includeRetail: true, includeExpenses: true })).toEqual({
       revenue: 47.75,
       profit: 35.25,

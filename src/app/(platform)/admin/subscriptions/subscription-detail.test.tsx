@@ -61,7 +61,7 @@ describe("SubscriptionDetail registro de pago con intención idempotente", () =>
 
   it("envía idempotency_key y la mantiene al reintentar tras un error", async () => {
     vi.mocked(registerPaymentAction)
-      .mockResolvedValueOnce({ ok: false, message: "Ya existe un pago para ese periodo" })
+      .mockResolvedValueOnce({ ok: false, message: "Ya existe un pago para ese período" })
       .mockResolvedValueOnce({ ok: true, message: "Pago registrado" });
     mounted = renderDetail();
     const paymentButton = getButtonByText(mounted.container, "Registrar pago");
@@ -103,7 +103,7 @@ describe("SubscriptionDetail", () => {
   it("indica que el salón no tiene plan cuando no hay asignación", () => {
     mounted = renderDetail(makeDetail({ assignment: null, plan: null, limits: [], enabledModules: [], monthlyTotal: 0, planPrice: 0 }));
 
-    expect(mounted.container.textContent).toContain("Este salon todavia no tiene plan asignado.");
+    expect(mounted.container.textContent).toContain("Este salón todavía no tiene plan asignado.");
     expect(mounted.container.textContent).toContain("Asignar plan");
     expect(mounted.container.textContent).toContain("Asigna un plan antes de registrar pagos.");
   });
@@ -121,7 +121,7 @@ describe("SubscriptionDetail", () => {
     expect(text).toContain("Pagado hasta");
   });
 
-  it("muestra el fin del trial cuando el salón aún no tiene periodo pagado", () => {
+  it("muestra el fin del trial cuando el salón aún no tiene período pagado", () => {
     mounted = renderDetail(
       makeDetail({
         assignment: {
@@ -238,13 +238,13 @@ describe("SubscriptionDetail", () => {
     expect(mounted.container.textContent).toContain("Historial de pagos");
     expect(mounted.container.textContent).toContain("USD 30.00");
     expect(mounted.container.textContent).toContain("Yappy");
-    expect(mounted.container.textContent).toContain("Periodo vigente:");
+    expect(mounted.container.textContent).toContain("Período vigente:");
   });
 
   it("avisa con el toast de advertencia cuando el pago se guardó pero un efecto posterior falló", async () => {
     vi.mocked(registerPaymentAction).mockResolvedValueOnce({
       ok: true,
-      message: "Pago registrado. La suscripcion quedo activa con su mes de uso.",
+      message: "Pago registrado. La suscripción quedó activa con su mes de uso.",
       warnings: ["La auditoria no se registro."],
     });
     mounted = renderDetail();

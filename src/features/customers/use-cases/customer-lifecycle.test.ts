@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { checkPlanLimit } from "@/features/billing";
 import { updateCustomer } from "../data/customers.repo";
 import { archiveCustomer, reactivateCustomer } from "./customer-lifecycle";
+
+vi.mock("@/features/billing", () => ({
+  checkPlanLimit: vi.fn(),
+}));
 
 vi.mock("../data/customers.repo", () => ({
   updateCustomer: vi.fn(),
@@ -12,6 +17,18 @@ describe("customer lifecycle", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedUpdateCustomer.mockResolvedValue({ id: "customer-1" } as never);
+    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: true, value: undefined });
+  });
+
+  it("no reactiva un archivado si el plan no tiene cupo de clientes activos", async () => {
+    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: false, error: "Límite de clientes alcanzado." });
+
+    await expect(reactivateCustomer("customer-1", "salon-1")).resolves.toEqual({
+      ok: false,
+      error: "Límite de clientes alcanzado.",
+    });
+    expect(checkPlanLimit).toHaveBeenCalledWith({ salonId: "salon-1", metricKey: "customers.active" });
+    expect(mockedUpdateCustomer).not.toHaveBeenCalled();
   });
 
   it("reactivates a customer as permanent and active", async () => {
@@ -35,7 +52,7 @@ describe("customer lifecycle", () => {
       ok: true,
       value: {
         outcome: "archived",
-        message: "Cliente archivado conservando su informacion para trazabilidad.",
+        message: "Cliente archivado conservando su información para trazabilidad.",
       },
     });
   });

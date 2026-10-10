@@ -135,7 +135,7 @@ select throws_ok(
     ))
   ))$q$,
   'P0001',
-  'Cliente invalido para este salon',
+  'Cliente inválido para este salón',
   'owner del salon B no puede crear citas con clientes del salon A'
 );
 

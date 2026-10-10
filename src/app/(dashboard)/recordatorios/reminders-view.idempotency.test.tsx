@@ -4,7 +4,7 @@ import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { chooseOption } from "@/test/ui-appointments-dom";
 import { clickElement, findButtonByText, requireElement } from "@/test/ui-shared-dom";
 import { idempotencyKeyOf, settleSubmission, UUID_PATTERN } from "@/test/form-intent-dom";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "@/features/reminders";
 import { markReminderSentAction, confirmReminderAppointmentAction } from "./actions";
 import { RemindersView } from "./reminders-view";
 

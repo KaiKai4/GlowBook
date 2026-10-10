@@ -112,12 +112,22 @@ export function isStackWorkdirMatch(workdir, expectedRoot) {
   return normalize(workdir) === normalize(expectedRoot);
 }
 
+/**
+ * Extrae project_id de supabase/config.toml. Lanza si no existe.
+ * @param {string} configText contenido de supabase/config.toml
+ * @returns {string}
+ */
+export function readProjectId(configText) {
+  const projectId = /^project_id\s*=\s*"([A-Za-z0-9_-]+)"/m.exec(configText)?.[1];
+  if (!projectId) throw new Error("No se pudo identificar el project_id de Supabase local.");
+  return projectId;
+}
+
 // La etiqueta de Docker registra el checkout real. No se depende de archivos
 // temporales que pueden desaparecer o cambiar entre versiones de Supabase CLI.
 function assertStackOwnedByThisCheckout() {
   const config = readFileSync(path.join(ROOT, "supabase", "config.toml"), "utf8");
-  const projectId = /^project_id\s*=\s*"([A-Za-z0-9_-]+)"/m.exec(config)?.[1];
-  if (!projectId) throw new Error("No se pudo identificar el project_id de Supabase local.");
+  const projectId = readProjectId(config);
   const result = spawnSync("docker", [
     "inspect", "supabase_db_" + projectId,
     "--format", '{{index .Config.Labels "com.supabase.cli.workdir"}}',

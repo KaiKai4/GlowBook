@@ -47,7 +47,6 @@ Scripts:
 
 ```text
 npm run test:e2e
-npm run test:e2e:staging
 npm run test:e2e:ui
 ```
 
@@ -110,27 +109,6 @@ npm run test:e2e
 
 Los flujos autenticados corren con fixtures temporales cuando hay service role.
 
-## E2E Contra Staging
+## E2E En CI
 
-Para validar el deploy real, usar:
-
-```text
-npm run test:e2e:staging
-```
-
-Ese comando exige:
-
-```text
-GLOWBOOK_ENV=staging
-E2E_BASE_URL=https://staging...
-NEXT_PUBLIC_SUPABASE_URL=https://staging...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-PRODUCTION_SUPABASE_URL=https://production...
-```
-
-El guard se niega a correr si el entorno es `production` o si la URL de
-Supabase coincide con `PRODUCTION_SUPABASE_URL`.
-
-En CI, el job E2E/health de `main` corre contra staging desplegado solo cuando
-existen `E2E_BASE_URL` y los secretos Supabase de staging.
+El job `browser` de CI (`npm run verify:job -- browser`) ejecuta Playwright contra la build local y la base de datos de Supabase local. No hay E2E contra un despliegue remoto: la verificación de producción es el smoke de `release.yml` y el check sintético de `synthetic.yml` (ver `docs/runbooks/deploy.md`).

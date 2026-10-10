@@ -67,7 +67,7 @@ describe("plan-sections", () => {
       expect(text).toContain("14 días");
       expect(text).toContain("Activo");
       expect(text).toContain("3");
-      expect(text).toContain("Informacion del plan");
+      expect(text).toContain("Información del plan");
     });
   });
 
@@ -133,7 +133,7 @@ describe("plan-sections", () => {
       mounted = mountComponent(<PlanModules plan={PLAN} modules={MODULES} />);
 
       clickElement(mounted.container.querySelector<HTMLInputElement>('input[name="enabledModuleKeys"][value="expenses"]')!);
-      clickElement(getButtonByText(mounted.container, "Guardar modulos"));
+      clickElement(getButtonByText(mounted.container, "Guardar módulos"));
       await flushAsync();
 
       const [, formData] = vi.mocked(savePlanModulesAction).mock.calls[0]!;
@@ -150,7 +150,7 @@ describe("plan-sections", () => {
         <PlanLimits plan={makePlan({ modules: [{ moduleKey: "appointments", enabled: false }], limits: [] })} metrics={METRICS} modules={MODULES} />
       );
 
-      expect(mounted.container.textContent).toContain("Este plan no tiene modulos activos.");
+      expect(mounted.container.textContent).toContain("Este plan no tiene módulos activos.");
       expect(mounted.container.querySelector("form")).toBeNull();
     });
 
@@ -160,7 +160,7 @@ describe("plan-sections", () => {
       const text = mounted.container.textContent ?? "";
       expect(text).toContain("Agenda");
       expect(text).toContain("2 controles");
-      expect(text).toContain("Modulos sin límites configurables porque no estan incluidos en este plan: Gastos.");
+      expect(text).toContain("Módulos sin límites configurables porque no están incluidos en este plan: Gastos.");
       expect(mounted.container.querySelectorAll('input[name="metricKey"]')).toHaveLength(2);
     });
 
@@ -211,7 +211,7 @@ describe("plan-sections", () => {
         <PlanSummary plan={makePlan({ modules: [], limits: [] })} modules={MODULES} metrics={METRICS} />
       );
 
-      expect(mounted.container.textContent).toContain("Este plan aun no tiene límites en sus modulos activos.");
+      expect(mounted.container.textContent).toContain("Este plan aún no tiene límites en sus módulos activos.");
     });
 
     it("muestra 'Sin límite' cuando el máximo del límite es nulo", () => {

@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import type { PlanLimitWarning } from "@/features/salon/use-cases/get-dashboard-shell";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
-import { PlanLimitBanner } from "./plan-limit-banner";
+import { PlanLimitBanner, type PlanLimitNotice } from "./plan-limit-banner";
 
 function banner(container: HTMLElement): HTMLElement | null {
   return container.querySelector<HTMLElement>('[role="status"]');
@@ -23,7 +22,7 @@ describe("PlanLimitBanner", () => {
   });
 
   it("con avisos de cercanía usa el tono de advertencia y el mensaje preventivo", () => {
-    const warnings: PlanLimitWarning[] = [{ level: "warning", message: "Citas: 90 de 100 este mes" }];
+    const warnings: PlanLimitNotice[] = [{ level: "warning", message: "Citas: 90 de 100 este mes" }];
     mounted = mountComponent(<PlanLimitBanner warnings={warnings} />);
 
     expect(banner(mounted.container)?.className).toContain("border-warning-border");
@@ -32,7 +31,7 @@ describe("PlanLimitBanner", () => {
   });
 
   it("si algún aviso es de peligro, el banner pasa al tono de peligro", () => {
-    const warnings: PlanLimitWarning[] = [
+    const warnings: PlanLimitNotice[] = [
       { level: "warning", message: "Colaboradores: 4 de 5" },
       { level: "danger", message: "Salones: 1 de 1" },
     ];
@@ -43,7 +42,7 @@ describe("PlanLimitBanner", () => {
   });
 
   it("lista cada aviso como un ítem y termina con la invitación a contactar", () => {
-    const warnings: PlanLimitWarning[] = [
+    const warnings: PlanLimitNotice[] = [
       { level: "warning", message: "Colaboradores: 4 de 5" },
       { level: "warning", message: "Clientes: 480 de 500" },
     ];

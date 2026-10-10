@@ -34,7 +34,7 @@ beforeEach(() => {
 });
 
 describe("regenerateSalonInvitationToken", () => {
-  it("devuelve un token nuevo y guarda solo su hash con caducidad de 14 dias", async () => {
+  it("devuelve un token nuevo y guarda solo su hash con caducidad de 14 días", async () => {
     vi.mocked(createSupabaseAdminClient).mockReturnValue(fakeAdmin([{ data: { id: INVITATION }, error: null }]) as never);
 
     const token = await regenerateSalonInvitationToken(INVITATION);
@@ -48,11 +48,11 @@ describe("regenerateSalonInvitationToken", () => {
     expect(expiresInDays).toBeLessThanOrEqual(14.01);
   });
 
-  it("una invitacion que ya no esta pendiente lanza el mensaje de dominio", async () => {
+  it("una invitación que ya no está pendiente lanza el mensaje de dominio", async () => {
     vi.mocked(createSupabaseAdminClient).mockReturnValue(fakeAdmin([{ data: null, error: null }]) as never);
 
     await expect(regenerateSalonInvitationToken(INVITATION)).rejects.toThrow(
-      "La invitacion no existe o ya no esta pendiente."
+      "La invitación no existe o ya no está pendiente."
     );
   });
 

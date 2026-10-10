@@ -37,7 +37,7 @@ export function InventoryProductEditor({
     >
       <form action={onSave} className="grid gap-3 md:grid-cols-2">
         <Input name="name" label="Nombre" defaultValue={product.name} required />
-        <Input name="category" label="Categoria" defaultValue={product.category ?? ""} />
+        <Input name="category" label="Categoría" defaultValue={product.category ?? ""} />
         <Input name="cost_price" type="number" step="0.01" min="0" label="Costo" defaultValue={product.costPrice} />
         <Input
           name="sale_price"
@@ -62,7 +62,7 @@ export function InventoryProductEditor({
             type="number"
             step="0.01"
             min="0"
-            label={`Minimo ${INVENTORY_LOCATION_LABELS[stock.location]}`}
+            label={`Mínimo ${INVENTORY_LOCATION_LABELS[stock.location]}`}
             defaultValue={stock.minimumQuantity}
           />
         ))}

@@ -32,7 +32,7 @@ function ProductCard({ product }: { product: RetailPageView["products"][number] 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-semibold text-fg">{product.name}</p>
-          <p className="text-sm text-fg-subtle">{product.category || "Sin categoria"}</p>
+          <p className="text-sm text-fg-subtle">{product.category || "Sin categoría"}</p>
         </div>
         <p className="shrink-0 font-semibold text-accent">{formatCurrency(product.salePrice)}</p>
       </div>

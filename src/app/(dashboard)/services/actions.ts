@@ -1,16 +1,17 @@
 "use server";
 
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
-import { archiveServiceCategory } from "@/features/services/use-cases/archive-category";
-import { createServiceCategory } from "@/features/services/use-cases/create-category";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
+import { archiveServiceCategory } from "@/features/services";
+import { createServiceCategory } from "@/features/services";
 import {
   createServiceWithPlan,
   type ServicePlanGate,
-} from "@/features/services/use-cases/create-service-with-plan";
-import { updateServiceCategory } from "@/features/services/use-cases/update-category";
-import { updateCatalogService } from "@/features/services/use-cases/update-service";
+} from "@/features/services";
+import { updateServiceCategory } from "@/features/services";
+import { updateCatalogService } from "@/features/services";
 import {
   parseCategoryPricingInput,
   parseCreateCategoryInput,
@@ -21,7 +22,7 @@ import {
   type CreateServiceRaw,
   type PricingMode,
   type UpdateServiceRaw,
-} from "@/features/services/use-cases/service-input";
+} from "@/features/services";
 import type { ServiceDurationParts } from "@/features/services/domain/duration";
 import type { UpdateCategoryInput, UpdateServiceInput } from "@/features/services/schemas";
 import { ok, type Result } from "@/infra/result";
@@ -33,7 +34,7 @@ const PERMISSION = {
   key: PERMISSIONS.SERVICES_MANAGE,
   deniedMessage: "No tienes permiso para gestionar servicios.",
 };
-const RATE_LIMIT = { scope: "services", options: { max: 60, windowMs: 60_000 } };
+const RATE_LIMIT = { scope: "services", options: RATE_LIMIT_POLICIES.write };
 const revalidateServices = (): readonly string[] => ["/services"];
 
 const servicePlanGate: ServicePlanGate = {

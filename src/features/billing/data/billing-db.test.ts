@@ -1,13 +1,10 @@
+import { PostgrestError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  argsOf,
-  createBillingSupabaseFake,
-  firstQueryOn,
-} from "@/test/billing-feature-supabase";
-import { assertOk, billingDb, countRows, selectRows, selectWhere } from "./billing-db";
+import { createBillingSupabaseFake } from "@/test/billing-feature-supabase";
+import { billingDb, countOrThrow, rowsOrThrow, throwOnError } from "./billing-db";
 
-// Helpers de acceso a Supabase usados por todos los repositorios de billing:
-// orden, filtros, normalización de null y propagación de errores.
+// Cliente de billing y helpers de resultado: normalizan null a lista/cero y
+// lanzan el error original de la base cuando la consulta falla.
 
 const admin = vi.hoisted(() => ({ factory: vi.fn() }));
 
@@ -29,115 +26,33 @@ describe("billingDb", () => {
   });
 });
 
-describe("selectRows", () => {
-  it("pide las columnas indicadas y ordena ascendente por la columna dada", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { commercial_plans: { data: [{ id: "p1" }, { id: "p2" }], error: null } },
-    });
-
-    const rows = await selectRows<{ id: string }>(fake, "commercial_plans", "id, name", "sort_order");
-
-    expect(rows).toEqual([{ id: "p1" }, { id: "p2" }]);
-    const query = firstQueryOn(fake, "commercial_plans");
-    expect(argsOf(query, "select")).toEqual(["id, name"]);
-    expect(argsOf(query, "order")).toEqual(["sort_order", { ascending: true }]);
+describe("rowsOrThrow", () => {
+  it("devuelve las filas de la consulta", () => {
+    expect(rowsOrThrow({ data: [{ id: "p1" }], error: null })).toEqual([{ id: "p1" }]);
   });
 
-  it("devuelve una lista vacía cuando la consulta no trae datos", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { commercial_plans: { data: null, error: null } },
-    });
-
-    expect(await selectRows(fake, "commercial_plans", "id", "sort_order")).toEqual([]);
+  it("devuelve una lista vacía cuando no hay datos", () => {
+    expect(rowsOrThrow({ data: null, error: null })).toEqual([]);
   });
 
-  it("lanza un Error con el mensaje de la base cuando la consulta falla", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { commercial_plans: { data: null, error: { message: "fallo de lectura" } } },
-    });
-
-    await expect(selectRows(fake, "commercial_plans", "id", "sort_order")).rejects.toThrow(
-      "fallo de lectura"
-    );
+  it("lanza el error original de la base cuando la consulta falla", () => {
+    const failure = new PostgrestError({ message: "fallo de lectura", details: "", hint: "", code: "42501" });
+    expect(() => rowsOrThrow({ data: null, error: failure })).toThrow(failure);
   });
 });
 
-describe("selectWhere", () => {
-  it("filtra por la columna y el valor exactos pedidos", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: {
-        commercial_plan_limits: { data: [{ metric_key: "appointments_monthly" }], error: null },
-      },
-    });
-
-    const rows = await selectWhere(fake, "commercial_plan_limits", "metric_key", "plan_id", "plan-1");
-
-    expect(rows).toEqual([{ metric_key: "appointments_monthly" }]);
-    const query = firstQueryOn(fake, "commercial_plan_limits");
-    expect(argsOf(query, "select")).toEqual(["metric_key"]);
-    expect(argsOf(query, "eq")).toEqual(["plan_id", "plan-1"]);
-  });
-
-  it("devuelve lista vacía sin datos y propaga el error de la consulta", async () => {
-    const empty = createBillingSupabaseFake({ tables: { t: { data: null, error: null } } });
-    expect(await selectWhere(empty, "t", "*", "plan_id", "x")).toEqual([]);
-
-    const failing = createBillingSupabaseFake({
-      tables: { t: { data: null, error: { message: "sin permiso" } } },
-    });
-    await expect(selectWhere(failing, "t", "*", "plan_id", "x")).rejects.toBeInstanceOf(Error);
+describe("countOrThrow", () => {
+  it("devuelve el conteo y normaliza null a cero", () => {
+    expect(countOrThrow({ count: 7, error: null })).toBe(7);
+    expect(countOrThrow({ count: null, error: null })).toBe(0);
   });
 });
 
-describe("countRows", () => {
-  it("devuelve el conteo exacto de la consulta", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { count: 7, error: null } },
-    });
+describe("throwOnError", () => {
+  it("no hace nada sin error y lanza el error original cuando falla", () => {
+    expect(() => throwOnError({ error: null })).not.toThrow();
 
-    const query = fake.from("salon_plan_alerts").select("*", { count: "exact", head: true });
-
-    expect(await countRows(query)).toBe(7);
-  });
-
-  it("normaliza un conteo nulo a cero", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { count: null, error: null } },
-    });
-
-    expect(await countRows(fake.from("salon_plan_alerts"))).toBe(0);
-  });
-
-  it("lanza un Error con el mensaje de la base cuando el conteo falla", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { count: null, error: { message: "timeout" } } },
-    });
-
-    await expect(countRows(fake.from("salon_plan_alerts"))).rejects.toBeInstanceOf(Error);
-  });
-});
-
-describe("assertOk", () => {
-  it("resuelve sin valor cuando la escritura no reporta error", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { data: null, error: null } },
-    });
-
-    await expect(
-      assertOk(fake.from("salon_plan_alerts").update({ status: "resolved" }))
-    ).resolves.toBeUndefined();
-    expect(argsOf(firstQueryOn(fake, "salon_plan_alerts"), "update")).toEqual([
-      { status: "resolved" },
-    ]);
-  });
-
-  it("lanza un Error con el mensaje de la base cuando la escritura falla", async () => {
-    const fake = createBillingSupabaseFake({
-      tables: { salon_plan_alerts: { data: null, error: { message: "violación de constraint" } } },
-    });
-
-    await expect(assertOk(fake.from("salon_plan_alerts").delete())).rejects.toThrow(
-      "violación de constraint"
-    );
+    const failure = new PostgrestError({ message: "violación de constraint", details: "", hint: "", code: "23505" });
+    expect(() => throwOnError({ error: failure })).toThrow(failure);
   });
 });

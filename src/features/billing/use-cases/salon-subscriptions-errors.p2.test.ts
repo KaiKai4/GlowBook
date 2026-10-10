@@ -14,15 +14,9 @@ import {
   updateSalonPlanOverrideStatus,
 } from "../data/salon-subscriptions.repo";
 import { publishAuditEvent } from "@/features/audit";
-import {
-  assignSalonAddonConfig,
-  assignSalonCommercialPlanConfig,
-  autoAssignPlanOnAcceptance,
-  cancelSalonExtraConfig,
-  registerSalonPlanPaymentConfig,
-  resolveSalonPlanAlertConfig,
-  saveSalonManualExtraConfig,
-} from "./salon-subscriptions";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
+import { assignSalonCommercialPlanConfig, autoAssignPlanOnAcceptance, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
+import { resolveSalonPlanAlertConfig } from "./plan-limits";
 
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/audit", () => ({ publishAuditEvent: vi.fn(async () => []) }));
@@ -49,7 +43,7 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
   assignSalonPlan: vi.fn(),
   findAssignmentForPayment: vi.fn(),
   findAssignmentStartsAt: vi.fn(),
-  findEffectivePlanRows: vi.fn(),
+  findEffectivePlanRowsForPlatform: vi.fn(),
   findOpenSalonAlerts: vi.fn(),
   findSalonPayments: vi.fn(),
   findSubscriptionRows: vi.fn(),
@@ -107,11 +101,11 @@ describe("alertas del plan", () => {
   });
 });
 
-describe("asignar plan al salon", () => {
-  it("valida los identificadores antes de consultar nada", async () => {
+describe("asignar plan al salón", () => {
+  it("válida los identificadores antes de consultar nada", async () => {
     const result = await assignSalonCommercialPlanConfig({ salonId: "x", planId: PLAN }, ACTOR);
 
-    expect(result).toEqual({ ok: false, error: "Selecciona un salon." });
+    expect(result).toEqual({ ok: false, error: "Selecciona un salón." });
     expect(assignSalonPlan).not.toHaveBeenCalled();
   });
 
@@ -149,12 +143,12 @@ describe("asignar plan al salon", () => {
     expect(result).toEqual({ ok: false, error: "La operación hace referencia a un registro inexistente." });
   });
 
-  it("la asignacion automatica por invitacion sin plan informa del problema", async () => {
+  it("la asignacion automatica por invitación sin plan informa del problema", async () => {
     vi.mocked(findPlanWithChildren).mockResolvedValue(null as never);
 
     const result = await autoAssignPlanOnAcceptance({ salonId: SALON, planId: PLAN, acceptedByUserId: ACTOR });
 
-    expect(result).toEqual({ ok: false, error: "El plan de la invitacion ya no existe." });
+    expect(result).toEqual({ ok: false, error: "El plan de la invitación ya no existe." });
   });
 
   it("la asignacion automatica que falla usa su mensaje de respaldo", async () => {
@@ -166,7 +160,7 @@ describe("asignar plan al salon", () => {
 
     vi.mocked(assignSalonPlan).mockRejectedValue(new Error("timeout"));
     const fallback = await autoAssignPlanOnAcceptance({ salonId: SALON, planId: PLAN, acceptedByUserId: ACTOR });
-    expect(fallback).toEqual({ ok: false, error: "No se pudo asignar el plan de la invitacion." });
+    expect(fallback).toEqual({ ok: false, error: "No se pudo asignar el plan de la invitación." });
   });
 });
 
@@ -190,7 +184,7 @@ describe("registrar pago del plan", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Este salon no tiene plan asignado. Asignale un plan primero.",
+      error: "Este salón no tiene plan asignado. Asígnale un plan primero.",
     });
   });
 
@@ -206,23 +200,23 @@ describe("registrar pago del plan", () => {
   });
 });
 
-describe("extras del salon", () => {
-  it("valida el extra del catalogo y su estado antes de asignarlo", async () => {
+describe("extras del salón", () => {
+  it("válida el extra del catálogo y su estado antes de asignarlo", async () => {
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: "x" })).toEqual({
       ok: false,
-      error: "Selecciona un extra del catalogo.",
+      error: "Selecciona un extra del catálogo.",
     });
 
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce(null as never);
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: ADDON })).toEqual({
       ok: false,
-      error: "El extra del catalogo no existe.",
+      error: "El extra del catálogo no existe.",
     });
 
     vi.mocked(findCommercialAddonById).mockResolvedValueOnce({ id: ADDON, status: "archived" } as never);
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: ADDON })).toEqual({
       ok: false,
-      error: "Este extra no esta activo en el catalogo.",
+      error: "Este extra no está activo en el catálogo.",
     });
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
@@ -244,10 +238,10 @@ describe("extras del salon", () => {
     });
   });
 
-  it("un cortesia manual sin modulo ni limite se rechaza", async () => {
+  it("un cortesia manual sin módulo ni límite se rechaza", async () => {
     const result = await saveSalonManualExtraConfig({ salonId: SALON, moduleKey: "", metricKey: "", maxDelta: "" });
 
-    expect(result).toEqual({ ok: false, error: "Selecciona un modulo o un límite para el extra." });
+    expect(result).toEqual({ ok: false, error: "Selecciona un módulo o un límite para el extra." });
     expect(saveSalonPlanOverride).not.toHaveBeenCalled();
   });
 
@@ -267,7 +261,7 @@ describe("extras del salon", () => {
   it("cancelar un extra cambia su estado y audita; si falla usa el mensaje de respaldo", async () => {
     vi.mocked(updateSalonPlanOverrideStatus).mockResolvedValueOnce(undefined as never);
     expect(await cancelSalonExtraConfig(OVERRIDE, SALON, ACTOR)).toEqual({ ok: true, value: undefined });
-    expect(updateSalonPlanOverrideStatus).toHaveBeenCalledWith(OVERRIDE, "canceled");
+    expect(updateSalonPlanOverrideStatus).toHaveBeenCalledWith(SALON, OVERRIDE, "canceled");
     expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_extra_canceled", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_extra_canceled", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: SALON }));
 
     vi.mocked(updateSalonPlanOverrideStatus).mockRejectedValueOnce(new Error("timeout"));

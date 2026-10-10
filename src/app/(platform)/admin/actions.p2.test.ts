@@ -142,14 +142,14 @@ describe("regenerateSalonInvitationAction", () => {
 });
 
 describe("deleteSalonAction", () => {
-  it("rechaza un salonId invalido sin borrar nada", async () => {
+  it("rechaza un salonId inválido sin borrar nada", async () => {
     const result = await deleteSalonAction("123", "BORRAR");
 
     expect(result).toEqual(err(INVALID_ID));
     expect(deleteSalon).not.toHaveBeenCalled();
   });
 
-  it("borra con la confirmacion recibida y revalida panel y salones", async () => {
+  it("borra con la confirmación recibida y revalida panel y salones", async () => {
     vi.mocked(deleteSalon).mockResolvedValue(ok(undefined));
 
     const result = await deleteSalonAction(SALON_ID, "BORRAR");
@@ -175,7 +175,7 @@ describe("deleteSalonAction", () => {
 });
 
 describe("updateSalonStatusAction", () => {
-  it("rechaza un salonId invalido sin cambiar el estado", async () => {
+  it("rechaza un salonId inválido sin cambiar el estado", async () => {
     const result = await updateSalonStatusAction("", false);
 
     expect(result).toEqual(err(INVALID_ID));

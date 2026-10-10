@@ -91,7 +91,7 @@ Decision recomendada antes de 100+ salones reales:
 
 1. Subir Supabase al menos a Pro o definir backups externos automatizados.
 2. Usar Vercel Pro si se necesita log drain/retencion superior.
-3. Mantener `release:scale-readiness` bloqueado hasta confirmar plan y
+3. Confirmar plan y
    observability.
 
 Decision conservadora de crecimiento controlado:
@@ -117,34 +117,14 @@ Evidencia todavia pendiente:
 - Decision de observability/log drain y backups automaticos para operacion
   amplia.
 
-## Gate Operativo
+## Lista De Verificación Para Lanzamiento Amplio
 
-Ejecutar:
+Antes de operar con muchos salones, confirma en los dashboards de Supabase y Vercel:
 
-```text
-npm run capacity:readiness
-```
+- fuentes oficiales consultadas y fecha de la consulta;
+- planes observados y umbrales de upgrade;
+- decisión para 100+ salones;
+- evidencia de dataset, advisors y restore (trazabilidad en `docs/archive/readiness-snapshots/`);
+- separación entre el proyecto Supabase de producción y cualquier otro proyecto.
 
-El gate valida que el plan tenga:
-
-- fuentes oficiales;
-- planes observados;
-- umbrales de upgrade;
-- decision para 100+ salones;
-- evidencia de dataset, advisors y restore;
-- separacion entre Supabase staging y production.
-
-Para lanzamiento amplio, exigir valores reales de dashboard con:
-
-```text
-GLOWBOOK_CAPACITY_REQUIRE_CONFIRMED_LIMITS=true
-GLOWBOOK_CAPACITY_SUPABASE_PLAN=
-GLOWBOOK_CAPACITY_SUPABASE_REGION=
-GLOWBOOK_CAPACITY_SUPABASE_BACKUPS=
-GLOWBOOK_CAPACITY_SUPABASE_CONNECTIONS=
-GLOWBOOK_CAPACITY_SUPABASE_AUTH_LIMITS=
-GLOWBOOK_CAPACITY_VERCEL_PLAN=
-GLOWBOOK_CAPACITY_VERCEL_REGION=
-GLOWBOOK_CAPACITY_VERCEL_BANDWIDTH=
-GLOWBOOK_CAPACITY_VERCEL_ALERTS=
-```
+Registra los valores reales de límites (plan, región, backups, conexiones, límites de Auth, plan y ancho de banda de Vercel) en este documento antes del lanzamiento amplio.

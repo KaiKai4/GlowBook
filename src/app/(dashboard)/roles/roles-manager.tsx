@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/components/ui/cn";
 import { useUnsavedChanges } from "@/components/layout/unsaved-changes";
+import type { LucideIcon } from "lucide-react";
+import type { Permission as PermissionKey } from "@/features/access";
 import { RoleDeleteButton } from "./delete-role-dialog";
+import { PERMISSION_TEXTS } from "./permission-texts";
 import {
   createRoleAction,
   updateRolePermissionsAction,
@@ -27,57 +30,15 @@ interface Role {
   permissionKeys: string[];
 }
 
-const PERMISSION_GROUPS = [
-  {
-    group: "Citas",
-    icon: CalendarCheck,
-    items: [
-      { key: "appointments.view", label: "Ver el calendario y sus citas", description: "Acceso de solo lectura: ve su calendario con las citas asignadas, sin poder crear ni editar" },
-      { key: "appointments.manage", label: "Crear y gestionar citas", description: "Agendar, editar, confirmar, completar y cancelar citas" },
-      { key: "appointments.view_all", label: "Ver todas las citas del salón", description: "Complemento de los permisos de citas: sin esto, el colaborador solo ve las citas donde está asignado" },
-    ],
-  },
-  {
-    group: "Clientes",
-    icon: Users,
-    items: [
-      { key: "customers.manage", label: "Gestionar clientes", description: "Crear, editar y consultar la ficha de clientes" },
-    ],
-  },
-  {
-    group: "Recordatorios",
-    icon: Bell,
-    items: [
-      { key: "reminders.send", label: "Enviar recordatorios", description: "Enviar mensajes de recordatorio a los clientes" },
-    ],
-  },
-  {
-    group: "Reportes",
-    icon: BarChart3,
-    items: [
-      { key: "reports.view", label: "Ver reportes e indicadores", description: "Acceder al dashboard y métricas del salón" },
-    ],
-  },
-  {
-    group: "Operación comercial",
-    icon: ShoppingBag,
-    items: [
-      { key: "retail.manage", label: "Gestionar vitrina", description: "Registrar ventas de productos y cobrar vitrina" },
-      { key: "inventory.manage", label: "Gestionar inventario", description: "Crear productos, reponer stock y registrar movimientos" },
-      { key: "expenses.manage", label: "Gestionar gastos", description: "Registrar egresos operativos del salón" },
-    ],
-  },
-  {
-    group: "Configuración",
-    icon: Settings,
-    items: [
-      { key: "employees.manage", label: "Gestionar colaboradores", description: "Crear, editar y dar acceso a colaboradores" },
-      { key: "services.manage", label: "Gestionar servicios", description: "Crear y editar categorías y servicios del catálogo" },
-      { key: "roles.manage", label: "Gestionar roles y permisos", description: "Crear roles y definir qué puede hacer cada colaborador" },
-      { key: "salon.manage", label: "Editar datos del salón", description: "Nombre, dirección, horarios y configuración general" },
-    ],
-  },
-] as const;
+// Grupos de la UI. Los permisos se tipan contra el catálogo; los textos viven en PERMISSION_TEXTS.
+const PERMISSION_GROUPS: { group: string; icon: LucideIcon; items: PermissionKey[] }[] = [
+  { group: "Citas", icon: CalendarCheck, items: ["appointments.view", "appointments.manage", "appointments.view_all"] },
+  { group: "Clientes", icon: Users, items: ["customers.manage"] },
+  { group: "Recordatorios", icon: Bell, items: ["reminders.send"] },
+  { group: "Reportes", icon: BarChart3, items: ["reports.view"] },
+  { group: "Operación comercial", icon: ShoppingBag, items: ["retail.manage", "inventory.manage", "expenses.manage"] },
+  { group: "Configuración", icon: Settings, items: ["employees.manage", "services.manage", "roles.manage", "salon.manage"] },
+];
 
 type PermKey = string;
 
@@ -99,7 +60,8 @@ function PermissionGroupList({
             <span className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">{group}</span>
           </div>
           <div className="space-y-2 pl-5">
-            {items.map((item) => {
+            {items.map((permissionKey) => {
+              const item = { key: permissionKey, ...PERMISSION_TEXTS[permissionKey] };
               const checked = disabled ? true : selected.includes(item.key);
               return (
                 <label
@@ -150,12 +112,12 @@ export function RolesManager({
     formData.set("permission_keys", JSON.stringify(newPerms));
     setCreateError(null);
     startCreate(async () => {
-      const res = await createRoleAction(null, formData);
-      if (res.ok) {
+      const result = await createRoleAction(null, formData);
+      if (result.ok) {
         setCreateOpen(false);
         setNewPerms([]);
       } else {
-        setCreateError(res.error);
+        setCreateError(result.error);
       }
     });
   }
@@ -225,14 +187,14 @@ function RoleCard({ role }: { role: Role }) {
   }
 
   function handleSave() {
-    const fd = new FormData();
-    fd.set("role_id", role.id);
-    fd.set("permission_keys", JSON.stringify(selected));
+    const formData = new FormData();
+    formData.set("role_id", role.id);
+    formData.set("permission_keys", JSON.stringify(selected));
     setError(null);
     startSave(async () => {
-      const res = await updateRolePermissionsAction(null, fd);
-      if (res.ok) setSaved(true);
-      else setError(res.error);
+      const result = await updateRolePermissionsAction(null, formData);
+      if (result.ok) setSaved(true);
+      else setError(result.error);
     });
   }
 

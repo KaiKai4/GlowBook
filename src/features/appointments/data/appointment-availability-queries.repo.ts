@@ -5,27 +5,63 @@ import { getUtcDayBoundaries } from "@/infra/format/dates";
 import type { OccupiedSlot, WorkSchedule } from "../domain/types";
 import type { OccupiedByEmployee } from "./appointment-command-types";
 
-export async function findEmployeeWorkSchedulesForCommand(
-  employeeId: string
-): Promise<WorkSchedule[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("work_schedules")
-    .select("day_of_week, start_time, end_time, is_active")
-    .eq("employee_id", employeeId)
-    .eq("is_active", true);
-
-  if (error) throw error;
-  return (data ?? []) as WorkSchedule[];
+/** Agrupa filas de varios profesionales por `employee_id` en una sola pasada. */
+function groupRowsByEmployee<Row extends { employee_id: string }, Value>(
+  rows: Row[],
+  toValue: (row: Row) => Value
+): Map<string, Value[]> {
+  const grouped = new Map<string, Value[]>();
+  for (const row of rows) {
+    const list = grouped.get(row.employee_id) ?? [];
+    list.push(toValue(row));
+    grouped.set(row.employee_id, list);
+  }
+  return grouped;
 }
 
 /**
- * Días libres puntuales del profesional desde hoy hacia adelante (fechas
- * locales del salon). Set pequeno: vacaciones y permisos próximos.
+ * Turnos activos de varios profesionales en una sola consulta (sin N+1).
+ * Los profesionales sin turnos no aparecen en el mapa.
  */
-export async function findEmployeeExceptionDatesForCommand(
-  employeeId: string
-): Promise<string[]> {
+export async function findWorkSchedulesByEmployeeForCommand({
+  salonId,
+  employeeIds,
+}: {
+  salonId: string;
+  employeeIds: string[];
+}): Promise<Map<string, WorkSchedule[]>> {
+  if (employeeIds.length === 0) return new Map();
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("work_schedules")
+    .select("employee_id, day_of_week, start_time, end_time, is_active")
+    .in("employee_id", employeeIds)
+    .eq("salon_id", salonId)
+    .eq("is_active", true);
+
+  if (error) throw error;
+  return groupRowsByEmployee(data ?? [], (row) => ({
+    day_of_week: row.day_of_week,
+    start_time: row.start_time,
+    end_time: row.end_time,
+    is_active: row.is_active,
+  }));
+}
+
+/**
+ * Días libres puntuales de varios profesionales desde hoy hacia adelante (fechas
+ * locales del salón). Set pequeno: vacaciones y permisos próximos.
+ */
+export async function findExceptionDatesByEmployeeForCommand({
+  salonId,
+  employeeIds,
+}: {
+  salonId: string;
+  employeeIds: string[];
+}): Promise<Map<string, string[]>> {
+  if (employeeIds.length === 0) return new Map();
+
   const supabase = await createSupabaseServerClient();
   const today = new Date();
   // Margen de un día hacia atras para cubrir cualquier desfase de zona horaria.
@@ -33,35 +69,39 @@ export async function findEmployeeExceptionDatesForCommand(
 
   const { data, error } = await supabase
     .from("schedule_exceptions")
-    .select("exception_date")
-    .eq("employee_id", employeeId)
+    .select("employee_id, exception_date")
+    .in("employee_id", employeeIds)
+    .eq("salon_id", salonId)
     .gte("exception_date", today.toISOString().slice(0, 10));
 
   if (error) throw error;
-  return (data ?? []).map((row) => row.exception_date);
+  return groupRowsByEmployee(data ?? [], (row) => row.exception_date);
 }
 
-export async function findEmployeeOccupiedSlotsForCommand({
+/** Bloques de calendario de varios profesionales en el día de `date` (zona del salón), en una consulta. */
+export async function findOccupiedSlotsByEmployeeForCommand({
   salonId,
-  employeeId,
+  employeeIds,
   date,
   timezone,
   excludeAppointmentId,
 }: {
   salonId: string;
-  employeeId: string;
+  employeeIds: string[];
   date: Date;
   timezone: string;
   excludeAppointmentId?: string;
-}): Promise<OccupiedSlot[]> {
+}): Promise<Map<string, OccupiedSlot[]>> {
+  if (employeeIds.length === 0) return new Map();
+
   const supabase = await createSupabaseServerClient();
   const { start, end } = getUtcDayBoundaries(date, timezone);
 
   let query = supabase
     .from("appointment_items")
-    .select("start_time, end_time")
+    .select("employee_id, start_time, end_time")
+    .in("employee_id", employeeIds)
     .eq("salon_id", salonId)
-    .eq("employee_id", employeeId)
     .eq("blocks_calendar", true)
     .gte("start_time", start.toISOString())
     .lte("start_time", end.toISOString());
@@ -72,7 +112,10 @@ export async function findEmployeeOccupiedSlotsForCommand({
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as OccupiedSlot[];
+  return groupRowsByEmployee(data ?? [], (row) => ({
+    start_time: row.start_time,
+    end_time: row.end_time,
+  }));
 }
 
 export async function findOccupiedSlotsForSalonDate(

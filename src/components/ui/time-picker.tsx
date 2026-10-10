@@ -1,15 +1,9 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
-import { createPortal } from "react-dom";
+import { useId, useRef, useState } from "react";
 import { Clock3 } from "lucide-react";
 import { cn } from "@/components/ui/cn";
+import { Field } from "@/components/forms/field";
 import {
   formatTimeValue,
   isTimeWithinRange,
@@ -20,6 +14,7 @@ import {
 } from "./time-picker-utils";
 import { InfiniteWheel } from "./time-picker-wheel";
 import { PeriodColumn } from "./time-picker-period";
+import { Popover, popoverTriggerAria } from "./popover";
 
 interface TimePickerProps {
   value?: string;
@@ -57,77 +52,21 @@ export function TimePicker({
   className,
   ariaLabel,
 }: TimePickerProps) {
-  const generatedId = useId();
-  const triggerId = `time-picker-${generatedId.replaceAll(":", "")}`;
+  const panelId = `time-picker-panel-${useId()}`;
   const controlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const selectedValue = controlled ? value : internalValue;
   const [draft, setDraft] = useState(() => parseTimeValue(selectedValue));
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
   const draftValue = toTimeValue(draft);
   const valid = isTimeWithinRange(draftValue, min, max, maxExclusive);
 
-  const close = useCallback(() => {
+  // Cerrar sin guardar descarta el borrador y vuelve a la hora seleccionada.
+  function close() {
     setDraft(parseTimeValue(selectedValue));
     setOpen(false);
-  }, [selectedValue]);
-
-  const positionPanel = useCallback(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-
-    const rect = trigger.getBoundingClientRect();
-    const panelWidth = 286;
-    const panelHeight = 314;
-    const margin = 12;
-    const left = Math.min(
-      Math.max(rect.left, margin),
-      window.innerWidth - panelWidth - margin
-    );
-    const top =
-      window.innerHeight - rect.bottom >= panelHeight || rect.top < panelHeight
-        ? rect.bottom + 8
-        : rect.top - panelHeight - 8;
-
-    setPosition({ top: Math.max(margin, top), left });
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    positionPanel();
-
-    function handlePointerDown(event: PointerEvent) {
-      const target = event.target as Node;
-      if (
-        !triggerRef.current?.contains(target) &&
-        !panelRef.current?.contains(target)
-      ) {
-        close();
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        close();
-        triggerRef.current?.focus();
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("resize", positionPanel);
-    window.addEventListener("scroll", positionPanel, true);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("resize", positionPanel);
-      window.removeEventListener("scroll", positionPanel, true);
-    };
-  }, [close, open, positionPanel]);
+  }
 
   function openPicker() {
     if (disabled) return;
@@ -150,54 +89,48 @@ export function TimePicker({
     if (!controlled) setInternalValue(draftValue);
     onChange?.(draftValue);
     setOpen(false);
-    window.setTimeout(() => triggerRef.current?.focus(), 0);
   }
 
   return (
-    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
-      {label && (
-        <label
-          htmlFor={triggerId}
-          className="text-sm font-semibold text-fg-secondary"
-        >
-          {label}
-          {required && <span className="ml-0.5 text-brand-600">*</span>}
-        </label>
-      )}
+    <Field
+      className={className}
+      label={label}
+      labelExtra={required ? <span className="ml-0.5 text-brand-600">*</span> : null}
+      error={error}
+    >
+      {(control) => (
+        <>
+          {name && <input type="hidden" name={name} value={selectedValue} />}
 
-      {name && <input type="hidden" name={name} value={selectedValue} />}
+          <button
+            ref={triggerRef}
+            id={control.id}
+            type="button"
+            disabled={disabled}
+            aria-label={ariaLabel ?? label ?? "Seleccionar hora"}
+            {...popoverTriggerAria(open, panelId)}
+            onClick={openPicker}
+            className={cn(
+              "flex w-full items-center gap-2 rounded-lg border border-border-input bg-surface px-3 text-left text-sm text-fg transition-[border-color,box-shadow,background-color] duration-150",
+              "hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100",
+              "disabled:pointer-events-none disabled:bg-surface-muted disabled:text-fg-subtle disabled:opacity-60",
+              compact ? "h-9 min-w-28" : "h-11",
+              error && "border-danger bg-danger-subtle/30 focus:border-danger focus:ring-danger-subtle"
+            )}
+          >
+            <Clock3 className="h-4 w-4 shrink-0 text-brand-500" />
+            <span className="truncate">{formatTimeValue(selectedValue)}</span>
+          </button>
 
-      <button
-        ref={triggerRef}
-        id={triggerId}
-        type="button"
-        disabled={disabled}
-        aria-label={ariaLabel ?? label ?? "Seleccionar hora"}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={openPicker}
-        className={cn(
-          "flex w-full items-center gap-2 rounded-lg border border-border-input bg-surface px-3 text-left text-sm text-fg transition-[border-color,box-shadow,background-color] duration-150",
-          "hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100",
-          "disabled:pointer-events-none disabled:bg-surface-muted disabled:text-fg-subtle disabled:opacity-60",
-          compact ? "h-9 min-w-28" : "h-11",
-          error && "border-danger bg-danger-subtle/30 focus:border-danger focus:ring-danger-subtle"
-        )}
-      >
-        <Clock3 className="h-4 w-4 shrink-0 text-brand-500" />
-        <span className="truncate">{formatTimeValue(selectedValue)}</span>
-      </button>
-
-      {error && <p className="text-xs font-medium text-danger">{error}</p>}
-
-      {open &&
-        createPortal(
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-label="Seleccionar hora"
-            style={{ top: position.top, left: position.left }}
-            className="fixed z-[70] w-[286px] rounded-xl bg-surface px-4 pb-4 pt-3 shadow-popover"
+          <Popover
+            open={open}
+            onDismiss={close}
+            triggerRef={triggerRef}
+            panelId={panelId}
+            label="Seleccionar hora"
+            width={286}
+            height={314}
+            className="rounded-xl bg-surface px-4 pb-4 pt-3 shadow-popover"
           >
             <h2 className="text-center text-base font-semibold text-fg">
               Seleccionar hora
@@ -262,9 +195,9 @@ export function TimePicker({
                 Guardar
               </button>
             </div>
-          </div>,
-          document.body
-        )}
-    </div>
+          </Popover>
+        </>
+      )}
+    </Field>
   );
 }

@@ -1,77 +1,29 @@
 import "server-only";
 
-import type { SalonFeatureKey } from "@/features/salon-features";
 import type {
   CommercialLimitMetric,
   CommercialPlan,
-  CommercialPlanLimit,
-  CommercialPlanModule,
   CommercialPlanStatus,
-  PlanLimitCountScope,
   PlanEnforcementMode,
+  PlanLimitCountScope,
   PlatformModule,
-  UsageCounterKey,
 } from "../domain/commercial-plan";
-import { assertOk, billingDb, selectRows, selectWhere } from "./billing-db";
-
-const MODULE_COLUMNS = "key, name, description, nav_href, icon_name, sort_order, is_active, is_archived";
-const METRIC_COLUMNS =
-  "key, module_key, name, description, unit, counter_key, default_count_scope, is_active, is_archived, sort_order";
-const PLAN_COLUMNS = "id, code, name, description, currency, monthly_price, trial_days, status, is_public, sort_order";
-const PLAN_MODULE_COLUMNS = "plan_id, module_key, enabled";
-const PLAN_LIMIT_COLUMNS = "plan_id, metric_key, max_value, enforcement_mode, warning_threshold, count_scope";
-
-interface ModuleRow {
-  key: string;
-  name: string;
-  description: string;
-  nav_href: string;
-  icon_name: string;
-  sort_order: number;
-  is_active: boolean;
-  is_archived: boolean;
-}
-
-interface PlanRow {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  currency: string;
-  monthly_price: number | string;
-  trial_days: number;
-  status: CommercialPlanStatus;
-  is_public: boolean;
-  sort_order: number;
-}
-
-interface PlanModuleRow {
-  plan_id: string;
-  module_key: string;
-  enabled: boolean;
-}
-
-interface MetricRow {
-  key: string;
-  module_key: string;
-  name: string;
-  description: string;
-  unit: string;
-  counter_key: UsageCounterKey;
-  default_count_scope: PlanLimitCountScope;
-  is_active: boolean;
-  is_archived: boolean;
-  sort_order: number;
-}
-
-interface PlanLimitRow {
-  plan_id: string;
-  metric_key: string;
-  max_value: number | null;
-  enforcement_mode: PlanEnforcementMode;
-  warning_threshold: number;
-  count_scope: PlanLimitCountScope;
-}
+import { billingDb, countOrThrow, rowsOrThrow, throwOnError, type BillingDb } from "./billing-db";
+import {
+  MODULE_COLUMNS,
+  METRIC_COLUMNS,
+  PLAN_COLUMNS,
+  PLAN_LIMIT_COLUMNS,
+  PLAN_MODULE_COLUMNS,
+  mapMetric,
+  mapModule,
+  mapPlan,
+  type MetricDbRow,
+  type ModuleDbRow,
+  type PlanDbRow,
+  type PlanLimitDbRow,
+  type PlanModuleDbRow,
+} from "./commercial-plans.rows";
 
 export interface PlanCatalog {
   modules: PlatformModule[];
@@ -82,42 +34,57 @@ export interface PlanCatalog {
 export async function findPlanCatalog(): Promise<PlanCatalog> {
   const supabase = billingDb();
   const [modules, metrics, planRows, planModules, planLimits] = await Promise.all([
-    selectRows<ModuleRow>(supabase, "platform_modules", MODULE_COLUMNS, "sort_order"),
-    selectRows<MetricRow>(supabase, "commercial_limit_metrics", METRIC_COLUMNS, "sort_order"),
-    selectRows<PlanRow>(supabase, "commercial_plans", PLAN_COLUMNS, "sort_order"),
-    selectRows<PlanModuleRow>(supabase, "commercial_plan_modules", PLAN_MODULE_COLUMNS, "module_key"),
-    selectRows<PlanLimitRow>(supabase, "commercial_plan_limits", PLAN_LIMIT_COLUMNS, "metric_key"),
+    supabase.from("platform_modules").select(MODULE_COLUMNS).order("sort_order", { ascending: true }),
+    supabase.from("commercial_limit_metrics").select(METRIC_COLUMNS).order("sort_order", { ascending: true }),
+    supabase.from("commercial_plans").select(PLAN_COLUMNS).order("sort_order", { ascending: true }),
+    supabase.from("commercial_plan_modules").select(PLAN_MODULE_COLUMNS).order("module_key", { ascending: true }),
+    supabase.from("commercial_plan_limits").select(PLAN_LIMIT_COLUMNS).order("metric_key", { ascending: true }),
   ]);
 
+  const planModuleRows: PlanModuleDbRow[] = rowsOrThrow(planModules);
+  const planLimitRows: PlanLimitDbRow[] = rowsOrThrow(planLimits);
   return {
-    modules: modules.map(mapModule),
-    metrics: metrics.map(mapMetric),
-    plans: planRows.map((plan) => mapPlan(plan, planModules, planLimits)),
+    modules: rowsOrThrow<ModuleDbRow>(modules).map(mapModule),
+    metrics: rowsOrThrow<MetricDbRow>(metrics).map(mapMetric),
+    plans: rowsOrThrow<PlanDbRow>(planRows).map((plan) => mapPlan(plan, planModuleRows, planLimitRows)),
   };
 }
 
-export async function findActiveMetrics(): Promise<CommercialLimitMetric[]> {
-  const supabase = billingDb();
-  const rows = await selectRows<MetricRow>(supabase, "commercial_limit_metrics", METRIC_COLUMNS, "sort_order");
-  return rows.map(mapMetric).filter((metric) => metric.isActive && !metric.isArchived);
+/** Métricas activas. El cliente lo elige quien llama (plataforma o sesión del salón). */
+export async function findActiveMetrics(supabase: BillingDb): Promise<CommercialLimitMetric[]> {
+  const rows = await supabase
+    .from("commercial_limit_metrics")
+    .select(METRIC_COLUMNS)
+    .order("sort_order", { ascending: true });
+  return rowsOrThrow<MetricDbRow>(rows)
+    .map(mapMetric)
+    .filter((metric) => metric.isActive && !metric.isArchived);
 }
 
+/** Plan de plataforma con módulos y límites (service_role, cualquier plan). */
 export async function findPlanWithChildren(planId: string): Promise<CommercialPlan | null> {
-  const supabase = billingDb();
+  return loadPlanWithChildren(billingDb(), planId);
+}
+
+/**
+ * Plan con sus módulos y límites con el cliente indicado. Con RLS de inquilino solo
+ * devuelve el plan asignado al salón (aunque esté archivado) o uno activo.
+ */
+export async function loadPlanWithChildren(supabase: BillingDb, planId: string): Promise<CommercialPlan | null> {
   const { data, error } = await supabase
     .from("commercial_plans")
     .select(PLAN_COLUMNS)
     .eq("id", planId)
-    .maybeSingle<PlanRow>();
-  if (error) throw new Error(error.message);
+    .maybeSingle();
+  if (error) throw error;
   if (!data) return null;
 
   const [modules, limits] = await Promise.all([
-    selectWhere<PlanModuleRow>(supabase, "commercial_plan_modules", PLAN_MODULE_COLUMNS, "plan_id", planId),
-    selectWhere<PlanLimitRow>(supabase, "commercial_plan_limits", PLAN_LIMIT_COLUMNS, "plan_id", planId),
+    supabase.from("commercial_plan_modules").select(PLAN_MODULE_COLUMNS).eq("plan_id", planId),
+    supabase.from("commercial_plan_limits").select(PLAN_LIMIT_COLUMNS).eq("plan_id", planId),
   ]);
 
-  return mapPlan(data, modules, limits);
+  return mapPlan(data, rowsOrThrow(modules), rowsOrThrow(limits));
 }
 
 export async function saveCommercialPlan(values: {
@@ -146,42 +113,48 @@ export async function saveCommercialPlan(values: {
   };
 
   if (values.id) {
-    await assertOk(supabase.from("commercial_plans").update(payload).eq("id", values.id));
+    throwOnError(await supabase.from("commercial_plans").update(payload).eq("id", values.id));
     return values.id;
   }
 
-  const { data, error } = await supabase
-    .from("commercial_plans")
-    .insert(payload)
-    .select("id")
-    .single<{ id: string }>();
-  if (error) throw new Error(error.message);
+  const { data, error } = await supabase.from("commercial_plans").insert(payload).select("id").single();
+  if (error) throw error;
   if (!data) throw new Error("No se pudo crear el plan.");
   return data.id;
 }
 
+/** Numero de asignaciones de salon a este plan (cualquier estado). */
+export async function countPlanAssignments(planId: string): Promise<number> {
+  const supabase = billingDb();
+  return countOrThrow(
+    await supabase
+      .from("salon_plan_assignments")
+      .select("id", { count: "exact", head: true })
+      .eq("plan_id", planId)
+  );
+}
+
 export async function archiveCommercialPlan(planId: string) {
   const supabase = billingDb();
-  await assertOk(supabase.from("commercial_plans").update({ status: "archived" }).eq("id", planId));
+  throwOnError(await supabase.from("commercial_plans").update({ status: "archived" }).eq("id", planId));
 }
 
 export async function deleteCommercialPlan(planId: string) {
   const supabase = billingDb();
-  await assertOk(supabase.from("commercial_plans").delete().eq("id", planId));
+  throwOnError(await supabase.from("commercial_plans").delete().eq("id", planId));
 }
 
-export async function savePlanModule(values: {
-  planId: string;
-  moduleKey: string;
-  enabled: boolean;
-}) {
+export async function savePlanModule(values: { planId: string; moduleKey: string; enabled: boolean }) {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("commercial_plan_modules").upsert({
-      plan_id: values.planId,
-      module_key: values.moduleKey,
-      enabled: values.enabled,
-    }, { onConflict: "plan_id,module_key" })
+  throwOnError(
+    await supabase.from("commercial_plan_modules").upsert(
+      {
+        plan_id: values.planId,
+        module_key: values.moduleKey,
+        enabled: values.enabled,
+      },
+      { onConflict: "plan_id,module_key" }
+    )
   );
 }
 
@@ -194,84 +167,17 @@ export async function savePlanLimit(values: {
   countScope: PlanLimitCountScope;
 }) {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("commercial_plan_limits").upsert({
-      plan_id: values.planId,
-      metric_key: values.metricKey,
-      max_value: values.maxValue,
-      enforcement_mode: values.enforcementMode,
-      warning_threshold: values.warningThreshold,
-      count_scope: values.countScope,
-    }, { onConflict: "plan_id,metric_key" })
+  throwOnError(
+    await supabase.from("commercial_plan_limits").upsert(
+      {
+        plan_id: values.planId,
+        metric_key: values.metricKey,
+        max_value: values.maxValue,
+        enforcement_mode: values.enforcementMode,
+        warning_threshold: values.warningThreshold,
+        count_scope: values.countScope,
+      },
+      { onConflict: "plan_id,metric_key" }
+    )
   );
-}
-
-function mapModule(row: ModuleRow): PlatformModule {
-  return {
-    key: row.key as SalonFeatureKey,
-    name: row.name,
-    description: row.description,
-    navHref: row.nav_href,
-    iconName: row.icon_name,
-    sortOrder: row.sort_order,
-    isActive: row.is_active,
-    isArchived: row.is_archived,
-  };
-}
-
-function mapMetric(row: MetricRow): CommercialLimitMetric {
-  return {
-    key: row.key,
-    moduleKey: row.module_key as SalonFeatureKey,
-    name: row.name,
-    description: row.description,
-    unit: row.unit,
-    counterKey: row.counter_key,
-    defaultCountScope: row.default_count_scope,
-    isActive: row.is_active,
-    isArchived: row.is_archived,
-    sortOrder: row.sort_order,
-  };
-}
-
-function mapPlan(
-  row: PlanRow,
-  moduleRows: PlanModuleRow[],
-  limitRows: PlanLimitRow[]
-): CommercialPlan {
-  return {
-    id: row.id,
-    code: row.code,
-    name: row.name,
-    description: row.description,
-    currency: row.currency,
-    monthlyPrice: Number(row.monthly_price),
-    trialDays: row.trial_days,
-    status: row.status,
-    isPublic: row.is_public,
-    sortOrder: row.sort_order,
-    modules: moduleRows
-      .filter((module) => module.plan_id === row.id)
-      .map(mapPlanModule),
-    limits: limitRows
-      .filter((limit) => limit.plan_id === row.id)
-      .map(mapPlanLimit),
-  };
-}
-
-function mapPlanModule(row: PlanModuleRow): CommercialPlanModule {
-  return {
-    moduleKey: row.module_key as SalonFeatureKey,
-    enabled: row.enabled,
-  };
-}
-
-function mapPlanLimit(row: PlanLimitRow): CommercialPlanLimit {
-  return {
-    metricKey: row.metric_key,
-    maxValue: row.max_value,
-    enforcementMode: row.enforcement_mode,
-    warningThreshold: row.warning_threshold,
-    countScope: row.count_scope,
-  };
 }

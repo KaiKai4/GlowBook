@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buttonWithText, click, flushAsync } from "@/test/ui-people-dom";
-import { reactivateEmployeeAction } from "./actions";
+import { reactivateEmployeeAction } from "./actions-profile";
 import { EmployeesGrid } from "./employees-grid";
 import type { EmployeeListItem } from "./types";
 
@@ -17,7 +17,7 @@ vi.mock("@/components/ui/toast", () => ({
   useToast: () => toastMock,
 }));
 
-vi.mock("./actions", () => ({
+vi.mock("./actions-profile", () => ({
   reactivateEmployeeAction: vi.fn(),
 }));
 
@@ -74,7 +74,7 @@ describe("EmployeesGrid", () => {
   it("indica que aún no hay colaboradores cuando el total es cero", () => {
     mounted = renderGrid({ employees: [], totalEmployees: 0 });
 
-    expect(mounted.container.textContent).toContain("Aun no hay colaboradores.");
+    expect(mounted.container.textContent).toContain("Aún no hay colaboradores.");
     expect(mounted.container.querySelector("button")).toBeNull();
   });
 

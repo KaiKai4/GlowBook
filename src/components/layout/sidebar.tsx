@@ -1,46 +1,29 @@
 "use client";
 
-import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import Link from "next/link";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import type { MouseEvent } from "react";
 
 import { GlowBookBrand, GlowBookMark } from "@/components/brand/glowbook-logo";
-import type { Permission } from "@/features/access";
 import { cn } from "@/components/ui/cn";
-import type { SalonFeatureKey } from "@/features/salon-features";
 
-import { getVisibleNavGroups } from "./nav-items";
+import type { NavGroup } from "./nav-items";
 import {
   ASIDE_WIDTH,
   BRAND_MARK,
   BRAND_TEXT,
-  GROUP_LABEL,
-  GROUP_SEPARATOR,
-  GROUP_STACK,
-  ITEM_LAYOUT,
-  LABEL_FADE,
-  NAV_PADDING,
-  NO_MODULES_HINT,
   TOGGLE_POSITION,
-  resolveSidebarCollapsed,
 } from "./sidebar-layout";
-import {
-  getServerDesktopViewport,
-  getServerSidebarPreference,
-  getSidebarPreference,
-  isDesktopViewport,
-  setSidebarCollapsed,
-  subscribeSidebarCollapsed,
-} from "./sidebar-store";
+import { SidebarLogout } from "./sidebar-logout";
+import { SidebarNav } from "./sidebar-nav";
 import type { SidebarPreference } from "./sidebar-store";
+import { useSidebarState } from "./use-sidebar-state";
 import { useNavigationGuard } from "./unsaved-changes";
 
 interface SidebarProps {
   salonName: string;
-  userPermissions: Permission[];
-  isOwner: boolean;
-  disabledFeatures: SalonFeatureKey[];
+  /** Módulos ya filtrados por el servidor (layout del dashboard). */
+  groups: NavGroup[];
 }
 
 /**
@@ -68,49 +51,14 @@ function ToggleIcon({
   return <PanelLeftClose className="h-4 w-4" aria-hidden="true" />;
 }
 
-export function Sidebar({
-  salonName,
-  userPermissions,
-  isOwner,
-  disabledFeatures,
-}: SidebarProps) {
+export function Sidebar({ salonName, groups }: SidebarProps) {
   const pathname = usePathname();
   const confirmNavigate = useNavigationGuard();
-  const preference = useSyncExternalStore(
-    subscribeSidebarCollapsed,
-    getSidebarPreference,
-    getServerSidebarPreference,
-  );
-  const desktop = useSyncExternalStore(
-    subscribeSidebarCollapsed,
-    isDesktopViewport,
-    getServerDesktopViewport,
-  );
-  // Estado efectivo: solo para atributos y etiquetas (no mueve el layout en "auto").
-  const isCollapsed = resolveSidebarCollapsed(preference, desktop);
+  const { preference, isCollapsed, toggleSidebar } = useSidebarState();
 
-  const groups = getVisibleNavGroups(
-    userPermissions,
-    isOwner,
-    disabledFeatures,
-  );
-  // "Inicio" no exige permisos: el aviso se basa en los módulos reales, no en los grupos.
-  const hasModules = groups.some((group) =>
-    group.items.some((item) => item.href !== "/"),
-  );
-
-  function toggleSidebar() {
-    setSidebarCollapsed(!isCollapsed);
-  }
-
-  function handleNav(event: React.MouseEvent, href: string) {
+  function handleNav(event: MouseEvent, href: string) {
     if (!confirmNavigate) return;
-    if (
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return;
     }
 
@@ -170,115 +118,15 @@ export function Sidebar({
         </div>
       </div>
 
-      <nav
-        className={cn(
-          "flex-1 overflow-y-auto pb-4 pt-3 transition-[padding] duration-200 motion-reduce:transition-none",
-          NAV_PADDING[preference],
-        )}
-      >
-        {!hasModules ? (
-          <p
-            className={cn(
-              "px-3 py-4 text-xs leading-relaxed text-fg-subtle",
-              NO_MODULES_HINT[preference],
-            )}
-          >
-            No tienes módulos asignados. Pide al administrador que configure tu
-            rol.
-          </p>
-        ) : null}
-        <div className={cn(GROUP_STACK[preference])}>
-          {groups.map((group, groupIndex) => (
-              <div
-                key={group.label ?? `group-${groupIndex}`}
-                className={cn(
-                  groupIndex > 0 && GROUP_SEPARATOR[preference],
-                )}
-              >
-                {group.label && preference !== "collapsed" ? (
-                  <p
-                    className={cn(
-                      "mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-fg-subtle",
-                      GROUP_LABEL[preference],
-                    )}
-                  >
-                    {group.label}
-                  </p>
-                ) : null}
+      <SidebarNav
+        groups={groups}
+        pathname={pathname}
+        preference={preference}
+        isCollapsed={isCollapsed}
+        onNavigate={handleNav}
+      />
 
-                <ul className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const isActive =
-                      item.href === "/"
-                        ? pathname === "/"
-                        : pathname.startsWith(item.href);
-
-                    return (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          onClick={(event) => handleNav(event, item.href)}
-                          title={isCollapsed ? item.label : undefined}
-                          aria-label={isCollapsed ? item.label : undefined}
-                          className={cn(
-                            "grid min-h-10 items-center rounded-lg py-2.5 text-sm font-medium transition-[background-color,color,grid-template-columns,gap,padding] duration-200 motion-reduce:transition-none",
-                            ITEM_LAYOUT[preference],
-                            isActive
-                              ? "bg-brand-50 text-brand-700"
-                              : "text-fg-subtle hover:bg-surface-muted hover:text-fg-secondary",
-                          )}
-                        >
-                          <item.icon
-                            className={cn(
-                              "h-4 w-4 shrink-0",
-                              isActive ? "text-brand-600" : "text-fg-subtle",
-                            )}
-                            aria-hidden="true"
-                          />
-                          <span
-                            className={cn(
-                              "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none",
-                              LABEL_FADE[preference],
-                            )}
-                          >
-                            {item.label}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-          ))}
-        </div>
-      </nav>
-
-      <div className="border-t border-brand-50 p-3">
-        <form action="/api/auth/signout" method="post">
-          <button
-            type="submit"
-            title={isCollapsed ? "Cerrar sesión" : undefined}
-            aria-label={isCollapsed ? "Cerrar sesión" : undefined}
-            className={cn(
-              "grid min-h-10 w-full items-center rounded-lg py-2.5 text-sm font-medium text-fg-subtle transition-[background-color,color,grid-template-columns,gap,padding] duration-200 hover:bg-surface-muted hover:text-fg-secondary motion-reduce:transition-none",
-              ITEM_LAYOUT[preference],
-            )}
-          >
-            <LogOut
-              className="h-4 w-4 shrink-0 text-fg-subtle"
-              aria-hidden="true"
-            />
-            <span
-              className={cn(
-                "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none",
-                LABEL_FADE[preference],
-              )}
-            >
-              Cerrar sesión
-            </span>
-          </button>
-        </form>
-      </div>
+      <SidebarLogout preference={preference} isCollapsed={isCollapsed} />
     </aside>
   );
 }

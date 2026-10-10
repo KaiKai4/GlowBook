@@ -59,7 +59,7 @@ describe("EditServiceDialog", () => {
     expect(fieldByName<HTMLTextAreaElement>(mounted.container, "description").value).toBe("");
     expect(mounted.container.querySelector<HTMLInputElement>('input[name="category_id"]')?.value).toBe("cat-2");
     expect(mounted.container.querySelector<HTMLInputElement>('input[name="is_active"]')?.value).toBe("false");
-    expect(mounted.container.textContent).toContain("Actualiza precio, duración, categoria y estado.");
+    expect(mounted.container.textContent).toContain("Actualiza precio, duración, categoría y estado.");
   });
 
   it("envía los cambios de categoría y estado elegidos en los selectores", async () => {
@@ -75,7 +75,7 @@ describe("EditServiceDialog", () => {
       />
     );
 
-    chooseSelectOption(mounted.container, "Categoria", "Uñas");
+    chooseSelectOption(mounted.container, "Categoría", "Uñas");
     chooseSelectOption(mounted.container, "Estado", "Inactivo");
     await submitForm(formOf(mounted.container));
 

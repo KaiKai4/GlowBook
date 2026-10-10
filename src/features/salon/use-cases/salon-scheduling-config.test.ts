@@ -1,17 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
-import { findAppointmentSalonConfig, findBusinessHours } from "../data/salon.repo";
+import { findAppointmentSalonConfig } from "../data/salon-settings.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 import { getSalonSchedulingConfig } from "./salon-scheduling-config";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findAppointmentSalonConfig: vi.fn(),
+}));
+
+vi.mock("../data/salon-business-hours.repo", () => ({
   findBusinessHours: vi.fn(),
 }));
 
 const mockedFindAppointmentSalonConfig = vi.mocked(findAppointmentSalonConfig);
 const mockedFindBusinessHours = vi.mocked(findBusinessHours);
 
-describe("salon scheduling config", () => {
-  it("returns scheduling defaults when the salon has no explicit config", async () => {
+describe("salón scheduling config", () => {
+  it("returns scheduling defaults when the salón has no explicit config", async () => {
     mockedFindAppointmentSalonConfig.mockResolvedValue(null);
     mockedFindBusinessHours.mockResolvedValue([]);
 

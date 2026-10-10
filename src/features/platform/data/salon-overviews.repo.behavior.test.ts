@@ -37,7 +37,7 @@ describe("findSalonOverviews", () => {
     await expect(findSalonOverviews()).rejects.toBe(rpcError);
   });
 
-  it("keeps a salon without appointments with a null last appointment and drops empty owner names", async () => {
+  it("keeps a salón without appointments with a null last appointment and drops empty owner names", async () => {
     clients.admin = createFakeSupabase({
       rpc: {
         platform_salon_overviews: {

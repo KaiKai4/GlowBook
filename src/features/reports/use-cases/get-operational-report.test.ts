@@ -11,12 +11,11 @@ import {
   fetchMonthlySeries,
   fetchProductSales,
 } from "../data/rpc/reports-history.rpc";
-import { findSalonReportIdentity, findSalonTimezone } from "../data/reports.repo";
+import { findSalonReportIdentity } from "../data/reports.repo";
 import { getOperationalReport } from "./get-operational-report";
 
 vi.mock("../data/reports.repo", () => ({
   findSalonReportIdentity: vi.fn(),
-  findSalonTimezone: vi.fn(),
 }));
 
 vi.mock("../data/rpc/reports-read-models.rpc", () => ({
@@ -41,7 +40,6 @@ const mockedBusyHours = vi.mocked(fetchBusyHours);
 const mockedExpenses = vi.mocked(fetchExpenseConcepts);
 const mockedProducts = vi.mocked(fetchProductSales);
 const mockedAlerts = vi.mocked(fetchInventoryAlerts);
-const mockedTimezone = vi.mocked(findSalonTimezone);
 const mockedIdentity = vi.mocked(findSalonReportIdentity);
 
 const NOW = new Date("2026-06-03T12:00:00.000Z");
@@ -95,7 +93,6 @@ function zeroSeries() {
 describe("get operational report", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedTimezone.mockResolvedValue("UTC");
     mockedIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "UTC",

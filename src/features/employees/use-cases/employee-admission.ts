@@ -2,7 +2,7 @@ import { err, ok, type Result } from "@/infra/result";
 
 // Admision de un alta de colaborador: comprueba el plan antes de tocar datos.
 // Los chequeos del plan llegan por parametro (el caso de uso no importa el modulo
-// de billing): la accion los construye con el salon de la sesion.
+// de billing): la accion los construye con el salón de la sesion.
 
 interface EmployeeAdmissionChecks {
   /** Acceso al modulo de colaboradores en el plan vigente. */
@@ -22,8 +22,8 @@ export interface EmployeeAdmissionInput {
 }
 
 /**
- * Devuelve el rol efectivo del alta: solo existe si el salon tiene roles
- * habilitados. Con rol, el alta emite una invitacion de acceso propio y consume
+ * Devuelve el rol efectivo del alta: solo existe si el salón tiene roles
+ * habilitados. Con rol, el alta emite una invitación de acceso propio y consume
  * tambien el cupo de usuarios con login.
  */
 export async function admitNewEmployee(

@@ -44,7 +44,7 @@ describe("recordManualReminder", () => {
     vi.clearAllMocks();
   });
 
-  it("registra el recordatorio con el telefono de la cita, la clave y devuelve la fecha de envio", async () => {
+  it("registra el recordatorio con el teléfono de la cita, la clave y devuelve la fecha de envio", async () => {
     mockedGetTarget.mockResolvedValue({ salonId: "salon-1", customerPhone: "61234567" });
     mockedCreateLog.mockResolvedValue("2026-06-12T10:00:00.000Z");
 
@@ -63,7 +63,7 @@ describe("recordManualReminder", () => {
     });
   });
 
-  it("registra sin telefono cuando el cliente de la cita no tiene uno", async () => {
+  it("registra sin teléfono cuando el cliente de la cita no tiene uno", async () => {
     mockedGetTarget.mockResolvedValue({ salonId: "salon-1" });
     mockedCreateLog.mockResolvedValue("2026-06-12T10:00:00.000Z");
 
@@ -102,7 +102,7 @@ describe("recordManualReminder", () => {
     expect(mockedCreateLog).not.toHaveBeenCalled();
   });
 
-  it("no revela citas de otro salon: responde igual que si no existieran", async () => {
+  it("no revela citas de otro salón: responde igual que si no existieran", async () => {
     mockedGetTarget.mockResolvedValue({ salonId: "salon-otro", customerPhone: "61234567" });
 
     expect(await recordManualReminder(input)).toEqual({ ok: false, error: "Cita no encontrada." });

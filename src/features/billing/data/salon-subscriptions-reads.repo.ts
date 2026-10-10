@@ -1,47 +1,73 @@
 import "server-only";
 
-import type { SalonPlanOverride } from "../domain/commercial-plan";
-import {
-  billingDb,
-  selectRows,
-  selectWhere,
-  type UntypedSupabase,
-} from "./billing-db";
-import { findPlanWithChildren, findActiveMetrics } from "./commercial-plans.repo";
+import type { CommercialLimitMetric, PlanRuleOverride, SalonPlanOverride } from "../domain/commercial-plan";
+import { billingDb, billingSalonDb, rowsOrThrow, type BillingDb } from "./billing-db";
+import { findActiveMetrics, loadPlanWithChildren } from "./commercial-plans.repo";
 import { calculateSalonUsage } from "./salon-subscriptions-usage.repo";
 import {
   ALERT_COLUMNS,
   ASSIGNMENT_COLUMNS,
+  ASSIGNMENT_TENANT_COLUMNS,
   OVERRIDE_COLUMNS,
+  OVERRIDE_TENANT_COLUMNS,
+  PAYMENT_COLUMNS,
+  mapAlert,
+  mapAssignment,
   mapOverride,
+  mapTenantAssignment,
+  mapTenantOverride,
+  type AlertDbRow,
+  type AssignmentDbRow,
+
+  type AssignmentTenantRow,
   type AssignmentRow,
-  type OverrideRow,
+  type OverrideDbRow,
+  type OverrideTenantDbRow,
   type PaymentRow,
   type PlanAlert,
 } from "./salon-subscriptions.rows";
 
+/** Pagos mostrados en el historial del salón. */
+const PAYMENT_HISTORY_LIMIT = 12;
+
+// Lecturas de suscripción. Cada función elige su cliente (ver billing-db.ts):
+//   - ...ForPlatform: service_role y columnas completas (panel /admin).
+//   - ...ForSalon: cliente del usuario (RLS) y columnas concedidas al salón.
+
 export async function findSubscriptionRows() {
   const supabase = billingDb();
   const [assignments, overrides, alerts] = await Promise.all([
-    selectRows<AssignmentRow>(supabase, "salon_plan_assignments", ASSIGNMENT_COLUMNS, "created_at"),
-    selectRows<OverrideRow>(supabase, "salon_plan_overrides", OVERRIDE_COLUMNS, "created_at"),
-    selectRows<PlanAlert>(supabase, "salon_plan_alerts", ALERT_COLUMNS, "created_at"),
+    supabase.from("salon_plan_assignments").select(ASSIGNMENT_COLUMNS).order("created_at", { ascending: true }),
+    supabase.from("salon_plan_overrides").select(OVERRIDE_COLUMNS).order("created_at", { ascending: true }),
+    supabase.from("salon_plan_alerts").select(ALERT_COLUMNS).order("created_at", { ascending: true }),
   ]);
-  return { assignments, overrides: overrides.map(mapOverride), alerts };
+  return {
+    assignments: rowsOrThrow<AssignmentDbRow>(assignments).map(mapAssignment),
+    overrides: rowsOrThrow<OverrideDbRow>(overrides).map(mapOverride),
+    alerts: rowsOrThrow<AlertDbRow>(alerts).map(mapAlert),
+  };
 }
 
-export async function findEffectivePlanRows(salonId: string) {
+/** Plan efectivo para plataforma (service_role, columnas completas). */
+export async function findEffectivePlanRowsForPlatform(salonId: string) {
   const supabase = billingDb();
   const [metrics, assignment, overrides] = await Promise.all([
-    findActiveMetrics(),
+    findActiveMetrics(supabase),
     findCurrentAssignment(supabase, salonId),
     findActiveOverrides(supabase, salonId),
   ]);
+  return finishEffectivePlan(supabase, salonId, metrics, assignment, overrides);
+}
 
-  const plan = assignment ? await findPlanWithChildren(assignment.plan_id) : null;
-  const usage = await calculateSalonUsage(supabase, salonId, metrics, plan, assignment);
-
-  return { metrics, assignment, plan, overrides, usage };
+/** Plan efectivo leído por el propio salón con su sesión (RLS). Sin notas, motivos ni precios especiales. */
+export async function findEffectivePlanRowsForSalon(salonId: string) {
+  const supabase = await billingSalonDb();
+  const [metrics, assignment, overrides] = await Promise.all([
+    findActiveMetrics(supabase),
+    findCurrentTenantAssignment(supabase, salonId),
+    findActiveTenantOverrides(supabase, salonId),
+  ]);
+  return finishEffectivePlan(supabase, salonId, metrics, assignment, overrides);
 }
 
 export async function findAssignmentStartsAt(salonId: string): Promise<string | null> {
@@ -50,8 +76,8 @@ export async function findAssignmentStartsAt(salonId: string): Promise<string | 
     .from("salon_plan_assignments")
     .select("starts_at")
     .eq("salon_id", salonId)
-    .maybeSingle<{ starts_at: string | null }>();
-  if (error) throw new Error(error.message);
+    .maybeSingle();
+  if (error) throw error;
   return data?.starts_at ?? null;
 }
 
@@ -64,42 +90,48 @@ export async function findAssignmentForPayment(salonId: string): Promise<{
     .from("salon_plan_assignments")
     .select("plan_id, current_period_end")
     .eq("salon_id", salonId)
-    .maybeSingle<{ plan_id: string; current_period_end: string | null }>();
-  if (error) throw new Error(error.message);
+    .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
-export async function findSalonPayments(salonId: string, limit = 12): Promise<PaymentRow[]> {
+export async function findSalonPayments(salonId: string, limit = PAYMENT_HISTORY_LIMIT): Promise<PaymentRow[]> {
   const supabase = billingDb();
-  const { data, error } = await supabase
+  const result = await supabase
     .from("salon_plan_payments")
-    .select("id, salon_id, plan_id, amount, currency, paid_at, period_start, period_end, notes")
+    .select(PAYMENT_COLUMNS)
     .eq("salon_id", salonId)
     .order("paid_at", { ascending: false })
-    .limit(limit)
-    .then((result) => result as { data: PaymentRow[] | null; error: { message: string } | null });
-  if (error) throw new Error(error.message);
-  return data ?? [];
+    .limit(limit);
+  return rowsOrThrow(result);
 }
 
 export async function findOpenSalonAlerts(salonId: string): Promise<PlanAlert[]> {
   const supabase = billingDb();
-  const { data, error } = await supabase
+  const result = await supabase
     .from("salon_plan_alerts")
     .select(ALERT_COLUMNS)
     .eq("salon_id", salonId)
     .eq("status", "open")
     .order("created_at", { ascending: false })
-    .limit(20)
-    .then((result) => result as { data: PlanAlert[] | null; error: { message: string } | null });
-  if (error) throw new Error(error.message);
-  return data ?? [];
+    .limit(20);
+  return rowsOrThrow<AlertDbRow>(result).map(mapAlert);
 }
 
-async function findCurrentAssignment(
-  supabase: UntypedSupabase,
-  salonId: string
-): Promise<AssignmentRow | null> {
+/** Cálculo común: plan con hijos (con el mismo cliente) y uso por métrica. */
+async function finishEffectivePlan<A extends AssignmentTenantRow, O extends PlanRuleOverride>(
+  supabase: BillingDb,
+  salonId: string,
+  metrics: CommercialLimitMetric[],
+  assignment: A | null,
+  overrides: O[]
+) {
+  const plan = assignment ? await loadPlanWithChildren(supabase, assignment.plan_id) : null;
+  const usage = await calculateSalonUsage(supabase, salonId, metrics, plan, assignment);
+  return { metrics, assignment, plan, overrides, usage };
+}
+
+async function findCurrentAssignment(supabase: BillingDb, salonId: string): Promise<AssignmentRow | null> {
   const { data, error } = await supabase
     .from("salon_plan_assignments")
     .select(ASSIGNMENT_COLUMNS)
@@ -107,28 +139,44 @@ async function findCurrentAssignment(
     .in("status", ["trialing", "active", "past_due", "paused"])
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle<AssignmentRow>();
-  if (error) throw new Error(error.message);
-  return data;
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapAssignment(data) : null;
 }
 
-async function findActiveOverrides(
-  supabase: UntypedSupabase,
-  salonId: string
-): Promise<SalonPlanOverride[]> {
-  const rows = await selectWhere<OverrideRow>(
-    supabase,
-    "salon_plan_overrides",
-    OVERRIDE_COLUMNS,
-    "salon_id",
-    salonId
+async function findCurrentTenantAssignment(supabase: BillingDb, salonId: string): Promise<AssignmentTenantRow | null> {
+  const { data, error } = await supabase
+    .from("salon_plan_assignments")
+    .select(ASSIGNMENT_TENANT_COLUMNS)
+    .eq("salon_id", salonId)
+    .in("status", ["trialing", "active", "past_due", "paused"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapTenantAssignment(data) : null;
+}
+
+async function findActiveOverrides(supabase: BillingDb, salonId: string): Promise<SalonPlanOverride[]> {
+  const rows = rowsOrThrow<OverrideDbRow>(
+    await supabase.from("salon_plan_overrides").select(OVERRIDE_COLUMNS).eq("salon_id", salonId)
   );
+  return keepOverridesActiveToday(rows.map(mapOverride));
+}
+
+async function findActiveTenantOverrides(supabase: BillingDb, salonId: string): Promise<PlanRuleOverride[]> {
+  const rows = rowsOrThrow<OverrideTenantDbRow>(
+    await supabase.from("salon_plan_overrides").select(OVERRIDE_TENANT_COLUMNS).eq("salon_id", salonId)
+  );
+  return keepOverridesActiveToday(rows.map(mapTenantOverride));
+}
+
+/** Overrides activos hoy: estado active y dentro de su ventana de fechas (si la tienen). */
+function keepOverridesActiveToday<O extends PlanRuleOverride>(rows: O[]): O[] {
   const today = new Date().toISOString().slice(0, 10);
-  return rows
-    .filter((row) =>
-      row.status === "active" &&
-      (!row.starts_at || row.starts_at <= today) &&
-      (!row.ends_at || row.ends_at >= today)
-    )
-    .map(mapOverride);
+  return rows.filter((row) =>
+    row.status === "active" &&
+    (!row.startsAt || row.startsAt <= today) &&
+    (!row.endsAt || row.endsAt >= today)
+  );
 }

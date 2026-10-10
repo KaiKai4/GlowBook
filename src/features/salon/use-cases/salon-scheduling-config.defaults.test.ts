@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findAppointmentSalonConfig, findBusinessHours } from "../data/salon.repo";
+import { findAppointmentSalonConfig } from "../data/salon-settings.repo";
+import { findBusinessHours } from "../data/salon-business-hours.repo";
 import { getSalonSchedulingConfig } from "./salon-scheduling-config";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-settings.repo", () => ({
   findAppointmentSalonConfig: vi.fn(),
+}));
+
+vi.mock("../data/salon-business-hours.repo", () => ({
   findBusinessHours: vi.fn(),
 }));
 
@@ -15,7 +19,7 @@ describe("getSalonSchedulingConfig (valores por defecto)", () => {
     vi.clearAllMocks();
   });
 
-  it("aplica los valores por defecto cuando el salon no tiene configuracion de agenda", async () => {
+  it("aplica los valores por defecto cuando el salón no tiene configuración de agenda", async () => {
     mockedFindConfig.mockResolvedValue(null);
     mockedFindHours.mockResolvedValue([]);
 
@@ -32,7 +36,7 @@ describe("getSalonSchedulingConfig (valores por defecto)", () => {
     });
   });
 
-  it("respeta valores explicitos, incluido un aviso minimo de cero y citas fuera de horario", async () => {
+  it("respeta valores explicitos, incluido un aviso mínimo de cero y citas fuera de horario", async () => {
     mockedFindConfig.mockResolvedValue({
       min_booking_notice_minutes: 0,
       min_appointment_duration_minutes: 45,
@@ -56,7 +60,7 @@ describe("getSalonSchedulingConfig (valores por defecto)", () => {
     ]);
   });
 
-  it("consulta la configuracion y los horarios del mismo salon", async () => {
+  it("consulta la configuración y los horarios del mismo salón", async () => {
     mockedFindConfig.mockResolvedValue(null);
     mockedFindHours.mockResolvedValue([]);
 

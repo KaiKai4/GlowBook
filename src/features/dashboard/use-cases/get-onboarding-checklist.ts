@@ -6,7 +6,7 @@ import {
   type OnboardingChecklist,
 } from "../domain/onboarding-checklist";
 
-export type { OnboardingChecklist } from "../domain/onboarding-checklist";
+export type { OnboardingChecklist, OnboardingStepKey } from "../domain/onboarding-checklist";
 
 export async function getOnboardingChecklist(salonId: string): Promise<OnboardingChecklist> {
   const counts = await findOnboardingCounts(salonId);

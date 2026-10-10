@@ -75,7 +75,7 @@ describe("getReportExportData", () => {
     mockedProducts.mockResolvedValue([]);
   });
 
-  it("usa el nombre y la zona horaria por defecto cuando el salon no tiene identidad", async () => {
+  it("usa el nombre y la zona horaria por defecto cuando el salón no tiene identidad", async () => {
     mockedIdentity.mockResolvedValue(null);
 
     const data = await getReportExportData("salon-1", ALL_MODULES, { type: "lifetime" }, NOW);
@@ -205,7 +205,7 @@ describe("getReportExportData", () => {
     ]);
   });
 
-  it("pide a SQL sin gastos ni productos cuando esos modulos estan desactivados", async () => {
+  it("pide a SQL sin gastos ni productos cuando esos módulos están desactivados", async () => {
     const modules = { inventory: false, retail: false, expenses: false };
     mockedExpenses.mockResolvedValue([]);
     mockedProducts.mockResolvedValue([]);

@@ -4,7 +4,10 @@ import type {
   PlanEnforcementMode,
   SalonPlanAssignmentStatus,
 } from "../domain/commercial-plan";
-import { billingDb, countRows, assertOk } from "./billing-db";
+import { billingDb, billingSalonDb, countOrThrow, expectOneUpdatedRow, throwOnError } from "./billing-db";
+
+// Escrituras de suscripción. Las de plataforma usan service_role y filtran por salon_id;
+// las del salón (alertas) usan el cliente del usuario y la RLS / RPC con su sesión.
 
 export async function recordSalonPlanPayment(values: {
   salonId: string;
@@ -17,8 +20,8 @@ export async function recordSalonPlanPayment(values: {
   notes: string;
 }): Promise<void> {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_payments").insert({
+  throwOnError(
+    await supabase.from("salon_plan_payments").insert({
       salon_id: values.salonId,
       plan_id: values.planId,
       amount: values.amount,
@@ -37,8 +40,8 @@ export async function activatePaidPeriod(values: {
   periodEnd: string;
 }): Promise<void> {
   const supabase = billingDb();
-  await assertOk(
-    supabase
+  throwOnError(
+    await supabase
       .from("salon_plan_assignments")
       .update({
         status: "active",
@@ -59,16 +62,19 @@ export async function assignSalonPlan(values: {
   notes: string;
 }) {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_assignments").upsert({
-      salon_id: values.salonId,
-      plan_id: values.planId,
-      status: values.status,
-      starts_at: values.startsAt,
-      ends_at: values.endsAt,
-      trial_ends_at: values.trialEndsAt,
-      notes: values.notes,
-    }, { onConflict: "salon_id" })
+  throwOnError(
+    await supabase.from("salon_plan_assignments").upsert(
+      {
+        salon_id: values.salonId,
+        plan_id: values.planId,
+        status: values.status,
+        starts_at: values.startsAt,
+        ends_at: values.endsAt,
+        trial_ends_at: values.trialEndsAt,
+        notes: values.notes,
+      },
+      { onConflict: "salon_id" }
+    )
   );
 }
 
@@ -91,8 +97,8 @@ export async function saveSalonPlanOverride(values: {
   priceOverride: number | null;
 }) {
   const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_overrides").insert({
+  throwOnError(
+    await supabase.from("salon_plan_overrides").insert({
       salon_id: values.salonId,
       module_key: values.moduleKey,
       metric_key: values.metricKey,
@@ -113,49 +119,69 @@ export async function saveSalonPlanOverride(values: {
   );
 }
 
+/** Cambia el estado de un override del salón indicado; debe afectar exactamente una fila. */
 export async function updateSalonPlanOverrideStatus(
+  salonId: string,
   overrideId: string,
   status: "active" | "paused" | "canceled"
 ) {
   const supabase = billingDb();
-  await assertOk(supabase.from("salon_plan_overrides").update({ status }).eq("id", overrideId));
+  expectOneUpdatedRow(
+    await supabase
+      .from("salon_plan_overrides")
+      .update({ status })
+      .eq("id", overrideId)
+      .eq("salon_id", salonId)
+      .select("id"),
+    "extra del plan"
+  );
 }
 
+/**
+ * Crea una alerta de plan para el salón de la sesión mediante la RPC record_plan_alert
+ * (security definer). El salón se toma del claim de la sesión, no de un parámetro.
+ */
 export async function recordPlanAlert(values: {
-  salonId: string;
-  planId: string | null;
-  metricKey: string | null;
-  moduleKey: string | null;
+  planId: string;
+  metricKey: string;
+  moduleKey: string;
   severity: "info" | "warning" | "danger";
   message: string;
 }) {
-  const supabase = billingDb();
-  await assertOk(
-    supabase.from("salon_plan_alerts").insert({
-      salon_id: values.salonId,
-      plan_id: values.planId,
-      metric_key: values.metricKey,
-      module_key: values.moduleKey,
-      severity: values.severity,
-      message: values.message,
+  const supabase = await billingSalonDb();
+  throwOnError(
+    await supabase.rpc("record_plan_alert", {
+      p_plan_id: values.planId,
+      p_metric_key: values.metricKey,
+      p_module_key: values.moduleKey,
+      p_severity: values.severity,
+      p_message: values.message,
     })
   );
 }
 
-export async function resolvePlanAlert(alertId: string) {
+/** Marca una alerta como resuelta dentro del salón indicado; debe afectar exactamente una fila. */
+export async function resolvePlanAlert(salonId: string, alertId: string) {
   const supabase = billingDb();
-  await assertOk(supabase.from("salon_plan_alerts").update({ status: "resolved" }).eq("id", alertId));
+  expectOneUpdatedRow(
+    await supabase
+      .from("salon_plan_alerts")
+      .update({ status: "resolved" })
+      .eq("id", alertId)
+      .eq("salon_id", salonId)
+      .select("id"),
+    "alerta del plan"
+  );
 }
 
+/** Indica si el salón de la sesión ya tiene una alerta abierta para esa métrica (RLS). */
 export async function hasOpenPlanAlert(salonId: string, metricKey: string): Promise<boolean> {
-  const supabase = billingDb();
-  const count = await countRows(
-    supabase
-      .from("salon_plan_alerts")
-      .select("*", { count: "exact", head: true })
-      .eq("salon_id", salonId)
-      .eq("metric_key", metricKey)
-      .eq("status", "open")
-  );
-  return count > 0;
+  const supabase = await billingSalonDb();
+  const count = await supabase
+    .from("salon_plan_alerts")
+    .select("id", { count: "exact", head: true })
+    .eq("salon_id", salonId)
+    .eq("metric_key", metricKey)
+    .eq("status", "open");
+  return countOrThrow(count) > 0;
 }

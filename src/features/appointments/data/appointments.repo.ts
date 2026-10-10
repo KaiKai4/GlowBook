@@ -55,10 +55,10 @@ export async function findAppointmentById(
     `)
     .eq("id", id)
     .eq("salon_id", salonId)
-    .single();
+    .maybeSingle();
 
-  if (error) return null;
-  return data as unknown as AppointmentWithDetails;
+  if (error) throw error;
+  return data;
 }
 
 export async function findAppointmentsBySalon(
@@ -90,5 +90,5 @@ export async function findAppointmentsBySalon(
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as unknown as AppointmentWithDetails[];
+  return data ?? [];
 }

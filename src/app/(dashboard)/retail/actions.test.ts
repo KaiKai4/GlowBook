@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing/use-cases/commercial-plans";
+import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { createRetailSale } from "@/features/retail/use-cases/retail-sales";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon/use-cases/salon-payment-methods";
 import { err, ok } from "@/infra/result";
@@ -11,9 +11,18 @@ import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fix
 import { createRetailSaleAction } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/infra/security/rate-limit", () => ({ assertActionRateLimit: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   checkPlanModuleAccess: vi.fn(),
   checkPlanLimit: vi.fn(),
 }));
@@ -89,7 +98,7 @@ describe("createRetailSaleAction", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Ese metodo de pago no esta habilitado para este salon.",
+      error: "Ese método de pago no está habilitado para este salón.",
     });
     expect(assertSalonPaymentMethodEnabled).toHaveBeenCalledWith(SALON_ID, "card");
     expect(createRetailSale).not.toHaveBeenCalled();

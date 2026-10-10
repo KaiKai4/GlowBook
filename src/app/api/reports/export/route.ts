@@ -1,10 +1,10 @@
 import { getProfile } from "@/app/_composition/request-context";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import {
   getReportExportData,
   type ReportExportScope,
-} from "@/features/reports/use-cases/get-report-export";
+} from "@/features/reports";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { captureError } from "@/infra/observability";
 import { binaryNoStore, jsonNoStore } from "@/infra/http/responses";
@@ -49,9 +49,9 @@ export async function GET(request: Request) {
 
   try {
     const modules = {
-      inventory: await isEffectiveSalonModuleEnabled(profile, "inventory"),
-      retail: await isEffectiveSalonModuleEnabled(profile, "retail"),
-      expenses: await isEffectiveSalonModuleEnabled(profile, "expenses"),
+      inventory: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "inventory"),
+      retail: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "retail"),
+      expenses: await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(profile), "expenses"),
     };
     const data = await getReportExportData(profile.salon_id, modules, scope);
     const workbook = buildReportWorkbook(data);

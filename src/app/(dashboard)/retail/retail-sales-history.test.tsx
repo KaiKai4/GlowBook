@@ -29,7 +29,7 @@ describe("RetailSalesHistory", () => {
   it("indica que no hay ventas registradas cuando la lista está vacía", () => {
     mounted = mountComponent(<RetailSalesHistory sales={[]} />);
 
-    expect(mounted.container.textContent).toContain("Sin ventas registradas todavia.");
+    expect(mounted.container.textContent).toContain("Sin ventas registradas todavía.");
   });
 
   it("identifica la venta como 'Venta sin cliente' y muestra 'Sin nota' cuando no hay datos", () => {

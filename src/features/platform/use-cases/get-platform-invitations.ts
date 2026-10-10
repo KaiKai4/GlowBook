@@ -75,8 +75,8 @@ export async function getPlatformInvitations(): Promise<PlatformInvitationsViewM
       id: invitation.id,
       email: invitation.email,
       salonName: invitation.salon_id
-        ? salonNames.get(invitation.salon_id) ?? "Salon eliminado"
-        : "Salon eliminado",
+        ? salonNames.get(invitation.salon_id) ?? "Salón eliminado"
+        : "Salón eliminado",
       planName: invitation.plan_id ? planById.get(invitation.plan_id)?.name ?? null : null,
       acceptedAtLabel: invitation.accepted_at ? formatDateTime(invitation.accepted_at) : "—",
     })),

@@ -12,9 +12,9 @@ import { commercialPlanAudit, dateOrNull } from "./billing-shared";
 import { publishAuditEvent } from "@/features/audit";
 
 const AddonExtraSchema = z.object({
-  salonId: z.string().uuid("Selecciona un salon."),
-  addonId: z.string().uuid("Selecciona un extra del catalogo."),
-  quantity: z.coerce.number().int().min(1, "La cantidad minima es 1.").max(999).default(1),
+  salonId: z.string().uuid("Selecciona un salón."),
+  addonId: z.string().uuid("Selecciona un extra del catálogo."),
+  quantity: z.coerce.number().int().min(1, "La cantidad mínima es 1.").max(999).default(1),
   isGift: z.boolean().default(false),
   // "" se evalúa antes que coerce: un campo vacío es "sin precio especial"
   // (null => precio de catálogo), nunca 0 (extra gratis).
@@ -28,7 +28,7 @@ const AddonExtraSchema = z.object({
 });
 
 const ManualExtraSchema = z.object({
-  salonId: z.string().uuid("Selecciona un salon."),
+  salonId: z.string().uuid("Selecciona un salón."),
   moduleKey: z.string().trim().optional(),
   metricKey: z.string().trim().optional(),
   moduleEnabled: z.boolean().nullable().default(null),
@@ -56,8 +56,8 @@ export async function assignSalonAddonConfig(
 
   try {
     const addon = await findCommercialAddonById(parsed.data.addonId);
-    if (!addon) return err("El extra del catalogo no existe.");
-    if (addon.status !== "active") return err("Este extra no esta activo en el catalogo.");
+    if (!addon) return err("El extra del catálogo no existe.");
+    if (addon.status !== "active") return err("Este extra no está activo en el catálogo.");
 
     await saveSalonPlanOverride({
       salonId: parsed.data.salonId,
@@ -91,7 +91,7 @@ export async function saveSalonManualExtraConfig(
   const parsed = ManualExtraSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
   if (!parsed.data.moduleKey && !parsed.data.metricKey) {
-    return err("Selecciona un modulo o un límite para el extra.");
+    return err("Selecciona un módulo o un límite para el extra.");
   }
 
   try {
@@ -126,7 +126,7 @@ export async function cancelSalonExtraConfig(
   actorUserId?: string | null
 ): Promise<Result<void>> {
   try {
-    await updateSalonPlanOverrideStatus(overrideId, "canceled");
+    await updateSalonPlanOverrideStatus(salonId, overrideId, "canceled");
     const warnings = await publishAuditEvent("billing.plan_extra_canceled", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_extra_canceled" });
     return ok(undefined, warnings);
   } catch (error) {

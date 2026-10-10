@@ -47,17 +47,17 @@ export function usePaymentMethods(paymentMethods: PaymentMethod[]) {
     const methodsToSave = normalizePaymentMethods(enabledPayments);
 
     if (methodsToSave.length === 0) {
-      setError("Agrega al menos un metodo de pago.");
+      setError("Agrega al menos un método de pago.");
       return;
     }
 
     startPayments(async () => {
-      const res = await updateSalonPaymentMethodsAction(methodsToSave);
-      if (res.ok) {
+      const result = await updateSalonPaymentMethodsAction(methodsToSave);
+      if (result.ok) {
         setSaved(true);
         setEnabledPayments(methodsToSave);
         setSavedPayments(methodsToSave);
-      } else setError(res.error);
+      } else setError(result.error);
     });
   }
 

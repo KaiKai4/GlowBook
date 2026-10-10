@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "@/features/reminders";
 import {
   buildReminderMessage,
   buildWhatsAppUrl,
   collaboratorNames,
   customerName,
-  isSameLocalDay,
-  localDateStr,
 } from "./reminder-format";
 
 const TZ = "America/Panama";
@@ -26,19 +24,6 @@ function appointment(overrides: Partial<ReminderAppointment> = {}): ReminderAppo
     ...overrides,
   };
 }
-
-describe("localDateStr e isSameLocalDay", () => {
-  it("expresa la fecha en la zona horaria del salón", () => {
-    // 02:00 UTC del 13 de junio es el 12 de junio en Panamá (UTC-5, sin horario de verano).
-    expect(localDateStr("2026-06-13T02:00:00.000Z", TZ)).toBe("2026-06-12");
-  });
-
-  it("compara días locales y considera que una fecha ausente nunca coincide", () => {
-    expect(isSameLocalDay("2026-06-13T02:00:00.000Z", "2026-06-12", TZ)).toBe(true);
-    expect(isSameLocalDay("2026-06-13T02:00:00.000Z", "2026-06-13", TZ)).toBe(false);
-    expect(isSameLocalDay(null, "2026-06-12", TZ)).toBe(false);
-  });
-});
 
 describe("buildWhatsAppUrl", () => {
   it("deja solo dígitos del teléfono y codifica el mensaje", () => {

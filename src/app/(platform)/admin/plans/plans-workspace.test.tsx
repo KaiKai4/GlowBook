@@ -5,7 +5,7 @@ import { clickElement, getButtonByText } from "@/test/ui-admin-dom";
 import { makeMetric, makePlan } from "@/test/ui-admin-fixtures";
 import { PlansWorkspace } from "./plans-workspace";
 
-vi.mock("./actions", () => ({ removePlanAction: vi.fn() }));
+vi.mock("./actions", () => ({ archivePlanAction: vi.fn(), deletePlanAction: vi.fn() }));
 
 // Los editores de cada pestaña tienen su propio test: aquí solo se comprueba
 // qué editor recibe el plan seleccionado.
@@ -105,12 +105,12 @@ describe("PlansWorkspace", () => {
 
   it("muestra el texto guía cuando el plan no tiene descripción y singulariza el contador", () => {
     mounted = renderWorkspace({ assignmentsByPlan: { "plan-pro": 1 } });
-    expect(mounted.container.textContent).toContain("1 salon asignado");
+    expect(mounted.container.textContent).toContain("1 salón asignado");
 
     clickElement(getButtonByText(mounted.container, "Básico"));
 
-    expect(mounted.container.textContent).toContain("Configura informacion, modulos y límites de este plan.");
-    expect(mounted.container.textContent).not.toContain("salon asignado");
+    expect(mounted.container.textContent).toContain("Configura información, módulos y límites de este plan.");
+    expect(mounted.container.textContent).not.toContain("salón asignado");
   });
 
   it("indica que se archivará cuando el plan tiene salones asignados y que se eliminará si no los tiene", () => {
@@ -125,9 +125,9 @@ describe("PlansWorkspace", () => {
     mounted = renderWorkspace();
 
     const tabs = Array.from(mounted.container.querySelectorAll("button")).map((button) => button.textContent ?? "");
-    const modulesTab = tabs.find((text) => text.startsWith("Modulos"));
+    const modulesTab = tabs.find((text) => text.startsWith("Módulos"));
     const limitsTab = tabs.find((text) => text.startsWith("Límites"));
-    expect(modulesTab).toBe("Modulos1");
+    expect(modulesTab).toBe("Módulos1");
     // Solo el límite de citas cuenta: el de gastos pertenece a un módulo desactivado.
     expect(limitsTab).toBe("Límites1");
   });
@@ -135,7 +135,7 @@ describe("PlansWorkspace", () => {
   it("cambia el editor mostrado al elegir cada pestaña del plan", () => {
     mounted = renderWorkspace();
 
-    clickElement(getButtonByText(mounted.container, "Modulos"));
+    clickElement(getButtonByText(mounted.container, "Módulos"));
     expect(mounted.container.querySelector("[data-editor]")?.getAttribute("data-editor")).toBe("modules");
 
     clickElement(getButtonByText(mounted.container, "Límites"));
@@ -145,9 +145,9 @@ describe("PlansWorkspace", () => {
     expect(mounted.container.querySelector("[data-editor]")?.getAttribute("data-editor")).toBe("summary");
   });
 
-  it("vuelve a la pestaña Informacion al seleccionar otro plan", () => {
+  it("vuelve a la pestaña Información al seleccionar otro plan", () => {
     mounted = renderWorkspace();
-    clickElement(getButtonByText(mounted.container, "Modulos"));
+    clickElement(getButtonByText(mounted.container, "Módulos"));
 
     clickElement(getButtonByText(mounted.container, "Básico"));
 

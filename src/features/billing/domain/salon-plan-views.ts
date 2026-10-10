@@ -6,6 +6,7 @@ import {
   type EffectivePlanLimit,
   type PlanEnforcementMode,
   type SalonPlanAssignmentStatus,
+  type PlanRuleOverride,
   type SalonPlanOverride,
   type SalonPlanUsageByMetric,
 } from "./commercial-plan";
@@ -26,7 +27,7 @@ export function isPlanAssignmentActive(status: SalonPlanAssignmentStatus | null 
 
 export function resolveEnabledModules(
   plan: CommercialPlan | null,
-  overrides: SalonPlanOverride[]
+  overrides: PlanRuleOverride[]
 ): Set<EnabledModuleKey> {
   const enabled = new Set<EnabledModuleKey>();
   if (plan) {
@@ -45,14 +46,14 @@ export function resolveEnabledModules(
 export function buildEffectiveLimits(
   plan: CommercialPlan | null,
   metrics: CommercialLimitMetric[],
-  overrides: SalonPlanOverride[],
+  overrides: PlanRuleOverride[],
   usage: SalonPlanUsageByMetric,
   enabledModules: Set<EnabledModuleKey>
 ): EffectivePlanLimit[] {
   if (!plan) return [];
   const limitByMetric = new Map(plan.limits.map((limit) => [limit.metricKey, limit]));
 
-  // Solo los límites de modulos que el salon realmente tiene: un límite de un
+  // Solo los límites de módulos que el salón realmente tiene: un límite de un
   // modulo apagado no controla nada y solo hace ruido.
   return metrics.filter((metric) => enabledModules.has(metric.moduleKey)).map((metric) => {
     const base = limitByMetric.get(metric.key);
@@ -92,7 +93,7 @@ export function extraDetail(
   metricByKey: Map<string, CommercialLimitMetric>
 ): string {
   if (override.moduleKey && override.moduleEnabled !== null) {
-    return override.moduleEnabled ? "Modulo activado" : "Modulo desactivado";
+    return override.moduleEnabled ? "Módulo activado" : "Módulo desactivado";
   }
   const metric = override.metricKey ? metricByKey.get(override.metricKey) : null;
   const unit = metric?.unit ?? "";

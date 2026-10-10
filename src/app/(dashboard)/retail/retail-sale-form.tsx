@@ -83,6 +83,7 @@ export function RetailSaleForm({
           </Select>
 
           <Select
+            id="producto"
             name="product_id"
             label="Producto"
             value={selectedProductId}
@@ -99,6 +100,7 @@ export function RetailSaleForm({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Select
+              id="origen"
               name="location"
               label="Origen"
               value={location}
@@ -138,7 +140,7 @@ export function RetailSaleForm({
             onChange={(event) => setUnitPrice(Number(event.target.value || 0))}
             required
           />
-          <Select name="payment_method" label="Metodo de pago" defaultValue={defaultPaymentMethod}>
+          <Select name="payment_method" label="Método de pago" defaultValue={defaultPaymentMethod}>
             {retail.paymentMethodOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}

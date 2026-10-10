@@ -2,7 +2,6 @@
 // Registra cada llamada encadenada (select, eq, gte, update...) por tabla para
 // que los tests afirmen filtros como salon_id sin depender de la base de datos.
 import { vi } from "vitest";
-import type { createSupabaseServerClient } from "@/infra/supabase/server";
 
 interface FakeSupabaseError {
   message: string;
@@ -124,17 +123,14 @@ export function createAppointmentsSupabaseDouble(
   };
 }
 
-type ServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
-
 /**
  * Hace que `createSupabaseServerClient` (mockeado por el test) devuelva el doble.
- * Doble tipado mínimo: solo implementa `from` y `rpc`, que son los únicos
- * métodos que usan los repositorios de appointments. El cast se concentra aquí.
+ * Solo implementa `from` y `rpc`, que son los únicos métodos que usan los
+ * repositorios de appointments; por eso el valor se acepta como `unknown`.
  */
 export function installSupabaseDouble(
   double: AppointmentsSupabaseDouble,
-  mockedCreateClient: { mockResolvedValue: (value: ServerClient) => unknown }
+  mockedCreateClient: { mockResolvedValue(value: unknown): unknown }
 ): void {
-  const client = { from: double.from, rpc: double.rpc } as unknown as ServerClient;
-  mockedCreateClient.mockResolvedValue(client);
+  mockedCreateClient.mockResolvedValue({ from: double.from, rpc: double.rpc });
 }

@@ -2,7 +2,9 @@ import { CSP_REPORT_PATH } from "@/infra/security/csp";
 
 export type ProxyAuthDecision =
   | { type: "next" }
-  | { type: "redirect"; location: "/login" | "/" };
+  | { type: "redirect"; location: "/login" | "/" }
+  // Llamadas /api sin sesion: 401 JSON, nunca redireccion a una pagina HTML.
+  | { type: "unauthorized" };
 
 export interface ProxyAuthInput {
   pathname: string;
@@ -38,6 +40,10 @@ export function getOptimisticAuthDecision({
   const isPasswordRecoveryRoute =
     pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password");
   const isAuthRoute = isLoginRoute || isInvitationRoute || isJoinRoute || isPasswordRecoveryRoute;
+
+  if (!hasAuthCookie && pathname.startsWith("/api/")) {
+    return { type: "unauthorized" };
+  }
 
   if (!hasAuthCookie && !isAuthRoute) {
     return { type: "redirect", location: "/login" };

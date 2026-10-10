@@ -15,8 +15,7 @@ Este owner puede cambiar antes de produccion, pero no debe quedar vacio.
 ## Owner Suplente
 
 Para piloto y crecimiento controlado, el owner inicial puede cubrir el soporte.
-Para lanzamiento amplio, confirmar un owner suplente antes de activar
-`SCALE_SUPPORT_CONFIRMED=true`.
+Para lanzamiento amplio, confirmar un owner suplente antes de abrir el soporte a muchos salones.
 
 Variable operativa:
 
@@ -93,11 +92,7 @@ Antes de abrir a muchos salones:
 - definir horario de respuesta durante los primeros 7 dias;
 - registrar postmortem para incidentes SEV1/SEV2.
 
-Gate operativo:
-
-```text
-npm run support:readiness
-```
+Revisión manual: confirma cada punto de la sección anterior con el responsable de soporte antes de abrir el soporte a muchos salones.
 
 ## Decision Conservadora 2026-06-01
 

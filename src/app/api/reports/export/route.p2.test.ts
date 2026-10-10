@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { getProfile } from "@/app/_composition/request-context";
 import { PERMISSIONS } from "@/features/access";
 import { captureError } from "@/infra/observability";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { isEffectiveSalonModuleEnabled } from "@/features/billing";
 import { getReportExportData } from "@/features/reports/use-cases/get-report-export";
 import { buildProfile, SALON_ID, USER_ID } from "@/test/action-fixtures";
 import { GET } from "./route";
@@ -14,7 +14,8 @@ vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ getProfile: vi.fn() }));
-vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
+vi.mock("@/features/billing", () => ({
+  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));
 vi.mock("@/features/reports/use-cases/get-report-export", () => ({
@@ -44,7 +45,7 @@ beforeEach(() => {
 });
 
 describe("GET /api/reports/export: autorizacion", () => {
-  it("sin sesion responde 401 sin cache", async () => {
+  it("sin sesión responde 401 sin cache", async () => {
     vi.mocked(getProfile).mockResolvedValue(null);
 
     const response = await GET(exportRequest());
@@ -75,7 +76,7 @@ describe("GET /api/reports/export: autorizacion", () => {
   });
 });
 
-describe("GET /api/reports/export: limite de peticiones", () => {
+describe("GET /api/reports/export: límite de peticiones", () => {
   it("limita por usuario con 5 por minuto y responde 429", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
@@ -110,7 +111,7 @@ describe("GET /api/reports/export: parametros", () => {
 });
 
 describe("GET /api/reports/export: exportacion", () => {
-  it("exporta un mes con los modulos efectivos y devuelve el xlsx como adjunto sin cache", async () => {
+  it("exporta un mes con los módulos efectivos y devuelve el xlsx como adjunto sin cache", async () => {
     const response = await GET(exportRequest("?month=2026-03"));
 
     expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith(reporter, "inventory");

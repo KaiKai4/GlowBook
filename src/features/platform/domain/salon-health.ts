@@ -1,4 +1,4 @@
-// Salud operativa de un salon vista desde la plataforma: un salon activo que
+// Salud operativa de un salón vista desde la plataforma: un salón activo que
 // lleva semanas sin agendar es riesgo de churn y merece contacto antes de que
 // cancele. La referencia es la ultima cita; si nunca agendo, su creacion.
 

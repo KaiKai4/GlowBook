@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 // Mide las lecturas por request: layout y pagina del dashboard comparten el
-// shell del salon (plan efectivo) gracias al lector cacheado del composition root.
+// shell del salón (plan efectivo) gracias al lector cacheado del composition root.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfileWithRole } from "@/types/app.types";
 import { getProfile, requireProfile } from "@/app/_composition/request-context";
 import { getDashboardShell, getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
-import { getOnboardingChecklist } from "@/features/dashboard/use-cases/get-onboarding-checklist";
-import { getDashboardOverview } from "@/features/dashboard/use-cases/get-dashboard-overview";
+import { getOnboardingChecklist } from "@/features/dashboard";
+import { getDashboardOverview } from "@/features/dashboard";
 import DashboardLayout from "./layout";
 import DashboardPage from "./page";
 
@@ -37,10 +37,8 @@ vi.mock("@/features/salon/use-cases/get-dashboard-shell", () => ({
   getDashboardShell: vi.fn(),
   getOwnerPlanLimitWarnings: vi.fn(async () => []),
 }));
-vi.mock("@/features/dashboard/use-cases/get-onboarding-checklist", () => ({
+vi.mock("@/features/dashboard", () => ({
   getOnboardingChecklist: vi.fn(async () => null),
-}));
-vi.mock("@/features/dashboard/use-cases/get-dashboard-overview", () => ({
   getDashboardOverview: vi.fn(async () => ({
     metrics: null,
     topServices: [],
@@ -48,11 +46,15 @@ vi.mock("@/features/dashboard/use-cases/get-dashboard-overview", () => ({
     pending: [],
   })),
 }));
+const { NAV_STUB } = vi.hoisted(() => ({
+  NAV_STUB: [
+    { href: "/", label: "Inicio", icon: "dashboard" },
+    { href: "/appointments", label: "Citas", icon: "calendar" },
+  ],
+}));
 vi.mock("@/components/layout/nav-items", () => ({
-  getVisibleNavItems: vi.fn(() => [
-    { href: "/", label: "Inicio", icon: () => null },
-    { href: "/appointments", label: "Citas", icon: () => null },
-  ]),
+  getVisibleNavGroups: vi.fn(() => [{ items: NAV_STUB }]),
+  getVisibleNavItems: vi.fn(() => NAV_STUB),
 }));
 vi.mock("@/components/layout/sidebar", () => ({ Sidebar: () => null }));
 vi.mock("@/components/layout/feedback-bubble", () => ({ FeedbackBubble: () => null }));
@@ -70,7 +72,7 @@ vi.mock("./onboarding-checklist-card", () => ({ OnboardingChecklistCard: () => n
 vi.mock("./monthly-appointments-chart", () => ({ MonthlyAppointmentsChart: () => null }));
 
 const SHELL = {
-  salonName: "Salon Test",
+  salonName: "Salón Test",
   isActive: true,
   theme: "violet",
   bgStyle: "neutral",
@@ -83,10 +85,12 @@ function ownerProfile(): ProfileWithRole {
   return {
     id: "owner-1",
     salon_id: "salon-1",
+    role_id: null,
+    full_name: "Dueña",
     is_owner: true,
     is_active: true,
     salon: { disabled_features: [] },
-  } as unknown as ProfileWithRole;
+  };
 }
 
 describe("lecturas por request del dashboard", () => {
@@ -95,7 +99,7 @@ describe("lecturas por request del dashboard", () => {
     vi.mocked(getDashboardShell).mockResolvedValue(SHELL as never);
   });
 
-  it("layout y pagina de la misma request leen el shell del salon una sola vez", async () => {
+  it("layout y página de la misma request leen el shell del salón una sola vez", async () => {
     const profile = ownerProfile();
     vi.mocked(getProfile).mockResolvedValue(profile);
     vi.mocked(requireProfile).mockResolvedValue(profile);

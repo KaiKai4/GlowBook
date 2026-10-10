@@ -36,7 +36,7 @@ export async function proxy(request: NextRequest) {
   // de construir cualquier respuesta, porque Next extrae el nonce del header
   // Content-Security-Policy entrante para firmar sus propios scripts.
   const nonce = generateCspNonce();
-  const csp = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const csp = buildContentSecurityPolicy({ nonce, mode: process.env.NODE_ENV === "development" ? "development" : "production" });
   request.headers.set("x-nonce", nonce);
   request.headers.set("content-security-policy", csp);
 
@@ -54,6 +54,17 @@ export async function proxy(request: NextRequest) {
     cookies: requestCookies,
     hasVerifiedSession,
   });
+
+  if (decision.type === "unauthorized") {
+    // Las rutas /api no redirigen: responden 401 JSON y no se cachean.
+    const unauthorizedResponse = NextResponse.json(
+      { error: "No autenticado" },
+      { status: 401 }
+    );
+    copySessionMetadata(response, unauthorizedResponse);
+    unauthorizedResponse.headers.set("Cache-Control", "no-store");
+    return applySecurityHeaders(unauthorizedResponse, csp, requestId);
+  }
 
   if (decision.type === "redirect") {
     // El origen real (Host / x-forwarded-host) evita redirigir a localhost detrás de un proxy.

@@ -26,7 +26,7 @@ describe("reportMonthlyHistoryRpc", () => {
     serverClient.current = null;
   });
 
-  it("envia los parametros del salon y devuelve los grupos validados", async () => {
+  it("envia los parametros del salón y devuelve los grupos validados", async () => {
     const db = useDb({
       report_monthly_history: {
         data: { expenseGroups: [{ amount: 10 }], purchaseMonths: [{ amount: "5.5" }] },

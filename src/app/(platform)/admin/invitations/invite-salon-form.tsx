@@ -16,6 +16,9 @@ interface InviteSalonFormProps {
   plans: Array<{ id: string; name: string; priceLabel: string; trialDays: number }>;
 }
 
+/** Estado inicial del formulario: todavía no se ha enviado ninguna invitación. */
+const NO_INVITE_RESULT: Awaited<ReturnType<typeof inviteSalonAction>> | null = null;
+
 export function InviteSalonForm({ plans }: InviteSalonFormProps) {
   const toast = useToast();
   const { submit } = useSubmissionIntent({
@@ -27,7 +30,7 @@ export function InviteSalonForm({ plans }: InviteSalonFormProps) {
       submit(formDataEntries(formData), (idempotencyKey) =>
         inviteSalonAction(null, withIdempotencyKey(formData, idempotencyKey))
       ),
-    null
+    NO_INVITE_RESULT
   );
 
   return (
@@ -47,7 +50,7 @@ export function InviteSalonForm({ plans }: InviteSalonFormProps) {
           />
         </div>
         <div className="sm:w-72">
-          <Select name="planId" label="Plan del salon" defaultValue={plans[0]?.id}>
+          <Select name="planId" label="Plan del salón" defaultValue={plans[0]?.id}>
             {plans.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.name} — {plan.priceLabel}
@@ -70,8 +73,8 @@ export function InviteSalonForm({ plans }: InviteSalonFormProps) {
       {state?.ok ? <InviteLinkReveal token={state.value} /> : null}
 
       <p className="text-xs text-fg-subtle">
-        Al aceptar la invitacion, el salon nace con este plan: trial, modulos y límites quedan activos
-        antes del primer inicio de sesion.
+        Al aceptar la invitación, el salón nace con este plan: trial, módulos y límites quedan activos
+        antes del primer inicio de sesión.
       </p>
     </div>
   );

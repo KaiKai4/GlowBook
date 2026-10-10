@@ -34,7 +34,7 @@ describe("reports history rpc adapters", () => {
   });
 
   describe("fetchMonthlySeries", () => {
-    it("invoca report_monthly_series con el rango de meses, zona y modulos", async () => {
+    it("invoca report_monthly_series con el rango de meses, zona y módulos", async () => {
       rpc.mockResolvedValue({ data: [SERIES_ROW], error: null });
 
       const series = await fetchMonthlySeries({
@@ -72,7 +72,7 @@ describe("reports history rpc adapters", () => {
   });
 
   describe("fetchBusyHours", () => {
-    it("invoca report_busy_hours con dias locales y zona", async () => {
+    it("invoca report_busy_hours con días locales y zona", async () => {
       rpc.mockResolvedValue({ data: [{ hour: 10, total: 2 }], error: null });
 
       const busy = await fetchBusyHours({ from: "2026-05-01", to: "2026-05-31", timezone: "America/Panama" });
@@ -108,7 +108,7 @@ describe("reports history rpc adapters", () => {
       expect(concepts).toEqual([{ label: "Alquiler", amount: 150 }]);
     });
 
-    it("sin limite no envia p_limit para que la base devuelva todos los conceptos", async () => {
+    it("sin límite no envia p_limit para que la base devuelva todos los conceptos", async () => {
       rpc.mockResolvedValue({ data: [], error: null });
 
       await fetchExpenseConcepts({ from: "2026-05-01", to: "2026-05-31", modules: MODULES, includeRestock: false });
@@ -119,7 +119,7 @@ describe("reports history rpc adapters", () => {
   });
 
   describe("fetchProductSales", () => {
-    it("invoca report_product_sales con el rango de meses, modulos y limite", async () => {
+    it("invoca report_product_sales con el rango de meses, módulos y límite", async () => {
       const product = { id: "p1", name: "Tinte", total: 5, months: [0, 3, 2] };
       rpc.mockResolvedValue({ data: [product], error: null });
 
@@ -143,7 +143,7 @@ describe("reports history rpc adapters", () => {
   });
 
   describe("fetchInventoryAlerts", () => {
-    it("invoca report_inventory_alerts con los modulos y valida el estado", async () => {
+    it("invoca report_inventory_alerts con los módulos y válida el estado", async () => {
       const alert = {
         id: "p1",
         name: "Shampoo",
@@ -162,7 +162,7 @@ describe("reports history rpc adapters", () => {
       expect(alerts).toEqual([alert]);
     });
 
-    it("rechaza un estado fuera del catalogo de alertas", async () => {
+    it("rechaza un estado fuera del catálogo de alertas", async () => {
       rpc.mockResolvedValue({
         data: [{ id: "p1", name: "X", retail: 0, internal: 0, storage: 0, total: 0, minimum: 0, state: "ok" }],
         error: null,

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
-import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions";
+import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { getPlatformAdminHome, type PlatformAdminHomeViewModel } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
@@ -14,7 +14,9 @@ import PlatformAdminPage from "./page";
 vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
 vi.mock("@/features/platform/use-cases/get-platform-admin-home", () => ({ getPlatformAdminHome: vi.fn() }));
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({ getPlatformSalonOverviews: vi.fn() }));
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({ getSubscriptionsPage: vi.fn() }));
+vi.mock("@/features/billing/use-cases/salon-subscriptions-page", () => ({
+  getSubscriptionsPage: vi.fn(),
+}));
 vi.mock("./actions", () => ({ regenerateSalonInvitationAction: vi.fn() }));
 vi.mock("next/link", async () => {
   const React = await import("react");
@@ -126,9 +128,9 @@ describe("PlatformAdminPage", () => {
 
     const text = mounted.container.textContent ?? "";
     expect(text).toContain("2 alertas de límite abiertas.");
-    expect(text).toContain("Pago vencido: registra el pago o pausa la suscripcion.");
+    expect(text).toContain("Pago vencido: registra el pago o pausa la suscripción.");
     expect(text).toContain("Trial por vencer");
-    expect(text).toContain("Salon activo sin plan: ve todo sin límites.");
+    expect(text).toContain("Salón activo sin plan: ve todo sin límites.");
   });
 
   it("usa singular para una sola alerta de límite", async () => {
@@ -161,7 +163,7 @@ describe("PlatformAdminPage", () => {
 
     mounted = await render();
 
-    expect(mounted.container.textContent).not.toContain("Salon activo sin plan");
+    expect(mounted.container.textContent).not.toContain("Salón activo sin plan");
   });
 
   it("incluye los salones dormidos en la lista de atención con contacto recomendado", async () => {
@@ -261,7 +263,7 @@ describe("PlatformAdminPage", () => {
     expect(hrefs).toContain("/admin/audit");
     expect(hrefs).toContain("/admin/reports");
     expect(hrefs).toContain("/admin/subscriptions");
-    expect(mounted.container.textContent).toContain("Invitar salon");
+    expect(mounted.container.textContent).toContain("Invitar salón");
   });
 
   it("separa las tarjetas de atención y de invitaciones con sus títulos", async () => {

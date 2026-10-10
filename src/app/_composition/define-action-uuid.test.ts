@@ -13,7 +13,7 @@ describe("parseUuidField", () => {
     expect(parseUuidField(UUID)).toEqual(ok(UUID));
   });
 
-  it("rechaza cualquier otro valor con el mensaje de identificador invalido", () => {
+  it("rechaza cualquier otro valor con el mensaje de identificador inválido", () => {
     expect(parseUuidField("no-es-uuid")).toEqual(err("Identificador inválido."));
     expect(parseUuidField("")).toEqual(err("Identificador inválido."));
   });

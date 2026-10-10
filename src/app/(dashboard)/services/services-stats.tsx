@@ -19,7 +19,7 @@ export function ServicesStats({
   return (
     <PageHeader
       title="Servicios"
-      description="Catalogo del salon por categorías"
+      description="Catálogo del salón por categorías"
       actions={
         <>
           <MetricCard label="categorías" value={categoryCount} help="0 inact." />

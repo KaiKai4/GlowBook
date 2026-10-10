@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findAppointmentServiceIdsForCommand,
+
+  findOccupiedSlotsByEmployeeForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
 } from "../data/appointment-commands.repo";
 import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
 import { updateAppointmentSchedule } from "./update-appointment";
@@ -12,9 +14,10 @@ import { updateAppointmentSchedule } from "./update-appointment";
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findAppointmentServiceIdsForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/update-appointment", () => ({
   updateAppointmentWithRpc: vi.fn(),
@@ -24,9 +27,10 @@ const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
 const mockedFindAppointmentForCommand = vi.mocked(findAppointmentForCommand);
 const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
-const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findEmployeeWorkSchedulesForCommand);
-const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findEmployeeExceptionDatesForCommand);
-const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findEmployeeOccupiedSlotsForCommand);
+const mockedFindAppointmentServiceIdsForCommand = vi.mocked(findAppointmentServiceIdsForCommand);
+const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findWorkSchedulesByEmployeeForCommand);
+const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findExceptionDatesByEmployeeForCommand);
+const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
 const mockedUpdateAppointmentWithRpc = vi.mocked(updateAppointmentWithRpc);
 
 const appointmentId = "00000000-0000-0000-0000-000000000001";
@@ -50,7 +54,7 @@ const workAllWeek = Array.from({ length: 7 }, (_, day) => ({
   is_active: true,
 }));
 
-function mockValidUpdate() {
+function mockValidUpdate({ serviceActive = true }: { serviceActive?: boolean } = {}) {
   mockedFindAppointmentForCommand.mockResolvedValue({
     id: appointmentId,
     salon_id: salonId,
@@ -73,7 +77,7 @@ function mockValidUpdate() {
           duration_minutes: 30,
           price: 25,
           salon_id: salonId,
-          is_active: true,
+          is_active: serviceActive,
           category_id: "category-1",
         },
         employee: {
@@ -87,9 +91,9 @@ function mockValidUpdate() {
       },
     ],
   });
-  mockedFindEmployeeWorkSchedulesForCommand.mockResolvedValue(workAllWeek);
-  mockedFindEmployeeExceptionDatesForCommand.mockResolvedValue([]);
-  mockedFindEmployeeOccupiedSlotsForCommand.mockResolvedValue([]);
+  mockedFindEmployeeWorkSchedulesForCommand.mockResolvedValue(new Map([[employeeId, workAllWeek]]));
+  mockedFindEmployeeExceptionDatesForCommand.mockResolvedValue(new Map());
+  mockedFindEmployeeOccupiedSlotsForCommand.mockResolvedValue(new Map());
   mockedUpdateAppointmentWithRpc.mockResolvedValue({ ok: true });
 }
 
@@ -115,7 +119,7 @@ describe("update appointment schedule", () => {
     expect(mockedFindAppointmentForCommand).toHaveBeenCalledWith(appointmentId, salonId);
     expect(mockedFindEmployeeOccupiedSlotsForCommand).toHaveBeenCalledWith({
       salonId,
-      employeeId,
+      employeeIds: [employeeId],
       date: new Date(startTime),
       timezone: "UTC",
       excludeAppointmentId: appointmentId,
@@ -168,7 +172,7 @@ describe("update appointment schedule", () => {
   it("maps overlap errors to the scheduling message", async () => {
     mockedUpdateAppointmentWithRpc.mockResolvedValue({
       ok: false,
-      errorMessage: "violates no_overlap_per_employee",
+      reason: "slot_taken",
     });
 
     const result = await updateAppointmentSchedule(
@@ -186,5 +190,49 @@ describe("update appointment schedule", () => {
       ok: false,
       error: "El profesional ya tiene una cita en ese horario. Elige otro horario.",
     });
+  });
+});
+
+describe("update appointment schedule: servicios inactivos ya asignados", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockValidUpdate({ serviceActive: false });
+  });
+
+  it("guarda la cita si conserva un servicio inactivo que ya tenía asignado", async () => {
+    mockedFindAppointmentServiceIdsForCommand.mockResolvedValue([serviceId]);
+
+    const result = await updateAppointmentSchedule(
+      {
+        appointment_id: appointmentId,
+        start_time: startTime,
+        notes: "",
+        assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
+      },
+      { salonId, idempotencyKey }
+    );
+
+    expect(mockedFindAppointmentServiceIdsForCommand).toHaveBeenCalledWith(appointmentId, salonId);
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(mockedUpdateAppointmentWithRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("rechaza añadir un servicio inactivo que la cita no tenía", async () => {
+    mockedFindAppointmentServiceIdsForCommand.mockResolvedValue([]);
+
+    const result = await updateAppointmentSchedule(
+      {
+        appointment_id: appointmentId,
+        start_time: startTime,
+        notes: "",
+        assignments: [{ service_id: serviceId, employee_id: employeeId }],
+        idempotency_key: idempotencyKey,
+      },
+      { salonId, idempotencyKey }
+    );
+
+    expect(result).toEqual({ ok: false, error: "El servicio no está activo." });
+    expect(mockedUpdateAppointmentWithRpc).not.toHaveBeenCalled();
   });
 });

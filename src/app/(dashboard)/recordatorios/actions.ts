@@ -1,59 +1,49 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { isEffectiveSalonModuleEnabled } from "@/features/billing/use-cases/commercial-plans";
+import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
-import { hasPermission, PERMISSIONS } from "@/features/access";
-import { requireActiveProfile } from "@/app/_composition/request-context";
-import { assertActionRateLimit } from "@/infra/security/rate-limit";
-import { confirmAppointment } from "@/features/appointments/use-cases/confirm-appointment";
-import { recordManualReminder } from "@/features/reminders/use-cases/record-manual-reminder";
+import { PERMISSIONS } from "@/features/access";
+import { confirmAppointment } from "@/features/appointments";
 import {
+  recordManualReminder,
   parseConfirmReminderInput,
   parseManualReminderInput,
   type ConfirmReminderFields,
   type ManualReminderFields,
-} from "@/features/reminders/use-cases/reminder-input";
+  type ManualReminderInput,
+} from "@/features/reminders";
 import type { Result } from "@/infra/result";
 
-// markReminderSentAction conserva su guard a mano: el modulo de recordatorios del
-// plan se comprueba antes del limite de peticiones, y defineAction solo sabe de
-// permisos por clave. La validacion y el caso de uso viven en features/reminders.
+// El permiso reminders.send ya exige los módulos "recordatorios" y "plantillas"
+// (PERMISSION_FEATURES), asi que defineAction cubre el modulo del plan sin guard manual.
+// La validacion y el caso de uso viven en features/reminders.
 
 const CONFIRM_FLOW = defineAction<ConfirmReminderFields, ConfirmReminderFields, void>({
   permission: {
     key: PERMISSIONS.APPOINTMENTS_MANAGE,
     deniedMessage: "No tienes permiso para confirmar citas.",
   },
-  rateLimit: { scope: "recordatorios-confirmar", options: { max: 60, windowMs: 60_000 } },
+  rateLimit: { scope: "recordatorios-confirmar", options: RATE_LIMIT_POLICIES.write },
   parse: parseConfirmReminderInput,
   run: (input, session) => confirmAppointment(input.appointmentId, session.salonId, input.idempotencyKey),
   revalidate: () => ["/recordatorios", "/appointments"],
 });
 
+const SEND_FLOW = defineAction<FormData, ManualReminderInput, string>({
+  permission: {
+    key: PERMISSIONS.REMINDERS_SEND,
+    deniedMessage: "No tienes permiso para enviar recordatorios.",
+  },
+  rateLimit: { scope: "recordatorios-envio", options: RATE_LIMIT_POLICIES.write },
+  parse: (formData) => parseManualReminderInput(readManualReminderFields(formData)),
+  run: (input, session) =>
+    recordManualReminder({ salonId: session.salonId, userId: session.userId, ...input }),
+  revalidate: () => ["/recordatorios"],
+});
+
 // FormData: appointment_id, template_id (opcional) e idempotency_key (uuid).
 export async function markReminderSentAction(formData: FormData): Promise<Result<string>> {
-  const profile = await requireActiveProfile();
-  const remindersEnabled = await isEffectiveSalonModuleEnabled(profile, "recordatorios");
-
-  if (!remindersEnabled || !hasPermission(profile, PERMISSIONS.REMINDERS_SEND)) {
-    return { ok: false, error: "No tienes permiso para enviar recordatorios." };
-  }
-
-  const limited = await assertActionRateLimit(profile.id, "recordatorios-envio", { max: 60, windowMs: 60_000 });
-  if (!limited.ok) return limited;
-
-  const input = parseManualReminderInput(readManualReminderFields(formData));
-  if (!input.ok) return input;
-
-  const result = await recordManualReminder({
-    salonId: profile.salon_id,
-    userId: profile.id,
-    ...input.value,
-  });
-
-  if (result.ok) revalidatePath("/recordatorios");
-  return result;
+  return SEND_FLOW(formData);
 }
 
 // FormData: appointment_id e idempotency_key (uuid).

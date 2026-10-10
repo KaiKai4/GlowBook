@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
 import { PublicError } from "@/infra/public-error";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
-import { setRolePermissions, deleteRole } from "../data/roles.repo";
+import { deleteRole } from "../data/roles.repo";
 import { deleteSalonRole } from "./delete-role";
 
 vi.mock("server-only", () => ({}));
@@ -40,27 +40,6 @@ beforeEach(() => {
 });
 
 describe("roles: permisos y borrado con errores de dominio", () => {
-  it("asignar permisos a un rol inexistente lanza 'Rol no encontrado.'", async () => {
-    useSupabase({ roles: [{ data: null, error: null }] });
-
-    const failure = setRolePermissions(ROLE, SALON, ["appointments.view"]);
-
-    await expect(failure).rejects.toThrow(PublicError);
-    await expect(failure).rejects.toThrow("Rol no encontrado.");
-  });
-
-  it("asignar una clave de permiso que no existe lanza 'Uno o mas permisos no existen.'", async () => {
-    useSupabase({
-      roles: [{ data: { id: ROLE }, error: null }],
-      permissions: [{ data: [{ id: "p1", key: "appointments.view" }], error: null }],
-    });
-
-    const failure = setRolePermissions(ROLE, SALON, ["appointments.view", "inexistente.key"]);
-
-    await expect(failure).rejects.toThrow(PublicError);
-    await expect(failure).rejects.toThrow("Uno o mas permisos no existen.");
-  });
-
   it("borrar un rol inexistente lanza 'Rol no encontrado.'", async () => {
     useSupabase({ roles: [{ data: null, error: null }] });
 

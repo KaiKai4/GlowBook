@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Link2, RefreshCw, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { generateEmployeeInviteAction } from "../actions";
+import { generateEmployeeInviteAction } from "../actions-access";
 import { EmployeeInviteLinkCard } from "../employee-invite-link-card";
 import type { PendingEmployeeInvitation, RoleOption } from "../types";
 
@@ -23,7 +23,7 @@ export function PendingEmployeeAccessPanel({
 }: PendingEmployeeAccessPanelProps) {
   const [invitation, setInvitation] = useState<PendingEmployeeInvitation | null>(initialInvitation);
   // El enlace en claro solo existe recien generado: la DB guarda el hash, asi
-  // que una invitacion previa se muestra como metadatos + boton de regenerar.
+  // que una invitación previa se muestra como metadatos + boton de regenerar.
   const [freshLink, setFreshLink] = useState<{ url: string; expiresAt: string } | null>(null);
   // Una invitación existente conserva su rol, incluido "sin rol" (""): no se reemplaza
   // por el primer rol del salón. El primer rol solo es valor inicial sin invitación previa.
@@ -36,18 +36,18 @@ export function PendingEmployeeAccessPanel({
   function handleGenerate() {
     setInviteError(null);
     startInvite(async () => {
-      const res = await generateEmployeeInviteAction(employeeId, selectedRole || null);
-      if (res.ok) {
+      const result = await generateEmployeeInviteAction(employeeId, selectedRole || null);
+      if (result.ok) {
         setInvitation({
-          expiresAt: res.value.expiresAt,
+          expiresAt: result.value.expiresAt,
           roleId: selectedRole || null,
         });
         setFreshLink({
-          url: `${window.location.origin}/join/${res.value.token}`,
-          expiresAt: res.value.expiresAt,
+          url: `${window.location.origin}/join/${result.value.token}`,
+          expiresAt: result.value.expiresAt,
         });
       } else {
-        setInviteError(res.error);
+        setInviteError(result.error);
       }
     });
   }

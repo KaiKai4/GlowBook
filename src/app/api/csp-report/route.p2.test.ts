@@ -63,8 +63,8 @@ describe("POST /api/csp-report: tipo de contenido", () => {
   });
 });
 
-describe("POST /api/csp-report: limite de peticiones y tamaño", () => {
-  it("limita por IP con el maximo de 30 por minuto y responde 429", async () => {
+describe("POST /api/csp-report: límite de peticiones y tamaño", () => {
+  it("limita por IP con el máximo de 30 por minuto y responde 429", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
     const response = await POST(report(legacyBody(), LEGACY));
@@ -111,7 +111,7 @@ describe("POST /api/csp-report: contenido del informe", () => {
     expect(await response.json()).toEqual({ error: "Informe inválido." });
   });
 
-  it("registra un resumen minimo del informe legacy sin query strings y responde 204", async () => {
+  it("registra un resumen mínimo del informe legacy sin query strings y responde 204", async () => {
     const response = await POST(report(legacyBody(), LEGACY));
 
     expect(response.status).toBe(204);

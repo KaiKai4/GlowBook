@@ -5,8 +5,8 @@ import {
   expenseDisplayLabel,
 } from "./categories";
 
-describe("catalogo de categorias de gasto", () => {
-  it("tiene una etiqueta en espanol para cada categoria del catalogo", () => {
+describe("catálogo de categorías de gasto", () => {
+  it("tiene una etiqueta en espanol para cada categoría del catálogo", () => {
     for (const category of EXPENSE_CATEGORIES) {
       expect(EXPENSE_CATEGORY_LABELS[category]).toEqual(expect.any(String));
       expect(EXPENSE_CATEGORY_LABELS[category].length).toBeGreaterThan(0);
@@ -15,7 +15,7 @@ describe("catalogo de categorias de gasto", () => {
   });
 
   describe("expenseDisplayLabel", () => {
-    it("usa la etiqueta del catalogo para categorias distintas de 'other', ignorando texto libre", () => {
+    it("usa la etiqueta del catálogo para categorías distintas de 'other', ignorando texto libre", () => {
       expect(expenseDisplayLabel("rent", "texto ajeno")).toBe("Alquiler");
       expect(expenseDisplayLabel("tools", null)).toBe("Herramientas y equipo");
     });

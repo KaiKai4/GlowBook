@@ -116,3 +116,29 @@ export function trimMonthlyRows<T extends MonthlyExportRow>(rows: T[], currentMo
   const currentIndex = rows.findIndex((row) => row.monthKey === currentMonthKey);
   return rows.slice(firstActive, Math.max(lastActive, currentIndex) + 1);
 }
+
+/** Forma mínima de los totales de periodo (report_period_totals) que usa el acumulado. */
+export interface PeriodTotalsSource {
+  revenue: number;
+  retailRevenue: number;
+  grossRevenue: number;
+  manualExpenses: number;
+  inventoryPurchases: number;
+  totalExpenses: number;
+  estimatedProfit: number;
+  completedCount: number;
+}
+
+/** Totales de periodo con la forma del acumulado (LifetimeReportTotals). */
+export function toLifetimeTotals(totals: PeriodTotalsSource): LifetimeReportTotals {
+  return {
+    appointmentRevenue: totals.revenue,
+    retailRevenue: totals.retailRevenue,
+    grossRevenue: totals.grossRevenue,
+    operationalExpenses: totals.manualExpenses,
+    inventoryPurchases: totals.inventoryPurchases,
+    totalExpenses: totals.totalExpenses,
+    estimatedProfit: totals.estimatedProfit,
+    completedAppointments: totals.completedCount,
+  };
+}

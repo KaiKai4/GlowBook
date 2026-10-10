@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
 import { captureError } from "@/infra/observability";
 import { deleteSalon } from "./delete-salon";
+import { PublicError } from "@/infra/public-error";
 import { publishAuditEvent } from "@/features/audit";
 
 // Borrado destructivo: la confirmacion debe coincidir exactamente con el id
-// del salon y, aunque se rechace, el intento queda auditado. Solo un borrado
+// del salón y, aunque se rechace, el intento queda auditado. Solo un borrado
 // completado devuelve ok.
 
 vi.mock("@/features/platform/data/delete-salon.repo", () => ({
@@ -39,12 +40,12 @@ describe("deleteSalon confirmation", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Para eliminar el salon debes escribir exactamente su ID.",
+      error: "Para eliminar el salón debes escribir exactamente su ID.",
     });
     expect(mockedDeleteCompletely).not.toHaveBeenCalled();
   });
 
-  it("audits the rejected confirmation as a failed delete for that salon", async () => {
+  it("audits the rejected confirmation as a failed delete for that salón", async () => {
     await deleteSalon({ salonId: SALON_ID, confirmation: "otro-id", actorUserId: ACTOR_ID });
 
     expect(mockedAudit).toHaveBeenCalledWith("platform.salon_deleted", {
@@ -65,7 +66,7 @@ describe("deleteSalon confirmation", () => {
 });
 
 describe("deleteSalon execution", () => {
-  it("deletes the salon when the exact id was confirmed and audits the success", async () => {
+  it("deletes the salón when the exact id was confirmed and audits the success", async () => {
     const result = await deleteSalon({ salonId: SALON_ID, confirmation: SALON_ID, actorUserId: ACTOR_ID });
 
     expect(result).toEqual({ ok: true, value: undefined });
@@ -78,7 +79,7 @@ describe("deleteSalon execution", () => {
     });
   });
 
-  it("returns the adapter detail, logs it and audits the failure when the deletion fails", async () => {
+  it("hides the adapter detail from the public message, logs it and audits the failure", async () => {
     const adapterError = new Error("Auth cleanup failed");
     mockedDeleteCompletely.mockRejectedValue(adapterError);
 
@@ -86,8 +87,9 @@ describe("deleteSalon execution", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo eliminar el salon y sus datos. Detalle: Auth cleanup failed",
+      error: "No se pudo eliminar el salón y sus datos.",
     });
+    expect(JSON.stringify(result)).not.toContain("Auth cleanup failed");
     expect(mockedCaptureError).toHaveBeenCalledWith(adapterError, {
       module: "platform",
       action: "delete_salon",
@@ -102,17 +104,26 @@ describe("deleteSalon execution", () => {
     });
   });
 
-  it("uses a generic detail when the deletion rejects with a non-Error value", async () => {
+  it("uses the fixed message when the deletion rejects with a non-Error value", async () => {
     mockedDeleteCompletely.mockRejectedValue(null);
 
     const result = await deleteSalon({ salonId: SALON_ID, confirmation: SALON_ID });
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo eliminar el salon y sus datos. Detalle: Error desconocido",
+      error: "No se pudo eliminar el salón y sus datos.",
     });
     expect(mockedAudit).toHaveBeenCalledWith(
       "platform.salon_deleted", expect.objectContaining({ status: "failed", errorMessage: "Error desconocido" })
     );
+  });
+
+  it("shows the message of a PublicError thrown on purpose by the adapter", async () => {
+    mockedDeleteCompletely.mockRejectedValue(new PublicError("El salón tiene facturas abiertas."));
+
+    const result = await deleteSalon({ salonId: SALON_ID, confirmation: SALON_ID, actorUserId: ACTOR_ID });
+
+    expect(result).toEqual({ ok: false, error: "El salón tiene facturas abiertas." });
+    expect(mockedCaptureError).toHaveBeenCalled();
   });
 });

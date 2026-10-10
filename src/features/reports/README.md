@@ -8,7 +8,8 @@ Interface principal:
 - `use-cases/get-operational-report.ts`
 - `domain/period.ts`
 - `domain/metrics.ts` (tipos del view model)
-- `domain/analytics.ts`
+- `domain/analytics.ts` (incluye `toLifetimeTotals`)
+- `domain/period.ts` (incluye `lastDayOfMonth`)
 - `data/reports.repo.ts`
 
 Autoridad final:
@@ -26,8 +27,8 @@ Cambio de conducta (Fase 5):
   que tope en 1000 filas: con mas de 1000 citas o items en el periodo, las
   cifras (ingresos, desgloses, comisiones) se truncaban en silencio.
 - Ahora las cifras del periodo son completas sin importar el volumen. Las
-  definiciones son las mismas que el calculo JS anterior (ver el oraculo en
-  `use-cases/get-operational-report.parity.test.ts`).
+  definiciones son las mismas que el calculo JS anterior (comprobado contra la
+  base local en `use-cases/get-operational-report.rpc.test.ts`).
 - El filtro mensual recalcula solo `OperationalReportPeriodViewModel`.
 - Las graficas consumen `HistoricalReportAnalytics`, una ventana fija de 12
   meses que no se vuelve a solicitar al cambiar el mes de las tarjetas.
@@ -57,7 +58,7 @@ Adapters externos:
 
 Tests que protegen el Module:
 
-- `use-cases/get-operational-report.parity.test.ts`
+- `use-cases/get-operational-report.rpc.test.ts` (base local real)
 - `use-cases/reports-sql-parity.test.ts` (oraculo JS del historial y exportacion)
 - `domain/period.test.ts`
 

@@ -128,7 +128,7 @@ describe("saveCommercialPlanModulesBatch", () => {
       err("Selecciona un plan.")
     );
     expect(await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: [] })).toEqual(
-      err("No hay modulos para guardar.")
+      err("No hay módulos para guardar.")
     );
     expect(savePlanModuleMock).not.toHaveBeenCalled();
   });
@@ -169,7 +169,7 @@ describe("saveCommercialPlanModulesBatch", () => {
 
     const result = await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: ["reports"] });
 
-    expect(result).toEqual(err(expect.stringContaining("No se pudieron guardar los modulos del plan.")));
+    expect(result).toEqual(err(expect.stringContaining("No se pudieron guardar los módulos del plan.")));
     expect(auditMock).not.toHaveBeenCalled();
   });
 });

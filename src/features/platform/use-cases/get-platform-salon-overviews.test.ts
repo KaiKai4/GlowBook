@@ -8,7 +8,7 @@ vi.mock("../data/salon-overviews.repo", () => ({
 
 const mockedFindSalonOverviews = vi.mocked(findSalonOverviews);
 
-describe("get platform salon overviews", () => {
+describe("get platform salón overviews", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedFindSalonOverviews.mockResolvedValue([]);

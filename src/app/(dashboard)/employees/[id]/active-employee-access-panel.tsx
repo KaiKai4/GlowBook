@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions";
+import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions-access";
 import { EmployeeInviteLinkCard } from "../employee-invite-link-card";
 import type { RoleOption } from "../types";
 
@@ -32,30 +32,33 @@ export function ActiveEmployeeAccessPanel({
   // El token en claro solo existe en la respuesta del action; se guarda la URL
   // construida para mostrarla una unica vez.
   const [resetLink, setResetLink] = useState<{ url: string; expiresAt: string } | null>(null);
+  const [resetWarning, setResetWarning] = useState<string | null>(null);
 
   const roleDirty = roleId !== (currentRoleId ?? "");
 
   function handleRoleSave() {
     setRoleError(null);
     startRoleSave(async () => {
-      const res = await changeEmployeeRoleAction(profileId, roleId || null);
-      if (res.ok) setRoleSaved(true);
-      else setRoleError(res.error);
+      const result = await changeEmployeeRoleAction(profileId, roleId || null);
+      if (result.ok) setRoleSaved(true);
+      else setRoleError(result.error);
     });
   }
 
   function handleResetAccess() {
     setRoleError(null);
+    setResetWarning(null);
     startReset(async () => {
       // "Sin rol" debe enviarse como null: no reutilizar el rol anterior (conservaría permisos).
-      const res = await resetEmployeeAccessAction(employeeId, roleId || null);
-      if (res.ok) {
+      const result = await resetEmployeeAccessAction(employeeId, roleId || null);
+      if (result.ok) {
         setResetLink({
-          url: `${window.location.origin}/join/${res.value.token}`,
-          expiresAt: res.value.expiresAt,
+          url: `${window.location.origin}/join/${result.value.token}`,
+          expiresAt: result.value.expiresAt,
         });
+        if (result.warnings?.length) setResetWarning(result.warnings.join(" "));
       } else {
-        setRoleError(res.error);
+        setRoleError(result.error);
       }
     });
   }
@@ -64,7 +67,7 @@ export function ActiveEmployeeAccessPanel({
     <div className="space-y-4">
       <div className="flex items-center gap-2.5 rounded-lg border border-success-border-subtle bg-success-subtle px-4 py-3">
         <StatusBadge variant="success" label="Acceso activo" />
-        <span className="ml-auto text-xs text-success-fg">Este colaborador puede iniciar sesion.</span>
+        <span className="ml-auto text-xs text-success-fg">Este colaborador puede iniciar sesión.</span>
       </div>
 
       <div className="flex items-end gap-3">
@@ -116,6 +119,10 @@ export function ActiveEmployeeAccessPanel({
 
       {resetLink && (
         <EmployeeInviteLinkCard url={resetLink.url} title="Nuevo enlace generado" expiresAt={resetLink.expiresAt} />
+      )}
+
+      {resetWarning && (
+        <p className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2 text-sm text-warning-strong">{resetWarning}</p>
       )}
 
       {roleSaved && !roleDirty && (

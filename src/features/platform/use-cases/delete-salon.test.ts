@@ -15,7 +15,7 @@ const mockedDeleteSalonCompletely = vi.mocked(deleteSalonCompletely);
 const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 
-describe("delete salon", () => {
+describe("delete salón", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedDeleteSalonCompletely.mockResolvedValue(undefined);
@@ -29,12 +29,12 @@ describe("delete salon", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Para eliminar el salon debes escribir exactamente su ID.",
+      error: "Para eliminar el salón debes escribir exactamente su ID.",
     });
     expect(mockedDeleteSalonCompletely).not.toHaveBeenCalled();
   });
 
-  it("deletes the salon when confirmation matches", async () => {
+  it("deletes the salón when confirmation matches", async () => {
     await expect(
       deleteSalon({ salonId: "salon-1", confirmation: "salon-1", actorUserId })
     ).resolves.toEqual({ ok: true, value: undefined });
@@ -47,7 +47,7 @@ describe("delete salon", () => {
     });
   });
 
-  it("returns Adapter failure details for platform operators", async () => {
+  it("keeps adapter failure details out of the public message and audits them", async () => {
     mockedDeleteSalonCompletely.mockRejectedValue(new Error("Auth cleanup failed"));
 
     const result = await deleteSalon({
@@ -56,8 +56,7 @@ describe("delete salon", () => {
       actorUserId,
     });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("Auth cleanup failed");
+    expect(result).toEqual({ ok: false, error: "No se pudo eliminar el salón y sus datos." });
     expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_deleted", {
       actorUserId,
       action: "delete_salon",

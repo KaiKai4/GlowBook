@@ -6,7 +6,7 @@ import { hasPermission, PERMISSIONS } from "@/features/access";
 import {
   getSalonActivity,
   type SalonActivityEntry,
-} from "@/features/salon/use-cases/get-salon-activity";
+} from "@/features/salon";
 
 export default async function SalonActivityPage() {
   const profile = await requireProfile();
@@ -19,7 +19,7 @@ export default async function SalonActivityPage() {
     );
   }
 
-  const view = await getSalonActivity();
+  const view = await getSalonActivity(profile.salon_id);
   const groups = groupByDate(view.entries);
 
   return (

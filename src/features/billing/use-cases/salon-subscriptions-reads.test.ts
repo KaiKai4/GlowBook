@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  findEffectivePlanRows,
+  findEffectivePlanRowsForPlatform,
+  findEffectivePlanRowsForSalon,
   findOpenSalonAlerts,
   findSalonPayments,
   findSubscriptionRows,
@@ -18,10 +19,11 @@ import type {
 import { legacyProfile, override, plan, rows } from "@/test/billing-plan-fixtures";
 import {
   getEffectiveDisabledSalonFeatures,
-  getSalonSubscriptionDetail,
-  getSubscriptionsPage,
   isEffectiveSalonModuleEnabled,
-} from "./salon-subscriptions";
+  salonModuleScopeFromProfile,
+} from "./plan-modules";
+import { getSalonSubscriptionDetail } from "./salon-subscription-detail";
+import { getSubscriptionsPage } from "./salon-subscriptions-page";
 import { SALON_FEATURES } from "@/features/salon-features";
 
 // Lecturas de suscripciones: el panel de plataforma (todas las filas de salones),
@@ -32,7 +34,8 @@ vi.mock("../data/salon-subscriptions.repo", () => ({
   assignSalonPlan: vi.fn(),
   findAssignmentForPayment: vi.fn(),
   findAssignmentStartsAt: vi.fn(),
-  findEffectivePlanRows: vi.fn(),
+  findEffectivePlanRowsForPlatform: vi.fn(),
+  findEffectivePlanRowsForSalon: vi.fn(),
   findOpenSalonAlerts: vi.fn(),
   findSalonPayments: vi.fn(),
   findSubscriptionRows: vi.fn(),
@@ -56,7 +59,8 @@ vi.mock("@/features/audit", () => ({
 }));
 
 const findSubscriptionRowsMock = vi.mocked(findSubscriptionRows);
-const findEffectivePlanRowsMock = vi.mocked(findEffectivePlanRows);
+const findEffectivePlanRowsMock = vi.mocked(findEffectivePlanRowsForSalon);
+const findPlatformRowsMock = vi.mocked(findEffectivePlanRowsForPlatform);
 const findSalonPaymentsMock = vi.mocked(findSalonPayments);
 const findOpenSalonAlertsMock = vi.mocked(findOpenSalonAlerts);
 const findCommercialAddonsMock = vi.mocked(findCommercialAddons);
@@ -313,7 +317,7 @@ describe("getSalonSubscriptionDetail", () => {
       addonId: null,
       isGift: false,
     });
-    findEffectivePlanRowsMock.mockResolvedValue(
+    findPlatformRowsMock.mockResolvedValue(
       rows({
         status: "active",
         plan: basicPlan,
@@ -352,7 +356,7 @@ describe("getSalonSubscriptionDetail", () => {
     const detail = await getSalonSubscriptionDetail(SALON_1);
 
     expect(detail.extras).toEqual([
-      expect.objectContaining({ id: "ov-module", name: "Reportes", detail: "Modulo activado", monthlyPrice: 0 }),
+      expect.objectContaining({ id: "ov-module", name: "Reportes", detail: "Módulo activado", monthlyPrice: 0 }),
       // Extra de catálogo: precio 10 x 2 y detalle +200 citas (delta x cantidad).
       expect.objectContaining({
         id: "ov-addon",
@@ -403,7 +407,7 @@ describe("getSalonSubscriptionDetail", () => {
       quantity: 2,
       addonId: null,
     });
-    findEffectivePlanRowsMock.mockResolvedValue(
+    findPlatformRowsMock.mockResolvedValue(
       rows({ status: "active", plan: basicPlan, overrides: [boost], usage: { appointments_monthly: 50 } })
     );
 
@@ -425,7 +429,7 @@ describe("getSalonSubscriptionDetail", () => {
   it("oculta límites de módulos apagados y expone módulos activados por sobreescritura", async () => {
     const enableReports = override({ moduleKey: "reports", moduleEnabled: true, addonId: null });
     const disableEmployees = override({ moduleKey: "employees", moduleEnabled: false, addonId: null });
-    findEffectivePlanRowsMock.mockResolvedValue(
+    findPlatformRowsMock.mockResolvedValue(
       rows({ status: "active", plan: basicPlan, overrides: [enableReports, disableEmployees] })
     );
 
@@ -435,15 +439,15 @@ describe("getSalonSubscriptionDetail", () => {
     expect(detail.limits.map((limit) => limit.metric.key)).toEqual(["appointments_monthly"]);
     // Módulo que no está en el catálogo se muestra con su clave y el estado de apagado.
     const disabled = override({ moduleKey: "customers", moduleEnabled: false, addonId: null });
-    findEffectivePlanRowsMock.mockResolvedValueOnce(rows({ status: "active", plan: basicPlan, overrides: [disabled] }));
+    findPlatformRowsMock.mockResolvedValueOnce(rows({ status: "active", plan: basicPlan, overrides: [disabled] }));
     const withUnknownModule = await getSalonSubscriptionDetail(SALON_1);
     expect(withUnknownModule.extras[0]).toEqual(
-      expect.objectContaining({ name: "customers", detail: "Modulo desactivado" })
+      expect.objectContaining({ name: "customers", detail: "Módulo desactivado" })
     );
   });
 
   it("no cobra el plan cuando el salón no tiene asignación ni plan", async () => {
-    findEffectivePlanRowsMock.mockResolvedValue(rows({ status: null, plan: null, overrides: [] }));
+    findPlatformRowsMock.mockResolvedValue(rows({ status: null, plan: null, overrides: [] }));
 
     const detail = await getSalonSubscriptionDetail(SALON_1);
 
@@ -457,7 +461,7 @@ describe("getSalonSubscriptionDetail", () => {
 
   it("el detalle con asignación pausada es coherente con el plan efectivo: sin módulos, límites ni precio de plan", async () => {
     // getEffectiveSalonPlan descarta el plan en estado pausado; el detalle debe hacer lo mismo.
-    findEffectivePlanRowsMock.mockResolvedValue(rows({ status: "paused", plan: basicPlan, overrides: [] }));
+    findPlatformRowsMock.mockResolvedValue(rows({ status: "paused", plan: basicPlan, overrides: [] }));
 
     const detail = await getSalonSubscriptionDetail(SALON_1);
 
@@ -474,7 +478,7 @@ describe("acceso efectivo a módulos con fallback legacy", () => {
   it("getEffectiveDisabledSalonFeatures usa los módulos desactivados del plan cuando existe", async () => {
     findEffectivePlanRowsMock.mockResolvedValue(rows({ status: "active", plan: basicPlan }));
 
-    const disabled = await getEffectiveDisabledSalonFeatures(legacy);
+    const disabled = await getEffectiveDisabledSalonFeatures(salonModuleScopeFromProfile(legacy));
 
     expect(disabled).toContain("reports");
     expect(disabled).not.toContain("appointments");
@@ -485,28 +489,28 @@ describe("acceso efectivo a módulos con fallback legacy", () => {
 
   it("getEffectiveDisabledSalonFeatures cae a las banderas legacy sin plan o si la lectura falla", async () => {
     findEffectivePlanRowsMock.mockResolvedValueOnce(rows({ status: null, plan: null }));
-    expect(await getEffectiveDisabledSalonFeatures(legacy)).toEqual(["reports"]);
+    expect(await getEffectiveDisabledSalonFeatures(salonModuleScopeFromProfile(legacy))).toEqual(["reports"]);
 
     findEffectivePlanRowsMock.mockRejectedValueOnce(new Error("base caída"));
-    expect(await getEffectiveDisabledSalonFeatures(legacy)).toEqual(["reports"]);
+    expect(await getEffectiveDisabledSalonFeatures(salonModuleScopeFromProfile(legacy))).toEqual(["reports"]);
   });
 
   it("isEffectiveSalonModuleEnabled consulta el plan efectivo cuando existe", async () => {
     findEffectivePlanRowsMock.mockResolvedValue(rows({ status: "active", plan: basicPlan }));
 
-    expect(await isEffectiveSalonModuleEnabled(legacy, "appointments")).toBe(true);
-    expect(await isEffectiveSalonModuleEnabled(legacy, "reports")).toBe(false);
+    expect(await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacy), "appointments")).toBe(true);
+    expect(await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacy), "reports")).toBe(false);
   });
 
   it("isEffectiveSalonModuleEnabled usa las banderas legacy sin plan o si la lectura falla", async () => {
     findEffectivePlanRowsMock.mockResolvedValueOnce(rows({ status: null, plan: null }));
-    expect(await isEffectiveSalonModuleEnabled(legacy, "reports")).toBe(false);
+    expect(await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacy), "reports")).toBe(false);
     findEffectivePlanRowsMock.mockResolvedValueOnce(rows({ status: null, plan: null }));
-    expect(await isEffectiveSalonModuleEnabled(legacy, "customers")).toBe(true);
+    expect(await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacy), "customers")).toBe(true);
 
     findEffectivePlanRowsMock.mockRejectedValueOnce(new Error("base caída"));
-    expect(await isEffectiveSalonModuleEnabled(legacy, "customers")).toBe(true);
+    expect(await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacy), "customers")).toBe(true);
     findEffectivePlanRowsMock.mockRejectedValueOnce(new Error("base caída"));
-    expect(await isEffectiveSalonModuleEnabled(legacy, "reports")).toBe(false);
+    expect(await isEffectiveSalonModuleEnabled(salonModuleScopeFromProfile(legacy), "reports")).toBe(false);
   });
 });

@@ -10,7 +10,15 @@ import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fix
 import { createRoleAction, deleteRoleAction, updateRolePermissionsAction } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
+vi.mock("@/app/_composition/request-context", async () => {
+  // requireActionContext deriva el contexto minimo del mismo mock de perfil que usa el test.
+  const { contextFromProfile } = await import("@/test/action-fixtures");
+  const requireActiveProfile = vi.fn();
+  return {
+    requireActiveProfile,
+    requireActionContext: vi.fn(async () => contextFromProfile(await requireActiveProfile())),
+  };
+});
 vi.mock("@/features/access/use-cases/create-role", () => ({ createRoleWithPermissions: vi.fn() }));
 vi.mock("@/features/access/use-cases/delete-role", () => ({ deleteSalonRole: vi.fn() }));
 vi.mock("@/features/access/use-cases/update-role-permissions", () => ({
@@ -18,7 +26,7 @@ vi.mock("@/features/access/use-cases/update-role-permissions", () => ({
 }));
 
 const rolesManager = buildProfile({ permissions: [PERMISSIONS.ROLES_MANAGE] });
-const invalidPermissions = "Permisos invalidos.";
+const invalidPermissions = "Permisos inválidos.";
 
 describe("roles actions", () => {
   beforeEach(() => {
@@ -74,7 +82,7 @@ describe("roles actions", () => {
       );
 
       expect(result).toEqual({ ok: true, value: "role-1" });
-      expect(createRoleWithPermissions).toHaveBeenCalledWith(SALON_ID, {
+      expect(createRoleWithPermissions).toHaveBeenCalledWith({
         name: "Recepción",
         permission_keys: ["appointments.view", "customers.manage"],
       });
@@ -86,7 +94,7 @@ describe("roles actions", () => {
 
       await createRoleAction(null, formDataOf({ name: "Solo lectura", permission_keys: "   " }));
 
-      expect(createRoleWithPermissions).toHaveBeenCalledWith(SALON_ID, {
+      expect(createRoleWithPermissions).toHaveBeenCalledWith({
         name: "Solo lectura",
         permission_keys: [],
       });
@@ -130,7 +138,7 @@ describe("roles actions", () => {
       );
 
       expect(result).toEqual({ ok: true, value: undefined });
-      expect(updateRolePermissions).toHaveBeenCalledWith(SALON_ID, {
+      expect(updateRolePermissions).toHaveBeenCalledWith({
         role_id: RECORD_ID,
         permission_keys: ["reports.view"],
       });

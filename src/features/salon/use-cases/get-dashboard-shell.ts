@@ -1,9 +1,14 @@
 import "server-only";
 
-import { getDisabledSalonFeatures, getPermissions, type Permission } from "@/features/access";
+import {
+  getDisabledSalonFeatures,
+  getPermissions,
+  withDisabledFeatures,
+  type Permission,
+} from "@/features/access";
 import type { ProfileWithRole } from "@/types/app.types";
 import type { SalonFeatureKey } from "@/features/salon-features";
-import { findDashboardShellSalon } from "../data/salon.repo";
+import { findDashboardShellSalon } from "../data/salon-settings.repo";
 import {
   evaluatePaymentStanding,
   getEffectiveSalonPlan,
@@ -25,9 +30,17 @@ export interface DashboardShellViewModel {
   permissions: Permission[];
   disabledFeatures: SalonFeatureKey[];
   paymentStanding: PaymentStanding;
+  /** Aviso de gracia ya calculado para el banner del dashboard (null fuera de gracia). */
+  paymentGrace: { overdueSince: string; graceDaysLeft: number } | null;
 }
 
-/** Estado de pago del salon, evaluado al acceder (sin cron). */
+/** Aviso de pago solo durante la gracia: el banner no decide estados. */
+function toPaymentGrace(standing: PaymentStanding): DashboardShellViewModel["paymentGrace"] {
+  if (standing.state !== "grace" || standing.overdueSince === null) return null;
+  return { overdueSince: standing.overdueSince, graceDaysLeft: standing.graceDaysLeft };
+}
+
+/** Estado de pago del salón, evaluado al acceder (sin cron). */
 async function getSalonPaymentStanding(salonId: string): Promise<PaymentStanding> {
   const effectivePlan = await readEffectivePlanOrNull(salonId, "dashboard-shell", getEffectiveSalonPlan);
   return evaluatePaymentStanding({
@@ -58,21 +71,16 @@ export async function getDashboardShell(
   const salon = await findDashboardShellSalon(profile.salon_id);
   if (!salon) return null;
 
-  const profileWithSalonFeatures: ProfileWithRole = {
-    ...profile,
-    salon: { disabled_features: salon.disabled_features },
-  };
+  const profileWithSalonFeatures = withDisabledFeatures(profile, salon.disabled_features);
 
   const effectivePlan = await readEffectivePlanOrNull(profile.salon_id, "dashboard-shell", getEffectiveSalonPlan);
   const disabledFeatures = effectivePlan?.plan
     ? effectivePlan.disabledModules
     : getDisabledSalonFeatures(profileWithSalonFeatures);
 
-  const profileForAccess: ProfileWithRole = {
-    ...profile,
-    salon: { disabled_features: disabledFeatures },
-  };
+  const profileForAccess = withDisabledFeatures(profile, disabledFeatures);
 
+  const paymentStanding = await getSalonPaymentStanding(profile.salon_id);
   return {
     salonName: salon.name,
     isActive: salon.is_active,
@@ -80,6 +88,7 @@ export async function getDashboardShell(
     bgStyle: salon.bg_style || "neutral",
     permissions: getPermissions(profileForAccess),
     disabledFeatures,
-    paymentStanding: await getSalonPaymentStanding(profile.salon_id),
+    paymentStanding,
+    paymentGrace: toPaymentGrace(paymentStanding),
   };
 }

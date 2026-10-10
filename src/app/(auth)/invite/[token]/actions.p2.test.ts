@@ -34,8 +34,8 @@ beforeEach(() => {
   signIn.mockResolvedValue({ error: null });
 });
 
-describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
-  it("limita por IP usando x-real-ip con el maximo anonimo de 10 por minuto", async () => {
+describe("acceptInvitationAction (invitación de salon, sin sesion)", () => {
+  it("limita por IP usando x-real-ip con el máximo anonimo de 10 por minuto", async () => {
     vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
 
     await acceptInvitationAction(INPUT);
@@ -47,7 +47,7 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     });
   });
 
-  it("bloquea por rate limit sin aceptar la invitacion", async () => {
+  it("bloquea por rate limit sin aceptar la invitación", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
     const result = await acceptInvitationAction(INPUT);
@@ -56,7 +56,7 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     expect(acceptInvitation).not.toHaveBeenCalled();
   });
 
-  it("acepta la invitacion con los datos recibidos y devuelve su resultado", async () => {
+  it("acepta la invitación con los datos recibidos y devuelve su resultado", async () => {
     vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
 
     const result = await acceptInvitationAction(INPUT);
@@ -65,7 +65,7 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     expect(result).toEqual(ok({ signedIn: true }));
   });
 
-  it("entra al panel con el correo y la contraseña de la invitacion tras aceptarla", async () => {
+  it("entra al panel con el correo y la contraseña de la invitación tras aceptarla", async () => {
     vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
 
     await acceptInvitationAction(INPUT);
@@ -73,7 +73,7 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     expect(signIn).toHaveBeenCalledWith({ email: INPUT.email, password: INPUT.password });
   });
 
-  it("si el inicio de sesion falla la invitacion sigue aceptada y devuelve signedIn false", async () => {
+  it("si el inicio de sesión falla la invitación sigue aceptada y devuelve signedIn false", async () => {
     vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
     signIn.mockResolvedValue({ error: new Error("Email not confirmed") });
 
@@ -82,7 +82,7 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     expect(result).toEqual(ok({ signedIn: false }));
   });
 
-  it("si la invitacion no se acepta no intenta iniciar sesion", async () => {
+  it("si la invitación no se acepta no intenta iniciar sesión", async () => {
     vi.mocked(acceptInvitation).mockResolvedValue(err("El enlace ha caducado."));
 
     await acceptInvitationAction(INPUT);
@@ -90,7 +90,7 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     expect(signIn).not.toHaveBeenCalled();
   });
 
-  it("devuelve el error de validacion del caso de uso tal cual", async () => {
+  it("devuelve el error de validación del caso de uso tal cual", async () => {
     vi.mocked(acceptInvitation).mockResolvedValue(err("El enlace ha caducado."));
 
     const result = await acceptInvitationAction(INPUT);
@@ -98,7 +98,7 @@ describe("acceptInvitationAction (invitacion de salon, sin sesion)", () => {
     expect(result).toEqual(err("El enlace ha caducado."));
   });
 
-  it("cuando falta x-real-ip usa el ultimo valor de x-forwarded-for, no el primero que el cliente puede falsear", async () => {
+  it("cuando falta x-real-ip usa el último valor de x-forwarded-for, no el primero que el cliente puede falsear", async () => {
     requestHeaders({ "x-forwarded-for": "203.0.113.4, 198.51.100.4" });
     vi.mocked(acceptInvitation).mockResolvedValue(ok(undefined));
 

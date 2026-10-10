@@ -2,6 +2,9 @@ import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.rep
 import { captureError } from "@/infra/observability";
 import { ok, type Result } from "@/infra/result";
 import { publishAuditEvent } from "@/features/audit";
+import { PublicError } from "@/infra/public-error";
+
+const DELETE_FAILED_MESSAGE = "No se pudo eliminar el salón y sus datos.";
 
 export interface DeleteSalonInput {
   salonId: string;
@@ -24,7 +27,7 @@ export async function deleteSalon({
     });
     return {
       ok: false,
-      error: "Para eliminar el salon debes escribir exactamente su ID.",
+      error: "Para eliminar el salón debes escribir exactamente su ID.",
     };
   }
 
@@ -51,9 +54,11 @@ export async function deleteSalon({
       targetSalonId: salonId,
       errorMessage: message,
     });
+    // El detalle interno (BD, red) solo va al registro y a la auditoria; al usuario
+    // solo llega un mensaje fijo o el PublicError lanzado a proposito (ADR 0018).
     return {
       ok: false,
-      error: `No se pudo eliminar el salon y sus datos. Detalle: ${message}`,
+      error: error instanceof PublicError ? error.message : DELETE_FAILED_MESSAGE,
     };
   }
 }

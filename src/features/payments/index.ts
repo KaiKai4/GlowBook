@@ -1,4 +1,4 @@
-// Punto publico del modulo payments. Otros modulos importan solo desde aqui.
+// Punto publico del modulo payments. Otros módulos importan solo desde aquí.
 // Modulo puro (sin I/O): seguro para componentes cliente.
 export {
   isPaymentMethodEnabled,

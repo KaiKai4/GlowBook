@@ -1,11 +1,15 @@
 import { addMinutes, getZonedTimeParts, zonedWallTimeToUtc } from "@/infra/format/dates";
 import { evaluateTimeRange } from "./availability";
+import { isEligible } from "./eligibility";
 import type {
   BusinessHour,
-  OccupiedSlot,
+  OccupiedByEmployee,
   SalonConfig,
   WorkSchedule,
 } from "./types";
+
+// Re-exportado para los consumidores del asistente; la definición única está en ./types.
+export type { OccupiedByEmployee } from "./types";
 
 export interface AppointmentServiceRow {
   key: string;
@@ -13,8 +17,6 @@ export interface AppointmentServiceRow {
   serviceId: string;
   employeeId: string;
 }
-
-export type OccupiedByEmployee = Record<string, OccupiedSlot[]>;
 
 export interface WizardServiceOption {
   id: string;
@@ -123,11 +125,7 @@ export function findEligibleEmployees<
   const service = serviceMap.get(serviceId);
   if (!service) return [];
 
-  const candidates = employees.filter(
-    (employee) =>
-      employee.service_ids.includes(serviceId) &&
-      employee.category_ids.includes(service.category_id)
-  );
+  const candidates = employees.filter((employee) => isEligible(employee, service));
 
   if (!start || !end) return candidates;
 

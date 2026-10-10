@@ -27,12 +27,12 @@ export type NewPaymentMethodResult = { ok: true; method: string } | { ok: false;
 // (sin distinguir mayúsculas).
 export function validateNewPaymentMethod(value: string, enabled: readonly string[]): NewPaymentMethodResult {
   const method = normalizePaymentMethod(value);
-  if (!method) return { ok: false, error: "Escribe un metodo de pago." };
+  if (!method) return { ok: false, error: "Escribe un método de pago." };
   if (method.length > MAX_PAYMENT_METHOD_LENGTH) {
-    return { ok: false, error: "El metodo de pago no puede superar 64 caracteres." };
+    return { ok: false, error: "El método de pago no puede superar 64 caracteres." };
   }
   if (enabled.some((item) => item.toLocaleLowerCase() === method.toLocaleLowerCase())) {
-    return { ok: false, error: "Ese metodo de pago ya esta en la lista." };
+    return { ok: false, error: "Ese método de pago ya esta en la lista." };
   }
   return { ok: true, method };
 }

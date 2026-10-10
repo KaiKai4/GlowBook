@@ -19,7 +19,7 @@ export function PeriodColumn({
   return (
     <div
       role="radiogroup"
-      aria-label="Periodo"
+      aria-label="Período"
       className="relative z-10 h-[180px]"
     >
       {(["AM", "PM"] as TimePeriod[]).map((period) => {

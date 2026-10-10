@@ -11,13 +11,13 @@ vi.mock("./salon-identity", () => ({
 
 const mockedGetSalonIdentity = vi.mocked(getSalonIdentity);
 
-describe("salon payment methods", () => {
+describe("salón payment methods", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("getSalonPaymentMethods", () => {
-    it("devuelve los metodos configurados del salon con sus etiquetas", async () => {
+    it("devuelve los métodos configurados del salón con sus etiquetas", async () => {
       mockedGetSalonIdentity.mockResolvedValue({
         name: "Glow",
         timezone: "UTC",
@@ -35,7 +35,7 @@ describe("salon payment methods", () => {
       expect(mockedGetSalonIdentity).toHaveBeenCalledWith("salon-1");
     });
 
-    it("usa los metodos por defecto cuando el salon no existe o no tiene metodos", async () => {
+    it("usa los métodos por defecto cuando el salón no existe o no tiene métodos", async () => {
       mockedGetSalonIdentity.mockResolvedValue(null);
 
       const view = await getSalonPaymentMethods("salon-missing");
@@ -47,7 +47,7 @@ describe("salon payment methods", () => {
   });
 
   describe("assertSalonPaymentMethodEnabled", () => {
-    it("acepta un metodo habilitado sin distinguir mayusculas ni espacios extra", async () => {
+    it("acepta un método habilitado sin distinguir mayusculas ni espacios extra", async () => {
       mockedGetSalonIdentity.mockResolvedValue({
         name: "Glow",
         timezone: "UTC",
@@ -57,7 +57,7 @@ describe("salon payment methods", () => {
       expect(await assertSalonPaymentMethodEnabled("salon-1", "  tarjeta   débito ")).toBe(true);
     });
 
-    it("rechaza un metodo que el salon no tiene habilitado", async () => {
+    it("rechaza un método que el salón no tiene habilitado", async () => {
       mockedGetSalonIdentity.mockResolvedValue({
         name: "Glow",
         timezone: "UTC",
@@ -67,7 +67,7 @@ describe("salon payment methods", () => {
       expect(await assertSalonPaymentMethodEnabled("salon-1", "card")).toBe(false);
     });
 
-    it("evalua contra los metodos por defecto cuando el salon no tiene configuracion", async () => {
+    it("evalua contra los métodos por defecto cuando el salón no tiene configuración", async () => {
       mockedGetSalonIdentity.mockResolvedValue(null);
 
       expect(await assertSalonPaymentMethodEnabled("salon-1", "yappy")).toBe(true);

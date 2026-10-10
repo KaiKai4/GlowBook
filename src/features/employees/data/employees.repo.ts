@@ -11,6 +11,8 @@ import {
 } from "@/features/employees/data/rpc/update-employee-rpc";
 import type { Database } from "@/types/database.types";
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
 export interface EmployeeNameRow {
   id: string;
   first_name: string;
@@ -27,22 +29,38 @@ export interface EmployeeListRow {
   categories: Array<{ category: { id: string; name: string } | null }>;
 }
 
+/**
+ * Consulta base de colaboradores del salón: columnas pedidas, filtro por salon,
+ * filtro opcional por estado activo y orden por apellido.
+ */
+function scopedEmployeesQuery<Select extends string>(
+  supabase: SupabaseServerClient,
+  select: Select,
+  salonId: string,
+  isActive?: boolean
+) {
+  const query = supabase
+    .from("employees")
+    .select(select)
+    .eq("salon_id", salonId)
+    .order("last_name", { ascending: true });
+
+  return isActive === undefined ? query : query.eq("is_active", isActive);
+}
+
 export async function findEmployees(salonId: string, isActive?: boolean) {
   const supabase = await createSupabaseServerClient();
-  let query = supabase
-    .from("employees")
-    .select(`
+  const { data, error } = await scopedEmployeesQuery(
+    supabase,
+    `
       *,
       services:employee_services(service:services(id, name, duration_minutes, price)),
       categories:employee_categories(category:service_categories(id, name)),
       work_schedules(id, day_of_week, start_time, end_time, is_active)
-    `)
-    .eq("salon_id", salonId)
-    .order("last_name", { ascending: true });
-
-  if (isActive !== undefined) query = query.eq("is_active", isActive);
-
-  const { data, error } = await query;
+    `,
+    salonId,
+    isActive
+  );
   if (error) throw error;
   return data ?? [];
 }
@@ -52,9 +70,9 @@ export async function findEmployeeListRows(
   isActive?: boolean
 ): Promise<EmployeeListRow[]> {
   const supabase = await createSupabaseServerClient();
-  let query = supabase
-    .from("employees")
-    .select(`
+  const { data, error } = await scopedEmployeesQuery(
+    supabase,
+    `
       id,
       first_name,
       last_name,
@@ -62,15 +80,12 @@ export async function findEmployeeListRows(
       profile_id,
       services:employee_services(service_id),
       categories:employee_categories(category:service_categories(id, name))
-    `)
-    .eq("salon_id", salonId)
-    .order("last_name", { ascending: true });
-
-  if (isActive !== undefined) query = query.eq("is_active", isActive);
-
-  const { data, error } = await query;
+    `,
+    salonId,
+    isActive
+  );
   if (error) throw error;
-  return (data ?? []) as unknown as EmployeeListRow[];
+  return data ?? [];
 }
 
 export async function findActiveEmployeeNames(salonId: string): Promise<EmployeeNameRow[]> {
@@ -98,24 +113,25 @@ export async function findEmployeeById(id: string, salonId: string) {
     `)
     .eq("id", id)
     .eq("salon_id", salonId)
-    .single();
-  if (error) return null;
+    .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
 export async function findEmployeeByEmail(email: string, salonId: string) {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("employees")
     .select("*")
     .eq("salon_id", salonId)
     .ilike("email", email)
     .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
 /**
- * Lectura de las categorias activas y de los servicios activos del salon que
+ * Lectura de las categorias activas y de los servicios activos del salón que
  * coinciden con los ids pedidos. Solo consulta: las reglas de asignacion viven en
  * el caso de uso (employee-assignments.ts).
  */
@@ -226,29 +242,3 @@ export async function deleteWorkSchedule(id: string, salonId: string) {
   if (error) throw error;
 }
 
-// El token en claro no existe en la DB (solo su hash), asi que una invitacion
-// pendiente solo expone metadatos: el enlace se muestra una unica vez al
-// generarse y despues solo puede regenerarse.
-export interface EmployeeInvitationRow {
-  id: string;
-  email: string;
-  role_id: string | null;
-  expires_at: string;
-  accepted_at: string | null;
-}
-
-export async function findLatestEmployeeInvitation(
-  employeeId: string,
-  salonId: string
-): Promise<EmployeeInvitationRow | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("employee_invitations")
-    .select("id, email, role_id, expires_at, accepted_at")
-    .eq("employee_id", employeeId)
-    .eq("salon_id", salonId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return (data ?? null) as EmployeeInvitationRow | null;
-}

@@ -2,18 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
 } from "../data/appointment-commands.repo";
 import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
 import { createAppointment } from "./create-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/create-appointment", () => ({
   createAppointmentWithRpc: vi.fn(),
@@ -96,9 +96,9 @@ describe("createAppointment: guardas del caso de uso", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(findAppointmentCreationResources).mockResolvedValue(validResources());
-    vi.mocked(findEmployeeWorkSchedulesForCommand).mockResolvedValue(workAllWeek);
-    vi.mocked(findEmployeeExceptionDatesForCommand).mockResolvedValue([]);
-    vi.mocked(findEmployeeOccupiedSlotsForCommand).mockResolvedValue([]);
+    vi.mocked(findWorkSchedulesByEmployeeForCommand).mockResolvedValue(new Map([[employeeId, workAllWeek]]));
+    vi.mocked(findExceptionDatesByEmployeeForCommand).mockResolvedValue(new Map());
+    vi.mocked(findOccupiedSlotsByEmployeeForCommand).mockResolvedValue(new Map());
     vi.mocked(createAppointmentWithRpc).mockResolvedValue({ ok: true, appointmentId: "appointment-1" });
   });
 
@@ -152,7 +152,7 @@ describe("createAppointment: guardas del caso de uso", () => {
 
   it("devuelve error de disponibilidad si falla consultar la agenda del profesional", async () => {
     const failure = new Error("timeout");
-    vi.mocked(findEmployeeWorkSchedulesForCommand).mockRejectedValue(failure);
+    vi.mocked(findWorkSchedulesByEmployeeForCommand).mockRejectedValue(failure);
 
     expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
@@ -172,7 +172,7 @@ describe("createAppointment: guardas del caso de uso", () => {
 
     expect(await createAppointment(input, { salonId, userId, idempotencyKey })).toEqual({
       ok: false,
-      error: "El salon esta cerrado ese día.",
+      error: "El salón está cerrado ese día.",
     });
     expect(createAppointmentWithRpc).not.toHaveBeenCalled();
   });

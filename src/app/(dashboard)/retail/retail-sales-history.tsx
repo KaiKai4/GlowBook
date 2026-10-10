@@ -16,7 +16,7 @@ export function RetailSalesHistory({ sales }: { sales: RetailPageView["recentSal
         columns={SALE_COLUMNS}
         rows={sales}
         getRowId={(sale) => sale.id}
-        emptyMessage="Sin ventas registradas todavia."
+        emptyMessage="Sin ventas registradas todavía."
       />
     </Panel>
   );

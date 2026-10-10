@@ -1,10 +1,8 @@
 import { AlertTriangle, Building2, CalendarDays, Users } from "lucide-react";
 
-import {
-  getSalonSubscriptionDetail,
-  getSubscriptionsPage,
-} from "@/features/billing/use-cases/salon-subscriptions";
-import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { getSalonSubscriptionDetail } from "@/features/billing";
+import { getSubscriptionsPage } from "@/features/billing";
+import { getPlatformSalonOverviews } from "@/features/platform";
 import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { SalonSubscriptionList } from "../subscriptions/salon-list";
@@ -31,7 +29,7 @@ export default async function PlatformSalonsPage({
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Salones"
-        description="Informacion global de cada salon: contacto, plan asignado, consumo de límites y acciones de plataforma."
+        description="Información global de cada salón: contacto, plan asignado, consumo de límites y acciones de plataforma."
         actions={
           <>
             <HeaderMetric icon={<Building2 className="h-4 w-4" />} label="Salones" value={view.metrics.totalSalons} />
@@ -93,7 +91,7 @@ export default async function PlatformSalonsPage({
           ) : (
             <div className="flex items-center justify-center p-8">
               <p className="max-w-sm text-center text-sm leading-6 text-fg-subtle">
-                No hay salones registrados. Invita un salon desde Invitaciones para empezar.
+                No hay salones registrados. Invita un salón desde Invitaciones para empezar.
               </p>
             </div>
           )}

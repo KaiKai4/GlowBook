@@ -12,8 +12,8 @@ function assertServicesHaveAssignedCategories(services: ServiceCategoryRef[], ca
   });
 }
 
-describe("asignacion de servicios a colaboradores: categorias", () => {
-  it("permite asignar servicios cuyas categorias estan asignadas al colaborador", () => {
+describe("asignacion de servicios a colaboradores: categorías", () => {
+  it("permite asignar servicios cuyas categorías están asignadas al colaborador", () => {
     const services = [
       { id: "s1", category_id: "c1" },
       { id: "s2", category_id: "c2" },
@@ -26,7 +26,7 @@ describe("asignacion de servicios a colaboradores: categorias", () => {
     expect(() => assertServicesHaveAssignedCategories([], [])).not.toThrow();
   });
 
-  it("un servicio cuya categoria no esta asignada al colaborador lanza PublicError", () => {
+  it("un servicio cuya categoría no está asignada al colaborador lanza PublicError", () => {
     const services = [
       { id: "s1", category_id: "c1" },
       { id: "s2", category_id: "c2" },
@@ -35,6 +35,6 @@ describe("asignacion de servicios a colaboradores: categorias", () => {
     const attempt = () => assertServicesHaveAssignedCategories(services, ["c1"]);
 
     expect(attempt).toThrow(PublicError);
-    expect(attempt).toThrow("Para asignar un servicio al colaborador, tambien debes asignar su categoria.");
+    expect(attempt).toThrow("Para asignar un servicio al colaborador, también debes asignar su categoría.");
   });
 });

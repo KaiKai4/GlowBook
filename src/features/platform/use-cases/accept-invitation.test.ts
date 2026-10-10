@@ -10,7 +10,7 @@ import {
   findPlatformOwnerAuthUserByEmail,
   updatePlatformOwnerAuthUser,
 } from "../data/platform-auth.repo";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-subscriptions";
+import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-plan-assignment";
 import { acceptInvitation } from "./accept-invitation";
 import { publishAuditEvent } from "@/features/audit";
 
@@ -27,7 +27,7 @@ vi.mock("../data/platform-auth.repo", () => ({
   updatePlatformOwnerAuthUser: vi.fn(),
 }));
 
-vi.mock("@/features/billing/use-cases/salon-subscriptions", () => ({
+vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
   autoAssignPlanOnAcceptance: vi.fn(),
 }));
 
@@ -49,7 +49,7 @@ const validInput = {
   token: "token-1",
   email: "owner@example.com",
   password: "password123",
-  salon_name: "Glow Salon",
+  salon_name: "Glow Salón",
   full_name: "Ana Owner",
 };
 
@@ -81,7 +81,7 @@ describe("accept platform invitation", () => {
     mockedAcceptSalonInvitationAsAdmin.mockResolvedValue("salon-1");
   });
 
-  it("creates the owner Auth user and accepts the Salon invitation", async () => {
+  it("creates the owner Auth user and accepts the Salón invitation", async () => {
     const result = await acceptInvitation(validInput);
 
     expect(result).toEqual({ ok: true, value: undefined });
@@ -94,12 +94,12 @@ describe("accept platform invitation", () => {
       token: "token-1",
       userId: "user-1",
       email: "owner@example.com",
-      salonName: "Glow Salon",
+      salonName: "Glow Salón",
       fullName: "Ana Owner",
     });
   });
 
-  it("auto-assigns the invitation plan to the new salon", async () => {
+  it("auto-assigns the invitation plan to the new salón", async () => {
     mockedFindSalonInvitationForAcceptance.mockResolvedValue({
       email: "owner@example.com",
       status: "pending",
@@ -127,7 +127,7 @@ describe("accept platform invitation", () => {
     expect(mockedAutoAssignPlanOnAcceptance).not.toHaveBeenCalled();
   });
 
-  it("rolls back a newly created owner Auth user when Salon creation fails", async () => {
+  it("rolls back a newly created owner Auth user when Salón creation fails", async () => {
     mockedAcceptSalonInvitationAsAdmin.mockRejectedValue(new Error("RPC failed"));
 
     const result = await acceptInvitation(validInput);

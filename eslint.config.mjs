@@ -22,6 +22,22 @@ const SWALLOWED_CATCH_SELECTORS = [
   "CallExpression[callee.property.name='catch'] > :matches(ArrowFunctionExpression, FunctionExpression) > BlockStatement > ReturnStatement[argument.raw='null']",
 ];
 
+// `x as unknown as T`: doble cast que oculta el tipo real a TypeScript. Se deriva el tipo
+// de la consulta (QueryData / database.types) o se valida con Zod (AGENTS.md §13).
+const DOUBLE_CAST_UNKNOWN_SELECTOR =
+  "TSAsExpression > TSAsExpression[typeAnnotation.type='TSUnknownKeyword']";
+
+const DOUBLE_CAST_UNKNOWN_MESSAGE =
+  "Prohibido 'as unknown as': deriva el tipo de la consulta (QueryData/database.types) o valida con Zod (AGENTS.md §13).";
+
+// Consulta Supabase (from/rpc) con `const { data } = await ...` sin desestructurar `error`:
+// el fallo de BD quedaria oculto como "sin datos" (AGENTS.md §9 y §13).
+const SUPABASE_RESULT_WITHOUT_ERROR_SELECTOR =
+  "VariableDeclarator[id.type='ObjectPattern'][init.type='AwaitExpression']:has(Property[key.name='data']):not(:has(Property[key.name='error'])):has(MemberExpression[property.name=/^(from|rpc)$/])";
+
+const SUPABASE_RESULT_WITHOUT_ERROR_MESSAGE =
+  "Consulta Supabase sin error: desestructura { data, error } y lanza el error (if (error) throw error).";
+
 const RESTRICTED_SYNTAX = [
   "error",
   {
@@ -33,6 +49,14 @@ const RESTRICTED_SYNTAX = [
     selector,
     message: SWALLOWED_CATCH_MESSAGE,
   })),
+  {
+    selector: SUPABASE_RESULT_WITHOUT_ERROR_SELECTOR,
+    message: SUPABASE_RESULT_WITHOUT_ERROR_MESSAGE,
+  },
+  {
+    selector: DOUBLE_CAST_UNKNOWN_SELECTOR,
+    message: DOUBLE_CAST_UNKNOWN_MESSAGE,
+  },
 ];
 
 const eslintConfig = defineConfig([

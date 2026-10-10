@@ -125,7 +125,7 @@ export function modeLabel(mode: string) {
 }
 
 export function countScopeLabel(scope: string) {
-  if (scope === "billing_cycle") return "Ciclo de facturacion";
+  if (scope === "billing_cycle") return "Ciclo de facturación";
   if (scope === "monthly") return "Mes calendario";
   if (scope === "lifetime") return "Historico total";
   return "Actual";

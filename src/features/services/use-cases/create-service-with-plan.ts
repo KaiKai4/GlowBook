@@ -12,7 +12,7 @@ export interface ServicePlanGate {
 }
 
 // Orden preservado: modulo del plan, cupo de servicios activos y, despues, la
-// validacion de la entrada. Asi un salon sin cupo recibe el mensaje del plan.
+// validacion de la entrada. Asi un salón sin cupo recibe el mensaje del plan.
 export async function createServiceWithPlan(
   salonId: string,
   raw: CreateServiceRaw,

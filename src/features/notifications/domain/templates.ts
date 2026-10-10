@@ -36,7 +36,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: Record<NotificationTemplateEvent, Messag
   },
   appointment_cancelled: {
     event: "appointment_cancelled",
-    name: "Cancelacion WhatsApp",
+    name: "Cancelación WhatsApp",
     is_active: true,
     body_text:
       "Hola {cliente}. Te escribimos de {salon}. Tu cita del {fecha} a las {hora} ha sido cancelada.\n\nServicio: {servicios}\n\nDisculpa las molestias. Contáctanos para reagendar y te ayudamos lo antes posible.",

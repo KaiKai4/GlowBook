@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "@/features/reminders";
 import { buildReminderMessage, buildWhatsAppUrl } from "./reminder-format";
 import { useReminderSubmissions } from "./use-reminder-submissions";
 

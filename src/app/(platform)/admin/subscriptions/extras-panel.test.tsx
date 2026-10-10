@@ -45,7 +45,7 @@ describe("ExtrasPanel", () => {
   it("indica que el salón no tiene extras vigentes cuando la lista está vacía", () => {
     mounted = renderPanel();
 
-    expect(mounted.container.textContent).toContain("Este salon no tiene extras vigentes.");
+    expect(mounted.container.textContent).toContain("Este salón no tiene extras vigentes.");
   });
 
   it("muestra cada extra con precio, regalo, cantidad, vencimiento y motivo", () => {
@@ -71,7 +71,7 @@ describe("ExtrasPanel", () => {
     mounted = renderPanel({ suggestedMetricKey: "appointments_monthly" });
 
     expect(mounted.container.textContent).toContain("Estas ampliando Citas.");
-    expect(mounted.container.textContent).toContain("El extra del catalogo que lo aumenta ya esta seleccionado");
+    expect(mounted.container.textContent).toContain("El extra del catálogo que lo aumenta ya está seleccionado");
     expect(getFieldByName<HTMLInputElement>(mounted.container, "addonId").value).toBe("addon-citas");
     expect(getFieldByName<HTMLInputElement>(mounted.container, "metricKey").value).toBe("");
   });
@@ -79,7 +79,7 @@ describe("ExtrasPanel", () => {
   it("preselecciona el límite en la cortesía cuando no hay extra de catálogo para él", () => {
     mounted = renderPanel({ suggestedMetricKey: "customers_active" });
 
-    expect(mounted.container.textContent).toContain("No hay un extra de catalogo para este límite");
+    expect(mounted.container.textContent).toContain("No hay un extra de catálogo para este límite");
     expect(getFieldByName<HTMLInputElement>(mounted.container, "metricKey").value).toBe("customers_active");
     expect(getFieldByName<HTMLInputElement>(mounted.container, "addonId").value).toBe("addon-citas");
   });
@@ -127,7 +127,7 @@ describe("ExtrasPanel", () => {
     clickElement(getButtonByText(mounted.container, "Aumentar un límite"));
     clickElement(
       Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).find((option) =>
-        option.textContent?.includes("Activar un modulo")
+        option.textContent?.includes("Activar un módulo")
       )!
     );
 

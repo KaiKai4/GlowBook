@@ -3,7 +3,7 @@ import { useIntentFormAction } from "@/components/forms/use-intent-form-action";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
-import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscriptions";
+import type { SalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
 import { todayIso } from "@/features/billing/domain/assignment-schedule";
 import { PLATFORM_PLAN_IDLE_STATE } from "../plans/action-state";
 import { InlineState, Panel, SubmitButton } from "../plans/workspace-ui";
@@ -29,8 +29,8 @@ export function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDe
         title="Registrar pago"
         description={
           period
-            ? `Periodo vigente: ${period}. Un nuevo pago encadena el siguiente mes.`
-            : "Marca que el salon ya pago: activa la suscripcion y arranca su mes de uso."
+            ? `Período vigente: ${period}. Un nuevo pago encadena el siguiente mes.`
+            : "Marca que el salón ya pago: activa la suscripción y arranca su mes de uso."
         }
       >
         {detail.assignment ? (
@@ -63,7 +63,7 @@ export function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDe
         <Panel
           icon={<History className="h-4 w-4" />}
           title="Historial de pagos"
-          description="Últimos pagos registrados y el mes que cubrio cada uno."
+          description="Últimos pagos registrados y el mes que cubrió cada uno."
         >
           <div className="divide-y divide-brand-100">
             {detail.payments.map((payment) => (

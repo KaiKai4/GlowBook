@@ -1,8 +1,9 @@
+import { captureError } from "@/infra/observability";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { updateSalonBackground as updateSalonBackgroundRow } from "../data/salon.repo";
+import { updateSalonBackground as updateSalonBackgroundRow } from "../data/salon-appearance.repo";
 import { updateSalonBackground } from "./update-salon-background";
 
-vi.mock("../data/salon.repo", () => ({
+vi.mock("../data/salon-appearance.repo", () => ({
   updateSalonBackground: vi.fn(),
 }));
 
@@ -13,7 +14,7 @@ describe("updateSalonBackground", () => {
     vi.clearAllMocks();
   });
 
-  it.each(["neutral", "colored"])("guarda el estilo de fondo valido '%s'", async (style) => {
+  it.each(["neutral", "colored"])("guarda el estilo de fondo válido '%s'", async (style) => {
     mockedUpdateBackground.mockResolvedValue(undefined);
 
     expect(await updateSalonBackground("salon-1", style)).toEqual({ ok: true, value: undefined });
@@ -35,5 +36,17 @@ describe("updateSalonBackground", () => {
       ok: false,
       error: "Error al guardar el fondo.",
     });
+  });
+});
+
+vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
+
+describe("registro de errores de fondo", () => {
+  it("registra con captureError el fallo de persistencia", async () => {
+    const dbError = new Error("caida");
+    mockedUpdateBackground.mockRejectedValue(dbError);
+
+    expect(await updateSalonBackground("salon-1", "colored")).toEqual({ ok: false, error: "Error al guardar el fondo." });
+    expect(captureError).toHaveBeenCalledWith(dbError, { module: "salon", action: "update_background" });
   });
 });

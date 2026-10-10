@@ -3,11 +3,11 @@ import { err, ok } from "@/infra/result";
 import { toPlanActionState } from "./action-state";
 
 describe("toPlanActionState", () => {
-  it("un exito devuelve el mensaje sin avisos cuando no los hay", () => {
+  it("un éxito devuelve el mensaje sin avisos cuando no los hay", () => {
     expect(toPlanActionState(ok("Plan guardado."))).toEqual({ ok: true, message: "Plan guardado." });
   });
 
-  it("un exito con avisos los conserva junto al mensaje", () => {
+  it("un éxito con avisos los conserva junto al mensaje", () => {
     expect(toPlanActionState(ok("Pago registrado.", ["La auditoria no se registro."]))).toEqual({
       ok: true,
       message: "Pago registrado.",

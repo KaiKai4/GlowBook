@@ -65,10 +65,10 @@ export function JoinForm({ token, email, employeeName, salonName }: Props) {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      const res = await acceptEmployeeInvitationAction(token, password, email);
+      const result = await acceptEmployeeInvitationAction(token, password, email);
 
-      if (!res.ok) {
-        const message = res.error;
+      if (!result.ok) {
+        const message = result.error;
         setFormError(message);
         if (message.toLowerCase().includes("contraseña") || message.toLowerCase().includes("password")) {
           setFieldErrors((current) => ({ ...current, password: message }));
@@ -77,7 +77,7 @@ export function JoinForm({ token, email, employeeName, salonName }: Props) {
       }
 
       setDone(true);
-      if (!res.value.signedIn) {
+      if (!result.value.signedIn) {
         setTimeout(() => router.push("/login?joined=1"), 2000);
         return;
       }

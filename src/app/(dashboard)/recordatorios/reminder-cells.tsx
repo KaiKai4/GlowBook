@@ -1,8 +1,8 @@
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatTimeTz } from "@/infra/format/dates";
-import type { ReminderAppointment } from "@/features/reminders/view-models";
+import type { ReminderAppointment } from "@/features/reminders";
 import { collaboratorNames, customerName, formatSentAt } from "./reminder-format";
-import type { ReminderRowState } from "./reminder-rules";
+import type { ReminderRowState } from "@/features/reminders/domain/reminder-rules";
 
 export function ReminderCustomerCell({ appt }: { appt: ReminderAppointment }) {
   return (

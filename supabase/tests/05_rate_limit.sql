@@ -108,14 +108,14 @@ select throws_ok(
 select throws_ok(
   $$select * from public.consume_rate_limit('', 1, 60)$$,
   '22023',
-  'clave de rate limit invalida',
+  'clave de rate limit inválida',
   'clave vacia se rechaza'
 );
 
 select throws_ok(
   $$select * from public.consume_rate_limit(repeat('x', 201), 1, 60)$$,
   '22023',
-  'clave de rate limit invalida',
+  'clave de rate limit inválida',
   'clave de mas de 200 caracteres se rechaza'
 );
 
