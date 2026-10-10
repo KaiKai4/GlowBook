@@ -2683,6 +2683,23 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            create_inventory_product_with_stock: {
+                Args: {
+                    p_category: string;
+                    p_cost_price: number;
+                    p_internal_minimum: number;
+                    p_internal_quantity: number;
+                    p_is_retail_enabled: boolean;
+                    p_name: string;
+                    p_retail_minimum: number;
+                    p_retail_quantity: number;
+                    p_sale_price: number;
+                    p_salon_id: string;
+                    p_storage_minimum: number;
+                    p_storage_quantity: number;
+                };
+                Returns: string;
+            };
             create_role_with_permissions: {
                 Args: {
                     p_name: string;
@@ -2717,6 +2734,12 @@ export type Database = {
                 Returns: {
                     user_id: string;
                 }[];
+            };
+            find_auth_user_id_by_email: {
+                Args: {
+                    p_email: string;
+                };
+                Returns: string;
             };
             has_permission: {
                 Args: {
@@ -3006,6 +3029,22 @@ export type Database = {
                     payload: Json;
                 };
                 Returns: Json;
+            };
+            update_inventory_product_profile: {
+                Args: {
+                    p_category: string;
+                    p_cost_price: number;
+                    p_internal_minimum: number;
+                    p_is_active: boolean;
+                    p_is_retail_enabled: boolean;
+                    p_name: string;
+                    p_product_id: string;
+                    p_retail_minimum: number;
+                    p_sale_price: number;
+                    p_salon_id: string;
+                    p_storage_minimum: number;
+                };
+                Returns: undefined;
             };
         };
         Enums: {

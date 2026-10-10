@@ -6,13 +6,12 @@ import { INVENTORY_LOCATIONS, stockStatus, type InventoryLocation } from "../dom
 import {
   findInventoryProducts,
   findRecentInventoryMovements,
-  insertInventoryMovement,
-  insertInventoryProduct,
-  insertStockLocations,
   softDeleteInventoryProduct,
-  updateInventoryProduct,
-  updateStockMinimums,
 } from "../data/inventory.repo";
+import {
+  createInventoryProductWithStockRpc,
+  updateInventoryProductProfileRpc,
+} from "../data/rpc/inventory-product-rpc";
 import type {
   CreateInventoryProductInput,
   UpdateInventoryProductInput,
@@ -130,46 +129,20 @@ export async function createInventoryProduct(
   input: CreateInventoryProductInput
 ): Promise<Result<void>> {
   try {
-    const product = await insertInventoryProduct(salonId, {
+    await createInventoryProductWithStockRpc({
+      salonId,
       name: input.name,
-      category: input.category,
-      cost_price: input.cost_price,
-      sale_price: input.sale_price,
-      is_retail_enabled: input.is_retail_enabled,
+      category: input.category || null,
+      costPrice: input.cost_price,
+      salePrice: input.sale_price,
+      isRetailEnabled: input.is_retail_enabled,
+      retailQuantity: input.retail_quantity,
+      retailMinimum: input.retail_minimum,
+      internalQuantity: input.internal_quantity,
+      internalMinimum: input.internal_minimum,
+      storageQuantity: input.storage_quantity,
+      storageMinimum: input.storage_minimum,
     });
-
-    const stockRows = await insertStockLocations(salonId, product.id, [
-      {
-        location: "retail",
-        quantity: input.retail_quantity,
-        minimum_quantity: input.retail_minimum,
-      },
-      {
-        location: "internal",
-        quantity: input.internal_quantity,
-        minimum_quantity: input.internal_minimum,
-      },
-      {
-        location: "storage",
-        quantity: input.storage_quantity,
-        minimum_quantity: input.storage_minimum,
-      },
-    ]);
-
-    for (const row of stockRows) {
-      const quantity = Number(row.quantity ?? 0);
-      if (quantity > 0) {
-        await insertInventoryMovement(salonId, {
-          product_id: product.id,
-          location: row.location,
-          movement_type: "initial",
-          quantity_delta: quantity,
-          quantity_after: quantity,
-          note: "Stock inicial",
-        });
-      }
-    }
-
     return { ok: true, value: undefined };
   } catch (error) {
     if (!isUniqueViolation(error)) captureError(error, { module: "inventory", action: "create_product" });
@@ -186,12 +159,19 @@ export async function updateInventoryProductProfile(
   input: UpdateInventoryProductInput
 ): Promise<Result<void>> {
   try {
-    await updateInventoryProduct(productId, salonId, input);
-    await updateStockMinimums(salonId, productId, [
-      { location: "retail", minimum_quantity: input.retail_minimum },
-      { location: "internal", minimum_quantity: input.internal_minimum },
-      { location: "storage", minimum_quantity: input.storage_minimum },
-    ]);
+    await updateInventoryProductProfileRpc({
+      salonId,
+      productId,
+      name: input.name,
+      category: input.category || null,
+      costPrice: input.cost_price,
+      salePrice: input.sale_price,
+      isRetailEnabled: input.is_retail_enabled,
+      isActive: input.is_active,
+      retailMinimum: input.retail_minimum,
+      internalMinimum: input.internal_minimum,
+      storageMinimum: input.storage_minimum,
+    });
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "inventory", action: "update_product" });

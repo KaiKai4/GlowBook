@@ -8,12 +8,7 @@ import {
   findInventoryProducts,
   findInventoryPurchaseHistory,
   findRecentInventoryMovements,
-  insertInventoryMovement,
-  insertInventoryProduct,
-  insertStockLocations,
   softDeleteInventoryProduct,
-  updateInventoryProduct,
-  updateStockMinimums,
 } from "./inventory.repo";
 
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
@@ -82,83 +77,7 @@ describe("inventory.repo", () => {
     });
   });
 
-  describe("insertInventoryProduct", () => {
-    it("inserta el producto del salon con categoria nula cuando viene vacia", async () => {
-      const db = useDb({ inventory_products: { data: { id: PRODUCT_ID }, error: null } });
-
-      expect(
-        await insertInventoryProduct(SALON_ID, {
-          name: "Tinte",
-          category: "",
-          cost_price: 4,
-          sale_price: 9,
-          is_retail_enabled: true,
-        })
-      ).toEqual({ id: PRODUCT_ID });
-      expect(operationsOn(db, "inventory_products")).toContainEqual({
-        target: "inventory_products",
-        method: "insert",
-        args: [
-          {
-            salon_id: SALON_ID,
-            name: "Tinte",
-            category: null,
-            cost_price: 4,
-            sale_price: 9,
-            is_retail_enabled: true,
-          },
-        ],
-      });
-    });
-
-    it("propaga el error de insercion", async () => {
-      const dbError = { message: "fallo" };
-      useDb({ inventory_products: { data: null, error: dbError } });
-
-      await expect(
-        insertInventoryProduct(SALON_ID, {
-          name: "Tinte",
-          cost_price: 4,
-          sale_price: 9,
-          is_retail_enabled: false,
-        })
-      ).rejects.toBe(dbError);
-    });
-  });
-
-  describe("updateInventoryProduct / softDeleteInventoryProduct", () => {
-    it("actualiza el producto solo dentro del salon y guarda categoria nula si viene vacia", async () => {
-      const db = useDb({ inventory_products: { data: null, error: null } });
-
-      await updateInventoryProduct(PRODUCT_ID, SALON_ID, {
-        name: "Tinte",
-        category: undefined,
-        cost_price: 4,
-        sale_price: 9,
-        is_retail_enabled: false,
-        is_active: true,
-      });
-
-      expect(operationsOn(db, "inventory_products")).toEqual([
-        {
-          target: "inventory_products",
-          method: "update",
-          args: [
-            {
-              name: "Tinte",
-              category: null,
-              cost_price: 4,
-              sale_price: 9,
-              is_retail_enabled: false,
-              is_active: true,
-            },
-          ],
-        },
-        { target: "inventory_products", method: "eq", args: ["id", PRODUCT_ID] },
-        { target: "inventory_products", method: "eq", args: ["salon_id", SALON_ID] },
-      ]);
-    });
-
+  describe("softDeleteInventoryProduct", () => {
     it("el borrado logico desactiva el producto, marca fecha de borrado y filtra por salon", async () => {
       const db = useDb({ inventory_products: { data: null, error: null } });
 
@@ -177,146 +96,10 @@ describe("inventory.repo", () => {
       });
     });
 
-    it("propaga errores de actualizacion y de borrado logico", async () => {
-      const updateError = { message: "fallo" };
-      useDb({ inventory_products: { data: null, error: updateError } });
-      await expect(
-        updateInventoryProduct(PRODUCT_ID, SALON_ID, {
-          name: "x",
-          cost_price: 1,
-          sale_price: 2,
-          is_retail_enabled: false,
-          is_active: true,
-        })
-      ).rejects.toBe(updateError);
-
+    it("propaga errores de borrado logico", async () => {
       const deleteError = { message: "fallo" };
       useDb({ inventory_products: { data: null, error: deleteError } });
       await expect(softDeleteInventoryProduct(PRODUCT_ID, SALON_ID)).rejects.toBe(deleteError);
-    });
-  });
-
-  describe("insertStockLocations", () => {
-    it("inserta una fila por ubicacion con salon y producto y devuelve las filas creadas", async () => {
-      const db = useDb({ inventory_stock_locations: { data: [{ id: "s1" }], error: null } });
-
-      expect(
-        await insertStockLocations(SALON_ID, PRODUCT_ID, [
-          { location: "retail", quantity: 3, minimum_quantity: 1 },
-        ])
-      ).toEqual([{ id: "s1" }]);
-      expect(operationsOn(db, "inventory_stock_locations")).toEqual([
-        {
-          target: "inventory_stock_locations",
-          method: "insert",
-          args: [
-            [
-              {
-                location: "retail",
-                quantity: 3,
-                minimum_quantity: 1,
-                salon_id: SALON_ID,
-                product_id: PRODUCT_ID,
-              },
-            ],
-          ],
-        },
-        { target: "inventory_stock_locations", method: "select", args: [] },
-      ]);
-    });
-
-    it("devuelve lista vacia sin datos y propaga errores", async () => {
-      useDb({ inventory_stock_locations: { data: null, error: null } });
-      expect(await insertStockLocations(SALON_ID, PRODUCT_ID, [])).toEqual([]);
-
-      const dbError = { message: "fallo" };
-      useDb({ inventory_stock_locations: { data: null, error: dbError } });
-      await expect(
-        insertStockLocations(SALON_ID, PRODUCT_ID, [{ location: "storage", quantity: 1, minimum_quantity: 0 }])
-      ).rejects.toBe(dbError);
-    });
-  });
-
-  describe("updateStockMinimums", () => {
-    it("actualiza el minimo de cada ubicacion del producto dentro del salon", async () => {
-      const db = useDb({ inventory_stock_locations: [{ data: null, error: null }, { data: null, error: null }] });
-
-      await updateStockMinimums(SALON_ID, PRODUCT_ID, [
-        { location: "retail", minimum_quantity: 2 },
-        { location: "storage", minimum_quantity: 5 },
-      ]);
-
-      const updates = operationsOn(db, "inventory_stock_locations").filter((op) => op.method === "update");
-      expect(updates.map((op) => op.args)).toEqual([[{ minimum_quantity: 2 }], [{ minimum_quantity: 5 }]]);
-      expect(operationsOn(db, "inventory_stock_locations")).toContainEqual({
-        target: "inventory_stock_locations",
-        method: "eq",
-        args: ["location", "storage"],
-      });
-    });
-
-    it("se detiene en la primera ubicacion con error", async () => {
-      const dbError = { message: "fallo" };
-      const db = useDb({
-        inventory_stock_locations: [{ data: null, error: dbError }, { data: null, error: null }],
-      });
-
-      await expect(
-        updateStockMinimums(SALON_ID, PRODUCT_ID, [
-          { location: "retail", minimum_quantity: 2 },
-          { location: "storage", minimum_quantity: 5 },
-        ])
-      ).rejects.toBe(dbError);
-      expect(operationsOn(db, "inventory_stock_locations").filter((op) => op.method === "update")).toHaveLength(1);
-    });
-  });
-
-  describe("insertInventoryMovement", () => {
-    it("registra el movimiento con referencias y nota nulas cuando no se indican", async () => {
-      const db = useDb({ inventory_movements: { data: null, error: null } });
-
-      await insertInventoryMovement(SALON_ID, {
-        product_id: PRODUCT_ID,
-        location: "retail",
-        movement_type: "sale",
-        quantity_delta: -1,
-        quantity_after: 4,
-      });
-
-      expect(operationsOn(db, "inventory_movements")).toEqual([
-        {
-          target: "inventory_movements",
-          method: "insert",
-          args: [
-            {
-              salon_id: SALON_ID,
-              product_id: PRODUCT_ID,
-              location: "retail",
-              movement_type: "sale",
-              quantity_delta: -1,
-              quantity_after: 4,
-              reference_type: null,
-              reference_id: null,
-              note: null,
-            },
-          ],
-        },
-      ]);
-    });
-
-    it("propaga el error de insercion", async () => {
-      const dbError = { message: "fallo" };
-      useDb({ inventory_movements: { data: null, error: dbError } });
-
-      await expect(
-        insertInventoryMovement(SALON_ID, {
-          product_id: PRODUCT_ID,
-          location: "storage",
-          movement_type: "adjust",
-          quantity_delta: 1,
-          quantity_after: 1,
-        })
-      ).rejects.toBe(dbError);
     });
   });
 

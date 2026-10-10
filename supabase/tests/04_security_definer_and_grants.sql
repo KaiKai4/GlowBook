@@ -76,8 +76,8 @@ select is(
       )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  36,
-  'authenticated tiene EXECUTE exactamente en 36 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores + 2 RPC de roles + count_salon_usage y record_plan_alert de F05)'
+  38,
+  'authenticated tiene EXECUTE exactamente en 38 funciones de public (29 de la matriz de lectura y citas + confirm_appointment + 2 RPC de colaboradores + 2 RPC de roles + count_salon_usage y record_plan_alert de F05 + 2 RPC de inventario atomico)'
 );
 
 select ok(
@@ -118,7 +118,9 @@ select ok(
       'public.create_role_with_permissions(text,text[])',
       'public.replace_role_permissions(uuid,text[])',
       'public.count_salon_usage(uuid,jsonb)',
-      'public.record_plan_alert(uuid,text,text,text,text)'
+      'public.record_plan_alert(uuid,text,text,text,text)',
+      'public.create_inventory_product_with_stock(uuid,text,text,numeric,numeric,boolean,numeric,numeric,numeric,numeric,numeric,numeric)',
+      'public.update_inventory_product_profile(uuid,uuid,text,text,numeric,numeric,boolean,boolean,numeric,numeric,numeric)'
     ]) as sig
   ),
   'authenticated puede ejecutar los helpers RLS y las RPC de cliente de usuario (incluidas las de cita y las de billing de F05)'
@@ -158,8 +160,8 @@ select is(
       )
       and has_function_privilege('service_role', p.oid, 'EXECUTE')
   ),
-  5,
-  'service_role tiene EXECUTE exactamente en 5 funciones de public'
+  6,
+  'service_role tiene EXECUTE exactamente en 6 funciones de public'
 );
 
 select ok(
@@ -170,7 +172,8 @@ select ok(
       'public.platform_salon_overviews()',
       'public.accept_invitation_admin(text,uuid,text,text,text)',
       'public.count_salon_usage(uuid,jsonb)',
-      'public.consume_rate_limit(text,integer,integer)'
+      'public.consume_rate_limit(text,integer,integer)',
+      'public.find_auth_user_id_by_email(text)'
     ]) as sig
   ),
   'service_role puede ejecutar las RPC de cliente admin y consume_rate_limit'

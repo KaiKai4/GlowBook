@@ -40,7 +40,7 @@ Reglas (las comprueba `.dependency-cruiser.cjs` por patrón, sin listas de archi
 - `domain/` no importa `use-cases/`, `data/`, `src/app`, `src/components`, `src/infra/supabase`, Next, React, `@supabase/*` ni `server-only` (`domain-pure`).
 - `data/` no importa `use-cases/`, `src/app`, `src/components` ni React (`data-no-upward`).
 - Un módulo importa de otro solo a través de su `index.ts` (`cross-module-via-index`).
-- `src/app` importa de `src/features/X` solo a través de `index.ts`; quedan permitidos `schemas.ts`, `domain/` y los imports solo de tipos (`app-via-feature-index`).
+- `src/app` importa de `src/features/<módulo>` solo a través de su `index.ts`; quedan permitidos `schemas.ts`, `domain/` y los imports solo de tipos (`app-via-feature-index`).
 - `use-cases/` no importa React, componentes, rutas ni `next/navigation` (`use-cases-no-ui`).
 - `app/` y `components/` solo importan Supabase como tipo (`presentation-no-runtime-db`); `src/app/_composition` queda fuera de la regla.
 - Los clientes `service_role` (`src/infra/supabase/admin.ts`, `auth-admin.ts`) solo se importan desde `src/infra` o `features/*/data` (`admin-client-boundary`, ADR 0010).

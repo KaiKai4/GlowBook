@@ -3,7 +3,7 @@ import "server-only";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { InventoryLocation } from "../domain/stock";
 
-export interface InventoryStockRow {
+interface InventoryStockRow {
   id: string;
   salon_id: string;
   product_id: string;
@@ -82,63 +82,6 @@ export async function findRecentInventoryMovements(
   return (data ?? []) as InventoryMovementRow[];
 }
 
-export async function insertInventoryProduct(
-  salonId: string,
-  input: {
-    name: string;
-    category?: string;
-    cost_price: number;
-    sale_price: number;
-    is_retail_enabled: boolean;
-  }
-): Promise<InventoryProductRow> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("inventory_products")
-    .insert({
-      salon_id: salonId,
-      name: input.name,
-      category: input.category || null,
-      cost_price: input.cost_price,
-      sale_price: input.sale_price,
-      is_retail_enabled: input.is_retail_enabled,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as InventoryProductRow;
-}
-
-export async function updateInventoryProduct(
-  productId: string,
-  salonId: string,
-  input: {
-    name: string;
-    category?: string;
-    cost_price: number;
-    sale_price: number;
-    is_retail_enabled: boolean;
-    is_active: boolean;
-  }
-): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("inventory_products")
-    .update({
-      name: input.name,
-      category: input.category || null,
-      cost_price: input.cost_price,
-      sale_price: input.sale_price,
-      is_retail_enabled: input.is_retail_enabled,
-      is_active: input.is_active,
-    })
-    .eq("id", productId)
-    .eq("salon_id", salonId);
-
-  if (error) throw error;
-}
-
 export async function softDeleteInventoryProduct(productId: string, salonId: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
@@ -149,73 +92,6 @@ export async function softDeleteInventoryProduct(productId: string, salonId: str
     })
     .eq("id", productId)
     .eq("salon_id", salonId);
-
-  if (error) throw error;
-}
-
-export async function insertStockLocations(
-  salonId: string,
-  productId: string,
-  rows: Array<{
-    location: InventoryLocation;
-    quantity: number;
-    minimum_quantity: number;
-  }>
-): Promise<InventoryStockRow[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("inventory_stock_locations")
-    .insert(rows.map((row) => ({ ...row, salon_id: salonId, product_id: productId })))
-    .select();
-
-  if (error) throw error;
-  return (data ?? []) as InventoryStockRow[];
-}
-
-export async function updateStockMinimums(
-  salonId: string,
-  productId: string,
-  rows: Array<{ location: InventoryLocation; minimum_quantity: number }>
-): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-
-  for (const row of rows) {
-    const { error } = await supabase
-      .from("inventory_stock_locations")
-      .update({ minimum_quantity: row.minimum_quantity })
-      .eq("salon_id", salonId)
-      .eq("product_id", productId)
-      .eq("location", row.location);
-
-    if (error) throw error;
-  }
-}
-
-export async function insertInventoryMovement(
-  salonId: string,
-  input: {
-    product_id: string;
-    location: InventoryLocation;
-    movement_type: string;
-    quantity_delta: number;
-    quantity_after: number;
-    reference_type?: string;
-    reference_id?: string;
-    note?: string;
-  }
-): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("inventory_movements").insert({
-    salon_id: salonId,
-    product_id: input.product_id,
-    location: input.location,
-    movement_type: input.movement_type,
-    quantity_delta: input.quantity_delta,
-    quantity_after: input.quantity_after,
-    reference_type: input.reference_type ?? null,
-    reference_id: input.reference_id ?? null,
-    note: input.note || null,
-  });
 
   if (error) throw error;
 }

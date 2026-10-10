@@ -3,9 +3,9 @@ flowchart LR
   subgraph g_app["app"]
     app["app (3)"]
     app__auth_["app/(auth) (12)"]
-    app__dashboard_["app/(dashboard) (174)"]
+    app__dashboard_["app/(dashboard) (175)"]
     app__platform_["app/(platform) (34)"]
-    app__composition["app/_composition (4)"]
+    app__composition["app/_composition (5)"]
     app_api["app/api (4)"]
   end
   subgraph g_components["components"]
@@ -15,32 +15,31 @@ flowchart LR
     components_ui["components/ui (26)"]
   end
   subgraph g_features["features"]
-    features_access["features/access (17)"]
+    features_access["features/access (19)"]
     features_appointments["features/appointments (40)"]
     features_audit["features/audit (6)"]
     features_billing["features/billing (31)"]
-    features_customers["features/customers (11)"]
-    features_dashboard["features/dashboard (7)"]
-    features_employees["features/employees (27)"]
-    features_expenses["features/expenses (10)"]
+    features_customers["features/customers (10)"]
+    features_dashboard["features/dashboard (8)"]
+    features_employees["features/employees (30)"]
+    features_expenses["features/expenses (11)"]
     features_feedback["features/feedback (4)"]
-    features_inventory["features/inventory (13)"]
+    features_inventory["features/inventory (14)"]
     features_notifications["features/notifications (8)"]
     features_payments["features/payments (2)"]
-    features_platform["features/platform (20)"]
-    features_reminders["features/reminders (5)"]
-    features_reports["features/reports (9)"]
-    features_retail["features/retail (5)"]
-    features_salon["features/salon (18)"]
+    features_platform["features/platform (23)"]
+    features_reminders["features/reminders (9)"]
+    features_reports["features/reports (10)"]
+    features_retail["features/retail (6)"]
+    features_salon["features/salon (20)"]
     features_salon_features["features/salon-features (2)"]
-    features_services["features/services (15)"]
+    features_services["features/services (16)"]
   end
   subgraph g_infra["infra"]
     infra["infra (3)"]
     infra_auth["infra/auth (4)"]
     infra_config["infra/config (1)"]
     infra_effects["infra/effects (1)"]
-    infra_events["infra/events (2)"]
     infra_format["infra/format (2)"]
     infra_http["infra/http (2)"]
     infra_idempotency["infra/idempotency (1)"]
@@ -65,6 +64,7 @@ flowchart LR
   end
   app --> components_brand
   app --> npm_next
+  app__auth_ --> app__composition
   app__auth_ --> components_brand
   app__auth_ --> components_ui
   app__auth_ --> features_employees
@@ -103,7 +103,6 @@ flowchart LR
   app__dashboard_ --> infra_validation
   app__dashboard_ --> npm_next
   app__dashboard_ --> npm_react
-  app__dashboard_ --> types
   app__platform_ --> app__composition
   app__platform_ --> components_brand
   app__platform_ --> components_forms
@@ -170,7 +169,7 @@ flowchart LR
   features_appointments --> infra_validation
   features_appointments --> npm_server_only
   features_appointments --> types
-  features_audit --> infra_events
+  features_audit --> infra_effects
   features_audit --> infra_supabase
   features_audit --> npm_server_only
   features_audit --> types
@@ -292,8 +291,6 @@ flowchart LR
   infra_auth --> npm_server_only
   infra_config --> infra_validation
   infra_effects --> infra_observability
-  infra_events --> infra_effects
-  infra_events --> infra_observability
   infra_http --> npm_next
   infra_observability --> npm_next
   infra_security --> infra

@@ -13,7 +13,7 @@
     {
       "id": "app/(dashboard)",
       "kind": "internal",
-      "files": 174
+      "files": 175
     },
     {
       "id": "app/(platform)",
@@ -23,7 +23,7 @@
     {
       "id": "app/_composition",
       "kind": "internal",
-      "files": 4
+      "files": 5
     },
     {
       "id": "app/api",
@@ -53,7 +53,7 @@
     {
       "id": "features/access",
       "kind": "internal",
-      "files": 17
+      "files": 19
     },
     {
       "id": "features/appointments",
@@ -73,22 +73,22 @@
     {
       "id": "features/customers",
       "kind": "internal",
-      "files": 11
+      "files": 10
     },
     {
       "id": "features/dashboard",
       "kind": "internal",
-      "files": 7
+      "files": 8
     },
     {
       "id": "features/employees",
       "kind": "internal",
-      "files": 27
+      "files": 30
     },
     {
       "id": "features/expenses",
       "kind": "internal",
-      "files": 10
+      "files": 11
     },
     {
       "id": "features/feedback",
@@ -98,7 +98,7 @@
     {
       "id": "features/inventory",
       "kind": "internal",
-      "files": 13
+      "files": 14
     },
     {
       "id": "features/notifications",
@@ -113,27 +113,27 @@
     {
       "id": "features/platform",
       "kind": "internal",
-      "files": 20
+      "files": 23
     },
     {
       "id": "features/reminders",
       "kind": "internal",
-      "files": 5
+      "files": 9
     },
     {
       "id": "features/reports",
       "kind": "internal",
-      "files": 9
+      "files": 10
     },
     {
       "id": "features/retail",
       "kind": "internal",
-      "files": 5
+      "files": 6
     },
     {
       "id": "features/salon",
       "kind": "internal",
-      "files": 18
+      "files": 20
     },
     {
       "id": "features/salon-features",
@@ -143,7 +143,7 @@
     {
       "id": "features/services",
       "kind": "internal",
-      "files": 15
+      "files": 16
     },
     {
       "id": "infra",
@@ -164,11 +164,6 @@
       "id": "infra/effects",
       "kind": "internal",
       "files": 1
-    },
-    {
-      "id": "infra/events",
-      "kind": "internal",
-      "files": 2
     },
     {
       "id": "infra/format",
@@ -259,6 +254,11 @@
     },
     {
       "from": "app/(auth)",
+      "to": "app/_composition",
+      "count": 5
+    },
+    {
+      "from": "app/(auth)",
       "to": "components/brand",
       "count": 5
     },
@@ -290,7 +290,7 @@
     {
       "from": "app/(auth)",
       "to": "infra/security",
-      "count": 3
+      "count": 1
     },
     {
       "from": "app/(auth)",
@@ -310,7 +310,7 @@
     {
       "from": "app/(dashboard)",
       "to": "app/_composition",
-      "count": 33
+      "count": 34
     },
     {
       "from": "app/(dashboard)",
@@ -335,7 +335,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/access",
-      "count": 36
+      "count": 31
     },
     {
       "from": "app/(dashboard)",
@@ -345,22 +345,22 @@
     {
       "from": "app/(dashboard)",
       "to": "features/billing",
-      "count": 11
+      "count": 9
     },
     {
       "from": "app/(dashboard)",
       "to": "features/customers",
-      "count": 8
+      "count": 5
     },
     {
       "from": "app/(dashboard)",
       "to": "features/dashboard",
-      "count": 6
+      "count": 5
     },
     {
       "from": "app/(dashboard)",
       "to": "features/employees",
-      "count": 13
+      "count": 10
     },
     {
       "from": "app/(dashboard)",
@@ -375,12 +375,12 @@
     {
       "from": "app/(dashboard)",
       "to": "features/inventory",
-      "count": 19
+      "count": 18
     },
     {
       "from": "app/(dashboard)",
       "to": "features/notifications",
-      "count": 6
+      "count": 5
     },
     {
       "from": "app/(dashboard)",
@@ -390,12 +390,12 @@
     {
       "from": "app/(dashboard)",
       "to": "features/reminders",
-      "count": 12
+      "count": 15
     },
     {
       "from": "app/(dashboard)",
       "to": "features/reports",
-      "count": 14
+      "count": 13
     },
     {
       "from": "app/(dashboard)",
@@ -405,7 +405,7 @@
     {
       "from": "app/(dashboard)",
       "to": "features/salon",
-      "count": 13
+      "count": 8
     },
     {
       "from": "app/(dashboard)",
@@ -415,12 +415,12 @@
     {
       "from": "app/(dashboard)",
       "to": "features/services",
-      "count": 10
+      "count": 5
     },
     {
       "from": "app/(dashboard)",
       "to": "infra",
-      "count": 16
+      "count": 19
     },
     {
       "from": "app/(dashboard)",
@@ -430,7 +430,7 @@
     {
       "from": "app/(dashboard)",
       "to": "infra/security",
-      "count": 11
+      "count": 10
     },
     {
       "from": "app/(dashboard)",
@@ -440,17 +440,12 @@
     {
       "from": "app/(dashboard)",
       "to": "npm/next",
-      "count": 36
+      "count": 35
     },
     {
       "from": "app/(dashboard)",
       "to": "npm/react",
       "count": 58
-    },
-    {
-      "from": "app/(dashboard)",
-      "to": "types",
-      "count": 2
     },
     {
       "from": "app/(platform)",
@@ -475,12 +470,12 @@
     {
       "from": "app/(platform)",
       "to": "features/billing",
-      "count": 34
+      "count": 27
     },
     {
       "from": "app/(platform)",
       "to": "features/platform",
-      "count": 15
+      "count": 11
     },
     {
       "from": "app/(platform)",
@@ -510,7 +505,7 @@
     {
       "from": "app/_composition",
       "to": "features/access",
-      "count": 3
+      "count": 2
     },
     {
       "from": "app/_composition",
@@ -525,7 +520,7 @@
     {
       "from": "app/_composition",
       "to": "infra",
-      "count": 2
+      "count": 3
     },
     {
       "from": "app/_composition",
@@ -540,7 +535,7 @@
     {
       "from": "app/_composition",
       "to": "infra/security",
-      "count": 1
+      "count": 2
     },
     {
       "from": "app/_composition",
@@ -560,12 +555,12 @@
     {
       "from": "app/_composition",
       "to": "npm/server-only",
-      "count": 4
+      "count": 5
     },
     {
       "from": "app/_composition",
       "to": "types",
-      "count": 3
+      "count": 2
     },
     {
       "from": "app/api",
@@ -690,7 +685,7 @@
     {
       "from": "features/access",
       "to": "infra/supabase",
-      "count": 4
+      "count": 5
     },
     {
       "from": "features/access",
@@ -700,12 +695,12 @@
     {
       "from": "features/access",
       "to": "npm/server-only",
-      "count": 10
+      "count": 11
     },
     {
       "from": "features/access",
       "to": "types",
-      "count": 4
+      "count": 5
     },
     {
       "from": "features/appointments",
@@ -784,8 +779,8 @@
     },
     {
       "from": "features/audit",
-      "to": "infra/events",
-      "count": 3
+      "to": "infra/effects",
+      "count": 1
     },
     {
       "from": "features/audit",
@@ -860,7 +855,7 @@
     {
       "from": "features/customers",
       "to": "infra",
-      "count": 6
+      "count": 5
     },
     {
       "from": "features/customers",
@@ -935,7 +930,7 @@
     {
       "from": "features/employees",
       "to": "infra",
-      "count": 14
+      "count": 16
     },
     {
       "from": "features/employees",
@@ -955,12 +950,12 @@
     {
       "from": "features/employees",
       "to": "infra/observability",
-      "count": 7
+      "count": 9
     },
     {
       "from": "features/employees",
       "to": "infra/supabase",
-      "count": 8
+      "count": 10
     },
     {
       "from": "features/employees",
@@ -975,7 +970,7 @@
     {
       "from": "features/employees",
       "to": "npm/server-only",
-      "count": 12
+      "count": 13
     },
     {
       "from": "features/employees",
@@ -1010,7 +1005,7 @@
     {
       "from": "features/expenses",
       "to": "npm/server-only",
-      "count": 3
+      "count": 4
     },
     {
       "from": "features/feedback",
@@ -1035,7 +1030,7 @@
     {
       "from": "features/feedback",
       "to": "npm/server-only",
-      "count": 2
+      "count": 3
     },
     {
       "from": "features/inventory",
@@ -1055,17 +1050,17 @@
     {
       "from": "features/inventory",
       "to": "infra/supabase",
-      "count": 4
+      "count": 6
     },
     {
       "from": "features/inventory",
       "to": "infra/validation",
-      "count": 2
+      "count": 3
     },
     {
       "from": "features/inventory",
       "to": "npm/server-only",
-      "count": 9
+      "count": 10
     },
     {
       "from": "features/notifications",
@@ -1150,7 +1145,7 @@
     {
       "from": "features/platform",
       "to": "npm/server-only",
-      "count": 12
+      "count": 14
     },
     {
       "from": "features/platform",
@@ -1225,7 +1220,7 @@
     {
       "from": "features/reports",
       "to": "npm/server-only",
-      "count": 4
+      "count": 5
     },
     {
       "from": "features/retail",
@@ -1270,7 +1265,7 @@
     {
       "from": "features/retail",
       "to": "npm/server-only",
-      "count": 2
+      "count": 3
     },
     {
       "from": "features/salon",
@@ -1305,7 +1300,7 @@
     {
       "from": "features/salon",
       "to": "infra/supabase",
-      "count": 2
+      "count": 4
     },
     {
       "from": "features/salon",
@@ -1315,7 +1310,7 @@
     {
       "from": "features/salon",
       "to": "npm/server-only",
-      "count": 15
+      "count": 17
     },
     {
       "from": "features/salon",
@@ -1325,12 +1320,12 @@
     {
       "from": "features/services",
       "to": "infra",
-      "count": 7
+      "count": 10
     },
     {
       "from": "features/services",
       "to": "infra/observability",
-      "count": 1
+      "count": 5
     },
     {
       "from": "features/services",
@@ -1345,7 +1340,7 @@
     {
       "from": "features/services",
       "to": "npm/server-only",
-      "count": 11
+      "count": 12
     },
     {
       "from": "features/services",
@@ -1360,7 +1355,7 @@
     {
       "from": "infra/auth",
       "to": "infra/supabase",
-      "count": 4
+      "count": 3
     },
     {
       "from": "infra/auth",
@@ -1389,16 +1384,6 @@
     },
     {
       "from": "infra/effects",
-      "to": "infra/observability",
-      "count": 1
-    },
-    {
-      "from": "infra/events",
-      "to": "infra/effects",
-      "count": 1
-    },
-    {
-      "from": "infra/events",
       "to": "infra/observability",
       "count": 1
     },
