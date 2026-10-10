@@ -118,7 +118,7 @@ ADR 0004 is the product-level contract. SQL stores the flags; TypeScript owns us
 
 ## Transactional RPC Contracts
 
-ADR 0024: lo que debe ser atómico vive en una sola RPC. Una llamada RPC es una transacción; si un paso falla, no queda nada escrito. Todas estas funciones siguen el mismo patrón: `revoke all` a `public`, `anon`, `service_role` y grant de `execute` solo a `authenticated`, con `set search_path = public, pg_temp`.
+ADR 0023: lo que debe ser atómico vive en una sola RPC. Una llamada RPC es una transacción; si un paso falla, no queda nada escrito. Todas estas funciones siguen el mismo patrón: `revoke all` a `public`, `anon`, `service_role` y grant de `execute` solo a `authenticated`, con `set search_path = public, pg_temp`.
 
 | Contract | SQL source | Seguridad | Grants | Errores (SQLSTATE) | TypeScript owner | Prueba pgTAP |
 |---|---|---|---|---|---|---|
@@ -137,7 +137,7 @@ Notas de cada contrato:
 - `create_appointment` conserva el tipo de retorno `uuid` (id de la cita). El id del cliente nuevo no se devuelve; se consulta desde la cita.
 - La clave de idempotencia de `create_appointment` cubre el payload completo, incluido `new_customer`: un reenvío devuelve la misma cita y no crea un segundo cliente.
 - `resolve_new_customer` reutiliza un cliente temporal con el mismo teléfono, o un cliente activo con ese teléfono, y crea un temporal inactivo en otro caso.
-- Auth no forma parte de estas transacciones. En colaboradores se escribe primero en BD y después se modifica la cuenta de Auth; si Auth falla, la operación devuelve un aviso (ADR 0024).
+- Auth no forma parte de estas transacciones. En colaboradores se escribe primero en BD y después se modifica la cuenta de Auth; si Auth falla, la operación devuelve un aviso (ADR 0023).
 
 ### Búsqueda de usuario de Auth por email
 
@@ -145,7 +145,7 @@ Notas de cada contrato:
 
 ## Billing Tenant Contracts
 
-ADR 0025: las lecturas de billing del propio salón pasan por RLS con el cliente del usuario (`billingSalonDb()`). El panel de plataforma sigue con `service_role` (`billingDb()`). Migración `20240101000073_billing_tenant_rls.sql`, forward-only: solo cambia políticas, grants y funciones, no datos.
+ADR 0024: las lecturas de billing del propio salón pasan por RLS con el cliente del usuario (`billingSalonDb()`). El panel de plataforma sigue con `service_role` (`billingDb()`). Migración `20240101000073_billing_tenant_rls.sql`, forward-only: solo cambia políticas, grants y funciones, no datos.
 
 ### Políticas (RLS)
 
@@ -188,7 +188,7 @@ Migraciones forward-only (ADR 0016). Las de esta sección son anteriores a las q
 
 | Contrato | Migración | Seguridad y grants | TypeScript owner | Prueba pgTAP |
 |---|---|---|---|---|
-| `update_appointment(payload jsonb) returns void` | `20240101000029`, redefinida en `20240101000030` y en `20240101000065` (con clave de idempotencia) | `security definer`, `search_path = public, pg_temp`; ejecutable por `authenticated` | `src/features/appointments/use-cases` | `03_create_appointment.sql`, `06_idempotency.sql` |
+| `update_appointment(payload jsonb) returns void` | `20240101000029`, redefinida en `20240101000030`, `20240101000065` (con clave de idempotencia), `20240101000078` (mensajes con tildes) y `20240101000079` (conserva servicios ya asignados aunque estén desactivados; los inactivos nuevos siguen rechazados) | `security definer`, `search_path = public, pg_temp`; ejecutable por `authenticated` | `src/features/appointments/use-cases` (`update-appointment.rpc.test.ts`) | `03_create_appointment.sql`, `06_idempotency.sql`, `23_update_appointment_inactive_service.sql` |
 | `create_appointment(payload jsonb)` (redefinición) | `20240101000030`, reemplazada en `20240101000065` | Igual que arriba | `src/features/appointments/use-cases/create-appointment.ts` | `03_create_appointment.sql`, `06_idempotency.sql` |
 | `recalc_appointment()` con descuentos por ítem | `20240101000032` (añade `discount_amount` a la cabecera y `pricing_mode`, `completion_price_note`) y `20240101000033` (recalcula con descuentos por ítem) | Trigger, sin grant de cliente | `src/features/appointments/data/appointments.repo.ts` | `15_recalc_appointment.sql` |
 | `appointment_items.discount_amount` y precio variable | `20240101000032`, `20240101000033`, guarda `appointment_items_discount_not_greater_than_price` en `20240101000034` | Check constraint: el descuento no supera el precio del ítem | `src/features/appointments/domain` | `15_recalc_appointment.sql` |
@@ -278,6 +278,7 @@ Migraciones `20240101000047` y `20240101000048` son marcadores históricos sin c
 - Limpieza de `idempotency_keys` (migración `20240101000065`): cada llamada a `idempotency_begin` borra como mucho 100 claves con más de 7 días. Es una limpieza oportunista y acotada.
 - Limpieza de `rate_limit_buckets` (migración `20240101000064`): cada llamada a la función de rate limit borra como mucho 100 cubos expirados.
 - Con esta limpieza oportunista basta mientras no se mida crecimiento de estas tablas. Si se mide, se añadiría `pg_cron` para una purga periódica; está fuera de alcance de este documento.
+- Migración `20240101000078_user_messages_accents`: solo cambia el texto de los `raise exception` que llegan al usuario (tildes y ortografía, por ejemplo «inválido», «salón», «método de pago»). No cambia firmas, lógica, SQLSTATE, `security`, `search_path` ni grants. Las comparaciones por texto (`rpc-failure-reason.ts` y las pruebas pgTAP con `throws_ok`) usan ya la redacción nueva; cualquier cambio de texto futuro exige actualizar esas comparaciones en el mismo cambio.
 
 ## Allowed Duplication
 

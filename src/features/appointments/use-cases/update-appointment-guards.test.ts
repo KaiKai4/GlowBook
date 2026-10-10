@@ -14,6 +14,7 @@ import type { AppointmentCommandState } from "../data/appointment-commands.repo"
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
+  findAppointmentServiceIdsForCommand: vi.fn(),
   findExceptionDatesByEmployeeForCommand: vi.fn(),
   findOccupiedSlotsByEmployeeForCommand: vi.fn(),
   findWorkSchedulesByEmployeeForCommand: vi.fn(),

@@ -34,9 +34,15 @@ const APPOINTMENT_ID = "00000000-0000-4000-8000-0000000000a1";
 const NOT_UUID = "cita-1";
 
 function appointment(status: string): AppointmentDetailViewModel {
-  return partialDouble<AppointmentDetailViewModel>({ id: APPOINTMENT_ID, customerName: "Laura Gómez", status });
+  return partialDouble<AppointmentDetailViewModel>({
+    id: APPOINTMENT_ID,
+    customerName: "Laura Gómez",
+    status,
+    items: [],
+  });
 }
 
+// La página pide los servicios de la cita: con items vacío se piden sin ninguno extra.
 const WIZARD_DATA = {
   categories: [],
   services: [{ id: "srv-1" }, { id: "srv-2" }],
@@ -96,7 +102,17 @@ describe("EditAppointmentPage", () => {
     expect(text).toContain("Laura Gómez");
     expect(text).toContain("Formulario de Laura Gómez con 2 servicios");
     expect(text).not.toContain("ya está cerrada");
-    expect(getAppointmentWizardData).toHaveBeenCalledWith(SALON_ID);
+    expect(getAppointmentWizardData).toHaveBeenCalledWith(SALON_ID, []);
+  });
+
+  it("en edición pide también los servicios de la cita, aunque estén inactivos", async () => {
+    vi.mocked(getAppointmentDetail).mockResolvedValue({
+      ...appointment("scheduled"),
+      items: [{ serviceId: "srv-viejo" }],
+    } as AppointmentDetailViewModel);
+    mounted = mountComponent(await EditAppointmentPage({ params: Promise.resolve({ id: APPOINTMENT_ID }) }));
+
+    expect(getAppointmentWizardData).toHaveBeenCalledWith(SALON_ID, ["srv-viejo"]);
   });
 
   it.each(["completed", "cancelled", "no_show"])(

@@ -19,16 +19,19 @@ export interface SchedulingContext {
   /** Días libres puntuales del profesional (YYYY-MM-DD en zona del salón). */
   getExceptionDates?: (employeeId: string) => string[];
   excludeAppointmentId?: string;
+  /** Servicios inactivos que la cita ya tenía (solo al actualizar). Los inactivos nuevos se siguen rechazando. */
+  allowedInactiveServiceIds?: ReadonlySet<string>;
 }
 
 function validateAssignment(
   assignment: ServiceAssignment,
-  salonId: string
+  salonId: string,
+  allowedInactiveServiceIds: ReadonlySet<string>
 ): void {
   if (assignment.service.salon_id !== salonId) {
     throw new PublicError("El servicio no pertenece al salón.");
   }
-  if (!assignment.service.is_active) {
+  if (!assignment.service.is_active && !allowedInactiveServiceIds.has(assignment.service.id)) {
     throw new PublicError(`El servicio no está activo.`);
   }
   if (assignment.employee.salon_id !== salonId) {
@@ -59,11 +62,12 @@ export function buildItemPayloads(
     throw new PublicError("Selecciona al menos un servicio.");
   }
 
+  const allowedInactiveServiceIds = ctx.allowedInactiveServiceIds ?? new Set<string>();
   let cursor = startTime;
   const payloads: AppointmentItemPayload[] = [];
 
   assignments.forEach((assignment, index) => {
-    validateAssignment(assignment, salonId);
+    validateAssignment(assignment, salonId, allowedInactiveServiceIds);
 
     const end = addMinutes(cursor, assignment.service.duration_minutes);
     const workSchedules = ctx.getWorkSchedules(assignment.employee.id);

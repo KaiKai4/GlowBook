@@ -39,6 +39,8 @@ export interface PrepareAppointmentItemsInput {
   startTime: string;
   /** Cita que se reprograma: sus propios bloques no cuentan como ocupados. */
   excludeAppointmentId?: string;
+  /** Servicios inactivos que la cita ya tenía: solo se aceptan al actualizar. */
+  allowedInactiveServiceIds?: ReadonlySet<string>;
   action: "create" | "update";
 }
 
@@ -105,6 +107,7 @@ export async function prepareAppointmentItems(
         date.toDateString() === startDay ? (occupied.get(employeeId) ?? []) : [],
       getExceptionDates: (employeeId) => exceptions.get(employeeId) ?? [],
       excludeAppointmentId: input.excludeAppointmentId,
+      allowedInactiveServiceIds: input.allowedInactiveServiceIds,
     };
   } catch (error) {
     captureError(error, { module: "appointments", action });

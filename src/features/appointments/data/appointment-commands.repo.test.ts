@@ -8,6 +8,7 @@ import {
 import {
   findAppointmentCreationResources,
   findAppointmentForCommand,
+  findAppointmentServiceIdsForCommand,
   findExceptionDatesByEmployeeForCommand,
   findOccupiedSlotsByEmployeeForCommand,
   findWorkSchedulesByEmployeeForCommand,
@@ -603,5 +604,31 @@ describe("comandos de cita: agenda ocupada por día del salón", () => {
     useDouble(double);
 
     expect(await findOccupiedSlotsForSalonDate(salonId, "2026-05-25")).toEqual({});
+  });
+});
+
+describe("comandos de cita: servicios actuales de la cita", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("lee los servicios de los items de la cita siempre por id y salón", async () => {
+    const double = createAppointmentsSupabaseDouble({
+      appointment_items: { data: [{ service_id: serviceA }, { service_id: serviceB }], error: null },
+    });
+    useDouble(double);
+
+    expect(await findAppointmentServiceIdsForCommand(appointmentId, salonId)).toEqual([serviceA, serviceB]);
+    expect(double.callsFor("appointment_items")).toEqual([
+      { method: "select", args: ["service_id"] },
+      { method: "eq", args: ["appointment_id", appointmentId] },
+      { method: "eq", args: ["salon_id", salonId] },
+    ]);
+  });
+
+  it("propaga el error de lectura de los items", async () => {
+    useDouble(createAppointmentsSupabaseDouble({ appointment_items: { data: null, error: failure } }));
+
+    await expect(findAppointmentServiceIdsForCommand(appointmentId, salonId)).rejects.toEqual(failure);
   });
 });

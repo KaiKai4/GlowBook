@@ -47,4 +47,25 @@ describe("service scheduling options", () => {
       ],
     });
   });
+
+  it("incluye los servicios inactivos indicados, marcados como (inactivo), y sigue ocultando el resto", async () => {
+    mockedFindCategoriesWithServices.mockResolvedValue([
+      {
+        id: "category-nails",
+        name: "Unas",
+        pricing_mode: "fixed",
+        services: [
+          { id: "service-active", name: "Softgel", duration_minutes: 45, price: 31, is_active: true },
+          { id: "service-kept", name: "Manicura", duration_minutes: 30, price: 15, is_active: false },
+          { id: "service-other", name: "Pedicura", duration_minutes: 40, price: 20, is_active: false },
+        ],
+      },
+    ] as Awaited<ReturnType<typeof findCategoriesWithServices>>);
+
+    const options = await getServiceSchedulingOptions("salon-1", ["service-kept"]);
+
+    expect(options.services.map((service) => service.id)).toEqual(["service-active", "service-kept"]);
+    expect(options.services[1]?.name).toBe("Manicura (inactivo)");
+    expect(options.services[0]?.name).toBe("Softgel");
+  });
 });

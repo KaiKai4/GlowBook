@@ -1,6 +1,9 @@
 import { err, ok, type Result } from "@/infra/result";
 import { captureError } from "@/infra/observability";
-import { findAppointmentForCommand } from "../data/appointment-commands.repo";
+import {
+  findAppointmentForCommand,
+  findAppointmentServiceIdsForCommand,
+} from "../data/appointment-commands.repo";
 import {
   updateAppointmentWithRpc,
   type UpdateAppointmentRpcPayload,
@@ -21,9 +24,14 @@ export async function updateAppointmentSchedule(
   { salonId, idempotencyKey }: Deps
 ): Promise<Result<void>> {
   let appointment: Awaited<ReturnType<typeof findAppointmentForCommand>>;
+  let currentServiceIds: string[] = [];
 
   try {
     appointment = await findAppointmentForCommand(input.appointment_id, salonId);
+    // Servicios que la cita ya tiene: si siguen asignados aunque se hayan desactivado, se conservan.
+    if (appointment) {
+      currentServiceIds = await findAppointmentServiceIdsForCommand(input.appointment_id, salonId);
+    }
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
     return err(APPOINTMENT_MESSAGES.loadFailed);
@@ -41,6 +49,7 @@ export async function updateAppointmentSchedule(
     assignments: input.assignments,
     startTime: input.start_time,
     excludeAppointmentId: input.appointment_id,
+    allowedInactiveServiceIds: new Set(currentServiceIds),
     action: "update",
   });
   if (!prepared.ok) return err(prepared.error);

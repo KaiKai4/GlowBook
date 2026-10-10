@@ -19,6 +19,7 @@ vi.mock("@/features/salon", () => ({ assertSalonPaymentMethodEnabled: vi.fn(asyn
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
   findAppointmentForCommand: vi.fn(),
+  findAppointmentServiceIdsForCommand: vi.fn(),
   findExceptionDatesByEmployeeForCommand: vi.fn(),
   findOccupiedSlotsByEmployeeForCommand: vi.fn(),
   findWorkSchedulesByEmployeeForCommand: vi.fn(),

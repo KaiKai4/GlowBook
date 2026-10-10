@@ -9,10 +9,17 @@ import type { AppointmentWizardData } from "../view-models";
 /** Clientes que se ofrecen en el asistente de nueva cita. */
 const CUSTOMER_OPTIONS_LIMIT = 200;
 
-export async function getAppointmentWizardData(salonId: string): Promise<AppointmentWizardData> {
+/**
+ * Datos del asistente. En edición, `assignedServiceIds` son los servicios que la
+ * cita ya tiene: se ofrecen aunque estén inactivos, para no obligar a cambiarlos.
+ */
+export async function getAppointmentWizardData(
+  salonId: string,
+  assignedServiceIds: readonly string[] = []
+): Promise<AppointmentWizardData> {
   const [customers, serviceSchedulingOptions, salonSchedulingConfig] = await Promise.all([
     getActiveCustomerOptions(salonId, CUSTOMER_OPTIONS_LIMIT),
-    getServiceSchedulingOptions(salonId),
+    getServiceSchedulingOptions(salonId, assignedServiceIds),
     getSalonSchedulingConfig(salonId),
   ]);
 

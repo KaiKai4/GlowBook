@@ -25,12 +25,14 @@ export default async function EditAppointmentPage({
     );
   }
 
-  const [appointment, wizardData] = await Promise.all([
-    getAppointmentDetail({ appointmentId: id, salonId: profile.salon_id }),
-    getAppointmentWizardData(profile.salon_id),
-  ]);
-
+  const appointment = await getAppointmentDetail({ appointmentId: id, salonId: profile.salon_id });
   if (!appointment) notFound();
+
+  // La cita puede tener servicios que se desactivaron después: se ofrecen para no forzar un cambio.
+  const wizardData = await getAppointmentWizardData(
+    profile.salon_id,
+    appointment.items.map((item) => item.serviceId)
+  );
 
   const isClosed = isClosedStatus(appointment.status);
 
