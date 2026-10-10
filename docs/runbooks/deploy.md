@@ -60,6 +60,19 @@ E2E y los demás controles. La promoción no reconstruye el artefacto probado.
 Los tokens se entregan únicamente a pasos que los necesitan; checkout no
 conserva credenciales. No se publican secretos ni estados de sesión.
 
+## Aprobar las dos etapas en GitHub
+
+1. Abrir el repositorio → Actions → GlowBook Release → ejecución del SHA integrado en main.
+2. Cuando aparezca Review deployments, seleccionar Production y pulsar Approve and deploy.
+3. La primera aprobación desbloquea Migrations (production). Puede aplicar SQL pendiente antes de desplegar; el frontend anterior sigue activo.
+4. Esperar a que Deploy candidate y Smoke candidate estén en verde. Candidate es un despliegue con configuración y base de producción, sin el dominio público; no es un proyecto Supabase staging.
+5. Repetir Review deployments → Production → Approve and deploy para desbloquear Promote production. Esta aprobación asigna el dominio público al mismo build probado; no lo reconstruye.
+6. Confirmar que Promote production y la ejecución completa terminan en success. Ese job incluye la prueba del dominio público.
+
+Un push a una rama no publica la aplicación. Integrar el PR dispara CI sobre main; solo su éxito activa la release. No aprobar una ejecución con SHA inesperado ni saltarse un fallo. Si se rechaza una aprobación, la publicación se detiene. Corregir la causa y reintentar desde Actions; una nueva ejecución puede pedir las aprobaciones otra vez.
+
+Las aprobaciones son controles operativos de GitHub, no un paso de commit. Una persona con permiso o un agente expresamente autorizado puede realizarlas. No se presume autorización de producción por pedir cambios de código.
+
 ## Validación de datos
 
 CI aplica las migraciones al stack Supabase local y ejecuta pgTAP, integración

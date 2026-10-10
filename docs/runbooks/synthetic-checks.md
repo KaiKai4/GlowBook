@@ -105,8 +105,4 @@ node --test scripts/ops/synthetic-alert.test.mjs scripts/ops/synthetic-check.tes
 
 ## Estado
 
-- Workflow y scripts: implementados y validados en seco.
-- Primera ejecución real contra producción y staging: **PENDIENTE** de que una
-  persona configure los secretos en GitHub Actions y dispare
-  `workflow_dispatch` una vez. Hasta entonces el job fallará por secretos
-  faltantes, lo cual es el comportamiento esperado.
+Monitor de producción verificado en GitHub Actions, sin dependencia de staging: [ejecución correcta](https://github.com/KaiKai4/GlowBook/actions/runs/38017894068). Sigue activo cada hora; esta evidencia fechada no sustituye revisar el resultado del último ciclo.
