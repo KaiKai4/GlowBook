@@ -31,6 +31,10 @@ Fecha: 2026-05-30
   ni query) y ruta del documento (sin query ni fragmento);
 - responde 204 sin cuerpo, o 4xx con `no-store`.
 
+## Rutas /api Sin Sesion
+
+Las llamadas a `/api/*` sin sesion responden `401` con cuerpo JSON y `no-store`. Nunca redirigen a una pagina HTML de login (`src/proxy.ts`, `src/proxy-auth.ts`).
+
 ## Request Id (Fase 2)
 
 `src/proxy.ts` asigna `x-request-id` a cada request: reutiliza el UUID entrante
@@ -106,6 +110,10 @@ Reglas:
 - nunca usarlo para saltar permisos normales de Salon;
 - registrar acciones Platform sensibles en `platform_audit_log`;
 - no loguear tokens, cookies, passwords ni service role.
+
+## Variables De Entorno
+
+Las variables de entorno se validan con Zod en `src/infra/config/env.ts` al usarse, no al importar el modulo, y no tienen valores por defecto. Si falta una variable requerida, el error indica cual falta sin mostrar su valor. Los secretos siguen fuera del repositorio.
 
 ## Flujos Sensibles
 

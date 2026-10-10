@@ -170,6 +170,37 @@ describe("assertAnonymousRateLimit", () => {
     );
   });
 
+  it("sin IP aplica un limite propio 10 veces mayor y avisa en consola sin datos personales", async () => {
+    setRequestHeaders({});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await assertAnonymousRateLimit("accept-invitation");
+
+    expect(rpc).toHaveBeenCalledWith("consume_rate_limit", {
+      p_key: "ip:unknown:accept-invitation",
+      p_max: 100,
+      p_window_seconds: 60,
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const line = String(warnSpy.mock.calls[0]?.[0]);
+    expect(JSON.parse(line)).toEqual({ event: "rate_limit_unknown_ip", scope: "accept-invitation" });
+    warnSpy.mockRestore();
+  });
+
+  it("con IP conocida no avisa y usa el maximo indicado", async () => {
+    setRequestHeaders({ "x-real-ip": "192.0.2.10" });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await assertAnonymousRateLimit("csp-report", { max: 30, windowMs: 60_000 });
+
+    expect(rpc).toHaveBeenCalledWith(
+      "consume_rate_limit",
+      expect.objectContaining({ p_key: "ip:192.0.2.10:csp-report", p_max: 30 })
+    );
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   it("acepta opciones propias y bloquea con el mensaje publico", async () => {
     setRequestHeaders({ "x-real-ip": "192.0.2.1" });
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });

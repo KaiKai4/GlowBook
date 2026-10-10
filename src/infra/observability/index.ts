@@ -25,8 +25,19 @@ function shouldEmitToConsole(): boolean {
   return process.env.NODE_ENV !== "test" && process.env.VITEST !== "true";
 }
 
+// Serializa con la misma redaccion que el resto del modulo. Nunca lanza: si el
+// valor no se puede convertir a texto, devuelve un marcador fijo.
+function safeSerializeError(value: unknown): ReturnType<typeof serializeError> {
+  try {
+    return serializeError(value);
+  } catch {
+    return { name: "UnserializableError", message: "[no serializable]" };
+  }
+}
+
 // Resuelve el request id (asincrono en Next 16) y emite. Nunca rechaza: si la
-// emision falla, lo registra en consola sin datos del error original.
+// emision falla, registra en consola el fallo y el error original (redactado),
+// para no perder el error que se queria registrar.
 async function emitError(error: unknown, context: ObservabilityContext): Promise<void> {
   try {
     const requestId = await getRequestId();
@@ -43,10 +54,16 @@ async function emitError(error: unknown, context: ObservabilityContext): Promise
       console.error("[observability:error]", JSON.stringify(payload));
     }
     scheduleObservabilityWebhook(payload);
-  } catch {
+  } catch (emitFailure) {
     if (shouldEmitToConsole()) {
       console.error(
-        JSON.stringify({ event: "observability_emit_failed", module: context.module, action: context.action })
+        JSON.stringify({
+          event: "observability_emit_failed",
+          module: context.module,
+          action: context.action,
+          emitError: safeSerializeError(emitFailure),
+          originalError: safeSerializeError(error),
+        })
       );
     }
   }

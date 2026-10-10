@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSupabasePublicEnv } from "@/infra/config/env";
 import type { Database } from "@/types/database.types";
 import { SESSION_ONLY_COOKIE, setSupabaseServerCookies } from "./cookies";
 
@@ -18,9 +19,10 @@ export interface SupabaseServerClientOptions {
 export async function createSupabaseServerClient(options: SupabaseServerClientOptions = {}) {
   const cookieStore = await cookies();
   const sessionOnly = options.sessionOnly ?? cookieStore.get(SESSION_ONLY_COOKIE)?.value === "1";
+  const { url, anonKey } = getSupabasePublicEnv();
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {

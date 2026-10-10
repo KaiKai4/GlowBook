@@ -84,15 +84,28 @@ export function assertActionRateLimit(
  * IP del cliente. En Vercel la plataforma fija x-real-ip, por eso se prefiere.
  * Como respaldo se usa el ÚLTIMO valor de x-forwarded-for: es el que añade el
  * proxy más cercano; el primero lo escribe el cliente y es falseable fuera de
- * Vercel. Sin IP, la clave es el bucket compartido "ip:unknown".
+ * Vercel. Devuelve null si no hay ninguna de las dos cabeceras.
  */
-async function clientIp(): Promise<string> {
+async function clientIp(): Promise<string | null> {
   const headerList = await headers();
   const realIp = headerList.get("x-real-ip")?.trim();
   if (realIp) return realIp;
 
   const forwardedFor = headerList.get("x-forwarded-for")?.split(",").at(-1)?.trim();
-  return forwardedFor || "unknown";
+  return forwardedFor || null;
+}
+
+/**
+ * Sin IP, todos los clientes sin cabecera comparten el bucket "ip:unknown". Para
+ * no bloquearlos entre si se aplica un maximo mayor (multiplicador sobre la
+ * politica). Es un limite mas laxo, no una exencion.
+ */
+const UNKNOWN_IP_LIMIT_MULTIPLIER = 10;
+const UNKNOWN_IP = "unknown";
+
+function warnUnknownIp(scope: string): void {
+  // Solo ambito (no personal): nunca la cabecera ni la IP.
+  console.warn(JSON.stringify({ event: "rate_limit_unknown_ip", scope }));
 }
 
 /**
@@ -104,5 +117,9 @@ export async function assertAnonymousRateLimit(
   options: RateLimitOptions = DEFAULT_ANONYMOUS_LIMIT
 ): Promise<Result<void>> {
   const ip = await clientIp();
-  return consumeRateLimit(`ip:${ip}:${scope}`, scope, options);
+  if (ip) return consumeRateLimit(`ip:${ip}:${scope}`, scope, options);
+
+  warnUnknownIp(scope);
+  const relaxed = { ...options, max: options.max * UNKNOWN_IP_LIMIT_MULTIPLIER };
+  return consumeRateLimit(`ip:${UNKNOWN_IP}:${scope}`, scope, relaxed);
 }

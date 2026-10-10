@@ -11,6 +11,24 @@ describe("getOptimisticAuthDecision", () => {
     ).toEqual({ type: "next" });
   });
 
+  it("answers anonymous /api calls with unauthorized instead of redirecting", () => {
+    expect(
+      getOptimisticAuthDecision({
+        pathname: "/api/reports/export",
+        cookies: [],
+      })
+    ).toEqual({ type: "unauthorized" });
+  });
+
+  it("keeps /api calls with a session passing through", () => {
+    expect(
+      getOptimisticAuthDecision({
+        pathname: "/api/reports/export",
+        cookies: [{ name: "sb-project-auth-token" }],
+      })
+    ).toEqual({ type: "next" });
+  });
+
   it("redirects protected routes to login when no Supabase auth cookie is present", () => {
     expect(
       getOptimisticAuthDecision({

@@ -87,4 +87,24 @@ describe("toPublicErrorMessage", () => {
   it("falls back when a passthrough SQLSTATE has an empty message", () => {
     expect(toPublicErrorMessage(pgError("P0001", ""), FALLBACK)).toBe(FALLBACK);
   });
+
+  it("maps PostgREST PGRST116 (no rows, or several rows with .single()) to a fixed message", () => {
+    const error = pgError("PGRST116", "JSON object requested, multiple (or no) rows returned");
+
+    expect(toPublicErrorMessage(error, FALLBACK)).toBe("No se encontró el registro solicitado.");
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it("never leaks the PostgREST message for a mapped PGRST code", () => {
+    const error = pgError("PGRST116", "The result contains 0 rows, relation \"public.customers\"");
+
+    expect(toPublicErrorMessage(error, FALLBACK)).not.toContain("public.customers");
+  });
+
+  it("does not treat an unmapped PostgREST code as a passthrough message", () => {
+    const error = pgError("PGRST301", "JWT expired");
+
+    expect(toPublicErrorMessage(error, FALLBACK)).toBe(FALLBACK);
+    expect(captureError).toHaveBeenCalledTimes(1);
+  });
 });

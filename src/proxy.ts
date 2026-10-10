@@ -55,6 +55,17 @@ export async function proxy(request: NextRequest) {
     hasVerifiedSession,
   });
 
+  if (decision.type === "unauthorized") {
+    // Las rutas /api no redirigen: responden 401 JSON y no se cachean.
+    const unauthorizedResponse = NextResponse.json(
+      { error: "No autenticado" },
+      { status: 401 }
+    );
+    copySessionMetadata(response, unauthorizedResponse);
+    unauthorizedResponse.headers.set("Cache-Control", "no-store");
+    return applySecurityHeaders(unauthorizedResponse, csp, requestId);
+  }
+
   if (decision.type === "redirect") {
     // El origen real (Host / x-forwarded-host) evita redirigir a localhost detrás de un proxy.
     const redirectResponse = NextResponse.redirect(

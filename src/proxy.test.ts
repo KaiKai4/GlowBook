@@ -29,14 +29,29 @@ describe("proxy security headers", () => {
     expect(response.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/);
   });
 
-  it("marks session redirects as no-store, also for api routes", async () => {
+  it("marks session redirects as no-store", async () => {
     const page = await proxy(get("/clientes"));
+
+    expect(page.status).toBe(307);
+    expect(page.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("answers anonymous api calls with 401 JSON instead of redirecting to login", async () => {
     const api = await proxy(get("/api/reports/export"));
 
-    expect(page.headers.get("cache-control")).toBe("no-store");
-    expect(api.status).toBe(307);
-    expect(api.headers.get("location")).toBe(`${BASE}/login`);
+    expect(api.status).toBe(401);
+    expect(api.headers.get("location")).toBeNull();
+    expect(api.headers.get("content-type")).toContain("application/json");
+    expect(await api.json()).toEqual({ error: "No autenticado" });
     expect(api.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("keeps the security headers on the 401 api response", async () => {
+    const api = await proxy(get("/api/reports/export"));
+
+    expect(api.headers.get("content-security-policy")).toContain("report-uri /api/csp-report");
+    expect(api.headers.get("reporting-endpoints")).toBe('csp-endpoint="/api/csp-report"');
+    expect(api.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it("builds the redirect from the host the client used behind a proxy, not from localhost", async () => {
