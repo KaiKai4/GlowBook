@@ -7,6 +7,7 @@ import {
 } from "../data/appointment-commands.repo";
 import { completeAppointmentRpc } from "../data/rpc/complete-appointment";
 import { assertTransition } from "../domain/lifecycle";
+import { APPOINTMENT_MESSAGES } from "../domain/messages";
 
 export interface CompleteAppointmentPriceInput {
   id: string;
@@ -32,15 +33,15 @@ export async function completeAppointment(
     appointment = await findAppointmentForCommand(appointmentId, salonId);
   } catch (error) {
     captureError(error, { module: "appointments", action: "complete" });
-    return err("Cita no encontrada.");
+    return err(APPOINTMENT_MESSAGES.notFound);
   }
 
-  if (!appointment) return err("Cita no encontrada.");
+  if (!appointment) return err(APPOINTMENT_MESSAGES.notFound);
 
   try {
     assertTransition(appointment.status, "completed");
   } catch (error) {
-    return err(toPublicErrorMessage(error, "No se pudo completar la cita."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.completeFailed));
   }
 
   try {
@@ -56,7 +57,7 @@ export async function completeAppointment(
       idempotencyKey,
     });
   } catch (error) {
-    return err(toPublicErrorMessage(error, "Error al completar la cita."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.completeError));
   }
 
   return ok(undefined);

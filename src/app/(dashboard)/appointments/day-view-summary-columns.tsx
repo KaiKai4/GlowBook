@@ -4,9 +4,8 @@ import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { DataTableColumn } from "@/components/ui/data-table";
 import type { CalendarAppointment } from "@/features/appointments/view-models";
-import { APPOINTMENT_STATUS_BADGE } from "./appointment-status";
-
-const CLOSED_STATUSES = ["completed", "cancelled", "no_show"];
+import { appointmentStatusPresentation } from "./appointment-status";
+import { isClosedStatus } from "@/features/appointments/domain/lifecycle";
 
 function formatAppointmentDayTz(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("es-PA", {
@@ -123,7 +122,7 @@ export function buildSummaryColumns(
       id: "status",
       header: "Estado",
       secondary: true,
-      cell: (appt) => <StatusBadge {...APPOINTMENT_STATUS_BADGE[appt.status]} />,
+      cell: (appt) => <StatusBadge {...appointmentStatusPresentation(appt.status)} />,
     },
     {
       id: "total",
@@ -140,7 +139,7 @@ export function buildSummaryColumns(
       header: "Acciones",
       align: "right",
       cell: (appt) => {
-        const manageable = canManage && !CLOSED_STATUSES.includes(appt.status);
+        const manageable = canManage && !isClosedStatus(appt.status);
         return manageable ? (
           <ActionsCell appt={appt} actionsOpen={actions.openActionsId === appt.id} actions={actions} />
         ) : null;

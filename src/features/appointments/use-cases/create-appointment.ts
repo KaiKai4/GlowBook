@@ -16,6 +16,7 @@ import { buildItemPayloads } from "../domain/scheduling";
 import type { SchedulingContext } from "../domain/scheduling";
 import type { BusinessHour, OccupiedSlot, ServiceAssignment, WorkSchedule } from "../domain/types";
 import type { CreateAppointmentInput } from "../schemas";
+import { APPOINTMENT_MESSAGES } from "../domain/messages";
 
 interface Deps {
   salonId: string;
@@ -50,17 +51,17 @@ export async function createAppointment(
     });
   } catch (error) {
     captureError(error, { module: "appointments", action: "create" });
-    return err("Datos inválidos.");
+    return err(APPOINTMENT_MESSAGES.invalidData);
   }
 
-  // Con cliente nuevo no hay id que comprobar: la RPC lo resuelve en la misma transaccion.
+  // Con cliente nuevo no hay id que comprobar: la RPC lo resuelve en la misma transacción.
   if (input.customer_id !== undefined && !resources.customerExists) {
-    return err("Cliente no encontrado en este salón.");
+    return err(APPOINTMENT_MESSAGES.customerNotFound);
   }
-  if (!resources.salonConfig) return err("Salón no encontrado.");
+  if (!resources.salonConfig) return err(APPOINTMENT_MESSAGES.salonNotFound);
 
   if (resources.assignments.some((assignment) => !assignment.service || !assignment.employee)) {
-    return err("Servicio o profesional no encontrado en el salón.");
+    return err(APPOINTMENT_MESSAGES.resourceNotFound);
   }
 
   const validAssignments = resources.assignments as ServiceAssignment[];
@@ -93,7 +94,7 @@ export async function createAppointment(
     }
   } catch (error) {
     captureError(error, { module: "appointments", action: "create" });
-    return err("No se pudo validar la disponibilidad del profesional.");
+    return err(APPOINTMENT_MESSAGES.availabilityFailed);
   }
 
   const ctx: SchedulingContext = {
@@ -109,7 +110,7 @@ export async function createAppointment(
   try {
     payloads = buildItemPayloads(salonId, startTime, validAssignments, ctx);
   } catch (error) {
-    return err(toPublicErrorMessage(error, "Error al crear la cita. Intenta de nuevo."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.createFailed));
   }
 
   const lastPayload = payloads[payloads.length - 1];
@@ -154,17 +155,17 @@ export async function createAppointment(
     created = await createAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "create" });
-    return err("Error al crear la cita. Intenta de nuevo.");
+    return err(APPOINTMENT_MESSAGES.createFailed);
   }
 
   if (!created.ok) {
     if (created.errorMessage?.includes("no_overlap_per_employee")) {
-      return err("El profesional ya tiene una cita en ese horario. Elige otro horario.");
+      return err(APPOINTMENT_MESSAGES.slotTaken);
     }
     if (created.errorMessage?.includes("no esta disponible para nuevas citas")) {
       return err(INACTIVE_CUSTOMER_MESSAGE);
     }
-    return err("Error al crear la cita. Intenta de nuevo.");
+    return err(APPOINTMENT_MESSAGES.createFailed);
   }
 
   return ok(created.appointmentId as string);

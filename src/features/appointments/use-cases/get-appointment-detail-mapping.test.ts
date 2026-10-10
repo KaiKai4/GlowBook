@@ -73,33 +73,22 @@ function withNullFields<T extends object>(row: T, keys: string[]): T {
   return { ...row, ...Object.fromEntries(keys.map((key) => [key, null])) };
 }
 
-describe("getAppointmentDetail: etiquetas y variantes por estado", () => {
+describe("getAppointmentDetail: estado", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedIdentity.mockResolvedValue({ name: "Glow", timezone: "America/Panama", payment_methods: [] });
   });
 
-  it.each([
-    ["scheduled", "Agendada", "info"],
-    ["confirmed", "Confirmada", "primary"],
-    ["completed", "Completada", "success"],
-    ["cancelled", "Cancelada", "danger"],
-    ["no_show", "No asistió", "warning"],
-  ] as const)("el estado %s se muestra como '%s' con variante %s", async (status, label, variant) => {
-    mockedFind.mockResolvedValue(appointment({ status }));
+  it.each(["scheduled", "confirmed", "completed", "cancelled", "no_show"] as const)(
+    "devuelve el estado %s tal cual, sin traducirlo",
+    async (status) => {
+      mockedFind.mockResolvedValue(appointment({ status }));
 
-    const view = await getAppointmentDetail({ appointmentId: "appointment-1", salonId });
+      const view = await getAppointmentDetail({ appointmentId: "appointment-1", salonId });
 
-    expect(view).toMatchObject({ status, statusLabel: label, statusVariant: variant });
-  });
-
-  it("un estado desconocido conserva su texto y usa la variante por defecto", async () => {
-    mockedFind.mockResolvedValue(appointment({ status: "archived" }));
-
-    const view = await getAppointmentDetail({ appointmentId: "appointment-1", salonId });
-
-    expect(view).toMatchObject({ statusLabel: "archived", statusVariant: "default" });
-  });
+      expect(view?.status).toBe(status);
+    }
+  );
 });
 
 describe("getAppointmentDetail: cliente, colaborador y servicio", () => {

@@ -1,0 +1,22 @@
+/** Textos públicos de las operaciones de citas. Un solo sitio para no repetir literales. */
+export const APPOINTMENT_MESSAGES = {
+  notFound: "Cita no encontrada.",
+  notFoundInSalon: "Cita no encontrada en este salón.",
+  loadFailed: "No se pudo cargar la cita.",
+  closedNotEditable: "Esta cita ya está cerrada y no se puede editar.",
+  missingCustomer: "La cita no tiene un cliente válido.",
+  invalidData: "Datos inválidos.",
+  customerNotFound: "Cliente no encontrado en este salón.",
+  salonNotFound: "Salón no encontrado.",
+  resourceNotFound: "Servicio o profesional no encontrado en el salón.",
+  availabilityFailed: "No se pudo validar la disponibilidad del profesional.",
+  slotTaken: "El profesional ya tiene una cita en ese horario. Elige otro horario.",
+  createFailed: "Error al crear la cita. Intenta de nuevo.",
+  updateFailed: "Error al actualizar la cita. Intenta de nuevo.",
+  cancelFailed: "No se pudo cancelar la cita.",
+  cancelError: "Error al cancelar la cita.",
+  completeFailed: "No se pudo completar la cita.",
+  completeError: "Error al completar la cita.",
+  confirmFailed: "No se pudo confirmar la cita.",
+  confirmError: "Error al confirmar la cita.",
+} as const;

@@ -4,6 +4,7 @@ import { captureError } from "@/infra/observability";
 import { findAppointmentForCommand } from "../data/appointment-commands.repo";
 import { cancelAppointmentRpc } from "../data/rpc/cancel-appointment";
 import { assertTransition } from "../domain/lifecycle";
+import { APPOINTMENT_MESSAGES } from "../domain/messages";
 
 export async function cancelAppointment(
   appointmentId: string,
@@ -15,22 +16,22 @@ export async function cancelAppointment(
     appointment = await findAppointmentForCommand(appointmentId, salonId);
   } catch (error) {
     captureError(error, { module: "appointments", action: "cancel" });
-    return err("Cita no encontrada.");
+    return err(APPOINTMENT_MESSAGES.notFound);
   }
 
-  if (!appointment) return err("Cita no encontrada.");
+  if (!appointment) return err(APPOINTMENT_MESSAGES.notFound);
 
   try {
     assertTransition(appointment.status, "cancelled");
   } catch (error) {
-    return err(toPublicErrorMessage(error, "No se pudo cancelar la cita."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.cancelFailed));
   }
 
   // Cierre y liberacion de la agenda en una sola transaccion en la base.
   try {
     await cancelAppointmentRpc({ appointmentId, idempotencyKey });
   } catch (error) {
-    return err(toPublicErrorMessage(error, "Error al cancelar la cita."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.cancelError));
   }
 
   return ok(undefined);

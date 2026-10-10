@@ -75,8 +75,6 @@ describe("get appointment detail", () => {
     expect(view).toEqual({
       id: "appointment-1",
       status: "confirmed",
-      statusLabel: "Confirmada",
-      statusVariant: "primary",
       customerName: "Lia Mora",
       customer: {
         first_name: "Lia",

@@ -3,6 +3,7 @@
 import "server-only";
 
 export { getAppointmentReminderTarget } from "./use-cases/appointment-reminder-target";
+export { isClosedStatus } from "./domain/lifecycle";
 export {
   getRemindableAppointments,
   type RemindableAppointment,

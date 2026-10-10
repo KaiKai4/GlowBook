@@ -3,30 +3,6 @@ import "server-only";
 import { getSalonIdentity } from "@/features/salon";
 import { findAppointmentById } from "../data/appointments.repo";
 
-type AppointmentStatusVariant =
-  | "default"
-  | "info"
-  | "success"
-  | "danger"
-  | "warning"
-  | "primary";
-
-const STATUS_LABEL: Record<string, string> = {
-  scheduled: "Agendada",
-  confirmed: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
-  no_show: "No asistió",
-};
-
-const STATUS_VARIANT: Record<string, AppointmentStatusVariant> = {
-  scheduled: "info",
-  confirmed: "primary",
-  completed: "success",
-  cancelled: "danger",
-  no_show: "warning",
-};
-
 interface AppointmentDetailItemViewModel {
   id: string;
   serviceId: string;
@@ -44,8 +20,6 @@ interface AppointmentDetailItemViewModel {
 export interface AppointmentDetailViewModel {
   id: string;
   status: string;
-  statusLabel: string;
-  statusVariant: AppointmentStatusVariant;
   customerName: string;
   customer: {
     first_name: string;
@@ -79,8 +53,6 @@ export async function getAppointmentDetail({
   return {
     id: appointment.id,
     status: appointment.status,
-    statusLabel: STATUS_LABEL[appointment.status] ?? appointment.status,
-    statusVariant: STATUS_VARIANT[appointment.status] ?? "default",
     customerName: appointment.customer
       ? `${appointment.customer.first_name} ${appointment.customer.last_name}`.trim()
       : "Cliente sin nombre",

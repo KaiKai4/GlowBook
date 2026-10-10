@@ -16,14 +16,14 @@ import { evaluateTimeRange } from "../domain/availability";
 import { buildItemPayloads, type SchedulingContext } from "../domain/scheduling";
 import type { BusinessHour, OccupiedSlot, ServiceAssignment, WorkSchedule } from "../domain/types";
 import type { UpdateAppointmentScheduleInput } from "../schemas";
+import { canEditSchedule } from "../domain/lifecycle";
+import { APPOINTMENT_MESSAGES } from "../domain/messages";
 
 interface Deps {
   salonId: string;
   /** Clave de idempotencia del formulario (uuid). Un reenvio no reemplaza los items dos veces. */
   idempotencyKey: string;
 }
-
-const CLOSED_STATUSES = new Set(["completed", "cancelled", "no_show"]);
 
 export async function updateAppointmentSchedule(
   input: UpdateAppointmentScheduleInput,
@@ -35,14 +35,14 @@ export async function updateAppointmentSchedule(
     appointment = await findAppointmentForCommand(input.appointment_id, salonId);
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
-    return err("No se pudo cargar la cita.");
+    return err(APPOINTMENT_MESSAGES.loadFailed);
   }
 
-  if (!appointment) return err("Cita no encontrada en este salón.");
-  if (CLOSED_STATUSES.has(appointment.status)) {
-    return err("Esta cita ya está cerrada y no se puede editar.");
+  if (!appointment) return err(APPOINTMENT_MESSAGES.notFoundInSalon);
+  if (!canEditSchedule(appointment.status)) {
+    return err(APPOINTMENT_MESSAGES.closedNotEditable);
   }
-  if (!appointment.customer_id) return err("La cita no tiene un cliente válido.");
+  if (!appointment.customer_id) return err(APPOINTMENT_MESSAGES.missingCustomer);
 
   let resources: Awaited<ReturnType<typeof findAppointmentCreationResources>>;
 
@@ -54,14 +54,14 @@ export async function updateAppointmentSchedule(
     });
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
-    return err("Datos inválidos.");
+    return err(APPOINTMENT_MESSAGES.invalidData);
   }
 
-  if (!resources.customerExists) return err("Cliente no encontrado en este salón.");
-  if (!resources.salonConfig) return err("Salón no encontrado.");
+  if (!resources.customerExists) return err(APPOINTMENT_MESSAGES.customerNotFound);
+  if (!resources.salonConfig) return err(APPOINTMENT_MESSAGES.salonNotFound);
 
   if (resources.assignments.some((assignment) => !assignment.service || !assignment.employee)) {
-    return err("Servicio o profesional no encontrado en el salón.");
+    return err(APPOINTMENT_MESSAGES.resourceNotFound);
   }
 
   const validAssignments = resources.assignments as ServiceAssignment[];
@@ -95,7 +95,7 @@ export async function updateAppointmentSchedule(
     }
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
-    return err("No se pudo validar la disponibilidad del profesional.");
+    return err(APPOINTMENT_MESSAGES.availabilityFailed);
   }
 
   const ctx: SchedulingContext = {
@@ -112,7 +112,7 @@ export async function updateAppointmentSchedule(
   try {
     payloads = buildItemPayloads(salonId, startTime, validAssignments, ctx);
   } catch (error) {
-    return err(toPublicErrorMessage(error, "Error al actualizar la cita. Intenta de nuevo."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.updateFailed));
   }
 
   const lastPayload = payloads[payloads.length - 1];
@@ -153,14 +153,14 @@ export async function updateAppointmentSchedule(
     updated = await updateAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "update" });
-    return err("Error al actualizar la cita. Intenta de nuevo.");
+    return err(APPOINTMENT_MESSAGES.updateFailed);
   }
 
   if (!updated.ok) {
     if (updated.errorMessage?.includes("no_overlap_per_employee")) {
-      return err("El profesional ya tiene una cita en ese horario. Elige otro horario.");
+      return err(APPOINTMENT_MESSAGES.slotTaken);
     }
-    return err("Error al actualizar la cita. Intenta de nuevo.");
+    return err(APPOINTMENT_MESSAGES.updateFailed);
   }
 
   return ok(undefined);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getAppointmentDetail } from "@/features/appointments/use-cases/get-appointment-detail";
+import { isClosedStatus } from "@/features/appointments";
 import { getAppointmentWizardData } from "@/features/appointments/use-cases/get-appointment-wizard-data";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";
@@ -33,7 +34,7 @@ export default async function EditAppointmentPage({
 
   if (!appointment) notFound();
 
-  const isClosed = ["completed", "cancelled", "no_show"].includes(appointment.status);
+  const isClosed = isClosedStatus(appointment.status);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

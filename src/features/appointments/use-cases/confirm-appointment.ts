@@ -4,6 +4,7 @@ import { captureError } from "@/infra/observability";
 import { findAppointmentForCommand } from "../data/appointment-commands.repo";
 import { confirmAppointmentRpc } from "../data/rpc/confirm-appointment";
 import { assertTransition } from "../domain/lifecycle";
+import { APPOINTMENT_MESSAGES } from "../domain/messages";
 
 export async function confirmAppointment(
   appointmentId: string,
@@ -15,22 +16,22 @@ export async function confirmAppointment(
     appointment = await findAppointmentForCommand(appointmentId, salonId);
   } catch (error) {
     captureError(error, { module: "appointments", action: "confirm" });
-    return err("Cita no encontrada.");
+    return err(APPOINTMENT_MESSAGES.notFound);
   }
 
-  if (!appointment) return err("Cita no encontrada.");
+  if (!appointment) return err(APPOINTMENT_MESSAGES.notFound);
 
   try {
     assertTransition(appointment.status, "confirmed");
   } catch (error) {
-    return err(toPublicErrorMessage(error, "No se pudo confirmar la cita."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.confirmFailed));
   }
 
   // La transicion se valida de nuevo en la base (FOR UPDATE): una cancelacion concurrente no se pisa.
   try {
     await confirmAppointmentRpc({ appointmentId, idempotencyKey });
   } catch (error) {
-    return err(toPublicErrorMessage(error, "Error al confirmar la cita."));
+    return err(toPublicErrorMessage(error, APPOINTMENT_MESSAGES.confirmError));
   }
 
   return ok(undefined);

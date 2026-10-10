@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition, type ComponentProps } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useSubmissionIntent } from "@/components/forms/use-submission-intent";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { canEditSchedule } from "@/features/appointments/domain/lifecycle";
+import { appointmentStatusPresentation } from "../appointment-status";
 import { formatCurrency, formatTimeTz } from "@/infra/format/dates";
 import {
   CheckCheck,
@@ -43,15 +45,6 @@ interface ApptForDetail {
   items: ApptItem[];
 }
 
-type StatusBadgeProps = ComponentProps<typeof StatusBadge>;
-
-const STATUS_BADGES: Record<string, { variant: StatusBadgeProps["variant"]; label: string }> = {
-  scheduled: { variant: "info", label: "Agendada" },
-  confirmed: { variant: "accent", label: "Confirmada" },
-  completed: { variant: "success", label: "Completada" },
-  cancelled: { variant: "neutral", label: "Cancelada" },
-  no_show: { variant: "warning", label: "No asistió" },
-};
 const ITEM_ACCENT: Record<string, string> = {
   scheduled: "border-l-info",
   confirmed: "border-l-brand-500",
@@ -81,9 +74,8 @@ export function AppointmentDetailDialog({
     ? `${appt.customer.first_name} ${appt.customer.last_name}`
     : "Cliente desconocido";
 
-  const statusBadge = STATUS_BADGES[appt.status];
   const accentClass = ITEM_ACCENT[appt.status] ?? "border-l-border-strong";
-  const canEdit = canManage && !["completed", "cancelled", "no_show"].includes(appt.status);
+  const canEdit = canManage && canEditSchedule(appt.status);
   const subtotal = appt.items.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
   const discountAmount = Number(appt.discount_amount ?? 0);
   const whatsappPhone = appt.customer?.phone?.replace(/\D/g, "") ?? "";
@@ -116,7 +108,7 @@ export function AppointmentDetailDialog({
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          {statusBadge && <StatusBadge variant={statusBadge.variant} label={statusBadge.label} />}
+          <StatusBadge {...appointmentStatusPresentation(appt.status)} />
           {canEdit && (
             <Link
               href={`/appointments/${appt.id}/edit`}

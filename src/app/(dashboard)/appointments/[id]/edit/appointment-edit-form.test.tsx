@@ -43,8 +43,6 @@ function buildAppointment(overrides: Partial<AppointmentDetailViewModel> = {}): 
   return {
     id: "appt-1",
     status: "scheduled",
-    statusLabel: "Agendada",
-    statusVariant: "info",
     customerName: "Ana Pérez",
     customer: { first_name: "Ana", last_name: "Pérez" },
     start_time: `${TEST_DATE}T14:00:00-05:00`,
