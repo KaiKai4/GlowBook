@@ -20,7 +20,7 @@ describe("salon-features (ramas)", () => {
       ]);
     });
 
-    it("reconoce todas las claves del catalogo", () => {
+    it("reconoce todas las claves del catálogo", () => {
       const allKeys = SALON_FEATURES.map((feature) => feature.key);
 
       expect(normalizeDisabledSalonFeatures(allKeys)).toEqual(allKeys);
@@ -28,7 +28,7 @@ describe("salon-features (ramas)", () => {
   });
 
   describe("isSalonFeatureDisabled", () => {
-    it("indica que una funcion esta deshabilitada solo si figura en la lista valida", () => {
+    it("indica que una funcion esta deshabilitada solo si figura en la lista válida", () => {
       expect(isSalonFeatureDisabled(["reports"], "reports")).toBe(true);
       expect(isSalonFeatureDisabled(["reports"], "retail")).toBe(false);
     });

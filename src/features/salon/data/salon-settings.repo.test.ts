@@ -36,7 +36,7 @@ describe("salon-settings.repo", () => {
   });
 
   describe("findSalonSettings", () => {
-    it("devuelve los ajustes del salon filtrando por id", async () => {
+    it("devuelve los ajustes del salón filtrando por id", async () => {
       const settings = {
         id: SALON_ID,
         name: "Glow",
@@ -77,7 +77,7 @@ describe("salon-settings.repo", () => {
       expect(operationsOn(db, "salons")[3]?.args).toEqual(["id, name, timezone, theme, bg_style"]);
     });
 
-    it("devuelve null si el salon no existe en la consulta de fallback", async () => {
+    it("devuelve null si el salón no existe en la consulta de fallback", async () => {
       useDb({ salons: [{ data: null, error: MISSING_PAYMENT_COLUMN }, { data: null, error: null }] });
 
       expect(await findSalonSettings(SALON_ID)).toBeNull();
@@ -101,7 +101,7 @@ describe("salon-settings.repo", () => {
   });
 
   describe("findSalonIdentity", () => {
-    it("devuelve nombre, zona horaria y metodos de pago", async () => {
+    it("devuelve nombre, zona horaria y métodos de pago", async () => {
       useDb({ salons: { data: { name: "Glow", timezone: "UTC", payment_methods: ["card"] }, error: null } });
 
       expect(await findSalonIdentity(SALON_ID)).toEqual({
@@ -140,7 +140,7 @@ describe("salon-settings.repo", () => {
   });
 
   describe("findDashboardShellSalon / findAppointmentSalonConfig", () => {
-    it("devuelve el salon para el shell del dashboard o null si no hay fila", async () => {
+    it("devuelve el salón para el shell del dashboard o null si no hay fila", async () => {
       const shell = {
         name: "Glow",
         is_active: true,
@@ -160,7 +160,7 @@ describe("salon-settings.repo", () => {
       await expect(findDashboardShellSalon(SALON_ID)).rejects.toEqual({ message: "caido" });
     });
 
-    it("devuelve la configuracion de agenda del salon o null", async () => {
+    it("devuelve la configuración de agenda del salón o null", async () => {
       const config = {
         min_booking_notice_minutes: 60,
         min_appointment_duration_minutes: 15,
@@ -180,11 +180,11 @@ describe("salon-settings.repo", () => {
     });
   });
 
-  describe("updates de nombre y metodos de pago", () => {
+  describe("updates de nombre y métodos de pago", () => {
     it.each([
       ["nombre", () => updateSalonName(SALON_ID, "Nuevo"), { name: "Nuevo" }],
-      ["metodos de pago", () => updateSalonPaymentMethods(SALON_ID, ["cash", "card"]), { payment_methods: ["cash", "card"] }],
-    ])("actualiza %s del salon indicado", async (_label, run, payload) => {
+      ["métodos de pago", () => updateSalonPaymentMethods(SALON_ID, ["cash", "card"]), { payment_methods: ["cash", "card"] }],
+    ])("actualiza %s del salón indicado", async (_label, run, payload) => {
       const db = useDb({ salons: { data: null, error: null } });
 
       await run();
@@ -195,7 +195,7 @@ describe("salon-settings.repo", () => {
       ]);
     });
 
-    it("propaga el error de actualizacion", async () => {
+    it("propaga el error de actualización", async () => {
       const dbError = { message: "fallo" };
       useDb({ salons: { data: null, error: dbError } });
 

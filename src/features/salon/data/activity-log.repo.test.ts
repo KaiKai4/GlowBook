@@ -23,7 +23,7 @@ describe("activity-log.repo", () => {
     serverClient.current = null;
   });
 
-  it("lista la actividad mas reciente del salon con limite por defecto de 150", async () => {
+  it("lista la actividad más reciente del salón con límite por defecto de 150", async () => {
     const row = {
       id: "log-1",
       actor_id: "user-1",
@@ -49,7 +49,7 @@ describe("activity-log.repo", () => {
     ]);
   });
 
-  it("respeta el limite indicado y devuelve lista vacia sin datos", async () => {
+  it("respeta el límite indicado y devuelve lista vacia sin datos", async () => {
     const db = useDb({ salon_activity_log: { data: null, error: null } });
 
     expect(await findSalonActivity("salon-1", 10)).toEqual([]);

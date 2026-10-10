@@ -25,8 +25,8 @@ describe("reports.repo", () => {
     serverClient.current = null;
   });
 
-  describe("identidad del salon", () => {
-    it("findSalonReportIdentity devuelve nombre, zona y fecha de creacion, o null", async () => {
+  describe("identidad del salón", () => {
+    it("findSalonReportIdentity devuelve nombre, zona y fecha de creación, o null", async () => {
       const identity = { name: "Glow", timezone: null, created_at: "2025-01-01T00:00:00.000Z" };
       const db = useDb({ salons: { data: identity, error: null } });
 

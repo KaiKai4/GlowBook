@@ -10,12 +10,12 @@ import { err, ok, type Result } from "@/infra/result";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 // Lectura de los formularios de citas: los campos JSON (servicios y cobros) se
-// parsean aqui y el resto se valida con los schemas del modulo. Las acciones solo
+// parsean aquí y el resto se valida con los schemas del modulo. Las acciones solo
 // orquestan: leen el FormData, llaman a esta funcion y despues al caso de uso.
 
-const INVALID_SERVICES_MESSAGE = "Datos de servicios invalidos.";
-const INVALID_NEW_CUSTOMER_MESSAGE = "Datos del cliente nuevo invalidos.";
-const INVALID_CHARGES_MESSAGE = "Cobros de servicios invalidos.";
+const INVALID_SERVICES_MESSAGE = "Datos de servicios inválidos.";
+const INVALID_NEW_CUSTOMER_MESSAGE = "Datos del cliente nuevo inválidos.";
+const INVALID_CHARGES_MESSAGE = "Cobros de servicios inválidos.";
 
 type RawForm = Record<string, FormDataEntryValue>;
 
@@ -58,7 +58,7 @@ export function parseUpdateAppointmentScheduleForm(form: RawForm): Result<Update
 }
 
 /**
- * Lee y valida el formulario de completar cita (sin consultar el salon: que el
+ * Lee y valida el formulario de completar cita (sin consultar el salón: que el
  * metodo de pago este habilitado es una regla del caso de uso).
  */
 export function parseCompleteAppointmentForm(formData: FormData): Result<CompleteAppointmentInput> {

@@ -10,7 +10,7 @@ import type { Result } from "@/infra/result";
 
 export interface CreateEmployeeFlowInput {
   salonId: string;
-  /** Roles habilitados en el plan del salon (lo resuelve la accion con el perfil). */
+  /** Roles habilitados en el plan del salón (lo resuelve la accion con el perfil). */
   rolesEnabled: boolean;
   /** Chequeos del plan, inyectados por la accion: el caso de uso no importa billing. */
   checks: EmployeeAdmissionInput["checks"];
@@ -20,7 +20,7 @@ export interface CreateEmployeeFlowInput {
  * Alta de colaborador. Orden observable: admision del plan (y cupo de login si
  * hay rol) antes de validar la clave de idempotencia y el formulario.
  */
-export async function createEmployeeFlow(
+export async function createEmployee(
   input: CreateEmployeeFlowInput,
   formData: FormData
 ): Promise<Result<CreateEmployeeResult>> {
@@ -40,7 +40,7 @@ export async function createEmployeeFlow(
 }
 
 /** Edicion de colaborador: clave de idempotencia y formulario, luego la escritura. */
-export async function updateEmployeeFlow(
+export async function updateEmployee(
   salonId: string,
   employeeId: string,
   formData: FormData

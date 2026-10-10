@@ -50,7 +50,7 @@ describe("role use-cases", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Uno o mas permisos no son validos.",
+      error: "Uno o más permisos no son válidos.",
     });
     expect(mockedReplaceRpc).not.toHaveBeenCalled();
   });

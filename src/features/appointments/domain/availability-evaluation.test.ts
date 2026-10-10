@@ -37,7 +37,7 @@ describe("evaluateTimeRange: duración mínima y horario del salón", () => {
     const violations = evaluate({ start: panama("2026-05-25T10:00"), end: panama("2026-05-25T10:20") });
 
     expect(violations).toEqual([
-      { code: "min_duration", message: "La duración minima es 30 minutos." },
+      { code: "min_duration", message: "La duración mínima es 30 minutos." },
     ]);
   });
 

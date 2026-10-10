@@ -69,7 +69,7 @@ describe("requireActiveProfile", () => {
     vi.clearAllMocks();
   });
 
-  it("returns the profile when profile and salon are active", async () => {
+  it("returns the profile when profile and salón are active", async () => {
     mockedCreateSupabaseServerClient.mockResolvedValue(supabaseMock({}) as never);
 
     await expect(requireActiveProfile()).resolves.toMatchObject({
@@ -87,7 +87,7 @@ describe("requireActiveProfile", () => {
     await expect(requireActiveProfile()).rejects.toThrow("REDIRECT:/login");
   });
 
-  it("redirects to the dashboard shell when the salon is suspended", async () => {
+  it("redirects to the dashboard shell when the salón is suspended", async () => {
     mockedCreateSupabaseServerClient.mockResolvedValue(
       supabaseMock({ salon: { id: "salon-1", is_active: false } }) as never
     );
@@ -95,7 +95,7 @@ describe("requireActiveProfile", () => {
     await expect(requireActiveProfile()).rejects.toThrow("REDIRECT:/");
   });
 
-  it("redirects to login when the salon no longer exists", async () => {
+  it("redirects to login when the salón no longer exists", async () => {
     mockedCreateSupabaseServerClient.mockResolvedValue(supabaseMock({ salon: null }) as never);
 
     await expect(requireActiveProfile()).rejects.toThrow("REDIRECT:/login");

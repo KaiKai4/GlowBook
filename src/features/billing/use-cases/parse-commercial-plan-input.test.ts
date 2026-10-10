@@ -40,7 +40,7 @@ describe("readSavePlanInput", () => {
 });
 
 describe("readSavePlanModulesInput", () => {
-  it("reune todos los modulos y solo los activados", () => {
+  it("reune todos los módulos y solo los activados", () => {
     const data = fields([["planId", "plan-1"]]);
     data.append("allModuleKeys", "inventory");
     data.append("allModuleKeys", "retail");
@@ -55,7 +55,7 @@ describe("readSavePlanModulesInput", () => {
 });
 
 describe("readSavePlanLimitsInput", () => {
-  it("construye un limite por clave de metrica y aplica los defectos por indice", () => {
+  it("construye un límite por clave de metrica y aplica los defectos por indice", () => {
     const data = fields([["planId", "plan-1"]]);
     data.append("metricKey", "appointments");
     data.append("metricKey", "employees");
@@ -85,7 +85,7 @@ describe("readSavePlanLimitsInput", () => {
     });
   });
 
-  it("sin claves de metrica no genera limites", () => {
+  it("sin claves de metrica no genera límites", () => {
     expect(readSavePlanLimitsInput(new FormData()).limits).toEqual([]);
   });
 });
@@ -110,7 +110,7 @@ describe("readSaveAddonInput", () => {
     });
   });
 
-  it("conserva el tipo, el modulo y la metrica cuando llegan", () => {
+  it("conserva el tipo, el módulo y la metrica cuando llegan", () => {
     const input = readSaveAddonInput(
       fields([["kind", "limit_boost"], ["moduleKey", "retail"], ["metricKey", "employees"], ["limitDelta", "10"]])
     );

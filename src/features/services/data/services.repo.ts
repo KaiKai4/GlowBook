@@ -119,7 +119,7 @@ export async function updateService(
 }
 
 /**
- * Consulta la categoria activa del salon. Solo lee: la regla de negocio que
+ * Consulta la categoria activa del salón. Solo lee: la regla de negocio que
  * decide si la categoria sirve para un servicio vive en validate-service-category.
  */
 export async function findActiveServiceCategory(

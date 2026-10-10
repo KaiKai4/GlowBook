@@ -73,7 +73,7 @@ describe("getEffectiveSalonPlan", () => {
     }
   });
 
-  it("returns no plan and no assignment status when the salon has no assignment", async () => {
+  it("returns no plan and no assignment status when the salón has no assignment", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ status: null, plan: null }));
 
     const result = await getEffectiveSalonPlan("salon-1");

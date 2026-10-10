@@ -3,7 +3,7 @@ import type { ProfileWithRole } from "@/types/app.types";
 import { PERMISSIONS, getPermissions, hasPermission } from "./permission-checks";
 
 // Simula un permiso que no declara ningun modulo (rama `features` vacia de
-// PERMISSION_FEATURES): debe seguir concediendose aunque el salon tenga todo apagado.
+// PERMISSION_FEATURES): debe seguir concediendose aunque el salón tenga todo apagado.
 vi.mock("@/features/salon-features", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/salon-features")>();
   return {
@@ -37,15 +37,15 @@ const ALL_FEATURES = [
   "expenses", "reports", "reminders", "roles", "salon",
 ];
 
-describe("permisos sin modulos asociados", () => {
-  it("concede un permiso sin modulos aunque todos los modulos del salon esten desactivados", () => {
+describe("permisos sin módulos asociados", () => {
+  it("concede un permiso sin módulos aunque todos los módulos del salón esten desactivados", () => {
     const staff = profile({ permissionKeys: ["reminders.send"], disabledFeatures: ALL_FEATURES });
 
     expect(hasPermission(staff, PERMISSIONS.REMINDERS_SEND)).toBe(true);
     expect(getPermissions(staff)).toContain(PERMISSIONS.REMINDERS_SEND);
   });
 
-  it("no concede un permiso sin modulos si el rol no lo tiene", () => {
+  it("no concede un permiso sin módulos si el rol no lo tiene", () => {
     const staff = profile({ permissionKeys: ["reports.view"], disabledFeatures: ALL_FEATURES });
 
     expect(hasPermission(staff, PERMISSIONS.REMINDERS_SEND)).toBe(false);

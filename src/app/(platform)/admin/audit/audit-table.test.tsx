@@ -20,7 +20,7 @@ function entry(index: number, overrides: Partial<PlatformAuditLogEntryViewModel>
   return {
     id: `log-${index}`,
     action: "invite_salon",
-    actionLabel: "Invitar Salon",
+    actionLabel: "Invitar Salón",
     status: "succeeded",
     statusLabel: "Exitosa",
     actorLabel: `actor-${index}@glowbook.test`,
@@ -41,7 +41,7 @@ function view(entries: PlatformAuditLogEntryViewModel[], overrides: Partial<Plat
     failedCount: 0,
     actions: [
       { value: "all", label: "Todas las acciones" },
-      { value: "invite_salon", label: "Invitar Salon" },
+      { value: "invite_salon", label: "Invitar Salón" },
     ],
     statuses: [
       { value: "all", label: "Todos" },
@@ -75,7 +75,7 @@ describe("PlatformAuditPage tabla de eventos", () => {
     return container;
   }
 
-  it("pagina los eventos de 10 en 10 y permite avanzar a la siguiente página", async () => {
+  it("página los eventos de 10 en 10 y permite avanzar a la siguiente página", async () => {
     const entries = Array.from({ length: 12 }, (_, index) => entry(index));
     vi.mocked(getPlatformAuditLog).mockResolvedValue(view(entries));
 

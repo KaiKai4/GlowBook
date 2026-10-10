@@ -31,7 +31,7 @@ describe("InventoryMovementsList", () => {
   it("indica que no hay movimientos cuando la lista está vacía", () => {
     mounted = mountComponent(<InventoryMovementsList movements={[]} />);
 
-    expect(mounted.container.textContent).toContain("Sin movimientos todavia.");
+    expect(mounted.container.textContent).toContain("Sin movimientos todavía.");
   });
 
   it("muestra 'Sin nota' cuando el movimiento no tiene nota y firma las entradas", () => {

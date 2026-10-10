@@ -17,7 +17,7 @@ export const APPOINTMENT_MESSAGES = {
   cancelError: "Error al cancelar la cita.",
   completeFailed: "No se pudo completar la cita.",
   completeError: "Error al completar la cita.",
-  paymentMethodDisabled: "Ese metodo de pago no esta habilitado para este salon.",
+  paymentMethodDisabled: "Ese método de pago no está habilitado para este salón.",
   confirmFailed: "No se pudo confirmar la cita.",
   confirmError: "Error al confirmar la cita.",
 } as const;

@@ -36,7 +36,7 @@ describe("RetailProductList", () => {
 
     expect(mounted.container.textContent).toContain("Shampoo");
     expect(mounted.container.textContent).toContain("Cabello");
-    expect(mounted.container.textContent).not.toContain("Sin categoria");
+    expect(mounted.container.textContent).not.toContain("Sin categoría");
   });
 
   it("comunica el estado de stock de vitrina con texto: agotado, bajo o disponible", () => {
@@ -54,9 +54,9 @@ describe("RetailProductList", () => {
     expect(badges.map((badge) => badge.textContent)).toEqual(["Agotado", "Bajo", "Disponible"]);
   });
 
-  it("usa 'Sin categoria' cuando el producto no tiene categoría", () => {
+  it("usa 'Sin categoría' cuando el producto no tiene categoría", () => {
     mounted = mountComponent(<RetailProductList products={[product({ category: "" })]} />);
 
-    expect(mounted.container.textContent).toContain("Sin categoria");
+    expect(mounted.container.textContent).toContain("Sin categoría");
   });
 });

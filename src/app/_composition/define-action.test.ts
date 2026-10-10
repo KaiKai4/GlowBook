@@ -41,7 +41,7 @@ describe("defineAction: permisos", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("con el permiso ejecuta el caso de uso una vez con el contexto minimo y el dato validado", async () => {
+  it("con el permiso ejecuta el caso de uso una vez con el contexto mínimo y el dato validado", async () => {
     const run = vi.fn().mockResolvedValue(ok("creado"));
     const action = defineAction({
       permission: { key: PERMISSIONS.EMPLOYEES_MANAGE, deniedMessage: "No tienes permiso." },
@@ -106,7 +106,7 @@ describe("defineAction: flujo", () => {
     expect(assertActionRateLimit).toHaveBeenCalledWith("user-1", "feedback", { max: 5, windowMs: 300_000 });
   });
 
-  it("si el rate limit bloquea no valida ni ejecuta el caso de uso", async () => {
+  it("si el rate limit bloquea no válida ni ejecuta el caso de uso", async () => {
     vi.mocked(assertActionRateLimit).mockResolvedValue(err("Demasiados intentos."));
     const run = vi.fn();
     const action = defineAction({
@@ -121,7 +121,7 @@ describe("defineAction: flujo", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("un dato invalido devuelve el primer mensaje del schema sin ejecutar el caso de uso", async () => {
+  it("un dato inválido devuelve el primer mensaje del schema sin ejecutar el caso de uso", async () => {
     const run = vi.fn();
     const action = defineAction({ parse: parseWithSchema(SCHEMA), run });
 
@@ -159,7 +159,7 @@ describe("defineAction: flujo", () => {
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("sin sesion el error de requireActionContext se propaga", async () => {
+  it("sin sesión el error de requireActionContext se propaga", async () => {
     vi.mocked(requireActionContext).mockRejectedValue(new Error("NEXT_REDIRECT:/login"));
     const run = vi.fn();
     const action = defineAction({ parse: parseWithSchema(SCHEMA), run });

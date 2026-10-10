@@ -183,7 +183,7 @@ describe("services actions", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
+        error: "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.",
       });
       expect(createCatalogService).not.toHaveBeenCalled();
     });
@@ -197,7 +197,7 @@ describe("services actions", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
+        error: "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.",
       });
       expect(createCatalogService).not.toHaveBeenCalled();
     });
@@ -274,7 +274,7 @@ describe("services actions", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.",
+        error: "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.",
       });
       expect(updateCatalogService).not.toHaveBeenCalled();
     });

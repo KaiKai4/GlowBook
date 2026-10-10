@@ -55,7 +55,7 @@ describe("ArchiveCategoryDialog", () => {
       <ArchiveCategoryDialog category={buildCategory()} pending={false} error={null} onClose={vi.fn()} onConfirm={onConfirm} />
     );
 
-    click(buttonWithText(mounted.container, "Archivar categoria"));
+    click(buttonWithText(mounted.container, "Archivar categoría"));
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
@@ -85,7 +85,7 @@ describe("ArchiveCategoryDialog", () => {
 
     expect(onClose).not.toHaveBeenCalled();
     expect(buttonWithText(mounted.container, "Cancelar").disabled).toBe(true);
-    expect(buttonWithText(mounted.container, "Archivar categoria").disabled).toBe(true);
+    expect(buttonWithText(mounted.container, "Archivar categoría").disabled).toBe(true);
   });
 
   it("muestra el error devuelto por la acción de archivado", () => {

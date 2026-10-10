@@ -101,8 +101,8 @@ describe("alertas del plan", () => {
   });
 });
 
-describe("asignar plan al salon", () => {
-  it("valida los identificadores antes de consultar nada", async () => {
+describe("asignar plan al salón", () => {
+  it("válida los identificadores antes de consultar nada", async () => {
     const result = await assignSalonCommercialPlanConfig({ salonId: "x", planId: PLAN }, ACTOR);
 
     expect(result).toEqual({ ok: false, error: "Selecciona un salón." });
@@ -143,12 +143,12 @@ describe("asignar plan al salon", () => {
     expect(result).toEqual({ ok: false, error: "La operación hace referencia a un registro inexistente." });
   });
 
-  it("la asignacion automatica por invitacion sin plan informa del problema", async () => {
+  it("la asignacion automatica por invitación sin plan informa del problema", async () => {
     vi.mocked(findPlanWithChildren).mockResolvedValue(null as never);
 
     const result = await autoAssignPlanOnAcceptance({ salonId: SALON, planId: PLAN, acceptedByUserId: ACTOR });
 
-    expect(result).toEqual({ ok: false, error: "El plan de la invitacion ya no existe." });
+    expect(result).toEqual({ ok: false, error: "El plan de la invitación ya no existe." });
   });
 
   it("la asignacion automatica que falla usa su mensaje de respaldo", async () => {
@@ -160,7 +160,7 @@ describe("asignar plan al salon", () => {
 
     vi.mocked(assignSalonPlan).mockRejectedValue(new Error("timeout"));
     const fallback = await autoAssignPlanOnAcceptance({ salonId: SALON, planId: PLAN, acceptedByUserId: ACTOR });
-    expect(fallback).toEqual({ ok: false, error: "No se pudo asignar el plan de la invitacion." });
+    expect(fallback).toEqual({ ok: false, error: "No se pudo asignar el plan de la invitación." });
   });
 });
 
@@ -184,7 +184,7 @@ describe("registrar pago del plan", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Este salon no tiene plan asignado. Asignale un plan primero.",
+      error: "Este salón no tiene plan asignado. Asígnale un plan primero.",
     });
   });
 
@@ -200,8 +200,8 @@ describe("registrar pago del plan", () => {
   });
 });
 
-describe("extras del salon", () => {
-  it("valida el extra del catálogo y su estado antes de asignarlo", async () => {
+describe("extras del salón", () => {
+  it("válida el extra del catálogo y su estado antes de asignarlo", async () => {
     expect(await assignSalonAddonConfig({ salonId: SALON, addonId: "x" })).toEqual({
       ok: false,
       error: "Selecciona un extra del catálogo.",
@@ -238,7 +238,7 @@ describe("extras del salon", () => {
     });
   });
 
-  it("un cortesia manual sin modulo ni limite se rechaza", async () => {
+  it("un cortesia manual sin módulo ni límite se rechaza", async () => {
     const result = await saveSalonManualExtraConfig({ salonId: SALON, moduleKey: "", metricKey: "", maxDelta: "" });
 
     expect(result).toEqual({ ok: false, error: "Selecciona un módulo o un límite para el extra." });

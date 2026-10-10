@@ -14,7 +14,7 @@ describe("updateSalonBackground", () => {
     vi.clearAllMocks();
   });
 
-  it.each(["neutral", "colored"])("guarda el estilo de fondo valido '%s'", async (style) => {
+  it.each(["neutral", "colored"])("guarda el estilo de fondo válido '%s'", async (style) => {
     mockedUpdateBackground.mockResolvedValue(undefined);
 
     expect(await updateSalonBackground("salon-1", style)).toEqual({ ok: true, value: undefined });

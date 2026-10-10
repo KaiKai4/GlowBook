@@ -53,7 +53,7 @@ export function buildEffectiveLimits(
   if (!plan) return [];
   const limitByMetric = new Map(plan.limits.map((limit) => [limit.metricKey, limit]));
 
-  // Solo los límites de modulos que el salon realmente tiene: un límite de un
+  // Solo los límites de módulos que el salón realmente tiene: un límite de un
   // modulo apagado no controla nada y solo hace ruido.
   return metrics.filter((metric) => enabledModules.has(metric.moduleKey)).map((metric) => {
     const base = limitByMetric.get(metric.key);

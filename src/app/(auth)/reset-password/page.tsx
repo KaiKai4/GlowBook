@@ -91,7 +91,7 @@ function ResetPasswordForm() {
           Crea tu nueva contraseña
         </h2>
         <p className="mt-1 text-sm text-fg-subtle">
-          Minimo 8 caracteres. La usaras la próxima vez que inicies sesion.
+          Mínimo 8 caracteres. La usaras la próxima vez que inicies sesion.
         </p>
       </div>
 

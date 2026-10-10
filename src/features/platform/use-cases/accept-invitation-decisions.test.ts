@@ -8,7 +8,7 @@ import { createPlatformOwnerAuthUser } from "@/features/platform/data/platform-a
 import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-plan-assignment";
 import { acceptInvitation } from "./accept-invitation";
 
-// Decisiones de aceptacion de invitacion: estado, vencimiento y correo.
+// Decisiones de aceptacion de invitación: estado, vencimiento y correo.
 // Se fija la conducta actual sin depender de Supabase real.
 
 vi.mock("@/features/platform/data/invitations.repo", () => ({
@@ -46,7 +46,7 @@ const validInput = {
   token: "a".repeat(48),
   email: "Owner@Example.com",
   password: "clave-segura-123",
-  salon_name: "Salon Aurora",
+  salon_name: "Salón Aurora",
   full_name: "Ana Perez",
 };
 
@@ -89,7 +89,7 @@ describe("acceptInvitation validation (before any lookup)", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "La contrasena debe tener al menos 8 caracteres",
+      error: "La contraseña debe tener al menos 8 caracteres",
     });
     expect(lookupMock).not.toHaveBeenCalled();
   });
@@ -107,7 +107,7 @@ describe("acceptInvitation invitation state decisions", () => {
 
     const result = await acceptInvitation(validInput);
 
-    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitacion." });
+    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitación." });
     expect(createUserMock).not.toHaveBeenCalled();
   });
 
@@ -116,7 +116,7 @@ describe("acceptInvitation invitation state decisions", () => {
 
     const result = await acceptInvitation(validInput);
 
-    expect(result).toEqual({ ok: false, error: "Invitacion inválida o ya utilizada." });
+    expect(result).toEqual({ ok: false, error: "Invitación inválida o ya utilizada." });
   });
 
   it("refuses invitations that are not pending, such as accepted or revoked ones", async () => {
@@ -125,7 +125,7 @@ describe("acceptInvitation invitation state decisions", () => {
 
       const result = await acceptInvitation(validInput);
 
-      expect(result).toEqual({ ok: false, error: "Invitacion inválida o ya utilizada." });
+      expect(result).toEqual({ ok: false, error: "Invitación inválida o ya utilizada." });
     }
     expect(createUserMock).not.toHaveBeenCalled();
   });
@@ -135,7 +135,7 @@ describe("acceptInvitation invitation state decisions", () => {
 
     const result = await acceptInvitation(validInput);
 
-    expect(result).toEqual({ ok: false, error: "La invitacion expiro." });
+    expect(result).toEqual({ ok: false, error: "La invitación expiro." });
     expect(createUserMock).not.toHaveBeenCalled();
   });
 
@@ -148,7 +148,7 @@ describe("acceptInvitation invitation state decisions", () => {
   it("refuses an invitation issued to a different email", async () => {
     const result = await acceptInvitation({ ...validInput, email: "otra@example.com" });
 
-    expect(result).toEqual({ ok: false, error: "Esta invitacion fue emitida para otro correo." });
+    expect(result).toEqual({ ok: false, error: "Esta invitación fue emitida para otro correo." });
     expect(createUserMock).not.toHaveBeenCalled();
     expect(acceptSalonMock).not.toHaveBeenCalled();
   });

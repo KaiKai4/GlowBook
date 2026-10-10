@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { isUniqueConstraintError } from "./errors";
 
-describe("errores de catalogo de servicios", () => {
+describe("errores de catálogo de servicios", () => {
   describe("isUniqueConstraintError", () => {
-    it("reconoce el codigo 23505 de Postgres aunque no haya mensaje", () => {
+    it("reconoce el código 23505 de Postgres aunque no haya mensaje", () => {
       expect(isUniqueConstraintError({ code: "23505" })).toBe(true);
     });
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Mide las lecturas por request: layout y pagina del dashboard comparten el
-// shell del salon (plan efectivo) gracias al lector cacheado del composition root.
+// shell del salón (plan efectivo) gracias al lector cacheado del composition root.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfileWithRole } from "@/types/app.types";
 import { getProfile, requireProfile } from "@/app/_composition/request-context";
@@ -72,7 +72,7 @@ vi.mock("./onboarding-checklist-card", () => ({ OnboardingChecklistCard: () => n
 vi.mock("./monthly-appointments-chart", () => ({ MonthlyAppointmentsChart: () => null }));
 
 const SHELL = {
-  salonName: "Salon Test",
+  salonName: "Salón Test",
   isActive: true,
   theme: "violet",
   bgStyle: "neutral",
@@ -99,7 +99,7 @@ describe("lecturas por request del dashboard", () => {
     vi.mocked(getDashboardShell).mockResolvedValue(SHELL as never);
   });
 
-  it("layout y pagina de la misma request leen el shell del salon una sola vez", async () => {
+  it("layout y página de la misma request leen el shell del salón una sola vez", async () => {
     const profile = ownerProfile();
     vi.mocked(getProfile).mockResolvedValue(profile);
     vi.mocked(requireProfile).mockResolvedValue(profile);

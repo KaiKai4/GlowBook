@@ -95,7 +95,7 @@ describe("get platform invitations", () => {
         plan_id: "plan-1",
       },
     ]);
-    mockedFindSalonNamesByIds.mockResolvedValue(new Map([["salon-1", "Glow Salon"]]));
+    mockedFindSalonNamesByIds.mockResolvedValue(new Map([["salon-1", "Glow Salón"]]));
 
     const view = await getPlatformInvitations();
 
@@ -104,7 +104,7 @@ describe("get platform invitations", () => {
     ]);
     expect(view.acceptedInvitations[0]).toMatchObject({
       email: "done@example.com",
-      salonName: "Glow Salon",
+      salonName: "Glow Salón",
       planName: "Agenda",
     });
   });

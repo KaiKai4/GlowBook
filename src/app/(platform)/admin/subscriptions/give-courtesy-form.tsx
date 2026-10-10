@@ -29,7 +29,7 @@ export function GiveCourtesyForm({
     <Panel
       icon={<HandHeart className="h-4 w-4" />}
       title="Cortesia personalizada"
-      description="Regalo puntual sin catalogo: util cuando un salon esta llegando a su límite y quieres darle margen."
+      description="Regalo puntual sin catálogo: útil cuando un salón está llegando a su límite y quieres darle margen."
     >
       <form action={action} className="space-y-4">
         <input type="hidden" name="salonId" value={salonId} />
@@ -42,7 +42,7 @@ export function GiveCourtesyForm({
             onChange={(event) => setTargetType(event.target.value as "metric" | "module")}
           >
             <option value="metric">Aumentar un límite</option>
-            <option value="module">Activar un modulo</option>
+            <option value="module">Activar un módulo</option>
           </Select>
           {targetType === "metric" ? (
             <Select name="metricKey" label="Límite" defaultValue={initialMetricKey ?? ""} required>
@@ -52,8 +52,8 @@ export function GiveCourtesyForm({
               ))}
             </Select>
           ) : (
-            <Select name="moduleKey" label="Modulo" defaultValue="" required>
-              <option value="">Selecciona un modulo</option>
+            <Select name="moduleKey" label="Módulo" defaultValue="" required>
+              <option value="">Selecciona un módulo</option>
               {modules.map((module) => (
                 <option key={module.key} value={module.key}>{module.name}</option>
               ))}

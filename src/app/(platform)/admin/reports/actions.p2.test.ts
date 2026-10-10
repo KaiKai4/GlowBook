@@ -36,7 +36,7 @@ describe("setFeedbackStatusAction", () => {
     expect(setFeedbackReportStatus).not.toHaveBeenCalled();
   });
 
-  it("marca el reporte como resuelto y revalida la pagina de reportes", async () => {
+  it("marca el reporte como resuelto y revalida la página de reportes", async () => {
     await setFeedbackStatusAction(formDataOf({ id: REPORT_ID, status: "resolved" }));
 
     expect(setFeedbackReportStatus).toHaveBeenCalledWith({

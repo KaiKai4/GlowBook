@@ -27,7 +27,7 @@ export interface ExpensesPageView {
   history: ExpenseHistoryItem[];
   /** Egresos del mes calendario en curso. */
   monthTotal: number;
-  /** Egresos acumulados de toda la vida del salon (manuales + compras). */
+  /** Egresos acumulados de toda la vida del salón (manuales + compras). */
   lifetimeTotal: number;
   /** Desglose por categoria del mes en curso (mayor a menor). */
   categoryTotals: CategoryTotal[];

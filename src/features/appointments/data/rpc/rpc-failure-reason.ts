@@ -5,7 +5,10 @@
  */
 export type AppointmentRpcFailureReason = "slot_taken" | "inactive_customer" | "unknown";
 
-/** Texto que emite la RPC cuando el cliente no puede recibir citas nuevas. */
+/**
+ * Fragmento del texto que emite la RPC (supabase/migrations 20240101000072) cuando el cliente
+ * no puede recibir citas nuevas. El SQL no lleva tilde: la comparación debe ser exacta.
+ */
 const INACTIVE_CUSTOMER_TEXT = "no esta disponible para nuevas citas";
 /** SQLSTATE de exclusion_violation: la constraint de solape de citas por profesional. */
 const EXCLUSION_VIOLATION_CODE = "23P01";

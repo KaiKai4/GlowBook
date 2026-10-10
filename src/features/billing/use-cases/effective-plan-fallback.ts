@@ -4,7 +4,7 @@ import type { EffectiveSalonPlan } from "../domain/commercial-plan";
 /**
  * Lee el plan efectivo para decisiones de visibilidad. Si la lectura falla se
  * registra el error (con el contexto de la accion) y se devuelve null: el
- * llamador aplica entonces el fallback heredado de features del salon.
+ * llamador aplica entonces el fallback heredado de features del salón.
  */
 export async function readEffectivePlanOrNull(
   salonId: string,

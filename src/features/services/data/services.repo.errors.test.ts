@@ -16,14 +16,14 @@ function useDb(script: Parameters<typeof createSupabaseDouble>[0] = {}): void {
   serverClient.current = createSupabaseDouble(script);
 }
 
-describe("services.repo: errores de la consulta de categoria activa", () => {
+describe("services.repo: errores de la consulta de categoría activa", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     serverClient.current = null;
   });
 
   it("findActiveServiceCategory propaga el error de la consulta sin traducirlo", async () => {
-    const dbError = { message: "fallo al leer categorias" };
+    const dbError = { message: "fallo al leer categorías" };
     useDb({ service_categories: { data: null, error: dbError } });
 
     await expect(findActiveServiceCategory(SALON_ID, "cat-1")).rejects.toBe(dbError);

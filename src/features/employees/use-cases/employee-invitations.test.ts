@@ -41,7 +41,7 @@ function pendingInvitation() {
     expires_at: "2099-01-01T00:00:00.000Z",
     accepted_at: null,
     employees: { first_name: "Ana", last_name: "Staff" },
-    salons: { name: "Glow Salon" },
+    salons: { name: "Glow Salón" },
   };
 }
 

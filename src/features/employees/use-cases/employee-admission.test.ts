@@ -50,7 +50,7 @@ describe("admitNewEmployee", () => {
     expect(result).toEqual(ok({ roleId: null }));
   });
 
-  it("si el modulo no esta en el plan se corta antes de mirar los cupos", async () => {
+  it("si el módulo no esta en el plan se corta antes de mirar los cupos", async () => {
     const c = checks({ checkModuleAccess: err("Tu plan no incluye colaboradores.") });
 
     const result = await admitNewEmployee({ rolesEnabled: true, requestedRoleId: ROLE_ID, checks: c });

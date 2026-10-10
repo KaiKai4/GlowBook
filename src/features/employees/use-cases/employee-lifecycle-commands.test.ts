@@ -3,7 +3,7 @@ import { getSalonSchedulingConfig } from "@/features/salon";
 import { err, ok } from "@/infra/result";
 import { addEmployeeScheduleException } from "./employee-exceptions";
 import { reactivateEmployee } from "./employee-lifecycle";
-import { addScheduleExceptionFlow, reactivateEmployeeFlow } from "./employee-lifecycle-commands";
+import { addScheduleException, reactivateEmployeeWithLimitCheck } from "./employee-lifecycle-commands";
 
 vi.mock("./employee-lifecycle", () => ({ reactivateEmployee: vi.fn() }));
 vi.mock("./employee-exceptions", () => ({ addEmployeeScheduleException: vi.fn() }));
@@ -24,35 +24,35 @@ function schedulingConfig(timezone: string) {
   };
 }
 
-describe("reactivateEmployeeFlow", () => {
+describe("reactivateEmployeeWithLimitCheck", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("corta con el error del cupo de activos sin reactivar", async () => {
     const checkActiveLimit = vi.fn(async () => err("Límite de colaboradores alcanzado."));
 
-    expect(await reactivateEmployeeFlow({ salonId: SALON_ID, checkActiveLimit }, EMPLOYEE_ID)).toEqual(
+    expect(await reactivateEmployeeWithLimitCheck({ salonId: SALON_ID, checkActiveLimit }, EMPLOYEE_ID)).toEqual(
       err("Límite de colaboradores alcanzado.")
     );
     expect(reactivateEmployee).not.toHaveBeenCalled();
   });
 
-  it("reactiva tras el cupo con el salon de la sesion", async () => {
+  it("reactiva tras el cupo con el salón de la sesión", async () => {
     const checkActiveLimit = vi.fn(async () => ok(undefined));
     vi.mocked(reactivateEmployee).mockResolvedValue(ok(undefined));
 
-    expect(await reactivateEmployeeFlow({ salonId: SALON_ID, checkActiveLimit }, EMPLOYEE_ID)).toEqual(ok(undefined));
+    expect(await reactivateEmployeeWithLimitCheck({ salonId: SALON_ID, checkActiveLimit }, EMPLOYEE_ID)).toEqual(ok(undefined));
     expect(reactivateEmployee).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID);
   });
 });
 
-describe("addScheduleExceptionFlow", () => {
+describe("addScheduleException", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("usa la zona horaria del salon al registrar la excepcion", async () => {
+  it("usa la zona horaria del salón al registrar la excepcion", async () => {
     vi.mocked(getSalonSchedulingConfig).mockResolvedValue(schedulingConfig("America/Panama"));
     vi.mocked(addEmployeeScheduleException).mockResolvedValue(ok(undefined));
 
-    const result = await addScheduleExceptionFlow(
+    const result = await addScheduleException(
       { salonId: SALON_ID },
       { employeeId: EMPLOYEE_ID, exceptionDate: "2026-10-12", reason: "Vacaciones" }
     );
@@ -73,7 +73,7 @@ describe("addScheduleExceptionFlow", () => {
     vi.mocked(addEmployeeScheduleException).mockResolvedValue(err("Selecciona una fecha válida."));
 
     expect(
-      await addScheduleExceptionFlow({ salonId: SALON_ID }, { employeeId: EMPLOYEE_ID, exceptionDate: "x", reason: "" })
+      await addScheduleException({ salonId: SALON_ID }, { employeeId: EMPLOYEE_ID, exceptionDate: "x", reason: "" })
     ).toEqual(err("Selecciona una fecha válida."));
   });
 });

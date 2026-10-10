@@ -167,7 +167,7 @@ describe("CompleteAppointmentSchema", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]?.message).toBe("El metodo de pago es obligatorio.");
+      expect(result.error.issues[0]?.message).toBe("El método de pago es obligatorio.");
     }
   });
 
@@ -176,7 +176,7 @@ describe("CompleteAppointmentSchema", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]?.message).toBe("El metodo de pago no puede superar 64 caracteres.");
+      expect(result.error.issues[0]?.message).toBe("El método de pago no puede superar 64 caracteres.");
     }
   });
 

@@ -13,7 +13,7 @@ interface ReminderRowActionsProps {
 }
 
 function confirmTitle(row: ReminderRowState): string | undefined {
-  if (row.currentStatus === "confirmed") return "La cita ya esta confirmada";
+  if (row.currentStatus === "confirmed") return "La cita ya está confirmada";
   if (row.hasReminderContact) return undefined;
   return "Copia el mensaje o envialo por WhatsApp antes de confirmar la cita.";
 }

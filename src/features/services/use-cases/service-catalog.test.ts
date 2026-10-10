@@ -59,7 +59,7 @@ describe("service catalog use-cases", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Ya existe una categoria con ese nombre.",
+      error: "Ya existe una categoría con ese nombre.",
     });
   });
 
@@ -79,11 +79,11 @@ describe("service catalog use-cases", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "No se pudo archivar la categoria.",
+      error: "No se pudo archivar la categoría.",
     });
   });
 
-  it("informa que la categoria no pertenece al salon y no crea el servicio", async () => {
+  it("informa que la categoría no pertenece al salón y no crea el servicio", async () => {
     mockedFindActiveCategory.mockResolvedValueOnce(null);
 
     const result = await createCatalogService("salon-1", {
@@ -119,13 +119,13 @@ describe("service catalog use-cases", () => {
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 describe("registro de errores de archivado", () => {
-  it("registra con captureError el fallo al archivar la categoria", async () => {
+  it("registra con captureError el fallo al archivar la categoría", async () => {
     const dbError = new Error("caida");
     mockedArchiveCategory.mockRejectedValue(dbError);
 
     expect(await archiveServiceCategory("cat-1", "salon-1")).toEqual({
       ok: false,
-      error: "No se pudo archivar la categoria.",
+      error: "No se pudo archivar la categoría.",
     });
     expect(captureError).toHaveBeenCalledWith(dbError, { module: "services", action: "archive_category" });
   });

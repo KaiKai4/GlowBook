@@ -2,7 +2,7 @@ import { formFlag, formText, type FormFieldSource } from "@/infra/validation/for
 import type { assignSalonAddonConfig, saveSalonManualExtraConfig } from "./salon-plan-extras";
 import type { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "./salon-plan-assignment";
 
-// Lectura de los formularios de suscripciones de salon: fija aqui las reglas de
+// Lectura de los formularios de suscripciones de salon: fija aquí las reglas de
 // formulario (estado por defecto, regalo que ignora el precio, cortesia por
 // modulo o por metrica, pago sin fecha). Sin I/O: se prueba directamente.
 

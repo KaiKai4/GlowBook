@@ -77,7 +77,7 @@ export default async function PlatformSubscriptionsPage({
           ) : (
             <div className="flex items-center justify-center p-8">
               <p className="max-w-sm text-center text-sm leading-6 text-fg-subtle">
-                No hay salones registrados todavia. Invita un salon desde Invitaciones para asignarle un plan.
+                No hay salones registrados todavía. Invita un salón desde Invitaciones para asignarle un plan.
               </p>
             </div>
           )}

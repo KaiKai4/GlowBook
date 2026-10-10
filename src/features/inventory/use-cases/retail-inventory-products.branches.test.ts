@@ -43,7 +43,7 @@ describe("getRetailInventoryProducts (ramas)", () => {
     expect(mockedFindProducts).toHaveBeenCalledWith("salon-1");
   });
 
-  it("convierte precio y cantidades a numero, y usa categoria vacia si no hay", async () => {
+  it("convierte precio y cantidades a número, y usa categoría vacia si no hay", async () => {
     mockedFindProducts.mockResolvedValue([
       product({
         id: "p1",

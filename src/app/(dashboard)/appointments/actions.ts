@@ -10,7 +10,7 @@ import {
   completeAppointment,
   confirmAppointment,
   type CompleteAppointmentInput,
-  createAppointmentGuarded,
+  createAppointmentWithPlanChecks,
   type CreateAppointmentInput,
   getOccupiedSlotsForSalonDate,
   type OccupiedByEmployee,
@@ -63,7 +63,7 @@ const createAppointmentFlow = defineAction<FormData, CreateAppointmentInput, str
   permission: { key: PERMISSIONS.APPOINTMENTS_MANAGE, deniedMessage: "No tienes permiso para crear citas." },
   rateLimit: APPOINTMENTS_RATE_LIMIT,
   parse: (formData) => parseCreateAppointmentForm(Object.fromEntries(formData)),
-  run: (input, session) => createAppointmentGuarded(input, { salonId: session.salonId, userId: session.userId }),
+  run: (input, session) => createAppointmentWithPlanChecks(input, { salonId: session.salonId, userId: session.userId }),
   revalidate: () => APPOINTMENT_PATHS,
 });
 

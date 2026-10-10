@@ -14,7 +14,7 @@ describe("updateSalonInfo", () => {
     vi.clearAllMocks();
   });
 
-  it("guarda el nuevo nombre para el salon del contexto", async () => {
+  it("guarda el nuevo nombre para el salón del contexto", async () => {
     mockedUpdateName.mockResolvedValue(undefined);
 
     expect(await updateSalonInfo("salon-1", { name: "Glow Studio" })).toEqual({
@@ -29,7 +29,7 @@ describe("updateSalonInfo", () => {
 
     expect(await updateSalonInfo("salon-1", { name: "Glow" })).toEqual({
       ok: false,
-      error: "Error al guardar el nombre del salon.",
+      error: "Error al guardar el nombre del salón.",
     });
   });
 });
@@ -41,7 +41,7 @@ describe("registro de errores de nombre", () => {
     const dbError = new Error("caida");
     mockedUpdateName.mockRejectedValue(dbError);
 
-    expect(await updateSalonInfo("salon-1", { name: "Glow" })).toEqual({ ok: false, error: "Error al guardar el nombre del salon." });
+    expect(await updateSalonInfo("salon-1", { name: "Glow" })).toEqual({ ok: false, error: "Error al guardar el nombre del salón." });
     expect(captureError).toHaveBeenCalledWith(dbError, { module: "salon", action: "update_info" });
   });
 });

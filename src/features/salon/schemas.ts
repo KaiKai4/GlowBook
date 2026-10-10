@@ -18,11 +18,11 @@ export const SalonPaymentMethodsSchema = z
     z
       .string()
       .trim()
-      .min(1, "El metodo de pago es obligatorio.")
-      .max(64, "El metodo de pago no puede superar 64 caracteres.")
+      .min(1, "El método de pago es obligatorio.")
+      .max(64, "El método de pago no puede superar 64 caracteres.")
       .transform(normalizePaymentMethod)
   )
-  .min(1, "Agrega al menos un metodo de pago.")
+  .min(1, "Agrega al menos un método de pago.")
   .transform((values) => normalizePaymentMethods(values));
 
 export type SalonPaymentMethodsInput = z.infer<typeof SalonPaymentMethodsSchema>;

@@ -14,7 +14,7 @@ import {
 } from "@/features/reminders";
 import type { Result } from "@/infra/result";
 
-// El permiso reminders.send ya exige los modulos "recordatorios" y "plantillas"
+// El permiso reminders.send ya exige los módulos "recordatorios" y "plantillas"
 // (PERMISSION_FEATURES), asi que defineAction cubre el modulo del plan sin guard manual.
 // La validacion y el caso de uso viven en features/reminders.
 

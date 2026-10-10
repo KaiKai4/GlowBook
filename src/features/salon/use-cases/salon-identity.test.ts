@@ -8,8 +8,8 @@ vi.mock("../data/salon-settings.repo", () => ({
 
 const mockedFindSalonIdentity = vi.mocked(findSalonIdentity);
 
-describe("salon identity", () => {
-  it("returns the salon identity through a narrow read Module", async () => {
+describe("salón identity", () => {
+  it("returns the salón identity through a narrow read Module", async () => {
     mockedFindSalonIdentity.mockResolvedValue({
       name: "Glow Studio",
       timezone: "America/Panama",

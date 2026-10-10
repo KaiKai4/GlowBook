@@ -75,7 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Gastos", href: "/expenses", icon: "receipt", permissions: ["expenses.manage"], feature: "expenses" },
       { label: "Roles", href: "/roles", icon: "shield", permissions: ["roles.manage"], feature: "roles" },
       { label: "Plantillas", href: "/plantillas", icon: "message", permissions: ["reminders.send"], feature: "plantillas" },
-      { label: "Salon", href: "/salon", icon: "settings", permissions: ["salon.manage"], feature: "salon" },
+      { label: "Salón", href: "/salon", icon: "settings", permissions: ["salon.manage"], feature: "salon" },
     ],
   },
 ];

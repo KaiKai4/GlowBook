@@ -56,8 +56,8 @@ describe("POST /api/auth/signout: origen", () => {
   });
 });
 
-describe("POST /api/auth/signout: cierre de sesion", () => {
-  it("cierra la sesion y redirige a /login cuando el Origin coincide", async () => {
+describe("POST /api/auth/signout: cierre de sesión", () => {
+  it("cierra la sesión y redirige a /login cuando el Origin coincide", async () => {
     const response = await POST(signoutRequest({ origin: "https://app.glowbook.test" }));
 
     expect(signOut).toHaveBeenCalledTimes(1);

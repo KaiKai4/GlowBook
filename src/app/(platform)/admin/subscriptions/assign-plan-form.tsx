@@ -100,7 +100,7 @@ function ScheduleSummary({
       <ScheduleItem
         label={hasExistingStart ? "Inicio (se conserva)" : "Inicio"}
         value={formatDate(startsAt)}
-        hint={hasExistingStart ? "Fecha original de la suscripcion" : "Comienza hoy"}
+        hint={hasExistingStart ? "Fecha original de la suscripción" : "Comienza hoy"}
       />
       <ScheduleItem
         label="Fin del trial"

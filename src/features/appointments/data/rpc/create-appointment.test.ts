@@ -78,7 +78,10 @@ describe("createAppointmentWithRpc", () => {
   });
 
   it("devuelve causa inactive_customer cuando el cliente no puede recibir citas", async () => {
-    const inactive = { message: "El cliente no esta disponible para nuevas citas" };
+    const inactive = {
+      message:
+        "Este cliente no esta disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.",
+    };
     installSupabaseDouble(createAppointmentsSupabaseDouble({}, { data: null, error: inactive }), mockedCreateClient);
 
     const result = await createAppointmentWithRpc({ payload, idempotencyKey: KEY });

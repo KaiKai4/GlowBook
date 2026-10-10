@@ -145,7 +145,7 @@ describe("ExpensesHistory", () => {
     expect(mounted.container.textContent).not.toContain("Ver comprobante");
   });
 
-  it("pagina el historial de 10 en 10 sobre las filas ya filtradas", () => {
+  it("página el historial de 10 en 10 sobre las filas ya filtradas", () => {
     const twelve = Array.from({ length: 12 }, (_, index) => item({ id: `m-${index}`, concept: "Luz", amount: 10 }));
     mounted = mountComponent(<ExpensesHistory history={twelve} />);
 

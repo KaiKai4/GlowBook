@@ -45,7 +45,7 @@ function navItem(href: string): NavItems[number] {
   return partialDouble<NavItems[number]>({ href, label: href, icon: "dashboard" });
 }
 
-describe("DashboardPage redireccion del unico modulo visible", () => {
+describe("DashboardPage redireccion del unico módulo visible", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
@@ -62,7 +62,7 @@ describe("DashboardPage redireccion del unico modulo visible", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it("redirige al modulo unico cuando su ruta es distinta de '/'", async () => {
+  it("redirige al módulo unico cuando su ruta es distinta de '/'", async () => {
     vi.mocked(getVisibleNavItems).mockReturnValue([navItem("/appointments")]);
 
     await expect(DashboardPage()).rejects.toThrow("REDIRECT:/appointments");
@@ -123,7 +123,7 @@ describe("DashboardPage indicadores de dinero", () => {
     expect(container.textContent).toContain(formatCurrency(35.5));
   });
 
-  it("sin modulo retail el ingreso son las citas y la ganancia descuenta los gastos", async () => {
+  it("sin módulo retail el ingreso son las citas y la ganancia descuenta los gastos", async () => {
     vi.mocked(requireProfile).mockResolvedValue(partialDouble<Profile>({
       id: "owner-1",
       salon_id: "salon-1",

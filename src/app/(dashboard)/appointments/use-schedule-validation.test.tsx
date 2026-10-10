@@ -76,14 +76,14 @@ describe("useScheduleValidation", () => {
     expect(hook.current().schedule).toHaveLength(2);
   });
 
-  it("una fila con profesional que no hace el servicio invalida el horario", () => {
+  it("una fila con profesional que no hace el servicio inválida el horario", () => {
     const hook = mountHook({ date: TEST_DATE, time: "10:00", rows: [row("svc-manicura", "emp-1")] });
 
     expect(hook.current().rowsAssignable).toBe(false);
     expect(hook.current().isScheduleValid).toBe(false);
   });
 
-  it("una fila sin profesional invalida el horario", () => {
+  it("una fila sin profesional inválida el horario", () => {
     const hook = mountHook({ date: TEST_DATE, time: "10:00", rows: [row("svc-corte", "")] });
 
     expect(hook.current().isScheduleValid).toBe(false);

@@ -17,7 +17,7 @@ const validService = {
 
 describe("services schemas", () => {
   describe("CreateCategorySchema", () => {
-    it("aplica valores por defecto: descripcion vacia, orden 0 y precio fijo", () => {
+    it("aplica valores por defecto: descripción vacia, orden 0 y precio fijo", () => {
       expect(CreateCategorySchema.parse({ name: "Corte" })).toEqual({
         name: "Corte",
         description: "",
@@ -26,7 +26,7 @@ describe("services schemas", () => {
       });
     });
 
-    it("exige nombre no vacio de maximo 100 caracteres", () => {
+    it("exige nombre no vacio de máximo 100 caracteres", () => {
       expect(CreateCategorySchema.safeParse({ name: "" }).success).toBe(false);
       expect(CreateCategorySchema.safeParse({ name: "a".repeat(100) }).success).toBe(true);
       expect(CreateCategorySchema.safeParse({ name: "a".repeat(101) }).success).toBe(false);
@@ -41,30 +41,30 @@ describe("services schemas", () => {
   });
 
   describe("UpdateCategorySchema", () => {
-    it("valida los campos que llegan y conserva el estado activo", () => {
+    it("válida los campos que llegan y conserva el estado activo", () => {
       expect(UpdateCategorySchema.safeParse({ name: "" }).success).toBe(false);
       expect(UpdateCategorySchema.safeParse({ is_active: true }).success).toBe(true);
     });
 
     // Regresión: cambiar solo el modo de precio no debe reescribir description ni ordering.
-    it("una actualizacion parcial solo contiene los campos enviados", () => {
+    it("una actualización parcial solo contiene los campos enviados", () => {
       expect(UpdateCategorySchema.parse({ pricing_mode: "variable" })).toEqual({ pricing_mode: "variable" });
     });
   });
 
   describe("CreateServiceSchema", () => {
-    it("acepta un servicio valido con descripcion por defecto vacia", () => {
+    it("acepta un servicio válido con descripción por defecto vacia", () => {
       expect(CreateServiceSchema.parse(validService)).toEqual({ ...validService, description: "" });
     });
 
-    it("exige una categoria con formato uuid", () => {
+    it("exige una categoría con formato uuid", () => {
       const result = CreateServiceSchema.safeParse({ ...validService, category_id: "no-uuid" });
 
       expect(result.success).toBe(false);
       expect(result.error?.issues[0]?.message).toBe("Categoría inválida");
     });
 
-    it("exige duracion entera de al menos un minuto", () => {
+    it("exige duración entera de al menos un minuto", () => {
       const zero = CreateServiceSchema.safeParse({ ...validService, duration_minutes: 0 });
       expect(zero.error?.issues[0]?.message).toBe("La duración debe ser al menos 1 minuto");
 
@@ -78,20 +78,20 @@ describe("services schemas", () => {
       expect(negative.error?.issues[0]?.message).toBe("El precio no puede ser negativo");
     });
 
-    it("limita la descripcion a 500 caracteres", () => {
+    it("limita la descripción a 500 caracteres", () => {
       expect(CreateServiceSchema.safeParse({ ...validService, description: "d".repeat(500) }).success).toBe(true);
       expect(CreateServiceSchema.safeParse({ ...validService, description: "d".repeat(501) }).success).toBe(false);
     });
   });
 
   describe("UpdateServiceSchema", () => {
-    it("valida los campos que llegan y conserva el estado activo", () => {
+    it("válida los campos que llegan y conserva el estado activo", () => {
       expect(UpdateServiceSchema.safeParse({ duration_minutes: 0 }).success).toBe(false);
       expect(UpdateServiceSchema.parse({ is_active: true })).toMatchObject({ is_active: true });
     });
 
     // Regresión: una edición de precio no debe sobrescribir la descripción.
-    it("una actualizacion parcial no rellena description", () => {
+    it("una actualización parcial no rellena description", () => {
       expect(UpdateServiceSchema.parse({ price: 20 })).toEqual({ price: 20 });
     });
   });

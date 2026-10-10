@@ -1,7 +1,7 @@
 import type { ProfileWithRole } from "@/types/app.types";
 
 /**
- * Devuelve una copia del perfil con los modulos desactivados del salon sustituidos.
+ * Devuelve una copia del perfil con los módulos desactivados del salón sustituidos.
  * Funcion pura: no toca el perfil original. Es la unica forma de fijar
  * `salon.disabled_features` antes de calcular permisos.
  */

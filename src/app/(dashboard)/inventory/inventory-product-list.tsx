@@ -34,9 +34,9 @@ export function InventoryProductList({ products, pendingForm, onSave, onDelete }
     },
     {
       id: "category",
-      header: "Categoria",
+      header: "Categoría",
       secondary: true,
-      cell: (product) => product.category || "Sin categoria",
+      cell: (product) => product.category || "Sin categoría",
     },
     {
       id: "status",
@@ -86,7 +86,7 @@ export function InventoryProductList({ products, pendingForm, onSave, onDelete }
         columns={columns}
         rows={products}
         getRowId={(product) => product.id}
-        emptyMessage="Aun no hay productos registrados."
+        emptyMessage="Aún no hay productos registrados."
       />
 
       {editingProduct && (

@@ -307,7 +307,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
 
     expect(await updateAppointmentSchedule(input({ start_time: lateStart }), deps)).toEqual({
       ok: false,
-      error: "El horario esta fuera del horario de atención del salon.",
+      error: "El horario esta fuera del horario de atención del salón.",
     });
     expect(mockedRpc).not.toHaveBeenCalled();
   });

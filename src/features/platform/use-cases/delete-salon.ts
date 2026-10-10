@@ -27,7 +27,7 @@ export async function deleteSalon({
     });
     return {
       ok: false,
-      error: "Para eliminar el salon debes escribir exactamente su ID.",
+      error: "Para eliminar el salón debes escribir exactamente su ID.",
     };
   }
 

@@ -45,7 +45,7 @@ describe("movimientos de inventario", () => {
   });
 
   describe("transferInventoryStock", () => {
-    it("transfiere el stock dentro del salon con la clave y devuelve exito", async () => {
+    it("transfiere el stock dentro del salón con la clave y devuelve éxito", async () => {
       mockedTransfer.mockResolvedValue(undefined);
 
       expect(await transferInventoryStock(SALON_ID, transferInput, KEY)).toEqual({
@@ -76,7 +76,7 @@ describe("movimientos de inventario", () => {
   });
 
   describe("recordInventoryPurchase", () => {
-    it("registra la compra con la clave, sin ubicacion y devuelve exito", async () => {
+    it("registra la compra con la clave, sin ubicación y devuelve éxito", async () => {
       mockedRecordPurchase.mockResolvedValue("purchase-1");
 
       expect(await recordInventoryPurchase(SALON_ID, purchaseInput, KEY)).toEqual({

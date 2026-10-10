@@ -16,7 +16,7 @@ export default function DashboardError({
           <AlertTriangle className="h-5 w-5 text-danger" />
         </div>
         <h2 className="mt-4 text-lg font-semibold text-fg">
-          No se pudo cargar esta seccion
+          No se pudo cargar esta sección
         </h2>
         <p className="mt-2 text-sm text-fg-subtle">
           Intenta nuevamente. Si el problema continua, revisa tu conexion o vuelve a iniciar sesion.

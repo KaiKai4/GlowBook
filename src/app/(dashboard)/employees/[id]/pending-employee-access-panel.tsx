@@ -23,7 +23,7 @@ export function PendingEmployeeAccessPanel({
 }: PendingEmployeeAccessPanelProps) {
   const [invitation, setInvitation] = useState<PendingEmployeeInvitation | null>(initialInvitation);
   // El enlace en claro solo existe recien generado: la DB guarda el hash, asi
-  // que una invitacion previa se muestra como metadatos + boton de regenerar.
+  // que una invitación previa se muestra como metadatos + boton de regenerar.
   const [freshLink, setFreshLink] = useState<{ url: string; expiresAt: string } | null>(null);
   // Una invitación existente conserva su rol, incluido "sin rol" (""): no se reemplaza
   // por el primer rol del salón. El primer rol solo es valor inicial sin invitación previa.

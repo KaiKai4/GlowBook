@@ -341,7 +341,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     expect(countersByKey(fake).appointments_monthly).toMatchObject({ from: null, to: null });
   });
 
-  it("usa el periodo pagado como ventana de ciclo cuando la plataforma registró un pago", async () => {
+  it("usa el período pagado como ventana de ciclo cuando la plataforma registró un pago", async () => {
     const fake = createBillingSupabaseFake({
       tables: {
         commercial_limit_metrics: {
@@ -368,7 +368,7 @@ describe("findEffectivePlanRowsForPlatform: ventanas de conteo enviadas a la RPC
     });
   });
 
-  it("ancla el ciclo de facturación al día de inicio cuando no hay periodo pagado", async () => {
+  it("ancla el ciclo de facturación al día de inicio cuando no hay período pagado", async () => {
     const fake = createBillingSupabaseFake({
       tables: {
         commercial_limit_metrics: {
@@ -489,7 +489,7 @@ describe("lecturas por salón", () => {
     expect(await findAssignmentStartsAt(OTHER_SALON_ID)).toBeNull();
   });
 
-  it("findAssignmentForPayment devuelve plan y fin de periodo del salón indicado", async () => {
+  it("findAssignmentForPayment devuelve plan y fin de período del salón indicado", async () => {
     const fake = createBillingSupabaseFake({
       tables: {
         salon_plan_assignments: {
@@ -639,7 +639,7 @@ describe("escrituras por salón", () => {
     expect(argsOf(query, "eq")).toEqual(["salon_id", SALON_ID]);
   });
 
-  it("recordSalonPlanPayment inserta el pago con el salón y el periodo cubierto", async () => {
+  it("recordSalonPlanPayment inserta el pago con el salón y el período cubierto", async () => {
     const fake = createBillingSupabaseFake();
     useFake(fake);
 

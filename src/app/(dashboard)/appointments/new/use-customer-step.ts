@@ -57,8 +57,8 @@ export function useCustomerStep({
       if (exists) {
         setCustomerError(
           archived
-            ? "Este numero pertenece a un cliente existente. Restauralo desde Clientes para conservar su historial."
-            : "Este numero ya esta registrado. Buscalo en Cliente existente."
+            ? "Este número pertenece a un cliente existente. Restauralo desde Clientes para conservar su historial."
+            : "Este número ya está registrado. Búscalo en Cliente existente."
         );
         return;
       }

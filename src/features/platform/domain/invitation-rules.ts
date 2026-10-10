@@ -17,10 +17,10 @@ export function invitationRejection(input: {
   now: Date;
 }): string | null {
   const { invitation, email, now } = input;
-  if (!invitation || invitation.status !== "pending") return "Invitacion inválida o ya utilizada.";
-  if (new Date(invitation.expires_at) < now) return "La invitacion expiro.";
+  if (!invitation || invitation.status !== "pending") return "Invitación inválida o ya utilizada.";
+  if (new Date(invitation.expires_at) < now) return "La invitación expiro.";
   if (invitation.email.toLowerCase() !== email.toLowerCase()) {
-    return "Esta invitacion fue emitida para otro correo.";
+    return "Esta invitación fue emitida para otro correo.";
   }
   return null;
 }
@@ -36,8 +36,8 @@ export function isAlreadyRegisteredError(message: string | null | undefined): bo
 }
 
 export const DUPLICATE_OWNER_MESSAGE =
-  "Este correo ya pertenece a una cuenta de otro salon en GlowBook. " +
-  "Cada cuenta puede pertenecer a un solo salon: usa un correo distinto para crear el nuevo salon.";
+  "Este correo ya pertenece a una cuenta de otro salón en GlowBook. " +
+  "Cada cuenta puede pertenecer a un solo salón: usa un correo distinto para crear el nuevo salón.";
 
 // Traduce errores crudos de Postgres o RPC a mensajes que el usuario puede seguir.
 export function translateAcceptError(message: string): string {
@@ -45,5 +45,5 @@ export function translateAcceptError(message: string): string {
   if (m.includes("profiles_pkey") || m.includes("duplicate key")) return DUPLICATE_OWNER_MESSAGE;
   // La RPC ya lanza mensajes en español para el usuario (token inválido o expirado).
   if (m.includes("invitaci")) return message;
-  return "No se pudo crear el salon. Intentalo de nuevo o solicita una nueva invitacion.";
+  return "No se pudo crear el salón. Intentalo de nuevo o solicita una nueva invitación.";
 }

@@ -8,11 +8,11 @@ import { z } from "@/infra/validation/zod";
 import { publishAuditEvent } from "@/features/audit";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
-// El plan es obligatorio: el salon debe nacer con su plan asignado para que
+// El plan es obligatorio: el salón debe nacer con su plan asignado para que
 // el owner nunca vea funcionalidades fuera de lo contratado.
 const InviteSchema = z.object({
   email: z.string().email("Email inválido"),
-  planId: z.string().uuid("Selecciona el plan que tendra el salon."),
+  planId: z.string().uuid("Selecciona el plan que tendrá el salón."),
 });
 
 export interface InviteSalonInput extends z.input<typeof InviteSchema> {
@@ -53,12 +53,12 @@ export async function inviteSalon(input: InviteSalonInput): Promise<Result<strin
       metadata: { emailDomain, planId: parsed.data.planId },
       errorMessage: error instanceof Error ? error.message : "Error desconocido",
     });
-    return err("Error al crear la invitacion.");
+    return err("Error al crear la invitación.");
   }
 }
 
 /**
- * Reemplaza el token de una invitacion pendiente. El enlace anterior queda
+ * Reemplaza el token de una invitación pendiente. El enlace anterior queda
  * invalidado y el nuevo se muestra una sola vez.
  */
 export async function regenerateSalonInvitation(input: {

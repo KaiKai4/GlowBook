@@ -132,7 +132,7 @@ describe("completeAppointment: método de pago del salón", () => {
 
     expect(await completeAppointment(command(), deps)).toEqual({
       ok: false,
-      error: "Ese metodo de pago no esta habilitado para este salon.",
+      error: "Ese método de pago no está habilitado para este salón.",
     });
     expect(deps.findAppointment).not.toHaveBeenCalled();
     expect(deps.completeRpc).not.toHaveBeenCalled();
@@ -170,15 +170,17 @@ describe("completeAppointment: errores", () => {
   });
 
   it("muestra el mensaje de validación de la base (SQLSTATE 22023)", async () => {
+    // Texto literal de la RPC (supabase/migrations): sin tilde, porque el passthrough muestra el mensaje tal cual.
+    const bdMessage = "Ese metodo de pago no esta habilitado para este salon.";
     const deps = makeDeps({
       completeRpc: async () => {
-        throw { code: "22023", message: "Ese metodo de pago no esta habilitado para este salon." };
+        throw { code: "22023", message: bdMessage };
       },
     });
 
     expect(await completeAppointment(command({ paymentMethod: "cash" }), deps)).toEqual({
       ok: false,
-      error: "Ese metodo de pago no esta habilitado para este salon.",
+      error: bdMessage,
     });
   });
 

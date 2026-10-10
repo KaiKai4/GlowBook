@@ -4,12 +4,12 @@ import { changeEmployeeRole } from "./employee-role";
 import { createEmployeeInviteForExistingEmployee } from "./employee-invitation-issue";
 import { resetEmployeeAccess } from "./employee-revocation";
 import {
-  changeEmployeeRoleFlow,
-  generateEmployeeInviteFlow,
-  resetEmployeeAccessFlow,
+  changeEmployeeRoleWithGate,
+  generateEmployeeInvite,
+  resetEmployeeAccessWithGate,
 } from "./employee-role-commands";
 
-const ROLES_DISABLED_MESSAGE = "Los roles estan deshabilitados para este salon.";
+const ROLES_DISABLED_MESSAGE = "Los roles están deshabilitados para este salón.";
 
 vi.mock("./employee-role", () => ({
   changeEmployeeRole: vi.fn(),
@@ -31,47 +31,47 @@ const DISABLED = err(ROLES_DISABLED_MESSAGE);
 const gate = { salonId: SALON_ID, rolesEnabled: true };
 const disabledGate = { salonId: SALON_ID, rolesEnabled: false };
 
-describe("changeEmployeeRoleFlow", () => {
+describe("changeEmployeeRoleWithGate", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("no toca el caso de uso si los roles estan deshabilitados", async () => {
-    expect(await changeEmployeeRoleFlow(disabledGate, { profileId: EMPLOYEE_ID, roleId: ROLE_ID })).toEqual(DISABLED);
+  it("no toca el caso de uso si los roles están deshabilitados", async () => {
+    expect(await changeEmployeeRoleWithGate(disabledGate, { profileId: EMPLOYEE_ID, roleId: ROLE_ID })).toEqual(DISABLED);
     expect(changeEmployeeRole).not.toHaveBeenCalled();
   });
 
-  it("cambia el rol con el salon de la sesion", async () => {
+  it("cambia el rol con el salón de la sesión", async () => {
     vi.mocked(changeEmployeeRole).mockResolvedValue(ok(undefined));
 
-    expect(await changeEmployeeRoleFlow(gate, { profileId: EMPLOYEE_ID, roleId: null })).toEqual(ok(undefined));
+    expect(await changeEmployeeRoleWithGate(gate, { profileId: EMPLOYEE_ID, roleId: null })).toEqual(ok(undefined));
     expect(changeEmployeeRole).toHaveBeenCalledWith(SALON_ID, EMPLOYEE_ID, null);
   });
 });
 
-describe("resetEmployeeAccessFlow", () => {
+describe("resetEmployeeAccessWithGate", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("no genera el enlace si los roles estan deshabilitados", async () => {
-    expect(await resetEmployeeAccessFlow(disabledGate, { employeeId: EMPLOYEE_ID, roleId: null })).toEqual(DISABLED);
+  it("no genera el enlace si los roles están deshabilitados", async () => {
+    expect(await resetEmployeeAccessWithGate(disabledGate, { employeeId: EMPLOYEE_ID, roleId: null })).toEqual(DISABLED);
     expect(resetEmployeeAccess).not.toHaveBeenCalled();
   });
 
   it("normaliza el rol vacio a null y devuelve el enlace", async () => {
     vi.mocked(resetEmployeeAccess).mockResolvedValue(ok(INVITE));
 
-    expect(await resetEmployeeAccessFlow(gate, { employeeId: EMPLOYEE_ID, roleId: "" })).toEqual(ok(INVITE));
+    expect(await resetEmployeeAccessWithGate(gate, { employeeId: EMPLOYEE_ID, roleId: "" })).toEqual(ok(INVITE));
     expect(resetEmployeeAccess).toHaveBeenCalledWith({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
   });
 
   it("propaga el error del caso de uso", async () => {
     vi.mocked(resetEmployeeAccess).mockResolvedValue(err("El colaborador no tiene email."));
 
-    expect(await resetEmployeeAccessFlow(gate, { employeeId: EMPLOYEE_ID, roleId: ROLE_ID })).toEqual(
+    expect(await resetEmployeeAccessWithGate(gate, { employeeId: EMPLOYEE_ID, roleId: ROLE_ID })).toEqual(
       err("El colaborador no tiene email.")
     );
   });
 });
 
-describe("generateEmployeeInviteFlow", () => {
+describe("generateEmployeeInvite", () => {
   const checkLoginLimit = vi.fn<() => Promise<Result<void>>>(async () => ok(undefined));
 
   beforeEach(() => {
@@ -79,8 +79,8 @@ describe("generateEmployeeInviteFlow", () => {
     checkLoginLimit.mockResolvedValue(ok(undefined));
   });
 
-  it("no consulta el cupo de login si los roles estan deshabilitados", async () => {
-    const result = await generateEmployeeInviteFlow(
+  it("no consulta el cupo de login si los roles están deshabilitados", async () => {
+    const result = await generateEmployeeInvite(
       { ...disabledGate, checkLoginLimit },
       { employeeId: EMPLOYEE_ID, roleId: ROLE_ID }
     );
@@ -90,20 +90,20 @@ describe("generateEmployeeInviteFlow", () => {
     expect(createEmployeeInviteForExistingEmployee).not.toHaveBeenCalled();
   });
 
-  it("corta con el error del cupo de login sin crear la invitacion", async () => {
+  it("corta con el error del cupo de login sin crear la invitación", async () => {
     checkLoginLimit.mockResolvedValue(err("Sin cupo de usuarios con acceso."));
 
     expect(
-      await generateEmployeeInviteFlow({ ...gate, checkLoginLimit }, { employeeId: EMPLOYEE_ID, roleId: ROLE_ID })
+      await generateEmployeeInvite({ ...gate, checkLoginLimit }, { employeeId: EMPLOYEE_ID, roleId: ROLE_ID })
     ).toEqual(err("Sin cupo de usuarios con acceso."));
     expect(createEmployeeInviteForExistingEmployee).not.toHaveBeenCalled();
   });
 
-  it("crea la invitacion tras el cupo y devuelve su resultado", async () => {
+  it("crea la invitación tras el cupo y devuelve su resultado", async () => {
     vi.mocked(createEmployeeInviteForExistingEmployee).mockResolvedValue(ok(INVITE));
 
     expect(
-      await generateEmployeeInviteFlow({ ...gate, checkLoginLimit }, { employeeId: EMPLOYEE_ID, roleId: null })
+      await generateEmployeeInvite({ ...gate, checkLoginLimit }, { employeeId: EMPLOYEE_ID, roleId: null })
     ).toEqual(ok(INVITE));
     expect(createEmployeeInviteForExistingEmployee).toHaveBeenCalledWith({
       employeeId: EMPLOYEE_ID,

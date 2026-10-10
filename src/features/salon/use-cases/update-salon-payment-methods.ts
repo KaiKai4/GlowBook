@@ -8,7 +8,7 @@ import type { SalonPaymentMethodsInput } from "../schemas";
 
 // Mensaje fijo para el usuario. El detalle tecnico (p. ej. una migracion
 // pendiente) no sale a la interfaz: se registra con captureError.
-const SAVE_FAILED_MESSAGE = "No se pudieron guardar los metodos de pago.";
+const SAVE_FAILED_MESSAGE = "No se pudieron guardar los métodos de pago.";
 
 export async function updateSalonPaymentMethods(
   salonId: string,

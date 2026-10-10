@@ -18,7 +18,7 @@ const mondayWorkSchedule: WorkSchedule[] = [
 ];
 
 describe("appointment availability", () => {
-  it("reports salon, collaborator and occupied-slot violations together", () => {
+  it("reports salón, collaborator and occupied-slot violations together", () => {
     const start = new Date("2026-05-25T22:30:00.000Z"); // 17:30 Panama, after salon close.
     const end = new Date("2026-05-25T23:00:00.000Z");
     const violations = evaluateTimeRange({

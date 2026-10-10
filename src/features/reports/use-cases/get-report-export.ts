@@ -137,7 +137,7 @@ function withMonthFallback(
 
 /**
  * Datos listos para exportar segun el alcance: filas por mes (serie continua)
- * + totales, respetando los modulos activos del plan. Para el alcance mensual
+ * + totales, respetando los módulos activos del plan. Para el alcance mensual
  * la "serie" es ese unico mes y los totales son los de ese mes.
  */
 export async function getReportExportData(

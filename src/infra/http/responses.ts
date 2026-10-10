@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 // Respuestas de las rutas de src/app/api/**. Toda respuesta lleva
 // Cache-Control: no-store: ningun intermediario ni cache del navegador puede
-// guardar datos de un salon ni errores de autorizacion.
+// guardar datos de un salón ni errores de autorizacion.
 
 const NO_STORE = "no-store";
 

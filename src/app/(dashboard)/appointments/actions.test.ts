@@ -149,7 +149,7 @@ describe("appointments actions", () => {
     it("rechaza servicios que no son JSON válido", async () => {
       expect(
         await createAppointmentAction(null, formDataOf({ ...validCreate, assignments: "{no-json" }))
-      ).toEqual({ ok: false, error: "Datos de servicios invalidos." });
+      ).toEqual({ ok: false, error: "Datos de servicios inválidos." });
       expect(createAppointment).not.toHaveBeenCalled();
     });
 
@@ -205,7 +205,7 @@ describe("appointments actions", () => {
     it("rechaza servicios que no son JSON válido", async () => {
       expect(
         await updateAppointmentScheduleAction(null, formDataOf({ ...validUpdate, assignments: "[" }))
-      ).toEqual({ ok: false, error: "Datos de servicios invalidos." });
+      ).toEqual({ ok: false, error: "Datos de servicios inválidos." });
     });
 
     it("devuelve el primer issue de Zod cuando no hay servicios", async () => {
@@ -321,7 +321,7 @@ describe("appointments actions", () => {
     it("rechaza los cobros que no son JSON válido", async () => {
       expect(
         await completeAppointmentAction(null, formDataOf({ ...validComplete, item_charges: "[" }))
-      ).toEqual({ ok: false, error: "Cobros de servicios invalidos." });
+      ).toEqual({ ok: false, error: "Cobros de servicios inválidos." });
     });
 
     it("devuelve el primer issue de Zod cuando la cita no tiene cobros", async () => {

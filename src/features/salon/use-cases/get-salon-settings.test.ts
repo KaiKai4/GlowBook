@@ -14,7 +14,7 @@ vi.mock("../data/salon-business-hours.repo", () => ({
 const mockedFindBusinessHours = vi.mocked(findBusinessHours);
 const mockedFindSalonSettings = vi.mocked(findSalonSettings);
 
-describe("get salon settings", () => {
+describe("get salón settings", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -57,7 +57,7 @@ describe("get salon settings", () => {
     });
   });
 
-  it("returns stable defaults when the salon row is missing", async () => {
+  it("returns stable defaults when the salón row is missing", async () => {
     mockedFindSalonSettings.mockResolvedValue(null);
     mockedFindBusinessHours.mockResolvedValue([]);
 

@@ -63,7 +63,7 @@ describe("inviteSalon authorization and validation", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Selecciona el plan que tendra el salon.",
+      error: "Selecciona el plan que tendrá el salón.",
     });
     expect(mockedCreate).not.toHaveBeenCalled();
   });
@@ -74,7 +74,7 @@ describe("inviteSalon authorization and validation", () => {
     expect(result).toEqual({ ok: false, error: "Email inválido" });
   });
 
-  it("records the invitation with the actor but no target salon yet", async () => {
+  it("records the invitation with the actor but no target salón yet", async () => {
     await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
     expect(mockedAudit).toHaveBeenCalledWith("platform.salon_invited", {
@@ -110,7 +110,7 @@ describe("inviteSalon failures", () => {
 
     const result = await inviteSalon({ email: "owner@example.com", planId: PLAN_ID, actorUserId: ACTOR_ID, actorIsPlatformAdmin: isAdmin });
 
-    expect(result).toEqual({ ok: false, error: "Error al crear la invitacion." });
+    expect(result).toEqual({ ok: false, error: "Error al crear la invitación." });
     expect(mockedCaptureError).toHaveBeenCalledWith(adapterError, {
       module: "platform",
       action: "invite_salon",
@@ -157,7 +157,7 @@ describe("regenerateSalonInvitation", () => {
   });
 
   it("reports a stable error, logs the invitation id and audits the failure", async () => {
-    const adapterError = new Error("ya no esta pendiente");
+    const adapterError = new Error("ya no está pendiente");
     mockedRegenerate.mockRejectedValue(adapterError);
 
     const result = await regenerateSalonInvitation({ invitationId: INVITATION_ID, actorIsPlatformAdmin: isAdmin });
@@ -174,7 +174,7 @@ describe("regenerateSalonInvitation", () => {
       status: "failed",
       targetResourceType: "salon_invitation",
       targetResourceId: INVITATION_ID,
-      errorMessage: "ya no esta pendiente",
+      errorMessage: "ya no está pendiente",
     });
   });
 

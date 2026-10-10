@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 
-// Los tokens de invitacion viajan en el enlace y NUNCA se guardan en claro:
+// Los tokens de invitación viajan en el enlace y NUNCA se guardan en claro:
 // la base solo conoce el sha256. Si la DB o un backup se filtra, los enlaces
 // vigentes no sirven. El token en claro existe solo al generarse (se muestra
 // una vez para copiar) y en la URL que recibe el invitado.

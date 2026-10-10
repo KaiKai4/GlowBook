@@ -26,7 +26,7 @@ describe("lastDayOfMonth", () => {
 });
 
 describe("toLifetimeTotals", () => {
-  it("renombra los totales de periodo a la forma del acumulado", () => {
+  it("renombra los totales de período a la forma del acumulado", () => {
     expect(toLifetimeTotals(TOTALS)).toEqual({
       appointmentRevenue: 100,
       retailRevenue: 20,

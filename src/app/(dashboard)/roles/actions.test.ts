@@ -26,7 +26,7 @@ vi.mock("@/features/access/use-cases/update-role-permissions", () => ({
 }));
 
 const rolesManager = buildProfile({ permissions: [PERMISSIONS.ROLES_MANAGE] });
-const invalidPermissions = "Permisos invalidos.";
+const invalidPermissions = "Permisos inválidos.";
 
 describe("roles actions", () => {
   beforeEach(() => {

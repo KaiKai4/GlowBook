@@ -14,7 +14,7 @@ describe("opciones de servicios (categorias sin servicios)", () => {
     vi.clearAllMocks();
   });
 
-  it("category-service-options devuelve categorias con lista vacia cuando no traen servicios", async () => {
+  it("category-service-options devuelve categorías con lista vacia cuando no traen servicios", async () => {
     mockedFindCategories.mockResolvedValue([
       { id: "c1", name: "Cabello", services: null },
       { id: "c2", name: "Unas", services: undefined },
@@ -27,7 +27,7 @@ describe("opciones de servicios (categorias sin servicios)", () => {
     expect(mockedFindCategories).toHaveBeenCalledWith("salon-1");
   });
 
-  it("service-scheduling-options omite servicios inactivos y categorias sin servicios", async () => {
+  it("service-scheduling-options omite servicios inactivos y categorías sin servicios", async () => {
     mockedFindCategories.mockResolvedValue([
       {
         id: "c1",

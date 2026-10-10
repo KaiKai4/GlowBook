@@ -46,7 +46,7 @@ const CUSTOMER_ID = RECORD_ID;
 const manager = buildProfile({ permissions: [PERMISSIONS.CUSTOMERS_MANAGE] });
 const LIMITED = err("Demasiados intentos.");
 
-describe("customers actions: rate limit por accion", () => {
+describe("customers actions: rate limit por acción", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);

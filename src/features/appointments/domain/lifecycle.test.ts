@@ -7,7 +7,7 @@ import {
   shouldBlockCalendar,
 } from "./lifecycle";
 
-// Catalogo completo de estados. Lista local: el catalogo interno no se exporta.
+// Catálogo completo de estados. Lista local: el catálogo interno no se exporta.
 const APPOINTMENT_STATUSES = ["scheduled", "confirmed", "completed", "cancelled", "no_show"] as const;
 
 describe("appointment lifecycle", () => {

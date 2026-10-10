@@ -61,8 +61,8 @@ describe("requestPasswordResetAction", () => {
   });
 });
 
-describe("requestPasswordResetAction con limite por IP", () => {
-  it("si el limite bloquea no envia el correo de recuperacion", async () => {
+describe("requestPasswordResetAction con límite por IP", () => {
+  it("si el límite bloquea no envia el correo de recuperacion", async () => {
     vi.mocked(assertAnonymousRateLimit).mockResolvedValue(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
 
     const result = await requestPasswordResetAction("ana@salonluna.com");
@@ -71,7 +71,7 @@ describe("requestPasswordResetAction con limite por IP", () => {
     expect(requestPasswordReset).not.toHaveBeenCalled();
   });
 
-  it("aplica el limite del restablecimiento con su ambito propio", async () => {
+  it("aplica el límite del restablecimiento con su ambito propio", async () => {
     await requestPasswordResetAction("ana@salonluna.com");
 
     expect(assertAnonymousRateLimit).toHaveBeenCalledWith("forgot-password", { max: 5, windowMs: 900_000 });

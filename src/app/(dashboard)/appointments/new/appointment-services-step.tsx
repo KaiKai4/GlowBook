@@ -107,9 +107,9 @@ export function AppointmentServicesStep({
           </div>
         ) : isClosedDay ? (
           <div className="rounded-xl border border-dashed border-warning-border bg-warning-subtle py-8 text-center">
-            <p className="text-sm font-medium text-warning-fg">El salon esta cerrado ese día.</p>
+            <p className="text-sm font-medium text-warning-fg">El salón está cerrado ese día.</p>
             <p className="text-xs text-warning-fg mt-0.5">
-              Elige otra fecha o ajusta los horarios en Configuración del salon.
+              Elige otra fecha o ajusta los horarios en Configuración del salón.
             </p>
           </div>
         ) : (

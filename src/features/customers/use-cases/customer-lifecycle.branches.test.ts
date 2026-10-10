@@ -45,7 +45,7 @@ describe("customer-lifecycle (ramas de error)", () => {
   });
 
   describe("reactivateCustomer", () => {
-    it("marca al cliente como activo y permanente dentro del salon", async () => {
+    it("marca al cliente como activo y permanente dentro del salón", async () => {
       mockedUpdate.mockResolvedValue(customerRow);
 
       expect(await reactivateCustomer("cust-1", SALON_ID)).toEqual({ ok: true, value: undefined });
@@ -75,7 +75,7 @@ describe("customer-lifecycle (ramas de error)", () => {
         ok: true,
         value: {
           outcome: "archived",
-          message: "Cliente archivado conservando su informacion para trazabilidad.",
+          message: "Cliente archivado conservando su información para trazabilidad.",
         },
       });
       expect(mockedUpdate).toHaveBeenCalledWith("cust-1", SALON_ID, { is_active: false });

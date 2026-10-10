@@ -48,7 +48,7 @@ export function UsageTab({
         href={`/admin/subscriptions?salon=${salonId}`}
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline"
       >
-        {row?.planName ? "Cambiar plan, registrar pago o dar extras" : "Asignar un plan a este salon"}
+        {row?.planName ? "Cambiar plan, registrar pago o dar extras" : "Asignar un plan a este salón"}
         <ArrowUpRight className="h-3.5 w-3.5" />
       </Link>
     </div>
@@ -60,8 +60,8 @@ export function ActionsTab({ salon }: { salon: SalonWorkspaceSalon }) {
     <div className="max-w-xl space-y-5">
       <Panel
         icon={<ShieldAlert className="h-4 w-4" />}
-        title="Estado del salon"
-        description="Suspender bloquea el acceso de todos los usuarios del salon sin borrar datos."
+        title="Estado del salón"
+        description="Suspender bloquea el acceso de todos los usuarios del salón sin borrar datos."
       >
         <SalonStatusControl salonId={salon.id} salonName={salon.name} isActive={salon.isActive} />
       </Panel>
@@ -69,7 +69,7 @@ export function ActionsTab({ salon }: { salon: SalonWorkspaceSalon }) {
       <Panel
         icon={<ShieldAlert className="h-4 w-4" />}
         title="Zona de peligro"
-        description="Eliminar el salon borra todos sus datos de forma permanente."
+        description="Eliminar el salón borra todos sus datos de forma permanente."
       >
         <DeleteSalonButton salonId={salon.id} salonName={salon.name} />
       </Panel>

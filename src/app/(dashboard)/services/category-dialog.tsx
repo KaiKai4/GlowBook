@@ -17,7 +17,7 @@ export function CategoryDialog({
   onSubmit: (formData: FormData) => void;
 }) {
   return (
-    <Dialog open={open} onClose={onClose} title="Nueva categoria">
+    <Dialog open={open} onClose={onClose} title="Nueva categoría">
       <form action={onSubmit} className="space-y-4">
         <Input name="name" label="Nombre" placeholder="Cabello, Unas, Barberia..." required />
         <Textarea name="description" label="Descripcion (opcional)" />
@@ -43,7 +43,7 @@ export function CategoryDialog({
             Cancelar
           </Button>
           <Button type="submit" variant="primary" loading={pending}>
-            Crear categoria
+            Crear categoría
           </Button>
         </div>
       </form>

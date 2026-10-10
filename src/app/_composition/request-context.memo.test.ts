@@ -39,7 +39,7 @@ describe("request-context: memoizacion por peticion", () => {
     vi.clearAllMocks();
   });
 
-  it("isPlatformAdmin y requirePlatformAdmin comparten una sola lectura de sesion", async () => {
+  it("isPlatformAdmin y requirePlatformAdmin comparten una sola lectura de sesión", async () => {
     const { isPlatformAdmin, requirePlatformAdmin, getUser } = await loadRequestContext();
 
     await expect(isPlatformAdmin()).resolves.toBe(true);
@@ -58,7 +58,7 @@ describe("request-context: memoizacion por peticion", () => {
     expect(from).toHaveBeenCalledWith("platform_admins");
   });
 
-  it("sin sesion isPlatformAdmin devuelve false sin consultar platform_admins", async () => {
+  it("sin sesión isPlatformAdmin devuelve false sin consultar platform_admins", async () => {
     const { isPlatformAdmin, getUser, from } = await loadRequestContext();
     getUser.mockResolvedValueOnce({ data: { user: null }, error: null });
 

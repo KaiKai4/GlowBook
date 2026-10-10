@@ -5,7 +5,7 @@ import type { RetailSaleInput } from "../schemas";
 import { createRetailSale } from "./retail-sales";
 
 // Venta de vitrina con sus reglas: modulo habilitado, cupo del plan y metodo de
-// pago habilitado por el salon. Todo se valida antes de registrar la venta.
+// pago habilitado por el salón. Todo se valida antes de registrar la venta.
 
 export async function createRetailSaleWithPlanLimits(
   salonId: string,
@@ -19,7 +19,7 @@ export async function createRetailSaleWithPlanLimits(
 
   const paymentEnabled = await assertSalonPaymentMethodEnabled(salonId, input.payment_method);
   if (!paymentEnabled) {
-    return err("Ese metodo de pago no esta habilitado para este salon.");
+    return err("Ese método de pago no está habilitado para este salón.");
   }
 
   return createRetailSale(salonId, input, idempotencyKey);

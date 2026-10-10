@@ -217,7 +217,7 @@ describe("CompleteAppointmentDialog", () => {
     vi.mocked(completeAppointmentAction).mockResolvedValue({ ok: true, value: SERVER_RESULT });
     const { container } = render();
 
-    chooseOption(container, "Metodo de pago", "Tarjeta");
+    chooseOption(container, "Método de pago", "Tarjeta");
     setFieldValue(numberFields(container)[1]!, "10");
     setFieldValue(container.querySelector("textarea")!, "Promo de temporada");
     await clickAndSettle(buttonWithText(container, "Cobrar y completar"));

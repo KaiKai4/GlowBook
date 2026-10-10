@@ -20,7 +20,7 @@ export interface RoleOption {
   name: string;
 }
 
-// Sin token: la DB solo guarda el hash, asi que el enlace de una invitacion
+// Sin token: la DB solo guarda el hash, asi que el enlace de una invitación
 // existente no puede volver a mostrarse — solo regenerarse.
 export interface PendingEmployeeInvitation {
   expiresAt: string;

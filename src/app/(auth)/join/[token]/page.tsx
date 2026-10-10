@@ -18,7 +18,7 @@ export default async function JoinPage({
         <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-lg font-semibold text-fg">Enlace ya utilizado</p>
           <p className="mt-2 text-sm text-fg-subtle">
-            Esta invitacion ya fue aceptada. Si tienes problemas para acceder, contacta al administrador del salon.
+            Esta invitación ya fue aceptada. Si tienes problemas para acceder, contacta al administrador del salón.
           </p>
         </div>
       </div>
@@ -31,7 +31,7 @@ export default async function JoinPage({
         <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-lg font-semibold text-fg">Enlace expirado</p>
           <p className="mt-2 text-sm text-fg-subtle">
-            Este enlace de invitacion ha vencido. Solicita uno nuevo al administrador del salon.
+            Este enlace de invitación ha vencido. Solicita uno nuevo al administrador del salón.
           </p>
         </div>
       </div>

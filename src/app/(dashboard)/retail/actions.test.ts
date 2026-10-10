@@ -98,7 +98,7 @@ describe("createRetailSaleAction", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Ese metodo de pago no esta habilitado para este salon.",
+      error: "Ese método de pago no está habilitado para este salón.",
     });
     expect(assertSalonPaymentMethodEnabled).toHaveBeenCalledWith(SALON_ID, "card");
     expect(createRetailSale).not.toHaveBeenCalled();

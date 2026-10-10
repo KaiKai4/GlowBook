@@ -27,7 +27,7 @@ describe("collaborator assignment", () => {
 
   it("rejects assigning a service without assigning its category", () => {
     expect(() => assertServicesHaveAssignedCategories(services, ["hair"])).toThrow(
-      "tambien debes asignar su categoria"
+      "también debes asignar su categoría"
     );
   });
 });

@@ -140,7 +140,7 @@ describe("EmployeeCreateDialog", () => {
     expect(dialogTitle()).toBe("Colaborador creado");
     const input = document.body.querySelector<HTMLInputElement>('input[aria-label="Enlace de invitación"]');
     expect(input?.value).toBe(`${window.location.origin}/join/tok-abc123`);
-    expect(document.body.textContent).toContain("Enlace de acceso valido 7 días");
+    expect(document.body.textContent).toContain("Enlace de acceso válido 7 días");
     expect(onOpenChange).not.toHaveBeenCalled();
   });
 

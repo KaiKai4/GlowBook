@@ -82,7 +82,7 @@ const savePlanModulesFlow = definePlatformAction<FormData, SavePlanModulesInput,
   parse: (formData) => ok(readSavePlanModulesInput(formData)),
   run: async (input, session) => {
     const result = await saveCommercialPlanModulesBatch(input, session.userId);
-    return result.ok ? ok("Modulos del plan actualizados.") : result;
+    return result.ok ? ok("Módulos del plan actualizados.") : result;
   },
   revalidate: () => PLAN_PATHS,
 });

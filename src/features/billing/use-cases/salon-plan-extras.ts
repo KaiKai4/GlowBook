@@ -14,7 +14,7 @@ import { publishAuditEvent } from "@/features/audit";
 const AddonExtraSchema = z.object({
   salonId: z.string().uuid("Selecciona un salón."),
   addonId: z.string().uuid("Selecciona un extra del catálogo."),
-  quantity: z.coerce.number().int().min(1, "La cantidad minima es 1.").max(999).default(1),
+  quantity: z.coerce.number().int().min(1, "La cantidad mínima es 1.").max(999).default(1),
   isGift: z.boolean().default(false),
   // "" se evalúa antes que coerce: un campo vacío es "sin precio especial"
   // (null => precio de catálogo), nunca 0 (extra gratis).

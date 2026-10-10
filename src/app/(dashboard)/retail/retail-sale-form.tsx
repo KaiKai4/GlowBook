@@ -140,7 +140,7 @@ export function RetailSaleForm({
             onChange={(event) => setUnitPrice(Number(event.target.value || 0))}
             required
           />
-          <Select name="payment_method" label="Metodo de pago" defaultValue={defaultPaymentMethod}>
+          <Select name="payment_method" label="Método de pago" defaultValue={defaultPaymentMethod}>
             {retail.paymentMethodOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}

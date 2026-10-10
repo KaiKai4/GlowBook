@@ -49,8 +49,8 @@ describe("permission catalog in lib/auth", () => {
   });
 });
 
-describe("salon feature gating and getDisabledSalonFeatures", () => {
-  it("treats every feature as enabled when the salon has no disabled list", () => {
+describe("salón feature gating and getDisabledSalonFeatures", () => {
+  it("treats every feature as enabled when the salón has no disabled list", () => {
     const owner = profile({ disabledFeatures: null, isOwner: true });
 
     expect(hasPermission(owner, PERMISSIONS.APPOINTMENTS_VIEW)).toBe(true);
@@ -65,7 +65,7 @@ describe("salon feature gating and getDisabledSalonFeatures", () => {
     expect(hasPermission(owner, PERMISSIONS.SERVICES_MANAGE)).toBe(true);
   });
 
-  it("treats a profile without salon row as having no disabled features", () => {
+  it("treats a profile without salón row as having no disabled features", () => {
     const orphan = profile({ hasSalon: false, isOwner: true });
 
     expect(getDisabledSalonFeatures(orphan)).toEqual([]);
@@ -74,7 +74,7 @@ describe("salon feature gating and getDisabledSalonFeatures", () => {
 });
 
 describe("hasPermission", () => {
-  it("short-circuits to true for the salon owner", () => {
+  it("short-circuits to true for the salón owner", () => {
     const owner = profile({ isOwner: true, hasRole: false });
 
     for (const permission of ALL_PERMISSIONS) {
@@ -118,7 +118,7 @@ describe("hasPermission", () => {
     expect(hasPermission(staff, PERMISSIONS.RETAIL_MANAGE)).toBe(false);
   });
 
-  it("keeps reminders.send ungated by salon features and denies ungranted appointments.view_all", () => {
+  it("keeps reminders.send ungated by salón features and denies ungranted appointments.view_all", () => {
     const staff = profile({
       permissionKeys: ["reminders.send"],
       disabledFeatures: ["appointments", "customers"],
@@ -134,7 +134,7 @@ describe("getPermissions", () => {
     expect(getPermissions(profile({ isOwner: true }))).toEqual(ALL_PERMISSIONS);
   });
 
-  it("returns the owner catalog minus features disabled for the salon", () => {
+  it("returns the owner catalog minus features disabled for the salón", () => {
     const owner = profile({ isOwner: true, disabledFeatures: ["appointments"] });
     const permissions = getPermissions(owner);
 

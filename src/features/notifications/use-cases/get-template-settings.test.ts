@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe("getTemplateSettings", () => {
-  it("loads the templates of the requested salon only", async () => {
+  it("loads the templates of the requested salón only", async () => {
     mockedFindTemplates.mockResolvedValue([
       DEFAULT_MESSAGE_TEMPLATES.appointment_reminder,
       DEFAULT_MESSAGE_TEMPLATES.appointment_cancelled,

@@ -8,7 +8,7 @@ import { err, ok, type Result } from "@/infra/result";
 import { firstIssueMessage } from "@/infra/validation/first-issue";
 
 // Lectura y validacion del FormData de las acciones de roles. Las reglas viven
-// aqui (no en la accion): el JSON de permisos y el esquema se validan en orden.
+// aquí (no en la accion): el JSON de permisos y el esquema se validan en orden.
 
 function parsePermissionKeys(formData: FormData): Result<string[]> {
   const raw = formData.get("permission_keys");
@@ -17,12 +17,12 @@ function parsePermissionKeys(formData: FormData): Result<string[]> {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string")) {
-      return err("Permisos invalidos.");
+      return err("Permisos inválidos.");
     }
 
     return ok(parsed);
   } catch {
-    return err("Permisos invalidos.");
+    return err("Permisos inválidos.");
   }
 }
 

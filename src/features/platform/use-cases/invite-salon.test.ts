@@ -19,7 +19,7 @@ const planId = "00000000-0000-4000-8000-00000000000a";
 
 let isAdmin = true;
 
-describe("invite salon", () => {
+describe("invite salón", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     isAdmin = true;
@@ -69,7 +69,7 @@ describe("invite salon", () => {
 
     const result = await inviteSalon({ email: "owner@example.com", planId, actorUserId, actorIsPlatformAdmin: isAdmin });
 
-    expect(result).toEqual({ ok: false, error: "Error al crear la invitacion." });
+    expect(result).toEqual({ ok: false, error: "Error al crear la invitación." });
     expect(mockedPublishAuditEvent).toHaveBeenCalledWith("platform.salon_invited", {
       actorUserId,
       action: "invite_salon",

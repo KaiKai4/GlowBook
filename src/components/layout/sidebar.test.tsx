@@ -104,7 +104,7 @@ describe("Sidebar", () => {
     expect(mounted.container.textContent).toContain("Salón Aurora");
     expect(linkTo("Citas").getAttribute("href")).toBe("/appointments");
     expect(linkTo("Reportes").getAttribute("href")).toBe("/reports");
-    expect(linkTo("Salon").getAttribute("href")).toBe("/salon");
+    expect(linkTo("Salón").getAttribute("href")).toBe("/salon");
   });
 
   it("agrupa los módulos con su encabezado de sección cuando está expandida", () => {

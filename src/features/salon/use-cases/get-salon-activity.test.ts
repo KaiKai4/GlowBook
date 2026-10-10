@@ -28,7 +28,7 @@ describe("getSalonActivity", () => {
     vi.clearAllMocks();
   });
 
-  it("describe cada accion con la verbo y el sujeto del tipo de registro", async () => {
+  it("describe cada acción con la verbo y el sujeto del tipo de registro", async () => {
     mockedFindSalonActivity.mockResolvedValue([
       activityRow({ id: "1", action: "insert", table_name: "appointments" }),
       activityRow({ id: "2", action: "update", table_name: "customers" }),
@@ -48,12 +48,12 @@ describe("getSalonActivity", () => {
     ]);
   });
 
-  it("describe los cambios de configuracion del salon con una frase propia", async () => {
+  it("describe los cambios de configuración del salón con una frase propia", async () => {
     mockedFindSalonActivity.mockResolvedValue([activityRow({ action: "update", table_name: "salons" })]);
 
     const [entry] = (await getSalonActivity("salon-1")).entries;
 
-    expect(entry?.actionLabel).toBe("Actualizo la configuración del salon");
+    expect(entry?.actionLabel).toBe("Actualizo la configuración del salón");
   });
 
   it("mapea los campos de presentacion y usa 'sistema' cuando no hay correo del actor", async () => {
@@ -72,7 +72,7 @@ describe("getSalonActivity", () => {
     expect(view.entries[1]?.actorEmail).toBe("ana@example.com");
   });
 
-  it("formatea fecha y hora en espanol a partir de la marca de creacion", async () => {
+  it("formatea fecha y hora en espanol a partir de la marca de creación", async () => {
     mockedFindSalonActivity.mockResolvedValue([activityRow({})]);
 
     const [entry] = (await getSalonActivity("salon-1")).entries;

@@ -103,7 +103,7 @@ describe("AppointmentServicesStep", () => {
     it("avisa cuando el salón está cerrado el día elegido", () => {
       const { container } = render({ isClosedDay: true, selectedWindow: null });
 
-      expect(container.textContent).toContain("El salon esta cerrado ese día.");
+      expect(container.textContent).toContain("El salón está cerrado ese día.");
       expect(container.querySelectorAll("[draggable='true']")).toHaveLength(0);
     });
 
@@ -175,7 +175,7 @@ describe("AppointmentServicesStep", () => {
         schedule: [scheduleItem({ categoryId: "", serviceId: "", employeeId: "" })],
       });
 
-      click(selectTriggerWithLabel(container, "Categoria"));
+      click(selectTriggerWithLabel(container, "Categoría"));
       const listed = Array.from(document.body.querySelectorAll<HTMLButtonElement>("[role='option']"));
       expect(listed.map((option) => option.textContent?.trim())).toEqual(["Cabello", "Uñas"]);
       expect(listed.some((option) => option.disabled)).toBe(false);
@@ -184,7 +184,7 @@ describe("AppointmentServicesStep", () => {
     it("cambiar de categoría limpia el servicio y el profesional de ese horario", () => {
       const { container, props } = render();
 
-      chooseOption(container, "Categoria", "Uñas");
+      chooseOption(container, "Categoría", "Uñas");
 
       expect(props.updateRow).toHaveBeenCalledWith("r0", {
         categoryId: "cat-unas",
@@ -199,7 +199,7 @@ describe("AppointmentServicesStep", () => {
       });
 
       expect(selectTriggerWithLabel(container, "Servicio").disabled).toBe(true);
-      expect(selectedLabelOf(container, "Servicio")).toBe("Elige categoria primero");
+      expect(selectedLabelOf(container, "Servicio")).toBe("Elige categoría primero");
     });
 
     it("pide al profesional según el servicio y el horario de la fila", () => {

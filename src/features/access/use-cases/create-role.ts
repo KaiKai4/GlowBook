@@ -21,7 +21,7 @@ export async function createRoleWithPermissions(
 ): Promise<Result<string>> {
   const permissionKeys = uniquePermissionKeys(input.permission_keys);
   if (!hasOnlyKnownPermissionKeys(permissionKeys)) {
-    return { ok: false, error: "Uno o mas permisos no son validos." };
+    return { ok: false, error: "Uno o más permisos no son válidos." };
   }
 
   try {

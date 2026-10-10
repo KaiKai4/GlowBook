@@ -19,8 +19,12 @@ function supabaseOrigin(): string {
   }
 }
 
-export function buildContentSecurityPolicy(nonce: string, isDev: boolean): string {
+/** Modo de ejecución: en desarrollo React necesita `unsafe-eval` y no se fuerza HTTPS. */
+export type CspMode = "development" | "production";
+
+export function buildContentSecurityPolicy({ nonce, mode }: { nonce: string; mode: CspMode }): string {
   const origin = supabaseOrigin();
+  const isDev = mode === "development";
 
   return [
     "default-src 'self'",

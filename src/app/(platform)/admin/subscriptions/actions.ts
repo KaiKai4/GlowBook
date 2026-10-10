@@ -43,7 +43,7 @@ const giveAddonFlow = definePlatformAction<FormData, GiveAddonInput, string>({
   run: async (input, session) => {
     const result = await assignSalonAddonConfig(input, session.userId);
     return result.ok
-      ? ok(input.isGift ? "Extra regalado al salon." : "Extra asignado al salon.")
+      ? ok(input.isGift ? "Extra regalado al salón." : "Extra asignado al salón.")
       : result;
   },
   revalidate: () => SUBSCRIPTION_PATHS,
@@ -79,7 +79,7 @@ const registerPaymentFlow = definePlatformAction<FormData, RegisterPaymentInput,
   run: async (input, session) => {
     const result = await registerSalonPlanPaymentConfig(input, session.userId);
     return result.ok
-      ? ok("Pago registrado. La suscripcion quedo activa con su mes de uso.", result.warnings)
+      ? ok("Pago registrado. La suscripción quedo activa con su mes de uso.", result.warnings)
       : result;
   },
   revalidate: () => SUBSCRIPTION_PATHS,

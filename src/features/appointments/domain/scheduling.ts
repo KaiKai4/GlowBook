@@ -16,7 +16,7 @@ export interface SchedulingContext {
   businessHours: BusinessHour[];
   getWorkSchedules: (employeeId: string) => WorkSchedule[];
   getOccupiedSlots: (employeeId: string, date: Date) => OccupiedSlot[];
-  /** Días libres puntuales del profesional (YYYY-MM-DD en zona del salon). */
+  /** Días libres puntuales del profesional (YYYY-MM-DD en zona del salón). */
   getExceptionDates?: (employeeId: string) => string[];
   excludeAppointmentId?: string;
 }

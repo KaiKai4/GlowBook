@@ -21,7 +21,7 @@ describe("reportExpenseMonthTotalsRpc", () => {
     serverClient.current = null;
   });
 
-  it("envia el salon y el rango, y convierte los importes a numero", async () => {
+  it("envia el salón y el rango, y convierte los importes a número", async () => {
     const db = useDb({
       report_expense_month_totals: {
         data: [

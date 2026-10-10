@@ -1,4 +1,4 @@
-// Punto publico del modulo inventory. Otros modulos importan solo desde aqui.
+// Punto publico del modulo inventory. Otros módulos importan solo desde aquí.
 // Indice de servidor: los casos de uso consultan la base de datos.
 import "server-only";
 

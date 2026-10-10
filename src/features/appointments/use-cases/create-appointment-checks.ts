@@ -9,10 +9,10 @@ interface GuardedCreateContext {
 }
 
 /**
- * Crea la cita solo si el plan del salon da acceso al modulo de citas y queda
+ * Crea la cita solo si el plan del salón da acceso al modulo de citas y queda
  * cupo de citas. Los cupos son una regla de negocio: la accion solo orquesta.
  */
-export async function createAppointmentGuarded(
+export async function createAppointmentWithPlanChecks(
   input: CreateAppointmentInput,
   { salonId, userId }: GuardedCreateContext
 ): Promise<Result<string>> {

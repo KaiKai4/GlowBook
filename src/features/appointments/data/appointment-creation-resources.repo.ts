@@ -13,7 +13,7 @@ export async function findAppointmentCreationResources({
   assignments,
 }: {
   salonId: string;
-  /** Ausente con cliente nuevo: todavia no existe y la RPC lo da de alta. */
+  /** Ausente con cliente nuevo: todavía no existe y la RPC lo da de alta. */
   customerId?: string;
   assignments: AppointmentCreationAssignmentRequest[];
 }): Promise<AppointmentCreationResources> {

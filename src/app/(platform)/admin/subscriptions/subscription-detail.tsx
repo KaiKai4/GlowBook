@@ -56,7 +56,7 @@ export function SubscriptionDetail({
           <p className="mt-1 text-sm text-fg-subtle">
             {detail.plan
               ? `${detail.plan.name} · ${STATUS_LABELS[detail.assignment?.status ?? ""] ?? "Sin estado"} · ${detail.plan.currency} ${detail.monthlyTotal.toFixed(2)}/mes`
-              : "Este salon todavia no tiene plan asignado."}
+              : "Este salón todavía no tiene plan asignado."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

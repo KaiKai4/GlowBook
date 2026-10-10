@@ -10,7 +10,7 @@ import {
 
 const CATEGORY_ID = "00000000-0000-4000-8000-0000000000cc";
 const SERVICE_ID = "00000000-0000-4000-8000-0000000000dd";
-const DURATION_MESSAGE = "Indica una duración valida: horas desde 0 y minutos entre 0 y 59.";
+const DURATION_MESSAGE = "Indica una duración válida: horas desde 0 y minutos entre 0 y 59.";
 const INVALID_ID_MESSAGE = "Identificador inválido.";
 
 const validCreateService = {
@@ -75,7 +75,7 @@ describe("parseCategoryPricingInput", () => {
 });
 
 describe("parseCreateServiceInput", () => {
-  it("valida la duración antes que el esquema y combina los minutos", () => {
+  it("válida la duración antes que el esquema y combina los minutos", () => {
     expect(parseCreateServiceInput({ ...validCreateService, duration: { hours: 0, minutes: 0 } })).toEqual(
       err(DURATION_MESSAGE)
     );
@@ -112,7 +112,7 @@ describe("parseUpdateServiceInput", () => {
     );
   });
 
-  it("valida la duración y devuelve solo los campos presentes", () => {
+  it("válida la duración y devuelve solo los campos presentes", () => {
     expect(parseUpdateServiceInput(SERVICE_ID, { ...fields, duration: { hours: 0, minutes: 0 } })).toEqual(
       err(DURATION_MESSAGE)
     );

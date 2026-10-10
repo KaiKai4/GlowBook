@@ -36,10 +36,10 @@ describe("get platform audit log", () => {
     expect(view.failedCount).toBe(1);
     expect(view.entries[0]).toMatchObject({
       id: "audit-1",
-      actionLabel: "Eliminar Salon",
+      actionLabel: "Eliminar Salón",
       statusLabel: "Fallida",
       actorLabel: "Admin 00000000",
-      targetLabel: "Salon 11111111",
+      targetLabel: "Salón 11111111",
       errorMessage: "Auth cleanup failed",
       metadata: [{ key: "disabledFeatures", value: "appointments, reports" }],
     });

@@ -24,7 +24,7 @@ beforeEach(() => {
   signIn.mockResolvedValue({ error: null });
 });
 
-describe("acceptEmployeeInvitationAction (invitacion de empleado, sin sesion)", () => {
+describe("acceptEmployeeInvitationAction (invitación de empleado, sin sesion)", () => {
   it("limita por IP con la clave join-invitation", async () => {
     vi.mocked(acceptEmployeeInvitation).mockResolvedValue(ok(undefined) as never);
 
@@ -37,7 +37,7 @@ describe("acceptEmployeeInvitationAction (invitacion de empleado, sin sesion)", 
     });
   });
 
-  it("bloquea por rate limit sin aceptar la invitacion ni iniciar sesion", async () => {
+  it("bloquea por rate limit sin aceptar la invitación ni iniciar sesión", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
     const result = await acceptEmployeeInvitationAction("tok", "clave-1", EMAIL);
@@ -47,7 +47,7 @@ describe("acceptEmployeeInvitationAction (invitacion de empleado, sin sesion)", 
     expect(signIn).not.toHaveBeenCalled();
   });
 
-  it("si la invitacion falla devuelve el error y no inicia sesion", async () => {
+  it("si la invitación falla devuelve el error y no inicia sesión", async () => {
     vi.mocked(acceptEmployeeInvitation).mockResolvedValue(err("Invitación inválida.") as never);
 
     const result = await acceptEmployeeInvitationAction("tok", "clave-1", EMAIL);
@@ -57,7 +57,7 @@ describe("acceptEmployeeInvitationAction (invitacion de empleado, sin sesion)", 
     expect(signIn).not.toHaveBeenCalled();
   });
 
-  it("si la invitacion se acepta inicia sesion con el correo de la invitacion y devuelve signedIn", async () => {
+  it("si la invitación se acepta inicia sesión con el correo de la invitación y devuelve signedIn", async () => {
     vi.mocked(acceptEmployeeInvitation).mockResolvedValue(ok(undefined) as never);
 
     const result = await acceptEmployeeInvitationAction("tok", "clave-1", EMAIL);
@@ -66,7 +66,7 @@ describe("acceptEmployeeInvitationAction (invitacion de empleado, sin sesion)", 
     expect(result).toEqual(ok({ signedIn: true }));
   });
 
-  it("si el inicio de sesion falla la cuenta queda creada y devuelve signedIn false", async () => {
+  it("si el inicio de sesión falla la cuenta queda creada y devuelve signedIn false", async () => {
     vi.mocked(acceptEmployeeInvitation).mockResolvedValue(ok(undefined) as never);
     signIn.mockResolvedValue({ error: new Error("Invalid login credentials") });
 

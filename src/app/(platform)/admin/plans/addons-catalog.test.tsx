@@ -68,9 +68,9 @@ describe("AddonsCatalog", () => {
     mounted = renderCatalog();
 
     const text = mounted.container.textContent ?? "";
-    expect(text).toContain("2 en catalogo");
+    expect(text).toContain("2 en catálogo");
     expect(text).toContain("1 activos");
-    expect(text).toContain("USD 9.00/mes · Modulo");
+    expect(text).toContain("USD 9.00/mes · Módulo");
     expect(text).toContain("USD 5.00/mes · Límite");
     expect(text).toContain("Borrador");
   });
@@ -90,7 +90,7 @@ describe("AddonsCatalog", () => {
     clickElement(getButtonByText(mounted.container, "Bloque de citas"));
 
     expect(mounted.container.querySelector("h2")?.textContent).toBe("Bloque de citas");
-    expect(mounted.container.textContent).toContain("Extra vendible o regalable por salon.");
+    expect(mounted.container.textContent).toContain("Extra vendible o regalable por salón.");
   });
 
   it("cambia el formulario al extra elegido y precarga sus valores", () => {
@@ -108,7 +108,7 @@ describe("AddonsCatalog", () => {
     mounted = renderCatalog([]);
 
     expect(mounted.container.textContent).toContain("Crea el primer extra para venderlo o regalarlo a salones.");
-    expect(mounted.container.textContent).toContain("0 en catalogo");
+    expect(mounted.container.textContent).toContain("0 en catálogo");
     expect(mounted.container.textContent).toContain("Nuevo extra");
     expect(mounted.container.querySelector("h2")?.textContent).toBe("Nuevo extra");
     expect(getFieldByName<HTMLInputElement>(mounted.container, "kind").value).toBe("module");
@@ -132,7 +132,7 @@ describe("AddonsCatalog", () => {
     expect(mounted.container.querySelector('select[name="moduleKey"], input[name="moduleKey"]')).not.toBeNull();
     expect(mounted.container.querySelector('input[name="limitDelta"]')).toBeNull();
 
-    clickElement(getButtonByText(mounted.container, "Activa un modulo"));
+    clickElement(getButtonByText(mounted.container, "Activa un módulo"));
     clickElement(
       Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).find((option) =>
         option.textContent?.includes("Aumenta un límite")
@@ -146,7 +146,7 @@ describe("AddonsCatalog", () => {
   it("solo ofrece módulos y límites no archivados al crear un extra", () => {
     mounted = renderCatalog([]);
 
-    clickElement(getButtonByText(mounted.container, "Selecciona un modulo"));
+    clickElement(getButtonByText(mounted.container, "Selecciona un módulo"));
     const moduleOptions = Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).map((o) => o.textContent);
     expect(moduleOptions).toContain("Agenda");
     expect(moduleOptions).not.toContain("Reportes");

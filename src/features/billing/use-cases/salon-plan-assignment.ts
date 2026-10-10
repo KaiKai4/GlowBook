@@ -77,8 +77,8 @@ export async function assignSalonCommercialPlanConfig(
 }
 
 /**
- * Asigna el plan elegido en la invitacion apenas el salon se crea.
- * Asi el salon nace con sus modulos y límites correctos y nunca ve
+ * Asigna el plan elegido en la invitación apenas el salón se crea.
+ * Asi el salón nace con sus módulos y límites correctos y nunca ve
  * funcionalidades que su plan no incluye.
  */
 export async function autoAssignPlanOnAcceptance(input: {
@@ -88,7 +88,7 @@ export async function autoAssignPlanOnAcceptance(input: {
 }): Promise<Result<void>> {
   try {
     const plan = await findPlanWithChildren(input.planId);
-    if (!plan) return err("El plan de la invitacion ya no existe.");
+    if (!plan) return err("El plan de la invitación ya no existe.");
 
     const status = plan.trialDays > 0 ? "trialing" : "active";
     const schedule = deriveAssignmentSchedule({
@@ -105,18 +105,18 @@ export async function autoAssignPlanOnAcceptance(input: {
       startsAt: schedule.startsAt,
       endsAt: null,
       trialEndsAt: schedule.trialEndsAt,
-      notes: "Asignado automaticamente al aceptar la invitacion.",
+      notes: "Asignado automaticamente al aceptar la invitación.",
     });
     const warnings = await publishAuditEvent("billing.plan_assigned", { ...commercialPlanAudit(input.acceptedByUserId, input.salonId), action: "commercial_plan_assigned" });
     return ok(undefined, warnings);
   } catch (error) {
-    return err(toPublicErrorMessage(error, "No se pudo asignar el plan de la invitacion."));
+    return err(toPublicErrorMessage(error, "No se pudo asignar el plan de la invitación."));
   }
 }
 
 /**
- * Registra que el salon pago su mensualidad: guarda el pago en el historial,
- * activa la suscripcion y fija el mes de uso (periodo) que cubre ese pago.
+ * Registra que el salón pago su mensualidad: guarda el pago en el historial,
+ * activa la suscripción y fija el mes de uso (periodo) que cubre ese pago.
  */
 export async function registerSalonPlanPaymentConfig(
   input: z.input<typeof PaymentSchema>,
@@ -126,7 +126,7 @@ export async function registerSalonPlanPaymentConfig(
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
     const assignment = await findAssignmentForPayment(parsed.data.salonId);
-    if (!assignment) return err("Este salon no tiene plan asignado. Asignale un plan primero.");
+    if (!assignment) return err("Este salón no tiene plan asignado. Asígnale un plan primero.");
 
     const plan = await findPlanWithChildren(assignment.plan_id);
     const paidAt = parsed.data.paidAt || todayIso();

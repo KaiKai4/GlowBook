@@ -67,7 +67,7 @@ export function setSidebarCollapsed(collapsed: boolean): boolean {
 }
 
 /**
- * Suscripcion compatible con useSyncExternalStore: reacciona a cambios locales,
+ * Suscripción compatible con useSyncExternalStore: reacciona a cambios locales,
  * a cambios hechos en otra pestaña (evento "storage") y a cruces del punto md.
  */
 export function subscribeSidebarCollapsed(listener: SidebarListener): () => void {

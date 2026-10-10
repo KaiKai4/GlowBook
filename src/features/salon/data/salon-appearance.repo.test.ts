@@ -28,7 +28,7 @@ describe("salon-appearance.repo", () => {
   it.each([
     ["tema", () => updateSalonTheme(SALON_ID, "dark"), { theme: "dark" }],
     ["fondo", () => updateSalonBackground(SALON_ID, "dots"), { bg_style: "dots" }],
-  ])("actualiza %s del salon indicado", async (_label, run, payload) => {
+  ])("actualiza %s del salón indicado", async (_label, run, payload) => {
     const db = useDb({ salons: { data: null, error: null } });
 
     await run();

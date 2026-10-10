@@ -5,7 +5,7 @@ import { updateSalonStatus } from "./update-salon-status";
 import { PublicError } from "@/infra/public-error";
 import { publishAuditEvent } from "@/features/audit";
 
-// Suspender o reactivar un salon: el id llega con espacios del formulario y
+// Suspender o reactivar un salón: el id llega con espacios del formulario y
 // se normaliza antes de tocar la base; cada cambio queda auditado con el
 // estado solicitado.
 
@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 
 describe("updateSalonStatus input handling", () => {
-  it("trims the salon id before it reaches the adapter and the audit trail", async () => {
+  it("trims the salón id before it reaches the adapter and the audit trail", async () => {
     await updateSalonStatus({ salonId: `  ${SALON_ID}\n`, isActive: false, actorUserId: ACTOR_ID });
 
     expect(mockedSetStatus).toHaveBeenCalledWith(SALON_ID, false);
@@ -45,7 +45,7 @@ describe("updateSalonStatus input handling", () => {
   it("rejects a whitespace-only id without calling the adapter or auditing", async () => {
     const result = await updateSalonStatus({ salonId: "   ", isActive: true, actorUserId: ACTOR_ID });
 
-    expect(result).toEqual({ ok: false, error: "Salon inválido." });
+    expect(result).toEqual({ ok: false, error: "Salón inválido." });
     expect(mockedSetStatus).not.toHaveBeenCalled();
     expect(mockedAudit).not.toHaveBeenCalled();
   });

@@ -19,7 +19,7 @@ describe("date utilities", () => {
     expect(end.toISOString()).toBe("2026-05-29T15:45:00.000Z");
   });
 
-  it("reads wall-clock parts in the salon timezone", () => {
+  it("reads wall-clock parts in the salón timezone", () => {
     expect(getZonedTimeParts(new Date("2026-05-28T15:30:00.000Z"), "America/Panama")).toEqual({
       dayOfWeek: 3,
       minutesOfDay: 10 * 60 + 30,
@@ -62,7 +62,7 @@ describe("zonedWallTimeToUtc", () => {
       .toBe("2026-07-15T14:00:00.000Z");
   });
 
-  it("applies daylight saving offsets for the salon date", () => {
+  it("applies daylight saving offsets for the salón date", () => {
     expect(zonedWallTimeToUtc("2026-07-15", "09:00", "Europe/Madrid").toISOString())
       .toBe("2026-07-15T07:00:00.000Z");
     expect(zonedWallTimeToUtc("2026-01-15", "09:00", "Europe/Madrid").toISOString())

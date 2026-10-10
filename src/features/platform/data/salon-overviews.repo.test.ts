@@ -10,7 +10,7 @@ vi.mock("@/infra/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminClient,
 }));
 
-describe("platform salon overview read model", () => {
+describe("platform salón overview read model", () => {
   beforeEach(() => {
     adminClient.rpc.mockReset();
   });

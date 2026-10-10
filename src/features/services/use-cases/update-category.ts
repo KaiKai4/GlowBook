@@ -16,10 +16,10 @@ export async function updateServiceCategory(
     return { ok: true, value: undefined };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      return { ok: false, error: "Ya existe una categoria con ese nombre." };
+      return { ok: false, error: "Ya existe una categoría con ese nombre." };
     }
 
     captureError(error, { module: "services", action: "update-category" });
-    return { ok: false, error: "Error al actualizar la categoria." };
+    return { ok: false, error: "Error al actualizar la categoría." };
   }
 }

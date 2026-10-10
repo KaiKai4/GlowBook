@@ -27,7 +27,7 @@ export interface EmployeeInvitationForJoin {
   salons: { name: string } | null;
 }
 
-// El token en claro no existe en la DB (solo su hash), asi que una invitacion
+// El token en claro no existe en la DB (solo su hash), asi que una invitación
 // pendiente solo expone metadatos: el enlace se muestra una unica vez al
 // generarse y despues solo puede regenerarse.
 export interface EmployeeInvitationRow {

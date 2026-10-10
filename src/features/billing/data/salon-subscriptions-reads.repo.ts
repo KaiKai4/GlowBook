@@ -27,6 +27,9 @@ import {
   type PlanAlert,
 } from "./salon-subscriptions.rows";
 
+/** Pagos mostrados en el historial del salón. */
+const PAYMENT_HISTORY_LIMIT = 12;
+
 // Lecturas de suscripción. Cada función elige su cliente (ver billing-db.ts):
 //   - ...ForPlatform: service_role y columnas completas (panel /admin).
 //   - ...ForSalon: cliente del usuario (RLS) y columnas concedidas al salón.
@@ -92,7 +95,7 @@ export async function findAssignmentForPayment(salonId: string): Promise<{
   return data;
 }
 
-export async function findSalonPayments(salonId: string, limit = 12): Promise<PaymentRow[]> {
+export async function findSalonPayments(salonId: string, limit = PAYMENT_HISTORY_LIMIT): Promise<PaymentRow[]> {
   const supabase = billingDb();
   const result = await supabase
     .from("salon_plan_payments")

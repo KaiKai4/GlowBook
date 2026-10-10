@@ -39,7 +39,7 @@ describe("reminder-log.repo", () => {
       expect(db.operations).toEqual([]);
     });
 
-    it("conserva solo el recordatorio mas reciente por cita, filtrando por salon", async () => {
+    it("conserva solo el recordatorio más reciente por cita, filtrando por salón", async () => {
       const db = useDb({
         appointment_reminder_log: {
           data: [
@@ -119,7 +119,7 @@ describe("reminder-log.repo", () => {
       ]);
     });
 
-    it("usa nulos para plantilla y telefono cuando no se indican", async () => {
+    it("usa nulos para plantilla y teléfono cuando no se indican", async () => {
       const db = useDb({ appointment_reminder_log: { data: { sent_at: "2026-06-12T10:00:00.000Z" }, error: null } });
 
       await createManualReminderLog({ salonId: SALON_ID, appointmentId: "a1", userId: "user-1", idempotencyKey: KEY });
@@ -149,7 +149,7 @@ describe("reminder-log.repo", () => {
   });
 
   describe("findManualReminderSentAt", () => {
-    it("busca el registro por salon, cita y clave de idempotencia", async () => {
+    it("busca el registro por salón, cita y clave de idempotencia", async () => {
       const db = useDb({
         appointment_reminder_log: { data: { sent_at: "2026-06-12T10:00:00.000Z" }, error: null },
       });

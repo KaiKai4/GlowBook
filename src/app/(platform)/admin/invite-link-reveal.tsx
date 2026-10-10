@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy, Link2 } from "lucide-react";
 
-// Muestra el enlace de invitacion recien generado. Es la unica oportunidad de
+// Muestra el enlace de invitación recien generado. Es la unica oportunidad de
 // copiarlo: la base de datos solo guarda el hash del token.
 export function InviteLinkReveal({ token }: { token: string }) {
   const [copied, setCopied] = useState(false);

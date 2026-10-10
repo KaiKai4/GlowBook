@@ -237,7 +237,7 @@ describe("recordPlanAlert: RPC con la sesión del usuario", () => {
 
   it("propaga el error de la RPC (por ejemplo, sesión sin salón)", async () => {
     server.factory.mockResolvedValue(
-      createBillingSupabaseFake({ rpc: { error: { message: "La sesion no tiene salon" } } })
+      createBillingSupabaseFake({ rpc: { error: { message: "La sesión no tiene salón" } } })
     );
 
     await expect(
@@ -248,7 +248,7 @@ describe("recordPlanAlert: RPC con la sesión del usuario", () => {
         severity: "info",
         message: "x",
       })
-    ).rejects.toThrow("La sesion no tiene salon");
+    ).rejects.toThrow("La sesión no tiene salón");
   });
 });
 

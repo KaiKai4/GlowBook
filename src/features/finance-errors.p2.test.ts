@@ -69,7 +69,7 @@ describe("gastos: mensaje publico al registrar", () => {
     expect(captureError).toHaveBeenCalledWith(failure, { module: "errors", action: "public-message" });
   });
 
-  it("registra el gasto y devuelve su mensaje de exito", async () => {
+  it("registra el gasto y devuelve su mensaje de éxito", async () => {
     vi.mocked(insertExpense).mockResolvedValue(undefined as never);
 
     const result = await createExpense(SALON, {} as never, KEY);

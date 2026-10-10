@@ -45,7 +45,7 @@ beforeEach(() => {
 });
 
 describe("GET /api/reports/export: autorizacion", () => {
-  it("sin sesion responde 401 sin cache", async () => {
+  it("sin sesión responde 401 sin cache", async () => {
     vi.mocked(getProfile).mockResolvedValue(null);
 
     const response = await GET(exportRequest());
@@ -76,7 +76,7 @@ describe("GET /api/reports/export: autorizacion", () => {
   });
 });
 
-describe("GET /api/reports/export: limite de peticiones", () => {
+describe("GET /api/reports/export: límite de peticiones", () => {
   it("limita por usuario con 5 por minuto y responde 429", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
@@ -111,7 +111,7 @@ describe("GET /api/reports/export: parametros", () => {
 });
 
 describe("GET /api/reports/export: exportacion", () => {
-  it("exporta un mes con los modulos efectivos y devuelve el xlsx como adjunto sin cache", async () => {
+  it("exporta un mes con los módulos efectivos y devuelve el xlsx como adjunto sin cache", async () => {
     const response = await GET(exportRequest("?month=2026-03"));
 
     expect(isEffectiveSalonModuleEnabled).toHaveBeenCalledWith(reporter, "inventory");

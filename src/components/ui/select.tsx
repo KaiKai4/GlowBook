@@ -172,7 +172,7 @@ function Select<T extends string = string>({
             )}
           >
             <span className={cn("truncate", !selectedOption && "text-fg-subtle")}>
-              {selectedOption?.label ?? placeholder ?? "Selecciona una opcion"}
+              {selectedOption?.label ?? placeholder ?? "Selecciona una opción"}
             </span>
             <ChevronsUpDown className="h-4 w-4 shrink-0 text-fg-subtle" />
           </button>

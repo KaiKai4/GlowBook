@@ -13,7 +13,7 @@ const profile: ProfileWithRole = {
 };
 
 describe("withDisabledFeatures", () => {
-  it("sustituye los modulos desactivados y conserva el resto del perfil", () => {
+  it("sustituye los módulos desactivados y conserva el resto del perfil", () => {
     const result = withDisabledFeatures(profile, ["inventory", "expenses"]);
 
     expect(result.salon).toEqual({ disabled_features: ["inventory", "expenses"] });
@@ -22,7 +22,7 @@ describe("withDisabledFeatures", () => {
     expect(result.is_owner).toBe(false);
   });
 
-  it("acepta una lista vacia para reactivar todos los modulos", () => {
+  it("acepta una lista vacia para reactivar todos los módulos", () => {
     expect(withDisabledFeatures(profile, []).salon).toEqual({ disabled_features: [] });
   });
 

@@ -14,7 +14,7 @@ import { loginWith } from "./support/login";
 let admin: TestSupabaseClient | null = null;
 let fixture: SalonOwnerFixture | null = null;
 
-test.describe("disabled salon features", () => {
+test.describe("disabled salón features", () => {
   test.beforeAll(async () => {
     const env = getSupabaseIntegrationEnv();
     if (!env) return;

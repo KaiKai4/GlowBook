@@ -128,9 +128,9 @@ describe("PlatformAdminPage", () => {
 
     const text = mounted.container.textContent ?? "";
     expect(text).toContain("2 alertas de límite abiertas.");
-    expect(text).toContain("Pago vencido: registra el pago o pausa la suscripcion.");
+    expect(text).toContain("Pago vencido: registra el pago o pausa la suscripción.");
     expect(text).toContain("Trial por vencer");
-    expect(text).toContain("Salon activo sin plan: ve todo sin límites.");
+    expect(text).toContain("Salón activo sin plan: ve todo sin límites.");
   });
 
   it("usa singular para una sola alerta de límite", async () => {
@@ -163,7 +163,7 @@ describe("PlatformAdminPage", () => {
 
     mounted = await render();
 
-    expect(mounted.container.textContent).not.toContain("Salon activo sin plan");
+    expect(mounted.container.textContent).not.toContain("Salón activo sin plan");
   });
 
   it("incluye los salones dormidos en la lista de atención con contacto recomendado", async () => {
@@ -263,7 +263,7 @@ describe("PlatformAdminPage", () => {
     expect(hrefs).toContain("/admin/audit");
     expect(hrefs).toContain("/admin/reports");
     expect(hrefs).toContain("/admin/subscriptions");
-    expect(mounted.container.textContent).toContain("Invitar salon");
+    expect(mounted.container.textContent).toContain("Invitar salón");
   });
 
   it("separa las tarjetas de atención y de invitaciones con sus títulos", async () => {

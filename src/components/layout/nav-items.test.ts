@@ -20,7 +20,7 @@ describe("getVisibleNavItems", () => {
       "Gastos",
       "Roles",
       "Plantillas",
-      "Salon",
+      "Salón",
     ]);
   });
 

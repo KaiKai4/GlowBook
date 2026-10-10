@@ -166,33 +166,33 @@ describe("SalonSettings", () => {
     vi.mocked(updateSalonPaymentMethodsAction).mockResolvedValue({ ok: true, value: undefined });
     mounted = renderSettings();
 
-    const input = mounted.container.querySelector<HTMLInputElement>('input[placeholder="Escribe un metodo, ej. Zinli"]');
+    const input = mounted.container.querySelector<HTMLInputElement>('input[placeholder="Escribe un método, ej. Zinli"]');
     if (!input) throw new Error("falta el campo de método de pago");
     setFieldValue(input, "  Zinli   móvil ");
     click(buttonWithText(mounted.container, "Agregar"));
-    click(buttonWithText(mounted.container, "Guardar metodos"));
+    click(buttonWithText(mounted.container, "Guardar métodos"));
     await flushAsync();
 
     expect(updateSalonPaymentMethodsAction).toHaveBeenCalledWith(["Efectivo", "Tarjeta", "Zinli móvil"]);
-    expect(mounted.container.textContent).toContain("Metodos actualizados");
+    expect(mounted.container.textContent).toContain("Métodos actualizados");
   });
 
   it("rechaza métodos vacíos, duplicados sin importar mayúsculas y nombres demasiado largos", () => {
     mounted = renderSettings();
-    const input = mounted.container.querySelector<HTMLInputElement>('input[placeholder="Escribe un metodo, ej. Zinli"]');
+    const input = mounted.container.querySelector<HTMLInputElement>('input[placeholder="Escribe un método, ej. Zinli"]');
     if (!input) throw new Error("falta el campo de método de pago");
 
     setFieldValue(input, "   ");
     click(buttonWithText(mounted.container, "Agregar"));
-    expect(mounted.container.textContent).toContain("Escribe un metodo de pago.");
+    expect(mounted.container.textContent).toContain("Escribe un método de pago.");
 
     setFieldValue(input, "efectivo");
     click(buttonWithText(mounted.container, "Agregar"));
-    expect(mounted.container.textContent).toContain("Ese metodo de pago ya esta en la lista.");
+    expect(mounted.container.textContent).toContain("Ese método de pago ya esta en la lista.");
 
     setFieldValue(input, "x".repeat(65));
     click(buttonWithText(mounted.container, "Agregar"));
-    expect(mounted.container.textContent).toContain("El metodo de pago no puede superar 64 caracteres.");
+    expect(mounted.container.textContent).toContain("El método de pago no puede superar 64 caracteres.");
   });
 
   it("quita un método de pago de la lista antes de guardar", () => {
@@ -208,9 +208,9 @@ describe("SalonSettings", () => {
     mounted = renderSettings({ paymentMethods: ["Efectivo"] });
 
     click(buttonWithAriaLabel(mounted.container, "Quitar Efectivo"));
-    click(buttonWithText(mounted.container, "Guardar metodos"));
+    click(buttonWithText(mounted.container, "Guardar métodos"));
 
-    expect(mounted.container.textContent).toContain("Agrega al menos un metodo de pago.");
+    expect(mounted.container.textContent).toContain("Agrega al menos un método de pago.");
     expect(updateSalonPaymentMethodsAction).not.toHaveBeenCalled();
   });
 

@@ -17,7 +17,7 @@ export async function updateRolePermissions(
 ): Promise<Result<void>> {
   const permissionKeys = uniquePermissionKeys(input.permission_keys);
   if (!hasOnlyKnownPermissionKeys(permissionKeys)) {
-    return { ok: false, error: "Uno o mas permisos no son validos." };
+    return { ok: false, error: "Uno o más permisos no son válidos." };
   }
 
   try {

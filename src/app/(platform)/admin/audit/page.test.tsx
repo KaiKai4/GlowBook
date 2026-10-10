@@ -16,7 +16,7 @@ vi.mock("@/features/platform/use-cases/get-platform-audit-log", () => ({
 
 const ALL_ACTIONS = [
   { value: "all" as const, label: "Todas las acciones" },
-  { value: "invite_salon" as const, label: "Invitar Salon" },
+  { value: "invite_salon" as const, label: "Invitar Salón" },
 ];
 const ALL_STATUSES = [
   { value: "all" as const, label: "Todos" },
@@ -28,7 +28,7 @@ function entry(overrides: Partial<PlatformAuditLogEntryViewModel> = {}): Platfor
   return {
     id: "log-1",
     action: "invite_salon",
-    actionLabel: "Invitar Salon",
+    actionLabel: "Invitar Salón",
     status: "succeeded",
     statusLabel: "Exitosa",
     actorLabel: "admin@glowbook.test",
@@ -130,7 +130,7 @@ describe("PlatformAuditPage", () => {
     );
     expect(linkWithText(mounted.container, "Todos").getAttribute("href")).toBe("/admin/audit?action=invite_salon");
     expect(linkWithText(mounted.container, "Todas las acciones").getAttribute("href")).toBe("/admin/audit");
-    expect(linkWithText(mounted.container, "Invitar Salon").className).toContain("border-accent");
+    expect(linkWithText(mounted.container, "Invitar Salón").className).toContain("border-accent");
   });
 
   it("marca el filtro de estado activo y vuelve a /admin/audit al quitar filtros", async () => {
@@ -157,7 +157,7 @@ describe("PlatformAuditPage", () => {
     mounted = await render();
 
     const text = mounted.container.textContent ?? "";
-    expect(text).toContain("Invitar Salon");
+    expect(text).toContain("Invitar Salón");
     expect(text).toContain("Exitosa");
     expect(text).toContain("admin@glowbook.test");
     expect(text).toContain("salon-1");

@@ -101,7 +101,7 @@ export function AppointmentServiceRow({
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Select
-          label="Categoria"
+          label="Categoría"
           value={item.row.categoryId}
           onChange={(event) =>
             updateRow(item.row.key, {
@@ -111,7 +111,7 @@ export function AppointmentServiceRow({
             })
           }
         >
-          <option value="" disabled hidden>Selecciona categoria...</option>
+          <option value="" disabled hidden>Selecciona categoría...</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -132,7 +132,7 @@ export function AppointmentServiceRow({
         >
           <option value="" disabled hidden>
             {!item.row.categoryId
-              ? "Elige categoria primero"
+              ? "Elige categoría primero"
               : filteredServices.length
                 ? "Selecciona servicio..."
                 : "Sin servicios"}

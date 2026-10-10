@@ -52,7 +52,7 @@ describe("ServicesCategorySection", () => {
   it("indica que la categoría no tiene servicios cuando está vacía", () => {
     mounted = renderSection({ category: buildCategory({ services: [] }) });
 
-    expect(mounted.container.textContent).toContain("Sin servicios en esta categoria.");
+    expect(mounted.container.textContent).toContain("Sin servicios en esta categoría.");
     expect(mounted.container.querySelector("section .group")).toBeNull();
   });
 
@@ -69,7 +69,7 @@ describe("ServicesCategorySection", () => {
   it("muestra Precio variable cuando la categoría usa precio variable", () => {
     mounted = renderSection({ category: buildCategory({ pricing_mode: "variable" }) });
 
-    expect(buttonWithText(mounted.container, "Precio variable").title).toBe("Cambiar modo de precio de la categoria");
+    expect(buttonWithText(mounted.container, "Precio variable").title).toBe("Cambiar modo de precio de la categoría");
   });
 
   it("deshabilita el cambio de modo solo en la categoría que se está actualizando", () => {
@@ -113,7 +113,7 @@ describe("ServicesCategorySection", () => {
     const category = buildCategory({ name: "Uñas" });
     mounted = renderSection({ category }, { onArchiveCategory });
 
-    click(buttonWithAriaLabel(mounted.container, "Archivar categoria Uñas"));
+    click(buttonWithAriaLabel(mounted.container, "Archivar categoría Uñas"));
 
     expect(onArchiveCategory).toHaveBeenCalledWith(category);
   });
@@ -125,7 +125,7 @@ describe("ServicesCategorySection", () => {
       archiveCategoryId: "cat-1",
     });
 
-    expect(buttonWithAriaLabel(mounted.container, "Archivar categoria Uñas").disabled).toBe(
+    expect(buttonWithAriaLabel(mounted.container, "Archivar categoría Uñas").disabled).toBe(
       true
     );
   });

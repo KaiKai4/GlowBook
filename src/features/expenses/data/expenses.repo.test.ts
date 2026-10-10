@@ -31,7 +31,7 @@ describe("expenses.repo", () => {
   });
 
   describe("insertExpense", () => {
-    it("guarda el gasto del salon normalizando textos vacios a null", async () => {
+    it("guarda el gasto del salón normalizando textos vacios a null", async () => {
       const db = useDb({ expenses: { data: null, error: null } });
 
       await insertExpense(SALON_ID, {
@@ -64,7 +64,7 @@ describe("expenses.repo", () => {
       });
     });
 
-    it("guarda el concepto como categoria libre solo cuando la categoria es 'other'", async () => {
+    it("guarda el concepto como categoría libre solo cuando la categoría es 'other'", async () => {
       const db = useDb({ expenses: { data: null, error: null } });
 
       await insertExpense(SALON_ID, {
@@ -89,7 +89,7 @@ describe("expenses.repo", () => {
       });
     });
 
-    it("no guarda categoria libre si 'other' llega sin texto", async () => {
+    it("no guarda categoría libre si 'other' llega sin texto", async () => {
       const db = useDb({ expenses: { data: null, error: null } });
 
       await insertExpense(
@@ -110,7 +110,7 @@ describe("expenses.repo", () => {
       ).rejects.toBe(dbError);
     });
 
-    it("un reenvio con la misma clave se trata como exito si la fila ya existe en el salon", async () => {
+    it("un reenvio con la misma clave se trata como éxito si la fila ya existe en el salón", async () => {
       const db = useDb({
         expenses: [
           { data: null, error: { message: "duplicate key", code: "23505" } },
@@ -135,7 +135,7 @@ describe("expenses.repo", () => {
       });
     });
 
-    it("rechaza la clave repetida si la fila pertenece a otro salon", async () => {
+    it("rechaza la clave repetida si la fila pertenece a otro salón", async () => {
       const conflict = { message: "duplicate key", code: "23505" };
       useDb({
         expenses: [{ data: null, error: conflict }, { data: null, error: null }],
@@ -148,7 +148,7 @@ describe("expenses.repo", () => {
   });
 
   describe("findExpenses", () => {
-    it("lista los gastos del salon por fecha descendente con limite por defecto de 40", async () => {
+    it("lista los gastos del salón por fecha descendente con límite por defecto de 40", async () => {
       const db = useDb({ expenses: { data: [{ id: "e1" }], error: null } });
 
       expect(await findExpenses(SALON_ID)).toEqual([{ id: "e1" }]);
@@ -161,7 +161,7 @@ describe("expenses.repo", () => {
       ]);
     });
 
-    it("respeta el limite indicado y devuelve lista vacia sin datos", async () => {
+    it("respeta el límite indicado y devuelve lista vacia sin datos", async () => {
       const db = useDb({ expenses: { data: null, error: null } });
 
       expect(await findExpenses(SALON_ID, 5)).toEqual([]);

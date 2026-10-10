@@ -1,4 +1,4 @@
-// Punto publico del modulo access. Otros modulos y las rutas importan solo desde aqui.
+// Punto publico del modulo access. Otros módulos y las rutas importan solo desde aquí.
 // Indice de servidor: incluye casos de uso que consultan la base de datos. Los
 // componentes cliente solo deben importar tipos de este indice (import type).
 import "server-only";

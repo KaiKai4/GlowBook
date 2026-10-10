@@ -78,8 +78,8 @@ describe("getPlatformAuditLog filters", () => {
     const view = await getPlatformAuditLog();
 
     expect(view.actions[0]).toEqual({ value: "all", label: "Todas" });
-    expect(view.actions).toContainEqual({ value: "invitation_accepted", label: "Invitacion aceptada" });
-    expect(view.actions).toContainEqual({ value: "delete_salon", label: "Eliminar Salon" });
+    expect(view.actions).toContainEqual({ value: "invitation_accepted", label: "Invitación aceptada" });
+    expect(view.actions).toContainEqual({ value: "delete_salon", label: "Eliminar Salón" });
     expect(view.statuses).toEqual([
       { value: "all", label: "Todos" },
       { value: "succeeded", label: "Correcta" },
@@ -94,7 +94,7 @@ describe("getPlatformAuditLog entries", () => {
 
     const entry = firstOf((await getPlatformAuditLog()).entries);
 
-    expect(entry.actionLabel).toBe("Actualizar estado de Salon");
+    expect(entry.actionLabel).toBe("Actualizar estado de Salón");
     expect(entry.statusLabel).toBe("Correcta");
     expect(entry.actorLabel).toBe("Admin aaaaaaaa");
   });
@@ -121,7 +121,7 @@ describe("getPlatformAuditLog entries", () => {
 
     const entry = firstOf((await getPlatformAuditLog()).entries);
 
-    expect(entry.actionLabel).toBe("Invitar Salon");
+    expect(entry.actionLabel).toBe("Invitar Salón");
     expect(entry.metadata).toEqual([{ key: "message", value: "Texto antiguo" }]);
   });
 
@@ -133,14 +133,14 @@ describe("getPlatformAuditLog entries", () => {
     expect(entry.actionLabel).toBe("Acción no reconocida");
   });
 
-  it("describes the target as the salon when one is set, even if a resource is also set", async () => {
+  it("describes the target as the salón when one is set, even if a resource is also set", async () => {
     mockedFind.mockResolvedValue([
       row({ target_salon_id: SALON_ID, target_resource_type: "salon_invitation", target_resource_id: RESOURCE_ID }),
     ]);
 
     const entry = firstOf((await getPlatformAuditLog()).entries);
 
-    expect(entry.targetLabel).toBe("Salon 11111111");
+    expect(entry.targetLabel).toBe("Salón 11111111");
   });
 
   it("describes a resource target by its type and short id", async () => {

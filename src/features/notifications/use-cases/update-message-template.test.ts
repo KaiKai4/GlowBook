@@ -29,7 +29,7 @@ describe("update message template", () => {
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedUpsertMessageTemplate).toHaveBeenCalledWith("salon-1", {
       event: "appointment_cancelled",
-      name: "Cancelacion WhatsApp",
+      name: "Cancelación WhatsApp",
       body_text: "Hola {{customer_name}}, tu cita fue cancelada.",
       is_active: false,
     });

@@ -38,13 +38,13 @@ describe("permisos y módulos del salón", () => {
     }
   });
 
-  it("asocia recordatorios a los modulos recordatorios y plantillas", () => {
+  it("asocia recordatorios a los módulos recordatorios y plantillas", () => {
     expect(hasPermission(ownerWith(["plantillas"]), PERMISSIONS.REMINDERS_SEND)).toBe(false);
     expect(hasPermission(ownerWith(["recordatorios"]), PERMISSIONS.REMINDERS_SEND)).toBe(false);
     expect(hasPermission(ownerWith(["reports"]), PERMISSIONS.REMINDERS_SEND)).toBe(true);
   });
 
-  it("coincide con el catalogo de permisos de la base de datos", () => {
+  it("coincide con el catálogo de permisos de la base de datos", () => {
     const catalogKeys = PERMISSION_CATALOG.map((permission) => permission.key).sort();
     expect([...ALL_PERMISSIONS].sort()).toEqual(catalogKeys);
   });

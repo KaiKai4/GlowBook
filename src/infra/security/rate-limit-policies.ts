@@ -3,7 +3,7 @@
 // Sin imports: rate-limit.ts depende de este modulo, no al reves.
 
 export interface RateLimitPolicy {
-  /** Maximo de intentos dentro de la ventana. */
+  /** Máximo de intentos dentro de la ventana. */
   readonly max: number;
   /** Duracion de la ventana en milisegundos. */
   readonly windowMs: number;

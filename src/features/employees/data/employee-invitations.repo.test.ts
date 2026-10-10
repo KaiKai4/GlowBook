@@ -161,7 +161,7 @@ describe("employee invitations repo", () => {
         expires_at: "2026-10-16T00:00:00.000Z",
         accepted_at: null,
         employees: { first_name: "Ana", last_name: "Lopez" },
-        salons: { name: "Salon Sol" },
+        salons: { name: "Salón Sol" },
       };
       useTables({ employee_invitations: [{ data: invitation }] });
 

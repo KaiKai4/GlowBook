@@ -3,7 +3,7 @@ import { createEmployeeInviteForExistingEmployee } from "./employee-invitation-i
 import { resetEmployeeAccess } from "./employee-revocation";
 import { err, type Result } from "@/infra/result";
 
-const ROLES_DISABLED_MESSAGE = "Los roles estan deshabilitados para este salon.";
+const ROLES_DISABLED_MESSAGE = "Los roles están deshabilitados para este salón.";
 
 /** Comprobacion comun: las operaciones de rol solo existen si el plan incluye roles. */
 function requireRolesEnabled(rolesEnabled: boolean): Result<void> {
@@ -16,7 +16,7 @@ export interface RoleGate {
   rolesEnabled: boolean;
 }
 
-export async function changeEmployeeRoleFlow(
+export async function changeEmployeeRoleWithGate(
   gate: RoleGate,
   input: { profileId: string; roleId: string | null }
 ): Promise<Result<void>> {
@@ -26,7 +26,7 @@ export async function changeEmployeeRoleFlow(
   return changeEmployeeRole(gate.salonId, input.profileId, input.roleId);
 }
 
-export async function resetEmployeeAccessFlow(
+export async function resetEmployeeAccessWithGate(
   gate: RoleGate,
   input: { employeeId: string; roleId: string | null }
 ): Promise<Result<{ token: string; expiresAt: string }>> {
@@ -41,10 +41,10 @@ export async function resetEmployeeAccessFlow(
 }
 
 /**
- * Invitacion de acceso para un colaborador existente. Un acceso propio nuevo
+ * Invitación de acceso para un colaborador existente. Un acceso propio nuevo
  * consume el cupo de usuarios con login del plan (chequeo inyectado).
  */
-export async function generateEmployeeInviteFlow(
+export async function generateEmployeeInvite(
   gate: RoleGate & { checkLoginLimit: () => Promise<Result<void>> },
   input: { employeeId: string; roleId: string | null }
 ): Promise<Result<{ token: string; expiresAt: string }>> {

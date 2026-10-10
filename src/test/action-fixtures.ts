@@ -43,7 +43,7 @@ export function formDataOf(values: Record<string, string>): FormData {
 
 /**
  * Contexto minimo que el composition root entrega a los casos de uso, derivado del
- * perfil de prueba (mismos permisos y modulos que evaluaria el composition root).
+ * perfil de prueba (mismos permisos y módulos que evaluaria el composition root).
  */
 export function contextFromProfile(profile: ProfileWithRole): ActionContext {
   return {

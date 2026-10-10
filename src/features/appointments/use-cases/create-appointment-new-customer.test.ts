@@ -3,7 +3,7 @@ import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import type { CreateAppointmentInput } from "@/features/appointments/schemas";
 import { err, ok } from "@/infra/result";
 import { createAppointment } from "./create-appointment";
-import { createAppointmentGuarded } from "./create-appointment-checks";
+import { createAppointmentWithPlanChecks } from "./create-appointment-checks";
 
 vi.mock("@/features/billing", () => ({
   checkPlanLimit: vi.fn(),
@@ -18,7 +18,7 @@ const NEW_CUSTOMER = { first_name: "Luis", last_name: "Soto", phone: "+507611122
 const input = { idempotency_key: KEY, new_customer: NEW_CUSTOMER } as CreateAppointmentInput;
 const context = { salonId: SALON_ID, userId: USER_ID };
 
-describe("createAppointmentGuarded con cliente nuevo", () => {
+describe("createAppointmentWithPlanChecks con cliente nuevo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
@@ -27,7 +27,7 @@ describe("createAppointmentGuarded con cliente nuevo", () => {
   });
 
   it("no comprueba el cupo de clientes activos: el cliente temporal no lo consume", async () => {
-    await createAppointmentGuarded(input, context);
+    await createAppointmentWithPlanChecks(input, context);
 
     expect(checkPlanModuleAccess).not.toHaveBeenCalledWith({ salonId: SALON_ID, moduleKey: "customers" });
     expect(checkPlanLimit).not.toHaveBeenCalledWith({ salonId: SALON_ID, metricKey: "customers.active" });
@@ -38,12 +38,12 @@ describe("createAppointmentGuarded con cliente nuevo", () => {
       metricKey === "customers.active" ? err("Límite de clientes alcanzado.") : ok(undefined)
     );
 
-    expect(await createAppointmentGuarded(input, context)).toEqual(ok("appointment-id"));
+    expect(await createAppointmentWithPlanChecks(input, context)).toEqual(ok("appointment-id"));
     expect(createAppointment).toHaveBeenCalledTimes(1);
   });
 
   it("hace una sola llamada al caso de uso de cita con el cliente nuevo", async () => {
-    const result = await createAppointmentGuarded(input, context);
+    const result = await createAppointmentWithPlanChecks(input, context);
 
     expect(createAppointment).toHaveBeenCalledTimes(1);
     expect(createAppointment).toHaveBeenCalledWith(input, { salonId: SALON_ID, userId: USER_ID, idempotencyKey: KEY });

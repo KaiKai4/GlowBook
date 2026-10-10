@@ -16,7 +16,7 @@ describe("validateServiceCategory", () => {
     vi.clearAllMocks();
   });
 
-  it("acepta una categoria activa del salon", async () => {
+  it("acepta una categoría activa del salón", async () => {
     mockedFind.mockResolvedValue({ id: "cat-1" });
 
     await expect(validateServiceCategory("salon-1", "cat-1")).resolves.toBeUndefined();
@@ -25,7 +25,7 @@ describe("validateServiceCategory", () => {
 
   it.each([
     ["inexistente, ajena o inactiva", null],
-  ])("rechaza una categoria %s con PublicError de mensaje fijo", async (_label, row) => {
+  ])("rechaza una categoría %s con PublicError de mensaje fijo", async (_label, row) => {
     mockedFind.mockResolvedValue(row);
 
     const error = await validateServiceCategory("salon-1", "cat-x").catch((e: unknown) => e);

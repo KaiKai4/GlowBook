@@ -4,7 +4,7 @@ import { isDormantSalon } from "./salon-health";
 
 // Propiedades de la regla de salon dormido: el umbral es estricto (mas de N
 // dias), la ultima cita manda sobre la creacion y las fechas invalidas nunca
-// marcan un salon como dormido.
+// marcan un salón como dormido.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date("2026-06-30T12:00:00.000Z");
@@ -14,7 +14,7 @@ function daysAgo(days: number): string {
 }
 
 describe("isDormantSalon properties", () => {
-  it("never marks an inactive salon as dormant, whatever its dates", () => {
+  it("never marks an inactive salón as dormant, whatever its dates", () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 0, max: 2000 }),
@@ -83,7 +83,7 @@ describe("isDormantSalon properties", () => {
     );
   });
 
-  it("never marks a salon as dormant when its reference date cannot be parsed", () => {
+  it("never marks a salón as dormant when its reference date cannot be parsed", () => {
     fc.assert(
       fc.property(fc.string(), (garbage) => {
         fc.pre(Number.isNaN(new Date(garbage).getTime()));

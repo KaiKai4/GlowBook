@@ -123,7 +123,7 @@ describe("saveCommercialPlanConfig", () => {
   });
 
   it("maps repo errors to the bare prefix, without the raw cause", async () => {
-    saveCommercialPlanMock.mockRejectedValueOnce(new Error("codigo duplicado"));
+    saveCommercialPlanMock.mockRejectedValueOnce(new Error("código duplicado"));
 
     const result = await saveCommercialPlanConfig({ name: "Pro", monthlyPrice: 1 });
 

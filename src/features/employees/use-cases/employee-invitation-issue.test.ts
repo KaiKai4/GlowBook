@@ -99,7 +99,7 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
       expect(JSON.stringify(mockedInsertInvitation.mock.calls)).not.toContain(result.value.token);
     });
 
-    it("invalida primero las invitaciones pendientes del colaborador en el salón", async () => {
+    it("inválida primero las invitaciones pendientes del colaborador en el salón", async () => {
       await replacePendingEmployeeInvitation({
         employeeId: EMPLOYEE_ID,
         salonId: SALON_ID,
@@ -139,7 +139,7 @@ describe("invitaciones de acceso (emision y limpieza)", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "El rol seleccionado no es valido para este salon.",
+        error: "El rol seleccionado no es válido para este salón.",
       });
       expect(mockedFindAssignableRole).toHaveBeenCalledWith(SALON_ID, "role-ajeno");
       expect(mockedDeletePending).not.toHaveBeenCalled();

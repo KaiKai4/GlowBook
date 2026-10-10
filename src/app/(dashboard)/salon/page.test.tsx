@@ -55,7 +55,7 @@ describe("SalonSettingsPage", () => {
 
     mounted = mountComponent(await SalonSettingsPage());
 
-    expect(mounted.container.textContent).toContain("No tienes permiso para configurar el salon.");
+    expect(mounted.container.textContent).toContain("No tienes permiso para configurar el salón.");
     expect(getSalonSettings).not.toHaveBeenCalled();
   });
 

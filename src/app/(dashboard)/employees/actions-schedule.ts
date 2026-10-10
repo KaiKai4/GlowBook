@@ -7,7 +7,7 @@ import {
   removeEmployeeWorkSchedule,
 } from "@/features/employees";
 import { removeEmployeeScheduleException } from "@/features/employees";
-import { addScheduleExceptionFlow } from "@/features/employees";
+import { addScheduleException } from "@/features/employees";
 import type { Result } from "@/infra/result";
 import { checkIds, EMPLOYEE_GUARD } from "./employee-action-guard";
 
@@ -40,7 +40,7 @@ const deleteWorkScheduleFlowAction = defineAction<ScheduleDeleteRaw, ScheduleDel
 const addExceptionFlowAction = defineAction<ExceptionAddRaw, ExceptionAddRaw, void>({
   ...EMPLOYEE_GUARD,
   parse: (raw) => checkIds(raw, [raw.employeeId]),
-  run: (raw, session) => addScheduleExceptionFlow({ salonId: session.salonId }, raw),
+  run: (raw, session) => addScheduleException({ salonId: session.salonId }, raw),
   revalidate: (_out, raw) => [`/employees/${raw.employeeId}`, "/appointments"],
 });
 

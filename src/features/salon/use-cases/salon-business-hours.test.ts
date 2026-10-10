@@ -13,7 +13,7 @@ describe("getSalonBusinessHours", () => {
     vi.clearAllMocks();
   });
 
-  it("proyecta solo los campos de horario del salon consultado", async () => {
+  it("proyecta solo los campos de horario del salón consultado", async () => {
     mockedFindBusinessHours.mockResolvedValue([
       { day_of_week: 0, is_open: false, open_time: null, close_time: null },
       { day_of_week: 1, is_open: true, open_time: "09:00", close_time: "18:00" },
@@ -26,7 +26,7 @@ describe("getSalonBusinessHours", () => {
     expect(mockedFindBusinessHours).toHaveBeenCalledWith("salon-1");
   });
 
-  it("devuelve lista vacia cuando el salon no tiene horarios configurados", async () => {
+  it("devuelve lista vacia cuando el salón no tiene horarios configurados", async () => {
     mockedFindBusinessHours.mockResolvedValue([]);
 
     expect(await getSalonBusinessHours("salon-1")).toEqual([]);

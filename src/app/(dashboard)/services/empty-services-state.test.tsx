@@ -15,14 +15,14 @@ describe("EmptyServicesState", () => {
   it("invita a crear la primera categoría", () => {
     mounted = mountComponent(<EmptyServicesState onCreateCategory={vi.fn()} />);
 
-    expect(mounted.container.textContent).toContain("Crea tu primera categoria para empezar.");
+    expect(mounted.container.textContent).toContain("Crea tu primera categoría para empezar.");
   });
 
-  it("invoca onCreateCategory al pulsar Nueva categoria", () => {
+  it("invoca onCreateCategory al pulsar Nueva categoría", () => {
     const onCreateCategory = vi.fn();
     mounted = mountComponent(<EmptyServicesState onCreateCategory={onCreateCategory} />);
 
-    click(buttonWithText(mounted.container, "Nueva categoria"));
+    click(buttonWithText(mounted.container, "Nueva categoría"));
 
     expect(onCreateCategory).toHaveBeenCalledTimes(1);
   });

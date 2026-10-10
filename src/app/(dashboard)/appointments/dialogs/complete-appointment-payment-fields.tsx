@@ -23,7 +23,7 @@ export function CompleteAppointmentPaymentFields({
   return (
     <div className="grid gap-4">
       <Select
-        label="Metodo de pago"
+        label="Método de pago"
         value={payment}
         onChange={(event) => onPaymentChange(event.target.value as PaymentMethod)}
       >

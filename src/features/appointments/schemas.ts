@@ -5,8 +5,8 @@ import { normalizePaymentMethod } from "@/features/payments";
 const PaymentMethodSchema = z
   .string()
   .trim()
-  .min(1, "El metodo de pago es obligatorio.")
-  .max(64, "El metodo de pago no puede superar 64 caracteres.")
+  .min(1, "El método de pago es obligatorio.")
+  .max(64, "El método de pago no puede superar 64 caracteres.")
   .transform(normalizePaymentMethod);
 
 const AssignmentSchema = z.object({

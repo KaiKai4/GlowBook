@@ -11,12 +11,12 @@ export function SalonPaymentsCard({ payments }: { payments: PaymentMethodsState 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CreditCard className="h-4 w-4 text-brand-500" />
-          Metodos de pago
+          Métodos de pago
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-fg-subtle">
-          Escribe cada metodo que acepta tu salon. Por ejemplo: Zinli, efectivo, tarjeta o transferencia.
+          Escribe cada metodo que acepta tu salón. Por ejemplo: Zinli, efectivo, tarjeta o transferencia.
         </p>
 
         <form
@@ -29,7 +29,7 @@ export function SalonPaymentsCard({ payments }: { payments: PaymentMethodsState 
           <input
             value={payments.newPaymentMethod}
             onChange={(event) => payments.changeNewPaymentMethod(event.target.value)}
-            placeholder="Escribe un metodo, ej. Zinli"
+            placeholder="Escribe un método, ej. Zinli"
             maxLength={64}
             className="h-10 flex-1 rounded-xl border border-border bg-surface px-3 text-sm text-fg-secondary outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-brand-500"
           />
@@ -64,11 +64,11 @@ export function SalonPaymentsCard({ payments }: { payments: PaymentMethodsState 
 
         <div className="flex items-center gap-3">
           <Button variant="primary" onClick={payments.savePaymentMethods} loading={payments.saving}>
-            Guardar metodos
+            Guardar métodos
           </Button>
           {payments.saved && (
             <span className="flex items-center gap-1 text-sm text-success-fg">
-              <Check className="h-4 w-4" /> Metodos actualizados
+              <Check className="h-4 w-4" /> Métodos actualizados
             </span>
           )}
         </div>

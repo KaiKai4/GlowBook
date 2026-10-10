@@ -18,10 +18,10 @@ export async function createServiceCategory(
     return { ok: true, value: category.id };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      return { ok: false, error: "Ya existe una categoria con ese nombre." };
+      return { ok: false, error: "Ya existe una categoría con ese nombre." };
     }
 
     captureError(error, { module: "services", action: "create-category" });
-    return { ok: false, error: "Error al crear la categoria." };
+    return { ok: false, error: "Error al crear la categoría." };
   }
 }

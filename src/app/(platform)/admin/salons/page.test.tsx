@@ -131,7 +131,7 @@ describe("PlatformSalonsPage", () => {
 
     mounted = await render();
 
-    expect(mounted.container.textContent).toContain("No hay salones registrados. Invita un salon desde Invitaciones para empezar.");
+    expect(mounted.container.textContent).toContain("No hay salones registrados. Invita un salón desde Invitaciones para empezar.");
     expect(getSalonSubscriptionDetail).not.toHaveBeenCalled();
     expect(mounted.container.textContent).toContain("0 registrados");
   });

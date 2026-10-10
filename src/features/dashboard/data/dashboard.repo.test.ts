@@ -49,7 +49,7 @@ describe("dashboard.repo", () => {
       ]);
     });
 
-    it("respeta un limite explicito y devuelve lista vacia sin datos", async () => {
+    it("respeta un límite explicito y devuelve lista vacia sin datos", async () => {
       const db = useDb({ appointments: { data: null, error: null } });
 
       expect(await findPendingConfirmationRows(SALON_ID, "2026-06-12T00:00:00.000Z", 2)).toEqual([]);

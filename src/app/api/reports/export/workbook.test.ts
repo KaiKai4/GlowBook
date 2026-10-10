@@ -55,7 +55,7 @@ describe("report workbook", () => {
   });
 
   it("does not crash when every optional module is disabled", async () => {
-    // Regresion: getCell sobre una columna omitida por modulos deshabilitados
+    // Regresion: getCell sobre una columna omitida por módulos deshabilitados
     // lanzaba "Out of bounds. Excel supports columns from 1 to 16384".
     const workbook = buildReportWorkbook(
       exportData({ inventory: false, retail: false, expenses: false })

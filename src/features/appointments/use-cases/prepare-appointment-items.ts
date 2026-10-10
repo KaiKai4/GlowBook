@@ -32,7 +32,7 @@ export interface PreparedAppointmentItems {
 
 export interface PrepareAppointmentItemsInput {
   salonId: string;
-  /** Ausente con cliente nuevo: todavia no existe y la RPC lo da de alta. */
+  /** Ausente con cliente nuevo: todavía no existe y la RPC lo da de alta. */
   customerId?: string;
   assignments: AppointmentCreationAssignmentRequest[];
   /** Inicio de la cita en ISO. */

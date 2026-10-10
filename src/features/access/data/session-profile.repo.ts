@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { ProfileWithRole } from "@/types/app.types";
 
 /**
- * Perfil del usuario con su rol y permisos (sin modulos efectivos del plan).
+ * Perfil del usuario con su rol y permisos (sin módulos efectivos del plan).
  * Devuelve null solo si no hay filas; un error de BD se lanza tal cual.
  */
 export async function findSessionProfile(userId: string): Promise<ProfileWithRole | null> {
@@ -19,7 +19,7 @@ export async function findSessionProfile(userId: string): Promise<ProfileWithRol
   return data;
 }
 
-/** Estado del salon (activo o no) o null si no existe. Un error de BD se lanza. */
+/** Estado del salón (activo o no) o null si no existe. Un error de BD se lanza. */
 export async function findSalonAccessState(
   salonId: string
 ): Promise<{ id: string; is_active: boolean } | null> {

@@ -45,7 +45,7 @@ describe("proxy: identificador de request", () => {
     expect(request.headers.get("x-request-id")).toBe(responseId);
   });
 
-  it("reutiliza el x-request-id entrante si es un UUID valido", async () => {
+  it("reutiliza el x-request-id entrante si es un UUID válido", async () => {
     const response = await proxy(requestFor("/dashboard", { "x-request-id": INCOMING_ID }));
 
     expect(response.headers.get("x-request-id")).toBe(INCOMING_ID);
@@ -88,8 +88,8 @@ describe("proxy: Content-Security-Policy con nonce por request", () => {
   });
 });
 
-describe("proxy: sesion y decision de acceso", () => {
-  it("sin cookie de sesion no refresca la sesion y pasa hasVerifiedSession indefinido", async () => {
+describe("proxy: sesión y decision de acceso", () => {
+  it("sin cookie de sesión no refresca la sesión y pasa hasVerifiedSession indefinido", async () => {
     vi.mocked(hasSupabaseSessionCookie).mockReturnValue(false);
 
     await proxy(requestFor("/dashboard"));
@@ -100,7 +100,7 @@ describe("proxy: sesion y decision de acceso", () => {
     );
   });
 
-  it("con cookie de sesion refresca la sesion y usa su resultado para la decision", async () => {
+  it("con cookie de sesión refresca la sesión y usa su resultado para la decision", async () => {
     vi.mocked(hasSupabaseSessionCookie).mockReturnValue(true);
     const refreshed = NextResponse.next();
     refreshed.headers.set("x-refreshed", "1");
@@ -115,7 +115,7 @@ describe("proxy: sesion y decision de acceso", () => {
     expect(response.headers.get("x-refreshed")).toBe("1");
   });
 
-  it("una redireccion conserva cookies y cabeceras de la sesion refrescada, sin copiar set-cookie como cabecera", async () => {
+  it("una redireccion conserva cookies y cabeceras de la sesión refrescada, sin copiar set-cookie como cabecera", async () => {
     vi.mocked(hasSupabaseSessionCookie).mockReturnValue(true);
     const refreshed = NextResponse.next();
     refreshed.cookies.set("sb-access", "token-nuevo", { path: "/" });
@@ -133,7 +133,7 @@ describe("proxy: sesion y decision de acceso", () => {
     expect(response.headers.get("x-request-id")).toMatch(UUID_V4);
   });
 
-  it("una redireccion sin sesion aplica igualmente la CSP y el identificador de request", async () => {
+  it("una redireccion sin sesión aplica igualmente la CSP y el identificador de request", async () => {
     vi.mocked(getOptimisticAuthDecision).mockReturnValue({ type: "redirect", location: "/" });
 
     const response = await proxy(requestFor("/login", { "x-request-id": INCOMING_ID }));

@@ -55,19 +55,19 @@ describe("getReminderQueue (ramas)", () => {
     mockedFindLatest.mockResolvedValue(new Map());
   });
 
-  it("usa la zona horaria de Panama y el nombre de respaldo cuando el salon no existe", async () => {
+  it("usa la zona horaria de Panama y el nombre de respaldo cuando el salón no existe", async () => {
     mockedGetRemindable.mockResolvedValue([]);
 
     const result = await getReminderQueue({ salonId: "salon-1", now: new Date("2026-06-12T12:00:00.000Z") });
 
-    expect(result).toMatchObject({ timezone: "America/Panama", salonName: "tu salon", appointments: [] });
+    expect(result).toMatchObject({ timezone: "America/Panama", salonName: "tu salón", appointments: [] });
     expect(mockedGetRemindable).toHaveBeenCalledWith("salon-1", {
       startDate: "2026-06-12T05:00:00.000Z",
       endDate: "2026-06-20T04:59:59.999Z",
     });
   });
 
-  it("amplia la ventana segun los dias indicados", async () => {
+  it("amplia la ventana segun los días indicados", async () => {
     mockedGetRemindable.mockResolvedValue([]);
 
     await getReminderQueue({ salonId: "salon-1", daysAhead: 2, now: new Date("2026-06-12T12:00:00.000Z") });
@@ -78,7 +78,7 @@ describe("getReminderQueue (ramas)", () => {
     });
   });
 
-  it("adjunta el ultimo recordatorio por cita y deja nulos los que no tienen envio", async () => {
+  it("adjunta el último recordatorio por cita y deja nulos los que no tienen envio", async () => {
     mockedGetRemindable.mockResolvedValue([
       remindable({ id: "con-envio" }),
       remindable({ id: "sin-envio" }),
@@ -125,7 +125,7 @@ describe("getReminderQueue (ramas)", () => {
     ]);
   });
 
-  it("expone la plantilla activa y los colaboradores del salon", async () => {
+  it("expone la plantilla activa y los colaboradores del salón", async () => {
     mockedGetRemindable.mockResolvedValue([]);
     mockedGetEmployees.mockResolvedValue([{ id: "e1", name: "Ana Vega" }]);
 

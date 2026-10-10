@@ -119,7 +119,7 @@ describe("expenses use-cases (ramas)", () => {
       expect(view.monthTotal).toBe(15.25);
     });
 
-    it("ordena el historial por fecha descendente y, en empate, por fecha de creacion", async () => {
+    it("ordena el historial por fecha descendente y, en empate, por fecha de creación", async () => {
       mockedFindExpenses.mockResolvedValue([
         expenseRow({ id: "viejo", expense_date: "2026-06-01", created_at: "2026-06-01T08:00:00.000Z" }),
         expenseRow({ id: "mismo-dia-antes", expense_date: "2026-06-09", created_at: "2026-06-09T08:00:00.000Z" }),
@@ -188,7 +188,7 @@ describe("expenses use-cases (ramas)", () => {
       expect(view.topCategory).toMatchObject({ category: "marketing" });
     });
 
-    it("no tiene categoria principal cuando el mes no tiene gastos", async () => {
+    it("no tiene categoría principal cuando el mes no tiene gastos", async () => {
       mockedFindExpenses.mockResolvedValue([expenseRow({ expense_date: "2026-01-10" })]);
 
       const view = await getExpensesPage(SALON_ID);
@@ -232,7 +232,7 @@ describe("expenses use-cases (ramas)", () => {
       idempotency_key: KEY,
     };
 
-    it("registra el gasto del salon con la clave y confirma con mensaje de exito", async () => {
+    it("registra el gasto del salón con la clave y confirma con mensaje de éxito", async () => {
       mockedInsertExpense.mockResolvedValue(undefined);
 
       expect(await createExpense(SALON_ID, input, KEY)).toEqual({ ok: true, value: "Gasto registrado." });
@@ -240,7 +240,7 @@ describe("expenses use-cases (ramas)", () => {
     });
 
     it("devuelve error legible cuando la insercion lanza un Error", async () => {
-      mockedInsertExpense.mockRejectedValue(new Error("sin conexion"));
+      mockedInsertExpense.mockRejectedValue(new Error("sin conexión"));
 
       const result = await createExpense(SALON_ID, input, KEY);
 
@@ -271,7 +271,7 @@ describe("expenses use-cases (ramas)", () => {
       idempotency_key: KEY,
     };
 
-    it("registra la compra en bodega con la clave y confirma con mensaje de exito", async () => {
+    it("registra la compra en bodega con la clave y confirma con mensaje de éxito", async () => {
       mockedRecordPurchase.mockResolvedValue({ ok: true, value: undefined });
 
       expect(await createInventoryPurchaseExpense(SALON_ID, purchase, KEY)).toEqual({

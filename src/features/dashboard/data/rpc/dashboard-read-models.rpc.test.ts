@@ -31,7 +31,7 @@ describe("dashboard read-model rpc adapters", () => {
     rpc.mockReset();
   });
 
-  it("invoca report_dashboard_metrics con zona horaria y fecha de referencia y valida el resultado", async () => {
+  it("invoca report_dashboard_metrics con zona horaria y fecha de referencia y válida el resultado", async () => {
     rpc.mockResolvedValue({ data: VALID_METRICS, error: null });
 
     const metrics = await fetchDashboardMetrics(INPUT);
@@ -43,7 +43,7 @@ describe("dashboard read-model rpc adapters", () => {
     expect(metrics).toMatchObject({ appointmentRevenue: 35.5, lowStockProducts: 1, completedThisMonth: 2 });
   });
 
-  it("rechaza un resultado de metricas con campos que no son numeros", async () => {
+  it("rechaza un resultado de metricas con campos que no son números", async () => {
     rpc.mockResolvedValue({ data: { ...VALID_METRICS, totalCustomers: "12" }, error: null });
 
     await expect(fetchDashboardMetrics(INPUT)).rejects.toThrow();
@@ -56,7 +56,7 @@ describe("dashboard read-model rpc adapters", () => {
     await expect(fetchDashboardMetrics(INPUT)).rejects.toBe(dbError);
   });
 
-  it("valida la serie mensual y rechaza tendencias fuera del contrato", async () => {
+  it("válida la serie mensual y rechaza tendencias fuera del contrato", async () => {
     rpc.mockResolvedValue({
       data: [{ monthKey: "2030-01", total: 2, delta: 1, trend: "up" }],
       error: null,
@@ -76,7 +76,7 @@ describe("dashboard read-model rpc adapters", () => {
     await expect(fetchMonthlyAppointmentSeries(INPUT)).rejects.toThrow();
   });
 
-  it("valida los servicios principales y acepta lista vacia", async () => {
+  it("válida los servicios principales y acepta lista vacia", async () => {
     rpc.mockResolvedValue({ data: [{ name: "Corte", count: 2, pct: 100 }], error: null });
     await expect(fetchTopServices(INPUT)).resolves.toEqual([{ name: "Corte", count: 2, pct: 100 }]);
     expect(rpc).toHaveBeenCalledWith("report_dashboard_top_services", {

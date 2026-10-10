@@ -26,8 +26,8 @@ export default async function PlatformPlansPage({
         title="Planes y extras"
         description={
           view === "plans"
-            ? "Crea planes comerciales, activa modulos y define límites maximos por plan."
-            : "Define el catalogo de extras: modulos sueltos y bloques de límite para vender o regalar."
+            ? "Crea planes comerciales, activa módulos y define límites maximos por plan."
+            : "Define el catálogo de extras: módulos sueltos y bloques de límite para vender o regalar."
         }
         actions={
           <>

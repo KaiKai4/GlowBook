@@ -54,7 +54,7 @@ export default async function DashboardLayout({
   }
 
   // Suspension automatica por impago: vencido el periodo pagado (o el trial)
-  // y agotada la ventana de gracia, el salon queda bloqueado hasta registrar
+  // y agotada la ventana de gracia, el salón queda bloqueado hasta registrar
   // el pago. Se evalua al acceder; no requiere ningun job programado.
   if (shell.paymentStanding.state === "suspended") {
     return (

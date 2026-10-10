@@ -34,8 +34,8 @@ describe("services.repo", () => {
     serverClient.current = null;
   });
 
-  describe("lecturas del catalogo", () => {
-    it("findCategoriesWithServices trae categorias activas con sus servicios ordenadas", async () => {
+  describe("lecturas del catálogo", () => {
+    it("findCategoriesWithServices trae categorías activas con sus servicios ordenadas", async () => {
       const db = useDb({ service_categories: { data: [{ id: "cat-1" }], error: null } });
 
       expect(await findCategoriesWithServices(SALON_ID)).toEqual([{ id: "cat-1" }]);
@@ -47,7 +47,7 @@ describe("services.repo", () => {
       ]);
     });
 
-    it("findServicesCatalog incluye empleados asignados a cada servicio y filtra por salon", async () => {
+    it("findServicesCatalog incluye empleados asignados a cada servicio y filtra por salón", async () => {
       const db = useDb({ service_categories: { data: [{ id: "cat-1", services: [] }], error: null } });
 
       expect(await findServicesCatalog(SALON_ID)).toEqual([{ id: "cat-1", services: [] }]);
@@ -70,7 +70,7 @@ describe("services.repo", () => {
   });
 
   describe("categorias", () => {
-    it("createCategory inserta con el salon del contexto y devuelve la fila creada", async () => {
+    it("createCategory inserta con el salón del contexto y devuelve la fila creada", async () => {
       const db = useDb({ service_categories: { data: { id: "cat-1" }, error: null } });
 
       expect(await createCategory(SALON_ID, { name: "Corte", ordering: 1 })).toEqual({ id: "cat-1" });
@@ -81,7 +81,7 @@ describe("services.repo", () => {
       ]);
     });
 
-    it("updateCategory actualiza solo la categoria del salon indicado", async () => {
+    it("updateCategory actualiza solo la categoría del salón indicado", async () => {
       const db = useDb({ service_categories: { data: { id: "cat-1", name: "Color" }, error: null } });
 
       expect(await updateCategory("cat-1", SALON_ID, { name: "Color" })).toEqual({ id: "cat-1", name: "Color" });
@@ -94,7 +94,7 @@ describe("services.repo", () => {
       ]);
     });
 
-    it("archiveCategory desactiva solo categorias activas del salon", async () => {
+    it("archiveCategory desactiva solo categorías activas del salón", async () => {
       const db = useDb({ service_categories: { data: { id: "cat-1" }, error: null } });
 
       expect(await archiveCategory("cat-1", SALON_ID)).toEqual({ id: "cat-1" });
@@ -108,7 +108,7 @@ describe("services.repo", () => {
       ]);
     });
 
-    it("las escrituras de categorias propagan errores", async () => {
+    it("las escrituras de categorías propagan errores", async () => {
       const dbError = { message: "fallo" };
       useDb({ service_categories: { data: null, error: dbError } });
       await expect(createCategory(SALON_ID, { name: "Corte", ordering: 1 })).rejects.toBe(dbError);
@@ -121,8 +121,8 @@ describe("services.repo", () => {
     });
   });
 
-  describe("consulta de categoria activa", () => {
-    it("findActiveServiceCategory consulta solo categorias activas del salon", async () => {
+  describe("consulta de categoría activa", () => {
+    it("findActiveServiceCategory consulta solo categorías activas del salón", async () => {
       const db = useDb({ service_categories: { data: { id: "cat-1" }, error: null } });
 
       expect(await findActiveServiceCategory(SALON_ID, "cat-1")).toEqual({ id: "cat-1" });
@@ -135,7 +135,7 @@ describe("services.repo", () => {
       ]);
     });
 
-    it("findActiveServiceCategory devuelve null si la categoria es ajena o inactiva", async () => {
+    it("findActiveServiceCategory devuelve null si la categoría es ajena o inactiva", async () => {
       useDb({ service_categories: { data: null, error: null } });
 
       expect(await findActiveServiceCategory(SALON_ID, "cat-ajena")).toBeNull();
@@ -143,7 +143,7 @@ describe("services.repo", () => {
   });
 
   describe("servicios", () => {
-    it("createService inserta sin revisar la categoria: la regla vive en validateServiceCategory", async () => {
+    it("createService inserta sin revisar la categoría: la regla vive en validateServiceCategory", async () => {
       const db = useDb({ services: { data: { id: "svc-1" }, error: null } });
 
       expect(
@@ -169,7 +169,7 @@ describe("services.repo", () => {
       ).rejects.toBe(dbError);
     });
 
-    it("updateService sin cambio de categoria actualiza directamente el servicio del salon", async () => {
+    it("updateService sin cambio de categoría actualiza directamente el servicio del salón", async () => {
       const db = useDb({ services: { data: { id: "svc-1" }, error: null } });
 
       expect(await updateService("svc-1", SALON_ID, { price: 15 })).toEqual({ id: "svc-1" });
@@ -183,7 +183,7 @@ describe("services.repo", () => {
       ]);
     });
 
-    it("updateService propaga el error de actualizacion", async () => {
+    it("updateService propaga el error de actualización", async () => {
       const dbError = { message: "fallo" };
       useDb({ services: { data: null, error: dbError } });
 

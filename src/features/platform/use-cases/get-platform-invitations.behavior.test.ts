@@ -9,8 +9,8 @@ import { getPlatformInvitations } from "./get-platform-invitations";
 import { firstOf } from "@/test/platform-feedback-notifications-helpers";
 
 // Bandeja de invitaciones de la plataforma: marca las vencidas respecto al
-// reloj actual, nombra el salon creado a partir de cada aceptacion y solo
-// ofrece planes activos para asignar a una nueva invitacion.
+// reloj actual, nombra el salón creado a partir de cada aceptacion y solo
+// ofrece planes activos para asignar a una nueva invitación.
 
 vi.mock("@/features/platform/data/invitations.repo", () => ({
   findPendingInvitations: vi.fn(),
@@ -169,7 +169,7 @@ describe("getPlatformInvitations pending invitations", () => {
 });
 
 describe("getPlatformInvitations accepted invitations", () => {
-  it("resolves the salon name of each accepted invitation, requesting only the known salon ids", async () => {
+  it("resolves the salón name of each accepted invitation, requesting only the known salón ids", async () => {
     mockedAccepted.mockResolvedValue([
       {
         id: "a-1",
@@ -202,14 +202,14 @@ describe("getPlatformInvitations accepted invitations", () => {
       {
         id: "a-2",
         email: "otro@example.com",
-        salonName: "Salon eliminado",
+        salonName: "Salón eliminado",
         planName: null,
         acceptedAtLabel: "—",
       },
     ]);
   });
 
-  it("shows a deleted salon when the accepted salon no longer exists", async () => {
+  it("shows a deleted salón when the accepted salón no longer exists", async () => {
     mockedAccepted.mockResolvedValue([
       {
         id: "a-1",
@@ -223,7 +223,7 @@ describe("getPlatformInvitations accepted invitations", () => {
 
     const accepted = firstOf((await getPlatformInvitations()).acceptedInvitations);
 
-    expect(accepted.salonName).toBe("Salon eliminado");
+    expect(accepted.salonName).toBe("Salón eliminado");
     expect(accepted.planName).toBeNull();
   });
 });

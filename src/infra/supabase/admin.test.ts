@@ -21,7 +21,7 @@ describe("createSupabaseAdminClient", () => {
     vi.clearAllMocks();
   });
 
-  it("crea el cliente con la URL publica y la clave de servicio, sin persistir sesion", async () => {
+  it("crea el cliente con la URL publica y la clave de servicio, sin persistir sesión", async () => {
     const { createClient, createSupabaseAdminClient } = await loadAdmin();
 
     createSupabaseAdminClient();

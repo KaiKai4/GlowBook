@@ -4,7 +4,7 @@ import { err, ok } from "@/infra/result";
 import { parseCreateRoleForm, parseUpdateRolePermissionsForm } from "./parse-role-input";
 
 const ROLE_ID = "00000000-0000-4000-8000-0000000000bb";
-const INVALID_PERMISSIONS = err("Permisos invalidos.");
+const INVALID_PERMISSIONS = err("Permisos inválidos.");
 
 describe("permission_keys del formulario de rol", () => {
   it("sin campo o vacio equivale a ninguna clave", () => {
@@ -22,11 +22,11 @@ describe("permission_keys del formulario de rol", () => {
 });
 
 describe("parseCreateRoleForm", () => {
-  it("valida el nombre con el mensaje del esquema", () => {
+  it("válida el nombre con el mensaje del esquema", () => {
     expect(parseCreateRoleForm(formDataOf({ name: "" }))).toEqual(err("El nombre del rol es obligatorio"));
   });
 
-  it("rechaza permisos invalidos antes que el nombre", () => {
+  it("rechaza permisos inválidos antes que el nombre", () => {
     expect(parseCreateRoleForm(formDataOf({ name: "", permission_keys: "{" }))).toEqual(INVALID_PERMISSIONS);
   });
 

@@ -54,5 +54,5 @@ export async function setSalonActiveStatus(
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) throw new Error("Salon no encontrado.");
+  if (!data) throw new Error("Salón no encontrado.");
 }

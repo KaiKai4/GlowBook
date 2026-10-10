@@ -37,7 +37,7 @@ describe("customers schemas", () => {
       expect(CreateCustomerSchema.safeParse({ ...validCustomer, first_name: "a".repeat(101) }).success).toBe(false);
     });
 
-    it("acepta telefono opcional de celular panameno y rechaza el que no cumple", () => {
+    it("acepta teléfono opcional de celular panameno y rechaza el que no cumple", () => {
       expect(CreateCustomerSchema.safeParse({ ...validCustomer, phone: "6123-4567" }).success).toBe(true);
       expect(CreateCustomerSchema.safeParse({ ...validCustomer, phone: null }).success).toBe(true);
 
@@ -46,7 +46,7 @@ describe("customers schemas", () => {
       expect(invalid.error?.issues[0]?.message).toBe("El celular debe tener 8 digitos y comenzar con 6.");
     });
 
-    it("valida el formato del correo y permite omitirlo", () => {
+    it("válida el formato del correo y permite omitirlo", () => {
       expect(CreateCustomerSchema.safeParse({ ...validCustomer, email: "ana@example.com" }).success).toBe(true);
       expect(CreateCustomerSchema.safeParse({ ...validCustomer, email: null }).success).toBe(true);
 
@@ -72,7 +72,7 @@ describe("customers schemas", () => {
     });
 
     // Una edición parcial no debe reescribir notes ni is_temporary.
-    it("una actualizacion parcial solo devuelve los campos enviados", () => {
+    it("una actualización parcial solo devuelve los campos enviados", () => {
       expect(UpdateCustomerSchema.parse({ notes: "Alergia", is_active: false })).toEqual({ notes: "Alergia" });
     });
 
@@ -83,7 +83,7 @@ describe("customers schemas", () => {
   });
 
   describe("CustomerPhoneLookupSchema", () => {
-    it("acepta un celular panameño valido y rechaza uno que no cumple", () => {
+    it("acepta un celular panameño válido y rechaza uno que no cumple", () => {
       expect(CustomerPhoneLookupSchema.safeParse("61234567").success).toBe(true);
       expect(CustomerPhoneLookupSchema.safeParse("").success).toBe(false);
       expect(CustomerPhoneLookupSchema.safeParse("2123-4567").success).toBe(false);
@@ -92,14 +92,14 @@ describe("customers schemas", () => {
   });
 
   describe("ArchivedCustomerLookupSchema", () => {
-    it("permite buscar solo por telefono, solo por email o sin datos", () => {
+    it("permite buscar solo por teléfono, solo por email o sin datos", () => {
       expect(ArchivedCustomerLookupSchema.safeParse({ phone: "61234567" }).success).toBe(true);
       expect(ArchivedCustomerLookupSchema.safeParse({ email: "a@b.co" }).success).toBe(true);
       expect(ArchivedCustomerLookupSchema.safeParse({ phone: "", email: "" }).success).toBe(true);
       expect(ArchivedCustomerLookupSchema.safeParse({}).success).toBe(true);
     });
 
-    it("rechaza un telefono o email con formato invalido", () => {
+    it("rechaza un teléfono o email con formato inválido", () => {
       expect(ArchivedCustomerLookupSchema.safeParse({ phone: "2123-4567" }).success).toBe(false);
       expect(ArchivedCustomerLookupSchema.safeParse({ email: "no-es-correo" }).success).toBe(false);
     });

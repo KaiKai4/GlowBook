@@ -9,10 +9,10 @@ import {
   type EmployeeWriteResult,
 } from "@/features/employees";
 import {
-  createEmployeeFlow,
-  updateEmployeeFlow,
+  createEmployee,
+  updateEmployee,
 } from "@/features/employees";
-import { reactivateEmployeeFlow } from "@/features/employees";
+import { reactivateEmployeeWithLimitCheck } from "@/features/employees";
 import { ok, type Result } from "@/infra/result";
 import {
   activeLimitCheck,
@@ -31,7 +31,7 @@ const createEmployeeFlowAction = defineAction<FormData, FormData, CreateEmployee
   ...EMPLOYEE_GUARD,
   parse: (formData) => ok(formData),
   run: async (formData, session) =>
-    createEmployeeFlow(
+    createEmployee(
       {
         salonId: session.salonId,
         rolesEnabled: session.rolesEnabled,
@@ -52,7 +52,7 @@ const reactivateFlowAction = defineAction<string, string, void>({
   ...EMPLOYEE_GUARD,
   parse: (employeeId) => checkIds(employeeId, [employeeId]),
   run: (employeeId, session) =>
-    reactivateEmployeeFlow(
+    reactivateEmployeeWithLimitCheck(
       { salonId: session.salonId, checkActiveLimit: activeLimitCheck(session.salonId) },
       employeeId
     ),
@@ -62,7 +62,7 @@ const reactivateFlowAction = defineAction<string, string, void>({
 const updateEmployeeFlowAction = defineAction<UpdateEmployeeRaw, UpdateEmployeeRaw, EmployeeWriteResult>({
   ...EMPLOYEE_GUARD,
   parse: (raw) => checkIds(raw, [raw.employeeId]),
-  run: (raw, session) => updateEmployeeFlow(session.salonId, raw.employeeId, raw.formData),
+  run: (raw, session) => updateEmployee(session.salonId, raw.employeeId, raw.formData),
   revalidate: (_out, raw) => ["/employees", `/employees/${raw.employeeId}`],
 });
 

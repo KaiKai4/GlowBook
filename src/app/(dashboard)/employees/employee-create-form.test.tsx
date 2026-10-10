@@ -154,7 +154,7 @@ describe("EmployeeCreateForm", () => {
   it("informa cuando el salón no tiene roles disponibles", () => {
     mounted = renderForm({ roles: [] });
 
-    expect(mounted.container.textContent).toContain("Roles no disponibles para este salon.");
+    expect(mounted.container.textContent).toContain("Roles no disponibles para este salón.");
     expect(mounted.container.querySelector('input[name="role_id"]')).toBeNull();
   });
 

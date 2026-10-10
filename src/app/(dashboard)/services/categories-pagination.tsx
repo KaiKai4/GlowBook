@@ -20,7 +20,7 @@ export function CategoriesPagination({ page, totalPages, pageSize, total, onPage
           {total}
         </p>
         <p className="text-xs text-fg-subtle">
-          Pagina {page} de {totalPages}
+          Página {page} de {totalPages}
         </p>
       </div>
       <div className="flex gap-2">

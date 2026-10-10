@@ -44,7 +44,7 @@ function completeForm(overrides: Record<string, string | null> = {}): FormData {
 }
 
 describe("parseCreateAppointmentForm", () => {
-  it("parsea los servicios JSON y valida el resto del formulario", () => {
+  it("parsea los servicios JSON y válida el resto del formulario", () => {
     const result = parseCreateAppointmentForm(createForm());
 
     expect(result.ok).toBe(true);
@@ -54,20 +54,20 @@ describe("parseCreateAppointmentForm", () => {
     expect(result.value.idempotency_key).toBe(IDEMPOTENCY_KEY);
   });
 
-  it("si los servicios no son JSON devuelve el mensaje de datos invalidos", () => {
+  it("si los servicios no son JSON devuelve el mensaje de datos inválidos", () => {
     expect(parseCreateAppointmentForm(createForm({ assignments: "{no-json" }))).toEqual(
-      err("Datos de servicios invalidos.")
+      err("Datos de servicios inválidos.")
     );
   });
 
-  it("si falta el campo de servicios devuelve el mensaje de datos invalidos", () => {
+  it("si falta el campo de servicios devuelve el mensaje de datos inválidos", () => {
     const form: Record<string, string> = createForm();
     delete form.assignments;
 
-    expect(parseCreateAppointmentForm(form)).toEqual(err("Datos de servicios invalidos."));
+    expect(parseCreateAppointmentForm(form)).toEqual(err("Datos de servicios inválidos."));
   });
 
-  it("devuelve el primer error de validacion del schema", () => {
+  it("devuelve el primer error de validación del schema", () => {
     expect(parseCreateAppointmentForm(createForm({ assignments: "[]" }))).toEqual(
       err("Selecciona al menos un servicio")
     );
@@ -96,10 +96,10 @@ describe("parseUpdateAppointmentScheduleForm", () => {
       idempotency_key: IDEMPOTENCY_KEY,
     });
 
-    expect(result).toEqual(err("Datos de servicios invalidos."));
+    expect(result).toEqual(err("Datos de servicios inválidos."));
   });
 
-  it("valida el id de cita con su mensaje", () => {
+  it("válida el id de cita con su mensaje", () => {
     const result = parseUpdateAppointmentScheduleForm({
       appointment_id: "no-uuid",
       start_time: START,
@@ -112,7 +112,7 @@ describe("parseUpdateAppointmentScheduleForm", () => {
 });
 
 describe("parseCompleteAppointmentForm", () => {
-  it("parsea el cobro y el formulario sin consultar el salon", () => {
+  it("parsea el cobro y el formulario sin consultar el salón", () => {
     const result = parseCompleteAppointmentForm(completeForm());
 
     expect(result.ok).toBe(true);
@@ -121,7 +121,7 @@ describe("parseCompleteAppointmentForm", () => {
   it("si los cobros no son JSON devuelve su mensaje", () => {
     const result = parseCompleteAppointmentForm(completeForm({ item_charges: "{" }));
 
-    expect(result).toEqual(err("Cobros de servicios invalidos."));
+    expect(result).toEqual(err("Cobros de servicios inválidos."));
   });
 
   it("sin cobros enviados el schema exige al menos un servicio", () => {
@@ -130,7 +130,7 @@ describe("parseCompleteAppointmentForm", () => {
     expect(result).toEqual(err("La cita debe tener al menos un servicio"));
   });
 
-  it("un metodo de pago vacio se rechaza por el schema", () => {
+  it("un método de pago vacio se rechaza por el schema", () => {
     const result = parseCompleteAppointmentForm(completeForm({ payment_method: "   " }));
 
     expect(result.ok).toBe(false);

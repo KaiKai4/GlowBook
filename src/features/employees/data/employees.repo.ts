@@ -30,7 +30,7 @@ export interface EmployeeListRow {
 }
 
 /**
- * Consulta base de colaboradores del salon: columnas pedidas, filtro por salon,
+ * Consulta base de colaboradores del salón: columnas pedidas, filtro por salon,
  * filtro opcional por estado activo y orden por apellido.
  */
 function scopedEmployeesQuery<Select extends string>(
@@ -131,7 +131,7 @@ export async function findEmployeeByEmail(email: string, salonId: string) {
 }
 
 /**
- * Lectura de las categorias activas y de los servicios activos del salon que
+ * Lectura de las categorias activas y de los servicios activos del salón que
  * coinciden con los ids pedidos. Solo consulta: las reglas de asignacion viven en
  * el caso de uso (employee-assignments.ts).
  */

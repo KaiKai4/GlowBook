@@ -260,7 +260,7 @@ describe("createAppointment: reglas de dominio antes del RPC", () => {
 
     expect(await createAppointment(input(), deps)).toEqual({
       ok: false,
-      error: "La duración minima es 15 minutos.",
+      error: "La duración mínima es 15 minutos.",
     });
     expect(mockedRpc).not.toHaveBeenCalled();
   });
@@ -271,7 +271,7 @@ describe("createAppointment: reglas de dominio antes del RPC", () => {
     const lateStart = "2030-01-01T23:00:00.000Z"; // 18:00 en Panamá, al cierre.
     expect(await createAppointment(input({ start_time: lateStart }), deps)).toEqual({
       ok: false,
-      error: "El horario esta fuera del horario de atención del salon.",
+      error: "El horario esta fuera del horario de atención del salón.",
     });
     expect(mockedRpc).not.toHaveBeenCalled();
   });

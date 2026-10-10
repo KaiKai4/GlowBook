@@ -29,8 +29,8 @@ export function RegisterPaymentSection({ detail }: { detail: SalonSubscriptionDe
         title="Registrar pago"
         description={
           period
-            ? `Periodo vigente: ${period}. Un nuevo pago encadena el siguiente mes.`
-            : "Marca que el salon ya pago: activa la suscripcion y arranca su mes de uso."
+            ? `Período vigente: ${period}. Un nuevo pago encadena el siguiente mes.`
+            : "Marca que el salón ya pago: activa la suscripción y arranca su mes de uso."
         }
       >
         {detail.assignment ? (

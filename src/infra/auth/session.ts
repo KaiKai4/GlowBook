@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from "@/infra/supabase/server";
 /**
  * Indica si un error de auth es de infraestructura (red, servicio caido o
  * respuesta invalida) y debe lanzarse. Los errores del cliente (4xx: sin sesion,
- * JWT invalido o caducado, usuario inexistente) significan "sin sesion".
+ * JWT invalido o caducado, usuario inexistente) significan "sin sesión".
  */
 export function isAuthInfrastructureError(
   error: { name?: string; status?: number } | null
@@ -21,7 +21,7 @@ export function isAuthInfrastructureError(
 
 /**
  * Id del usuario autenticado en la sesion actual, o null si no hay sesion.
- * Un fallo de red o de auth distinto de "sin sesion" se lanza.
+ * Un fallo de red o de auth distinto de "sin sesión" se lanza.
  */
 export async function readSessionUserId(): Promise<string | null> {
   const supabase = await createSupabaseServerClient();

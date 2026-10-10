@@ -106,7 +106,7 @@ describe("get appointment detail", () => {
     });
   });
 
-  it("returns null when the appointment belongs to another salon", async () => {
+  it("returns null when the appointment belongs to another salón", async () => {
     mockedFindAppointmentById.mockResolvedValue({
       id: "appointment-1",
       salon_id: "other-salon",

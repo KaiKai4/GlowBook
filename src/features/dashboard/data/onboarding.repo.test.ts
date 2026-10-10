@@ -19,7 +19,7 @@ describe("onboarding.repo", () => {
     serverClient.current = null;
   });
 
-  it("cuenta servicios, empleados, clientes y citas del salon con consultas head", async () => {
+  it("cuenta servicios, empleados, clientes y citas del salón con consultas head", async () => {
     const db = createSupabaseDouble({
       services: { data: null, error: null, count: 4 },
       employees: { data: null, error: null, count: 2 },

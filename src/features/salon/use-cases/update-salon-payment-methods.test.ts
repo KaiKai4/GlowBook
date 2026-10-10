@@ -14,7 +14,7 @@ vi.mock("@/infra/observability", () => ({
 const mockedUpdatePaymentMethods = vi.mocked(updateSalonPaymentMethodsRepo);
 const mockedCaptureError = vi.mocked(captureError);
 
-const SAVE_FAILED = "No se pudieron guardar los metodos de pago.";
+const SAVE_FAILED = "No se pudieron guardar los métodos de pago.";
 
 describe("updateSalonPaymentMethods", () => {
   beforeEach(() => {

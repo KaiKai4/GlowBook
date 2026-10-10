@@ -40,7 +40,7 @@ const getRequestContext = cache(async (): Promise<RequestContext | null> => {
   const row = await loadSessionProfile(userId);
   if (!row) return null;
 
-  // El perfil sale con los modulos efectivos del plan (con fallback
+  // El perfil sale con los módulos efectivos del plan (con fallback
   // a salons.disabled_features si no hay plan): hasPermission y la navegacion
   // deben decidir con la misma fuente, no con la columna legacy a secas.
   const disabledFeatures = await getEffectiveDisabledSalonFeatures(salonModuleScopeFromProfile(row));
@@ -52,7 +52,7 @@ const getRequestContext = cache(async (): Promise<RequestContext | null> => {
     profile,
     permissions: getPermissions(profile),
     requestId: (await getRequestId()) ?? crypto.randomUUID(),
-    // Los modulos deshabilitados ya salen del plan efectivo: el modulo de roles
+    // Los módulos deshabilitados ya salen del plan efectivo: el modulo de roles
     // esta activo si no figura en esa lista (mismo criterio que isEffectiveSalonModuleEnabled).
     rolesEnabled: !disabledFeatures.includes("roles"),
   };
@@ -72,7 +72,7 @@ export async function requireProfile(): Promise<ProfileWithRole> {
 
 /**
  * Contexto de la request con perfil y salon activos. Redirige a /login o a / si
- * el perfil o el salon estan inactivos.
+ * el perfil o el salón están inactivos.
  */
 async function requireActiveRequestContext(): Promise<RequestContext> {
   const context = await getRequestContext();
@@ -98,7 +98,7 @@ export async function requireActionContext(): Promise<ActionContext> {
   return { userId, salonId, permissions, requestId, rolesEnabled };
 }
 
-/** Si el plan del salon incluye el modulo de roles, leido del contexto memoizado de la request. */
+/** Si el plan del salón incluye el modulo de roles, leido del contexto memoizado de la request. */
 export async function getRolesEnabled(): Promise<boolean> {
   const context = await getRequestContext();
   return context?.rolesEnabled ?? false;

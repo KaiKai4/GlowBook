@@ -176,7 +176,7 @@ describe("updateAppointmentSchedule: guardas del caso de uso", () => {
 
     expect(await updateAppointmentSchedule(input, { salonId, idempotencyKey })).toEqual({
       ok: false,
-      error: "El salon esta cerrado ese día.",
+      error: "El salón está cerrado ese día.",
     });
     expect(updateAppointmentWithRpc).not.toHaveBeenCalled();
   });

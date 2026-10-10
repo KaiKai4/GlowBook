@@ -12,10 +12,10 @@ export function ActiveExtrasList({ salonId, extras }: { salonId: string; extras:
     <Panel
       icon={<Gift className="h-4 w-4" />}
       title="Extras vigentes"
-      description="Modulos y aumentos de límite activos para este salon, vendidos o regalados."
+      description="Módulos y aumentos de límite activos para este salón, vendidos o regalados."
     >
       {extras.length === 0 ? (
-        <p className="text-sm text-fg-subtle">Este salon no tiene extras vigentes.</p>
+        <p className="text-sm text-fg-subtle">Este salón no tiene extras vigentes.</p>
       ) : (
         <div className="space-y-2">
           {extras.map((extra) => (

@@ -24,8 +24,8 @@ interface PlansWorkspaceData {
 }
 
 const PLAN_TABS: Array<{ key: PlanEditorTab; label: string }> = [
-  { key: "info", label: "Informacion" },
-  { key: "modules", label: "Modulos" },
+  { key: "info", label: "Información" },
+  { key: "modules", label: "Módulos" },
   { key: "limits", label: "Límites" },
   { key: "summary", label: "Resumen" },
 ];
@@ -134,12 +134,12 @@ export function PlansWorkspace({
                       </span>
                       {selectedAssignments > 0 ? (
                         <span className="rounded-lg bg-warning-subtle px-2 py-1 text-xs font-semibold text-warning-fg">
-                          {selectedAssignments} {selectedAssignments === 1 ? "salon asignado" : "salones asignados"}
+                          {selectedAssignments} {selectedAssignments === 1 ? "salón asignado" : "salones asignados"}
                         </span>
                       ) : null}
                     </div>
                     <p className="mt-1 text-sm text-fg-subtle">
-                      {selectedPlan.description || "Configura informacion, modulos y límites de este plan."}
+                      {selectedPlan.description || "Configura información, módulos y límites de este plan."}
                     </p>
                   </div>
                 </div>

@@ -9,6 +9,9 @@ import { captureError } from "@/infra/observability";
 import type { Result } from "@/infra/result";
 import { validateAssignableRoleId } from "./employee-role";
 
+/** Caducidad del enlace de invitación de empleado: 7 días. */
+const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 // Emision y limpieza de invitaciones de acceso de colaboradores (no el alta por enlace: ver employee-invitations.ts).
 
 export interface EmployeeInviteResult {
@@ -16,7 +19,7 @@ export interface EmployeeInviteResult {
   expiresAt: string;
 }
 
-/** Sustituye la invitacion pendiente por un enlace nuevo de 7 dias. */
+/** Sustituye la invitación pendiente por un enlace nuevo de 7 dias. */
 export async function replacePendingEmployeeInvitation({
   employeeId,
   salonId,
@@ -42,7 +45,7 @@ export async function replacePendingEmployeeInvitation({
   }
 
   const { token, tokenHash } = generateInvitationToken();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + INVITATION_TTL_MS).toISOString();
   const { error: inviteError } = await insertEmployeeInvitation({
     employee_id: employeeId,
     salon_id: salonId,
@@ -60,7 +63,7 @@ export async function replacePendingEmployeeInvitation({
   return { ok: true, value: { token, expiresAt } };
 }
 
-/** Invitacion de acceso para un colaborador existente sin cuenta vinculada. */
+/** Invitación de acceso para un colaborador existente sin cuenta vinculada. */
 export async function createEmployeeInviteForExistingEmployee({
   employeeId,
   salonId,
@@ -83,7 +86,7 @@ export async function createEmployeeInviteForExistingEmployee({
   });
 }
 
-/** Escritura en BD: elimina las invitaciones del colaborador dentro del salon. */
+/** Escritura en BD: elimina las invitaciones del colaborador dentro del salón. */
 export async function clearEmployeeInvitations(
   employeeId: string,
   salonId: string

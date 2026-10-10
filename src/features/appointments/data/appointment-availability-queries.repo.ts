@@ -51,7 +51,7 @@ export async function findWorkSchedulesByEmployeeForCommand({
 
 /**
  * Días libres puntuales de varios profesionales desde hoy hacia adelante (fechas
- * locales del salon). Set pequeno: vacaciones y permisos próximos.
+ * locales del salón). Set pequeno: vacaciones y permisos próximos.
  */
 export async function findExceptionDatesByEmployeeForCommand({
   salonId,
@@ -78,7 +78,7 @@ export async function findExceptionDatesByEmployeeForCommand({
   return groupRowsByEmployee(data ?? [], (row) => row.exception_date);
 }
 
-/** Bloques de calendario de varios profesionales en el día de `date` (zona del salon), en una consulta. */
+/** Bloques de calendario de varios profesionales en el día de `date` (zona del salón), en una consulta. */
 export async function findOccupiedSlotsByEmployeeForCommand({
   salonId,
   employeeIds,

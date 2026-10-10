@@ -16,7 +16,7 @@ interface Deps {
 }
 
 const INACTIVE_CUSTOMER_MESSAGE =
-  "Este cliente no esta disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.";
+  "Este cliente no está disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.";
 
 function toRpcNewCustomer(customer: NonNullable<CreateAppointmentInput["new_customer"]>) {
   const phone = customer.phone?.trim();

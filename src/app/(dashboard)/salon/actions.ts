@@ -25,7 +25,7 @@ import { ok, type Result } from "@/infra/result";
 
 const PERMISSION = {
   key: PERMISSIONS.SALON_MANAGE,
-  deniedMessage: "No tienes permiso para editar el salon.",
+  deniedMessage: "No tienes permiso para editar el salón.",
 };
 const RATE_LIMIT = { scope: "salon", options: RATE_LIMIT_POLICIES.write };
 

@@ -22,7 +22,7 @@ export function NewProductForm({ pending, onCreate }: NewProductFormProps) {
       <CardContent>
         <form action={onCreate} className="grid gap-4 md:grid-cols-2">
           <Input name="name" label="Producto" placeholder="Shampoo hidratante" required />
-          <Input name="category" label="Categoria" placeholder="Cabello" />
+          <Input name="category" label="Categoría" placeholder="Cabello" />
           <Input name="cost_price" type="number" step="0.01" min="0" label="Costo" defaultValue="0" />
           <Select
             id="se-vende-en-vitrina"
@@ -86,7 +86,7 @@ function StockInputs({
           type="number"
           step="0.01"
           min="0"
-          label="Minimo"
+          label="Mínimo"
           placeholder="0"
           disabled={disabled}
           onFocus={(event) => event.currentTarget.select()}

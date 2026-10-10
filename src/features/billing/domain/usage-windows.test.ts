@@ -31,7 +31,7 @@ describe("scopeWindow", () => {
     ]);
   });
 
-  it("billing_cycle usa el periodo pagado cuando existe", () => {
+  it("billing_cycle usa el período pagado cuando existe", () => {
     expect(
       scopeWindow(
         "billing_cycle",
@@ -40,7 +40,7 @@ describe("scopeWindow", () => {
     ).toEqual(["2026-03-10T00:00:00.000Z", "2026-04-10T00:00:00.000Z"]);
   });
 
-  it("billing_cycle sin periodo ancla al día de inicio de la asignación", () => {
+  it("billing_cycle sin período ancla al día de inicio de la asignación", () => {
     expect(scopeWindow("billing_cycle", assignment({ starts_at: "2026-01-20" }))).toEqual([
       "2026-02-20T00:00:00.000Z",
       "2026-03-20T00:00:00.000Z",

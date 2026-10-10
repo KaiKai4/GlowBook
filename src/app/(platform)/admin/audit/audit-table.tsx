@@ -12,7 +12,7 @@ function statusVariant(status: PlatformAuditLogEntryViewModel["status"]) {
 const AUDIT_COLUMNS: DataTableColumn<PlatformAuditLogEntryViewModel>[] = [
   {
     id: "action",
-    header: "Accion",
+    header: "Acción",
     cell: (entry) => (
       <div>
         <p className="font-semibold text-fg">{entry.actionLabel}</p>

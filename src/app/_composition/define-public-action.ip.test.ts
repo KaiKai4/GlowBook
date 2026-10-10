@@ -28,7 +28,7 @@ beforeEach(() => {
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
 });
 
-describe("definePublicAction: limite por IP", () => {
+describe("definePublicAction: límite por IP", () => {
   it("usa la IP del cliente (x-real-ip) como parte de la clave del limite", async () => {
     vi.mocked(headers).mockResolvedValue(new Headers({ "x-real-ip": "203.0.113.7" }) as never);
 
@@ -41,7 +41,7 @@ describe("definePublicAction: limite por IP", () => {
     });
   });
 
-  it("si la IP supera el limite no ejecuta el caso de uso y devuelve el aviso", async () => {
+  it("si la IP supera el límite no ejecuta el caso de uso y devuelve el aviso", async () => {
     vi.mocked(headers).mockResolvedValue(new Headers({ "x-real-ip": "203.0.113.7" }) as never);
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
     const run = vi.fn(async () => undefined);

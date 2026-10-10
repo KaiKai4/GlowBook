@@ -55,7 +55,7 @@ describe("createRoleWithPermissions outcomes", () => {
       permission_keys: ["reports.view", "inventado.borrar"],
     });
 
-    expect(result).toEqual({ ok: false, error: "Uno o mas permisos no son validos." });
+    expect(result).toEqual({ ok: false, error: "Uno o más permisos no son válidos." });
     expect(mockedCreateRpc).not.toHaveBeenCalled();
   });
 

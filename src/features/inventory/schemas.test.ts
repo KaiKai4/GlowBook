@@ -27,7 +27,7 @@ describe("inventory schemas", () => {
       });
     });
 
-    it("convierte cadenas numericas de formularios a numeros", () => {
+    it("convierte cadenas numericas de formularios a números", () => {
       const parsed = CreateInventoryProductSchema.parse({
         name: "Tinte",
         cost_price: "4.5",
@@ -72,7 +72,7 @@ describe("inventory schemas", () => {
       expect(InventoryTransferSchema.safeParse({ ...base, idempotency_key: "x" }).success).toBe(false);
     });
 
-    it("rechaza transferir a la misma ubicacion de origen", () => {
+    it("rechaza transferir a la misma ubicación de origen", () => {
       const result = InventoryTransferSchema.safeParse({ ...base, to_location: "storage" });
 
       expect(result.success).toBe(false);

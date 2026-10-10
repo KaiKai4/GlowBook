@@ -5,7 +5,7 @@ import { CalendarDays, CalendarRange, Download, History } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 
 // El usuario elige el alcance del archivo: el mes que ve, el año del acumulado
-// o todo el historico del salon. Cada opcion descarga directo y cierra.
+// o todo el historico del salón. Cada opcion descarga directo y cierra.
 export function ExportReportDialog({
   monthKey,
   monthLabel,

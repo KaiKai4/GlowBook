@@ -25,7 +25,7 @@ describe("get dashboard shell", () => {
     vi.resetAllMocks();
   });
 
-  it("returns shell access and applies salon feature flags", async () => {
+  it("returns shell access and applies salón feature flags", async () => {
     mockedFindDashboardShellSalon.mockResolvedValue({
       name: "Glow Studio",
       is_active: true,
@@ -47,7 +47,7 @@ describe("get dashboard shell", () => {
     expect(view?.permissions).not.toContain("reports.view");
   });
 
-  it("returns null when the salon cannot be loaded", async () => {
+  it("returns null when the salón cannot be loaded", async () => {
     mockedFindDashboardShellSalon.mockResolvedValue(null);
 
     await expect(getDashboardShell(profile)).resolves.toBeNull();

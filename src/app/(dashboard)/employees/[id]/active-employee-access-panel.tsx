@@ -67,7 +67,7 @@ export function ActiveEmployeeAccessPanel({
     <div className="space-y-4">
       <div className="flex items-center gap-2.5 rounded-lg border border-success-border-subtle bg-success-subtle px-4 py-3">
         <StatusBadge variant="success" label="Acceso activo" />
-        <span className="ml-auto text-xs text-success-fg">Este colaborador puede iniciar sesion.</span>
+        <span className="ml-auto text-xs text-success-fg">Este colaborador puede iniciar sesión.</span>
       </div>
 
       <div className="flex items-end gap-3">

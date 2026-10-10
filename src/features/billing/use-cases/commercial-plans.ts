@@ -62,7 +62,7 @@ export interface CommercialPlansPageData {
   assignmentsByPlan: Record<string, number>;
 }
 
-/** Catalogo minimo de planes para otros features (ej. invitaciones). */
+/** Catálogo minimo de planes para otros features (ej. invitaciones). */
 export async function getPlanCatalogSummary(): Promise<
   Array<Pick<CommercialPlan, "id" | "name" | "currency" | "monthlyPrice" | "trialDays" | "status">>
 > {
@@ -117,7 +117,7 @@ export async function saveCommercialPlanConfig(
   }
 }
 
-/** Archiva el plan: lo retira del catalogo sin tocar las asignaciones existentes. */
+/** Archiva el plan: lo retira del catálogo sin tocar las asignaciones existentes. */
 export async function archivePlan(planId: string, actorUserId?: string | null): Promise<Result<void>> {
   try {
     await archiveCommercialPlan(planId);

@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 describe("assertActionRateLimit", () => {
-  it("permite la accion y consume el bucket del usuario con los limites por defecto", async () => {
+  it("permite la acción y consume el bucket del usuario con los límites por defecto", async () => {
     const result = await assertActionRateLimit("user-1", "customers:create");
 
     expect(result).toEqual({ ok: true, value: undefined });
@@ -35,7 +35,7 @@ describe("assertActionRateLimit", () => {
     });
   });
 
-  it("bloquea con el mensaje publico cuando el contador supera el maximo", async () => {
+  it("bloquea con el mensaje publico cuando el contador supera el máximo", async () => {
     rpc.mockResolvedValue({ data: [{ allowed: false }], error: null });
 
     const result = await assertActionRateLimit("user-1", "scope");
@@ -44,7 +44,7 @@ describe("assertActionRateLimit", () => {
     expect(captureError).not.toHaveBeenCalled();
   });
 
-  it("aplica las opciones indicadas, redondea la ventana hacia arriba y tiene minimo de 1 s", async () => {
+  it("aplica las opciones indicadas, redondea la ventana hacia arriba y tiene mínimo de 1 s", async () => {
     await assertActionRateLimit("u", "s", { max: 5, windowMs: 1500 });
     expect(rpc).toHaveBeenLastCalledWith(
       "consume_rate_limit",
@@ -89,7 +89,7 @@ describe("assertActionRateLimit", () => {
     );
   });
 
-  it("fail-open: si la RPC devuelve error permite la accion y lo registra", async () => {
+  it("fail-open: si la RPC devuelve error permite la acción y lo registra", async () => {
     rpc.mockResolvedValue({ data: null, error: { message: "connection reset" } });
 
     const result = await assertActionRateLimit("user-1", "scope");
@@ -122,7 +122,7 @@ describe("assertActionRateLimit", () => {
     expect(captureError).toHaveBeenCalledTimes(1);
   });
 
-  it("fail-open: si el cliente de administracion no se puede crear permite la accion", async () => {
+  it("fail-open: si el cliente de administracion no se puede crear permite la acción", async () => {
     vi.mocked(createSupabaseAdminClient).mockImplementationOnce(() => {
       throw new Error("SUPABASE_SERVICE_ROLE_KEY ausente");
     });
@@ -170,7 +170,7 @@ describe("assertAnonymousRateLimit", () => {
     );
   });
 
-  it("sin IP aplica un limite propio 10 veces mayor y avisa en consola sin datos personales", async () => {
+  it("sin IP aplica un límite propio 10 veces mayor y avisa en consola sin datos personales", async () => {
     setRequestHeaders({});
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -187,7 +187,7 @@ describe("assertAnonymousRateLimit", () => {
     warnSpy.mockRestore();
   });
 
-  it("con IP conocida no avisa y usa el maximo indicado", async () => {
+  it("con IP conocida no avisa y usa el máximo indicado", async () => {
     setRequestHeaders({ "x-real-ip": "192.0.2.10" });
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 

@@ -17,7 +17,7 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
   const [state, action] = useActionState(savePlanLimitsAction, PLATFORM_PLAN_IDLE_STATE);
   const moduleByKey = new Map(modules.map((module) => [module.key, module]));
   const limitByMetric = new Map(plan.limits.map((limit) => [limit.metricKey, limit]));
-  // Solo se configuran límites de modulos incluidos en el plan: un límite de
+  // Solo se configuran límites de módulos incluidos en el plan: un límite de
   // un modulo apagado no controla nada.
   const enabledModuleKeys = new Set(
     plan.modules.filter((module) => module.enabled).map((module) => module.moduleKey)
@@ -34,7 +34,7 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
   if (visibleMetrics.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-brand-200 bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
-        Este plan no tiene modulos activos. Activa modulos en la pestaña Modulos y aqui apareceran sus límites.
+        Este plan no tiene módulos activos. Activa módulos en la pestaña Módulos y aquí apareceran sus límites.
       </div>
     );
   }
@@ -66,8 +66,8 @@ export function PlanLimits({ plan, metrics, modules }: { plan: CommercialPlan; m
 
       {hiddenModuleNames.length > 0 ? (
         <p className="text-xs leading-5 text-fg-subtle">
-          Modulos sin límites configurables porque no estan incluidos en este plan: {hiddenModuleNames.join(", ")}.
-          Activalos en la pestaña Modulos para configurar sus límites.
+          Módulos sin límites configurables porque no están incluidos en este plan: {hiddenModuleNames.join(", ")}.
+          Actívalos en la pestaña Módulos para configurar sus límites.
         </p>
       ) : null}
       <InlineState state={state} block />
@@ -92,7 +92,7 @@ function PlanLimitRow({
         </div>
         <p className="mt-2 text-sm text-fg-subtle">{metric.description}</p>
       </div>
-      <Input name="maxValue" label={`Maximo (${metric.unit || "total"})`} type="number" min="0" defaultValue={limit?.maxValue ?? ""} placeholder="Sin límite" />
+      <Input name="maxValue" label={`Máximo (${metric.unit || "total"})`} type="number" min="0" defaultValue={limit?.maxValue ?? ""} placeholder="Sin límite" />
       <Select name="countScope" label="Tipo de conteo" defaultValue={limit?.countScope ?? metric.defaultCountScope}>
         <option value="current">Actual</option>
         <option value="billing_cycle">Ciclo de facturacion</option>

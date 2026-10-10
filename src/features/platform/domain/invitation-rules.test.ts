@@ -22,20 +22,20 @@ describe("invitationRejection", () => {
   });
 
   it("rechaza invitaciones inexistentes o ya usadas", () => {
-    expect(invitationRejection({ invitation: null, email: "a@b.co", now: NOW })).toBe("Invitacion inválida o ya utilizada.");
+    expect(invitationRejection({ invitation: null, email: "a@b.co", now: NOW })).toBe("Invitación inválida o ya utilizada.");
     expect(
       invitationRejection({ invitation: { ...VALID, status: "accepted" }, email: "owner@salon.com", now: NOW })
-    ).toBe("Invitacion inválida o ya utilizada.");
+    ).toBe("Invitación inválida o ya utilizada.");
   });
 
   it("rechaza invitaciones caducadas", () => {
     const expired = { ...VALID, expires_at: "2026-06-11T00:00:00.000Z" };
-    expect(invitationRejection({ invitation: expired, email: "owner@salon.com", now: NOW })).toBe("La invitacion expiro.");
+    expect(invitationRejection({ invitation: expired, email: "owner@salon.com", now: NOW })).toBe("La invitación expiro.");
   });
 
   it("rechaza un correo distinto al de la invitación", () => {
     expect(invitationRejection({ invitation: VALID, email: "otro@salon.com", now: NOW })).toBe(
-      "Esta invitacion fue emitida para otro correo."
+      "Esta invitación fue emitida para otro correo."
     );
   });
 });
@@ -69,7 +69,7 @@ describe("translateAcceptError", () => {
 
   it("oculta cualquier otro error técnico", () => {
     expect(translateAcceptError("connection reset by peer")).toBe(
-      "No se pudo crear el salon. Intentalo de nuevo o solicita una nueva invitacion."
+      "No se pudo crear el salón. Intentalo de nuevo o solicita una nueva invitación."
     );
   });
 });

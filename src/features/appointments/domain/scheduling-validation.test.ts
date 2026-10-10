@@ -115,7 +115,7 @@ describe("buildItemPayloads: validación de asignaciones", () => {
     ).toThrow("El profesional seleccionado no atiende esa categoría.");
   });
 
-  it("valida el servicio antes que el horario: no consulta la agenda si la asignación es inválida", () => {
+  it("válida el servicio antes que el horario: no consulta la agenda si la asignación es inválida", () => {
     const getOccupiedSlots = vi.fn(() => []);
     expect(() =>
       buildItemPayloads(

@@ -79,7 +79,7 @@ describe("customer-temporary (ramas)", () => {
   });
 
   describe("deleteTemporaryCustomer", () => {
-    it("borra el temporal del salon indicado", async () => {
+    it("borra el temporal del salón indicado", async () => {
       mockedDelete.mockResolvedValue(undefined);
 
       expect(await deleteTemporaryCustomer("temp-1", SALON_ID)).toEqual({ ok: true, value: undefined });

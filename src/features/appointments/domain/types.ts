@@ -50,7 +50,7 @@ export interface RangeEvaluationInput {
   businessHours: BusinessHour[];
   workSchedules?: WorkSchedule[];
   occupiedSlots?: OccupiedSlot[];
-  /** Días libres del profesional (YYYY-MM-DD en la zona del salon). */
+  /** Días libres del profesional (YYYY-MM-DD en la zona del salón). */
   employeeExceptionDates?: string[];
   excludeAppointmentId?: string;
   enforceSalonSchedule?: boolean;

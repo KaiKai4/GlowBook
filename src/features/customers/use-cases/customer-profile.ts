@@ -28,7 +28,7 @@ function mapCustomerConstraintError(error: unknown, fallback: string): string {
 }
 
 /**
- * Da de alta el cliente solo si el plan del salon incluye el modulo de clientes y
+ * Da de alta el cliente solo si el plan del salón incluye el modulo de clientes y
  * queda cupo de clientes activos.
  */
 export async function createCustomerProfile(

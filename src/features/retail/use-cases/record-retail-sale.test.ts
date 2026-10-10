@@ -65,7 +65,7 @@ describe("createRetailSaleWithPlanLimits", () => {
 
     expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY)).toEqual({
       ok: false,
-      error: "Ese metodo de pago no esta habilitado para este salon.",
+      error: "Ese método de pago no está habilitado para este salón.",
     });
     expect(assertSalonPaymentMethodEnabled).toHaveBeenCalledWith(SALON, "card");
     expect(createRetailSale).not.toHaveBeenCalled();

@@ -60,7 +60,7 @@ describe("TopServices", () => {
     expect(mounted.container.querySelector('[role="img"]')).toBeNull();
   });
 
-  it("dibuja la gráfica accesible con el periodo en la cabecera", () => {
+  it("dibuja la gráfica accesible con el período en la cabecera", () => {
     mounted = mountComponent(<TopServices services={[service]} />);
 
     expect(mounted.container.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe(

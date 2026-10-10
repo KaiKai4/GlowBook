@@ -64,7 +64,7 @@ describe("NewCustomerModal", () => {
     expect(document.body.querySelector('[role="dialog"] h2')?.textContent).toBe("Nuevo cliente");
   });
 
-  it("valida que nombre y apellido no estén vacíos antes de crear", () => {
+  it("válida que nombre y apellido no estén vacíos antes de crear", () => {
     mounted = mountComponent(<NewCustomerModal />);
     openModal(mounted.container);
 

@@ -6,7 +6,7 @@ import {
   SubmitFeedbackSchema,
 } from "./schemas";
 
-// Validacion del reporte de feedback del salon: categoria cerrada y mensaje
+// Validacion del reporte de feedback del salón: categoria cerrada y mensaje
 // entre 5 y 2000 caracteres tras recortar los espacios de los extremos.
 
 const VALID_CATEGORY = "bug" as const;
@@ -19,7 +19,7 @@ function messageIssue(message: string): string | undefined {
 describe("SubmitFeedbackSchema categories", () => {
   it("accepts every declared category", () => {
     for (const category of FEEDBACK_CATEGORIES) {
-      const result = SubmitFeedbackSchema.safeParse({ category, message: "Mensaje valido" });
+      const result = SubmitFeedbackSchema.safeParse({ category, message: "Mensaje válido" });
       expect(result.success).toBe(true);
     }
   });
@@ -29,7 +29,7 @@ describe("SubmitFeedbackSchema categories", () => {
       fc.property(
         fc.string().filter((value) => !(FEEDBACK_CATEGORIES as readonly string[]).includes(value)),
         (category) => {
-          const result = SubmitFeedbackSchema.safeParse({ category, message: "Mensaje valido" });
+          const result = SubmitFeedbackSchema.safeParse({ category, message: "Mensaje válido" });
           return result.success === false;
         }
       )

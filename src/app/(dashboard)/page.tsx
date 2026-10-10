@@ -21,7 +21,7 @@ import { AlertCircle, CalendarDays, ChevronRight, Users } from "lucide-react";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  // El perfil ya lleva los modulos efectivos del plan (los resuelve request-context).
+  // El perfil ya lleva los módulos efectivos del plan (los resuelve request-context).
   const disabledFeatures = getDisabledSalonFeatures(profile);
   const visibleNav = getVisibleNavItems({
     permissions: getPermissions(profile),
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
   if (!profile.is_owner && visibleNav.length === 1 && onlyNavItem && onlyNavItem.href !== "/") redirect(onlyNavItem.href);
 
   // Los avisos del plan (límites y pago vencido) y la guia de arranque solo
-  // viven aqui: el owner los ve al entrar, sin perseguirlo por los modulos.
+  // viven aquí: el owner los ve al entrar, sin perseguirlo por los módulos.
   const [planWarnings, paymentGrace, onboarding] = profile.is_owner
     ? await Promise.all([
         getOwnerPlanLimitWarnings(profile.salon_id),

@@ -12,10 +12,10 @@ import { createSupabaseAdminClient } from "@/infra/supabase/admin";
 //
 // Politica ante fallo del almacen: fail-open. Si la RPC falla, la operacion se
 // permite y el error se registra con captureError. La fuerza bruta de tokens
-// de invitacion queda cubierta por la entropia del token, no por este limite.
+// de invitación queda cubierta por la entropia del token, no por este limite.
 
 export interface RateLimitOptions {
-  /** Maximo de intentos dentro de la ventana. */
+  /** Máximo de intentos dentro de la ventana. */
   max: number;
   /** Duración de la ventana en milisegundos. */
   windowMs: number;

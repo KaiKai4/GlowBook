@@ -56,8 +56,8 @@ export function EmployeeCreateDialog({
 
           <EmployeeInviteLinkCard
             url={inviteUrl}
-            title="Enlace de acceso valido 7 días"
-            description="El colaborador abrira este link para crear su contrasena y acceder al sistema."
+            title="Enlace de acceso válido 7 días"
+            description="El colaborador abrira este link para crear su contraseña y acceder al sistema."
           />
 
           <Button variant="primary" className="w-full" onClick={closeDialog}>

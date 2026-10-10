@@ -238,7 +238,7 @@ describe("ReportsView (pestañas, inventario y módulos)", () => {
     expect(mounted.container.textContent).toContain("No hay alertas de stock.");
   });
 
-  it("la tabla de inventario pagina las alertas de 10 en 10", () => {
+  it("la tabla de inventario página las alertas de 10 en 10", () => {
     const base = buildReport();
     const alerts = Array.from({ length: 11 }, (_, index) => ({
       id: `p-${index + 1}`,

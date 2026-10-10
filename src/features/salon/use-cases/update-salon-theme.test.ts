@@ -14,7 +14,7 @@ describe("updateSalonTheme", () => {
     vi.clearAllMocks();
   });
 
-  it("guarda un tema valido del catalogo para el salon del contexto", async () => {
+  it("guarda un tema válido del catálogo para el salón del contexto", async () => {
     mockedUpdateTheme.mockResolvedValue(undefined);
 
     const result = await updateSalonTheme("salon-1", "tiffany");
@@ -23,14 +23,14 @@ describe("updateSalonTheme", () => {
     expect(mockedUpdateTheme).toHaveBeenCalledWith("salon-1", "tiffany");
   });
 
-  it("rechaza un tema fuera del catalogo sin tocar la base de datos", async () => {
+  it("rechaza un tema fuera del catálogo sin tocar la base de datos", async () => {
     const result = await updateSalonTheme("salon-1", "neon");
 
     expect(result).toEqual({ ok: false, error: "Tema inválido." });
     expect(mockedUpdateTheme).not.toHaveBeenCalled();
   });
 
-  it("rechaza texto vacio como tema invalido", async () => {
+  it("rechaza texto vacio como tema inválido", async () => {
     const result = await updateSalonTheme("salon-1", "");
 
     expect(result.ok).toBe(false);

@@ -4,7 +4,7 @@ import { auditActionOptions, auditActionText, isKnownAuditAction } from "./audit
 const GENERIC_TEXT = "Acción no reconocida";
 
 describe("tabla de textos de auditoria", () => {
-  it("cada accion conocida tiene un texto no vacio y la misma etiqueta en el filtro", () => {
+  it("cada acción conocida tiene un texto no vacio y la misma etiqueta en el filtro", () => {
     const options = auditActionOptions();
 
     expect(options.length).toBeGreaterThan(0);
@@ -14,7 +14,7 @@ describe("tabla de textos de auditoria", () => {
     }
   });
 
-  it("una accion desconocida recibe el texto generico, nunca la clave cruda", () => {
+  it("una acción desconocida recibe el texto generico, nunca la clave cruda", () => {
     expect(auditActionText("legacy_action")).toBe(GENERIC_TEXT);
     expect(auditActionText("")).toBe(GENERIC_TEXT);
   });
@@ -25,12 +25,12 @@ describe("tabla de textos de auditoria", () => {
     expect(auditActionText("constructor")).toBe(GENERIC_TEXT);
   });
 
-  it("las opciones del filtro cubren el catalogo con su texto", () => {
+  it("las opciones del filtro cubren el catálogo con su texto", () => {
     const options = auditActionOptions();
 
-    expect(options.find((option) => option.value === "invitation_accepted")?.label).toBe("Invitacion aceptada");
+    expect(options.find((option) => option.value === "invitation_accepted")?.label).toBe("Invitación aceptada");
     expect(options.find((option) => option.value === "set_salon_status")?.label).toBe(
-      "Actualizar estado de Salon"
+      "Actualizar estado de Salón"
     );
   });
 });

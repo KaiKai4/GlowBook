@@ -1,7 +1,7 @@
 import type { Permission } from "@/features/access";
 
 // Textos visibles de cada permiso en /roles. El tipo Record obliga a cubrir
-// cada permiso del catalogo: un permiso nuevo no compila hasta tener texto.
+// cada permiso del catálogo: un permiso nuevo no compila hasta tener texto.
 export const PERMISSION_TEXTS: Record<Permission, { label: string; description: string }> = {
   "salon.manage": { label: "Editar datos del salón", description: "Nombre, dirección, horarios y configuración general" },
   "roles.manage": { label: "Gestionar roles y permisos", description: "Crear roles y definir qué puede hacer cada colaborador" },

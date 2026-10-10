@@ -2,6 +2,9 @@ import "server-only";
 
 import { findCustomers } from "../data/customers.repo";
 
+/** Longitud máxima de la búsqueda de clientes. */
+const MAX_SEARCH_QUERY_LENGTH = 100;
+
 const PER_PAGE = 10;
 
 export interface GetCustomersPageInput {
@@ -36,7 +39,7 @@ export async function getCustomersPage({
   const page = Number.isSafeInteger(parsedPage) ? Math.max(1, parsedPage) : 1;
   const mode: CustomerPageMode = status === "archived" ? "archived" : "active";
   const isArchived = mode === "archived";
-  const query = (q ?? "").trim().slice(0, 100);
+  const query = (q ?? "").trim().slice(0, MAX_SEARCH_QUERY_LENGTH);
 
   const { data: customers, total } = await findCustomers(salonId, {
     q: query,

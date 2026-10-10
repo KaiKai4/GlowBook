@@ -5,7 +5,7 @@ import {
 } from "@/features/employees/data/employee-access.repo";
 import type { Result } from "@/infra/result";
 
-/** Valida que el rol pedido exista en el salon y no sea de sistema. Null (sin rol) es valido. */
+/** Valida que el rol pedido exista en el salón y no sea de sistema. Null (sin rol) es valido. */
 export async function validateAssignableRoleId(
   salonId: string,
   roleId: string | null
@@ -20,7 +20,7 @@ export async function validateAssignableRoleId(
   }
 
   if (!data) {
-    return { ok: false, error: "El rol seleccionado no es valido para este salon." };
+    return { ok: false, error: "El rol seleccionado no es válido para este salón." };
   }
 
   return { ok: true, value: data.id };

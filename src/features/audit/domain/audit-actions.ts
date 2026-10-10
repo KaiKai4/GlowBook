@@ -1,4 +1,4 @@
-// Catalogo cerrado de acciones y estados de la auditoria de plataforma.
+// Catálogo cerrado de acciones y estados de la auditoria de plataforma.
 // Dominio puro: sin I/O ni dependencias de infraestructura.
 
 export const PLATFORM_AUDIT_ACTIONS = [

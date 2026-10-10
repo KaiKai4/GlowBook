@@ -53,7 +53,7 @@ describe("Select", () => {
       </Select>
     );
 
-    expect(trigger(mounted.container).textContent).toContain("Selecciona una opcion");
+    expect(trigger(mounted.container).textContent).toContain("Selecciona una opción");
   });
 
   it("enlaza la etiqueta con el disparador", () => {

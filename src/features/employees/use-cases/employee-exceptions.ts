@@ -6,6 +6,8 @@ import {
 import type { Result } from "@/infra/result";
 import { formatLocalDateISO } from "@/infra/format/dates";
 
+const MAX_EXCEPTION_REASON_LENGTH = 200;
+
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function addEmployeeScheduleException(input: {
@@ -29,7 +31,7 @@ export async function addEmployeeScheduleException(input: {
       salonId: input.salonId,
       employeeId: input.employeeId,
       exceptionDate: input.exceptionDate,
-      reason: input.reason.trim().slice(0, 200),
+      reason: input.reason.trim().slice(0, MAX_EXCEPTION_REASON_LENGTH),
     });
     return { ok: true, value: undefined };
   } catch (error) {

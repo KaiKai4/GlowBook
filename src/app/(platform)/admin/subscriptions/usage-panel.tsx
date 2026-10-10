@@ -22,7 +22,7 @@ export function UsagePanel({
   if (!detail.plan) {
     return (
       <p className="rounded-xl border border-dashed border-brand-200 bg-surface px-4 py-8 text-center text-sm text-fg-subtle">
-        Asigna un plan para ver el consumo de límites de este salon.
+        Asigna un plan para ver el consumo de límites de este salón.
       </p>
     );
   }
@@ -64,7 +64,7 @@ export function UsagePanel({
       <Panel
         icon={<Gauge className="h-4 w-4" />}
         title="Consumo de límites"
-        description="Que tanto del plan asignado (mas extras) esta usando este salon."
+        description="Qué tanto del plan asignado (más extras) está usando este salón."
       >
         {detail.limits.length === 0 ? (
           <p className="text-sm text-fg-subtle">El plan no tiene límites configurados.</p>
@@ -79,8 +79,8 @@ export function UsagePanel({
 
       <Panel
         icon={<Blocks className="h-4 w-4" />}
-        title="Modulos visibles"
-        description="Apartados de la sidebar que este salon puede usar segun plan y extras."
+        title="Módulos visibles"
+        description="Apartados de la sidebar que este salón puede usar segun plan y extras."
       >
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {modules.map((module) => (

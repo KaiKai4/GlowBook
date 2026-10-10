@@ -43,7 +43,7 @@ describe("runSideEffect", () => {
     });
   });
 
-  it("captura tambien valores no Error lanzados por el efecto", async () => {
+  it("captura también valores no Error lanzados por el efecto", async () => {
     const outcome = await runSideEffect("sincronizar", () => Promise.reject("texto"), context);
 
     expect(outcome.ok).toBe(false);

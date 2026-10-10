@@ -79,7 +79,7 @@ export function override(partial: Partial<SalonPlanOverride>): SalonPlanOverride
   return {
     id: "ov-1",
     salonId: "salon-1",
-    salonName: "Salon",
+    salonName: "Salón",
     moduleKey: null,
     metricKey: null,
     moduleEnabled: null,

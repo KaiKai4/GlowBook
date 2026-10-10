@@ -25,7 +25,7 @@ describe("adaptadores RPC de ciclo de vida de cita", () => {
     vi.resetAllMocks();
   });
 
-  it("confirmar envía el payload canónico con la clave y valida el resultado", async () => {
+  it("confirmar envía el payload canónico con la clave y válida el resultado", async () => {
     useRpcResponse({ data: { appointment_id: APPOINTMENT_ID, status: "confirmed" }, error: null });
 
     const result = await confirmAppointmentRpc({ appointmentId: APPOINTMENT_ID, idempotencyKey: KEY });
@@ -61,7 +61,7 @@ describe("adaptadores RPC de ciclo de vida de cita", () => {
     await expect(cancelAppointmentRpc({ appointmentId: APPOINTMENT_ID })).rejects.toBe(failure);
   });
 
-  it("cancelar envía la clave y valida el estado devuelto", async () => {
+  it("cancelar envía la clave y válida el estado devuelto", async () => {
     useRpcResponse({ data: { appointment_id: APPOINTMENT_ID, status: "confirmed" }, error: null });
 
     await expect(cancelAppointmentRpc({ appointmentId: APPOINTMENT_ID, idempotencyKey: KEY })).rejects.toThrow(

@@ -54,7 +54,7 @@ describe("ResetPasswordPage", () => {
     vi.clearAllMocks();
   });
 
-  it("muestra el estado de verificación mientras el enlace se valida", () => {
+  it("muestra el estado de verificación mientras el enlace se válida", () => {
     vi.mocked(verifyRecoveryLinkAction).mockReturnValue(new Promise(() => undefined));
     mounted = mountComponent(<ResetPasswordPage />);
 

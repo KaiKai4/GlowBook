@@ -44,8 +44,8 @@ export function ExtrasPanel({
         <p className="rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 text-sm text-brand-800">
           Estas ampliando <span className="font-semibold">{suggestedMetricName}</span>.
           {suggestedAddon
-            ? " El extra del catalogo que lo aumenta ya esta seleccionado: vendelo o regalalo."
-            : " No hay un extra de catalogo para este límite: usa la cortesia personalizada o crea el extra en Planes → Extras."}
+            ? " El extra del catálogo que lo aumenta ya está seleccionado: véndelo o regálalo."
+            : " No hay un extra de catálogo para este límite: usa la cortesia personalizada o crea el extra en Planes → Extras."}
         </p>
       ) : null}
       <ActiveExtrasList salonId={salonId} extras={extras} />
@@ -79,8 +79,8 @@ function GiveAddonForm({
   return (
     <Panel
       icon={<ShoppingCart className="h-4 w-4" />}
-      title="Asignar extra del catalogo"
-      description="Vende un extra al precio del catalogo, ajusta el precio o marcalo como regalo."
+      title="Asignar extra del catálogo"
+      description="Vende un extra al precio del catálogo, ajusta el precio o marcalo como regalo."
     >
       <form action={action} className="space-y-4">
         <input type="hidden" name="salonId" value={salonId} />
@@ -103,7 +103,7 @@ function GiveAddonForm({
               type="number"
               min="0"
               step="0.01"
-              placeholder={selected ? selected.monthlyPrice.toFixed(2) : "Precio del catalogo"}
+              placeholder={selected ? selected.monthlyPrice.toFixed(2) : "Precio del catálogo"}
             />
           ) : null}
         </div>

@@ -162,7 +162,7 @@ describe("createEmployeeProfile", () => {
     expect(mockedGenerateInvite).not.toHaveBeenCalled();
   });
 
-  it("valida las asignaciones antes de la RPC y oculta el detalle interno", async () => {
+  it("válida las asignaciones antes de la RPC y oculta el detalle interno", async () => {
     mockedValidateAssignments.mockRejectedValue(new Error("categoría ajena"));
 
     const result = await createEmployeeProfile(SALON_ID, baseCreateInput, null, KEY);
@@ -222,7 +222,7 @@ describe("createEmployeeProfile", () => {
     });
   });
 
-  it("devuelve el alta con aviso si el enlace falla despues de confirmarse la escritura", async () => {
+  it("devuelve el alta con aviso si el enlace falla después de confirmarse la escritura", async () => {
     mockedGenerateInvite.mockResolvedValue({ ok: false, error: "No se pudo generar el nuevo enlace de acceso." });
 
     const result = await createEmployeeProfile(SALON_ID, baseCreateInput, "role-1", KEY);
@@ -244,7 +244,7 @@ describe("updateEmployeeProfile", () => {
     expect(mockedUpdateRecord).not.toHaveBeenCalled();
   });
 
-  it("editar solo el nombre no escribe telefono, email, especialidad ni comision", async () => {
+  it("editar solo el nombre no escribe teléfono, email, especialidad ni comision", async () => {
     mockedFindEmployeeById.mockResolvedValue(employeeDetail());
 
     const result = await updateEmployeeProfile(EMPLOYEE_ID, SALON_ID, { first_name: "Ana Maria" }, KEY);
@@ -259,7 +259,7 @@ describe("updateEmployeeProfile", () => {
     });
   });
 
-  it("valida las asignaciones antes de cualquier escritura o revocacion", async () => {
+  it("válida las asignaciones antes de cualquier escritura o revocacion", async () => {
     mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: PROFILE_ID }));
     mockedValidateAssignments.mockRejectedValue(new Error("servicio ajeno"));
 
@@ -331,7 +331,7 @@ describe("updateEmployeeProfile", () => {
     expect(mockedReplaceInvite).not.toHaveBeenCalled();
   });
 
-  it("si Auth falla despues de la BD devuelve ok con aviso", async () => {
+  it("si Auth falla después de la BD devuelve ok con aviso", async () => {
     mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: PROFILE_ID }));
     mockedCheckRevocable.mockResolvedValue({ ok: true, value: { roleId: null } });
     mockedDeleteAuthAccount.mockResolvedValue({ ok: false, error: "No se pudo revocar la cuenta anterior del colaborador." });
@@ -372,7 +372,7 @@ describe("updateEmployeeProfile", () => {
     expect(mockedDeleteAuthAccount).not.toHaveBeenCalled();
   });
 
-  it("lee la invitacion pendiente antes de escribir y reutiliza su rol al cambiar el email", async () => {
+  it("lee la invitación pendiente antes de escribir y reutiliza su rol al cambiar el email", async () => {
     mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: null }));
     mockedFindLatestInvite.mockResolvedValue({ data: { role_id: "role-9" }, error: null });
     mockedReplaceInvite.mockResolvedValue({ ok: true, value: { token: "t", expiresAt: "x" } });
@@ -392,13 +392,13 @@ describe("updateEmployeeProfile", () => {
     });
   });
 
-  it("si no se puede leer la invitacion pendiente no escribe nada", async () => {
+  it("si no se puede leer la invitación pendiente no escribe nada", async () => {
     mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: null }));
     mockedFindLatestInvite.mockResolvedValue({ data: null, error: { message: "boom" } });
 
     const result = await updateEmployeeProfile(EMPLOYEE_ID, SALON_ID, { email: "otro@glowbook.test" }, KEY);
 
-    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitacion pendiente." });
+    expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitación pendiente." });
     expect(mockedUpdateRecord).not.toHaveBeenCalled();
   });
 
@@ -416,7 +416,7 @@ describe("updateEmployeeProfile", () => {
     expect(mockedReplaceInvite).not.toHaveBeenCalled();
   });
 
-  it("si el enlace falla despues de confirmarse la escritura devuelve aviso", async () => {
+  it("si el enlace falla después de confirmarse la escritura devuelve aviso", async () => {
     mockedFindEmployeeById.mockResolvedValue(employeeDetail({ profile_id: null }));
     mockedReplaceInvite.mockResolvedValue({ ok: false, error: "No se pudo generar el nuevo enlace de acceso." });
 

@@ -45,7 +45,7 @@ describe("readGiveAddonInput", () => {
 });
 
 describe("readManualExtraInput", () => {
-  it("con targetType 'module' envia el modulo, habilitado, y vacia la metrica", () => {
+  it("con targetType 'module' envia el módulo, habilitado, y vacia la metrica", () => {
     expect(
       readManualExtraInput(
         fields({ salonId: "s", targetType: "module", moduleKey: "inventory", metricKey: "x", maxDelta: "5", reason: "r" })
@@ -64,7 +64,7 @@ describe("readManualExtraInput", () => {
     });
   });
 
-  it("por defecto (metric) envia la metrica y el delta sin tocar modulos", () => {
+  it("por defecto (metric) envia la metrica y el delta sin tocar módulos", () => {
     expect(
       readManualExtraInput(fields({ moduleKey: "inventory", metricKey: "appointments", maxDelta: "20" }))
     ).toMatchObject({
@@ -75,7 +75,7 @@ describe("readManualExtraInput", () => {
     });
   });
 
-  it("un tipo desconocido no envia ni modulo ni metrica ni delta", () => {
+  it("un tipo desconocido no envia ni módulo ni metrica ni delta", () => {
     expect(
       readManualExtraInput(fields({ targetType: "otro", moduleKey: "m", metricKey: "x", maxDelta: "1" }))
     ).toMatchObject({ moduleKey: "", metricKey: "", moduleEnabled: null, maxDelta: "" });

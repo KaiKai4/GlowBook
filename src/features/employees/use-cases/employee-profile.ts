@@ -139,7 +139,7 @@ export async function updateEmployeeProfile(
   idempotencyKey: string
 ): Promise<Result<EmployeeWriteResult>> {
   try {
-    // Lectura previa a cualquier escritura: estado actual, invitacion pendiente y validaciones.
+    // Lectura previa a cualquier escritura: estado actual, invitación pendiente y validaciones.
     const currentEmployee = await findEmployeeById(employeeId, salonId);
     if (!currentEmployee) return { ok: false, error: "Colaborador no encontrado." };
 
@@ -168,13 +168,13 @@ export async function updateEmployeeProfile(
       unlinkProfile = true;
       revokedProfileId = currentEmployee.profile_id;
     } else if (emailChanged && !currentEmployee.profile_id && nextEmail) {
-      // La invitacion pendiente se lee ANTES de escribir: la RPC la invalida al cambiar el email.
+      // La invitación pendiente se lee ANTES de escribir: la RPC la invalida al cambiar el email.
       const { data: latestInvite, error: latestInviteError } =
         await findLatestPendingEmployeeInvitationRole(employeeId, salonId);
 
       if (latestInviteError) {
         captureError(latestInviteError, { module: "employees", action: "profile" });
-        return { ok: false, error: "No se pudo verificar la invitacion pendiente." };
+        return { ok: false, error: "No se pudo verificar la invitación pendiente." };
       }
       inviteRoleId = latestInvite?.role_id ?? null;
     }

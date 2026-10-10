@@ -7,8 +7,8 @@ import type {
   saveCommercialPlanModulesBatch,
 } from "./commercial-plans";
 
-// Lectura del formulario del catalogo comercial: convierte los campos crudos en
-// la entrada del caso de uso y fija aqui los valores por defecto (estado draft,
+// Lectura del formulario del catálogo comercial: convierte los campos crudos en
+// la entrada del caso de uso y fija aquí los valores por defecto (estado draft,
 // modo warn, umbral 80, ambito current...). Sin I/O: se prueba directamente.
 
 export type SavePlanInput = Parameters<typeof saveCommercialPlanConfig>[0];

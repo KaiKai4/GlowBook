@@ -135,7 +135,7 @@ describe("create appointment command", () => {
     });
   });
 
-  it("stops before scheduling when the customer does not belong to the salon", async () => {
+  it("stops before scheduling when the customer does not belong to the salón", async () => {
     mockedFindAppointmentCreationResources.mockResolvedValue({
       customerExists: false,
       salonConfig: null,
@@ -199,7 +199,7 @@ describe("create appointment command", () => {
     );
 
     expect(result).toMatchObject({ ok: false });
-    expect(result.ok === false && result.error).toContain("no esta disponible para nuevas citas");
+    expect(result.ok === false && result.error).toContain("no está disponible para nuevas citas");
   });
 
   it("decide solo por la causa: un texto de solape sin causa tipada devuelve el error genérico", async () => {

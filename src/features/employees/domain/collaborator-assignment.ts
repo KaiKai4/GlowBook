@@ -18,13 +18,13 @@ function assertServicesHaveAssignedCategories(
 ): void {
   const missing = findServicesMissingAssignedCategory(services, assignedCategoryIds);
   if (missing.length > 0) {
-    throw new PublicError("Para asignar un servicio al colaborador, tambien debes asignar su categoria.");
+    throw new PublicError("Para asignar un servicio al colaborador, también debes asignar su categoría.");
   }
 }
 
 /**
- * Reglas de una asignacion de colaborador frente a lo que existe en el salon:
- * todas las categorias y servicios pedidos deben estar activos y en el salon, y
+ * Reglas de una asignacion de colaborador frente a lo que existe en el salón:
+ * todas las categorias y servicios pedidos deben estar activos y en el salón, y
  * cada servicio exige su categoria asignada.
  */
 export function assertCollaboratorAssignments(input: {
@@ -34,10 +34,10 @@ export function assertCollaboratorAssignments(input: {
   services: ServiceCategoryRef[];
 }): void {
   if (input.activeCategoryIds.length !== input.requestedCategoryIds.length) {
-    throw new Error("Una o mas categorías no pertenecen al salon o estan inactivas.");
+    throw new Error("Una o más categorías no pertenecen al salón o están inactivas.");
   }
   if (input.services.length !== input.requestedServiceIds.length) {
-    throw new Error("Uno o mas servicios no pertenecen al salon o estan inactivos.");
+    throw new Error("Uno o más servicios no pertenecen al salón o están inactivos.");
   }
   assertServicesHaveAssignedCategories(input.services, input.requestedCategoryIds);
 }

@@ -18,14 +18,14 @@ beforeEach(() => {
 });
 
 describe("signInAction", () => {
-  it("inicia sesion con las credenciales y la preferencia recordarme", async () => {
+  it("inicia sesión con las credenciales y la preferencia recordarme", async () => {
     const result = await signInAction(INPUT);
 
     expect(signInWithPassword).toHaveBeenCalledWith(INPUT);
     expect(result).toEqual(ok(undefined));
   });
 
-  it("pasa 'no recordarme' al servidor para que la sesion sea solo de esta visita", async () => {
+  it("pasa 'no recordarme' al servidor para que la sesión sea solo de esta visita", async () => {
     await signInAction({ ...INPUT, remember: false });
 
     expect(signInWithPassword).toHaveBeenCalledWith({ ...INPUT, remember: false });
@@ -62,14 +62,14 @@ describe("signInAction", () => {
   });
 });
 
-describe("signInAction con limite por IP", () => {
-  it("aplica el limite de inicio de sesion por IP antes de tocar la autenticacion", async () => {
+describe("signInAction con límite por IP", () => {
+  it("aplica el límite de inicio de sesión por IP antes de tocar la autenticacion", async () => {
     await signInAction(INPUT);
 
     expect(assertAnonymousRateLimit).toHaveBeenCalledWith("sign-in", { max: 20, windowMs: 900_000 });
   });
 
-  it("si el limite bloquea no intenta iniciar sesion y devuelve el aviso de limite", async () => {
+  it("si el límite bloquea no intenta iniciar sesión y devuelve el aviso de límite", async () => {
     vi.mocked(assertAnonymousRateLimit).mockResolvedValue(err("Demasiados intentos. Espera un momento y vuelve a intentarlo."));
 
     const result = await signInAction(INPUT);

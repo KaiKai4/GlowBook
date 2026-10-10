@@ -34,7 +34,7 @@ export default async function ExpensesPage() {
             Gastos
           </span>
         }
-        description="Registra egresos del salon, incluyendo compras de inventario."
+        description="Registra egresos del salón, incluyendo compras de inventario."
       />
       <ExpensesManager
         expenses={expenses}

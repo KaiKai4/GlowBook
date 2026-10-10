@@ -5,6 +5,9 @@ import { findPlatformAuditLog, type PlatformAuditRow } from "@/features/platform
 import type { Json } from "@/types/database.types";
 import { auditActionOptions, auditActionText, isKnownAuditAction } from "./audit-messages";
 
+/** Entradas de auditoría por página en la vista de plataforma. */
+const AUDIT_LOG_PAGE_SIZE = 100;
+
 const STATUS_LABELS: Record<PlatformAuditStatus, string> = {
   succeeded: "Correcta",
   failed: "Fallida",
@@ -90,7 +93,7 @@ function metadataItems(metadata: Json): PlatformAuditMetadataItem[] {
 }
 
 function targetLabel(entry: PlatformAuditRow): string {
-  if (entry.target_salon_id) return `Salon ${shortId(entry.target_salon_id)}`;
+  if (entry.target_salon_id) return `Salón ${shortId(entry.target_salon_id)}`;
   if (entry.target_resource_type && entry.target_resource_id) {
     return `${entry.target_resource_type} ${shortId(entry.target_resource_id)}`;
   }
@@ -125,7 +128,7 @@ export async function getPlatformAuditLog({
   const entries = (await findPlatformAuditLog({
     action: parsedAction,
     status: parsedStatus,
-    limit: 100,
+    limit: AUDIT_LOG_PAGE_SIZE,
   })).map(toViewModel);
 
   return {

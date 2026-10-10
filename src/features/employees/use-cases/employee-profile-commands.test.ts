@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "@/infra/result";
-import { createEmployeeFlow, updateEmployeeFlow } from "./employee-profile-commands";
+import { createEmployee, updateEmployee } from "./employee-profile-commands";
 import { admitNewEmployee } from "./employee-admission";
 import { createEmployeeProfile, updateEmployeeProfile } from "./employee-profile";
 import { formDataOf } from "@/test/action-fixtures";
@@ -27,7 +27,7 @@ const checks = {
 const validForm = (extra: Record<string, string> = {}) =>
   formDataOf({ idempotency_key: KEY, first_name: "Ana", last_name: "Pérez", ...extra });
 
-describe("createEmployeeFlow", () => {
+describe("createEmployee", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(admitNewEmployee).mockImplementation(async (input) => ok({ roleId: input.rolesEnabled ? input.requestedRoleId : null }));
@@ -37,7 +37,7 @@ describe("createEmployeeFlow", () => {
   it("corta antes de validar la clave y el formulario si la admision falla", async () => {
     vi.mocked(admitNewEmployee).mockResolvedValue(err("Límite de colaboradores alcanzado."));
 
-    const result = await createEmployeeFlow(
+    const result = await createEmployee(
       { salonId: SALON_ID, rolesEnabled: true, checks },
       formDataOf({ first_name: "" })
     );
@@ -47,7 +47,7 @@ describe("createEmployeeFlow", () => {
   });
 
   it("pide la clave de idempotencia antes de leer el formulario", async () => {
-    const result = await createEmployeeFlow(
+    const result = await createEmployee(
       { salonId: SALON_ID, rolesEnabled: false, checks },
       formDataOf({ first_name: "", last_name: "" })
     );
@@ -57,7 +57,7 @@ describe("createEmployeeFlow", () => {
   });
 
   it("devuelve el primer error del formulario sin crear el colaborador", async () => {
-    const result = await createEmployeeFlow(
+    const result = await createEmployee(
       { salonId: SALON_ID, rolesEnabled: false, checks },
       validForm({ first_name: "" })
     );
@@ -67,7 +67,7 @@ describe("createEmployeeFlow", () => {
   });
 
   it("crea el colaborador con el rol admitido y la clave validada", async () => {
-    const result = await createEmployeeFlow(
+    const result = await createEmployee(
       { salonId: SALON_ID, rolesEnabled: true, checks },
       validForm({ role_id: ROLE_ID })
     );
@@ -82,8 +82,8 @@ describe("createEmployeeFlow", () => {
     expect(result).toEqual(ok({ id: EMPLOYEE_ID }));
   });
 
-  it("no pasa rol cuando el salon no tiene roles habilitados", async () => {
-    await createEmployeeFlow({ salonId: SALON_ID, rolesEnabled: false, checks }, validForm({ role_id: ROLE_ID }));
+  it("no pasa rol cuando el salón no tiene roles habilitados", async () => {
+    await createEmployee({ salonId: SALON_ID, rolesEnabled: false, checks }, validForm({ role_id: ROLE_ID }));
 
     expect(admitNewEmployee).toHaveBeenCalledWith(expect.objectContaining({ requestedRoleId: ROLE_ID }));
     expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null, KEY);
@@ -92,7 +92,7 @@ describe("createEmployeeFlow", () => {
   it("devuelve el error del caso de uso de alta", async () => {
     vi.mocked(createEmployeeProfile).mockResolvedValue(err("El email ya existe."));
 
-    expect(await createEmployeeFlow({ salonId: SALON_ID, rolesEnabled: false, checks }, validForm())).toEqual(
+    expect(await createEmployee({ salonId: SALON_ID, rolesEnabled: false, checks }, validForm())).toEqual(
       err("El email ya existe.")
     );
   });
@@ -100,34 +100,34 @@ describe("createEmployeeFlow", () => {
   it("admitNewEmployee sigue siendo la fuente del rol efectivo", async () => {
     vi.mocked(admitNewEmployee).mockResolvedValue(ok({ roleId: null }));
 
-    await createEmployeeFlow({ salonId: SALON_ID, rolesEnabled: true, checks }, validForm({ role_id: ROLE_ID }));
+    await createEmployee({ salonId: SALON_ID, rolesEnabled: true, checks }, validForm({ role_id: ROLE_ID }));
 
     expect(createEmployeeProfile).toHaveBeenCalledWith(SALON_ID, expect.any(Object), null, KEY);
   });
 });
 
-describe("updateEmployeeFlow", () => {
+describe("updateEmployee", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(updateEmployeeProfile).mockResolvedValue(ok({}));
   });
 
-  it("valida la clave antes que el formulario", async () => {
-    const result = await updateEmployeeFlow(SALON_ID, EMPLOYEE_ID, formDataOf({ first_name: "" }));
+  it("válida la clave antes que el formulario", async () => {
+    const result = await updateEmployee(SALON_ID, EMPLOYEE_ID, formDataOf({ first_name: "" }));
 
     expect(result).toEqual(err("Solicitud inválida. Recarga la página e inténtalo de nuevo."));
     expect(updateEmployeeProfile).not.toHaveBeenCalled();
   });
 
-  it("rechaza un formulario de edicion invalido", async () => {
-    const result = await updateEmployeeFlow(SALON_ID, EMPLOYEE_ID, validForm({ email: "no-es-email" }));
+  it("rechaza un formulario de edicion inválido", async () => {
+    const result = await updateEmployee(SALON_ID, EMPLOYEE_ID, validForm({ email: "no-es-email" }));
 
     expect(result).toEqual(err("Email inválido"));
     expect(updateEmployeeProfile).not.toHaveBeenCalled();
   });
 
   it("escribe solo los campos presentes con la clave validada", async () => {
-    await updateEmployeeFlow(SALON_ID, EMPLOYEE_ID, formDataOf({ idempotency_key: KEY, phone: "555" }));
+    await updateEmployee(SALON_ID, EMPLOYEE_ID, formDataOf({ idempotency_key: KEY, phone: "555" }));
 
     expect(updateEmployeeProfile).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID, { phone: "555", service_ids: [], category_ids: [] }, KEY);
   });

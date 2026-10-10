@@ -75,7 +75,7 @@ export async function getAppointmentDetail({
       serviceId: item.service_id,
       employeeId: item.employee_id,
       serviceName: item.service?.name ?? "Servicio eliminado",
-      serviceCategoryName: item.service?.category?.name ?? "Sin categoria",
+      serviceCategoryName: item.service?.category?.name ?? "Sin categoría",
       pricingMode: item.service?.category?.pricing_mode === "variable" ? "variable" : "fixed",
       employeeName: item.employee
         ? `${item.employee.first_name} ${item.employee.last_name}`.trim()

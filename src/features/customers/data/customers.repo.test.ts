@@ -13,7 +13,7 @@ import {
   updateCustomer,
 } from "./customers.repo";
 
-// Todas las consultas de clientes deben quedar acotadas al salon indicado:
+// Todas las consultas de clientes deben quedar acotadas al salón indicado:
 // la RLS lo garantiza en BD, pero el repositorio tambien lo pide explicitamente.
 const serverClient = vi.hoisted(() => ({ current: null as SupabaseDouble | null }));
 vi.mock("@/infra/supabase/server", () => ({
@@ -46,7 +46,7 @@ describe("customers.repo", () => {
   });
 
   describe("findCustomers", () => {
-    it("filtra por salon, excluye temporales y pagina con range", async () => {
+    it("filtra por salón, excluye temporales y página con range", async () => {
       const db = useDb({ customers: { data: [customerRow], error: null, count: 1 } });
 
       const result = await findCustomers(SALON_ID, { page: 3, perPage: 5 });
@@ -59,7 +59,7 @@ describe("customers.repo", () => {
       expect(ops).toContainEqual({ target: "customers", method: "select", args: ["*", { count: "exact" }] });
     });
 
-    it("usa por defecto la primera pagina de 10 filas", async () => {
+    it("usa por defecto la primera página de 10 filas", async () => {
       const db = useDb({ customers: { data: [], error: null, count: 0 } });
 
       await findCustomers(SALON_ID);
@@ -151,7 +151,7 @@ describe("customers.repo", () => {
   });
 
   describe("findCustomerByPhone / findCustomerByEmail", () => {
-    it("busca por telefono dentro del salon y devuelve el cliente encontrado", async () => {
+    it("busca por teléfono dentro del salón y devuelve el cliente encontrado", async () => {
       const db = useDb({ customers: { data: customerRow, error: null } });
 
       expect(await findCustomerByPhone(SALON_ID, "+50761234567")).toEqual(customerRow);
@@ -163,13 +163,13 @@ describe("customers.repo", () => {
       ]);
     });
 
-    it("devuelve null cuando no hay cliente con ese telefono", async () => {
+    it("devuelve null cuando no hay cliente con ese teléfono", async () => {
       useDb({ customers: { data: null, error: null } });
 
       expect(await findCustomerByPhone(SALON_ID, "000")).toBeNull();
     });
 
-    it("busca por email sin distinguir mayusculas y dentro del salon", async () => {
+    it("busca por email sin distinguir mayusculas y dentro del salón", async () => {
       const db = useDb({ customers: { data: customerRow, error: null } });
 
       expect(await findCustomerByEmail(SALON_ID, "ANA@example.com")).toEqual(customerRow);
@@ -190,7 +190,7 @@ describe("customers.repo", () => {
   });
 
   describe("deleteCustomer", () => {
-    it("solo borra clientes temporales del salon indicado", async () => {
+    it("solo borra clientes temporales del salón indicado", async () => {
       const db = useDb({ customers: { data: null, error: null } });
 
       await deleteCustomer("cust-1", SALON_ID);
@@ -212,7 +212,7 @@ describe("customers.repo", () => {
   });
 
   describe("updateCustomer", () => {
-    it("actualiza solo la fila del salon y devuelve el registro actualizado", async () => {
+    it("actualiza solo la fila del salón y devuelve el registro actualizado", async () => {
       const db = useDb({ customers: { data: { ...customerRow, notes: "VIP" }, error: null } });
 
       const updated = await updateCustomer("cust-1", SALON_ID, { notes: "VIP" });
@@ -227,7 +227,7 @@ describe("customers.repo", () => {
       ]);
     });
 
-    it("propaga el error de actualizacion", async () => {
+    it("propaga el error de actualización", async () => {
       const dbError = { message: "sin permiso" };
       useDb({ customers: { data: null, error: dbError } });
 

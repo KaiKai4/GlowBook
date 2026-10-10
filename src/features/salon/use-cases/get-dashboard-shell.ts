@@ -40,7 +40,7 @@ function toPaymentGrace(standing: PaymentStanding): DashboardShellViewModel["pay
   return { overdueSince: standing.overdueSince, graceDaysLeft: standing.graceDaysLeft };
 }
 
-/** Estado de pago del salon, evaluado al acceder (sin cron). */
+/** Estado de pago del salón, evaluado al acceder (sin cron). */
 async function getSalonPaymentStanding(salonId: string): Promise<PaymentStanding> {
   const effectivePlan = await readEffectivePlanOrNull(salonId, "dashboard-shell", getEffectiveSalonPlan);
   return evaluatePaymentStanding({

@@ -133,12 +133,12 @@ describe("getAppointmentDetail: cliente, colaborador y servicio", () => {
 
     expect(view?.items[0]).toMatchObject({
       serviceName: "Servicio eliminado",
-      serviceCategoryName: "Sin categoria",
+      serviceCategoryName: "Sin categoría",
       pricingMode: "fixed",
     });
   });
 
-  it("un servicio sin categoría usa 'Sin categoria' y precio fijo", async () => {
+  it("un servicio sin categoría usa 'Sin categoría' y precio fijo", async () => {
     mockedFind.mockResolvedValue(
       appointment({
         items: [item({ service: { id: "service-1", name: "Manicura", duration_minutes: 30, category: null } })],
@@ -149,7 +149,7 @@ describe("getAppointmentDetail: cliente, colaborador y servicio", () => {
 
     expect(view?.items[0]).toMatchObject({
       serviceName: "Manicura",
-      serviceCategoryName: "Sin categoria",
+      serviceCategoryName: "Sin categoría",
       pricingMode: "fixed",
     });
   });

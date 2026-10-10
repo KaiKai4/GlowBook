@@ -125,7 +125,7 @@ describe("inventory-products", () => {
   });
 
   describe("getInventoryPage", () => {
-    it("calcula estado y total de stock por ubicacion y marca los productos con stock bajo", async () => {
+    it("calcula estado y total de stock por ubicación y marca los productos con stock bajo", async () => {
       mockedFindProducts.mockResolvedValue([
         productRow({
           id: "p-ok",
@@ -216,7 +216,7 @@ describe("inventory-products", () => {
       expect(view.recentMovements[2]).toMatchObject({ note: "", quantityDelta: 0, quantityAfter: 0 });
     });
 
-    it("consulta productos y movimientos del salon indicado", async () => {
+    it("consulta productos y movimientos del salón indicado", async () => {
       mockedFindProducts.mockResolvedValue([]);
       mockedFindMovements.mockResolvedValue([]);
 
@@ -331,7 +331,7 @@ describe("inventory-products", () => {
   });
 
   describe("deleteInventoryProduct", () => {
-    it("aplica borrado logico del producto del salon", async () => {
+    it("aplica borrado logico del producto del salón", async () => {
       expect(await deleteInventoryProduct(PRODUCT_ID, SALON_ID)).toEqual({ ok: true, value: undefined });
       expect(mockedSoftDelete).toHaveBeenCalledWith(PRODUCT_ID, SALON_ID);
     });
@@ -349,7 +349,7 @@ describe("inventory-products", () => {
 
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
-describe("registro de errores de eliminacion", () => {
+describe("registro de errores de eliminación", () => {
   it("registra con captureError el fallo al eliminar el producto", async () => {
     const dbError = new Error("caida");
     mockedSoftDelete.mockRejectedValue(dbError);

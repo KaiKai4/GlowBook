@@ -14,7 +14,7 @@ import { replacePendingEmployeeInvitation, type EmployeeInviteResult } from "./e
 const OWNER_ACCESS_MESSAGE = "No se puede modificar el acceso de un owner desde colaboradores.";
 
 /**
- * Validacion previa a cualquier escritura: el perfil vinculado existe en el salon y no es owner.
+ * Validacion previa a cualquier escritura: el perfil vinculado existe en el salón y no es owner.
  * No escribe nada ni toca Auth.
  */
 export async function checkEmployeeAccessRevocable(

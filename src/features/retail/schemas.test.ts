@@ -13,7 +13,7 @@ const validSale = {
 };
 
 describe("RetailSaleSchema", () => {
-  it("convierte cantidades y precios de formulario y aplica defaults de ubicacion, pago y nota", () => {
+  it("convierte cantidades y precios de formulario y aplica defaults de ubicación, pago y nota", () => {
     expect(RetailSaleSchema.parse(validSale)).toEqual({
       customer_id: "",
       product_id: PRODUCT_ID,
@@ -39,7 +39,7 @@ describe("RetailSaleSchema", () => {
 
   it("exige cantidad entera y positiva", () => {
     expect(RetailSaleSchema.safeParse({ ...validSale, quantity: "1.5" }).error?.issues[0]?.message).toBe(
-      "La cantidad debe ser un numero entero."
+      "La cantidad debe ser un número entero."
     );
     expect(RetailSaleSchema.safeParse({ ...validSale, quantity: "0" }).error?.issues[0]?.message).toBe(
       "La cantidad debe ser mayor que 0."
@@ -53,22 +53,22 @@ describe("RetailSaleSchema", () => {
     );
   });
 
-  it("normaliza el metodo de pago recortando y colapsando espacios", () => {
+  it("normaliza el método de pago recortando y colapsando espacios", () => {
     expect(RetailSaleSchema.parse({ ...validSale, payment_method: "  Tarjeta   Debito " }).payment_method).toBe(
       "Tarjeta Debito"
     );
   });
 
-  it("rechaza metodos de pago vacios o demasiado largos", () => {
+  it("rechaza métodos de pago vacios o demasiado largos", () => {
     expect(RetailSaleSchema.safeParse({ ...validSale, payment_method: "   " }).error?.issues[0]?.message).toBe(
-      "El metodo de pago es obligatorio."
+      "El método de pago es obligatorio."
     );
     expect(RetailSaleSchema.safeParse({ ...validSale, payment_method: "m".repeat(65) }).error?.issues[0]?.message).toBe(
-      "El metodo de pago no puede superar 64 caracteres."
+      "El método de pago no puede superar 64 caracteres."
     );
   });
 
-  it("valida ubicacion de inventario y producto", () => {
+  it("válida ubicación de inventario y producto", () => {
     expect(RetailSaleSchema.safeParse({ ...validSale, location: "storage" }).success).toBe(true);
     expect(RetailSaleSchema.safeParse({ ...validSale, location: "bodega" }).success).toBe(false);
     expect(RetailSaleSchema.safeParse({ ...validSale, product_id: "x" }).error?.issues[0]?.message).toBe(

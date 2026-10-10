@@ -27,7 +27,7 @@ const revenue: Series = {
 };
 
 describe("scaleRange", () => {
-  it("redondea montos a un maximo de orden de magnitud y empieza en cero si no hay negativos", () => {
+  it("redondea montos a un máximo de orden de magnitud y empieza en cero si no hay negativos", () => {
     expect(scaleRange([10, 50], false)).toEqual({ min: 0, max: 50 });
     expect(scaleRange([], false)).toEqual({ min: 0, max: 1 });
   });
@@ -36,13 +36,13 @@ describe("scaleRange", () => {
     expect(scaleRange([10, 60], true)).toEqual({ min: 0, max: 75 });
   });
 
-  it("refleja el minimo negativo simetricamente", () => {
+  it("refleja el mínimo negativo simetricamente", () => {
     expect(scaleRange([-30, 20], false)).toEqual({ min: -30, max: 30 });
   });
 });
 
 describe("buildChart", () => {
-  it("distribuye los puntos en el ancho util y ubica la base en el valor cero", () => {
+  it("distribuye los puntos en el ancho útil y ubica la base en el valor cero", () => {
     const chart = buildChart([point("a", 0), point("b", 100), point("c", 50)], [revenue], 0, 100);
 
     expect(chart.x(0)).toBe(PAD.left);
@@ -50,7 +50,7 @@ describe("buildChart", () => {
     expect(chart.slot).toBe((WIDTH - PAD.left - PAD.right) / 2);
   });
 
-  it("genera cinco marcas de eje entre el minimo y el maximo", () => {
+  it("genera cinco marcas de eje entre el mínimo y el máximo", () => {
     const chart = buildChart([point("a", 0), point("b", 100)], [revenue], 0, 100);
 
     expect(chart.ticks.map((tick) => tick.value)).toEqual([0, 25, 50, 75, 100]);
@@ -76,12 +76,12 @@ describe("tooltipBox", () => {
     expect(tooltipBox(400, 0, 1)).toEqual({ left: 308, top: PAD.top + 10, width: 184, height: 54 });
   });
 
-  it("no sale del area util por la izquierda ni por la derecha", () => {
+  it("no sale del area útil por la izquierda ni por la derecha", () => {
     expect(tooltipBox(60, 1, 2).left).toBe(PAD.left);
     expect(tooltipBox(740, 0, 1).left).toBe(WIDTH - PAD.right - 184);
   });
 
-  it("alterna la altura en puntos impares y crece con el numero de series", () => {
+  it("alterna la altura en puntos impares y crece con el número de series", () => {
     expect(tooltipBox(400, 1, 2)).toMatchObject({ top: PAD.top + 18, height: 74 });
   });
 });

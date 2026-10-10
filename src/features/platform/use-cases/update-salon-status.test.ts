@@ -15,13 +15,13 @@ const mockedSetSalonActiveStatus = vi.mocked(setSalonActiveStatus);
 const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 
-describe("update salon status", () => {
+describe("update salón status", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedSetSalonActiveStatus.mockResolvedValue(undefined);
   });
 
-  it("suspends or reactivates a salon and records the platform action", async () => {
+  it("suspends or reactivates a salón and records the platform action", async () => {
     await expect(
       updateSalonStatus({
         salonId: "salon-1",
@@ -40,14 +40,14 @@ describe("update salon status", () => {
     });
   });
 
-  it("rejects blank Salon ids before touching the data Adapter", async () => {
+  it("rejects blank Salón ids before touching the data Adapter", async () => {
     const result = await updateSalonStatus({
       salonId: "   ",
       isActive: true,
       actorUserId,
     });
 
-    expect(result).toEqual({ ok: false, error: "Salon inválido." });
+    expect(result).toEqual({ ok: false, error: "Salón inválido." });
     expect(mockedSetSalonActiveStatus).not.toHaveBeenCalled();
     expect(mockedPublishAuditEvent).not.toHaveBeenCalled();
   });

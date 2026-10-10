@@ -47,7 +47,7 @@ export function usePaymentMethods(paymentMethods: PaymentMethod[]) {
     const methodsToSave = normalizePaymentMethods(enabledPayments);
 
     if (methodsToSave.length === 0) {
-      setError("Agrega al menos un metodo de pago.");
+      setError("Agrega al menos un método de pago.");
       return;
     }
 

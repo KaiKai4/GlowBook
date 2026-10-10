@@ -25,9 +25,9 @@ export const PERMISSIONS = {
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 /**
- * Permiso -> modulos que lo requieren. Se deriva de SALON_FEATURES (cada modulo
+ * Permiso -> módulos que lo requieren. Se deriva de SALON_FEATURES (cada modulo
  * declara sus permisos). null = el permiso no depende de ningun modulo. Un permiso
- * solo esta activo si TODOS sus modulos estan activos en el salon.
+ * solo esta activo si TODOS sus módulos están activos en el salón.
  */
 const PERMISSION_FEATURES: Record<Permission, SalonFeatureKey[] | null> =
   Object.fromEntries(

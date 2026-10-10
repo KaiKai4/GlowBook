@@ -44,7 +44,7 @@ export function checkIds<T>(value: T, ids: (string | null)[]): Result<T> {
   return ids.every((id) => id === null || parseUuid(id) !== null) ? ok(value) : err(INVALID_ID);
 }
 
-/** Puerta de roles de una accion: el salon de la sesion y si el plan incluye roles (resuelto por el composition root). */
+/** Puerta de roles de una accion: el salón de la sesion y si el plan incluye roles (resuelto por el composition root). */
 export function roleGateOf(session: ActionContext): RoleGate {
   return { salonId: session.salonId, rolesEnabled: session.rolesEnabled };
 }

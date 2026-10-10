@@ -81,7 +81,7 @@ describe("RemindersView con tabla DataTable", () => {
     expect(badge?.querySelector("svg")).not.toBeNull();
   });
 
-  it("pagina de 10 en 10 y vuelve a la página 1 al cambiar un filtro", () => {
+  it("página de 10 en 10 y vuelve a la página 1 al cambiar un filtro", () => {
     const appointments = Array.from({ length: 12 }, (_, index) => appointment(index + 1));
     const { container } = renderView(appointments);
 

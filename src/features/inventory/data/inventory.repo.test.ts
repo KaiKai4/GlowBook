@@ -32,7 +32,7 @@ describe("inventory.repo", () => {
   });
 
   describe("findInventoryProducts", () => {
-    it("lista productos vigentes del salon con sus ubicaciones de stock", async () => {
+    it("lista productos vigentes del salón con sus ubicaciones de stock", async () => {
       const db = useDb({ inventory_products: { data: [{ id: PRODUCT_ID }], error: null } });
 
       expect(await findInventoryProducts(SALON_ID)).toEqual([{ id: PRODUCT_ID }]);
@@ -55,7 +55,7 @@ describe("inventory.repo", () => {
   });
 
   describe("findRecentInventoryMovements", () => {
-    it("trae los ultimos movimientos del salon con limite por defecto de 8", async () => {
+    it("trae los últimos movimientos del salón con límite por defecto de 8", async () => {
       const db = useDb({ inventory_movements: { data: [{ id: "m1" }], error: null } });
 
       expect(await findRecentInventoryMovements(SALON_ID)).toEqual([{ id: "m1" }]);
@@ -104,7 +104,7 @@ describe("inventory.repo", () => {
   });
 
   describe("findInventoryPurchaseHistory", () => {
-    it("trae el historial de compras del salon ordenado y limitado a 80 por defecto", async () => {
+    it("trae el historial de compras del salón ordenado y limitado a 80 por defecto", async () => {
       const db = useDb({ inventory_purchases: { data: [{ id: "c1" }], error: null } });
 
       expect(await findInventoryPurchaseHistory(SALON_ID)).toEqual([{ id: "c1" }]);

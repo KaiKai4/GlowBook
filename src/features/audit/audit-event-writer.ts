@@ -2,7 +2,7 @@ import { recordAuditLogEntry } from "./data/audit-log.repo";
 import type { AuditEventPayload } from "./events";
 
 // Escritor unico de auditoria: persiste el evento en platform_audit_log.
-// Normaliza los opcionales a null/{} aqui, para que los casos de uso no
+// Normaliza los opcionales a null/{} aquí, para que los casos de uso no
 // tengan que hacerlo. Si la escritura falla, la rechaza: quien lo llama
 // (publishAuditEvent, dentro de runSideEffect) la convierte en un aviso.
 export async function recordAuditEvent(payload: AuditEventPayload): Promise<void> {

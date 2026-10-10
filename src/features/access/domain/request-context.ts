@@ -11,7 +11,7 @@ export interface ActionContext {
   salonId: string;
   permissions: Permission[];
   requestId: string;
-  /** Si el plan del salon incluye el modulo de roles (calculado una vez por request). */
+  /** Si el plan del salón incluye el modulo de roles (calculado una vez por request). */
   rolesEnabled: boolean;
 }
 
@@ -20,6 +20,6 @@ export interface ActionContext {
  * para resolver permisos y pagina; los casos de uso reciben ActionContext.
  */
 export interface RequestContext extends ActionContext {
-  /** Perfil con los modulos efectivos del plan (disabled_features ya resuelto). */
+  /** Perfil con los módulos efectivos del plan (disabled_features ya resuelto). */
   profile: ProfileWithRole;
 }

@@ -19,7 +19,7 @@ describe("getSalonSchedulingConfig (valores por defecto)", () => {
     vi.clearAllMocks();
   });
 
-  it("aplica los valores por defecto cuando el salon no tiene configuracion de agenda", async () => {
+  it("aplica los valores por defecto cuando el salón no tiene configuración de agenda", async () => {
     mockedFindConfig.mockResolvedValue(null);
     mockedFindHours.mockResolvedValue([]);
 
@@ -36,7 +36,7 @@ describe("getSalonSchedulingConfig (valores por defecto)", () => {
     });
   });
 
-  it("respeta valores explicitos, incluido un aviso minimo de cero y citas fuera de horario", async () => {
+  it("respeta valores explicitos, incluido un aviso mínimo de cero y citas fuera de horario", async () => {
     mockedFindConfig.mockResolvedValue({
       min_booking_notice_minutes: 0,
       min_appointment_duration_minutes: 45,
@@ -60,7 +60,7 @@ describe("getSalonSchedulingConfig (valores por defecto)", () => {
     ]);
   });
 
-  it("consulta la configuracion y los horarios del mismo salon", async () => {
+  it("consulta la configuración y los horarios del mismo salón", async () => {
     mockedFindConfig.mockResolvedValue(null);
     mockedFindHours.mockResolvedValue([]);
 

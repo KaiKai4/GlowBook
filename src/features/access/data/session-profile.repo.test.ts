@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { findSalonAccessState, findSessionProfile } from "./session-profile.repo";
 
-// Lectura del perfil de sesion y del estado del salon: consultas acotadas al usuario y al salon.
+// Lectura del perfil de sesion y del estado del salón: consultas acotadas al usuario y al salón.
 
 const hoisted = vi.hoisted(() => {
   const maybeSingle = vi.fn();
@@ -45,13 +45,13 @@ describe("findSessionProfile", () => {
 });
 
 describe("findSalonAccessState", () => {
-  it("devuelve null cuando el salon no existe", async () => {
+  it("devuelve null cuando el salón no existe", async () => {
     hoisted.maybeSingle.mockResolvedValue({ data: null, error: null });
 
     await expect(findSalonAccessState("salon-1")).resolves.toBeNull();
   });
 
-  it("devuelve el estado activo del salon", async () => {
+  it("devuelve el estado activo del salón", async () => {
     hoisted.maybeSingle.mockResolvedValue({ data: { id: "salon-1", is_active: true }, error: null });
 
     await expect(findSalonAccessState("salon-1")).resolves.toEqual({ id: "salon-1", is_active: true });

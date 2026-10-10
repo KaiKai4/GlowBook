@@ -53,7 +53,7 @@ export function EmployeesGrid({
           <Users className="h-5 w-5 text-brand-400" />
         </div>
         <p className="mt-3 text-sm font-medium text-fg-subtle">
-          {totalEmployees === 0 ? "Aun no hay colaboradores." : "No hay coincidencias."}
+          {totalEmployees === 0 ? "Aún no hay colaboradores." : "No hay coincidencias."}
         </p>
         {hasActiveFilters ? (
           <button onClick={onClearFilters} className="mt-2 text-xs text-brand-600 hover:underline">

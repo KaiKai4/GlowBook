@@ -145,7 +145,7 @@ describe("autoAssignPlanOnAcceptance", () => {
       acceptedByUserId: ACTOR_ID,
     });
 
-    expect(result).toEqual(err("El plan de la invitacion ya no existe."));
+    expect(result).toEqual(err("El plan de la invitación ya no existe."));
     expect(assignPlanMock).not.toHaveBeenCalled();
     expect(auditMock).not.toHaveBeenCalled();
   });
@@ -167,7 +167,7 @@ describe("autoAssignPlanOnAcceptance", () => {
       startsAt: "2026-10-09",
       endsAt: null,
       trialEndsAt: "2026-10-23",
-      notes: "Asignado automaticamente al aceptar la invitacion.",
+      notes: "Asignado automaticamente al aceptar la invitación.",
     });
     expect(auditMock).toHaveBeenCalledWith("billing.plan_assigned", 
       expect.objectContaining({
@@ -198,7 +198,7 @@ describe("autoAssignPlanOnAcceptance", () => {
       acceptedByUserId: ACTOR_ID,
     });
 
-    expect(result).toEqual(err(expect.stringContaining("No se pudo asignar el plan de la invitacion.")));
+    expect(result).toEqual(err(expect.stringContaining("No se pudo asignar el plan de la invitación.")));
     expect(auditMock).not.toHaveBeenCalled();
   });
 });
@@ -304,7 +304,7 @@ describe("registerSalonPlanPaymentConfig", () => {
 
     const result = await registerSalonPlanPaymentConfig({ salonId: SALON_ID, amount: 20 });
 
-    expect(result).toEqual(err("Este salon no tiene plan asignado. Asignale un plan primero."));
+    expect(result).toEqual(err("Este salón no tiene plan asignado. Asígnale un plan primero."));
     expect(recordPaymentMock).not.toHaveBeenCalled();
     expect(activatePeriodMock).not.toHaveBeenCalled();
   });
@@ -336,7 +336,7 @@ describe("registerSalonPlanPaymentConfig", () => {
     );
   });
 
-  it("encadena el nuevo mes al periodo vigente cuando el pago llega por adelantado", async () => {
+  it("encadena el nuevo mes al período vigente cuando el pago llega por adelantado", async () => {
     findAssignmentPaymentMock.mockResolvedValueOnce({ plan_id: PLAN_ID, current_period_end: "2026-11-05" });
     findPlanMock.mockResolvedValueOnce(plan({ id: PLAN_ID, currency: "EUR" }));
 

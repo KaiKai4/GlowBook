@@ -19,9 +19,9 @@ import { createSupabaseServerClient } from "@/infra/supabase/server";
 //
 // billingSalonDb() (cliente del usuario de la sesión, RLS). Solo para el propio salón,
 // en el composition root y en los casos de uso del salón (módulos y límites del plan):
-//   Lecturas: findEffectivePlanRowsForSalon (metricas, plan asignado, modulos/limites, overrides
+//   Lecturas: findEffectivePlanRowsForSalon (metricas, plan asignado, módulos/limites, overrides
 //   y asignacion en las columnas concedidas), hasOpenPlanAlert.
-//   Escrituras: recordPlanAlert (RPC record_plan_alert, crea la alerta en el salon de la sesion).
+//   Escrituras: recordPlanAlert (RPC record_plan_alert, crea la alerta en el salón de la sesion).
 //   El conteo de uso va con count_salon_usage (security definer con guarda) desde ambos.
 //
 // Columnas que el salón NO puede leer (migración 073): overrides.reason, overrides.price_override,

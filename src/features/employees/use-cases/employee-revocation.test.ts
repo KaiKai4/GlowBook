@@ -81,7 +81,7 @@ describe("revocacion y reinicio de acceso", () => {
       mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }) as never);
     });
 
-    it("valida, desvincula en BD y después borra la cuenta de Auth", async () => {
+    it("válida, desvincula en BD y después borra la cuenta de Auth", async () => {
       const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
 
       expect(result.ok).toBe(true);

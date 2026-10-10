@@ -36,7 +36,7 @@ export async function proxy(request: NextRequest) {
   // de construir cualquier respuesta, porque Next extrae el nonce del header
   // Content-Security-Policy entrante para firmar sus propios scripts.
   const nonce = generateCspNonce();
-  const csp = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const csp = buildContentSecurityPolicy({ nonce, mode: process.env.NODE_ENV === "development" ? "development" : "production" });
   request.headers.set("x-nonce", nonce);
   request.headers.set("content-security-policy", csp);
 

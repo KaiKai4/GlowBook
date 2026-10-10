@@ -27,8 +27,8 @@ import {
 const AcceptSchema = z.object({
   token: z.string().min(1, "Token inválido"),
   email: z.string().email("Email inválido"),
-  password: z.string().min(8, "La contrasena debe tener al menos 8 caracteres"),
-  salon_name: z.string().min(1, "El nombre del salon es obligatorio").max(120),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  salon_name: z.string().min(1, "El nombre del salón es obligatorio").max(120),
   full_name: personNameField("Tu nombre es obligatorio", "Tu nombre"),
 });
 
@@ -135,11 +135,11 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<Re
       action: "accept_invitation_lookup",
       metadata: { emailDomain },
     });
-    return err("No se pudo verificar la invitacion.");
+    return err("No se pudo verificar la invitación.");
   }
 
   const rejection = invitationRejection({ invitation, email, now: new Date() });
-  if (rejection || !invitation) return err(rejection ?? "Invitacion inválida o ya utilizada.");
+  if (rejection || !invitation) return err(rejection ?? "Invitación inválida o ya utilizada.");
 
   const owner = await resolveOwnerAccount(email, password, emailDomain);
   if (!owner.ok) return owner;

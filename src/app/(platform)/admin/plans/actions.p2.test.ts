@@ -175,7 +175,7 @@ describe("savePlanModulesAction", () => {
     expect(saveCommercialPlanModulesBatch).not.toHaveBeenCalled();
   });
 
-  it("envia todos los modulos y solo los activados", async () => {
+  it("envia todos los módulos y solo los activados", async () => {
     vi.mocked(saveCommercialPlanModulesBatch).mockResolvedValue(ok(undefined) as never);
     const formData = new FormData();
     formData.set("planId", PLAN_ID);
@@ -189,7 +189,7 @@ describe("savePlanModulesAction", () => {
       { planId: PLAN_ID, allModuleKeys: ["inventory", "retail"], enabledModuleKeys: ["retail"] },
       ADMIN_ID
     );
-    expect(state).toEqual({ ok: true, message: "Modulos del plan actualizados." });
+    expect(state).toEqual({ ok: true, message: "Módulos del plan actualizados." });
   });
 
   it("devuelve el error del caso de uso sin revalidar", async () => {
@@ -212,7 +212,7 @@ describe("savePlanLimitsAction", () => {
     expect(saveCommercialPlanLimitsBatch).not.toHaveBeenCalled();
   });
 
-  it("construye los limites por indice y aplica valores por defecto", async () => {
+  it("construye los límites por indice y aplica valores por defecto", async () => {
     vi.mocked(saveCommercialPlanLimitsBatch).mockResolvedValue(ok(undefined) as never);
     const formData = new FormData();
     formData.set("planId", PLAN_ID);
@@ -271,7 +271,7 @@ describe("saveAddonAction", () => {
     expect(saveCommercialAddonConfig).not.toHaveBeenCalled();
   });
 
-  it("guarda el extra con id, modulo y metrica opcionales vacios como undefined", async () => {
+  it("guarda el extra con id, módulo y metrica opcionales vacios como undefined", async () => {
     vi.mocked(saveCommercialAddonConfig).mockResolvedValue(ok(undefined) as never);
 
     const state = await saveAddonAction(

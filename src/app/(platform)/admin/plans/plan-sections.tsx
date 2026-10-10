@@ -42,14 +42,14 @@ export function PlanForm({ plan, compact = false }: { plan: CommercialPlan | nul
   return (
     <Panel
       icon={<Plus className="h-4 w-4" />}
-      title={plan ? "Informacion del plan" : "Nuevo plan"}
-      description={plan ? "Edita el contenedor comercial. Los límites se configuran en su propia pestaña." : "Crea el plan y luego configura modulos y límites."}
+      title={plan ? "Información del plan" : "Nuevo plan"}
+      description={plan ? "Edita el contenedor comercial. Los límites se configuran en su propia pestaña." : "Crea el plan y luego configura módulos y límites."}
       compact={compact}
     >
       <form action={action} className="space-y-4">
         {plan ? <input type="hidden" name="id" value={plan.id} /> : null}
         <Input name="name" label="Nombre del plan" placeholder="Plan Basico" defaultValue={plan?.name ?? ""} required />
-        <Input name="code" label="Codigo interno" placeholder="Se genera desde el nombre" defaultValue={plan?.code ?? ""} />
+        <Input name="code" label="Código interno" placeholder="Se genera desde el nombre" defaultValue={plan?.code ?? ""} />
         <Textarea name="description" label="Descripcion" rows={compact ? 2 : 3} defaultValue={plan?.description ?? ""} />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Input name="monthlyPrice" label="Precio mensual" type="number" min="0" step="0.01" defaultValue={plan?.monthlyPrice ?? 0} />
@@ -87,8 +87,8 @@ export function PlanModules({ plan, modules }: { plan: CommercialPlan; modules: 
       ))}
 
       <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-1 flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-surface/95 px-5 py-3 backdrop-blur">
-        <p className="text-sm text-fg-subtle">Marca los apartados que el salon vera en la sidebar con este plan.</p>
-        <SaveAllButton label="Guardar modulos" />
+        <p className="text-sm text-fg-subtle">Marca los apartados que el salón vera en la sidebar con este plan.</p>
+        <SaveAllButton label="Guardar módulos" />
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">

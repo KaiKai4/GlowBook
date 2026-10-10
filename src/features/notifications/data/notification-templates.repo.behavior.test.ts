@@ -30,7 +30,7 @@ const OTHER_SALON_ID = "00000000-0000-4000-8000-000000000009";
 const customCancelled = {
   id: "tpl-cancel",
   event: "appointment_cancelled",
-  name: "Cancelacion WhatsApp",
+  name: "Cancelación WhatsApp",
   body_text: "Hola {cliente}, tu cita fue cancelada.",
   is_active: false,
 };
@@ -40,7 +40,7 @@ beforeEach(() => {
 });
 
 describe("findMessageTemplates", () => {
-  it("scopes the read to the salon, WhatsApp channel and customer recipient, in event order", async () => {
+  it("scopes the read to the salón, WhatsApp channel and customer recipient, in event order", async () => {
     const server = createFakeSupabase();
     clients.server = server;
 
@@ -58,7 +58,7 @@ describe("findMessageTemplates", () => {
     expect(argsOf(query, "order")).toEqual([["event", { ascending: true }]]);
   });
 
-  it("never reads another salon's templates when asked for one salon", async () => {
+  it("never reads another salón's templates when asked for one salón", async () => {
     const server = createFakeSupabase();
     clients.server = server;
 
@@ -70,7 +70,7 @@ describe("findMessageTemplates", () => {
     ]);
   });
 
-  it("returns the salon's stored templates and fills missing events with defaults in fixed order", async () => {
+  it("returns the salón's stored templates and fills missing events with defaults in fixed order", async () => {
     clients.server = createFakeSupabase({
       tables: { notification_templates: { data: [customCancelled], error: null } },
     });
@@ -82,14 +82,14 @@ describe("findMessageTemplates", () => {
       {
         id: "tpl-cancel",
         event: "appointment_cancelled",
-        name: "Cancelacion WhatsApp",
+        name: "Cancelación WhatsApp",
         body_text: "Hola {cliente}, tu cita fue cancelada.",
         is_active: false,
       },
     ]);
   });
 
-  it("returns both defaults when the salon has no stored templates", async () => {
+  it("returns both defaults when the salón has no stored templates", async () => {
     clients.server = createFakeSupabase({
       tables: { notification_templates: { data: null, error: null } },
     });
@@ -143,7 +143,7 @@ describe("findActiveMessageTemplate", () => {
     await expect(findActiveMessageTemplate(SALON_ID, "appointment_reminder")).resolves.toEqual({
       id: "tpl-1",
       event: "appointment_reminder",
-      name: "Cancelacion WhatsApp",
+      name: "Cancelación WhatsApp",
       body_text: "Hola {cliente}, tu cita fue cancelada.",
       is_active: true,
     });
@@ -176,7 +176,7 @@ describe("upsertMessageTemplate", () => {
 
     await upsertMessageTemplate(SALON_ID, {
       event: "appointment_cancelled",
-      name: "ignorado: el nombre se toma del catalogo",
+      name: "ignorado: el nombre se toma del catálogo",
       body_text: "Tu cita del {fecha} fue cancelada.",
       is_active: true,
     });

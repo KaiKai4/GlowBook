@@ -31,6 +31,9 @@ import {
 } from "../domain/period";
 import type { ReportFilters, SelectedReportPreset } from "../schemas";
 
+/** Meses de la serie mensual del reporte operativo. */
+const MONTHS_IN_SERIES = 12;
+
 const DEFAULT_REPORT_TIMEZONE = "America/Panama";
 const TOP_LIMIT = 5;
 
@@ -66,7 +69,7 @@ interface MonthLabel {
   label: string;
 }
 
-function getMonthSequence(now: Date, timezone: string, count = 12): MonthLabel[] {
+function getMonthSequence(now: Date, timezone: string, count = MONTHS_IN_SERIES): MonthLabel[] {
   const currentMonthKey = localDateString(now, timezone).slice(0, 7);
   const [year = NaN, month = NaN] = currentMonthKey.split("-").map(Number);
   const label = new Intl.DateTimeFormat("es-PA", { month: "short", timeZone: "UTC" });

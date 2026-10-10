@@ -20,7 +20,7 @@ describe("employee role", () => {
     mockedUpdateEmployeeProfileRole.mockResolvedValue({ error: null });
   });
 
-  it("rejects role assignment when the role does not belong to the salon", async () => {
+  it("rejects role assignment when the role does not belong to the salón", async () => {
     mockedFindAssignableEmployeeRole.mockResolvedValue({ data: null, error: null });
 
     const result = await changeEmployeeRole("salon-1", "profile-1", "foreign-role");
@@ -29,7 +29,7 @@ describe("employee role", () => {
     expect(mockedUpdateEmployeeProfileRole).not.toHaveBeenCalled();
   });
 
-  it("changes role only after validating that the role belongs to the salon", async () => {
+  it("changes role only after validating that the role belongs to the salón", async () => {
     const result = await changeEmployeeRole("salon-1", "profile-1", "role-1");
 
     expect(result.ok).toBe(true);

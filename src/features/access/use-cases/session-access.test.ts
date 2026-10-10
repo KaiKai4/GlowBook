@@ -20,7 +20,7 @@ describe("session-access", () => {
     expect(findSessionProfile).toHaveBeenCalledWith("user-1");
   });
 
-  it("loadSalonAccessState delega en el repositorio con el id del salon", async () => {
+  it("loadSalonAccessState delega en el repositorio con el id del salón", async () => {
     vi.mocked(findSalonAccessState).mockResolvedValue({ id: "salon-1", is_active: false });
 
     await expect(loadSalonAccessState("salon-1")).resolves.toEqual({ id: "salon-1", is_active: false });

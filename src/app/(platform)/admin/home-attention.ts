@@ -29,7 +29,7 @@ export function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[
         salonId: row.salonId,
         salonName: row.salonName,
         reason: "Moroso",
-        detail: "Pago vencido: registra el pago o pausa la suscripcion.",
+        detail: "Pago vencido: registra el pago o pausa la suscripción.",
         severity: "danger",
       });
     }
@@ -38,7 +38,7 @@ export function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[
         salonId: row.salonId,
         salonName: row.salonName,
         reason: "Trial por vencer",
-        detail: `El trial termina el ${formatDate(row.trialEndsAt)}. Contacta al salon para cerrar la venta.`,
+        detail: `El trial termina el ${formatDate(row.trialEndsAt)}. Contacta al salón para cerrar la venta.`,
         severity: "warning",
       });
     }
@@ -47,7 +47,7 @@ export function buildAttentionList(rows: SalonSubscriptionRow[]): AttentionItem[
         salonId: row.salonId,
         salonName: row.salonName,
         reason: "Sin plan",
-        detail: "Salon activo sin plan: ve todo sin límites.",
+        detail: "Salón activo sin plan: ve todo sin límites.",
         severity: "warning",
       });
     }

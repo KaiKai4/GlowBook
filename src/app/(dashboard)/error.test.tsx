@@ -15,7 +15,7 @@ describe("DashboardError", () => {
   it("explica que la sección no cargó y ofrece reintentar", () => {
     mounted = mountComponent(<DashboardError error={new Error("boom")} retry={vi.fn()} />);
 
-    expect(mounted.container.querySelector("h2")?.textContent).toBe("No se pudo cargar esta seccion");
+    expect(mounted.container.querySelector("h2")?.textContent).toBe("No se pudo cargar esta sección");
     expect(mounted.container.textContent).toContain("Intenta nuevamente.");
     expect(findButtonByText(mounted.container, "Reintentar").type).toBe("button");
   });

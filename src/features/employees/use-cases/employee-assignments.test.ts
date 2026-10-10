@@ -35,7 +35,7 @@ describe("validateEmployeeAssignments", () => {
     expect(findActiveAssignmentReferences).toHaveBeenCalledWith(SALON_ID, [SVC_1], [CAT_A]);
   });
 
-  it("acepta servicios cuya categoria tambien esta asignada", async () => {
+  it("acepta servicios cuya categoría también está asignada", async () => {
     vi.mocked(findActiveAssignmentReferences).mockResolvedValue({
       activeCategoryIds: [CAT_A],
       services: [{ id: SVC_1, category_id: CAT_A }],
@@ -44,26 +44,26 @@ describe("validateEmployeeAssignments", () => {
     await expect(validateEmployeeAssignments(SALON_ID, [SVC_1], [CAT_A])).resolves.toBeUndefined();
   });
 
-  it("rechaza categorias que no pertenecen al salon o estan inactivas", async () => {
+  it("rechaza categorías que no pertenecen al salón o están inactivas", async () => {
     vi.mocked(findActiveAssignmentReferences).mockResolvedValue({ activeCategoryIds: [CAT_A], services: [] });
 
     await expect(validateEmployeeAssignments(SALON_ID, [], [CAT_A, CAT_B])).rejects.toThrow(
-      "Una o mas categorías no pertenecen al salon o estan inactivas."
+      "Una o más categorías no pertenecen al salón o están inactivas."
     );
   });
 
-  it("rechaza servicios que no pertenecen al salon o estan inactivos", async () => {
+  it("rechaza servicios que no pertenecen al salón o están inactivos", async () => {
     vi.mocked(findActiveAssignmentReferences).mockResolvedValue({
       activeCategoryIds: [CAT_A],
       services: [{ id: SVC_1, category_id: CAT_A }],
     });
 
     await expect(validateEmployeeAssignments(SALON_ID, [SVC_1, SVC_2], [CAT_A])).rejects.toThrow(
-      "Uno o mas servicios no pertenecen al salon o estan inactivos."
+      "Uno o más servicios no pertenecen al salón o están inactivos."
     );
   });
 
-  it("rechaza un servicio cuya categoria no fue asignada, con error publico", async () => {
+  it("rechaza un servicio cuya categoría no fue asignada, con error publico", async () => {
     vi.mocked(findActiveAssignmentReferences).mockResolvedValue({
       activeCategoryIds: [CAT_A],
       services: [{ id: SVC_1, category_id: CAT_B }],
@@ -72,17 +72,17 @@ describe("validateEmployeeAssignments", () => {
     const attempt = validateEmployeeAssignments(SALON_ID, [SVC_1], [CAT_A]);
 
     await expect(attempt).rejects.toBeInstanceOf(PublicError);
-    await expect(attempt).rejects.toThrow("Para asignar un servicio al colaborador, tambien debes asignar su categoria.");
+    await expect(attempt).rejects.toThrow("Para asignar un servicio al colaborador, también debes asignar su categoría.");
   });
 
-  it("rechaza servicios sin categorias asignadas", async () => {
+  it("rechaza servicios sin categorías asignadas", async () => {
     vi.mocked(findActiveAssignmentReferences).mockResolvedValue({
       activeCategoryIds: [],
       services: [{ id: SVC_1, category_id: CAT_A }],
     });
 
     await expect(validateEmployeeAssignments(SALON_ID, [SVC_1], [])).rejects.toThrow(
-      "Para asignar un servicio al colaborador, tambien debes asignar su categoria."
+      "Para asignar un servicio al colaborador, también debes asignar su categoría."
     );
   });
 });

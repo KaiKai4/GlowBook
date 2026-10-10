@@ -86,9 +86,9 @@ describe("PlatformPlansPage", () => {
     mounted = await render({ view: "addons" });
 
     expect(linkByText(mounted.container, "Nuevo plan")).toBeUndefined();
-    expect(mounted.container.textContent).toContain("Define el catalogo de extras");
+    expect(mounted.container.textContent).toContain("Define el catálogo de extras");
     expect(mounted.container.textContent).toContain("Nuevo extra");
-    expect(mounted.container.textContent).toContain("1 en catalogo");
+    expect(mounted.container.textContent).toContain("1 en catálogo");
   });
 
   it("enlaza las pestañas Planes y Extras y marca la activa", async () => {

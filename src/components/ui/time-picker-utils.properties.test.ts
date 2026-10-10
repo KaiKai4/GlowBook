@@ -31,7 +31,7 @@ describe("time picker utils (propiedades)", () => {
     );
   });
 
-  it("las partes de 12 horas están siempre en el rango 1-12 y el periodo coincide con la hora de 24 horas", () => {
+  it("las partes de 12 horas están siempre en el rango 1-12 y el período coincide con la hora de 24 horas", () => {
     fc.assert(
       fc.property(hhmm, (value) => {
         const parts = parseTimeValue(value);
@@ -84,7 +84,7 @@ describe("time picker utils (propiedades)", () => {
     );
   });
 
-  it("sin límites el periodo resuelto es el que ya tenían las partes", () => {
+  it("sin límites el período resuelto es el que ya tenían las partes", () => {
     fc.assert(
       fc.property(timeParts, (parts) => {
         expect(resolvePeriodForRange(parts)).toBe(parts.period);
@@ -92,7 +92,7 @@ describe("time picker utils (propiedades)", () => {
     );
   });
 
-  it("si el periodo elegido ya es válido, se conserva", () => {
+  it("si el período elegido ya es válido, se conserva", () => {
     fc.assert(
       fc.property(timeParts, (parts) => {
         const min = "00:00";

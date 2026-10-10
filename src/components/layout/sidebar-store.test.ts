@@ -146,7 +146,7 @@ describe("sidebar-store", () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
-  it("deja de notificar tras cancelar la suscripcion", () => {
+  it("deja de notificar tras cancelar la suscripción", () => {
     const listener = vi.fn();
     const unsubscribe = subscribe(listener);
 
@@ -176,7 +176,7 @@ describe("sidebar-store", () => {
     expect(isDesktopViewport()).toBe(false);
   });
 
-  it("al cancelar la suscripcion también deja de escuchar matchMedia", () => {
+  it("al cancelar la suscripción también deja de escuchar matchMedia", () => {
     const viewport = stubViewport(true);
     const unsubscribe = subscribeSidebarCollapsed(vi.fn());
     expect(viewport.changeListeners.size).toBe(1);

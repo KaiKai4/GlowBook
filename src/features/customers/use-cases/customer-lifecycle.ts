@@ -37,7 +37,7 @@ export async function archiveCustomer(
       ok: true,
       value: {
         outcome: "archived",
-        message: "Cliente archivado conservando su informacion para trazabilidad.",
+        message: "Cliente archivado conservando su información para trazabilidad.",
       },
     };
   } catch (error) {

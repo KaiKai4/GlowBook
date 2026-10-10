@@ -74,7 +74,7 @@ describe("EmployeesGrid", () => {
   it("indica que aún no hay colaboradores cuando el total es cero", () => {
     mounted = renderGrid({ employees: [], totalEmployees: 0 });
 
-    expect(mounted.container.textContent).toContain("Aun no hay colaboradores.");
+    expect(mounted.container.textContent).toContain("Aún no hay colaboradores.");
     expect(mounted.container.querySelector("button")).toBeNull();
   });
 

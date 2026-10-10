@@ -41,7 +41,7 @@ async function selectFirstRealOption(page: Page, label: string | RegExp) {
   await expect(trigger).not.toHaveText(/^Selecciona/i);
 }
 
-test.describe("salon owner critical smoke", () => {
+test.describe("salón owner critical smoke", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeAll(async ({}, workerInfo) => {
@@ -78,7 +78,7 @@ test.describe("salon owner critical smoke", () => {
     await loginWith(page, credentials!.email, credentials!.password);
   });
 
-  test("loads the dashboard shell and visible salon Modules", async ({ page }) => {
+  test("loads the dashboard shell and visible salón Modules", async ({ page }) => {
     await expect(page.getByText("GlowBook").first()).toBeVisible();
 
     const modules = [
@@ -89,7 +89,7 @@ test.describe("salon owner critical smoke", () => {
       { label: "Reportes", path: "/reports" },
       { label: "Roles", path: "/roles" },
       { label: "Plantillas", path: "/plantillas" },
-      { label: "Salon", path: "/salon" },
+      { label: "Salón", path: "/salon" },
     ];
 
     for (const feature of modules) {
@@ -149,17 +149,17 @@ test.describe("salon owner critical smoke", () => {
       .getByRole("option", { name: "00", exact: true })
       .click();
     await page
-      .getByRole("radiogroup", { name: "Periodo" })
+      .getByRole("radiogroup", { name: "Período" })
       .getByRole("radio", { name: "AM", exact: true })
       .click();
     await timeDialog.getByRole("button", { name: "Guardar" }).click();
-    await selectFirstRealOption(page, "Categoria");
+    await selectFirstRealOption(page, "Categoría");
     await selectFirstRealOption(page, "Servicio");
     await selectFirstRealOption(page, "Profesional");
     await page.getByRole("button", { name: /Continuar/i }).click();
 
     await expect(page.getByRole("heading", { name: /Confirmar cita/i })).toBeVisible();
-    await page.getByLabel(/Notas/i).fill("E2E cita valida");
+    await page.getByLabel(/Notas/i).fill("E2E cita válida");
     await page.getByRole("button", { name: /Confirmar cita/i }).click();
 
     await expect(page).toHaveURL(/\/appointments$/);
@@ -196,11 +196,11 @@ test.describe("salon owner critical smoke", () => {
       .getByRole("option", { name: "00", exact: true })
       .click();
     await page
-      .getByRole("radiogroup", { name: "Periodo" })
+      .getByRole("radiogroup", { name: "Período" })
       .getByRole("radio", { name: "AM", exact: true })
       .click();
     await timeDialog.getByRole("button", { name: "Guardar" }).click();
-    await selectFirstRealOption(page, "Categoria");
+    await selectFirstRealOption(page, "Categoría");
     await selectFirstRealOption(page, "Servicio");
     await selectFirstRealOption(page, "Profesional");
     await page.getByRole("button", { name: /Continuar/i }).click();

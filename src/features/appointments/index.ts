@@ -1,4 +1,4 @@
-// Punto publico del modulo appointments. Otros modulos y src/app importan solo desde aqui.
+// Punto publico del modulo appointments. Otros módulos y src/app importan solo desde aquí.
 // Indice de servidor ("server-only"): los casos de uso consultan la base de datos.
 // Excepcion documentada: los componentes cliente importan dominio puro (sin server-only)
 // directamente de domain/ (lifecycle, summary-filter, pricing, wizard-availability, types)
@@ -24,7 +24,7 @@ export {
 export { confirmAppointment } from "./use-cases/confirm-appointment";
 export { completeAppointment } from "./use-cases/complete-appointment";
 export type { CompleteAppointmentRpcResult as CompleteAppointmentResult } from "./data/rpc/complete-appointment";
-export { createAppointmentGuarded } from "./use-cases/create-appointment-checks";
+export { createAppointmentWithPlanChecks } from "./use-cases/create-appointment-checks";
 export { updateAppointmentSchedule } from "./use-cases/update-appointment";
 export {
   parseCompleteAppointmentForm,

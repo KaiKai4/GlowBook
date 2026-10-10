@@ -57,7 +57,7 @@ const assignments = JSON.stringify([{ service_id: SERVICE_ID, employee_id: EMPLO
 const manager = buildProfile({ permissions: [PERMISSIONS.APPOINTMENTS_MANAGE] });
 const LIMITED = err("Demasiados intentos.");
 
-describe("appointments actions: rate limit por accion", () => {
+describe("appointments actions: rate limit por acción", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(manager);

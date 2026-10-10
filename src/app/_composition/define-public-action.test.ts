@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 
 describe("definePublicAction", () => {
-  it("aplica el limite por IP con el ambito y las opciones indicadas", async () => {
+  it("aplica el límite por IP con el ambito y las opciones indicadas", async () => {
     const action = definePublicAction({
       rateLimit: { scope: "sign-in", options: { max: 20, windowMs: 900_000 } },
       parse: (raw: string) => ok(raw),
@@ -26,7 +26,7 @@ describe("definePublicAction", () => {
     expect(mockedLimit).toHaveBeenCalledWith("sign-in", { max: 20, windowMs: 900_000 });
   });
 
-  it("sin opciones delega en el limite anonimo por defecto", async () => {
+  it("sin opciones delega en el límite anonimo por defecto", async () => {
     const action = definePublicAction({
       rateLimit: { scope: "accept-invitation" },
       parse: (raw: string) => ok(raw),
@@ -38,7 +38,7 @@ describe("definePublicAction", () => {
     expect(mockedLimit).toHaveBeenCalledWith("accept-invitation", undefined);
   });
 
-  it("si el limite bloquea devuelve su error sin validar ni ejecutar el caso de uso", async () => {
+  it("si el límite bloquea devuelve su error sin validar ni ejecutar el caso de uso", async () => {
     mockedLimit.mockResolvedValue(err("Demasiados intentos."));
     const parse = vi.fn((raw: string) => ok(raw));
     const run = vi.fn(async () => ok(undefined));
@@ -51,7 +51,7 @@ describe("definePublicAction", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("un dato invalido devuelve el error del parser sin ejecutar el caso de uso", async () => {
+  it("un dato inválido devuelve el error del parser sin ejecutar el caso de uso", async () => {
     const run = vi.fn(async () => ok(undefined));
     const action = definePublicAction({
       rateLimit: { scope: "x" },

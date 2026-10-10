@@ -68,7 +68,7 @@ describe("AppointmentWizard", () => {
 
   /** Completa una fila válida: corte de cabello con Lucía Gómez a las 09:00. */
   function fillValidRow(container: HTMLElement) {
-    chooseOption(container, "Categoria", "Cabello");
+    chooseOption(container, "Categoría", "Cabello");
     chooseOption(container, "Servicio", "Corte (60min)");
     chooseOption(container, "Profesional", "Lucía Gómez");
   }
@@ -122,7 +122,7 @@ describe("AppointmentWizard", () => {
 
       expect(checkCustomerPhoneAction).toHaveBeenCalledWith("61234567");
       expect(container.textContent).toContain(
-        "Este numero ya esta registrado. Buscalo en Cliente existente."
+        "Este número ya está registrado. Búscalo en Cliente existente."
       );
       expect(fieldWithLabel(container, "Nombre")).toBeInstanceOf(HTMLInputElement);
     });
@@ -171,7 +171,7 @@ describe("AppointmentWizard", () => {
 
       await setFieldValueAndSettle(byAriaLabel<HTMLInputElement>(container, "Fecha"), "2026-10-18");
 
-      expect(container.textContent).toContain("El salon esta cerrado ese día.");
+      expect(container.textContent).toContain("El salón está cerrado ese día.");
       expect(buttonWithText(container, "Continuar").disabled).toBe(true);
     });
 

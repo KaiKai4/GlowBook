@@ -57,7 +57,7 @@ function errorOf(fn: () => unknown): unknown {
 }
 
 describe("transiciones de cita (assertTransition)", () => {
-  it("permite la transicion valida sin lanzar", () => {
+  it("permite la transicion válida sin lanzar", () => {
     expect(() => assertTransition("scheduled", "confirmed")).not.toThrow();
   });
 
@@ -81,7 +81,7 @@ describe("construccion de items de cita (buildItemPayloads): validaciones de dom
     expect((error as PublicError).message).toBe("Selecciona al menos un servicio.");
   });
 
-  it("un servicio de otro salon no se puede reservar", () => {
+  it("un servicio de otro salón no se puede reservar", () => {
     const error = errorOf(() =>
       buildItemPayloads(SALON, START, [assignment({ service: { salon_id: OTHER_SALON } })], context)
     );
@@ -97,7 +97,7 @@ describe("construccion de items de cita (buildItemPayloads): validaciones de dom
     expect((error as PublicError).message).toBe("El servicio no está activo.");
   });
 
-  it("un profesional de otro salon no se puede asignar", () => {
+  it("un profesional de otro salón no se puede asignar", () => {
     const error = errorOf(() =>
       buildItemPayloads(SALON, START, [assignment({ employee: { salon_id: OTHER_SALON } })], context)
     );
@@ -121,7 +121,7 @@ describe("construccion de items de cita (buildItemPayloads): validaciones de dom
     expect((error as PublicError).message).toBe("El profesional seleccionado no realiza ese servicio.");
   });
 
-  it("un profesional de otra categoria no atiende el servicio", () => {
+  it("un profesional de otra categoría no atiende el servicio", () => {
     const error = errorOf(() =>
       buildItemPayloads(SALON, START, [assignment({ employee: { category_ids: ["otra"] } })], context)
     );

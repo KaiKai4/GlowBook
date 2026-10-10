@@ -26,7 +26,7 @@ export function NewServiceDialog({
   return (
     <Dialog open={open} onClose={onClose} title="Nuevo servicio">
       <form action={onSubmit} className="space-y-4">
-        <Select name="category_id" label="Categoria" defaultValue={defaultCategory} required>
+        <Select name="category_id" label="Categoría" defaultValue={defaultCategory} required>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}

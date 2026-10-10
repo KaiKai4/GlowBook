@@ -58,7 +58,7 @@ function invitation(overrides: Partial<EmployeeInvitationForJoin> = {}): Employe
     expires_at: FUTURE,
     accepted_at: null,
     employees: { first_name: "Ana", last_name: "Lopez" },
-    salons: { name: "Glow Salon" },
+    salons: { name: "Glow Salón" },
     ...overrides,
   };
 }
@@ -88,7 +88,7 @@ describe("employee invitation join", () => {
         token: TOKEN,
         email: "ana@salon.test",
         employeeName: "Ana Lopez",
-        salonName: "Glow Salon",
+        salonName: "Glow Salón",
       });
     });
 
@@ -141,7 +141,7 @@ describe("employee invitation join", () => {
         token: TOKEN,
         email: "ana@salon.test",
         employeeName: "Colaborador",
-        salonName: "tu salon",
+        salonName: "tu salón",
       });
     });
 
@@ -164,7 +164,7 @@ describe("employee invitation join", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "La contrasena debe tener al menos 8 caracteres.",
+        error: "La contraseña debe tener al menos 8 caracteres.",
       });
       expect(mockedFindInvitation).not.toHaveBeenCalled();
       expect(mockedCreateAuthUser).not.toHaveBeenCalled();
@@ -186,7 +186,7 @@ describe("employee invitation join", () => {
 
       const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
 
-      expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitacion." });
+      expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitación." });
       expect(mockedCaptureError).toHaveBeenCalledTimes(1);
       expect(mockedCreateAuthUser).not.toHaveBeenCalled();
     });
@@ -196,7 +196,7 @@ describe("employee invitation join", () => {
 
       const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
 
-      expect(result).toEqual({ ok: false, error: "El enlace no es valido." });
+      expect(result).toEqual({ ok: false, error: "El enlace no es válido." });
     });
 
     it("rechaza un enlace ya utilizado", async () => {
@@ -243,7 +243,7 @@ describe("employee invitation join", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "No se pudo verificar el rol de la invitacion.",
+        error: "No se pudo verificar el rol de la invitación.",
       });
       expect(mockedCreateAuthUser).not.toHaveBeenCalled();
     });
@@ -260,7 +260,7 @@ describe("employee invitation join", () => {
       expect(mockedCreateAuthUser).not.toHaveBeenCalled();
     });
 
-    it("sin rol en la invitación crea el perfil con role_id nulo y no valida roles", async () => {
+    it("sin rol en la invitación crea el perfil con role_id nulo y no válida roles", async () => {
       mockedFindInvitation.mockResolvedValue({
         data: invitation({ role_id: null }),
         error: null,
@@ -350,7 +350,7 @@ describe("employee invitation join", () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "Error al confirmar la invitacion. Solicita un enlace nuevo.",
+        error: "Error al confirmar la invitación. Solicita un enlace nuevo.",
       });
       expect(mockedDeleteAuthUser).toHaveBeenCalledWith("user-1");
       expect(mockedCaptureError).toHaveBeenCalledWith(

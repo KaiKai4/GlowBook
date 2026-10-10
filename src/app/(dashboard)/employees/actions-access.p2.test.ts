@@ -61,7 +61,7 @@ vi.mock("@/features/salon/use-cases/salon-scheduling-config", () => ({
 const EMPLOYEE_ID = "00000000-0000-4000-8000-0000000000dd";
 const ROLE_ID = "00000000-0000-4000-8000-0000000000ff";
 const INVALID = { ok: false, error: "Identificador inválido." } as const;
-const ROLES_DISABLED = { ok: false, error: "Los roles estan deshabilitados para este salon." } as const;
+const ROLES_DISABLED = { ok: false, error: "Los roles están deshabilitados para este salón." } as const;
 const manager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
 const INVITE = { token: "tok-123", expiresAt: "2026-10-10T00:00:00.000Z" };
 

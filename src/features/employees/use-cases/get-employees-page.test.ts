@@ -84,7 +84,7 @@ describe("get employees page", () => {
     });
   });
 
-  it("does not load roles when the salon feature is disabled", async () => {
+  it("does not load roles when the salón feature is disabled", async () => {
     await getEmployeesPage({ salonId: "salon-1", rolesEnabled: false });
 
     expect(mockedGetAssignableRoleOptions).not.toHaveBeenCalled();

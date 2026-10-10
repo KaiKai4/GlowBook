@@ -20,7 +20,7 @@ describe("update business hours", () => {
     vi.resetAllMocks();
   });
 
-  it("normalizes closed days before passing rows to the salon adapter", async () => {
+  it("normalizes closed days before passing rows to the salón adapter", async () => {
     mockedUpsertBusinessHours.mockResolvedValue(undefined);
 
     const result = await updateBusinessHours("salon-1", hours);

@@ -26,7 +26,7 @@ describe("salon-business-hours.repo", () => {
   });
 
   describe("findBusinessHours", () => {
-    it("lista el horario del salon ordenado por dia y devuelve lista vacia sin datos", async () => {
+    it("lista el horario del salón ordenado por día y devuelve lista vacia sin datos", async () => {
       const db = useDb({ salon_business_hours: { data: [{ day_of_week: 1, is_open: true, open_time: "09:00", close_time: "18:00" }], error: null } });
 
       expect(await findBusinessHours(SALON_ID)).toEqual([

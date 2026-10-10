@@ -114,7 +114,7 @@ describe("appointment wizard availability", () => {
     ).toEqual([]);
   });
 
-  it("blocks services that would end after the salon closes", () => {
+  it("blocks services that would end after the salón closes", () => {
     expect(
       eligible({
         serviceId: manicureService.id,

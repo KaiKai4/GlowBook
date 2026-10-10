@@ -32,14 +32,14 @@ describe("politica de acciones de colaboradores", () => {
     expect(EMPLOYEE_GUARD.rateLimit).toEqual({ scope: "employees", options: { max: 30, windowMs: 60_000 } });
   });
 
-  it("la puerta de roles usa el salon y el flag ya resuelto por el composition root", () => {
+  it("la puerta de roles usa el salón y el flag ya resuelto por el composition root", () => {
     const context = { userId: "user-1", salonId: SALON_ID, permissions: [], requestId: "req-1" };
 
     expect(roleGateOf({ ...context, rolesEnabled: true })).toEqual({ salonId: SALON_ID, rolesEnabled: true });
     expect(roleGateOf({ ...context, rolesEnabled: false })).toEqual({ salonId: SALON_ID, rolesEnabled: false });
   });
 
-  it("construye los chequeos de admision con el salon de la sesion", async () => {
+  it("construye los chequeos de admision con el salón de la sesión", async () => {
     const checks = admissionChecks(SALON_ID);
 
     await checks.checkModuleAccess();

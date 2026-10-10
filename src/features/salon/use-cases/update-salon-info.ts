@@ -14,6 +14,6 @@ export async function updateSalonInfo(
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "salon", action: "update_info" });
-    return { ok: false, error: "Error al guardar el nombre del salon." };
+    return { ok: false, error: "Error al guardar el nombre del salón." };
   }
 }

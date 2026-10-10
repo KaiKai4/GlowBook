@@ -67,7 +67,7 @@ describe("requireActionContext", () => {
     vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue([]);
   });
 
-  it("devuelve solo el contexto minimo que reciben los casos de uso, sin perfil", async () => {
+  it("devuelve solo el contexto mínimo que reciben los casos de uso, sin perfil", async () => {
     useSession({ id: USER_ID }, activeTables());
 
     const context = await requireActionContext();
@@ -81,7 +81,7 @@ describe("requireActionContext", () => {
     });
   });
 
-  it("calcula rolesEnabled a partir del plan efectivo: con el modulo de roles deshabilitado vale false", async () => {
+  it("calcula rolesEnabled a partir del plan efectivo: con el módulo de roles deshabilitado vale false", async () => {
     vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue(["roles"]);
     useSession({ id: USER_ID }, activeTables());
 
@@ -90,7 +90,7 @@ describe("requireActionContext", () => {
     expect(context.rolesEnabled).toBe(false);
   });
 
-  it("redirige a /login cuando no hay sesion", async () => {
+  it("redirige a /login cuando no hay sesión", async () => {
     useSession(null, {});
 
     await expect(requireActionContext()).rejects.toThrow("NEXT_REDIRECT:/login");
@@ -103,13 +103,13 @@ describe("getRolesEnabled", () => {
     vi.mocked(getEffectiveDisabledSalonFeatures).mockResolvedValue([]);
   });
 
-  it("devuelve true cuando el plan incluye el modulo de roles", async () => {
+  it("devuelve true cuando el plan incluye el módulo de roles", async () => {
     useSession({ id: USER_ID }, activeTables());
 
     await expect(getRolesEnabled()).resolves.toBe(true);
   });
 
-  it("devuelve false sin sesion, sin consultar el plan", async () => {
+  it("devuelve false sin sesión, sin consultar el plan", async () => {
     useSession(null, {});
 
     await expect(getRolesEnabled()).resolves.toBe(false);

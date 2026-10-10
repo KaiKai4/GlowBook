@@ -52,7 +52,7 @@ export function FeedbackPanel({
           <FeedbackCategoryPicker value={category} onChange={onCategoryChange} />
 
           <div>
-            <p className="mb-1.5 text-xs font-medium text-fg-subtle">Descripcion</p>
+            <p className="mb-1.5 text-xs font-medium text-fg-subtle">Descripción</p>
             <textarea
               value={message}
               onChange={(event) => onMessageChange(event.target.value)}

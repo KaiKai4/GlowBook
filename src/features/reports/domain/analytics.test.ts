@@ -41,7 +41,7 @@ describe("trimMonthlyRows", () => {
     expect(trimMonthlyRows(rows, "2026-04").map((r) => r.monthKey)).toEqual(["2026-01", "2026-02", "2026-03", "2026-04"]);
   });
 
-  it("recorta los meses en cero antes del primer movimiento y despues del mes actual", () => {
+  it("recorta los meses en cero antes del primer movimiento y después del mes actual", () => {
     const rows = [
       row("2026-01"),
       row("2026-02", { completedAppointments: 2, grossRevenue: 100 }),

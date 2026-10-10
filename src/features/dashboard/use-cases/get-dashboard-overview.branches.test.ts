@@ -52,7 +52,7 @@ describe("get dashboard overview (ramas)", () => {
     mockedPending.mockResolvedValue([]);
   });
 
-  it("no consulta datos cuando ambas secciones estan desactivadas", async () => {
+  it("no consulta datos cuando ambas secciones están desactivadas", async () => {
     const view = await getDashboardOverview({ salonId: "salon-1", wantsReports: false, wantsConfirmations: false, now: NOW });
 
     expect(view).toEqual({ metrics: null, topServices: [], monthlyCompletedAppointments: [], pending: [] });
@@ -62,7 +62,7 @@ describe("get dashboard overview (ramas)", () => {
     expect(mockedTopServices).not.toHaveBeenCalled();
   });
 
-  it("solo carga confirmaciones pendientes cuando los reportes estan desactivados", async () => {
+  it("solo carga confirmaciones pendientes cuando los reportes están desactivados", async () => {
     mockedPending.mockResolvedValue([{ id: "a2", start_time: null, customer: null }]);
 
     const view = await getDashboardOverview({ salonId: "salon-1", wantsReports: false, wantsConfirmations: true, now: NOW });
@@ -153,7 +153,7 @@ describe("get dashboard overview (ramas)", () => {
     expect(months.every((month) => month.label.length > 0)).toBe(true);
   });
 
-  it("pasa la zona horaria del salon y la fecha de referencia a los agregados", async () => {
+  it("pasa la zona horaria del salón y la fecha de referencia a los agregados", async () => {
     mockedGetSalon.mockResolvedValue({ name: "Glow", timezone: "America/Panama", payment_methods: [] });
 
     await getDashboardOverview({ salonId: "salon-1", wantsReports: true, wantsConfirmations: false, now: NOW });
@@ -163,7 +163,7 @@ describe("get dashboard overview (ramas)", () => {
     expect(mockedTopServices).toHaveBeenCalledWith({ timezone: "America/Panama", now: NOW });
   });
 
-  it("usa UTC cuando el salon no tiene zona horaria configurada", async () => {
+  it("usa UTC cuando el salón no tiene zona horaria configurada", async () => {
     mockedGetSalon.mockResolvedValue(null);
 
     await getDashboardOverview({ salonId: "salon-1", wantsReports: true, wantsConfirmations: false, now: NOW });

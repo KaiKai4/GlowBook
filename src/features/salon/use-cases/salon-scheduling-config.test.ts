@@ -14,8 +14,8 @@ vi.mock("../data/salon-business-hours.repo", () => ({
 const mockedFindAppointmentSalonConfig = vi.mocked(findAppointmentSalonConfig);
 const mockedFindBusinessHours = vi.mocked(findBusinessHours);
 
-describe("salon scheduling config", () => {
-  it("returns scheduling defaults when the salon has no explicit config", async () => {
+describe("salón scheduling config", () => {
+  it("returns scheduling defaults when the salón has no explicit config", async () => {
     mockedFindAppointmentSalonConfig.mockResolvedValue(null);
     mockedFindBusinessHours.mockResolvedValue([]);
 

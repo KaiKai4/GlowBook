@@ -48,7 +48,7 @@ const defaultCompleteAppointmentDeps: CompleteAppointmentDeps = {
  * Completa la cita con una unica RPC transaccional: precios y descuentos de los
  * items, totales, liberacion de la agenda y promocion del cliente temporal.
  * Las reglas de precio (validacion, precio variable, rangos) viven en la base.
- * Antes de nada comprueba que el metodo de pago esta habilitado en el salon.
+ * Antes de nada comprueba que el metodo de pago esta habilitado en el salón.
  * Devuelve el resultado validado de la RPC: el total final lo calcula el servidor.
  */
 export async function completeAppointment(

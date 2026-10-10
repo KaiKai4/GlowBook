@@ -10,7 +10,7 @@ import {
 const PANAMA = "America/Panama";
 
 describe("periodos de reporte (ramas)", () => {
-  it("calcula la fecha local en la zona del salon y su año calendario", () => {
+  it("calcula la fecha local en la zona del salón y su año calendario", () => {
     // 02:00 UTC del 1 de julio es aun 30 de junio en Panama (UTC-5).
     const date = new Date("2026-07-01T02:00:00.000Z");
 
@@ -23,12 +23,12 @@ describe("periodos de reporte (ramas)", () => {
     expect(getYearRange(2025)).toEqual({ from: "2025-01-01", to: "2025-12-31" });
   });
 
-  it("lista los años desde el actual hasta el primero con datos, del mas reciente al mas antiguo", () => {
+  it("lista los años desde el actual hasta el primero con datos, del más reciente al más antiguo", () => {
     expect(availableReportYears(2024, 2026)).toEqual([2026, 2025, 2024]);
     expect(availableReportYears(2026, 2026)).toEqual([2026]);
   });
 
-  it("no retrocede mas alla del año actual cuando el primer año con datos es posterior", () => {
+  it("no retrocede más alla del año actual cuando el primer año con datos es posterior", () => {
     expect(availableReportYears(2027, 2026)).toEqual([2026]);
   });
 
@@ -56,7 +56,7 @@ describe("periodos de reporte (ramas)", () => {
       });
     });
 
-    it("mes va desde el dia 1 hasta hoy", () => {
+    it("mes va desde el día 1 hasta hoy", () => {
       expect(getReportPresetRange("mes", PANAMA, new Date("2026-06-10T15:00:00.000Z"))).toEqual({
         from: "2026-06-01",
         to: "2026-06-10",
@@ -77,7 +77,7 @@ describe("periodos de reporte (ramas)", () => {
       });
     });
 
-    it("30dias y 90dias cuentan hacia atras incluyendo el dia de hoy", () => {
+    it("30dias y 90dias cuentan hacia atras incluyendo el día de hoy", () => {
       const now = new Date("2026-06-10T15:00:00.000Z");
 
       expect(getReportPresetRange("30dias", PANAMA, now)).toEqual({ from: "2026-05-12", to: "2026-06-10" });

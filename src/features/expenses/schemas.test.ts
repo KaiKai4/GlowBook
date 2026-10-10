@@ -11,7 +11,7 @@ const validExpense = {
 };
 
 describe("CreateExpenseSchema", () => {
-  it("convierte el monto de texto a numero y aplica defaults de texto", () => {
+  it("convierte el monto de texto a número y aplica defaults de texto", () => {
     expect(CreateExpenseSchema.parse(validExpense)).toEqual({
       expense_date: "2026-06-10",
       amount: 25.5,
@@ -29,7 +29,7 @@ describe("CreateExpenseSchema", () => {
     expect(CreateExpenseSchema.safeParse({ ...validExpense, idempotency_key: undefined }).success).toBe(false);
   });
 
-  it("usa 'other' como categoria por defecto y exige concepto en ese caso", () => {
+  it("usa 'other' como categoría por defecto y exige concepto en ese caso", () => {
     const result = CreateExpenseSchema.safeParse({ ...validExpense, category: undefined });
 
     expect(result.success).toBe(false);
@@ -37,7 +37,7 @@ describe("CreateExpenseSchema", () => {
     expect(result.error?.issues[0]?.message).toBe("Describe el concepto del gasto.");
   });
 
-  it("exige concepto solo cuando la categoria es 'other', tambien si viene con espacios", () => {
+  it("exige concepto solo cuando la categoría es 'other', también si viene con espacios", () => {
     expect(CreateExpenseSchema.safeParse({ ...validExpense, concept: "" }).success).toBe(true);
     expect(
       CreateExpenseSchema.safeParse({ ...validExpense, category: "other", concept: "   " }).success
@@ -54,7 +54,7 @@ describe("CreateExpenseSchema", () => {
     expect(CreateExpenseSchema.safeParse({ ...validExpense, amount: "-3" }).success).toBe(false);
   });
 
-  it("exige fecha y categoria dentro del catalogo", () => {
+  it("exige fecha y categoría dentro del catálogo", () => {
     expect(CreateExpenseSchema.safeParse({ ...validExpense, expense_date: "" }).error?.issues[0]?.message).toBe(
       "La fecha es obligatoria."
     );

@@ -13,6 +13,6 @@ export async function archiveServiceCategory(
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "services", action: "archive_category" });
-    return { ok: false, error: "No se pudo archivar la categoria." };
+    return { ok: false, error: "No se pudo archivar la categoría." };
   }
 }

@@ -1,5 +1,5 @@
-// Fuente unica de los modulos contratables del salon. Cada modulo declara los
-// permisos que afecta; el mapa permiso -> modulos de features access se deriva de aqui.
+// Fuente unica de los módulos contratables del salón. Cada modulo declara los
+// permisos que afecta; el mapa permiso -> módulos de features access se deriva de aquí.
 // Este modulo no importa access (evita ciclos): los permisos son cadenas.
 interface SalonFeatureDef {
   readonly key: string;
@@ -12,7 +12,7 @@ export const SALON_FEATURES = [
   {
     key: "appointments",
     label: "Citas",
-    description: "Agenda y creacion de citas.",
+    description: "Agenda y creación de citas.",
     permissions: ["appointments.view", "appointments.manage", "appointments.view_all"],
   },
   {
@@ -36,7 +36,7 @@ export const SALON_FEATURES = [
   {
     key: "services",
     label: "Servicios",
-    description: "Catalogo de servicios.",
+    description: "Catálogo de servicios.",
     permissions: ["services.manage"],
   },
   {
@@ -48,7 +48,7 @@ export const SALON_FEATURES = [
   {
     key: "retail",
     label: "Vitrina",
-    description: "Ventas de productos del salon.",
+    description: "Ventas de productos del salón.",
     permissions: ["retail.manage"],
   },
   {
@@ -66,7 +66,7 @@ export const SALON_FEATURES = [
   {
     key: "roles",
     label: "Roles",
-    description: "Roles y permisos del salon.",
+    description: "Roles y permisos del salón.",
     permissions: ["roles.manage"],
   },
   {
@@ -77,7 +77,7 @@ export const SALON_FEATURES = [
   },
   {
     key: "salon",
-    label: "Salon",
+    label: "Salón",
     description: "Configuración del negocio.",
     permissions: ["salon.manage"],
   },
@@ -93,7 +93,7 @@ function isSalonFeatureKey(value: string): value is SalonFeatureKey {
   return SALON_FEATURE_KEYS.has(value);
 }
 
-/** Modulos (en orden de catalogo) que declaran el permiso indicado. */
+/** Módulos (en orden de catálogo) que declaran el permiso indicado. */
 export function salonFeaturesForPermission(permission: string): SalonFeatureKey[] {
   return SALON_FEATURES.filter((feature) =>
     declaresPermission(feature, permission)

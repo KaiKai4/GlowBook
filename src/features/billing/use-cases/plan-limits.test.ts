@@ -41,8 +41,8 @@ vi.mock("@/features/audit", () => ({
   publishAuditEvent: vi.fn(async () => []),
 }));
 
-// Claves de la fixture de plan (fixtures heredadas, no del catalogo): el test prueba la
-// logica de limites, no el catalogo, asi que se fijan con un cast de test.
+// Claves de la fixture de plan (fixtures heredadas, no del catálogo): el test prueba la
+// logica de limites, no el catálogo, asi que se fijan con un cast de test.
 const APPOINTMENTS_METRIC = "appointments_monthly" as PlanMetricKey;
 const EMPLOYEES_METRIC = "employees_active" as PlanMetricKey;
 
@@ -138,7 +138,7 @@ describe("checkPlanLimit", () => {
     expect(recordAlertMock).not.toHaveBeenCalled();
   });
 
-  it("does not duplicate an alert that is already open for the same salon and metric", async () => {
+  it("does not duplicate an alert that is already open for the same salón and metric", async () => {
     hasOpenAlertMock.mockResolvedValueOnce(true);
     findRowsMock.mockResolvedValueOnce(rows({ usage: { appointments_monthly: 10 } }));
 
@@ -162,7 +162,7 @@ describe("checkPlanLimit", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("allows the action when the salon has no plan, so no limit resolves", async () => {
+  it("allows the action when the salón has no plan, so no limit resolves", async () => {
     findRowsMock.mockResolvedValueOnce(rows({ plan: null, usage: {} }));
 
     const result = await checkPlanLimit({ salonId: "salon-1", metricKey: APPOINTMENTS_METRIC });

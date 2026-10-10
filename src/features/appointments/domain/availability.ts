@@ -93,7 +93,7 @@ export function evaluateTimeRange({
   if (enforceMinDuration && durationMinutes < salonConfig.min_appointment_duration_minutes) {
     violations.push({
       code: "min_duration",
-      message: `La duración minima es ${salonConfig.min_appointment_duration_minutes} minutos.`,
+      message: `La duración mínima es ${salonConfig.min_appointment_duration_minutes} minutos.`,
     });
   }
 
@@ -103,11 +103,11 @@ export function evaluateTimeRange({
   if (enforceSalonSchedule) {
     const salonWindows = getSalonWindows(dayOfWeek, businessHours);
     if (salonWindows.length === 0) {
-      violations.push({ code: "salon_closed_day", message: "El salon esta cerrado ese día." });
+      violations.push({ code: "salon_closed_day", message: "El salón está cerrado ese día." });
     } else if (!isWithinWindows(startMins, endMins, salonWindows)) {
       violations.push({
         code: "salon_off_hours",
-        message: "El horario esta fuera del horario de atención del salon.",
+        message: "El horario esta fuera del horario de atención del salón.",
       });
     }
   }

@@ -19,7 +19,7 @@ export default async function PlatformInvitationsPage() {
             Invitaciones
           </span>
         }
-        description="Invita salones con su plan ya definido: al aceptar, el salon nace con los modulos y límites correctos."
+        description="Invita salones con su plan ya definido: al aceptar, el salón nace con los módulos y límites correctos."
         actions={
           <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-fg-muted">
             <Clock className="h-4 w-4 text-warning-fg" aria-hidden="true" />
@@ -39,7 +39,7 @@ export default async function PlatformInvitationsPage() {
           {view.assignablePlans.length === 0 ? (
             <p className="rounded-xl border border-dashed border-warning-border bg-warning-subtle/50 px-4 py-6 text-center text-sm text-warning-strong">
               No hay planes activos. Crea y activa un plan en Planes antes de invitar:
-              toda invitacion lleva el plan que tendra el salon al aceptar.
+              toda invitación lleva el plan que tendrá el salón al aceptar.
             </p>
           ) : (
             <InviteSalonForm plans={view.assignablePlans} />
@@ -65,7 +65,7 @@ export default async function PlatformInvitationsPage() {
         <CardContent>
           {view.acceptedInvitations.length === 0 ? (
             <p className="py-6 text-center text-sm text-fg-subtle">
-              Cuando alguien acepte una invitacion aparecera aqui con su salon y plan.
+              Cuando alguien acepte una invitación aparecerá aquí con su salon y plan.
             </p>
           ) : (
             <AcceptedInvitationsTable rows={view.acceptedInvitations} />

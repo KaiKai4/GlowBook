@@ -71,7 +71,7 @@ describe("recordAuditLogEntry", () => {
       targetResourceType: "salon",
       targetResourceId: SALON_ID,
       metadata: { isActive: false, note: "suspendido" },
-      errorMessage: "Salon no encontrado.",
+      errorMessage: "Salón no encontrado.",
     });
 
     expect(argsOf(queryFor(admin, "platform_audit_log"), "insert")).toEqual([
@@ -84,7 +84,7 @@ describe("recordAuditLogEntry", () => {
           target_resource_type: "salon",
           target_resource_id: SALON_ID,
           metadata: { isActive: false, note: "suspendido" },
-          error_message: "Salon no encontrado.",
+          error_message: "Salón no encontrado.",
         },
       ],
     ]);

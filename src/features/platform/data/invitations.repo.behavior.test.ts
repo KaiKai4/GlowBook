@@ -18,7 +18,7 @@ import {
 
 // Conducta de los repositorios de invitaciones: el token en claro nunca se
 // persiste (solo su hash), las lecturas de la plataforma usan el cliente admin
-// y cada consulta acota por el estado o por el salon que corresponde.
+// y cada consulta acota por el estado o por el salón que corresponde.
 
 const clients = vi.hoisted(() => ({
   admin: null as FakeSupabase | null,
@@ -131,7 +131,7 @@ describe("regenerateSalonInvitationToken", () => {
     useClients(createFakeSupabase({ tables: { salon_invitations: { data: null, error: null } } }));
 
     await expect(regenerateSalonInvitationToken(INVITATION_ID)).rejects.toThrow(
-      "La invitacion no existe o ya no esta pendiente."
+      "La invitación no existe o ya no está pendiente."
     );
   });
 
@@ -212,7 +212,7 @@ describe("findAcceptedInvitationEmailBySalon", () => {
     expect(admin.from).not.toHaveBeenCalled();
   });
 
-  it("keeps the most recently accepted email per salon and ignores rows without salon or email", async () => {
+  it("keeps the most recently accepted email per salón and ignores rows without salón or email", async () => {
     const admin = useClients(
       createFakeSupabase({
         tables: {

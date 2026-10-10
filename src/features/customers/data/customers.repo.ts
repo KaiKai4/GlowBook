@@ -2,6 +2,8 @@ import "server-only";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { Database } from "@/types/database.types";
 
+const DEFAULT_CUSTOMERS_PER_PAGE = 10;
+
 type CustomerRow = Database["public"]["Tables"]["customers"]["Row"];
 
 export async function findCustomers(
@@ -9,7 +11,7 @@ export async function findCustomers(
   options: { q?: string; page?: number; perPage?: number; isActive?: boolean } = {}
 ) {
   const supabase = await createSupabaseServerClient();
-  const { q = "", page = 1, perPage = 10, isActive } = options;
+  const { q = "", page = 1, perPage = DEFAULT_CUSTOMERS_PER_PAGE, isActive } = options;
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
   const searchTerm = q.trim().replace(/[%_(),]/g, "");

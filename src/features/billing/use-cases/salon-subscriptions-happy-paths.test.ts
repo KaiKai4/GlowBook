@@ -116,13 +116,13 @@ describe("registrar pago de mensualidad", () => {
     vi.mocked(findAssignmentForPayment).mockResolvedValue(null);
 
     expect(await registerSalonPlanPaymentConfig({ salonId: SALON_ID, amount: 25 })).toEqual(
-      err("Este salon no tiene plan asignado. Asignale un plan primero.")
+      err("Este salón no tiene plan asignado. Asígnale un plan primero.")
     );
     expect(recordSalonPlanPayment).not.toHaveBeenCalled();
     expect(activatePaidPeriod).not.toHaveBeenCalled();
   });
 
-  it("registra el pago en la moneda del plan y activa el periodo pagado", async () => {
+  it("registra el pago en la moneda del plan y activa el período pagado", async () => {
     vi.mocked(findAssignmentForPayment).mockResolvedValue({ plan_id: PLAN_ID, current_period_end: null });
     vi.mocked(findPlanWithChildren).mockResolvedValue(plan({ currency: "USD" }));
 

@@ -13,13 +13,13 @@ beforeEach(() => {
 });
 
 describe("readSessionUserId", () => {
-  it("devuelve el id del usuario de la sesion", async () => {
+  it("devuelve el id del usuario de la sesión", async () => {
     getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
 
     await expect(readSessionUserId()).resolves.toBe("u1");
   });
 
-  it("sin sesion abierta devuelve null", async () => {
+  it("sin sesión abierta devuelve null", async () => {
     const missing = Object.assign(new Error("Auth session missing!"), { name: "AuthSessionMissingError", status: 400 });
     getUser.mockResolvedValue({ data: { user: null }, error: missing });
 
@@ -43,7 +43,7 @@ describe("readSessionUserId", () => {
     await expect(readSessionUserId()).rejects.toBe(serverError);
   });
 
-  it("propaga los errores de BD o de red en vez de tratarlos como sin sesion", async () => {
+  it("propaga los errores de BD o de red en vez de tratarlos como sin sesión", async () => {
     const networkError = Object.assign(new Error("fetch failed"), { name: "AuthRetryableFetchError" });
     getUser.mockResolvedValue({ data: { user: null }, error: networkError });
 

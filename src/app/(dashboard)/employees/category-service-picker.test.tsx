@@ -123,7 +123,7 @@ describe("CategoryServicePicker", () => {
     expect(serviceCheckbox(mounted.container, "Corte")).toBeInstanceOf(HTMLInputElement);
     expect(serviceCheckbox(mounted.container, "Tinte")).toBeInstanceOf(HTMLInputElement);
     expect(mounted.container.querySelector('input[value="svc-manicura"]')).toBeNull();
-    expect(mounted.container.textContent).toContain("Sin servicios en esta categoria.");
+    expect(mounted.container.textContent).toContain("Sin servicios en esta categoría.");
   });
 
   it("añade una categoría a la selección sin tocar los servicios elegidos", () => {

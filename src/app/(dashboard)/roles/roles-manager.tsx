@@ -30,7 +30,7 @@ interface Role {
   permissionKeys: string[];
 }
 
-// Grupos de la UI. Los permisos se tipan contra el catalogo; los textos viven en PERMISSION_TEXTS.
+// Grupos de la UI. Los permisos se tipan contra el catálogo; los textos viven en PERMISSION_TEXTS.
 const PERMISSION_GROUPS: { group: string; icon: LucideIcon; items: PermissionKey[] }[] = [
   { group: "Citas", icon: CalendarCheck, items: ["appointments.view", "appointments.manage", "appointments.view_all"] },
   { group: "Clientes", icon: Users, items: ["customers.manage"] },

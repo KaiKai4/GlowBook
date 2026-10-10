@@ -37,7 +37,7 @@ vi.mock("@/features/employees/use-cases/employee-revocation", () => ({
 }));
 
 const employeesManager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
-const rolesDisabledError = "Los roles estan deshabilitados para este salon.";
+const rolesDisabledError = "Los roles están deshabilitados para este salón.";
 
 describe("employees actions (roles de acceso)", () => {
   beforeEach(() => {

@@ -10,7 +10,10 @@ describe("classifyAppointmentRpcFailure", () => {
 
   it("clasifica el cliente no disponible por su mensaje como inactive_customer", () => {
     expect(
-      classifyAppointmentRpcFailure({ message: "El cliente no esta disponible para nuevas citas" })
+      classifyAppointmentRpcFailure({
+        message:
+          "Este cliente no esta disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.",
+      })
     ).toBe("inactive_customer");
   });
 

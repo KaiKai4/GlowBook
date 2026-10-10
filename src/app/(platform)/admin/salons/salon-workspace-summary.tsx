@@ -30,7 +30,7 @@ export function SummaryTab({
         <Panel
           icon={<Building2 className="h-4 w-4" />}
           title="Datos de contacto"
-          description="Informacion registrada del salon."
+          description="Información registrada del salón."
         >
           <dl className="space-y-3 text-sm">
             <InfoRow label="Correo" value={salon.contactEmail || "Sin correo registrado"} />
@@ -42,8 +42,8 @@ export function SummaryTab({
 
         <Panel
           icon={<Users className="h-4 w-4" />}
-          title="Owners y suscripcion"
-          description="Quien administra el salon y que plan tiene."
+          title="Owners y suscripción"
+          description="Quien administra el salón y que plan tiene."
         >
           <div className="space-y-3 text-sm">
             <div>
@@ -78,7 +78,7 @@ export function SummaryTab({
               href={`/admin/subscriptions?salon=${salon.id}`}
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline"
             >
-              Gestionar suscripcion y extras
+              Gestionar suscripción y extras
               <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>

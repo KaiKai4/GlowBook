@@ -31,7 +31,7 @@ describe("hourLabel", () => {
 });
 
 describe("computeRange", () => {
-  it("usa el horario del salon cuando no hay citas", () => {
+  it("usa el horario del salón cuando no hay citas", () => {
     expect(computeRange([], SALON_TZ, 8, 21)).toEqual({ calStart: 8, calEnd: 21 });
   });
 
@@ -60,7 +60,7 @@ describe("computeRange", () => {
     expect(computeRange(appts, SALON_TZ, 8, 21)).toEqual({ calStart: 8, calEnd: 21 });
   });
 
-  it("garantiza al menos una hora visible y no supera el dia completo", () => {
+  it("garantiza al menos una hora visible y no supera el día completo", () => {
     expect(computeRange([], SALON_TZ, 10, 10)).toEqual({ calStart: 10, calEnd: 11 });
     const appts = [buildCalendarAppointment({ start_time: at("23:30"), end_time: null })];
     expect(computeRange(appts, SALON_TZ, 8, 21)).toEqual({ calStart: 8, calEnd: 24 });
@@ -106,7 +106,7 @@ describe("assignColumns", () => {
 });
 
 describe("getLocalDate", () => {
-  it("devuelve la fecha local del salon en formato ISO", () => {
+  it("devuelve la fecha local del salón en formato ISO", () => {
     expect(getLocalDate(`${TEST_DATE}T23:30:00-05:00`, SALON_TZ)).toBe(TEST_DATE);
     expect(getLocalDate(`${TEST_DATE}T23:30:00-05:00`, "UTC")).toBe("2026-10-13");
   });

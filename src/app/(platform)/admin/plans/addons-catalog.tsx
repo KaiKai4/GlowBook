@@ -35,7 +35,7 @@ export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
           <div className="flex items-center justify-between border-b border-brand-100 px-5 py-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Extras</p>
-              <p className="mt-1 text-sm text-fg-subtle">{data.addons.length} en catalogo</p>
+              <p className="mt-1 text-sm text-fg-subtle">{data.addons.length} en catálogo</p>
             </div>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
               {data.addons.filter((addon) => addon.status === "active").length} activos
@@ -104,7 +104,7 @@ export function AddonsCatalog({ data }: { data: AddonsCatalogData }) {
                   <span className="rounded-lg bg-surface-sunken px-2 py-1 font-mono text-xs text-fg-muted">{selected.code}</span>
                 </div>
                 <p className="mt-1 text-sm text-fg-subtle">
-                  {selected.description || "Extra vendible o regalable por salon."}
+                  {selected.description || "Extra vendible o regalable por salón."}
                 </p>
               </div>
               <form action={removeAddonAction.bind(null, selected.id)}>
@@ -144,25 +144,25 @@ function AddonForm({
   return (
     <Panel
       icon={<Plus className="h-4 w-4" />}
-      title={addon ? "Informacion del extra" : "Nuevo extra"}
-      description="Un extra activa un modulo fuera del plan o aumenta un límite. Se vende a precio mensual o se regala desde Suscripciones."
+      title={addon ? "Información del extra" : "Nuevo extra"}
+      description="Un extra activa un módulo fuera del plan o aumenta un límite. Se vende a precio mensual o se regala desde Suscripciones."
     >
       <form action={action} className="space-y-4">
         {addon ? <input type="hidden" name="id" value={addon.id} /> : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <Input name="name" label="Nombre" placeholder="Bloque de 1,000 citas" defaultValue={addon?.name ?? ""} required />
-          <Input name="code" label="Codigo interno" placeholder="Se genera desde el nombre" defaultValue={addon?.code ?? ""} />
+          <Input name="code" label="Código interno" placeholder="Se genera desde el nombre" defaultValue={addon?.code ?? ""} />
         </div>
         <Textarea name="description" label="Descripcion" rows={2} defaultValue={addon?.description ?? ""} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Select name="kind" label="Tipo de extra" value={kind} onChange={(event) => setKind(event.target.value as CommercialAddon["kind"])}>
-            <option value="module">Activa un modulo</option>
+            <option value="module">Activa un módulo</option>
             <option value="limit_boost">Aumenta un límite</option>
           </Select>
           {kind === "module" ? (
-            <Select name="moduleKey" label="Modulo que activa" defaultValue={addon?.moduleKey ?? ""}>
-              <option value="">Selecciona un modulo</option>
+            <Select name="moduleKey" label="Módulo que activa" defaultValue={addon?.moduleKey ?? ""}>
+              <option value="">Selecciona un módulo</option>
               {modules.filter((module) => !module.isArchived).map((module) => (
                 <option key={module.key} value={module.key}>{module.name}</option>
               ))}
@@ -210,5 +210,5 @@ function AddonForm({
 }
 
 function kindLabel(kind: CommercialAddon["kind"]) {
-  return kind === "module" ? "Modulo" : "Límite";
+  return kind === "module" ? "Módulo" : "Límite";
 }

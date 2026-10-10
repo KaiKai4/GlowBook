@@ -114,7 +114,7 @@ describe("PlatformSubscriptionsPage", () => {
 
     mounted = await render();
 
-    expect(mounted.container.textContent).toContain("No hay salones registrados todavia. Invita un salon desde Invitaciones para asignarle un plan.");
+    expect(mounted.container.textContent).toContain("No hay salones registrados todavía. Invita un salón desde Invitaciones para asignarle un plan.");
     expect(getSalonSubscriptionDetail).not.toHaveBeenCalled();
   });
 

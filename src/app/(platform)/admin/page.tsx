@@ -58,7 +58,7 @@ export default async function PlatformAdminPage() {
           className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-surface shadow-sm transition hover:bg-brand-700"
         >
           <MailOpen className="h-4 w-4" />
-          Invitar salon
+          Invitar salón
         </Link>
       </div>
 
@@ -194,7 +194,7 @@ export default async function PlatformAdminPage() {
               href="/admin/plans"
               icon={<CreditCard className="h-4 w-4 text-brand-600" />}
               title="Planes y extras"
-              detail="Catalogo comercial, modulos y límites"
+              detail="Catálogo comercial, módulos y límites"
             />
             <AdminShortcut
               href="/admin/audit"

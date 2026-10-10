@@ -174,7 +174,7 @@ describe(
         .from("service_categories")
         .insert({
           salon_id: owner.salonId,
-          name: "PARIDAD Categoria variable",
+          name: "PARIDAD Categoría variable",
           is_active: true,
           pricing_mode: "variable",
         })
