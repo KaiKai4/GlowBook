@@ -5,7 +5,7 @@ import type { Cookie } from "@playwright/test";
 // Caché de sesiones E2E: un inicio de sesión real por usuario y ejecución.
 // Vive en test-results/ (ignorado por git) y global-setup.ts la vacía al empezar,
 // porque la BD local se reinicia entre ejecuciones del verificador.
-export const AUTH_CACHE_DIR = resolve(process.cwd(), "test-results", ".auth");
+const AUTH_CACHE_DIR = resolve(process.cwd(), "test-results", ".auth");
 
 const LOCK_WAIT_MS = 60_000;
 const LOCK_POLL_MS = 200;
