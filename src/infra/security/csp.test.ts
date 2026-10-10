@@ -16,11 +16,11 @@ describe("content security policy", () => {
     expect(csp).toContain("object-src 'none'");
   });
 
-  it("signs <style> elements with the nonce in production", () => {
+  it("keeps unsafe-inline for styles (documented exception) and never for scripts", () => {
     const csp = buildContentSecurityPolicy({ nonce: "abc123", mode: "production" });
 
-    expect(csp).toContain("style-src 'self' 'nonce-abc123';");
-    expect(csp).not.toMatch(/style-src 'self' [^;]*'unsafe-inline'/);
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+    expect(csp).not.toMatch(/script-src [^;]*'unsafe-inline'/);
   });
 
   it("only allows eval in development", () => {

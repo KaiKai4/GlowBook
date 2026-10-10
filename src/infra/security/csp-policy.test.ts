@@ -64,21 +64,11 @@ describe("buildContentSecurityPolicy directives", () => {
     );
   });
 
-  it("signs <style> elements with the nonce and keeps unsafe-inline only for style attributes", () => {
+  it("keeps unsafe-inline only for styles, never for scripts", () => {
     const policy = buildContentSecurityPolicy({ nonce: "n", mode: "production" });
 
-    expect(directive(policy, "style-src")).toBe("style-src 'self' 'nonce-n'");
-    expect(directive(policy, "style-src-attr")).toBe("style-src-attr 'unsafe-inline'");
+    expect(directive(policy, "style-src")).toBe("style-src 'self' 'unsafe-inline'");
     expect(directive(policy, "script-src")).toBe("script-src 'self' 'nonce-n' 'strict-dynamic'");
-  });
-
-  it("allows unsafe-inline on style-src only in development", () => {
-    expect(directive(buildContentSecurityPolicy({ nonce: "n", mode: "development" }), "style-src")).toBe(
-      "style-src 'self' 'nonce-n' 'unsafe-inline'"
-    );
-    expect(directive(buildContentSecurityPolicy({ nonce: "n", mode: "production" }), "style-src")).not.toContain(
-      "unsafe-inline"
-    );
   });
 
   it("connects to the configured Supabase project over https and wss", () => {

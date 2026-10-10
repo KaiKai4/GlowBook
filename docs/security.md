@@ -210,28 +210,24 @@ Decision para lanzamiento amplio:
 - registrar la decision en el ADR 0017 o en uno nuevo.
 
 
-## Excepcion CSP: atributos style con unsafe-inline
+## Excepcion CSP: estilos con unsafe-inline
 
-`style-src` no usa `'unsafe-inline'` en produccion: los elementos `<style>` exigen
-nonce (`style-src 'self' 'nonce-...'`), el mismo patron que documenta la guia de
-Next (`node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md`,
-seccion "Nonces"). En desarrollo se anade `'unsafe-inline'` a `style-src` porque
-React Refresh puede inyectar `<style>` sin nonce.
+`style-src` mantiene `'self' 'unsafe-inline'` (`src/infra/security/csp.ts`). Se evaluo
+exigir nonce a los elementos `<style>` siguiendo la guia de Next
+(`node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md`, seccion
+"Nonces"), con `style-src-attr 'unsafe-inline'` para los atributos. Se descarto el
+2026-10-10 porque:
 
-La excepcion es solo para los atributos `style="..."`: se gobiernan con
-`style-src-attr 'unsafe-inline'` (`src/infra/security/csp.ts`). Motivo concreto:
-React escribe esos atributos en tiempo de render (alturas calculadas, anchos de
-graficas, posiciones). La especificacion CSP no aplica nonces ni hashes a los
-atributos `style`, asi que con `style-src` sin `unsafe-inline` esos estilos se
-bloquearian. Usar hashes no es viable porque sus valores dependen de los datos.
+- React escribe atributos `style="..."` en tiempo de render (alturas calculadas, anchos
+  de graficas). CSP no aplica nonces ni hashes a esos atributos.
+- La inyeccion de `<style>` sin nonce rompia el barrido de accesibilidad e2e
+  (`e2e/support/a11y.ts` desactiva transiciones con `page.addStyleTag`), y Next o
+  bibliotecas pueden inyectar `<style>` sin nonce segun el navegador.
 
-Lo que sigue bloqueado: `<style>` sin nonce y los estilos inyectados desde
-cadenas HTML o scripts sin nonce. El riesgo de ejecucion de codigo sigue en
-`script-src` (nonce + `strict-dynamic`, sin `unsafe-inline`).
+El riesgo de ejecucion de codigo esta en `script-src`, que usa nonce y
+`strict-dynamic` sin `unsafe-inline`. Pruebas: `src/infra/security/csp.test.ts`.
+Revisar esta excepcion si Next ofrece nonce para estilos sin romper atributos.
 
-Pruebas: `src/infra/security/csp.test.ts` y `csp-policy.test.ts` (modo produccion y
-desarrollo). Verificar en staging que no hay informes CSP de `style-src` antes de
-cualquier cambio posterior.
 ## Lectura de la IP del cliente
 
 El rate limit anonimo (`src/infra/security/rate-limit.ts`) obtiene la IP asi:

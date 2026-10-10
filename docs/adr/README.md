@@ -24,7 +24,7 @@ Para el vocabulario del dominio, leer antes `CONTEXT.md`.
 
 ## Índice
 
-Estado revisado a 2026-10-10: los 29 ADR están vigentes (ADR 0025 sustituida por ADR 0028; ADR 0031 modifica el manifiesto de ADR 0011 y la comprobación del mapa de ADR 0019), con las sustituciones parciales indicadas en cada estado. El ADR 0024 revisa la parte de billing del ADR 0010: las lecturas de billing del propio salón van por RLS y ya no por `service_role`. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021. ADR 0012 queda además parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
+Estado revisado a 2026-10-10: los 31 ADR están vigentes (ADR 0025 sustituida por ADR 0028; ADR 0031 modifica el manifiesto de ADR 0011 y la comprobación del mapa de ADR 0019), con las sustituciones parciales indicadas en cada estado. El ADR 0024 revisa la parte de billing del ADR 0010: las lecturas de billing del propio salón van por RLS y ya no por `service_role`. Ninguno está superado por completo. Los ADR 0009, 0010 y 0013 tienen partes superadas por el ADR 0019 (su estado lo indica): las partes vigentes siguen siendo válidas. ADR 0012 y ADR 0020 tienen las partes de Nightly y staging remoto sustituidas por ADR 0021. ADR 0012 queda además parcialmente superada por ADR 0022 (Stryker y scripts de readiness retirados).
 
 | ADR | Título | Ámbito |
 |---|---|---|

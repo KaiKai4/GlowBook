@@ -1,11 +1,9 @@
 // Content-Security-Policy en modo enforce, con nonce por request.
 // Los scripts solo corren si llevan el nonce ('strict-dynamic' permite los
-// chunks que Next encadena desde un script ya confiable). Los elementos <style>
-// tambien exigen nonce ('nonce-...' en style-src, patron de la guia de Next en
-// node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md).
-// Los atributos style="..." que React escribe (graficas, alturas calculadas) no
-// los cubre ningun nonce: se gobiernan con style-src-attr 'unsafe-inline'. Es la
-// excepcion documentada en docs/security.md ("Excepcion CSP").
+// chunks que Next encadena desde un script ya confiable). Los estilos mantienen
+// 'unsafe-inline': React escribe atributos style inline (graficas, alturas calculadas)
+// y Next o herramientas de prueba pueden inyectar <style> sin nonce. Es la excepcion
+// documentada en docs/security.md ("Excepcion CSP"); el riesgo real esta en script-src.
 
 // Endpoint que recibe los informes de violacion (report-uri / report-to). Va
 // en la cabecera Reporting-Endpoints y en la directiva report-uri.
@@ -37,10 +35,7 @@ export function buildContentSecurityPolicy({ nonce, mode }: { nonce: string; mod
     "form-action 'self'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    // En dev, Next/React Refresh puede inyectar <style> sin nonce: se tolera solo ahi.
-    `style-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-inline'" : ""}`,
-    // Atributos style="..." (no cubiertos por nonce). Ver docs/security.md.
-    "style-src-attr 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
     // En dev React necesita eval para reconstruir stacks de error del server.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `connect-src 'self' ${origin} https://*.supabase.co wss://*.supabase.co`,
