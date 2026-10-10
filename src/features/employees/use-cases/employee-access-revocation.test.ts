@@ -20,7 +20,6 @@ import {
   checkEmployeeAccessRevocable,
   clearEmployeeInvitations,
   deleteEmployeeAuthAccount,
-  unlinkEmployeeAccessForReset,
 } from "./employee-access";
 import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
 
@@ -236,11 +235,16 @@ describe("employee access revocation and invitations", () => {
     });
   });
 
-  describe("unlinkEmployeeAccessForReset", () => {
-    it("valida, desvincula en BD y después borra la cuenta de Auth", async () => {
-      const result = await unlinkEmployeeAccessForReset(EMPLOYEE_ID, SALON_ID, PROFILE_ID);
+  describe("reinicio de acceso con cuenta vinculada (vía resetEmployeeAccess)", () => {
+    beforeEach(() => {
+      mockedFindEmployeeById.mockResolvedValue(employeeRow({ profile_id: PROFILE_ID }) as never);
+    });
 
-      expect(result).toEqual({ ok: true, value: { roleId: "role-1", warnings: [] } });
+    it("valida, desvincula en BD y después borra la cuenta de Auth", async () => {
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+
+      expect(result.ok).toBe(true);
+      expect(mockedFindAccessProfile).toHaveBeenCalledWith(PROFILE_ID, SALON_ID);
       expect(mockedUnlinkProfile).toHaveBeenCalledWith(EMPLOYEE_ID, SALON_ID);
       expect(mockedDeleteAuthUser).toHaveBeenCalledWith(PROFILE_ID);
       expect(mockedUnlinkProfile.mock.invocationCallOrder[0]).toBeLessThan(
@@ -251,39 +255,59 @@ describe("employee access revocation and invitations", () => {
     it("si la desvinculación en BD falla, no borra la cuenta de Auth", async () => {
       mockedUnlinkProfile.mockResolvedValue({ error: { message: "bloqueado" } });
 
-      const result = await unlinkEmployeeAccessForReset(EMPLOYEE_ID, SALON_ID, PROFILE_ID);
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
 
       expect(result).toEqual({
         ok: false,
         error: "No se pudo desvincular el colaborador de su cuenta anterior.",
       });
       expect(mockedDeleteAuthUser).not.toHaveBeenCalled();
+      expect(mockedInsertInvitation).not.toHaveBeenCalled();
     });
 
     it("si Auth falla tras la BD, devuelve ok con aviso y registra el error", async () => {
       const failure = new AuthError("auth caido");
       mockedDeleteAuthUser.mockResolvedValue({ data: null, error: failure });
 
-      const result = await unlinkEmployeeAccessForReset(EMPLOYEE_ID, SALON_ID, PROFILE_ID);
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
 
       expect(mockedUnlinkProfile).toHaveBeenCalledTimes(1);
-      expect(result).toEqual({
-        ok: true,
-        value: { roleId: "role-1", warnings: [OLD_ACCOUNT_NOT_DELETED_WARNING] },
-      });
+      expect(result.ok).toBe(true);
+      expect(result).toMatchObject({ warnings: [OLD_ACCOUNT_NOT_DELETED_WARNING] });
+      expect(mockedInsertInvitation).toHaveBeenCalledWith(
+        expect.objectContaining({ role_id: "role-1" })
+      );
       expect(mockedCaptureError).toHaveBeenCalledWith(failure, { module: "employees", action: "access" });
     });
 
     it("nunca desvincula ni borra la cuenta de un owner", async () => {
       mockedFindAccessProfile.mockResolvedValue({ data: { role_id: null, is_owner: true }, error: null });
 
-      const result = await unlinkEmployeeAccessForReset(EMPLOYEE_ID, SALON_ID, PROFILE_ID);
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
 
-      expect(result.ok).toBe(false);
+      expect(result).toEqual({
+        ok: false,
+        error: "No se puede modificar el acceso de un owner desde colaboradores.",
+      });
+      expect(mockedUnlinkProfile).not.toHaveBeenCalled();
+      expect(mockedDeleteAuthUser).not.toHaveBeenCalled();
+      expect(mockedInsertInvitation).not.toHaveBeenCalled();
+    });
+
+    it("sin acceso verificable (error al leer el perfil) no desvincula ni borra Auth", async () => {
+      mockedFindAccessProfile.mockResolvedValue({ data: null, error: { message: "caido" } });
+
+      const result = await resetEmployeeAccess({ employeeId: EMPLOYEE_ID, salonId: SALON_ID, roleId: null });
+
+      expect(result).toEqual({
+        ok: false,
+        error: "No se pudo verificar el acceso actual del colaborador.",
+      });
       expect(mockedUnlinkProfile).not.toHaveBeenCalled();
       expect(mockedDeleteAuthUser).not.toHaveBeenCalled();
     });
   });
+
 
   describe("checkEmployeeAccessRevocable", () => {
     it("devuelve el rol del perfil sin tocar Auth ni la BD", async () => {

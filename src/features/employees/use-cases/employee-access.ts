@@ -155,7 +155,7 @@ export async function clearEmployeeInvitations(
  * Reinicio de acceso: valida, desvincula en BD y despues borra la cuenta de Auth.
  * Si Auth falla tras la BD, devuelve ok con aviso (la BD ya no tiene profile_id).
  */
-export async function unlinkEmployeeAccessForReset(
+async function unlinkEmployeeAccessForReset(
   employeeId: string,
   salonId: string,
   profileId: string
