@@ -25,6 +25,7 @@ export function NewProductForm({ pending, onCreate }: NewProductFormProps) {
           <Input name="category" label="Categoria" placeholder="Cabello" />
           <Input name="cost_price" type="number" step="0.01" min="0" label="Costo" defaultValue="0" />
           <Select
+            id="se-vende-en-vitrina"
             name="is_retail_enabled"
             label="Se vende en vitrina"
             value={String(retailEnabled)}

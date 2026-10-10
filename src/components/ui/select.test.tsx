@@ -63,8 +63,9 @@ describe("Select", () => {
       </Select>
     );
 
-    expect(mounted.container.querySelector("label")?.getAttribute("for")).toBe("sucursal");
-    expect(trigger(mounted.container).id).toBe("sucursal");
+    const id = trigger(mounted.container).id;
+    expect(id).not.toBe("");
+    expect(mounted.container.querySelector("label")?.getAttribute("for")).toBe(id);
   });
 
   // La opción seleccionada aparece en la lista marcada; las ocultas no.
@@ -83,7 +84,7 @@ describe("Select", () => {
     clickElement(trigger(mounted.container));
 
     expect(trigger(mounted.container).getAttribute("aria-expanded")).toBe("true");
-    expect(listbox()?.getAttribute("aria-labelledby")).toBe("servicio");
+    expect(listbox()?.getAttribute("aria-labelledby")).toBe(trigger(mounted.container).id);
     expect(optionsList().map((option) => option.textContent)).toEqual(["Corte", "Tinte", "Manicure"]);
     const selected = optionsList().find((option) => option.textContent === "Tinte");
     expect(selected?.getAttribute("aria-selected")).toBe("true");
@@ -297,7 +298,9 @@ describe("Select", () => {
     );
 
     expect(mounted.container.textContent).toContain("Selecciona un servicio");
-    expect(trigger(mounted.container).getAttribute("aria-describedby")).toBe("servicio-error");
+    const describedBy = trigger(mounted.container).getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy ?? "")?.textContent).toBe("Selecciona un servicio");
     expect(trigger(mounted.container).className).toContain("border-danger");
   });
 

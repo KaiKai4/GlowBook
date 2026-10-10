@@ -83,6 +83,7 @@ export function RetailSaleForm({
           </Select>
 
           <Select
+            id="producto"
             name="product_id"
             label="Producto"
             value={selectedProductId}
@@ -99,6 +100,7 @@ export function RetailSaleForm({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Select
+              id="origen"
               name="location"
               label="Origen"
               value={location}

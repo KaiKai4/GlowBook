@@ -18,13 +18,13 @@ describe("Textarea", () => {
     return element;
   }
 
-  it("asocia la etiqueta con el textarea usando el id derivado del texto", () => {
+  it("asocia la etiqueta con el textarea mediante un id generado", () => {
     mounted = mountComponent(<Textarea label="Nota Interna" />);
 
     const label = mounted.container.querySelector("label");
     expect(label?.textContent).toBe("Nota Interna");
-    expect(label?.getAttribute("for")).toBe("nota-interna");
-    expect(areaElement().id).toBe("nota-interna");
+    expect(areaElement().id).not.toBe("");
+    expect(label?.getAttribute("for")).toBe(areaElement().id);
   });
 
   it("prioriza el id explícito sobre el derivado de la etiqueta", () => {

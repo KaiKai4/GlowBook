@@ -25,17 +25,30 @@ describe("Input", () => {
     return element;
   }
 
-  it("deriva el id desde la etiqueta y enlaza el label", () => {
+  it("genera un id único con useId y enlaza el label con el input", () => {
     mounted = mountComponent(<Input label="Nombre completo" />);
 
-    expect(mounted.container.querySelector("label")?.getAttribute("for")).toBe("nombre-completo");
-    expect(inputElement().id).toBe("nombre-completo");
+    const id = inputElement().id;
+    expect(id).not.toBe("");
+    expect(mounted.container.querySelector("label")?.getAttribute("for")).toBe(id);
   });
 
-  it("sin etiqueta ni id no asigna id al input", () => {
+  it("dos campos con la misma etiqueta reciben ids distintos", () => {
+    mounted = mountComponent(
+      <>
+        <Input label="Nombre" />
+        <Input label="Nombre" />
+      </>
+    );
+
+    const ids = Array.from(mounted.container.querySelectorAll("input"), (input) => input.id);
+    expect(ids[0]).not.toBe("");
+    expect(ids[0]).not.toBe(ids[1]);
+  });
+
+  it("sin etiqueta no renderiza label", () => {
     mounted = mountComponent(<Input placeholder="Buscar" />);
 
-    expect(inputElement().hasAttribute("id")).toBe(false);
     expect(mounted.container.querySelector("label")).toBeNull();
   });
 
