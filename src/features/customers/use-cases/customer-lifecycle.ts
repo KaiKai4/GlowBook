@@ -1,12 +1,17 @@
 import { updateCustomer } from "@/features/customers/data/customers.repo";
 import type { Result } from "@/infra/result";
 import { captureError } from "@/infra/observability";
+import { assertCustomerQuotaAvailable } from "./customer-quota";
 
 export async function reactivateCustomer(
   customerId: string,
   salonId: string
 ): Promise<Result<void>> {
   try {
+    // El cupo se comprueba antes de escribir: reactivar un archivado activa un cliente.
+    const limit = await assertCustomerQuotaAvailable(salonId);
+    if (!limit.ok) return limit;
+
     await updateCustomer(customerId, salonId, {
       is_active: true,
       is_temporary: false,

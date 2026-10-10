@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { checkPlanLimit } from "@/features/billing";
 import { captureError } from "@/infra/observability";
 import { deleteCustomer, updateCustomer } from "@/features/customers/data/customers.repo";
 import type { Database } from "@/types/database.types";
@@ -10,6 +11,10 @@ import {
 vi.mock("@/features/customers/data/customers.repo", () => ({
   deleteCustomer: vi.fn(),
   updateCustomer: vi.fn(),
+}));
+
+vi.mock("@/features/billing", () => ({
+  checkPlanLimit: vi.fn(),
 }));
 
 vi.mock("@/infra/observability", () => ({
@@ -47,6 +52,7 @@ function customerRecord(overrides: Partial<CustomerRow> = {}): CustomerRow {
 describe("customer-temporary (ramas)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: true, value: undefined });
   });
 
   describe("promoteCustomer", () => {

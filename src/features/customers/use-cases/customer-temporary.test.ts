@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { checkPlanLimit } from "@/features/billing";
 import {
   createCustomer,
   deleteCustomer,
@@ -9,6 +10,10 @@ import {
   deleteTemporaryCustomer,
   promoteCustomer,
 } from "./customer-temporary";
+
+vi.mock("@/features/billing", () => ({
+  checkPlanLimit: vi.fn(),
+}));
 
 vi.mock("../data/customers.repo", () => ({
   createCustomer: vi.fn(),
@@ -42,6 +47,18 @@ describe("customer temporary workflow", () => {
     mockedDeleteCustomer.mockResolvedValue(undefined);
     mockedFindCustomerByPhone.mockResolvedValue(null);
     mockedUpdateCustomer.mockResolvedValue(customer() as never);
+    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: true, value: undefined });
+  });
+
+  it("no promueve un temporal si el plan no tiene cupo de clientes activos", async () => {
+    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: false, error: "Límite de clientes alcanzado." });
+
+    await expect(promoteCustomer("customer-1", "salon-1")).resolves.toEqual({
+      ok: false,
+      error: "Límite de clientes alcanzado.",
+    });
+    expect(checkPlanLimit).toHaveBeenCalledWith({ salonId: "salon-1", metricKey: "customers.active" });
+    expect(mockedUpdateCustomer).not.toHaveBeenCalled();
   });
 
   it("promotes and deletes temporary customers through their narrow lifecycle actions", async () => {

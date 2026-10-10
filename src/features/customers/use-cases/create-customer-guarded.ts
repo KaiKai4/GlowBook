@@ -1,6 +1,7 @@
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
+import { checkPlanModuleAccess } from "@/features/billing";
 import type { CreateCustomerInput } from "@/features/customers/schemas";
 import { err, type Result } from "@/infra/result";
+import { assertCustomerQuotaAvailable } from "./customer-quota";
 import { createCustomerProfile } from "./customer-profile";
 
 /**
@@ -11,7 +12,7 @@ export async function createCustomerGuarded(salonId: string, input: CreateCustom
   const moduleAccess = await checkPlanModuleAccess({ salonId, moduleKey: "customers" });
   if (!moduleAccess.ok) return err(moduleAccess.error);
 
-  const limit = await checkPlanLimit({ salonId, metricKey: "customers.active" });
+  const limit = await assertCustomerQuotaAvailable(salonId);
   if (!limit.ok) return err(limit.error);
 
   return createCustomerProfile(salonId, input);

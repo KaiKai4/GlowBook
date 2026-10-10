@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { checkPlanLimit } from "@/features/billing";
 import { captureError } from "@/infra/observability";
 import { updateCustomer } from "@/features/customers/data/customers.repo";
 import type { Database } from "@/types/database.types";
@@ -6,6 +7,10 @@ import { archiveCustomer, reactivateCustomer } from "./customer-lifecycle";
 
 vi.mock("@/features/customers/data/customers.repo", () => ({
   updateCustomer: vi.fn(),
+}));
+
+vi.mock("@/features/billing", () => ({
+  checkPlanLimit: vi.fn(),
 }));
 
 vi.mock("@/infra/observability", () => ({
@@ -36,6 +41,7 @@ const customerRow: Database["public"]["Tables"]["customers"]["Row"] = {
 describe("customer-lifecycle (ramas de error)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: true, value: undefined });
   });
 
   describe("reactivateCustomer", () => {
