@@ -140,6 +140,39 @@ describe("ActiveEmployeeAccessPanel", () => {
     expect(mounted.container.querySelector('input[aria-label="Enlace de invitación"]')).toBeNull();
   });
 
+  it("muestra los avisos devueltos al reiniciar el acceso junto al enlace nuevo", async () => {
+    vi.mocked(resetEmployeeAccessAction).mockResolvedValue({
+      ok: true,
+      value: { token: "tok-reset", expiresAt: "2026-10-16T00:00:00.000Z" },
+      warnings: ["El plan no permite más profesionales.", "Revisa el rol asignado."],
+    });
+    mounted = renderPanel();
+
+    click(buttonWithText(mounted.container, "Reiniciar y generar enlace"));
+    await flushAsync();
+
+    expect(mounted.container.textContent).toContain(
+      "El plan no permite más profesionales. Revisa el rol asignado."
+    );
+    expect(mounted.container.textContent).toContain("Nuevo enlace generado");
+  });
+
+  it("no muestra aviso cuando el reinicio no devuelve advertencias", async () => {
+    vi.mocked(resetEmployeeAccessAction).mockResolvedValue({
+      ok: true,
+      value: { token: "tok-reset", expiresAt: "2026-10-16T00:00:00.000Z" },
+      warnings: [],
+    });
+    mounted = renderPanel();
+
+    click(buttonWithText(mounted.container, "Reiniciar y generar enlace"));
+    await flushAsync();
+
+    expect(mounted.container.textContent).toContain("Nuevo enlace generado");
+    expect(mounted.container.textContent).not.toContain("El plan no permite");
+    expect(mounted.container.querySelector(".text-warning-strong.rounded-lg")).toBeNull();
+  });
+
   it("no permite reiniciar el acceso cuando el colaborador no tiene email", () => {
     mounted = renderPanel({ employeeEmail: "" });
 
