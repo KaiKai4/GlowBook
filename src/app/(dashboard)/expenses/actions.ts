@@ -7,7 +7,7 @@ import { inventoryPurchaseFields } from "@/features/expenses/domain/inventory-pu
 import {
   createExpenseWithPlanLimits,
   createInventoryPurchaseWithPlanLimits,
-} from "@/features/expenses/use-cases/expense-writes";
+} from "@/features/expenses";
 import { InventoryPurchaseSchema, type InventoryPurchaseInput } from "@/features/inventory/schemas";
 import type { Result } from "@/infra/result";
 

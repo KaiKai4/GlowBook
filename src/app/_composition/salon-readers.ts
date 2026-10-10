@@ -3,7 +3,7 @@ import { cache } from "react";
 import {
   getDashboardShell,
   type DashboardShellViewModel,
-} from "@/features/salon/use-cases/get-dashboard-shell";
+} from "@/features/salon";
 import type { ProfileWithRole } from "@/types/app.types";
 
 // Lectores memoizados por request del composition root. React cache vive solo

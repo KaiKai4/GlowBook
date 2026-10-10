@@ -4,7 +4,7 @@ import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/fe
 import {
   getReportExportData,
   type ReportExportScope,
-} from "@/features/reports/use-cases/get-report-export";
+} from "@/features/reports";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { captureError } from "@/infra/observability";
 import { binaryNoStore, jsonNoStore } from "@/infra/http/responses";

@@ -1,18 +1,18 @@
 "use server";
 
 import { defineAction } from "@/app/_composition/define-action";
-import { archiveEmployee } from "@/features/employees/use-cases/employee-lifecycle";
+import { archiveEmployee } from "@/features/employees";
 import {
   findArchivedEmployeeByEmail,
   type ArchivedEmployeeMatch,
   type CreateEmployeeResult,
   type EmployeeWriteResult,
-} from "@/features/employees/use-cases/employee-profile";
+} from "@/features/employees";
 import {
   createEmployeeFlow,
   updateEmployeeFlow,
-} from "@/features/employees/use-cases/employee-profile-flow";
-import { reactivateEmployeeFlow } from "@/features/employees/use-cases/employee-lifecycle-flows";
+} from "@/features/employees";
+import { reactivateEmployeeFlow } from "@/features/employees";
 import { ok, type Result } from "@/infra/result";
 import {
   activeLimitCheck,

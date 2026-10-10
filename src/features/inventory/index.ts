@@ -9,3 +9,7 @@ export {
   getRetailInventoryProducts,
   type RetailInventoryProductView,
 } from "./use-cases/retail-inventory-products";
+
+export { getInventoryProductOptions } from "./use-cases/inventory-product-options";
+export { deleteInventoryProduct, updateInventoryProductProfile, getInventoryPage } from "./use-cases/inventory-products";
+export { createInventoryProductWithPlanLimits, transferInventoryStockWithPlanLimits } from "./use-cases/inventory-product-writes";

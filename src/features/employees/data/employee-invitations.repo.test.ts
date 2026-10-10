@@ -182,18 +182,25 @@ describe("employee invitations repo", () => {
     it("marca la invitación como aceptada con una fecha ISO", async () => {
       useTables({ employee_invitations: [{}] });
 
-      await expect(markEmployeeInvitationAccepted("inv-1")).resolves.toEqual({ error: null });
+      await expect(markEmployeeInvitationAccepted("inv-1", SALON_ID)).resolves.toEqual({ error: null });
 
       const [update] = db.argsOf("employee_invitations", "update") ?? [];
       const acceptedAt = (update as { accepted_at: string }).accepted_at;
       expect(Number.isNaN(Date.parse(acceptedAt))).toBe(false);
-      expect(db.argsOf("employee_invitations", "eq")).toEqual(["id", "inv-1"]);
+      const eqArgs = db
+        .callsFor("employee_invitations")
+        .filter((call) => call.method === "eq")
+        .map((call) => call.args);
+      expect(eqArgs).toEqual([
+        ["id", "inv-1"],
+        ["salon_id", SALON_ID],
+      ]);
     });
 
     it("devuelve el error de actualización", async () => {
       useTables({ employee_invitations: [{ error: { message: "sin efecto" } }] });
 
-      await expect(markEmployeeInvitationAccepted("inv-1")).resolves.toEqual({
+      await expect(markEmployeeInvitationAccepted("inv-1", SALON_ID)).resolves.toEqual({
         error: { message: "sin efecto" },
       });
     });

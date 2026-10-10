@@ -4,12 +4,12 @@ import { definePlatformAction } from "@/app/_composition/define-platform-action"
 import { parseUuidField } from "@/app/_composition/define-action";
 import { ok, type Result } from "@/infra/result";
 import { formText } from "@/infra/validation/form-fields";
-import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
+import { deleteSalon } from "@/features/platform";
 import {
   inviteSalon,
   regenerateSalonInvitation,
-} from "@/features/platform/use-cases/invite-salon";
-import { updateSalonStatus } from "@/features/platform/use-cases/update-salon-status";
+} from "@/features/platform";
+import { updateSalonStatus } from "@/features/platform";
 
 // Devuelve el token en claro: el enlace solo puede mostrarse en esta
 // respuesta porque la DB guarda unicamente el hash.

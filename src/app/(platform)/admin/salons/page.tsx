@@ -1,8 +1,8 @@
 import { AlertTriangle, Building2, CalendarDays, Users } from "lucide-react";
 
-import { getSalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
-import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
-import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { getSalonSubscriptionDetail } from "@/features/billing";
+import { getSubscriptionsPage } from "@/features/billing";
+import { getPlatformSalonOverviews } from "@/features/platform";
 import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { SalonSubscriptionList } from "../subscriptions/salon-list";

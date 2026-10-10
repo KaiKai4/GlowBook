@@ -2,7 +2,7 @@ import { CheckCircle2, Clock, MailOpen, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
-import { getPlatformInvitations } from "@/features/platform/use-cases/get-platform-invitations";
+import { getPlatformInvitations } from "@/features/platform";
 import { InviteSalonForm } from "./invite-salon-form";
 import { AcceptedInvitationsTable, PendingInvitationsTable } from "./invitations-tables";
 

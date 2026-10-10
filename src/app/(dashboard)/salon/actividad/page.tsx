@@ -6,7 +6,7 @@ import { hasPermission, PERMISSIONS } from "@/features/access";
 import {
   getSalonActivity,
   type SalonActivityEntry,
-} from "@/features/salon/use-cases/get-salon-activity";
+} from "@/features/salon";
 
 export default async function SalonActivityPage() {
   const profile = await requireProfile();

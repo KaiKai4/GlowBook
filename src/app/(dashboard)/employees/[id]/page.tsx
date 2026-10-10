@@ -4,7 +4,7 @@ import { ArrowLeft, KeyRound, Mail, Percent, Phone } from "lucide-react";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { getRolesEnabled, requireProfile } from "@/app/_composition/request-context";
 import { parseUuid } from "@/infra/validation/route-id";
-import { getEmployeeDetail } from "@/features/employees/use-cases/get-employee-detail";
+import { getEmployeeDetail } from "@/features/employees";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";

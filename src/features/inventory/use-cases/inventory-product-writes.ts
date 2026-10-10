@@ -1,6 +1,6 @@
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { err, type Result } from "@/infra/result";
-import { canTransferToLocation } from "../domain/transfer-rules";
+import { canTransferToLocation, transferFromStorage } from "../domain/transfer-rules";
 import type { CreateInventoryProductInput, InventoryTransferInput } from "../schemas";
 import { transferInventoryStock } from "./inventory-movements";
 import { createInventoryProduct, getInventoryPage } from "./inventory-products";
@@ -29,12 +29,13 @@ export async function transferInventoryStockWithPlanLimits(
   const limit = await checkPlanLimit({ salonId, metricKey: "inventory.movements" });
   if (!limit.ok) return err(limit.error);
 
+  const transfer = transferFromStorage(input);
   const inventory = await getInventoryPage(salonId);
-  const product = inventory.products.find((item) => item.id === input.product_id);
+  const product = inventory.products.find((item) => item.id === transfer.product_id);
   if (!product) return err("Producto inválido.");
-  if (!canTransferToLocation(product, input.to_location)) {
+  if (!canTransferToLocation(product, transfer.to_location)) {
     return err("Este producto solo puede transferirse de Bodega a Uso interno.");
   }
 
-  return transferInventoryStock(salonId, input, input.idempotency_key);
+  return transferInventoryStock(salonId, transfer, transfer.idempotency_key);
 }

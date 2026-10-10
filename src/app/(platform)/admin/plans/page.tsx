@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Blocks, CreditCard, Gauge, Gift, Layers3, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/page-header";
-import { getCommercialPlansPage } from "@/features/billing/use-cases/commercial-plans";
+import { getCommercialPlansPage } from "@/features/billing";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { cn } from "@/components/ui/cn";
 import { AddonsCatalog } from "./addons-catalog";

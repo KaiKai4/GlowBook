@@ -1,6 +1,6 @@
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { getRolesPage } from "@/features/access/use-cases/get-roles-page";
+import { getRolesPage } from "@/features/access";
 import { RolesManager } from "./roles-manager";
 
 export default async function RolesPage() {

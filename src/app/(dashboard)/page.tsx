@@ -7,7 +7,7 @@ import { getVisibleNavItems } from "@/components/layout/nav-items";
 import { isSalonFeatureDisabled } from "@/features/salon-features";
 import { getDashboardOverview } from "@/features/dashboard";
 import { selectDashboardMoney } from "@/features/dashboard";
-import { getOwnerPlanLimitWarnings } from "@/features/salon/use-cases/get-dashboard-shell";
+import { getOwnerPlanLimitWarnings } from "@/features/salon";
 import { PlanLimitBanner } from "@/components/layout/plan-limit-banner";
 import { PaymentStandingBanner } from "@/components/layout/payment-standing-banner";
 import { getOnboardingChecklist } from "@/features/dashboard";

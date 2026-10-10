@@ -1,6 +1,6 @@
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { getSalonSettings } from "@/features/salon/use-cases/get-salon-settings";
+import { getSalonSettings } from "@/features/salon";
 import { SalonSettings } from "./salon-settings";
 
 export default async function SalonSettingsPage() {

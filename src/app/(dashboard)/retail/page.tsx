@@ -1,4 +1,4 @@
-import { getRetailPage } from "@/features/retail/use-cases/retail-sales";
+import { getRetailPage } from "@/features/retail";
 import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";

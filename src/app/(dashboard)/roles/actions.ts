@@ -4,13 +4,13 @@ import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import type { CreateRoleInput, UpdateRolePermissionsInput } from "@/features/access/schemas";
-import { createRoleWithPermissions } from "@/features/access/use-cases/create-role";
-import { deleteSalonRole } from "@/features/access/use-cases/delete-role";
+import { createRoleWithPermissions } from "@/features/access";
+import { deleteSalonRole } from "@/features/access";
 import {
   parseCreateRoleForm,
   parseUpdateRolePermissionsForm,
-} from "@/features/access/use-cases/role-form-input";
-import { updateRolePermissions } from "@/features/access/use-cases/update-role-permissions";
+} from "@/features/access";
+import { updateRolePermissions } from "@/features/access";
 import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
 

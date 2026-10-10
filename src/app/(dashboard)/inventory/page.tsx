@@ -1,4 +1,4 @@
-import { getInventoryPage } from "@/features/inventory/use-cases/inventory-products";
+import { getInventoryPage } from "@/features/inventory";
 import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";

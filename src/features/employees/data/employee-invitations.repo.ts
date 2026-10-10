@@ -115,13 +115,15 @@ export async function findEmployeeInvitationForJoin(
 }
 
 export async function markEmployeeInvitationAccepted(
-  invitationId: string
+  invitationId: string,
+  salonId: string
 ): Promise<{ error: DbError | null }> {
   const admin = createSupabaseAdminClient();
   const { error } = await admin
     .from("employee_invitations")
     .update({ accepted_at: new Date().toISOString() })
-    .eq("id", invitationId);
+    .eq("id", invitationId)
+    .eq("salon_id", salonId);
 
   return { error };
 }

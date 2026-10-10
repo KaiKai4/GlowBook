@@ -13,7 +13,7 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
+import { getSubscriptionsPage } from "@/features/billing";
 import { type SalonSubscriptionRow } from "@/features/billing/domain/salon-subscription-rows";
 import { getAdminHome } from "@/features/platform";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";

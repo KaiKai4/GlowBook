@@ -86,7 +86,7 @@ describe("employee invitations", () => {
       role_id: "role-1",
     });
     expect(mockedLinkEmployeeProfile).toHaveBeenCalledWith("employee-1", "salon-1", "user-1");
-    expect(mockedMarkEmployeeInvitationAccepted).toHaveBeenCalledWith("invitation-1");
+    expect(mockedMarkEmployeeInvitationAccepted).toHaveBeenCalledWith("invitation-1", "salon-1");
   });
 
   it("rolls back the Auth user when profile creation fails", async () => {

@@ -9,11 +9,11 @@ import {
   saveCommercialPlanConfig,
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
-} from "@/features/billing/use-cases/commercial-plans";
+} from "@/features/billing";
 import {
   removeCommercialAddonConfig,
   saveCommercialAddonConfig,
-} from "@/features/billing/use-cases/commercial-addons";
+} from "@/features/billing";
 import {
   readSaveAddonInput,
   readSavePlanInput,
@@ -23,7 +23,7 @@ import {
   type SavePlanInput,
   type SavePlanLimitsInput,
   type SavePlanModulesInput,
-} from "@/features/billing/use-cases/commercial-plans-form";
+} from "@/features/billing";
 import { toPlanActionState, type PlatformPlanActionState } from "./action-state";
 
 const PLAN_PATHS = ["/admin/plans", "/admin/subscriptions", "/"];

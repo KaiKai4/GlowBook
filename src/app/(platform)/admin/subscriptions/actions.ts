@@ -3,9 +3,9 @@
 import { definePlatformAction } from "@/app/_composition/define-platform-action";
 import { parseUuidField } from "@/app/_composition/define-action";
 import { ok } from "@/infra/result";
-import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "@/features/billing/use-cases/salon-plan-extras";
-import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "@/features/billing/use-cases/salon-plan-assignment";
-import { resolveSalonPlanAlertConfig } from "@/features/billing/use-cases/plan-limits";
+import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "@/features/billing";
+import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "@/features/billing";
+import { resolveSalonPlanAlertConfig } from "@/features/billing";
 import {
   readAssignPlanInput,
   readGiveAddonInput,
@@ -15,7 +15,7 @@ import {
   type GiveAddonInput,
   type ManualExtraInput,
   type RegisterPaymentInput,
-} from "@/features/billing/use-cases/salon-subscriptions-form";
+} from "@/features/billing";
 import { toPlanActionState, type PlatformPlanActionState } from "../plans/action-state";
 
 const SUBSCRIPTION_PATHS = ["/admin/subscriptions", "/admin/plans", "/admin/salons", "/"];

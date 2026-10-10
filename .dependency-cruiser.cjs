@@ -69,6 +69,18 @@ module.exports = {
       },
     },
     {
+      name: "app-via-feature-index",
+      severity: "error",
+      comment:
+        "src/app importa de src/features/X solo a traves de index.ts. Quedan permitidos schemas.ts, domain/ (dominio puro, para componentes cliente) y los imports solo de tipos.",
+      from: { path: "^src/app/" },
+      to: {
+        path: "^src/features/[^/]+/",
+        pathNot: "^src/features/[^/]+/(index|schemas)\\.tsx?$|^src/features/[^/]+/domain/",
+        dependencyTypesNot: ["type-only"],
+      },
+    },
+    {
       name: "use-cases-no-ui",
       severity: "error",
       comment:

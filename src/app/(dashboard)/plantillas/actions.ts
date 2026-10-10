@@ -3,8 +3,8 @@
 import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { revalidatePath } from "next/cache";
 import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
-import { updateMessageTemplate } from "@/features/notifications/use-cases/update-message-template";
-import { parseNotificationTemplateInput } from "@/features/notifications/use-cases/template-input";
+import { updateMessageTemplate } from "@/features/notifications";
+import { parseNotificationTemplateInput } from "@/features/notifications";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";

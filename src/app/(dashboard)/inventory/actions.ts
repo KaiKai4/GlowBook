@@ -11,11 +11,11 @@ import {
   type InventoryTransferInput,
   type UpdateInventoryProductInput,
 } from "@/features/inventory/schemas";
-import { deleteInventoryProduct, updateInventoryProductProfile } from "@/features/inventory/use-cases/inventory-products";
+import { deleteInventoryProduct, updateInventoryProductProfile } from "@/features/inventory";
 import {
   createInventoryProductWithPlanLimits,
   transferInventoryStockWithPlanLimits,
-} from "@/features/inventory/use-cases/inventory-product-writes";
+} from "@/features/inventory";
 import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
 
@@ -76,11 +76,7 @@ const updateProductFlow = defineAction<UpdateProductRaw, UpdateProductInput, voi
 const transferStockFlow = defineAction<FormData, InventoryTransferInput, string>({
   permission: { key: PERMISSIONS.INVENTORY_MANAGE, deniedMessage: "No tienes permiso para gestionar inventario." },
   rateLimit: { scope: "inventory", options: RATE_LIMIT_POLICIES.write },
-  parse: (formData) =>
-    parseWithSchema(InventoryTransferSchema)({
-      ...Object.fromEntries(formData),
-      from_location: "storage",
-    }),
+  parse: (formData) => parseWithSchema(InventoryTransferSchema)(Object.fromEntries(formData)),
   run: async (input, session) => {
     const result = await transferInventoryStockWithPlanLimits(session.salonId, input);
     return result.ok ? ok("Transferencia registrada.") : result;

@@ -13,7 +13,7 @@ import {
 import {
   loadSalonAccessState,
   loadSessionProfile,
-} from "@/features/access/use-cases/session-access";
+} from "@/features/access";
 import { getEffectiveDisabledSalonFeatures, salonModuleScopeFromProfile } from "@/features/billing";
 import type { ProfileWithRole } from "@/types/app.types";
 

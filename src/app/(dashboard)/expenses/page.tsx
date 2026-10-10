@@ -1,5 +1,5 @@
-import { getExpensesPage } from "@/features/expenses/use-cases/expenses";
-import { getInventoryProductOptions } from "@/features/inventory/use-cases/inventory-product-options";
+import { getExpensesPage } from "@/features/expenses";
+import { getInventoryProductOptions } from "@/features/inventory";
 import { isEffectiveSalonModuleEnabled, salonModuleScopeFromProfile } from "@/features/billing";
 import { hasPermission, PERMISSIONS } from "@/features/access";
 import { requireProfile } from "@/app/_composition/request-context";

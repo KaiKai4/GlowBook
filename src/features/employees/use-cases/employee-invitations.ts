@@ -151,7 +151,7 @@ export async function acceptEmployeeInvitation({
     return { ok: false, error: "Error al vincular el colaborador. Intenta de nuevo." };
   }
 
-  const { error: acceptedError } = await markEmployeeInvitationAccepted(invitation.id);
+  const { error: acceptedError } = await markEmployeeInvitationAccepted(invitation.id, invitation.salon_id);
   if (acceptedError) {
     captureError(acceptedError, { module: "employees", action: "join" });
     await rollbackAuthUser(user.id, "accepted");

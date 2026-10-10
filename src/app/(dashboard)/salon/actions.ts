@@ -4,12 +4,12 @@ import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { revalidatePath } from "next/cache";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
-import { parseBusinessHoursJson } from "@/features/salon/use-cases/business-hours-input";
-import { updateBusinessHours } from "@/features/salon/use-cases/update-business-hours";
-import { updateSalonBackground } from "@/features/salon/use-cases/update-salon-background";
-import { updateSalonInfo } from "@/features/salon/use-cases/update-salon-info";
-import { updateSalonPaymentMethods } from "@/features/salon/use-cases/update-salon-payment-methods";
-import { updateSalonTheme } from "@/features/salon/use-cases/update-salon-theme";
+import { parseBusinessHoursJson } from "@/features/salon";
+import { updateBusinessHours } from "@/features/salon";
+import { updateSalonBackground } from "@/features/salon";
+import { updateSalonInfo } from "@/features/salon";
+import { updateSalonPaymentMethods } from "@/features/salon";
+import { updateSalonTheme } from "@/features/salon";
 import {
   SalonInfoSchema,
   SalonPaymentMethodsSchema,

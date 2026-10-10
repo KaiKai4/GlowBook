@@ -5,7 +5,7 @@ import {
   changeEmployeeRoleFlow,
   generateEmployeeInviteFlow,
   resetEmployeeAccessFlow,
-} from "@/features/employees/use-cases/employee-role-flows";
+} from "@/features/employees";
 import type { Result } from "@/infra/result";
 import {
   checkIds,

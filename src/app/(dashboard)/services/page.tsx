@@ -1,6 +1,6 @@
 import { requireProfile } from "@/app/_composition/request-context";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { getServiceCatalog } from "@/features/services/use-cases/get-service-catalog";
+import { getServiceCatalog } from "@/features/services";
 import { ServicesManager } from "./services-manager";
 
 export default async function ServicesPage() {

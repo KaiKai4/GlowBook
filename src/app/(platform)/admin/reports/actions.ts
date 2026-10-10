@@ -6,8 +6,8 @@ import { parseUuid } from "@/infra/validation/route-id";
 import {
   readFeedbackStatusForm,
   type FeedbackStatusForm,
-} from "@/features/platform/use-cases/set-feedback-status-form";
-import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedback-report-status";
+} from "@/features/platform";
+import { setFeedbackReportStatus } from "@/features/platform";
 
 // Form action: toggle a report between 'new' and 'resolved'. Returns void
 // (React form actions must), authorization enforced by requirePlatformAdmin.

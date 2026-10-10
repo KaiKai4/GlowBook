@@ -16,10 +16,10 @@ import {
   checkPermanentCustomerByPhone,
   findArchivedCustomerByContact,
   type ArchivedCustomerMatch,
-} from "@/features/customers/use-cases/customer-duplicates";
-import { createCustomerProfile } from "@/features/customers/use-cases/customer-profile";
-import { updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
-import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
+} from "@/features/customers";
+import { createCustomerProfile } from "@/features/customers";
+import { updateCustomerProfile } from "@/features/customers";
+import { archiveCustomer, reactivateCustomer } from "@/features/customers";
 import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
 

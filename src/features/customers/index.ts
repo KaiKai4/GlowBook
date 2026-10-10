@@ -8,3 +8,8 @@ export {
   isTemporaryCustomer,
   promoteCustomer,
 } from "./use-cases/customer-temporary";
+
+export { checkPermanentCustomerByPhone, findArchivedCustomerByContact, type ArchivedCustomerMatch } from "./use-cases/customer-duplicates";
+export { createCustomerProfile, updateCustomerProfile } from "./use-cases/customer-profile";
+export { archiveCustomer, reactivateCustomer } from "./use-cases/customer-lifecycle";
+export { getCustomersPage } from "./use-cases/get-customers-page";

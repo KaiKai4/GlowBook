@@ -3,3 +3,7 @@
 import "server-only";
 
 export { getActiveMessageTemplate } from "./use-cases/active-message-template";
+
+export { updateMessageTemplate } from "./use-cases/update-message-template";
+export { parseNotificationTemplateInput } from "./use-cases/template-input";
+export { getTemplateSettings } from "./use-cases/get-template-settings";

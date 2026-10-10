@@ -1,9 +1,9 @@
 import { AlertTriangle, BadgeDollarSign, Building2, Hourglass } from "lucide-react";
 
-import { getSalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
-import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
+import { getSalonSubscriptionDetail } from "@/features/billing";
+import { getSubscriptionsPage } from "@/features/billing";
 import { PageHeader } from "@/components/ui/page-header";
-import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
+import { getPlatformSalonOverviews } from "@/features/platform";
 import { requirePlatformAdmin } from "@/app/_composition/request-context";
 import { SalonSubscriptionList } from "./salon-list";
 import { SubscriptionDetail } from "./subscription-detail";

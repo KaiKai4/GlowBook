@@ -5,9 +5,9 @@ import { WorkScheduleSchema, type WorkScheduleInput } from "@/features/employees
 import {
   addEmployeeWorkSchedule,
   removeEmployeeWorkSchedule,
-} from "@/features/employees/use-cases/employee-schedule";
-import { removeEmployeeScheduleException } from "@/features/employees/use-cases/employee-exceptions";
-import { addScheduleExceptionFlow } from "@/features/employees/use-cases/employee-lifecycle-flows";
+} from "@/features/employees";
+import { removeEmployeeScheduleException } from "@/features/employees";
+import { addScheduleExceptionFlow } from "@/features/employees";
 import type { Result } from "@/infra/result";
 import { checkIds, EMPLOYEE_GUARD } from "./employee-action-guard";
 

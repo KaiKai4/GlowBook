@@ -1,6 +1,6 @@
 import { getRolesEnabled, requireProfile } from "@/app/_composition/request-context";
 import { hasPermission, PERMISSIONS } from "@/features/access";
-import { getEmployeesPage } from "@/features/employees/use-cases/get-employees-page";
+import { getEmployeesPage } from "@/features/employees";
 import { EmployeesManager } from "./employees-manager";
 
 export default async function EmployeesPage() {

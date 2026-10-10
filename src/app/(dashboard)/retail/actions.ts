@@ -4,7 +4,7 @@ import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { defineAction, parseWithSchema } from "@/app/_composition/define-action";
 import { PERMISSIONS } from "@/features/access";
 import { RetailSaleSchema, type RetailSaleInput } from "@/features/retail/schemas";
-import { createRetailSaleWithPlanLimits } from "@/features/retail/use-cases/retail-sale-writes";
+import { createRetailSaleWithPlanLimits } from "@/features/retail";
 import type { Result } from "@/infra/result";
 
 // Ventas de vitrina: afectan a inventario y reportes ademas de la propia vitrina.

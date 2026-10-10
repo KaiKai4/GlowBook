@@ -38,3 +38,4 @@ export {
   type CreateAppointmentInput,
   type UpdateAppointmentScheduleInput,
 } from "./schemas";
+

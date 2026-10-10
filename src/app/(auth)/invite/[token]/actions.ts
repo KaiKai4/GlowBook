@@ -1,7 +1,7 @@
 "use server";
 
 import { definePublicAction } from "@/app/_composition/define-public-action";
-import { acceptInvitation } from "@/features/platform/use-cases/accept-invitation";
+import { acceptInvitation } from "@/features/platform";
 import { signInWithPassword } from "@/infra/auth/password-auth";
 import { ok, type Result } from "@/infra/result";
 

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getEmployeeInvitationJoinView } from "@/features/employees/use-cases/employee-invitations";
+import { getEmployeeInvitationJoinView } from "@/features/employees";
 import { JoinForm } from "./join-form";
 
 export default async function JoinPage({

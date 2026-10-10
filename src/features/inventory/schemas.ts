@@ -35,7 +35,7 @@ export const UpdateInventoryProductSchema = z.object({
 
 export const InventoryTransferSchema = z.object({
   product_id: z.string().uuid("Producto inválido."),
-  from_location: InventoryLocationSchema,
+  from_location: InventoryLocationSchema.default("storage"),
   to_location: InventoryLocationSchema,
   quantity: positiveQuantity,
   note: z.string().trim().max(500).optional().default(""),
