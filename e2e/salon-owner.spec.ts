@@ -174,6 +174,51 @@ test.describe("salon owner critical smoke", () => {
     await expectNoSeriousA11yViolations(page);
   });
 
+  test("creates an appointment with a new customer from the browser flow", async ({ page }) => {
+    const appointmentsLink = page.getByRole("link", { name: /Citas/i });
+    skipUnlessReady(
+      (await appointmentsLink.count()) === 0,
+      "Appointments Module is not visible for this user."
+    );
+
+    await page.goto("/appointments/new");
+    await expect(page.getByRole("heading", { name: /Seleccionar cliente/i })).toBeVisible();
+
+    const uniqueName = `E2E Nuevo ${Date.now()}`;
+    await page.getByRole("button", { name: "Cliente nuevo" }).click();
+    await page.getByLabel("Nombre").fill(uniqueName);
+    await page.getByLabel("Apellido").fill("Prueba");
+    await page.getByRole("button", { name: /Continuar/i }).click();
+
+    await selectCalendarDate(page, "Fecha", futureDate());
+    await page.getByLabel("Hora de inicio").click();
+    const timeDialog = page.getByRole("dialog", { name: "Seleccionar hora" });
+    await expect(timeDialog).toBeVisible();
+    await page
+      .getByRole("listbox", { name: "Hora" })
+      .getByRole("option", { name: "11", exact: true })
+      .click();
+    await page
+      .getByRole("listbox", { name: "Minutos" })
+      .getByRole("option", { name: "00", exact: true })
+      .click();
+    await page
+      .getByRole("radiogroup", { name: "Periodo" })
+      .getByRole("radio", { name: "AM", exact: true })
+      .click();
+    await timeDialog.getByRole("button", { name: "Guardar" }).click();
+    await selectFirstRealOption(page, "Categoria");
+    await selectFirstRealOption(page, "Servicio");
+    await selectFirstRealOption(page, "Profesional");
+    await page.getByRole("button", { name: /Continuar/i }).click();
+
+    await expect(page.getByRole("heading", { name: /Confirmar cita/i })).toBeVisible();
+    await page.getByRole("button", { name: /Confirmar cita/i }).click();
+
+    await expect(page).toHaveURL(/\/appointments$/);
+    await expect(page.getByRole("heading", { name: /Agenda/i })).toBeVisible();
+  });
+
   test("completes an appointment from the agenda with success feedback", async ({ page }) => {
     skipUnlessReady(!admin || !fixture, "Requires Supabase service role fixture env.");
     const activeAdmin = admin!;

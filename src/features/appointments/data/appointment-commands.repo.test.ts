@@ -211,6 +211,37 @@ describe("comandos de cita: recursos para crear o reprogramar", () => {
     expect(double.callsFor("employee_categories")).toEqual([]);
   });
 
+  it("con cliente nuevo (sin customer_id) no consulta el cliente por id y carga la configuración del salón", async () => {
+    const double = createAppointmentsSupabaseDouble(fullTables());
+    useDouble(double);
+
+    const resources = await findAppointmentCreationResources({
+      salonId,
+      assignments: [{ service_id: serviceA, employee_id: employeeA }],
+    });
+
+    expect(double.callsFor("customers")).toEqual([]);
+    expect(resources.salonConfig).toEqual(salonRow);
+    expect(resources.businessHours).toEqual(businessHoursRows);
+  });
+
+  it("CORRIGE BUG: con cliente nuevo carga servicios y profesionales aunque no haya fila de cliente", async () => {
+    useDouble(createAppointmentsSupabaseDouble(fullTables()));
+
+    const resources = await findAppointmentCreationResources({
+      salonId,
+      assignments: [{ service_id: serviceA, employee_id: employeeA }],
+    });
+
+    expect(resources.customerExists).toBe(false);
+    expect(resources.assignments).toEqual([
+      {
+        service: expect.objectContaining({ id: serviceA }),
+        employee: expect.objectContaining({ id: employeeA }),
+      },
+    ]);
+  });
+
   it("cuando el salón no existe devuelve configuración nula y sin asignaciones", async () => {
     useDouble(createAppointmentsSupabaseDouble({ ...fullTables(), salons: { data: null, error: null } }));
 
