@@ -13,7 +13,7 @@
     {
       "id": "app/(dashboard)",
       "kind": "internal",
-      "files": 166
+      "files": 167
     },
     {
       "id": "app/(platform)",
@@ -58,7 +58,7 @@
     {
       "id": "features/appointments",
       "kind": "internal",
-      "files": 37
+      "files": 38
     },
     {
       "id": "features/audit",
@@ -68,7 +68,7 @@
     {
       "id": "features/billing",
       "kind": "internal",
-      "files": 27
+      "files": 28
     },
     {
       "id": "features/customers",
@@ -193,7 +193,7 @@
     {
       "id": "infra/security",
       "kind": "internal",
-      "files": 4
+      "files": 5
     },
     {
       "id": "infra/supabase",
@@ -310,7 +310,7 @@
     {
       "from": "app/(dashboard)",
       "to": "app/_composition",
-      "count": 34
+      "count": 33
     },
     {
       "from": "app/(dashboard)",
@@ -335,17 +335,17 @@
     {
       "from": "app/(dashboard)",
       "to": "features/access",
-      "count": 34
+      "count": 36
     },
     {
       "from": "app/(dashboard)",
       "to": "features/appointments",
-      "count": 38
+      "count": 41
     },
     {
       "from": "app/(dashboard)",
       "to": "features/billing",
-      "count": 12
+      "count": 11
     },
     {
       "from": "app/(dashboard)",
@@ -430,7 +430,7 @@
     {
       "from": "app/(dashboard)",
       "to": "infra/security",
-      "count": 3
+      "count": 11
     },
     {
       "from": "app/(dashboard)",
@@ -440,7 +440,7 @@
     {
       "from": "app/(dashboard)",
       "to": "npm/next",
-      "count": 37
+      "count": 36
     },
     {
       "from": "app/(dashboard)",
@@ -605,7 +605,7 @@
     {
       "from": "app/api",
       "to": "infra/security",
-      "count": 4
+      "count": 5
     },
     {
       "from": "components/brand",
@@ -825,7 +825,7 @@
     {
       "from": "features/billing",
       "to": "features/salon-features",
-      "count": 5
+      "count": 6
     },
     {
       "from": "features/billing",
