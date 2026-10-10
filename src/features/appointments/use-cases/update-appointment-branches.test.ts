@@ -1,29 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import {
-  findAppointmentCreationResources,
-  findAppointmentForCommand,
-  findExceptionDatesByEmployeeForCommand,
-  findOccupiedSlotsByEmployeeForCommand,
-  findWorkSchedulesByEmployeeForCommand,
-  type AppointmentCommandState,
-  type AppointmentCreationResources,
-} from "../data/appointment-commands.repo";
-import { updateAppointmentWithRpc } from "../data/rpc/update-appointment";
+import type { AppointmentCommandState, AppointmentCreationResources } from "../data/appointment-commands.repo";
 import type { UpdateAppointmentScheduleInput } from "../schemas";
 import { updateAppointmentSchedule } from "./update-appointment";
+import { createAppointmentCommandFakes, updateDepsFrom } from "@/test/appointment-command-fakes";
 
-vi.mock("../data/appointment-commands.repo", () => ({
-  findAppointmentCreationResources: vi.fn(),
-  findAppointmentForCommand: vi.fn(),
-  findAppointmentServiceIdsForCommand: vi.fn(),
-  findExceptionDatesByEmployeeForCommand: vi.fn(),
-  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
-  findWorkSchedulesByEmployeeForCommand: vi.fn(),
-}));
-vi.mock("../data/rpc/update-appointment", () => ({
-  updateAppointmentWithRpc: vi.fn(),
-}));
+const fakes = createAppointmentCommandFakes();
+const runUpdate: typeof updateAppointmentSchedule = (input, ctx) => updateAppointmentSchedule(input, ctx, updateDepsFrom(fakes));
+
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 
 const salonId = "00000000-0000-4000-8000-0000000000g1";
@@ -36,12 +20,12 @@ const employeeId = "00000000-0000-4000-8000-0000000000g6";
 // 2030-01-01 es martes. 09:00 en Panamá son las 14:00 UTC.
 const startIso = "2030-01-01T14:00:00.000Z";
 
-const mockedFind = vi.mocked(findAppointmentForCommand);
-const mockedResources = vi.mocked(findAppointmentCreationResources);
-const mockedSchedules = vi.mocked(findWorkSchedulesByEmployeeForCommand);
-const mockedExceptions = vi.mocked(findExceptionDatesByEmployeeForCommand);
-const mockedOccupied = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
-const mockedRpc = vi.mocked(updateAppointmentWithRpc);
+const mockedFind = fakes.findAppointmentForCommand;
+const mockedResources = fakes.findAppointmentCreationResources;
+const mockedSchedules = fakes.findWorkSchedulesByEmployeeForCommand;
+const mockedExceptions = fakes.findExceptionDatesByEmployeeForCommand;
+const mockedOccupied = fakes.findOccupiedSlotsByEmployeeForCommand;
+const mockedRpc = fakes.updateAppointmentWithRpc;
 const mockedCaptureError = vi.mocked(captureError);
 
 function state(overrides: Partial<AppointmentCommandState> = {}): AppointmentCommandState {
@@ -116,7 +100,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
   });
 
   it("reescribe los ítems con la cita excluida de su propia agenda", async () => {
-    const result = await updateAppointmentSchedule(input(), deps);
+    const result = await runUpdate(input(), deps);
 
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedFind).toHaveBeenCalledWith(appointmentId, salonId);
@@ -159,7 +143,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
     async (status) => {
       mockedFind.mockResolvedValue(state({ status }));
 
-      expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+      expect(await runUpdate(input(), deps)).toEqual({
         ok: false,
         // CONDUCTA ACTUAL (posible bug): el mensaje se guarda con codificación doble
         // (mojibake) en use-cases/update-appointment.ts; aquí se fija el texto actual.
@@ -173,7 +157,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
   it("rechaza una cita que no existe en el salón sin cargar recursos", async () => {
     mockedFind.mockResolvedValue(null);
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       // CONDUCTA ACTUAL (posible bug): mojibake en el mensaje de "no encontrada".
       error: "Cita no encontrada en este salón.",
@@ -185,7 +169,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
     const failure = new Error("read failed");
     mockedFind.mockRejectedValue(failure);
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "No se pudo cargar la cita.",
     });
@@ -198,7 +182,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
   it("rechaza si el cliente de la cita ya no existe en el salón", async () => {
     mockedResources.mockResolvedValue(resources({ customerExists: false }));
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       // CONDUCTA ACTUAL (posible bug): mojibake en el mensaje de cliente no encontrado.
       error: "Cliente no encontrado en este salón.",
@@ -209,7 +193,7 @@ describe("updateAppointmentSchedule: estado de la cita", () => {
   it("rechaza si el salón no tiene configuración de agenda", async () => {
     mockedResources.mockResolvedValue(resources({ salonConfig: null }));
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       // CONDUCTA ACTUAL (posible bug): mojibake en el mensaje de salón no encontrado.
       error: "Salón no encontrado.",
@@ -235,7 +219,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
     const failure = new Error("occupied failed");
     mockedOccupied.mockRejectedValue(failure);
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "No se pudo validar la disponibilidad del profesional.",
     });
@@ -249,7 +233,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   it("si falla consultar los turnos del profesional devuelve el mismo error de disponibilidad", async () => {
     mockedSchedules.mockRejectedValue(new Error("schedules failed"));
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "No se pudo validar la disponibilidad del profesional.",
     });
@@ -261,7 +245,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
       { start_time: "2030-01-01T14:10:00.000Z", end_time: "2030-01-01T14:20:00.000Z" },
     ]]]));
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "El profesional ya tiene una cita en ese horario.",
     });
@@ -271,7 +255,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   it("rechaza mover la cita a un día libre puntual del profesional", async () => {
     mockedExceptions.mockResolvedValue(new Map([[employeeId, ["2030-01-01"]]]));
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "El profesional tiene el día libre en esa fecha.",
     });
@@ -293,7 +277,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
       })
     );
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "El profesional seleccionado no atiende esa categoría.",
     });
@@ -306,7 +290,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
       { day_of_week: 1, is_active: true, start_time: "00:00", end_time: "23:59" },
     ]]]));
 
-    expect(await updateAppointmentSchedule(input({ start_time: lateStart }), deps)).toEqual({
+    expect(await runUpdate(input({ start_time: lateStart }), deps)).toEqual({
       ok: false,
       error: "El horario esta fuera del horario de atención del salón.",
     });
@@ -317,7 +301,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
     const failure = new Error("rpc transport error");
     mockedRpc.mockRejectedValue(failure);
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "Error al actualizar la cita. Intenta de nuevo.",
     });
@@ -330,7 +314,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   it("si el RPC rechaza la actualización por otra causa devuelve el error genérico", async () => {
     mockedRpc.mockResolvedValue({ ok: false, errorMessage: "constraint failed" });
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "Error al actualizar la cita. Intenta de nuevo.",
     });
@@ -339,7 +323,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   it("si el RPC detecta solapamiento devuelve el mensaje de horario ocupado", async () => {
     mockedRpc.mockResolvedValue({ ok: false, reason: "slot_taken" });
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "El profesional ya tiene una cita en ese horario. Elige otro horario.",
     });
@@ -351,7 +335,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
       })
     );
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       // CONDUCTA ACTUAL (posible bug): mojibake en el mensaje de servicio o profesional no encontrado.
       error: "Servicio o profesional no encontrado en el salón.",
@@ -362,7 +346,7 @@ describe("updateAppointmentSchedule: disponibilidad y errores del RPC", () => {
   it("si el RPC rechaza sin mensaje devuelve el error genérico", async () => {
     mockedRpc.mockResolvedValue({ ok: false });
 
-    expect(await updateAppointmentSchedule(input(), deps)).toEqual({
+    expect(await runUpdate(input(), deps)).toEqual({
       ok: false,
       error: "Error al actualizar la cita. Intenta de nuevo.",
     });

@@ -1,6 +1,7 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { deleteSalon } from "@/features/platform/use-cases/delete-salon";
 import {
   inviteSalon,
@@ -19,7 +20,7 @@ import {
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/platform/use-cases/invite-salon", () => ({
@@ -37,13 +38,13 @@ const INVALID_ID = "Identificador inválido.";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requirePlatformAdmin).mockResolvedValue(ADMIN_ID);
+  vi.mocked(requirePlatformAdminProof).mockResolvedValue(issuePlatformAdminProof(ADMIN_ID));
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
 });
 
 describe("admin platform actions: guards", () => {
   it("propaga la redireccion de requirePlatformAdmin sin tocar casos de uso", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new Error("NEXT_REDIRECT"));
+    vi.mocked(requirePlatformAdminProof).mockRejectedValue(new Error("NEXT_REDIRECT"));
 
     await expect(inviteSalonAction(null, formDataOf({ email: "a@b.com" }))).rejects.toThrow(
       "NEXT_REDIRECT"

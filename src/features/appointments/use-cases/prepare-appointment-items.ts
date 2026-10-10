@@ -30,6 +30,21 @@ export interface PreparedAppointmentItems {
   startTime: Date;
 }
 
+/** Lecturas que necesita la preparación. Producción usa los repos; los tests inyectan fakes. */
+export interface PrepareAppointmentItemsDeps {
+  findAppointmentCreationResources: typeof findAppointmentCreationResources;
+  findExceptionDatesByEmployeeForCommand: typeof findExceptionDatesByEmployeeForCommand;
+  findOccupiedSlotsByEmployeeForCommand: typeof findOccupiedSlotsByEmployeeForCommand;
+  findWorkSchedulesByEmployeeForCommand: typeof findWorkSchedulesByEmployeeForCommand;
+}
+
+const defaultPrepareAppointmentItemsDeps: PrepareAppointmentItemsDeps = {
+  findAppointmentCreationResources,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
+};
+
 export interface PrepareAppointmentItemsInput {
   salonId: string;
   /** Ausente con cliente nuevo: todavía no existe y la RPC lo da de alta. */
@@ -50,7 +65,8 @@ export interface PrepareAppointmentItemsInput {
  * el rango global. No escribe nada.
  */
 export async function prepareAppointmentItems(
-  input: PrepareAppointmentItemsInput
+  input: PrepareAppointmentItemsInput,
+  deps: PrepareAppointmentItemsDeps = defaultPrepareAppointmentItemsDeps
 ): Promise<Result<PreparedAppointmentItems>> {
   const { salonId, action } = input;
   const fallbackMessage =
@@ -58,7 +74,7 @@ export async function prepareAppointmentItems(
 
   let resources: AppointmentCreationResources;
   try {
-    resources = await findAppointmentCreationResources({
+    resources = await deps.findAppointmentCreationResources({
       salonId,
       customerId: input.customerId,
       assignments: input.assignments,
@@ -86,9 +102,9 @@ export async function prepareAppointmentItems(
   try {
     // Tres consultas en lote para todos los profesionales, en paralelo.
     const [schedules, exceptions, occupied] = await Promise.all([
-      findWorkSchedulesByEmployeeForCommand({ salonId, employeeIds }),
-      findExceptionDatesByEmployeeForCommand({ salonId, employeeIds }),
-      findOccupiedSlotsByEmployeeForCommand({
+      deps.findWorkSchedulesByEmployeeForCommand({ salonId, employeeIds }),
+      deps.findExceptionDatesByEmployeeForCommand({ salonId, employeeIds }),
+      deps.findOccupiedSlotsByEmployeeForCommand({
         salonId,
         employeeIds,
         date: startTime,

@@ -6,6 +6,8 @@ import {
 import { getPlanCatalogSummary } from "@/features/billing/use-cases/commercial-plans";
 import { findSalonNamesByIds } from "../data/salons.repo";
 import { getPlatformInvitations } from "./get-platform-invitations";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 vi.mock("../data/invitations.repo", () => ({
   findPendingInvitations: vi.fn(),
@@ -69,7 +71,7 @@ describe("get platform invitations", () => {
       },
     ]);
 
-    const view = await getPlatformInvitations();
+    const view = await getPlatformInvitations(ADMIN_PROOF);
 
     expect(view.pendingCount).toBe(2);
     expect(view.expiredCount).toBe(1);
@@ -97,7 +99,7 @@ describe("get platform invitations", () => {
     ]);
     mockedFindSalonNamesByIds.mockResolvedValue(new Map([["salon-1", "Glow Salón"]]));
 
-    const view = await getPlatformInvitations();
+    const view = await getPlatformInvitations(ADMIN_PROOF);
 
     expect(view.assignablePlans).toEqual([
       { id: "plan-1", name: "Agenda", priceLabel: "USD 14.00/mes", trialDays: 14 },

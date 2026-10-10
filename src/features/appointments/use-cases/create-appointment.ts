@@ -8,6 +8,17 @@ import type { CreateAppointmentInput } from "../schemas";
 import { APPOINTMENT_MESSAGES } from "../domain/messages";
 import { prepareAppointmentItems } from "./prepare-appointment-items";
 
+/** Dependencias del caso de uso. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface CreateAppointmentDeps {
+  prepareAppointmentItems: typeof prepareAppointmentItems;
+  createAppointmentWithRpc: typeof createAppointmentWithRpc;
+}
+
+const defaultCreateAppointmentDeps: CreateAppointmentDeps = {
+  prepareAppointmentItems,
+  createAppointmentWithRpc,
+};
+
 interface Deps {
   salonId: string;
   userId: string;
@@ -29,9 +40,10 @@ function toRpcNewCustomer(customer: NonNullable<CreateAppointmentInput["new_cust
 
 export async function createAppointment(
   input: CreateAppointmentInput,
-  { salonId, userId, idempotencyKey }: Deps
+  { salonId, userId, idempotencyKey }: Deps,
+  deps: CreateAppointmentDeps = defaultCreateAppointmentDeps
 ): Promise<Result<string>> {
-  const prepared = await prepareAppointmentItems({
+  const prepared = await deps.prepareAppointmentItems({
     salonId,
     customerId: input.customer_id,
     assignments: input.assignments,
@@ -52,7 +64,7 @@ export async function createAppointment(
 
   let created: Awaited<ReturnType<typeof createAppointmentWithRpc>>;
   try {
-    created = await createAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
+    created = await deps.createAppointmentWithRpc({ payload: rpcPayload, idempotencyKey });
   } catch (error) {
     captureError(error, { module: "appointments", action: "create" });
     return err(APPOINTMENT_MESSAGES.createFailed);

@@ -12,11 +12,26 @@ import {
 import {
   createInventoryProductWithStockRpc,
   updateInventoryProductProfileRpc,
+  type CreateInventoryProductRpcInput,
+  type UpdateInventoryProductRpcInput,
 } from "../data/rpc/inventory-product-rpc";
 import type {
   CreateInventoryProductInput,
   UpdateInventoryProductInput,
 } from "../schemas";
+
+/** Dependencias de los comandos de escritura. Producción usa los adaptadores reales; los tests inyectan fakes. */
+export interface InventoryProductsDeps {
+  createProductWithStock: (input: CreateInventoryProductRpcInput) => Promise<string>;
+  updateProductProfile: (input: UpdateInventoryProductRpcInput) => Promise<void>;
+  softDeleteProduct: (productId: string, salonId: string) => Promise<void>;
+}
+
+const defaultInventoryProductsDeps: InventoryProductsDeps = {
+  createProductWithStock: createInventoryProductWithStockRpc,
+  updateProductProfile: updateInventoryProductProfileRpc,
+  softDeleteProduct: softDeleteInventoryProduct,
+};
 
 interface InventoryStockView {
   location: InventoryLocation;
@@ -127,10 +142,11 @@ function isUniqueViolation(error: unknown): boolean {
 
 export async function createInventoryProduct(
   salonId: string,
-  input: CreateInventoryProductInput
+  input: CreateInventoryProductInput,
+  deps: InventoryProductsDeps = defaultInventoryProductsDeps
 ): Promise<Result<void>> {
   try {
-    await createInventoryProductWithStockRpc({
+    await deps.createProductWithStock({
       salonId,
       name: input.name,
       category: input.category || null,
@@ -157,10 +173,11 @@ export async function createInventoryProduct(
 export async function updateInventoryProductProfile(
   productId: string,
   salonId: string,
-  input: UpdateInventoryProductInput
+  input: UpdateInventoryProductInput,
+  deps: InventoryProductsDeps = defaultInventoryProductsDeps
 ): Promise<Result<void>> {
   try {
-    await updateInventoryProductProfileRpc({
+    await deps.updateProductProfile({
       salonId,
       productId,
       name: input.name,
@@ -182,10 +199,11 @@ export async function updateInventoryProductProfile(
 
 export async function deleteInventoryProduct(
   productId: string,
-  salonId: string
+  salonId: string,
+  deps: InventoryProductsDeps = defaultInventoryProductsDeps
 ): Promise<Result<void>> {
   try {
-    await softDeleteInventoryProduct(productId, salonId);
+    await deps.softDeleteProduct(productId, salonId);
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "inventory", action: "delete_product" });

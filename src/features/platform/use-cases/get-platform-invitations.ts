@@ -5,6 +5,7 @@ import {
   findRecentAcceptedInvitations,
 } from "@/features/platform/data/invitations.repo";
 import { getPlanCatalogSummary } from "@/features/billing";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { findSalonNamesByIds } from "@/features/platform/data/salons.repo";
 
 interface PlatformInvitationViewModel {
@@ -42,12 +43,12 @@ function formatDateTime(value: string): string {
   });
 }
 
-export async function getPlatformInvitations(): Promise<PlatformInvitationsViewModel> {
+export async function getPlatformInvitations(proof: PlatformAdminProof): Promise<PlatformInvitationsViewModel> {
   const now = Date.now();
   const [pending, accepted, plans] = await Promise.all([
     findPendingInvitations(),
     findRecentAcceptedInvitations(),
-    getPlanCatalogSummary(),
+    getPlanCatalogSummary(proof),
   ]);
 
   const planById = new Map(plans.map((plan) => [plan.id, plan]));

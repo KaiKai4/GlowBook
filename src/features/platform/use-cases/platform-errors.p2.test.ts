@@ -1,29 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
 import { PublicError } from "@/infra/public-error";
-import { createSalonInvitation, findSalonInvitationForAcceptance } from "../data/invitations.repo";
-import { acceptInvitation } from "./accept-invitation";
-import { inviteSalon } from "./invite-salon";
-import { publishAuditEvent } from "@/features/audit";
+import {
+  acceptInvitation as acceptInvitationWithDeps,
+  type AcceptInvitationDeps,
+} from "./accept-invitation";
+import { inviteSalon as inviteSalonWithDeps, type InviteSalonDeps } from "./invite-salon";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
-vi.mock("@/features/audit", () => ({ publishAuditEvent: vi.fn(async () => []) }));
-vi.mock("../data/invitations.repo", () => ({
-  acceptSalonInvitationAsAdmin: vi.fn(),
-  createSalonInvitation: vi.fn(),
-  findSalonInvitationForAcceptance: vi.fn(),
-  profileExists: vi.fn(),
-}));
-vi.mock("../data/platform-auth.repo", () => ({
-  createPlatformOwnerAuthUser: vi.fn(),
-  deletePlatformOwnerAuthUser: vi.fn(),
-  findPlatformOwnerAuthUserByEmail: vi.fn(),
-  updatePlatformOwnerAuthUser: vi.fn(),
-}));
-vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
-  autoAssignPlanOnAcceptance: vi.fn(),
-}));
+
+// Fakes tipados de las dependencias: ningún test toca Supabase ni auditoría real.
+const inviteDeps: InviteSalonDeps = {
+  createSalonInvitation: vi.fn<InviteSalonDeps["createSalonInvitation"]>(),
+  regenerateSalonInvitationToken: vi.fn<InviteSalonDeps["regenerateSalonInvitationToken"]>(),
+  publishAuditEvent: vi.fn<InviteSalonDeps["publishAuditEvent"]>(async () => []),
+};
+const acceptDeps: AcceptInvitationDeps = {
+  findInvitation: vi.fn<AcceptInvitationDeps["findInvitation"]>(),
+  profileExists: vi.fn<AcceptInvitationDeps["profileExists"]>(),
+  acceptSalonAsAdmin: vi.fn<AcceptInvitationDeps["acceptSalonAsAdmin"]>(),
+  createOwnerAuthUser: vi.fn<AcceptInvitationDeps["createOwnerAuthUser"]>(),
+  deleteOwnerAuthUser: vi.fn<AcceptInvitationDeps["deleteOwnerAuthUser"]>(),
+  findOwnerAuthUserByEmail: vi.fn<AcceptInvitationDeps["findOwnerAuthUserByEmail"]>(),
+  updateOwnerAuthUser: vi.fn<AcceptInvitationDeps["updateOwnerAuthUser"]>(),
+  autoAssignPlan: vi.fn<AcceptInvitationDeps["autoAssignPlan"]>(),
+  publishAuditEvent: vi.fn<AcceptInvitationDeps["publishAuditEvent"]>(async () => []),
+};
+
+const inviteSalon = (input: Parameters<typeof inviteSalonWithDeps>[0]) =>
+  inviteSalonWithDeps(input, inviteDeps);
+const acceptInvitation = (input: Parameters<typeof acceptInvitationWithDeps>[0]) =>
+  acceptInvitationWithDeps(input, acceptDeps);
+
+const createSalonInvitation = vi.mocked(inviteDeps.createSalonInvitation);
+const findSalonInvitationForAcceptance = vi.mocked(acceptDeps.findInvitation);
+const publishAuditEvent = vi.mocked(inviteDeps.publishAuditEvent);
 
 const ADMIN = "00000000-0000-4000-8000-0000000000ad";
 const PLAN = "00000000-0000-4000-8000-0000000000b1";

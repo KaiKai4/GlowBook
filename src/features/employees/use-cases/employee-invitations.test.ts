@@ -1,35 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findAssignableEmployeeRole, insertEmployeeProfile, linkEmployeeProfile } from "../data/employee-access.repo";
-import { findEmployeeInvitationForJoin, markEmployeeInvitationAccepted } from "../data/employee-invitations.repo";
-import {
+import type {
+  findAssignableEmployeeRole,
+  insertEmployeeProfile,
+  linkEmployeeProfile,
+} from "../data/employee-access.repo";
+import type {
+  findEmployeeInvitationForJoin,
+  markEmployeeInvitationAccepted,
+} from "../data/employee-invitations.repo";
+import type {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,
 } from "../data/employee-auth.repo";
-import { acceptEmployeeInvitation } from "./employee-invitations";
+import { acceptEmployeeInvitation, type AcceptEmployeeInvitationDeps } from "./employee-invitations";
 
-vi.mock("../data/employee-access.repo", () => ({
-  findAssignableEmployeeRole: vi.fn(),
-  insertEmployeeProfile: vi.fn(),
-  linkEmployeeProfile: vi.fn(),
-}));
+const mockedFindInvitation = vi.fn<typeof findEmployeeInvitationForJoin>();
+const mockedFindAssignableEmployeeRole = vi.fn<typeof findAssignableEmployeeRole>();
+const mockedInsertEmployeeProfile = vi.fn<typeof insertEmployeeProfile>();
+const mockedLinkEmployeeProfile = vi.fn<typeof linkEmployeeProfile>();
+const mockedMarkEmployeeInvitationAccepted = vi.fn<typeof markEmployeeInvitationAccepted>();
+const mockedCreateEmployeeAuthUser = vi.fn<typeof createEmployeeAuthUser>();
+const mockedDeleteEmployeeAuthUser = vi.fn<typeof deleteEmployeeAuthUser>();
 
-vi.mock("../data/employee-invitations.repo", () => ({
-  findEmployeeInvitationForJoin: vi.fn(),
-  markEmployeeInvitationAccepted: vi.fn(),
-}));
-
-vi.mock("../data/employee-auth.repo", () => ({
-  createEmployeeAuthUser: vi.fn(),
-  deleteEmployeeAuthUser: vi.fn(),
-}));
-
-const mockedFindAssignableEmployeeRole = vi.mocked(findAssignableEmployeeRole);
-const mockedFindEmployeeInvitationForJoin = vi.mocked(findEmployeeInvitationForJoin);
-const mockedInsertEmployeeProfile = vi.mocked(insertEmployeeProfile);
-const mockedLinkEmployeeProfile = vi.mocked(linkEmployeeProfile);
-const mockedMarkEmployeeInvitationAccepted = vi.mocked(markEmployeeInvitationAccepted);
-const mockedCreateEmployeeAuthUser = vi.mocked(createEmployeeAuthUser);
-const mockedDeleteEmployeeAuthUser = vi.mocked(deleteEmployeeAuthUser);
+const deps: AcceptEmployeeInvitationDeps = {
+  findInvitationForJoin: mockedFindInvitation,
+  findAssignableRole: mockedFindAssignableEmployeeRole,
+  createAuthUser: mockedCreateEmployeeAuthUser,
+  deleteAuthUser: mockedDeleteEmployeeAuthUser,
+  insertProfile: mockedInsertEmployeeProfile,
+  linkProfile: mockedLinkEmployeeProfile,
+  markAccepted: mockedMarkEmployeeInvitationAccepted,
+};
 
 function pendingInvitation() {
   return {
@@ -48,7 +49,7 @@ function pendingInvitation() {
 describe("employee invitations", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockedFindEmployeeInvitationForJoin.mockResolvedValue({
+    mockedFindInvitation.mockResolvedValue({
       data: pendingInvitation(),
       error: null,
     });
@@ -67,10 +68,13 @@ describe("employee invitations", () => {
   });
 
   it("creates the Auth user, links the collaborator profile and marks the invitation accepted", async () => {
-    const result = await acceptEmployeeInvitation({
-      token: "token-1",
-      password: "password123",
-    });
+    const result = await acceptEmployeeInvitation(
+      {
+        token: "token-1",
+        password: "password123",
+      },
+      deps
+    );
 
     expect(result).toEqual({ ok: true, value: undefined });
     expect(mockedCreateEmployeeAuthUser).toHaveBeenCalledWith({
@@ -92,10 +96,13 @@ describe("employee invitations", () => {
   it("rolls back the Auth user when profile creation fails", async () => {
     mockedInsertEmployeeProfile.mockResolvedValue({ error: { message: "profile failed" } });
 
-    const result = await acceptEmployeeInvitation({
-      token: "token-1",
-      password: "password123",
-    });
+    const result = await acceptEmployeeInvitation(
+      {
+        token: "token-1",
+        password: "password123",
+      },
+      deps
+    );
 
     expect(result.ok).toBe(false);
     expect(mockedDeleteEmployeeAuthUser).toHaveBeenCalledWith("user-1");
@@ -107,10 +114,13 @@ describe("employee invitations", () => {
       error: { message: "User already registered" } as never,
     });
 
-    const result = await acceptEmployeeInvitation({
-      token: "token-1",
-      password: "password123",
-    });
+    const result = await acceptEmployeeInvitation(
+      {
+        token: "token-1",
+        password: "password123",
+      },
+      deps
+    );
 
     expect(result).toEqual({
       ok: false,

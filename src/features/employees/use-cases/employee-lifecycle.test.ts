@@ -1,97 +1,66 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { archiveEmployee, reactivateEmployee } from "./employee-lifecycle";
-import { findEmployeeById, updateEmployee } from "../data/employees.repo";
-import { clearEmployeeInvitations } from "./employee-invitation-issue";
+import { archiveEmployee, reactivateEmployee, type EmployeeLifecycleDeps } from "./employee-lifecycle";
 import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount } from "./employee-revocation";
+import { clearEmployeeInvitations } from "./employee-invitation-issue";
 
-vi.mock("../data/employees.repo", () => ({
-  findEmployeeById: vi.fn(),
-  updateEmployee: vi.fn(),
-}));
-
-vi.mock("./employee-invitation-issue", () => ({
-  clearEmployeeInvitations: vi.fn(),
-}));
-
-vi.mock("./employee-revocation", () => ({
-  checkEmployeeAccessRevocable: vi.fn(),
-  deleteEmployeeAuthAccount: vi.fn(),
-}));
-
-const mockedFindEmployeeById = vi.mocked(findEmployeeById);
-const mockedUpdateEmployee = vi.mocked(updateEmployee);
-const mockedCheckRevocable = vi.mocked(checkEmployeeAccessRevocable);
-const mockedClearInvitations = vi.mocked(clearEmployeeInvitations);
-const mockedDeleteAuthAccount = vi.mocked(deleteEmployeeAuthAccount);
-
-function employee(overrides: Record<string, unknown> = {}) {
+function fakeLifecycleDeps() {
   return {
-    id: "employee-1",
-    salon_id: "salon-1",
-    profile_id: null,
-    first_name: "Ana",
-    last_name: "Test",
-    phone: "",
-    email: "ana@example.com",
-    specialty: "",
-    commission_percentage: 0,
-    hire_date: null,
-    is_active: true,
-    created_at: "2026-05-26T00:00:00.000Z",
-    updated_at: "2026-05-26T00:00:00.000Z",
-    services: [],
-    categories: [],
-    work_schedules: [],
-    ...overrides,
-  };
+    findEmployee: vi.fn<EmployeeLifecycleDeps["findEmployee"]>(),
+    updateEmployee: vi.fn<EmployeeLifecycleDeps["updateEmployee"]>(),
+    clearInvitations: vi.fn<typeof clearEmployeeInvitations>(),
+    checkAccessRevocable: vi.fn<typeof checkEmployeeAccessRevocable>(),
+    deleteAuthAccount: vi.fn<typeof deleteEmployeeAuthAccount>(),
+  } satisfies Record<keyof EmployeeLifecycleDeps, unknown>;
 }
 
 describe("employee lifecycle", () => {
+  let deps: ReturnType<typeof fakeLifecycleDeps>;
+
   beforeEach(() => {
-    vi.resetAllMocks();
+    deps = fakeLifecycleDeps();
   });
 
   it("reactivates an archived collaborator without losing history", async () => {
-    mockedFindEmployeeById.mockResolvedValue(employee({ is_active: false }) as never);
-    mockedUpdateEmployee.mockResolvedValue(employee() as never);
+    deps.findEmployee.mockResolvedValue({ profile_id: null });
+    deps.updateEmployee.mockResolvedValue({});
 
-    const result = await reactivateEmployee("employee-1", "salon-1");
+    const result = await reactivateEmployee("employee-1", "salon-1", deps);
 
     expect(result.ok).toBe(true);
-    expect(mockedUpdateEmployee).toHaveBeenCalledWith("employee-1", "salon-1", {
+    expect(deps.updateEmployee).toHaveBeenCalledWith("employee-1", "salon-1", {
       is_active: true,
     });
   });
 
   it("archives a collaborator, checks access, unlinks profile and deletes the account", async () => {
-    mockedFindEmployeeById.mockResolvedValue(employee({ profile_id: "profile-1" }) as never);
-    mockedCheckRevocable.mockResolvedValue({ ok: true, value: { roleId: null } });
-    mockedClearInvitations.mockResolvedValue({ ok: true, value: undefined });
-    mockedDeleteAuthAccount.mockResolvedValue({ ok: true, value: undefined });
-    mockedUpdateEmployee.mockResolvedValue(employee() as never);
+    deps.findEmployee.mockResolvedValue({ profile_id: "profile-1" });
+    deps.checkAccessRevocable.mockResolvedValue({ ok: true, value: { roleId: null } });
+    deps.clearInvitations.mockResolvedValue({ ok: true, value: undefined });
+    deps.deleteAuthAccount.mockResolvedValue({ ok: true, value: undefined });
+    deps.updateEmployee.mockResolvedValue({});
 
-    const result = await archiveEmployee("employee-1", "salon-1");
+    const result = await archiveEmployee("employee-1", "salon-1", deps);
 
     expect(result.ok).toBe(true);
-    expect(mockedCheckRevocable).toHaveBeenCalledWith("profile-1", "salon-1");
-    expect(mockedUpdateEmployee).toHaveBeenCalledWith("employee-1", "salon-1", {
+    expect(deps.checkAccessRevocable).toHaveBeenCalledWith("profile-1", "salon-1");
+    expect(deps.updateEmployee).toHaveBeenCalledWith("employee-1", "salon-1", {
       is_active: false,
       profile_id: null,
     });
-    expect(mockedDeleteAuthAccount).toHaveBeenCalledWith("profile-1");
+    expect(deps.deleteAuthAccount).toHaveBeenCalledWith("profile-1");
   });
 
   it("does not archive when the access check fails", async () => {
-    mockedFindEmployeeById.mockResolvedValue(employee({ profile_id: "profile-1" }) as never);
-    mockedCheckRevocable.mockResolvedValue({
+    deps.findEmployee.mockResolvedValue({ profile_id: "profile-1" });
+    deps.checkAccessRevocable.mockResolvedValue({
       ok: false,
       error: "No se pudo verificar el acceso actual del colaborador.",
     });
 
-    const result = await archiveEmployee("employee-1", "salon-1");
+    const result = await archiveEmployee("employee-1", "salon-1", deps);
 
     expect(result.ok).toBe(false);
-    expect(mockedUpdateEmployee).not.toHaveBeenCalled();
-    expect(mockedDeleteAuthAccount).not.toHaveBeenCalled();
+    expect(deps.updateEmployee).not.toHaveBeenCalled();
+    expect(deps.deleteAuthAccount).not.toHaveBeenCalled();
   });
 });

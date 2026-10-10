@@ -1,17 +1,19 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { getPlatformAdminHome, type PlatformAdminHomeViewModel } from "@/features/platform/use-cases/get-platform-admin-home";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { getButtonByText } from "@/test/ui-admin-dom";
 import { makeRow } from "@/test/ui-admin-fixtures";
 import { makeOverviewsView, makeSubscriptionsData } from "@/test/ui-admin-page-fixtures";
 import PlatformAdminPage from "./page";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn(async () => issuePlatformAdminProof("admin-1")) }));
 vi.mock("@/features/platform/use-cases/get-platform-admin-home", () => ({ getPlatformAdminHome: vi.fn() }));
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({ getPlatformSalonOverviews: vi.fn() }));
 vi.mock("@/features/billing/use-cases/salon-subscriptions-page", () => ({
@@ -66,10 +68,10 @@ describe("PlatformAdminPage", () => {
   it("exige rol de plataforma y consulta el inicio, los salones y las suscripciones", async () => {
     mounted = await render();
 
-    expect(requirePlatformAdmin).toHaveBeenCalled();
+    expect(requirePlatformAdminProof).toHaveBeenCalled();
     expect(getPlatformAdminHome).toHaveBeenCalledTimes(1);
     expect(getPlatformSalonOverviews).toHaveBeenCalledTimes(1);
-    expect(getSubscriptionsPage).toHaveBeenCalledWith([]);
+    expect(getSubscriptionsPage).toHaveBeenCalledWith(ADMIN_PROOF, []);
   });
 
   it("muestra el MRR, los salones activos sobre el total, los trials y las alertas abiertas", async () => {

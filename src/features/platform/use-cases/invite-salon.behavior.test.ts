@@ -1,33 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  createSalonInvitation,
-  regenerateSalonInvitationToken,
-} from "@/features/platform/data/invitations.repo";
 import { captureError } from "@/infra/observability";
-import { inviteSalon, regenerateSalonInvitation } from "./invite-salon";
-import { publishAuditEvent } from "@/features/audit";
+import {
+  inviteSalon as inviteSalonWithDeps,
+  regenerateSalonInvitation as regenerateSalonInvitationWithDeps,
+  type InviteSalonDeps,
+  type InviteSalonInput,
+} from "./invite-salon";
 import { firstOf } from "@/test/platform-feedback-notifications-helpers";
 
 // Conducta de invitaciones emitidas por la plataforma: solo el admin emite,
 // el plan es obligatorio y todo intento (correcto o fallido) queda auditado
 // con el dominio del correo, nunca con la direccion completa.
 
-vi.mock("@/features/platform/data/invitations.repo", () => ({
-  createSalonInvitation: vi.fn(),
-  regenerateSalonInvitationToken: vi.fn(),
-}));
-
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("@/features/audit", () => ({
-  publishAuditEvent: vi.fn(async () => []),
-}));
+// Fakes tipados de las dependencias: ningún test toca Supabase ni auditoría real.
+const deps: InviteSalonDeps = {
+  createSalonInvitation: vi.fn<InviteSalonDeps["createSalonInvitation"]>(),
+  regenerateSalonInvitationToken: vi.fn<InviteSalonDeps["regenerateSalonInvitationToken"]>(),
+  publishAuditEvent: vi.fn<InviteSalonDeps["publishAuditEvent"]>(async () => []),
+};
 
-const mockedCreate = vi.mocked(createSalonInvitation);
-const mockedRegenerate = vi.mocked(regenerateSalonInvitationToken);
-const mockedAudit = vi.mocked(publishAuditEvent);
+const inviteSalon = (input: InviteSalonInput) => inviteSalonWithDeps(input, deps);
+const regenerateSalonInvitation = (
+  input: Parameters<typeof regenerateSalonInvitationWithDeps>[0]
+) => regenerateSalonInvitationWithDeps(input, deps);
+
+const mockedCreate = vi.mocked(deps.createSalonInvitation);
+const mockedRegenerate = vi.mocked(deps.regenerateSalonInvitationToken);
+const mockedAudit = vi.mocked(deps.publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const ACTOR_ID = "00000000-0000-4000-8000-000000000001";

@@ -34,6 +34,8 @@ vi.mock("@/features/employees/use-cases/employee-role", () => ({
 }));
 vi.mock("@/features/employees/use-cases/employee-revocation", () => ({
   resetEmployeeAccess: vi.fn(),
+  checkEmployeeAccessRevocable: vi.fn(),
+  deleteEmployeeAuthAccount: vi.fn(),
 }));
 
 const employeesManager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });

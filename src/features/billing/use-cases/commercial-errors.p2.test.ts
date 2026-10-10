@@ -1,21 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
 import { PublicError } from "@/infra/public-error";
-import {
-  archiveCommercialAddon,
-  countAddonAssignments,
-  deleteCommercialAddon,
-  saveCommercialAddon,
-} from "../data/commercial-addons.repo";
-import {
-  archiveCommercialPlan,
-  countPlanAssignments,
-  deleteCommercialPlan,
-  savePlanLimit,
-  savePlanModule,
-  saveCommercialPlan,
-} from "../data/commercial-plans.repo";
-import { publishAuditEvent } from "@/features/audit";
+import { fakeCommercialAddonDeps, fakeCommercialPlanDeps } from "@/test/billing-command-fakes";
 import { removeCommercialAddonConfig, saveCommercialAddonConfig } from "./commercial-addons";
 import {
   archivePlan,
@@ -24,6 +10,8 @@ import {
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
 } from "./commercial-plans";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("server-only", () => ({}));
@@ -65,22 +53,27 @@ function pgError(code: string, message: string) {
   return Object.assign(new Error(message), { code });
 }
 
+let addonDeps: ReturnType<typeof fakeCommercialAddonDeps>;
+let planDeps: ReturnType<typeof fakeCommercialPlanDeps>;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  addonDeps = fakeCommercialAddonDeps();
+  planDeps = fakeCommercialPlanDeps();
 });
 
 describe("commercial addons: validación y errores publicos", () => {
   it("un nombre demasiado corto se devuelve como primer mensaje de validación, sin escribir", async () => {
-    const result = await saveCommercialAddonConfig({ name: "A", code: "x" } as never, ACTOR);
+    const result = await saveCommercialAddonConfig(ADMIN_PROOF, { name: "A", code: "x" } as never, ACTOR, addonDeps);
 
     expect(result).toEqual({ ok: false, error: "Escribe el nombre del extra." });
-    expect(saveCommercialAddon).not.toHaveBeenCalled();
+    expect(addonDeps.saveCommercialAddon).not.toHaveBeenCalled();
   });
 
   it("guarda el extra normalizando la clave y audita la acción", async () => {
-    vi.mocked(saveCommercialAddon).mockResolvedValue("addon-1");
+    addonDeps.saveCommercialAddon.mockResolvedValue("addon-1");
 
-    const result = await saveCommercialAddonConfig(
+    const result = await saveCommercialAddonConfig(ADMIN_PROOF, 
       {
         name: "Turbo Cabello",
         kind: "limit_boost",
@@ -89,22 +82,23 @@ describe("commercial addons: validación y errores publicos", () => {
         currency: "usd",
         monthlyPrice: 5,
       },
-      ACTOR
+      ACTOR,
+      addonDeps
     );
 
     expect(result).toEqual({ ok: true, value: "addon-1" });
-    expect(saveCommercialAddon).toHaveBeenCalledWith(
+    expect(addonDeps.saveCommercialAddon).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ code: "turbo_cabello", currency: "USD", limitDelta: 10 })
     );
-    expect(publishAuditEvent).toHaveBeenCalledWith("billing.addon_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: "addon-1" }));
+    expect(addonDeps.publishAuditEvent).toHaveBeenCalledWith("billing.addon_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: "addon-1" }));
   });
 
   it("un error de dominio de la base (RAISE seguro) se muestra tal cual", async () => {
-    vi.mocked(saveCommercialAddon).mockRejectedValue(
+    addonDeps.saveCommercialAddon.mockRejectedValue(
       pgError("P0001", "Ya existe un extra con ese código.")
     );
 
-    const result = await saveCommercialAddonConfig(VALID_ADDON, ACTOR);
+    const result = await saveCommercialAddonConfig(ADMIN_PROOF, VALID_ADDON, ACTOR, addonDeps);
 
     expect(result).toEqual({ ok: false, error: "Ya existe un extra con ese código." });
     expect(captureError).not.toHaveBeenCalled();
@@ -112,31 +106,31 @@ describe("commercial addons: validación y errores publicos", () => {
 
   it("un error interno de la base usa el mensaje de respaldo y no filtra el SQL", async () => {
     const failure = pgError("42P01", 'relation "commercial_addons" does not exist');
-    vi.mocked(saveCommercialAddon).mockRejectedValue(failure);
+    addonDeps.saveCommercialAddon.mockRejectedValue(failure);
 
-    const result = await saveCommercialAddonConfig(VALID_ADDON, ACTOR);
+    const result = await saveCommercialAddonConfig(ADMIN_PROOF, VALID_ADDON, ACTOR, addonDeps);
 
     expect(result).toEqual({ ok: false, error: "No se pudo guardar el extra." });
     expect(captureError).toHaveBeenCalledWith(failure, { module: "errors", action: "public-message" });
   });
 
   it("archiva el extra si tiene asignaciones y lo elimina si no", async () => {
-    vi.mocked(countAddonAssignments).mockResolvedValueOnce(2);
-    expect(await removeCommercialAddonConfig(ADDON_ID, ACTOR)).toEqual({ ok: true, value: undefined });
-    expect(archiveCommercialAddon).toHaveBeenCalledWith(ADDON_ID);
-    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.addon_archived", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_archived", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: ADDON_ID }));
+    addonDeps.countAddonAssignments.mockResolvedValueOnce(2);
+    expect(await removeCommercialAddonConfig(ADMIN_PROOF, ADDON_ID, ACTOR, addonDeps)).toEqual({ ok: true, value: undefined });
+    expect(addonDeps.archiveCommercialAddon).toHaveBeenCalledWith(ADMIN_PROOF, ADDON_ID);
+    expect(addonDeps.publishAuditEvent).toHaveBeenLastCalledWith("billing.addon_archived", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_archived", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: ADDON_ID }));
 
-    vi.mocked(countAddonAssignments).mockResolvedValueOnce(0);
-    expect(await removeCommercialAddonConfig(ADDON_ID, ACTOR)).toEqual({ ok: true, value: undefined });
-    expect(deleteCommercialAddon).toHaveBeenCalledWith(ADDON_ID);
-    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.addon_deleted", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_deleted", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: ADDON_ID }));
+    addonDeps.countAddonAssignments.mockResolvedValueOnce(0);
+    expect(await removeCommercialAddonConfig(ADMIN_PROOF, ADDON_ID, ACTOR, addonDeps)).toEqual({ ok: true, value: undefined });
+    expect(addonDeps.deleteCommercialAddon).toHaveBeenCalledWith(ADMIN_PROOF, ADDON_ID);
+    expect(addonDeps.publishAuditEvent).toHaveBeenLastCalledWith("billing.addon_deleted", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_addon_deleted", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: ADDON_ID }));
   });
 
   it("si el borrado falla devuelve el mensaje de respaldo de eliminación", async () => {
-    vi.mocked(countAddonAssignments).mockResolvedValue(0);
-    vi.mocked(deleteCommercialAddon).mockRejectedValue(new Error("timeout"));
+    addonDeps.countAddonAssignments.mockResolvedValue(0);
+    addonDeps.deleteCommercialAddon.mockRejectedValue(new Error("timeout"));
 
-    const result = await removeCommercialAddonConfig(ADDON_ID, ACTOR);
+    const result = await removeCommercialAddonConfig(ADMIN_PROOF, ADDON_ID, ACTOR, addonDeps);
 
     expect(result).toEqual({ ok: false, error: "No se pudo eliminar el extra." });
   });
@@ -144,61 +138,61 @@ describe("commercial addons: validación y errores publicos", () => {
 
 describe("commercial plans: validación y errores publicos", () => {
   it("un plan sin nombre válido devuelve el mensaje del esquema y no escribe", async () => {
-    const result = await saveCommercialPlanConfig({ name: "P", monthlyPrice: 10 }, ACTOR);
+    const result = await saveCommercialPlanConfig(ADMIN_PROOF, { name: "P", monthlyPrice: 10 }, ACTOR, planDeps);
 
     expect(result).toEqual({ ok: false, error: "Escribe el nombre del plan." });
-    expect(saveCommercialPlan).not.toHaveBeenCalled();
+    expect(planDeps.saveCommercialPlan).not.toHaveBeenCalled();
   });
 
   it("un precio negativo devuelve su mensaje de validación", async () => {
-    const result = await saveCommercialPlanConfig({ name: "Pro", monthlyPrice: -1 }, ACTOR);
+    const result = await saveCommercialPlanConfig(ADMIN_PROOF, { name: "Pro", monthlyPrice: -1 }, ACTOR, planDeps);
 
     expect(result).toEqual({ ok: false, error: "El precio no puede ser negativo." });
   });
 
   it("guarda el plan con el código normalizado y devuelve su id", async () => {
-    vi.mocked(saveCommercialPlan).mockResolvedValue("plan-9");
+    planDeps.saveCommercialPlan.mockResolvedValue("plan-9");
 
-    const result = await saveCommercialPlanConfig(
+    const result = await saveCommercialPlanConfig(ADMIN_PROOF, 
       { name: "Plan Pro", code: "Plan Pro", monthlyPrice: 20, currency: "eur" },
-      ACTOR
+      ACTOR,
+      planDeps
     );
 
     expect(result).toEqual({ ok: true, value: "plan-9" });
-    expect(saveCommercialPlan).toHaveBeenCalledWith(
+    expect(planDeps.saveCommercialPlan).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ code: "plan_pro", currency: "EUR" })
     );
-    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: "plan-9" }));
+    expect(planDeps.publishAuditEvent).toHaveBeenCalledWith("billing.plan_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: "plan-9" }));
   });
 
   it("si la escritura falla devuelve el mensaje de respaldo del plan", async () => {
-    vi.mocked(saveCommercialPlan).mockRejectedValue(new Error("connection reset"));
+    planDeps.saveCommercialPlan.mockRejectedValue(new Error("connection reset"));
 
-    const result = await saveCommercialPlanConfig({ name: "Plan Pro", monthlyPrice: 20 });
+    const result = await saveCommercialPlanConfig(ADMIN_PROOF, { name: "Plan Pro", monthlyPrice: 20 }, undefined, planDeps);
 
     expect(result).toEqual({ ok: false, error: "No se pudo guardar el plan." });
     expect(captureError).toHaveBeenCalledTimes(1);
   });
 
   it("archiva el plan y audita la acción", async () => {
-    expect(await archivePlan(PLAN_ID, ACTOR)).toEqual({ ok: true, value: undefined });
-    expect(archiveCommercialPlan).toHaveBeenCalledWith(PLAN_ID);
-    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_archived", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_archived", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
+    expect(await archivePlan(ADMIN_PROOF, PLAN_ID, ACTOR, planDeps)).toEqual({ ok: true, value: undefined });
+    expect(planDeps.archiveCommercialPlan).toHaveBeenCalledWith(ADMIN_PROOF, PLAN_ID);
+    expect(planDeps.publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_archived", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_archived", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
   it("elimina el plan sin asignaciones y audita la acción", async () => {
-    vi.mocked(countPlanAssignments).mockResolvedValueOnce(0);
-    expect(await deletePlan(PLAN_ID, ACTOR)).toEqual({ ok: true, value: undefined });
-    expect(deleteCommercialPlan).toHaveBeenCalledWith(PLAN_ID);
-    expect(publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_deleted", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_deleted", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
+    planDeps.countPlanAssignments.mockResolvedValueOnce(0);
+    expect(await deletePlan(ADMIN_PROOF, PLAN_ID, ACTOR, planDeps)).toEqual({ ok: true, value: undefined });
+    expect(planDeps.deleteCommercialPlan).toHaveBeenCalledWith(ADMIN_PROOF, PLAN_ID);
+    expect(planDeps.publishAuditEvent).toHaveBeenLastCalledWith("billing.plan_deleted", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_deleted", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
-
   it("un mensaje de dominio (PublicError) del borrado del plan llega al usuario tal cual", async () => {
-    vi.mocked(deleteCommercialPlan).mockRejectedValue(new PublicError("No se puede eliminar un plan activo."));
+    planDeps.deleteCommercialPlan.mockRejectedValue(new PublicError("No se puede eliminar un plan activo."));
 
-    vi.mocked(countPlanAssignments).mockResolvedValueOnce(0);
-    const result = await deletePlan(PLAN_ID, ACTOR);
+    planDeps.countPlanAssignments.mockResolvedValueOnce(0);
+    const result = await deletePlan(ADMIN_PROOF, PLAN_ID, ACTOR, planDeps);
 
     expect(result).toEqual({ ok: false, error: "No se puede eliminar un plan activo." });
     expect(captureError).not.toHaveBeenCalled();
@@ -207,69 +201,73 @@ describe("commercial plans: validación y errores publicos", () => {
 
 describe("commercial plans: módulos y límites en lote", () => {
   it("válida el plan y la lista de módulos antes de escribir", async () => {
-    expect(await saveCommercialPlanModulesBatch({ planId: "no-uuid", allModuleKeys: ["a"] }, ACTOR)).toEqual({
+    expect(await saveCommercialPlanModulesBatch(ADMIN_PROOF, { planId: "no-uuid", allModuleKeys: ["a"] }, ACTOR, planDeps)).toEqual({
       ok: false,
       error: "Selecciona un plan.",
     });
-    expect(await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: [] }, ACTOR)).toEqual({
+    expect(await saveCommercialPlanModulesBatch(ADMIN_PROOF, { planId: PLAN_ID, allModuleKeys: [] }, ACTOR, planDeps)).toEqual({
       ok: false,
       error: "No hay módulos para guardar.",
     });
-    expect(savePlanModule).not.toHaveBeenCalled();
+    expect(planDeps.savePlanModule).not.toHaveBeenCalled();
   });
 
   it("guarda cada módulo marcando los habilitados y audita el lote", async () => {
-    const result = await saveCommercialPlanModulesBatch(
+    const result = await saveCommercialPlanModulesBatch(ADMIN_PROOF, 
       { planId: PLAN_ID, allModuleKeys: ["inventory", "retail"], enabledModuleKeys: ["retail"] },
-      ACTOR
+      ACTOR,
+      planDeps
     );
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(savePlanModule).toHaveBeenCalledWith({ planId: PLAN_ID, moduleKey: "inventory", enabled: false });
-    expect(savePlanModule).toHaveBeenCalledWith({ planId: PLAN_ID, moduleKey: "retail", enabled: true });
-    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_module_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_module_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
+    expect(planDeps.savePlanModule).toHaveBeenCalledWith(ADMIN_PROOF, { planId: PLAN_ID, moduleKey: "inventory", enabled: false });
+    expect(planDeps.savePlanModule).toHaveBeenCalledWith(ADMIN_PROOF, { planId: PLAN_ID, moduleKey: "retail", enabled: true });
+    expect(planDeps.publishAuditEvent).toHaveBeenCalledWith("billing.plan_module_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_module_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
   it("si un módulo no se puede guardar devuelve el mensaje de respaldo del lote", async () => {
-    vi.mocked(savePlanModule).mockRejectedValue(new Error("boom"));
+    planDeps.savePlanModule.mockRejectedValue(new Error("boom"));
 
-    const result = await saveCommercialPlanModulesBatch(
+    const result = await saveCommercialPlanModulesBatch(ADMIN_PROOF, 
       { planId: PLAN_ID, allModuleKeys: ["inventory"] },
-      ACTOR
+      ACTOR,
+      planDeps
     );
 
     expect(result).toEqual({ ok: false, error: "No se pudieron guardar los módulos del plan." });
   });
 
   it("válida el plan y la lista de límites antes de escribir", async () => {
-    expect(await saveCommercialPlanLimitsBatch({ planId: "x", limits: [] }, ACTOR)).toEqual({
+    expect(await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: "x", limits: [] }, ACTOR, planDeps)).toEqual({
       ok: false,
       error: "Selecciona un plan.",
     });
-    expect(await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [] }, ACTOR)).toEqual({
+    expect(await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: PLAN_ID, limits: [] }, ACTOR, planDeps)).toEqual({
       ok: false,
       error: "No hay límites para guardar.",
     });
-    expect(savePlanLimit).not.toHaveBeenCalled();
+    expect(planDeps.savePlanLimit).not.toHaveBeenCalled();
   });
 
   it("guarda los límites del plan y audita", async () => {
-    const result = await saveCommercialPlanLimitsBatch(
+    const result = await saveCommercialPlanLimitsBatch(ADMIN_PROOF, 
       { planId: PLAN_ID, limits: [{ metricKey: "appointments", maxValue: "100" }] },
-      ACTOR
+      ACTOR,
+      planDeps
     );
 
     expect(result).toEqual({ ok: true, value: undefined });
-    expect(savePlanLimit).toHaveBeenCalledWith(expect.objectContaining({ metricKey: "appointments", planId: PLAN_ID }));
-    expect(publishAuditEvent).toHaveBeenCalledWith("billing.plan_limit_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_limit_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
+    expect(planDeps.savePlanLimit).toHaveBeenCalledWith(ADMIN_PROOF, expect.objectContaining({ metricKey: "appointments", planId: PLAN_ID }));
+    expect(planDeps.publishAuditEvent).toHaveBeenCalledWith("billing.plan_limit_saved", expect.objectContaining({ actorUserId: ACTOR, action: "commercial_plan_limit_saved", status: "succeeded", targetResourceType: "commercial_plan", targetResourceId: PLAN_ID }));
   });
 
   it("si un límite no se puede guardar devuelve el mensaje de respaldo", async () => {
-    vi.mocked(savePlanLimit).mockRejectedValue(new Error("boom"));
+    planDeps.savePlanLimit.mockRejectedValue(new Error("boom"));
 
-    const result = await saveCommercialPlanLimitsBatch(
+    const result = await saveCommercialPlanLimitsBatch(ADMIN_PROOF, 
       { planId: PLAN_ID, limits: [{ metricKey: "appointments" }] },
-      ACTOR
+      ACTOR,
+      planDeps
     );
 
     expect(result).toEqual({ ok: false, error: "No se pudieron guardar los límites del plan." });

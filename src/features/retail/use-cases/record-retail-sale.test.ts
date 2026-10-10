@@ -1,21 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
-import { assertSalonPaymentMethodEnabled } from "@/features/salon";
-import { err, ok } from "@/infra/result";
-import { createRetailSale } from "./retail-sales";
-import { createRetailSaleWithPlanLimits } from "./record-retail-sale";
-
-vi.mock("@/features/billing", () => ({
-  salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
-  checkPlanModuleAccess: vi.fn(),
-  checkPlanLimit: vi.fn(),
-}));
-vi.mock("@/features/salon", () => ({
-  assertSalonPaymentMethodEnabled: vi.fn(),
-}));
-vi.mock("./retail-sales", () => ({
-  createRetailSale: vi.fn(),
-}));
+import { ok, err } from "@/infra/result";
+import type { createRetailSale } from "./retail-sales";
+import {
+  createRetailSaleWithPlanLimits,
+  type CreateRetailSaleWithPlanLimitsDeps,
+} from "./record-retail-sale";
 
 const SALON = "salon-1";
 const KEY = "00000000-0000-4000-8000-0000000000c1";
@@ -27,47 +16,58 @@ const sale = {
   idempotency_key: KEY,
 } as Parameters<typeof createRetailSale>[1];
 
+const checkModuleAccess = vi.fn<CreateRetailSaleWithPlanLimitsDeps["checkModuleAccess"]>();
+const checkLimit = vi.fn<CreateRetailSaleWithPlanLimitsDeps["checkLimit"]>();
+const isPaymentMethodEnabled = vi.fn<CreateRetailSaleWithPlanLimitsDeps["isPaymentMethodEnabled"]>();
+const createSale = vi.fn<CreateRetailSaleWithPlanLimitsDeps["createSale"]>();
+const deps: CreateRetailSaleWithPlanLimitsDeps = {
+  checkModuleAccess,
+  checkLimit,
+  isPaymentMethodEnabled,
+  createSale,
+};
+
 describe("createRetailSaleWithPlanLimits", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
-    vi.mocked(checkPlanLimit).mockResolvedValue(ok(undefined));
-    vi.mocked(assertSalonPaymentMethodEnabled).mockResolvedValue(true);
+    checkModuleAccess.mockResolvedValue(ok(undefined));
+    checkLimit.mockResolvedValue(ok(undefined));
+    isPaymentMethodEnabled.mockResolvedValue(true);
   });
 
   it("consulta el módulo vitrina y el cupo de ventas antes de registrar", async () => {
-    vi.mocked(createRetailSale).mockResolvedValue(ok("sale-1"));
+    createSale.mockResolvedValue(ok("sale-1"));
 
-    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY)).toEqual(ok("sale-1"));
-    expect(checkPlanModuleAccess).toHaveBeenCalledWith({ salonId: SALON, moduleKey: "retail" });
-    expect(checkPlanLimit).toHaveBeenCalledWith({ salonId: SALON, metricKey: "retail.sales" });
-    expect(createRetailSale).toHaveBeenCalledWith(SALON, sale, KEY);
+    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY, deps)).toEqual(ok("sale-1"));
+    expect(checkModuleAccess).toHaveBeenCalledWith({ salonId: SALON, moduleKey: "retail" });
+    expect(checkLimit).toHaveBeenCalledWith({ salonId: SALON, metricKey: "retail.sales" });
+    expect(createSale).toHaveBeenCalledWith(SALON, sale, KEY);
   });
 
   it("devuelve el rechazo del módulo o del cupo sin registrar", async () => {
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(err("Módulo no incluido en tu plan."));
-    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY)).toEqual({
+    checkModuleAccess.mockResolvedValue(err("Módulo no incluido en tu plan."));
+    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY, deps)).toEqual({
       ok: false,
       error: "Módulo no incluido en tu plan.",
     });
 
-    vi.mocked(checkPlanModuleAccess).mockResolvedValue(ok(undefined));
-    vi.mocked(checkPlanLimit).mockResolvedValue(err("Límite de ventas alcanzado."));
-    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY)).toEqual({
+    checkModuleAccess.mockResolvedValue(ok(undefined));
+    checkLimit.mockResolvedValue(err("Límite de ventas alcanzado."));
+    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY, deps)).toEqual({
       ok: false,
       error: "Límite de ventas alcanzado.",
     });
-    expect(createRetailSale).not.toHaveBeenCalled();
+    expect(createSale).not.toHaveBeenCalled();
   });
 
   it("rechaza un método de pago no habilitado por el salón sin registrar", async () => {
-    vi.mocked(assertSalonPaymentMethodEnabled).mockResolvedValue(false);
+    isPaymentMethodEnabled.mockResolvedValue(false);
 
-    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY)).toEqual({
+    expect(await createRetailSaleWithPlanLimits(SALON, sale, KEY, deps)).toEqual({
       ok: false,
       error: "Ese método de pago no está habilitado para este salón.",
     });
-    expect(assertSalonPaymentMethodEnabled).toHaveBeenCalledWith(SALON, "card");
-    expect(createRetailSale).not.toHaveBeenCalled();
+    expect(isPaymentMethodEnabled).toHaveBeenCalledWith(SALON, "card");
+    expect(createSale).not.toHaveBeenCalled();
   });
 });

@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
-import { updateSalonStatus } from "./update-salon-status";
-import { publishAuditEvent } from "@/features/audit";
+import {
+  updateSalonStatus as updateSalonStatusWithDeps,
+  type UpdateSalonStatusDeps,
+  type UpdateSalonStatusInput,
+} from "./update-salon-status";
 
-vi.mock("@/features/platform/data/salons.repo", () => ({
-  setSalonActiveStatus: vi.fn(),
-}));
+// Fakes tipados de las dependencias: ningún test toca Supabase ni auditoría real.
+const deps: UpdateSalonStatusDeps = {
+  setSalonActiveStatus: vi.fn<UpdateSalonStatusDeps["setSalonActiveStatus"]>(),
+  publishAuditEvent: vi.fn<UpdateSalonStatusDeps["publishAuditEvent"]>(async () => []),
+};
 
-vi.mock("@/features/audit", () => ({
-  publishAuditEvent: vi.fn(async () => []),
-}));
+const updateSalonStatus = (input: UpdateSalonStatusInput) => updateSalonStatusWithDeps(input, deps);
 
-const mockedSetSalonActiveStatus = vi.mocked(setSalonActiveStatus);
-const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
+const mockedSetSalonActiveStatus = vi.mocked(deps.setSalonActiveStatus);
+const mockedPublishAuditEvent = vi.mocked(deps.publishAuditEvent);
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 
 describe("update salón status", () => {

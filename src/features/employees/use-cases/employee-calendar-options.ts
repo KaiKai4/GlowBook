@@ -1,6 +1,6 @@
 import "server-only";
 
-import { findActiveEmployeeNames } from "../data/employees.repo";
+import { findActiveEmployeeNames } from "../data/employees-read.repo";
 
 export interface EmployeeCalendarOption {
   id: string;

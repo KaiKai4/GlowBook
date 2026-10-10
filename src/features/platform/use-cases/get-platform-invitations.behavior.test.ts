@@ -7,6 +7,8 @@ import { findSalonNamesByIds } from "@/features/platform/data/salons.repo";
 import { getPlanCatalogSummary } from "@/features/billing/use-cases/commercial-plans";
 import { getPlatformInvitations } from "./get-platform-invitations";
 import { firstOf } from "@/test/platform-feedback-notifications-helpers";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Bandeja de invitaciones de la plataforma: marca las vencidas respecto al
 // reloj actual, nombra el salón creado a partir de cada aceptacion y solo
@@ -89,7 +91,7 @@ describe("getPlatformInvitations pending invitations", () => {
       },
     ]);
 
-    const view = await getPlatformInvitations();
+    const view = await getPlatformInvitations(ADMIN_PROOF);
 
     expect(view.pendingInvitations.map((invitation) => [invitation.id, invitation.expired])).toEqual([
       ["p-1", true],
@@ -111,7 +113,7 @@ describe("getPlatformInvitations pending invitations", () => {
       },
     ]);
 
-    const invitation = firstOf((await getPlatformInvitations()).pendingInvitations);
+    const invitation = firstOf((await getPlatformInvitations(ADMIN_PROOF)).pendingInvitations);
 
     expect(invitation.expired).toBe(false);
   });
@@ -144,7 +146,7 @@ describe("getPlatformInvitations pending invitations", () => {
       },
     ]);
 
-    const view = await getPlatformInvitations();
+    const view = await getPlatformInvitations(ADMIN_PROOF);
 
     expect(view.pendingInvitations.map((invitation) => invitation.planName)).toEqual(["Pro", null, null]);
   });
@@ -161,7 +163,7 @@ describe("getPlatformInvitations pending invitations", () => {
       },
     ]);
 
-    const invitation = firstOf((await getPlatformInvitations()).pendingInvitations);
+    const invitation = firstOf((await getPlatformInvitations(ADMIN_PROOF)).pendingInvitations);
 
     expect(invitation.createdAtLabel).toMatch(/2026/);
     expect(invitation.expiresAtLabel).toMatch(/2026/);
@@ -188,7 +190,7 @@ describe("getPlatformInvitations accepted invitations", () => {
     ]);
     mockedSalonNames.mockResolvedValue(new Map([[SALON_ID, "Glow Studio"]]));
 
-    const view = await getPlatformInvitations();
+    const view = await getPlatformInvitations(ADMIN_PROOF);
 
     expect(mockedSalonNames).toHaveBeenCalledWith([SALON_ID]);
     expect(view.acceptedInvitations).toEqual([
@@ -221,7 +223,7 @@ describe("getPlatformInvitations accepted invitations", () => {
     ]);
     mockedSalonNames.mockResolvedValue(new Map());
 
-    const accepted = firstOf((await getPlatformInvitations()).acceptedInvitations);
+    const accepted = firstOf((await getPlatformInvitations(ADMIN_PROOF)).acceptedInvitations);
 
     expect(accepted.salonName).toBe("Salón eliminado");
     expect(accepted.planName).toBeNull();
@@ -230,7 +232,7 @@ describe("getPlatformInvitations accepted invitations", () => {
 
 describe("getPlatformInvitations assignable plans", () => {
   it("offers only active plans, with price formatted to two decimals and the trial length", async () => {
-    const view = await getPlatformInvitations();
+    const view = await getPlatformInvitations(ADMIN_PROOF);
 
     expect(view.assignablePlans).toEqual([
       { id: PLAN_ID_PRO, name: "Pro", priceLabel: "USD 29.90/mes", trialDays: 14 },
@@ -240,13 +242,13 @@ describe("getPlatformInvitations assignable plans", () => {
   it("offers no plans when the catalogue has none active", async () => {
     mockedPlans.mockResolvedValue([draftPlan]);
 
-    const view = await getPlatformInvitations();
+    const view = await getPlatformInvitations(ADMIN_PROOF);
 
     expect(view.assignablePlans).toEqual([]);
   });
 
   it("reads pending invitations, recent acceptances and the plan catalogue for each view", async () => {
-    await getPlatformInvitations();
+    await getPlatformInvitations(ADMIN_PROOF);
 
     expect(mockedPending).toHaveBeenCalledTimes(1);
     expect(mockedAccepted).toHaveBeenCalledTimes(1);

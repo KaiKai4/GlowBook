@@ -1,6 +1,6 @@
 import "server-only";
 
-import { findEmployees } from "../data/employees.repo";
+import { findEmployees } from "../data/employees-read.repo";
 
 interface EmployeeSchedulingWorkSchedule {
   day_of_week: number;

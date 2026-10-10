@@ -1,14 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import { findAssignableEmployeeRole, insertEmployeeProfile, linkEmployeeProfile } from "../data/employee-access.repo";
-import { findEmployeeInvitationForJoin, markEmployeeInvitationAccepted, type EmployeeInvitationForJoin } from "../data/employee-invitations.repo";
-import {
+import type {
+  findAssignableEmployeeRole,
+  insertEmployeeProfile,
+  linkEmployeeProfile,
+} from "../data/employee-access.repo";
+import type {
+  findEmployeeInvitationForJoin,
+  markEmployeeInvitationAccepted,
+  EmployeeInvitationForJoin,
+} from "../data/employee-invitations.repo";
+import type {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,
 } from "../data/employee-auth.repo";
 import {
   acceptEmployeeInvitation,
   getEmployeeInvitationJoinView,
+  type AcceptEmployeeInvitationDeps,
+  type EmployeeInvitationJoinDeps,
 } from "./employee-invitations";
 
 // Vista previa del enlace de invitación y aceptación. Cubre las ramas que el
@@ -19,30 +29,25 @@ vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("../data/employee-access.repo", () => ({
-  findAssignableEmployeeRole: vi.fn(),
-  insertEmployeeProfile: vi.fn(),
-  linkEmployeeProfile: vi.fn(),
-}));
-
-vi.mock("../data/employee-invitations.repo", () => ({
-  findEmployeeInvitationForJoin: vi.fn(),
-  markEmployeeInvitationAccepted: vi.fn(),
-}));
-
-vi.mock("../data/employee-auth.repo", () => ({
-  createEmployeeAuthUser: vi.fn(),
-  deleteEmployeeAuthUser: vi.fn(),
-}));
-
 const mockedCaptureError = vi.mocked(captureError);
-const mockedFindInvitation = vi.mocked(findEmployeeInvitationForJoin);
-const mockedFindAssignableRole = vi.mocked(findAssignableEmployeeRole);
-const mockedInsertProfile = vi.mocked(insertEmployeeProfile);
-const mockedLinkProfile = vi.mocked(linkEmployeeProfile);
-const mockedMarkAccepted = vi.mocked(markEmployeeInvitationAccepted);
-const mockedCreateAuthUser = vi.mocked(createEmployeeAuthUser);
-const mockedDeleteAuthUser = vi.mocked(deleteEmployeeAuthUser);
+const mockedFindInvitation = vi.fn<typeof findEmployeeInvitationForJoin>();
+const mockedFindAssignableRole = vi.fn<typeof findAssignableEmployeeRole>();
+const mockedInsertProfile = vi.fn<typeof insertEmployeeProfile>();
+const mockedLinkProfile = vi.fn<typeof linkEmployeeProfile>();
+const mockedMarkAccepted = vi.fn<typeof markEmployeeInvitationAccepted>();
+const mockedCreateAuthUser = vi.fn<typeof createEmployeeAuthUser>();
+const mockedDeleteAuthUser = vi.fn<typeof deleteEmployeeAuthUser>();
+
+const viewDeps: EmployeeInvitationJoinDeps = { findInvitationForJoin: mockedFindInvitation };
+const deps: AcceptEmployeeInvitationDeps = {
+  findInvitationForJoin: mockedFindInvitation,
+  findAssignableRole: mockedFindAssignableRole,
+  createAuthUser: mockedCreateAuthUser,
+  deleteAuthUser: mockedDeleteAuthUser,
+  insertProfile: mockedInsertProfile,
+  linkProfile: mockedLinkProfile,
+  markAccepted: mockedMarkAccepted,
+};
 
 const TOKEN = "token-de-prueba";
 const FUTURE = "2099-01-01T00:00:00.000Z";
@@ -77,13 +82,13 @@ describe("employee invitation join", () => {
 
   describe("getEmployeeInvitationJoinView", () => {
     it("busca la invitación por el token recibido en el enlace", async () => {
-      await getEmployeeInvitationJoinView(TOKEN);
+      await getEmployeeInvitationJoinView(TOKEN, viewDeps);
 
       expect(mockedFindInvitation).toHaveBeenCalledWith(TOKEN);
     });
 
     it("muestra los datos de una invitación pendiente vigente", async () => {
-      await expect(getEmployeeInvitationJoinView(TOKEN)).resolves.toEqual({
+      await expect(getEmployeeInvitationJoinView(TOKEN, viewDeps)).resolves.toEqual({
         status: "pending",
         token: TOKEN,
         email: "ana@salon.test",
@@ -95,7 +100,7 @@ describe("employee invitation join", () => {
     it("responde no encontrada y registra el error si la consulta falla", async () => {
       mockedFindInvitation.mockResolvedValue({ data: null, error: { message: "caido" } });
 
-      await expect(getEmployeeInvitationJoinView(TOKEN)).resolves.toEqual({
+      await expect(getEmployeeInvitationJoinView(TOKEN, viewDeps)).resolves.toEqual({
         status: "not_found",
       });
       expect(mockedCaptureError).toHaveBeenCalledWith(
@@ -107,7 +112,7 @@ describe("employee invitation join", () => {
     it("responde no encontrada si no existe ninguna invitación con ese token", async () => {
       mockedFindInvitation.mockResolvedValue({ data: null, error: null });
 
-      await expect(getEmployeeInvitationJoinView(TOKEN)).resolves.toEqual({
+      await expect(getEmployeeInvitationJoinView(TOKEN, viewDeps)).resolves.toEqual({
         status: "not_found",
       });
     });
@@ -118,7 +123,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      await expect(getEmployeeInvitationJoinView(TOKEN)).resolves.toEqual({ status: "accepted" });
+      await expect(getEmployeeInvitationJoinView(TOKEN, viewDeps)).resolves.toEqual({ status: "accepted" });
     });
 
     it("responde vencida cuando la fecha de expiración ya pasó", async () => {
@@ -127,7 +132,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      await expect(getEmployeeInvitationJoinView(TOKEN)).resolves.toEqual({ status: "expired" });
+      await expect(getEmployeeInvitationJoinView(TOKEN, viewDeps)).resolves.toEqual({ status: "expired" });
     });
 
     it("usa valores por defecto para el nombre y el salón cuando faltan relaciones", async () => {
@@ -136,7 +141,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      await expect(getEmployeeInvitationJoinView(TOKEN)).resolves.toEqual({
+      await expect(getEmployeeInvitationJoinView(TOKEN, viewDeps)).resolves.toEqual({
         status: "pending",
         token: TOKEN,
         email: "ana@salon.test",
@@ -151,7 +156,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      await expect(getEmployeeInvitationJoinView(TOKEN)).resolves.toMatchObject({
+      await expect(getEmployeeInvitationJoinView(TOKEN, viewDeps)).resolves.toMatchObject({
         status: "pending",
         employeeName: "Colaborador",
       });
@@ -160,7 +165,7 @@ describe("employee invitation join", () => {
 
   describe("acceptEmployeeInvitation validations", () => {
     it("rechaza contraseñas de menos de 8 caracteres sin consultar la invitación", async () => {
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "1234567" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "1234567" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -171,7 +176,7 @@ describe("employee invitation join", () => {
     });
 
     it("acepta exactamente 8 caracteres como contraseña válida", async () => {
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "12345678" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "12345678" }, deps);
 
       expect(result).toEqual({ ok: true, value: undefined });
       expect(mockedCreateAuthUser).toHaveBeenCalledWith({
@@ -184,7 +189,7 @@ describe("employee invitation join", () => {
     it("informa cuando no puede verificar la invitación", async () => {
       mockedFindInvitation.mockResolvedValue({ data: null, error: { message: "caido" } });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({ ok: false, error: "No se pudo verificar la invitación." });
       expect(mockedCaptureError).toHaveBeenCalledTimes(1);
@@ -194,7 +199,7 @@ describe("employee invitation join", () => {
     it("rechaza un enlace inexistente", async () => {
       mockedFindInvitation.mockResolvedValue({ data: null, error: null });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({ ok: false, error: "El enlace no es válido." });
     });
@@ -205,7 +210,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({ ok: false, error: "Este enlace ya fue utilizado." });
       expect(mockedCreateAuthUser).not.toHaveBeenCalled();
@@ -217,7 +222,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -231,7 +236,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({ ok: false, error: "Colaborador no encontrado." });
     });
@@ -239,7 +244,7 @@ describe("employee invitation join", () => {
     it("informa cuando no puede verificar el rol de la invitación", async () => {
       mockedFindAssignableRole.mockResolvedValue({ data: null, error: { message: "caido" } });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -251,7 +256,7 @@ describe("employee invitation join", () => {
     it("rechaza un rol que dejó de ser asignable", async () => {
       mockedFindAssignableRole.mockResolvedValue({ data: null, error: null });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -266,7 +271,7 @@ describe("employee invitation join", () => {
         error: null,
       });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({ ok: true, value: undefined });
       expect(mockedFindAssignableRole).not.toHaveBeenCalled();
@@ -283,7 +288,7 @@ describe("employee invitation join", () => {
         error: { message: "User already registered", name: "AuthError", status: 422 } as never,
       });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -298,7 +303,7 @@ describe("employee invitation join", () => {
         error: { message: "user already exists", name: "AuthError", status: 422 } as never,
       });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toMatchObject({
         ok: false,
@@ -309,7 +314,7 @@ describe("employee invitation join", () => {
     it("cualquier otro fallo de Auth o ausencia de usuario devuelve error genérico", async () => {
       mockedCreateAuthUser.mockResolvedValue({ data: null, error: null });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -320,7 +325,7 @@ describe("employee invitation join", () => {
     it("si falla el perfil revierte la cuenta creada", async () => {
       mockedInsertProfile.mockResolvedValue({ error: { message: "caido" } });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -333,7 +338,7 @@ describe("employee invitation join", () => {
     it("si la vinculación falla revierte la cuenta creada", async () => {
       mockedLinkProfile.mockResolvedValue({ error: { message: "caido" } });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -346,7 +351,7 @@ describe("employee invitation join", () => {
     it("si no se puede marcar aceptada revierte la cuenta y registra el error", async () => {
       mockedMarkAccepted.mockResolvedValue({ error: { message: "caido" } });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result).toEqual({
         ok: false,
@@ -366,7 +371,7 @@ describe("employee invitation join", () => {
         error: { message: "not found", status: 404 } as never,
       });
 
-      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      const result = await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(result.ok).toBe(false);
       expect(mockedCaptureError).not.toHaveBeenCalled();
@@ -379,7 +384,7 @@ describe("employee invitation join", () => {
         error: { message: "auth caido", status: 500 } as never,
       });
 
-      await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" });
+      await acceptEmployeeInvitation({ token: TOKEN, password: "clave-segura-1" }, deps);
 
       expect(mockedCaptureError).toHaveBeenCalledWith(
         expect.objectContaining({ message: "auth caido" }),

@@ -13,6 +13,8 @@
  *                      Los use-cases y data/ no se importan ni como tipo: sus tipos se exportan
  *                      por el index.ts del modulo. src/components sigue las mismas reglas que src/app.
  *   src/infra/supabase/admin|auth-admin: solo desde src/infra o features/*\/data.
+ *   src/infra/auth/platform-admin-proof: la emision es solo del composition root (type-only fuera).
+ *   src/features/billing/data/billing-db: solo lo importan los repos de billing (data/*.repo.ts).
  *
  * Si una regla falla, se corrige el codigo. No hay lista de violaciones conocidas
  * ni excepciones por archivo (ver docs/adr, ADR de arquitectura por capas).
@@ -122,6 +124,25 @@ module.exports = {
         path: `${NPM_SUPABASE}|^src/infra/supabase/`,
         dependencyTypesNot: ["type-only"],
       },
+    },
+    {
+      name: "platform-admin-proof-issuer",
+      severity: "error",
+      comment:
+        "La prueba PlatformAdminProof (src/infra/auth/platform-admin-proof) solo la emite el composition root (src/app/_composition) y src/infra/auth. Fuera de ellos solo se permite importar el tipo (type-only).",
+      from: { path: "^src/", pathNot: "^src/app/_composition/|^src/infra/auth/" },
+      to: {
+        path: "^src/infra/auth/platform-admin-proof\\.tsx?$",
+        dependencyTypesNot: ["type-only"],
+      },
+    },
+    {
+      name: "billing-db-importers",
+      severity: "error",
+      comment:
+        "billingDb() (service_role de billing, src/features/billing/data/billing-db) solo lo importan los repos de billing (data/*.repo.ts). Ningun otro modulo ni use-case lo usa: el acceso de plataforma pasa por platformDb(proof) (ADR 0028).",
+      from: { path: "^src/", pathNot: "^src/features/billing/data/[^/]+\\.repo\\.ts$" },
+      to: { path: "^src/features/billing/data/billing-db\\.tsx?$" },
     },
     {
       name: "admin-client-boundary",

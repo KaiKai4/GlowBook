@@ -2,18 +2,36 @@ import "server-only";
 
 import { toPublicErrorMessage } from "@/infra/errors";
 import type { Result } from "@/infra/result";
-import { recordInventoryPurchaseRpc } from "../data/rpc/record-inventory-purchase";
-import { recordInventoryTransferRpc } from "../data/rpc/record-inventory-transfer";
+import {
+  recordInventoryPurchaseRpc,
+  type RecordInventoryPurchaseRpcInput,
+} from "../data/rpc/record-inventory-purchase";
+import {
+  recordInventoryTransferRpc,
+  type RecordInventoryTransferRpcInput,
+} from "../data/rpc/record-inventory-transfer";
 import type { InventoryPurchaseInput, InventoryTransferInput } from "../schemas";
+
+/** Dependencias de los movimientos de stock. Producción usa los adaptadores RPC; los tests inyectan fakes. */
+export interface InventoryMovementsDeps {
+  recordTransfer: (input: RecordInventoryTransferRpcInput) => Promise<void>;
+  recordPurchase: (input: RecordInventoryPurchaseRpcInput) => Promise<string>;
+}
+
+const defaultInventoryMovementsDeps: InventoryMovementsDeps = {
+  recordTransfer: recordInventoryTransferRpc,
+  recordPurchase: recordInventoryPurchaseRpc,
+};
 
 /** Mueve stock. idempotencyKey evita aplicar dos veces un reenvio del mismo formulario. */
 export async function transferInventoryStock(
   salonId: string,
   input: InventoryTransferInput,
-  idempotencyKey: string
+  idempotencyKey: string,
+  deps: InventoryMovementsDeps = defaultInventoryMovementsDeps
 ): Promise<Result<void>> {
   try {
-    await recordInventoryTransferRpc({
+    await deps.recordTransfer({
       salonId,
       productId: input.product_id,
       fromLocation: input.from_location,
@@ -32,10 +50,11 @@ export async function transferInventoryStock(
 export async function recordInventoryPurchase(
   salonId: string,
   input: InventoryPurchaseInput,
-  idempotencyKey: string
+  idempotencyKey: string,
+  deps: InventoryMovementsDeps = defaultInventoryMovementsDeps
 ): Promise<Result<void>> {
   try {
-    await recordInventoryPurchaseRpc({
+    await deps.recordPurchase({
       salonId,
       supplierName: input.supplier_name || null,
       purchaseDate: input.purchase_date,

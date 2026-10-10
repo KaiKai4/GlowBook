@@ -1,6 +1,7 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { assignSalonAddonConfig, cancelSalonExtraConfig, saveSalonManualExtraConfig } from "@/features/billing/use-cases/salon-plan-extras";
 import { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } from "@/features/billing/use-cases/salon-plan-assignment";
 import { resolveSalonPlanAlertConfig } from "@/features/billing/use-cases/plan-limits";
@@ -19,7 +20,7 @@ import {
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/billing/use-cases/salon-plan-extras", () => ({
@@ -36,6 +37,7 @@ vi.mock("@/features/billing/use-cases/plan-limits", () => ({
 }));
 
 const ADMIN_ID = "00000000-0000-4000-8000-0000000000ad";
+const ADMIN_PROOF = issuePlatformAdminProof(ADMIN_ID);
 const SALON_ID = "00000000-0000-4000-8000-000000000005";
 const ALERT_ID = "00000000-0000-4000-8000-0000000000a1";
 const OVERRIDE_ID = "00000000-0000-4000-8000-0000000000c1";
@@ -45,7 +47,7 @@ const SUBSCRIPTION_PATHS = ["/admin/subscriptions", "/admin/plans", "/admin/salo
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requirePlatformAdmin).mockResolvedValue(ADMIN_ID);
+  vi.mocked(requirePlatformAdminProof).mockResolvedValue(issuePlatformAdminProof(ADMIN_ID));
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
 });
 
@@ -88,7 +90,7 @@ describe("assignPlanAction", () => {
       formDataOf({ salonId: SALON_ID, planId: "plan-1", status: "active", endsAt: "2027-01-01", notes: "n" })
     );
 
-    expect(assignSalonCommercialPlanConfig).toHaveBeenCalledWith(
+    expect(assignSalonCommercialPlanConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       { salonId: SALON_ID, planId: "plan-1", status: "active", endsAt: "2027-01-01", notes: "n" },
       ADMIN_ID
     );
@@ -101,7 +103,7 @@ describe("assignPlanAction", () => {
 
     const state = await assignPlanAction(PLATFORM_PLAN_IDLE_STATE, new FormData());
 
-    expect(assignSalonCommercialPlanConfig).toHaveBeenCalledWith(
+    expect(assignSalonCommercialPlanConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ status: "trialing", salonId: "" }),
       ADMIN_ID
     );
@@ -119,7 +121,7 @@ describe("giveAddonAction", () => {
       formDataOf({ salonId: SALON_ID, addonId: "a", isGift: "on", priceOverride: "99" })
     );
 
-    expect(assignSalonAddonConfig).toHaveBeenCalledWith(
+    expect(assignSalonAddonConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ isGift: true, priceOverride: "", quantity: "1" }),
       ADMIN_ID
     );
@@ -134,7 +136,7 @@ describe("giveAddonAction", () => {
       formDataOf({ salonId: SALON_ID, addonId: "a", isGift: "false", priceOverride: "49.9", quantity: "2" })
     );
 
-    expect(assignSalonAddonConfig).toHaveBeenCalledWith(
+    expect(assignSalonAddonConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ isGift: false, priceOverride: "49.9", quantity: "2" }),
       ADMIN_ID
     );
@@ -160,7 +162,7 @@ describe("giveManualExtraAction", () => {
       formDataOf({ salonId: SALON_ID, targetType: "module", moduleKey: "inventory", metricKey: "x", maxDelta: "5", reason: "r" })
     );
 
-    expect(saveSalonManualExtraConfig).toHaveBeenCalledWith(
+    expect(saveSalonManualExtraConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({
         moduleKey: "inventory",
         metricKey: "",
@@ -182,7 +184,7 @@ describe("giveManualExtraAction", () => {
       formDataOf({ salonId: SALON_ID, moduleKey: "inventory", metricKey: "appointments", maxDelta: "20" })
     );
 
-    expect(saveSalonManualExtraConfig).toHaveBeenCalledWith(
+    expect(saveSalonManualExtraConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({
         moduleKey: "",
         metricKey: "appointments",
@@ -213,7 +215,7 @@ describe("registerPaymentAction", () => {
       formDataOf({ salonId: SALON_ID, amount: "120", paidAt: "", notes: "transferencia" })
     );
 
-    expect(registerSalonPlanPaymentConfig).toHaveBeenCalledWith(
+    expect(registerSalonPlanPaymentConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       { salonId: SALON_ID, amount: "120", paidAt: undefined, notes: "transferencia" },
       ADMIN_ID
     );
@@ -226,6 +228,7 @@ describe("registerPaymentAction", () => {
     vi.mocked(registerSalonPlanPaymentConfig).mockResolvedValueOnce(ok(undefined) as never);
     await registerPaymentAction(PLATFORM_PLAN_IDLE_STATE, formDataOf({ paidAt: "2026-05-01" }));
     expect(registerSalonPlanPaymentConfig).toHaveBeenLastCalledWith(
+      ADMIN_PROOF,
       expect.objectContaining({ paidAt: "2026-05-01", amount: "0" }),
       ADMIN_ID
     );
@@ -263,7 +266,7 @@ describe("resolveAlertAction", () => {
     vi.mocked(resolveSalonPlanAlertConfig).mockResolvedValueOnce(ok(undefined) as never);
 
     await expect(resolveAlertAction(ALERT_ID, SALON_ID)).resolves.toBeUndefined();
-    expect(resolveSalonPlanAlertConfig).toHaveBeenCalledWith(ALERT_ID, SALON_ID, ADMIN_ID);
+    expect(resolveSalonPlanAlertConfig).toHaveBeenCalledWith(ADMIN_PROOF, ALERT_ID, SALON_ID, ADMIN_ID);
     for (const path of SUBSCRIPTION_PATHS) expect(revalidatePath).toHaveBeenCalledWith(path);
 
     vi.mocked(resolveSalonPlanAlertConfig).mockResolvedValueOnce(err("Alerta ya resuelta.") as never);
@@ -282,7 +285,7 @@ describe("cancelExtraAction", () => {
     vi.mocked(cancelSalonExtraConfig).mockResolvedValueOnce(ok(undefined) as never);
 
     await expect(cancelExtraAction(OVERRIDE_ID, SALON_ID)).resolves.toBeUndefined();
-    expect(cancelSalonExtraConfig).toHaveBeenCalledWith(OVERRIDE_ID, SALON_ID, ADMIN_ID);
+    expect(cancelSalonExtraConfig).toHaveBeenCalledWith(ADMIN_PROOF, OVERRIDE_ID, SALON_ID, ADMIN_ID);
     expect(revalidatePath).toHaveBeenCalledWith("/admin/subscriptions");
 
     vi.mocked(cancelSalonExtraConfig).mockResolvedValueOnce(err("Extra ya cancelado.") as never);

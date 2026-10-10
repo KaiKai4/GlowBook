@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada. Supera parcialmente a ADR 0009 (reglas de capas y verificación), a ADR 0010 (mecanismo de control de importadores de `service_role`) y a ADR 0013 (trinquetes de tamaño, tokens y violaciones de grafo). Ver las secciones "Relación con otros ADR" y el índice de `docs/adr/README.md`.
+Aceptada. Modificada parcialmente por ADR 0028 (reglas de capas de la fase 2). Supera parcialmente a ADR 0009 (reglas de capas y verificación), a ADR 0010 (mecanismo de control de importadores de `service_role`) y a ADR 0013 (trinquetes de tamaño, tokens y violaciones de grafo). Ver las secciones "Relación con otros ADR" y el índice de `docs/adr/README.md`.
 
 ## Contexto
 

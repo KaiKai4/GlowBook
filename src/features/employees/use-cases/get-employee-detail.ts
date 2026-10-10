@@ -6,7 +6,7 @@ import { getAssignableRoleOptions } from "@/features/access";
 import { getCategoryServiceOptions } from "@/features/services";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
 import { findUpcomingEmployeeExceptions } from "../data/employee-exceptions.repo";
-import { findEmployeeById } from "../data/employees.repo";
+import { findEmployeeById } from "../data/employees-read.repo";
 import { findLatestEmployeeInvitation } from "../data/employee-invitations.repo";
 
 type AssignedServiceRef = {

@@ -5,7 +5,9 @@ import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { archiveEmployee, reactivateEmployee } from "@/features/employees/use-cases/employee-lifecycle";
-import { createEmployeeProfile, findArchivedEmployeeByEmail, updateEmployeeProfile } from "@/features/employees/use-cases/employee-profile";
+import { createEmployeeProfile } from "@/features/employees/use-cases/employee-profile-create";
+import { findArchivedEmployeeByEmail } from "@/features/employees/use-cases/employee-profile-steps";
+import { updateEmployeeProfile } from "@/features/employees/use-cases/employee-profile-update";
 import { getSalonSchedulingConfig } from "@/features/salon/use-cases/salon-scheduling-config";
 import { err, ok } from "@/infra/result";
 import { buildProfile, rolesDisabled, formDataOf, SALON_ID } from "@/test/action-fixtures";
@@ -48,10 +50,14 @@ vi.mock("@/features/employees/use-cases/employee-exceptions", () => ({
   addEmployeeScheduleException: vi.fn(),
   removeEmployeeScheduleException: vi.fn(),
 }));
-vi.mock("@/features/employees/use-cases/employee-profile", () => ({
+vi.mock("@/features/employees/use-cases/employee-profile-create", () => ({
   createEmployeeProfile: vi.fn(),
-  findArchivedEmployeeByEmail: vi.fn(),
+}));
+vi.mock("@/features/employees/use-cases/employee-profile-update", () => ({
   updateEmployeeProfile: vi.fn(),
+}));
+vi.mock("@/features/employees/use-cases/employee-profile-steps", () => ({
+  findArchivedEmployeeByEmail: vi.fn(),
 }));
 vi.mock("@/features/salon/use-cases/salon-scheduling-config", () => ({
   getSalonSchedulingConfig: vi.fn(),

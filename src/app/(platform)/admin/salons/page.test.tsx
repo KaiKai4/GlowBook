@@ -1,16 +1,18 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { getSalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
 import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { makeDetail, makeRow } from "@/test/ui-admin-fixtures";
 import { makeOverview, makeOverviewsView, makeSubscriptionsData } from "@/test/ui-admin-page-fixtures";
 import PlatformSalonsPage from "./page";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn(async () => issuePlatformAdminProof("admin-1")) }));
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({
   getPlatformSalonOverviews: vi.fn(),
 }));
@@ -56,7 +58,7 @@ describe("PlatformSalonsPage", () => {
         totals: { mrr: 30, salonsWithPlan: 1, trialing: 0, openAlerts: 3 },
       })
     );
-    vi.mocked(getSalonSubscriptionDetail).mockImplementation(async (salonId: string) =>
+    vi.mocked(getSalonSubscriptionDetail).mockImplementation(async (_proof, salonId: string) =>
       makeDetail({ salonId })
     );
   });
@@ -70,7 +72,7 @@ describe("PlatformSalonsPage", () => {
   it("exige rol de plataforma antes de cargar los salones", async () => {
     mounted = await render();
 
-    expect(requirePlatformAdmin).toHaveBeenCalled();
+    expect(requirePlatformAdminProof).toHaveBeenCalled();
     expect(getPlatformSalonOverviews).toHaveBeenCalled();
   });
 
@@ -97,7 +99,7 @@ describe("PlatformSalonsPage", () => {
     mounted = await render();
 
     expect(mounted.container.querySelector("h2")?.textContent).toBe("Salón Luna");
-    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith("salon-1");
+    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith(ADMIN_PROOF, "salon-1");
     expect(getSalonSubscriptionDetail).toHaveBeenCalledTimes(1);
   });
 
@@ -105,7 +107,7 @@ describe("PlatformSalonsPage", () => {
     mounted = await render({ salon: "salon-2" });
 
     expect(mounted.container.querySelector("h2")?.textContent).toBe("Barbería Norte");
-    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith("salon-2");
+    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith(ADMIN_PROOF, "salon-2");
     expect(getSalonSubscriptionDetail).toHaveBeenCalledTimes(1);
   });
 
@@ -113,7 +115,7 @@ describe("PlatformSalonsPage", () => {
     mounted = await render({ salon: "salon-inexistente" });
 
     expect(mounted.container.querySelector("h2")?.textContent).toBe("Salón Luna");
-    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith("salon-1");
+    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith(ADMIN_PROOF, "salon-1");
   });
 
   it("formatea la fecha de registro del salón seleccionado", async () => {

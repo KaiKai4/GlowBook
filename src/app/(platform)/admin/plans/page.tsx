@@ -3,7 +3,7 @@ import { Blocks, CreditCard, Gauge, Gift, Layers3, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/page-header";
 import { getCommercialPlansPage } from "@/features/billing";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { cn } from "@/components/ui/cn";
 import { AddonsCatalog } from "./addons-catalog";
 import { PlansWorkspace } from "./plans-workspace";
@@ -13,10 +13,10 @@ export default async function PlatformPlansPage({
 }: {
   searchParams?: Promise<{ new?: string; view?: string }>;
 }) {
-  await requirePlatformAdmin();
+  const proof = await requirePlatformAdminProof();
   const params = await searchParams;
   const view = params?.view === "addons" ? "addons" : "plans";
-  const billing = await getCommercialPlansPage();
+  const billing = await getCommercialPlansPage(proof);
   const activePlans = billing.plans.filter((plan) => plan.status === "active").length;
   const assignedSalons = Object.values(billing.assignmentsByPlan).reduce((total, count) => total + count, 0);
 

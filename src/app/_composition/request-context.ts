@@ -2,6 +2,10 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { readSessionUserId } from "@/infra/auth/session";
+import {
+  issuePlatformAdminProof,
+  type PlatformAdminProof,
+} from "@/infra/auth/platform-admin-proof";
 import { getRequestId } from "@/infra/observability/request-context";
 import {
   getPermissions,
@@ -110,11 +114,21 @@ export async function isPlatformAdmin(): Promise<boolean> {
   return isPlatformAdminCached(userId);
 }
 
-export async function requirePlatformAdmin(): Promise<string> {
+/**
+ * Prueba de platform admin de la sesion actual (ADR 0028). Redirige a /login si
+ * no hay sesion o el usuario no figura en platform_admins. Es la unica fuente de
+ * PlatformAdminProof: los casos de uso de plataforma la exigen para llegar a billing.
+ */
+export async function requirePlatformAdminProof(): Promise<PlatformAdminProof> {
   const userId = await getSessionUserId();
   if (!userId) redirect("/login");
 
   const isAdmin = await isPlatformAdminCached(userId);
   if (!isAdmin) redirect("/login");
-  return userId;
+  return issuePlatformAdminProof(userId);
+}
+
+/** Id del platform admin de la sesion actual; redirige a /login si no lo es. */
+export async function requirePlatformAdmin(): Promise<string> {
+  return (await requirePlatformAdminProof()).userId;
 }

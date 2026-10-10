@@ -1,4 +1,5 @@
 import "server-only";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { publishAuditEvent } from "@/features/audit";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { err, ok, type Result } from "@/infra/result";
@@ -83,12 +84,13 @@ async function recordPlanAlertOnce(values: Parameters<typeof recordPlanAlert>[0]
 }
 
 export async function resolveSalonPlanAlertConfig(
+  proof: PlatformAdminProof,
   alertId: string,
   salonId: string,
   actorUserId?: string | null
 ): Promise<Result<void>> {
   try {
-    await resolvePlanAlert(salonId, alertId);
+    await resolvePlanAlert(proof, salonId, alertId);
     const warnings = await publishAuditEvent("billing.plan_alert_resolved", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_alert_resolved" });
     return ok(undefined, warnings);
   } catch (error) {

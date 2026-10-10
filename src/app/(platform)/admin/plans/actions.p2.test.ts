@@ -1,6 +1,7 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import {
   archivePlan,
   deletePlan,
@@ -28,7 +29,7 @@ import { PLATFORM_PLAN_IDLE_STATE } from "./action-state";
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/billing/use-cases/commercial-plans", () => ({
@@ -44,6 +45,7 @@ vi.mock("@/features/billing/use-cases/commercial-addons", () => ({
 }));
 
 const ADMIN_ID = "00000000-0000-4000-8000-0000000000ad";
+const ADMIN_PROOF = issuePlatformAdminProof(ADMIN_ID);
 const PLAN_ID = "00000000-0000-4000-8000-0000000000b1";
 const ADDON_ID = "00000000-0000-4000-8000-000000000a01";
 const RATE_LIMIT_MESSAGE = "Demasiados intentos. Espera un momento y vuelve a intentarlo.";
@@ -53,7 +55,7 @@ const PLAN_PATHS = ["/admin/plans", "/admin/subscriptions", "/"];
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requirePlatformAdmin).mockResolvedValue(ADMIN_ID);
+  vi.mocked(requirePlatformAdminProof).mockResolvedValue(issuePlatformAdminProof(ADMIN_ID));
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
 });
 
@@ -75,7 +77,7 @@ describe("savePlanAction", () => {
       formDataOf({ id: "", name: "Pro", code: "pro", isPublic: "on", status: "active" })
     );
 
-    expect(saveCommercialPlanConfig).toHaveBeenCalledWith(
+    expect(saveCommercialPlanConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       {
         id: undefined,
         name: "Pro",
@@ -99,7 +101,7 @@ describe("savePlanAction", () => {
 
     await savePlanAction(PLATFORM_PLAN_IDLE_STATE, formDataOf({ id: PLAN_ID, isPublic: "no" }));
 
-    expect(saveCommercialPlanConfig).toHaveBeenCalledWith(
+    expect(saveCommercialPlanConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       expect.objectContaining({ id: PLAN_ID, isPublic: false }),
       ADMIN_ID
     );
@@ -132,7 +134,7 @@ describe("archivePlanAction", () => {
     vi.mocked(archivePlan).mockResolvedValueOnce(ok(undefined) as never);
 
     await expect(archivePlanAction(PLAN_ID)).resolves.toBeUndefined();
-    expect(archivePlan).toHaveBeenCalledWith(PLAN_ID, ADMIN_ID);
+    expect(archivePlan).toHaveBeenCalledWith(ADMIN_PROOF, PLAN_ID, ADMIN_ID);
     for (const path of PLAN_PATHS) expect(revalidatePath).toHaveBeenCalledWith(path);
 
     vi.mocked(archivePlan).mockResolvedValueOnce(err("No se puede archivar.") as never);
@@ -157,7 +159,7 @@ describe("deletePlanAction", () => {
     vi.mocked(deletePlan).mockResolvedValueOnce(ok(undefined) as never);
 
     await expect(deletePlanAction(PLAN_ID)).resolves.toBeUndefined();
-    expect(deletePlan).toHaveBeenCalledWith(PLAN_ID, ADMIN_ID);
+    expect(deletePlan).toHaveBeenCalledWith(ADMIN_PROOF, PLAN_ID, ADMIN_ID);
     for (const path of PLAN_PATHS) expect(revalidatePath).toHaveBeenCalledWith(path);
 
     vi.mocked(deletePlan).mockResolvedValueOnce(err("El plan tiene salones asignados.") as never);
@@ -185,7 +187,7 @@ describe("savePlanModulesAction", () => {
 
     const state = await savePlanModulesAction(PLATFORM_PLAN_IDLE_STATE, formData);
 
-    expect(saveCommercialPlanModulesBatch).toHaveBeenCalledWith(
+    expect(saveCommercialPlanModulesBatch).toHaveBeenCalledWith(ADMIN_PROOF, 
       { planId: PLAN_ID, allModuleKeys: ["inventory", "retail"], enabledModuleKeys: ["retail"] },
       ADMIN_ID
     );
@@ -226,7 +228,7 @@ describe("savePlanLimitsAction", () => {
 
     const state = await savePlanLimitsAction(PLATFORM_PLAN_IDLE_STATE, formData);
 
-    expect(saveCommercialPlanLimitsBatch).toHaveBeenCalledWith(
+    expect(saveCommercialPlanLimitsBatch).toHaveBeenCalledWith(ADMIN_PROOF, 
       {
         planId: PLAN_ID,
         limits: [
@@ -279,7 +281,7 @@ describe("saveAddonAction", () => {
       formDataOf({ name: "Turbo", code: "turbo", limitDelta: "10", kind: "limit_boost" })
     );
 
-    expect(saveCommercialAddonConfig).toHaveBeenCalledWith(
+    expect(saveCommercialAddonConfig).toHaveBeenCalledWith(ADMIN_PROOF, 
       {
         id: undefined,
         name: "Turbo",
@@ -327,7 +329,7 @@ describe("removeAddonAction", () => {
     vi.mocked(removeCommercialAddonConfig).mockResolvedValueOnce(ok(undefined) as never);
 
     await expect(removeAddonAction(ADDON_ID)).resolves.toBeUndefined();
-    expect(removeCommercialAddonConfig).toHaveBeenCalledWith(ADDON_ID, ADMIN_ID);
+    expect(removeCommercialAddonConfig).toHaveBeenCalledWith(ADMIN_PROOF, ADDON_ID, ADMIN_ID);
     expect(revalidatePath).toHaveBeenCalledWith("/admin/plans");
 
     vi.mocked(removeCommercialAddonConfig).mockResolvedValueOnce(err("Extra en uso.") as never);

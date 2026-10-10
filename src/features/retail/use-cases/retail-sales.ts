@@ -6,7 +6,10 @@ import { getSalonPaymentMethods } from "@/features/salon";
 import type { PaymentMethodOption } from "@/features/payments";
 import type { RetailSaleInput } from "../schemas";
 import { findRecentRetailSales } from "../data/retail.repo";
-import { recordRetailSaleRpc } from "../data/rpc/record-retail-sale";
+import {
+  recordRetailSaleRpc,
+  type RecordRetailSaleRpcInput,
+} from "../data/rpc/record-retail-sale";
 
 export interface RetailPageView {
   products: RetailInventoryProductView[];
@@ -31,14 +34,24 @@ export async function getRetailPage(salonId: string): Promise<RetailPageView> {
   };
 }
 
+/** Dependencias de la venta. Producción usa el adaptador RPC; los tests inyectan fakes. */
+export interface CreateRetailSaleDeps {
+  recordSaleRpc: (input: RecordRetailSaleRpcInput) => Promise<string>;
+}
+
+const defaultCreateRetailSaleDeps: CreateRetailSaleDeps = {
+  recordSaleRpc: recordRetailSaleRpc,
+};
+
 /** Registra la venta. idempotencyKey evita duplicar la venta si el formulario se reenvia. */
 export async function createRetailSale(
   salonId: string,
   input: RetailSaleInput,
-  idempotencyKey: string
+  idempotencyKey: string,
+  deps: CreateRetailSaleDeps = defaultCreateRetailSaleDeps
 ): Promise<Result<string>> {
   try {
-    await recordRetailSaleRpc({
+    await deps.recordSaleRpc({
       salonId,
       customerId: input.customer_id || null,
       productId: input.product_id,

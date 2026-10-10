@@ -11,7 +11,34 @@ import type {
 import { err, type Result } from "@/infra/result";
 import { normalizeOptionalPhoneInput } from "@/infra/format/phone";
 import { rejectArchivedDuplicate } from "./customer-duplicates";
-import { assertCustomerQuotaAvailable } from "./customer-quota";
+import { assertCustomerQuotaAvailable, type AssertCustomerQuota } from "./customer-quota";
+
+/** Dependencias del alta y edición de clientes. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface CustomerProfileDeps {
+  checkModuleAccess: (input: { salonId: string; moduleKey: "customers" }) => Promise<Result<void>>;
+  assertQuota: AssertCustomerQuota;
+  rejectArchivedDuplicate: (
+    salonId: string,
+    input: Pick<CreateCustomerInput, "phone" | "email">
+  ) => Promise<Result<void>>;
+  createCustomer: (
+    salonId: string,
+    input: Parameters<typeof createCustomer>[1]
+  ) => Promise<{ id: string }>;
+  updateCustomer: (
+    customerId: string,
+    salonId: string,
+    input: Parameters<typeof updateCustomer>[2]
+  ) => Promise<unknown>;
+}
+
+const defaultCustomerProfileDeps: CustomerProfileDeps = {
+  checkModuleAccess: checkPlanModuleAccess,
+  assertQuota: assertCustomerQuotaAvailable,
+  rejectArchivedDuplicate,
+  createCustomer,
+  updateCustomer,
+};
 
 function mapCustomerConstraintError(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
@@ -33,20 +60,21 @@ function mapCustomerConstraintError(error: unknown, fallback: string): string {
  */
 export async function createCustomerProfile(
   salonId: string,
-  input: CreateCustomerInput
+  input: CreateCustomerInput,
+  deps: CustomerProfileDeps = defaultCustomerProfileDeps
 ): Promise<Result<string>> {
-  const moduleAccess = await checkPlanModuleAccess({ salonId, moduleKey: "customers" });
+  const moduleAccess = await deps.checkModuleAccess({ salonId, moduleKey: "customers" });
   if (!moduleAccess.ok) return err(moduleAccess.error);
 
-  const limit = await assertCustomerQuotaAvailable(salonId);
+  const limit = await deps.assertQuota(salonId);
   if (!limit.ok) return err(limit.error);
 
   const normalizedInput = normalizeCustomerPhone(input);
-  const duplicate = await rejectArchivedDuplicate(salonId, normalizedInput);
+  const duplicate = await deps.rejectArchivedDuplicate(salonId, normalizedInput);
   if (!duplicate.ok) return duplicate;
 
   try {
-    const customer = await createCustomer(salonId, normalizedInput);
+    const customer = await deps.createCustomer(salonId, normalizedInput);
     return { ok: true, value: customer.id };
   } catch (error) {
     return {
@@ -59,10 +87,11 @@ export async function createCustomerProfile(
 export async function updateCustomerProfile(
   customerId: string,
   salonId: string,
-  input: UpdateCustomerInput
+  input: UpdateCustomerInput,
+  deps: CustomerProfileDeps = defaultCustomerProfileDeps
 ): Promise<Result<void>> {
   try {
-    await updateCustomer(customerId, salonId, normalizeCustomerPhone(input));
+    await deps.updateCustomer(customerId, salonId, normalizeCustomerPhone(input));
     return { ok: true, value: undefined };
   } catch (error) {
     captureError(error, { module: "customers", action: "profile" });

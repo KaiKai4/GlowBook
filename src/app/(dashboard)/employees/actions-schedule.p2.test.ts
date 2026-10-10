@@ -49,10 +49,14 @@ vi.mock("@/features/employees/use-cases/employee-exceptions", () => ({
   addEmployeeScheduleException: vi.fn(),
   removeEmployeeScheduleException: vi.fn(),
 }));
-vi.mock("@/features/employees/use-cases/employee-profile", () => ({
+vi.mock("@/features/employees/use-cases/employee-profile-create", () => ({
   createEmployeeProfile: vi.fn(),
-  findArchivedEmployeeByEmail: vi.fn(),
+}));
+vi.mock("@/features/employees/use-cases/employee-profile-update", () => ({
   updateEmployeeProfile: vi.fn(),
+}));
+vi.mock("@/features/employees/use-cases/employee-profile-steps", () => ({
+  findArchivedEmployeeByEmail: vi.fn(),
 }));
 vi.mock("@/features/salon/use-cases/salon-scheduling-config", () => ({
   getSalonSchedulingConfig: vi.fn(),

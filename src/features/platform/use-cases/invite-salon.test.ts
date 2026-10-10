@@ -1,18 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSalonInvitation } from "@/features/platform/data/invitations.repo";
-import { inviteSalon } from "./invite-salon";
-import { publishAuditEvent } from "@/features/audit";
+import {
+  inviteSalon as inviteSalonWithDeps,
+  type InviteSalonDeps,
+  type InviteSalonInput,
+} from "./invite-salon";
 
-vi.mock("@/features/platform/data/invitations.repo", () => ({
-  createSalonInvitation: vi.fn(),
-}));
+// Fakes tipados de las dependencias: ningún test toca Supabase ni auditoría real.
+const deps: InviteSalonDeps = {
+  createSalonInvitation: vi.fn<InviteSalonDeps["createSalonInvitation"]>(),
+  regenerateSalonInvitationToken: vi.fn<InviteSalonDeps["regenerateSalonInvitationToken"]>(),
+  publishAuditEvent: vi.fn<InviteSalonDeps["publishAuditEvent"]>(async () => []),
+};
 
-vi.mock("@/features/audit", () => ({
-  publishAuditEvent: vi.fn(async () => []),
-}));
+const inviteSalon = (input: InviteSalonInput) => inviteSalonWithDeps(input, deps);
 
-const mockedCreateSalonInvitation = vi.mocked(createSalonInvitation);
-const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
+const mockedCreateSalonInvitation = vi.mocked(deps.createSalonInvitation);
+const mockedPublishAuditEvent = vi.mocked(deps.publishAuditEvent);
 
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 const planId = "00000000-0000-4000-8000-00000000000a";

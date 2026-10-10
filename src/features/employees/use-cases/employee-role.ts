@@ -5,14 +5,26 @@ import {
 } from "@/features/employees/data/employee-access.repo";
 import type { Result } from "@/infra/result";
 
+/** Dependencias del cambio de rol. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface EmployeeRoleDeps {
+  findAssignableRole: typeof findAssignableEmployeeRole;
+  updateProfileRole: typeof updateEmployeeProfileRole;
+}
+
+const defaultEmployeeRoleDeps: EmployeeRoleDeps = {
+  findAssignableRole: findAssignableEmployeeRole,
+  updateProfileRole: updateEmployeeProfileRole,
+};
+
 /** Valida que el rol pedido exista en el salón y no sea de sistema. Null (sin rol) es valido. */
 export async function validateAssignableRoleId(
   salonId: string,
-  roleId: string | null
+  roleId: string | null,
+  deps: Pick<EmployeeRoleDeps, "findAssignableRole"> = defaultEmployeeRoleDeps
 ): Promise<Result<string | null>> {
   if (!roleId) return { ok: true, value: null };
 
-  const { data, error } = await findAssignableEmployeeRole(salonId, roleId);
+  const { data, error } = await deps.findAssignableRole(salonId, roleId);
 
   if (error) {
     captureError(error, { module: "employees", action: "access" });
@@ -30,12 +42,13 @@ export async function validateAssignableRoleId(
 export async function changeEmployeeRole(
   salonId: string,
   profileId: string,
-  roleId: string | null
+  roleId: string | null,
+  deps: EmployeeRoleDeps = defaultEmployeeRoleDeps
 ): Promise<Result<void>> {
-  const assignableRole = await validateAssignableRoleId(salonId, roleId);
+  const assignableRole = await validateAssignableRoleId(salonId, roleId, deps);
   if (!assignableRole.ok) return assignableRole;
 
-  const { error } = await updateEmployeeProfileRole(
+  const { error } = await deps.updateProfileRole(
     profileId,
     salonId,
     assignableRole.value

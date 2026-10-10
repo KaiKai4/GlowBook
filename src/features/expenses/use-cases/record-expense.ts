@@ -7,28 +7,58 @@ import { createExpense, createInventoryPurchaseExpense } from "./expenses";
 // Registro de gastos y compras de inventario con sus cupos del plan. Primero el
 // modulo y despues el cupo; ambos se consultan antes de persistir.
 
+/** Dependencias del registro de gastos. Producción usa los casos reales; los tests inyectan fakes. */
+export interface CreateExpenseWithPlanLimitsDeps {
+  checkModuleAccess: typeof checkPlanModuleAccess;
+  checkLimit: typeof checkPlanLimit;
+  createExpense: typeof createExpense;
+}
+
+// Los accesos a otros modulos van dentro de cada funcion: otros tests los mockean parcialmente.
+const defaultCreateExpenseWithPlanLimitsDeps: CreateExpenseWithPlanLimitsDeps = {
+  checkModuleAccess: (input) => checkPlanModuleAccess(input),
+  checkLimit: (input) => checkPlanLimit(input),
+  createExpense: (salonId, input, idempotencyKey) => createExpense(salonId, input, idempotencyKey),
+};
+
+/** Dependencias de la compra de inventario registrada como gasto. */
+export interface CreateInventoryPurchaseWithPlanLimitsDeps {
+  checkModuleAccess: typeof checkPlanModuleAccess;
+  checkLimit: typeof checkPlanLimit;
+  createPurchaseExpense: typeof createInventoryPurchaseExpense;
+}
+
+const defaultCreateInventoryPurchaseWithPlanLimitsDeps: CreateInventoryPurchaseWithPlanLimitsDeps = {
+  checkModuleAccess: (input) => checkPlanModuleAccess(input),
+  checkLimit: (input) => checkPlanLimit(input),
+  createPurchaseExpense: (salonId, input, idempotencyKey) =>
+    createInventoryPurchaseExpense(salonId, input, idempotencyKey),
+};
+
 export async function createExpenseWithPlanLimits(
   salonId: string,
   input: CreateExpenseInput,
-  idempotencyKey: string
+  idempotencyKey: string,
+  deps: CreateExpenseWithPlanLimitsDeps = defaultCreateExpenseWithPlanLimitsDeps
 ): Promise<Result<string>> {
-  const moduleAccess = await checkPlanModuleAccess({ salonId, moduleKey: "expenses" });
+  const moduleAccess = await deps.checkModuleAccess({ salonId, moduleKey: "expenses" });
   if (!moduleAccess.ok) return err(moduleAccess.error);
-  const limit = await checkPlanLimit({ salonId, metricKey: "expenses.total" });
+  const limit = await deps.checkLimit({ salonId, metricKey: "expenses.total" });
   if (!limit.ok) return err(limit.error);
 
-  return createExpense(salonId, input, idempotencyKey);
+  return deps.createExpense(salonId, input, idempotencyKey);
 }
 
 export async function createInventoryPurchaseWithPlanLimits(
   salonId: string,
   input: InventoryPurchaseInput,
-  idempotencyKey: string
+  idempotencyKey: string,
+  deps: CreateInventoryPurchaseWithPlanLimitsDeps = defaultCreateInventoryPurchaseWithPlanLimitsDeps
 ): Promise<Result<string>> {
-  const moduleAccess = await checkPlanModuleAccess({ salonId, moduleKey: "inventory" });
+  const moduleAccess = await deps.checkModuleAccess({ salonId, moduleKey: "inventory" });
   if (!moduleAccess.ok) return err(moduleAccess.error);
-  const limit = await checkPlanLimit({ salonId, metricKey: "inventory.movements" });
+  const limit = await deps.checkLimit({ salonId, metricKey: "inventory.movements" });
   if (!limit.ok) return err(limit.error);
 
-  return createInventoryPurchaseExpense(salonId, input, idempotencyKey);
+  return deps.createPurchaseExpense(salonId, input, idempotencyKey);
 }

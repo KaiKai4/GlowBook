@@ -21,7 +21,7 @@ flowchart LR
     features_billing["features/billing (32)"]
     features_customers["features/customers (12)"]
     features_dashboard["features/dashboard (8)"]
-    features_employees["features/employees (30)"]
+    features_employees["features/employees (36)"]
     features_expenses["features/expenses (11)"]
     features_feedback["features/feedback (4)"]
     features_inventory["features/inventory (14)"]
@@ -37,7 +37,7 @@ flowchart LR
   end
   subgraph g_infra["infra"]
     infra["infra (3)"]
-    infra_auth["infra/auth (4)"]
+    infra_auth["infra/auth (5)"]
     infra_config["infra/config (1)"]
     infra_effects["infra/effects (1)"]
     infra_format["infra/format (3)"]
@@ -180,6 +180,7 @@ flowchart LR
   features_billing --> features_audit
   features_billing --> features_salon_features
   features_billing --> infra
+  features_billing --> infra_auth
   features_billing --> infra_format
   features_billing --> infra_observability
   features_billing --> infra_supabase

@@ -1,4 +1,5 @@
 import "server-only";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { planLimitMessage } from "../messages";
 import { roundCurrency } from "@/infra/format/money";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
@@ -93,13 +94,16 @@ function withLimitMessage(limit: EffectivePlanLimit): SalonPlanLimitView {
   };
 }
 
-export async function getSalonSubscriptionDetail(salonId: string): Promise<SalonSubscriptionDetail> {
+export async function getSalonSubscriptionDetail(
+  proof: PlatformAdminProof,
+  salonId: string
+): Promise<SalonSubscriptionDetail> {
   const [rows, addons, modules, payments, openAlerts] = await Promise.all([
-    findEffectivePlanRowsForPlatform(salonId),
-    findCommercialAddons(),
-    findPlanCatalog().then((catalog) => catalog.modules),
-    findSalonPayments(salonId),
-    findOpenSalonAlerts(salonId),
+    findEffectivePlanRowsForPlatform(proof, salonId),
+    findCommercialAddons(proof),
+    findPlanCatalog(proof).then((catalog) => catalog.modules),
+    findSalonPayments(proof, salonId),
+    findOpenSalonAlerts(proof, salonId),
   ]);
 
   // Mismo criterio que getEffectiveSalonPlan: un plan pausado/cancelado no da módulos ni límites.

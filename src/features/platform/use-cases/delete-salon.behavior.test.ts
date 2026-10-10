@@ -1,28 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deleteSalonCompletely } from "@/features/platform/data/delete-salon.repo";
 import { captureError } from "@/infra/observability";
-import { deleteSalon } from "./delete-salon";
+import {
+  deleteSalon as deleteSalonWithDeps,
+  type DeleteSalonDeps,
+  type DeleteSalonInput,
+} from "./delete-salon";
 import { PublicError } from "@/infra/public-error";
-import { publishAuditEvent } from "@/features/audit";
 
 // Borrado destructivo: la confirmacion debe coincidir exactamente con el id
 // del salón y, aunque se rechace, el intento queda auditado. Solo un borrado
 // completado devuelve ok.
 
-vi.mock("@/features/platform/data/delete-salon.repo", () => ({
-  deleteSalonCompletely: vi.fn(),
-}));
-
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("@/features/audit", () => ({
-  publishAuditEvent: vi.fn(async () => []),
-}));
+// Fakes tipados de las dependencias: ningún test toca Supabase ni auditoría real.
+const deps: DeleteSalonDeps = {
+  deleteSalonCompletely: vi.fn<DeleteSalonDeps["deleteSalonCompletely"]>(),
+  publishAuditEvent: vi.fn<DeleteSalonDeps["publishAuditEvent"]>(async () => []),
+};
 
-const mockedDeleteCompletely = vi.mocked(deleteSalonCompletely);
-const mockedAudit = vi.mocked(publishAuditEvent);
+const deleteSalon = (input: DeleteSalonInput) => deleteSalonWithDeps(input, deps);
+
+const mockedDeleteCompletely = vi.mocked(deps.deleteSalonCompletely);
+const mockedAudit = vi.mocked(deps.publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const SALON_ID = "00000000-0000-4000-8000-000000000002";

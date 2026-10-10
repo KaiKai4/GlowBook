@@ -1,51 +1,57 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { checkPlanLimit } from "@/features/billing";
-import { updateCustomer } from "../data/customers.repo";
-import { archiveCustomer, reactivateCustomer } from "./customer-lifecycle";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { err, ok, type Result } from "@/infra/result";
+import {
+  archiveCustomer,
+  reactivateCustomer,
+  type CustomerLifecycleDeps,
+} from "./customer-lifecycle";
 
-vi.mock("@/features/billing", () => ({
-  checkPlanLimit: vi.fn(),
-}));
+/** Fakes tipados: por defecto hay cupo y la actualización funciona. */
+interface LifecycleFakes {
+  deps: CustomerLifecycleDeps;
+  assertQuota: Mock<CustomerLifecycleDeps["assertQuota"]>;
+  updateCustomer: Mock<CustomerLifecycleDeps["updateCustomer"]>;
+}
 
-vi.mock("../data/customers.repo", () => ({
-  updateCustomer: vi.fn(),
-}));
-
-const mockedUpdateCustomer = vi.mocked(updateCustomer);
+function makeFakes(): LifecycleFakes {
+  const assertQuota = vi.fn<CustomerLifecycleDeps["assertQuota"]>(async (): Promise<Result<void>> => ok(undefined));
+  const updateCustomer = vi.fn<CustomerLifecycleDeps["updateCustomer"]>(async () => ({ id: "customer-1" }));
+  return { deps: { assertQuota, updateCustomer }, assertQuota, updateCustomer };
+}
 
 describe("customer lifecycle", () => {
+  let fakes: LifecycleFakes;
+
   beforeEach(() => {
-    vi.resetAllMocks();
-    mockedUpdateCustomer.mockResolvedValue({ id: "customer-1" } as never);
-    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: true, value: undefined });
+    fakes = makeFakes();
   });
 
   it("no reactiva un archivado si el plan no tiene cupo de clientes activos", async () => {
-    vi.mocked(checkPlanLimit).mockResolvedValue({ ok: false, error: "Límite de clientes alcanzado." });
+    fakes.assertQuota.mockResolvedValue(err("Límite de clientes alcanzado."));
 
-    await expect(reactivateCustomer("customer-1", "salon-1")).resolves.toEqual({
+    await expect(reactivateCustomer("customer-1", "salon-1", fakes.deps)).resolves.toEqual({
       ok: false,
       error: "Límite de clientes alcanzado.",
     });
-    expect(checkPlanLimit).toHaveBeenCalledWith({ salonId: "salon-1", metricKey: "customers.active" });
-    expect(mockedUpdateCustomer).not.toHaveBeenCalled();
+    expect(fakes.assertQuota).toHaveBeenCalledWith("salon-1");
+    expect(fakes.updateCustomer).not.toHaveBeenCalled();
   });
 
   it("reactivates a customer as permanent and active", async () => {
-    await expect(reactivateCustomer("customer-1", "salon-1")).resolves.toEqual({
+    await expect(reactivateCustomer("customer-1", "salon-1", fakes.deps)).resolves.toEqual({
       ok: true,
       value: undefined,
     });
-    expect(mockedUpdateCustomer).toHaveBeenCalledWith("customer-1", "salon-1", {
+    expect(fakes.updateCustomer).toHaveBeenCalledWith("customer-1", "salon-1", {
       is_active: true,
       is_temporary: false,
     });
   });
 
   it("archives the customer without deleting historical data", async () => {
-    const result = await archiveCustomer("customer-1", "salon-1");
+    const result = await archiveCustomer("customer-1", "salon-1", fakes.deps);
 
-    expect(mockedUpdateCustomer).toHaveBeenCalledWith("customer-1", "salon-1", {
+    expect(fakes.updateCustomer).toHaveBeenCalledWith("customer-1", "salon-1", {
       is_active: false,
     });
     expect(result).toEqual({
@@ -58,9 +64,9 @@ describe("customer lifecycle", () => {
   });
 
   it("returns a business error when the repository update fails", async () => {
-    mockedUpdateCustomer.mockRejectedValue(new Error("database down"));
+    fakes.updateCustomer.mockRejectedValue(new Error("database down"));
 
-    await expect(reactivateCustomer("customer-1", "salon-1")).resolves.toEqual({
+    await expect(reactivateCustomer("customer-1", "salon-1", fakes.deps)).resolves.toEqual({
       ok: false,
       error: "No se pudo reactivar el cliente.",
     });

@@ -83,7 +83,7 @@
     {
       "id": "features/employees",
       "kind": "internal",
-      "files": 30
+      "files": 36
     },
     {
       "id": "features/expenses",
@@ -153,7 +153,7 @@
     {
       "id": "infra/auth",
       "kind": "internal",
-      "files": 4
+      "files": 5
     },
     {
       "id": "infra/config",
@@ -525,7 +525,7 @@
     {
       "from": "app/_composition",
       "to": "infra/auth",
-      "count": 1
+      "count": 3
     },
     {
       "from": "app/_composition",
@@ -834,6 +834,11 @@
     },
     {
       "from": "features/billing",
+      "to": "infra/auth",
+      "count": 12
+    },
+    {
+      "from": "features/billing",
       "to": "infra/format",
       "count": 2
     },
@@ -950,7 +955,7 @@
     {
       "from": "features/employees",
       "to": "infra",
-      "count": 16
+      "count": 18
     },
     {
       "from": "features/employees",
@@ -975,7 +980,7 @@
     {
       "from": "features/employees",
       "to": "infra/supabase",
-      "count": 10
+      "count": 12
     },
     {
       "from": "features/employees",
@@ -990,12 +995,12 @@
     {
       "from": "features/employees",
       "to": "npm/server-only",
-      "count": 13
+      "count": 15
     },
     {
       "from": "features/employees",
       "to": "types",
-      "count": 2
+      "count": 3
     },
     {
       "from": "features/expenses",
@@ -1150,7 +1155,7 @@
     {
       "from": "features/platform",
       "to": "infra/auth",
-      "count": 1
+      "count": 2
     },
     {
       "from": "features/platform",

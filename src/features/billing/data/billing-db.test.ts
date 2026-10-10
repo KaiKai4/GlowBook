@@ -1,7 +1,8 @@
 import { PostgrestError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBillingSupabaseFake } from "@/test/billing-feature-supabase";
-import { billingDb, countOrThrow, rowsOrThrow, throwOnError } from "./billing-db";
+import { billingDb, countOrThrow, platformDb, rowsOrThrow, throwOnError } from "./billing-db";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 
 // Cliente de billing y helpers de resultado: normalizan null a lista/cero y
 // lanzan el error original de la base cuando la consulta falla.
@@ -54,5 +55,19 @@ describe("throwOnError", () => {
 
     const failure = new PostgrestError({ message: "violación de constraint", details: "", hint: "", code: "23505" });
     expect(() => throwOnError({ error: failure })).toThrow(failure);
+  });
+});
+
+describe("platformDb", () => {
+  it("devuelve el mismo cliente admin cuando la prueba identifica al administrador", () => {
+    const fake = createBillingSupabaseFake();
+    admin.factory.mockReturnValueOnce(fake);
+
+    expect(platformDb(issuePlatformAdminProof("admin-1"))).toBe(fake);
+  });
+
+  it("rechaza una prueba sin usuario y no crea cliente", () => {
+    expect(() => platformDb(issuePlatformAdminProof(""))).toThrow("La prueba de platform admin no identifica a nadie.");
+    expect(admin.factory).not.toHaveBeenCalled();
   });
 });

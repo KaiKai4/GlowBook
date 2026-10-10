@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAssignableRoleOptions } from "@/features/access/use-cases/role-options";
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
-import { findEmployeeListRows } from "../data/employees.repo";
+import { findEmployeeListRows } from "../data/employees-read.repo";
 import { getEmployeesPage } from "./get-employees-page";
 
-vi.mock("../data/employees.repo", () => ({
+vi.mock("../data/employees-read.repo", () => ({
   findEmployeeListRows: vi.fn(),
 }));
 

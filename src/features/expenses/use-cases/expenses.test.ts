@@ -11,7 +11,6 @@ import { getExpensesPage } from "./expenses";
 vi.mock("../data/expenses.repo", () => ({
   findExpenses: vi.fn(),
   findLifetimeExpenseTotals: vi.fn(),
-  insertExpense: vi.fn(),
 }));
 
 vi.mock("../data/rpc/report-expense-month-totals", () => ({

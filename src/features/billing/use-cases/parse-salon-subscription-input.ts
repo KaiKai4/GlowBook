@@ -6,10 +6,10 @@ import type { assignSalonCommercialPlanConfig, registerSalonPlanPaymentConfig } 
 // formulario (estado por defecto, regalo que ignora el precio, cortesia por
 // modulo o por metrica, pago sin fecha). Sin I/O: se prueba directamente.
 
-export type AssignPlanInput = Parameters<typeof assignSalonCommercialPlanConfig>[0];
-export type GiveAddonInput = Parameters<typeof assignSalonAddonConfig>[0];
-export type ManualExtraInput = Parameters<typeof saveSalonManualExtraConfig>[0];
-export type RegisterPaymentInput = Parameters<typeof registerSalonPlanPaymentConfig>[0];
+export type AssignPlanInput = Parameters<typeof assignSalonCommercialPlanConfig>[1];
+export type GiveAddonInput = Parameters<typeof assignSalonAddonConfig>[1];
+export type ManualExtraInput = Parameters<typeof saveSalonManualExtraConfig>[1];
+export type RegisterPaymentInput = Parameters<typeof registerSalonPlanPaymentConfig>[1];
 
 export function readAssignPlanInput(source: FormFieldSource): AssignPlanInput {
   return {

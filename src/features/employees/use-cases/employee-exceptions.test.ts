@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import {
-  deleteEmployeeException,
-  insertEmployeeException,
-} from "../data/employee-exceptions.repo";
+import type { deleteEmployeeException, insertEmployeeException } from "../data/employee-exceptions.repo";
 import {
   addEmployeeScheduleException,
   removeEmployeeScheduleException,
+  type EmployeeExceptionDeps,
 } from "./employee-exceptions";
 
 // Días libres del colaborador. Reglas: fecha con formato ISO, no en el pasado
@@ -17,18 +15,18 @@ vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("../data/employee-exceptions.repo", () => ({
-  deleteEmployeeException: vi.fn(),
-  insertEmployeeException: vi.fn(),
-}));
-
 const mockedCaptureError = vi.mocked(captureError);
-const mockedInsert = vi.mocked(insertEmployeeException);
-const mockedDelete = vi.mocked(deleteEmployeeException);
 
 const SALON_ID = "salon-1";
 const EMPLOYEE_ID = "employee-1";
 const TIMEZONE = "America/Bogota";
+
+function fakeExceptionDeps() {
+  return {
+    insertException: vi.fn<typeof insertEmployeeException>(),
+    deleteException: vi.fn<typeof deleteEmployeeException>(),
+  } satisfies Record<keyof EmployeeExceptionDeps, unknown>;
+}
 
 function baseInput(overrides: Partial<Parameters<typeof addEmployeeScheduleException>[0]> = {}) {
   return {
@@ -42,13 +40,16 @@ function baseInput(overrides: Partial<Parameters<typeof addEmployeeScheduleExcep
 }
 
 describe("employee schedule exceptions", () => {
+  let deps: ReturnType<typeof fakeExceptionDeps>;
+
   beforeEach(() => {
     vi.resetAllMocks();
+    deps = fakeExceptionDeps();
     vi.useFakeTimers({ toFake: ["Date"] });
     // 2026-10-09 03:00 UTC es 2026-10-08 en Bogotá (UTC-5): "hoy" local es el 8.
     vi.setSystemTime(new Date("2026-10-09T03:00:00.000Z"));
-    mockedInsert.mockResolvedValue(undefined);
-    mockedDelete.mockResolvedValue(undefined);
+    deps.insertException.mockResolvedValue(undefined);
+    deps.deleteException.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -58,11 +59,12 @@ describe("employee schedule exceptions", () => {
   describe("addEmployeeScheduleException", () => {
     it("guarda el día libre con salón, colaborador y motivo recortado", async () => {
       const result = await addEmployeeScheduleException(
-        baseInput({ reason: "  Vacaciones  " })
+        baseInput({ reason: "  Vacaciones  " }),
+        deps
       );
 
       expect(result).toEqual({ ok: true, value: undefined });
-      expect(mockedInsert).toHaveBeenCalledWith({
+      expect(deps.insertException).toHaveBeenCalledWith({
         salonId: SALON_ID,
         employeeId: EMPLOYEE_ID,
         exceptionDate: "2026-10-15",
@@ -71,37 +73,39 @@ describe("employee schedule exceptions", () => {
     });
 
     it("recorta el motivo a 200 caracteres", async () => {
-      await addEmployeeScheduleException(baseInput({ reason: "x".repeat(250) }));
+      await addEmployeeScheduleException(baseInput({ reason: "x".repeat(250) }), deps);
 
-      expect(mockedInsert).toHaveBeenCalledWith(
+      expect(deps.insertException).toHaveBeenCalledWith(
         expect.objectContaining({ reason: "x".repeat(200) })
       );
     });
 
     it("rechaza fechas que no tienen formato AAAA-MM-DD sin consultar la BD", async () => {
       for (const exceptionDate of ["15/10/2026", "2026-10-1", "2026-10-15T00:00", ""]) {
-        const result = await addEmployeeScheduleException(baseInput({ exceptionDate }));
+        const result = await addEmployeeScheduleException(baseInput({ exceptionDate }), deps);
 
         expect(result).toEqual({ ok: false, error: "Selecciona una fecha válida." });
       }
-      expect(mockedInsert).not.toHaveBeenCalled();
+      expect(deps.insertException).not.toHaveBeenCalled();
     });
 
     it("rechaza fechas anteriores a hoy en la zona horaria del salón", async () => {
       const result = await addEmployeeScheduleException(
-        baseInput({ exceptionDate: "2026-10-07" })
+        baseInput({ exceptionDate: "2026-10-07" }),
+        deps
       );
 
       expect(result).toEqual({
         ok: false,
         error: "La fecha del día libre no puede estar en el pasado.",
       });
-      expect(mockedInsert).not.toHaveBeenCalled();
+      expect(deps.insertException).not.toHaveBeenCalled();
     });
 
     it("acepta el día de hoy según la zona horaria aunque en UTC ya sea otro día", async () => {
       const result = await addEmployeeScheduleException(
-        baseInput({ exceptionDate: "2026-10-08" })
+        baseInput({ exceptionDate: "2026-10-08" }),
+        deps
       );
 
       expect(result).toEqual({ ok: true, value: undefined });
@@ -109,7 +113,8 @@ describe("employee schedule exceptions", () => {
 
     it("usa la zona horaria recibida: en UTC el mismo instante ya es el 9", async () => {
       const result = await addEmployeeScheduleException(
-        baseInput({ exceptionDate: "2026-10-08", timezone: "UTC" })
+        baseInput({ exceptionDate: "2026-10-08", timezone: "UTC" }),
+        deps
       );
 
       expect(result).toEqual({
@@ -119,9 +124,9 @@ describe("employee schedule exceptions", () => {
     });
 
     it("traduce el choque con un día ya registrado a un mensaje de negocio", async () => {
-      mockedInsert.mockRejectedValue(new Error("duplicate key value violates unique constraint schedule_exceptions_unique"));
+      deps.insertException.mockRejectedValue(new Error("duplicate key value violates unique constraint schedule_exceptions_unique"));
 
-      const result = await addEmployeeScheduleException(baseInput());
+      const result = await addEmployeeScheduleException(baseInput(), deps);
 
       expect(result.ok).toBe(false);
       expect(mockedCaptureError).not.toHaveBeenCalled();
@@ -129,9 +134,9 @@ describe("employee schedule exceptions", () => {
 
     it("cualquier otro error de guardado devuelve mensaje genérico y lo registra", async () => {
       const failure = new Error("conexión perdida");
-      mockedInsert.mockRejectedValue(failure);
+      deps.insertException.mockRejectedValue(failure);
 
-      const result = await addEmployeeScheduleException(baseInput());
+      const result = await addEmployeeScheduleException(baseInput(), deps);
 
       expect(result).toEqual({ ok: false, error: "No se pudo guardar el día libre." });
       expect(mockedCaptureError).toHaveBeenCalledWith(failure, {
@@ -141,9 +146,9 @@ describe("employee schedule exceptions", () => {
     });
 
     it("un fallo que no es Error también cae en el mensaje genérico", async () => {
-      mockedInsert.mockRejectedValue({ code: "XX" });
+      deps.insertException.mockRejectedValue({ code: "XX" });
 
-      const result = await addEmployeeScheduleException(baseInput());
+      const result = await addEmployeeScheduleException(baseInput(), deps);
 
       expect(result).toEqual({ ok: false, error: "No se pudo guardar el día libre." });
     });
@@ -151,17 +156,17 @@ describe("employee schedule exceptions", () => {
 
   describe("removeEmployeeScheduleException", () => {
     it("elimina el día libre dentro del salón y colaborador indicados", async () => {
-      const result = await removeEmployeeScheduleException(SALON_ID, EMPLOYEE_ID, "ex-1");
+      const result = await removeEmployeeScheduleException(SALON_ID, EMPLOYEE_ID, "ex-1", deps);
 
       expect(result).toEqual({ ok: true, value: undefined });
-      expect(mockedDelete).toHaveBeenCalledWith("ex-1", EMPLOYEE_ID, SALON_ID);
+      expect(deps.deleteException).toHaveBeenCalledWith("ex-1", EMPLOYEE_ID, SALON_ID);
     });
 
     it("devuelve error genérico y registra el fallo al eliminar", async () => {
       const failure = new Error("caido");
-      mockedDelete.mockRejectedValue(failure);
+      deps.deleteException.mockRejectedValue(failure);
 
-      const result = await removeEmployeeScheduleException(SALON_ID, EMPLOYEE_ID, "ex-1");
+      const result = await removeEmployeeScheduleException(SALON_ID, EMPLOYEE_ID, "ex-1", deps);
 
       expect(result).toEqual({ ok: false, error: "No se pudo eliminar el día libre." });
       expect(mockedCaptureError).toHaveBeenCalledWith(failure, {

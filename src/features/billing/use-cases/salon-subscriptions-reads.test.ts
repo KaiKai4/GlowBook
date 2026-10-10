@@ -25,6 +25,8 @@ import {
 import { getSalonSubscriptionDetail } from "./salon-subscription-detail";
 import { getSubscriptionsPage } from "./salon-subscriptions-page";
 import { SALON_FEATURES } from "@/features/salon-features";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Lecturas de suscripciones: el panel de plataforma (todas las filas de salones),
 // el detalle de un salón y el acceso efectivo a módulos con fallback legacy.
@@ -201,7 +203,7 @@ describe("getSubscriptionsPage", () => {
   it("calcula precio del plan, extras y total mensual por salón solo para estados facturables", async () => {
     findSubscriptionRowsMock.mockResolvedValue(subscriptionRows());
 
-    const page = await getSubscriptionsPage([
+    const page = await getSubscriptionsPage(ADMIN_PROOF, [
       platformSalon(SALON_1, "Salón Uno"),
       platformSalon(SALON_2, "Salón Dos"),
       platformSalon(SALON_3, "Salón Tres"),
@@ -259,7 +261,7 @@ describe("getSubscriptionsPage", () => {
   it("resume totales: MRR solo de salones activos, con plan, en prueba y alertas abiertas", async () => {
     findSubscriptionRowsMock.mockResolvedValue(subscriptionRows());
 
-    const page = await getSubscriptionsPage([
+    const page = await getSubscriptionsPage(ADMIN_PROOF, [
       platformSalon(SALON_1, "Salón Uno"),
       platformSalon(SALON_2, "Salón Dos"),
       platformSalon(SALON_3, "Salón Tres"),
@@ -273,7 +275,7 @@ describe("getSubscriptionsPage", () => {
   it("solo expone planes, extras, métricas y módulos vigentes del catálogo", async () => {
     findSubscriptionRowsMock.mockResolvedValue(subscriptionRows());
 
-    const page = await getSubscriptionsPage([]);
+    const page = await getSubscriptionsPage(ADMIN_PROOF, []);
 
     expect(page.rows).toEqual([]);
     expect(page.plans.map((item) => item.id)).toEqual([basicPlan.id]);
@@ -353,7 +355,7 @@ describe("getSalonSubscriptionDetail", () => {
       },
     ]);
 
-    const detail = await getSalonSubscriptionDetail(SALON_1);
+    const detail = await getSalonSubscriptionDetail(ADMIN_PROOF, SALON_1);
 
     expect(detail.extras).toEqual([
       expect.objectContaining({ id: "ov-module", name: "Reportes", detail: "Módulo activado", monthlyPrice: 0 }),
@@ -411,7 +413,7 @@ describe("getSalonSubscriptionDetail", () => {
       rows({ status: "active", plan: basicPlan, overrides: [boost], usage: { appointments_monthly: 50 } })
     );
 
-    const detail = await getSalonSubscriptionDetail(SALON_1);
+    const detail = await getSalonSubscriptionDetail(ADMIN_PROOF, SALON_1);
 
     // Plan: 10 citas + delta 100 x 2 = 210 máximo. Usado 50 => 24 %, restante 160.
     expect(detail.limits.find((limit) => limit.metric.key === "appointments_monthly")).toEqual(
@@ -433,14 +435,14 @@ describe("getSalonSubscriptionDetail", () => {
       rows({ status: "active", plan: basicPlan, overrides: [enableReports, disableEmployees] })
     );
 
-    const detail = await getSalonSubscriptionDetail(SALON_1);
+    const detail = await getSalonSubscriptionDetail(ADMIN_PROOF, SALON_1);
 
     expect(detail.enabledModules).toEqual(["appointments", "reports"]);
     expect(detail.limits.map((limit) => limit.metric.key)).toEqual(["appointments_monthly"]);
     // Módulo que no está en el catálogo se muestra con su clave y el estado de apagado.
     const disabled = override({ moduleKey: "customers", moduleEnabled: false, addonId: null });
     findPlatformRowsMock.mockResolvedValueOnce(rows({ status: "active", plan: basicPlan, overrides: [disabled] }));
-    const withUnknownModule = await getSalonSubscriptionDetail(SALON_1);
+    const withUnknownModule = await getSalonSubscriptionDetail(ADMIN_PROOF, SALON_1);
     expect(withUnknownModule.extras[0]).toEqual(
       expect.objectContaining({ name: "customers", detail: "Módulo desactivado" })
     );
@@ -449,7 +451,7 @@ describe("getSalonSubscriptionDetail", () => {
   it("no cobra el plan cuando el salón no tiene asignación ni plan", async () => {
     findPlatformRowsMock.mockResolvedValue(rows({ status: null, plan: null, overrides: [] }));
 
-    const detail = await getSalonSubscriptionDetail(SALON_1);
+    const detail = await getSalonSubscriptionDetail(ADMIN_PROOF, SALON_1);
 
     expect(detail.assignment).toBeNull();
     expect(detail.plan).toBeNull();
@@ -463,7 +465,7 @@ describe("getSalonSubscriptionDetail", () => {
     // getEffectiveSalonPlan descarta el plan en estado pausado; el detalle debe hacer lo mismo.
     findPlatformRowsMock.mockResolvedValue(rows({ status: "paused", plan: basicPlan, overrides: [] }));
 
-    const detail = await getSalonSubscriptionDetail(SALON_1);
+    const detail = await getSalonSubscriptionDetail(ADMIN_PROOF, SALON_1);
 
     expect(detail.planPrice).toBe(0);
     expect(detail.plan).toBeNull();

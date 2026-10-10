@@ -1,28 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { setSalonActiveStatus } from "@/features/platform/data/salons.repo";
 import { captureError } from "@/infra/observability";
-import { updateSalonStatus } from "./update-salon-status";
+import {
+  updateSalonStatus as updateSalonStatusWithDeps,
+  type UpdateSalonStatusDeps,
+  type UpdateSalonStatusInput,
+} from "./update-salon-status";
 import { PublicError } from "@/infra/public-error";
-import { publishAuditEvent } from "@/features/audit";
 
 // Suspender o reactivar un salón: el id llega con espacios del formulario y
 // se normaliza antes de tocar la base; cada cambio queda auditado con el
 // estado solicitado.
 
-vi.mock("@/features/platform/data/salons.repo", () => ({
-  setSalonActiveStatus: vi.fn(),
-}));
-
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("@/features/audit", () => ({
-  publishAuditEvent: vi.fn(async () => []),
-}));
+// Fakes tipados de las dependencias: ningún test toca Supabase ni auditoría real.
+const deps: UpdateSalonStatusDeps = {
+  setSalonActiveStatus: vi.fn<UpdateSalonStatusDeps["setSalonActiveStatus"]>(),
+  publishAuditEvent: vi.fn<UpdateSalonStatusDeps["publishAuditEvent"]>(async () => []),
+};
 
-const mockedSetStatus = vi.mocked(setSalonActiveStatus);
-const mockedAudit = vi.mocked(publishAuditEvent);
+const updateSalonStatus = (input: UpdateSalonStatusInput) => updateSalonStatusWithDeps(input, deps);
+
+const mockedSetStatus = vi.mocked(deps.setSalonActiveStatus);
+const mockedAudit = vi.mocked(deps.publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const SALON_ID = "00000000-0000-4000-8000-000000000002";

@@ -9,7 +9,8 @@ export { getEmployeeSchedulingOptions } from "./use-cases/employee-scheduling-op
 export { acceptEmployeeInvitation, getEmployeeInvitationJoinView } from "./use-cases/employee-invitations";
 export { changeEmployeeRoleWithGate, generateEmployeeInvite, resetEmployeeAccessWithGate } from "./use-cases/employee-role-commands";
 export { archiveEmployee } from "./use-cases/employee-lifecycle";
-export { findArchivedEmployeeByEmail, type ArchivedEmployeeMatch, type CreateEmployeeResult, type EmployeeWriteResult } from "./use-cases/employee-profile";
+export { findArchivedEmployeeByEmail } from "./use-cases/employee-profile-steps";
+export type { ArchivedEmployeeMatch, CreateEmployeeResult, EmployeeWriteResult } from "./use-cases/employee-profile-results";
 export { createEmployee, updateEmployee } from "./use-cases/employee-profile-commands";
 export { reactivateEmployeeWithLimitCheck, addScheduleException } from "./use-cases/employee-lifecycle-commands";
 export { addEmployeeWorkSchedule, removeEmployeeWorkSchedule } from "./use-cases/employee-schedule";

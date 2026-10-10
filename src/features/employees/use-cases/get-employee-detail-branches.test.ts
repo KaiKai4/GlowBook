@@ -4,7 +4,7 @@ import { getAssignableRoleOptions } from "@/features/access/use-cases/role-optio
 import { getCategoryServiceOptions } from "@/features/services/use-cases/category-service-options";
 import { findEmployeeAccessProfile } from "../data/employee-access.repo";
 import { findUpcomingEmployeeExceptions } from "../data/employee-exceptions.repo";
-import { findEmployeeById } from "../data/employees.repo";
+import { findEmployeeById } from "../data/employees-read.repo";
 import { findLatestEmployeeInvitation } from "../data/employee-invitations.repo";
 import { getEmployeeDetail } from "./get-employee-detail";
 
@@ -16,7 +16,7 @@ vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-vi.mock("../data/employees.repo", () => ({
+vi.mock("../data/employees-read.repo", () => ({
   findEmployeeById: vi.fn(),
 }));
 

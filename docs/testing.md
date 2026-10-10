@@ -4,7 +4,7 @@ Este documento define la estrategia de pruebas de GlowBook, qué comprueba cada 
 
 La fuente de verdad de los pasos es `scripts/quality/steps.mjs` (`STEPS`). Si este documento y el manifiesto no coinciden, manda el manifiesto.
 
-Decisiones relacionadas: ADR 0008 (pruebas como red de seguridad), ADR 0011 (verificador local igual a CI), ADR 0012 (toolchain de calidad), ADR 0013 (trinquetes de deuda), ADR 0014 (BD de pruebas local), ADR 0015 (excepciones de auditoría), ADR 0019 (arquitectura verificada), ADR 0026 (runner pgTAP propio), ADR 0025 (cuándo inyectar dependencias).
+Decisiones relacionadas: ADR 0008 (pruebas como red de seguridad), ADR 0011 (verificador local igual a CI), ADR 0012 (toolchain de calidad), ADR 0013 (trinquetes de deuda), ADR 0014 (BD de pruebas local), ADR 0015 (excepciones de auditoría), ADR 0019 (arquitectura verificada), ADR 0026 (runner pgTAP propio), ADR 0028 (inyección en comandos con lógica).
 
 ## Definición De Terminado
 

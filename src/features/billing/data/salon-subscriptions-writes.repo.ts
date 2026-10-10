@@ -4,12 +4,13 @@ import type {
   PlanEnforcementMode,
   SalonPlanAssignmentStatus,
 } from "../domain/commercial-plan";
-import { billingDb, billingSalonDb, countOrThrow, expectOneUpdatedRow, throwOnError } from "./billing-db";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+import { billingDb, billingSalonDb, countOrThrow, expectOneUpdatedRow, platformDb, throwOnError, type BillingDb } from "./billing-db";
 
 // Escrituras de suscripción. Las de plataforma usan service_role y filtran por salon_id;
 // las del salón (alertas) usan el cliente del usuario y la RLS / RPC con su sesión.
 
-export async function recordSalonPlanPayment(values: {
+export async function recordSalonPlanPayment(proof: PlatformAdminProof, values: {
   salonId: string;
   planId: string | null;
   amount: number;
@@ -19,7 +20,7 @@ export async function recordSalonPlanPayment(values: {
   periodEnd: string;
   notes: string;
 }): Promise<void> {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   throwOnError(
     await supabase.from("salon_plan_payments").insert({
       salon_id: values.salonId,
@@ -34,12 +35,12 @@ export async function recordSalonPlanPayment(values: {
   );
 }
 
-export async function activatePaidPeriod(values: {
+export async function activatePaidPeriod(proof: PlatformAdminProof, values: {
   salonId: string;
   periodStart: string;
   periodEnd: string;
 }): Promise<void> {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   throwOnError(
     await supabase
       .from("salon_plan_assignments")
@@ -52,7 +53,7 @@ export async function activatePaidPeriod(values: {
   );
 }
 
-export async function assignSalonPlan(values: {
+interface SalonPlanAssignmentValues {
   salonId: string;
   planId: string;
   status: SalonPlanAssignmentStatus;
@@ -60,8 +61,21 @@ export async function assignSalonPlan(values: {
   endsAt: string | null;
   trialEndsAt: string | null;
   notes: string;
-}) {
-  const supabase = billingDb();
+}
+
+export async function assignSalonPlan(proof: PlatformAdminProof, values: SalonPlanAssignmentValues) {
+  await upsertSalonPlanAssignment(platformDb(proof), values);
+}
+
+/**
+ * Asignación de plan en la alta por invitación (accept-invitation, ADR 0005). Sin prueba de
+ * platform admin: el token ya se validó en la RPC. Solo lo usa autoAssignPlanOnAcceptance.
+ */
+export async function assignSalonPlanAtAcceptance(values: SalonPlanAssignmentValues) {
+  await upsertSalonPlanAssignment(billingDb(), values);
+}
+
+async function upsertSalonPlanAssignment(supabase: BillingDb, values: SalonPlanAssignmentValues) {
   throwOnError(
     await supabase.from("salon_plan_assignments").upsert(
       {
@@ -78,7 +92,7 @@ export async function assignSalonPlan(values: {
   );
 }
 
-export async function saveSalonPlanOverride(values: {
+export async function saveSalonPlanOverride(proof: PlatformAdminProof, values: {
   salonId: string;
   moduleKey: string | null;
   metricKey: string | null;
@@ -96,7 +110,7 @@ export async function saveSalonPlanOverride(values: {
   isGift: boolean;
   priceOverride: number | null;
 }) {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   throwOnError(
     await supabase.from("salon_plan_overrides").insert({
       salon_id: values.salonId,
@@ -121,11 +135,12 @@ export async function saveSalonPlanOverride(values: {
 
 /** Cambia el estado de un override del salón indicado; debe afectar exactamente una fila. */
 export async function updateSalonPlanOverrideStatus(
+  proof: PlatformAdminProof,
   salonId: string,
   overrideId: string,
   status: "active" | "paused" | "canceled"
 ) {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   expectOneUpdatedRow(
     await supabase
       .from("salon_plan_overrides")
@@ -161,8 +176,8 @@ export async function recordPlanAlert(values: {
 }
 
 /** Marca una alerta como resuelta dentro del salón indicado; debe afectar exactamente una fila. */
-export async function resolvePlanAlert(salonId: string, alertId: string) {
-  const supabase = billingDb();
+export async function resolvePlanAlert(proof: PlatformAdminProof, salonId: string, alertId: string) {
+  const supabase = platformDb(proof);
   expectOneUpdatedRow(
     await supabase
       .from("salon_plan_alerts")

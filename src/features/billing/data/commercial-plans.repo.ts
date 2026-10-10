@@ -8,7 +8,8 @@ import type {
   PlanLimitCountScope,
   PlatformModule,
 } from "../domain/commercial-plan";
-import { billingDb, countOrThrow, rowsOrThrow, throwOnError, type BillingDb } from "./billing-db";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+import { billingDb, countOrThrow, platformDb, rowsOrThrow, throwOnError, type BillingDb } from "./billing-db";
 import {
   MODULE_COLUMNS,
   METRIC_COLUMNS,
@@ -31,8 +32,8 @@ export interface PlanCatalog {
   plans: CommercialPlan[];
 }
 
-export async function findPlanCatalog(): Promise<PlanCatalog> {
-  const supabase = billingDb();
+export async function findPlanCatalog(proof: PlatformAdminProof): Promise<PlanCatalog> {
+  const supabase = platformDb(proof);
   const [modules, metrics, planRows, planModules, planLimits] = await Promise.all([
     supabase.from("platform_modules").select(MODULE_COLUMNS).order("sort_order", { ascending: true }),
     supabase.from("commercial_limit_metrics").select(METRIC_COLUMNS).order("sort_order", { ascending: true }),
@@ -62,7 +63,16 @@ export async function findActiveMetrics(supabase: BillingDb): Promise<Commercial
 }
 
 /** Plan de plataforma con módulos y límites (service_role, cualquier plan). */
-export async function findPlanWithChildren(planId: string): Promise<CommercialPlan | null> {
+export async function findPlanWithChildren(proof: PlatformAdminProof, planId: string): Promise<CommercialPlan | null> {
+  return loadPlanWithChildren(platformDb(proof), planId);
+}
+
+/**
+ * Plan con hijos para la alta por invitación (accept-invitation, ADR 0005). Sin prueba de
+ * platform admin: el salón aún no tiene sesión de admin y el token ya se validó en la RPC.
+ * Solo lo usa autoAssignPlanOnAcceptance; cualquier otro llamador usa findPlanWithChildren.
+ */
+export async function findPlanWithChildrenAtAcceptance(planId: string): Promise<CommercialPlan | null> {
   return loadPlanWithChildren(billingDb(), planId);
 }
 
@@ -87,7 +97,7 @@ export async function loadPlanWithChildren(supabase: BillingDb, planId: string):
   return mapPlan(data, rowsOrThrow(modules), rowsOrThrow(limits));
 }
 
-export async function saveCommercialPlan(values: {
+export async function saveCommercialPlan(proof: PlatformAdminProof, values: {
   id?: string;
   code: string;
   name: string;
@@ -99,7 +109,7 @@ export async function saveCommercialPlan(values: {
   isPublic: boolean;
   sortOrder: number;
 }): Promise<string> {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   const payload = {
     code: values.code,
     name: values.name,
@@ -124,8 +134,8 @@ export async function saveCommercialPlan(values: {
 }
 
 /** Numero de asignaciones de salon a este plan (cualquier estado). */
-export async function countPlanAssignments(planId: string): Promise<number> {
-  const supabase = billingDb();
+export async function countPlanAssignments(proof: PlatformAdminProof, planId: string): Promise<number> {
+  const supabase = platformDb(proof);
   return countOrThrow(
     await supabase
       .from("salon_plan_assignments")
@@ -134,18 +144,18 @@ export async function countPlanAssignments(planId: string): Promise<number> {
   );
 }
 
-export async function archiveCommercialPlan(planId: string) {
-  const supabase = billingDb();
+export async function archiveCommercialPlan(proof: PlatformAdminProof, planId: string) {
+  const supabase = platformDb(proof);
   throwOnError(await supabase.from("commercial_plans").update({ status: "archived" }).eq("id", planId));
 }
 
-export async function deleteCommercialPlan(planId: string) {
-  const supabase = billingDb();
+export async function deleteCommercialPlan(proof: PlatformAdminProof, planId: string) {
+  const supabase = platformDb(proof);
   throwOnError(await supabase.from("commercial_plans").delete().eq("id", planId));
 }
 
-export async function savePlanModule(values: { planId: string; moduleKey: string; enabled: boolean }) {
-  const supabase = billingDb();
+export async function savePlanModule(proof: PlatformAdminProof, values: { planId: string; moduleKey: string; enabled: boolean }) {
+  const supabase = platformDb(proof);
   throwOnError(
     await supabase.from("commercial_plan_modules").upsert(
       {
@@ -158,7 +168,7 @@ export async function savePlanModule(values: { planId: string; moduleKey: string
   );
 }
 
-export async function savePlanLimit(values: {
+export async function savePlanLimit(proof: PlatformAdminProof, values: {
   planId: string;
   metricKey: string;
   maxValue: number | null;
@@ -166,7 +176,7 @@ export async function savePlanLimit(values: {
   warningThreshold: number;
   countScope: PlanLimitCountScope;
 }) {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   throwOnError(
     await supabase.from("commercial_plan_limits").upsert(
       {

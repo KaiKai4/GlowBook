@@ -1,59 +1,44 @@
 import { AuthApiError, type User } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  acceptSalonInvitationAsAdmin,
-  findSalonInvitationForAcceptance,
-  profileExists,
-} from "@/features/platform/data/invitations.repo";
-import {
-  createPlatformOwnerAuthUser,
-  deletePlatformOwnerAuthUser,
-  findPlatformOwnerAuthUserByEmail,
-  updatePlatformOwnerAuthUser,
-} from "@/features/platform/data/platform-auth.repo";
-import { autoAssignPlanOnAcceptance } from "@/features/billing/use-cases/salon-plan-assignment";
 import { captureError } from "@/infra/observability";
-import { acceptInvitation, type AcceptInvitationInput } from "./accept-invitation";
-import { publishAuditEvent } from "@/features/audit";
+import {
+  acceptInvitation as acceptInvitationWithDeps,
+  type AcceptInvitationDeps,
+  type AcceptInvitationInput,
+} from "./accept-invitation";
 
 // Conducta de aceptacion de invitación: cada rama de validacion, de cuenta
 // existente y de rollback debe dejar la base consistente. Se afirma el mensaje
 // de dominio que ve el invitado, nunca el texto crudo de la base.
 
-vi.mock("@/features/platform/data/invitations.repo", () => ({
-  acceptSalonInvitationAsAdmin: vi.fn(),
-  findSalonInvitationForAcceptance: vi.fn(),
-  profileExists: vi.fn(),
-}));
-
-vi.mock("@/features/platform/data/platform-auth.repo", () => ({
-  createPlatformOwnerAuthUser: vi.fn(),
-  deletePlatformOwnerAuthUser: vi.fn(),
-  findPlatformOwnerAuthUserByEmail: vi.fn(),
-  updatePlatformOwnerAuthUser: vi.fn(),
-}));
-
-vi.mock("@/features/billing/use-cases/salon-plan-assignment", () => ({
-  autoAssignPlanOnAcceptance: vi.fn(),
-}));
-
-vi.mock("@/features/audit", () => ({
-  publishAuditEvent: vi.fn(async () => []),
-}));
-
 vi.mock("@/infra/observability", () => ({
   captureError: vi.fn(),
 }));
 
-const mockedFindInvitation = vi.mocked(findSalonInvitationForAcceptance);
-const mockedProfileExists = vi.mocked(profileExists);
-const mockedAcceptAsAdmin = vi.mocked(acceptSalonInvitationAsAdmin);
-const mockedCreateUser = vi.mocked(createPlatformOwnerAuthUser);
-const mockedDeleteUser = vi.mocked(deletePlatformOwnerAuthUser);
-const mockedFindUserByEmail = vi.mocked(findPlatformOwnerAuthUserByEmail);
-const mockedUpdateUser = vi.mocked(updatePlatformOwnerAuthUser);
-const mockedAutoAssign = vi.mocked(autoAssignPlanOnAcceptance);
-const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
+// Fakes tipados de las dependencias: ningún test toca Supabase ni Auth.
+const deps: AcceptInvitationDeps = {
+  findInvitation: vi.fn<AcceptInvitationDeps["findInvitation"]>(),
+  profileExists: vi.fn<AcceptInvitationDeps["profileExists"]>(),
+  acceptSalonAsAdmin: vi.fn<AcceptInvitationDeps["acceptSalonAsAdmin"]>(),
+  createOwnerAuthUser: vi.fn<AcceptInvitationDeps["createOwnerAuthUser"]>(),
+  deleteOwnerAuthUser: vi.fn<AcceptInvitationDeps["deleteOwnerAuthUser"]>(),
+  findOwnerAuthUserByEmail: vi.fn<AcceptInvitationDeps["findOwnerAuthUserByEmail"]>(),
+  updateOwnerAuthUser: vi.fn<AcceptInvitationDeps["updateOwnerAuthUser"]>(),
+  autoAssignPlan: vi.fn<AcceptInvitationDeps["autoAssignPlan"]>(),
+  publishAuditEvent: vi.fn<AcceptInvitationDeps["publishAuditEvent"]>(async () => []),
+};
+
+const acceptInvitation = (input: AcceptInvitationInput) => acceptInvitationWithDeps(input, deps);
+
+const mockedFindInvitation = vi.mocked(deps.findInvitation);
+const mockedProfileExists = vi.mocked(deps.profileExists);
+const mockedAcceptAsAdmin = vi.mocked(deps.acceptSalonAsAdmin);
+const mockedCreateUser = vi.mocked(deps.createOwnerAuthUser);
+const mockedDeleteUser = vi.mocked(deps.deleteOwnerAuthUser);
+const mockedFindUserByEmail = vi.mocked(deps.findOwnerAuthUserByEmail);
+const mockedUpdateUser = vi.mocked(deps.updateOwnerAuthUser);
+const mockedAutoAssign = vi.mocked(deps.autoAssignPlan);
+const mockedPublishAuditEvent = vi.mocked(deps.publishAuditEvent);
 const mockedCaptureError = vi.mocked(captureError);
 
 const PLAN_ID = "00000000-0000-4000-8000-00000000000a";

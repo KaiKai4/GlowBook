@@ -4,7 +4,7 @@ import { getSalonSubscriptionDetail } from "@/features/billing";
 import { getSubscriptionsPage } from "@/features/billing";
 import { getPlatformSalonOverviews } from "@/features/platform";
 import { PageHeader } from "@/components/ui/page-header";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { SalonSubscriptionList } from "../subscriptions/salon-list";
 import { SalonWorkspace } from "./salon-workspace";
 
@@ -13,17 +13,17 @@ export default async function PlatformSalonsPage({
 }: {
   searchParams?: Promise<{ salon?: string }>;
 }) {
-  await requirePlatformAdmin();
+  const proof = await requirePlatformAdminProof();
   const params = await searchParams;
   const view = await getPlatformSalonOverviews();
-  const data = await getSubscriptionsPage(view.salons);
+  const data = await getSubscriptionsPage(proof, view.salons);
 
   const selectedSalon =
     view.salons.find((salon) => salon.id === params?.salon) ?? view.salons[0] ?? null;
   const selectedRow = selectedSalon
     ? data.rows.find((row) => row.salonId === selectedSalon.id) ?? null
     : null;
-  const detail = selectedSalon ? await getSalonSubscriptionDetail(selectedSalon.id) : null;
+  const detail = selectedSalon ? await getSalonSubscriptionDetail(proof, selectedSalon.id) : null;
 
   return (
     <div className="flex flex-col gap-5">

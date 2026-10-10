@@ -1,4 +1,5 @@
 import "server-only";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { z } from "@/infra/validation/zod";
 import { err, ok, type Result } from "@/infra/result";
@@ -47,19 +48,36 @@ const ManualExtraSchema = z.object({
   endsAt: z.string().trim().optional(),
 });
 
+/** Dependencias de los comandos de extras por salón. Producción usa las funciones reales; los tests inyectan fakes. */
+export interface SalonPlanExtrasCommandDeps {
+  findCommercialAddonById: typeof findCommercialAddonById;
+  saveSalonPlanOverride: typeof saveSalonPlanOverride;
+  updateSalonPlanOverrideStatus: typeof updateSalonPlanOverrideStatus;
+  publishAuditEvent: typeof publishAuditEvent;
+}
+
+const defaultSalonPlanExtrasCommandDeps: SalonPlanExtrasCommandDeps = {
+  findCommercialAddonById,
+  saveSalonPlanOverride,
+  updateSalonPlanOverrideStatus,
+  publishAuditEvent,
+};
+
 export async function assignSalonAddonConfig(
+  proof: PlatformAdminProof,
   input: z.input<typeof AddonExtraSchema>,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: SalonPlanExtrasCommandDeps = defaultSalonPlanExtrasCommandDeps
 ): Promise<Result<void>> {
   const parsed = AddonExtraSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
 
   try {
-    const addon = await findCommercialAddonById(parsed.data.addonId);
+    const addon = await deps.findCommercialAddonById(proof, parsed.data.addonId);
     if (!addon) return err("El extra del catálogo no existe.");
     if (addon.status !== "active") return err("Este extra no está activo en el catálogo.");
 
-    await saveSalonPlanOverride({
+    await deps.saveSalonPlanOverride(proof, {
       salonId: parsed.data.salonId,
       moduleKey: addon.moduleKey,
       metricKey: addon.metricKey,
@@ -77,7 +95,7 @@ export async function assignSalonAddonConfig(
       isGift: parsed.data.isGift,
       priceOverride: parsed.data.priceOverride,
     });
-    const warnings = await publishAuditEvent("billing.plan_extra_assigned", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_extra_assigned" });
+    const warnings = await deps.publishAuditEvent("billing.plan_extra_assigned", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_extra_assigned" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo asignar el extra."));
@@ -85,8 +103,10 @@ export async function assignSalonAddonConfig(
 }
 
 export async function saveSalonManualExtraConfig(
+  proof: PlatformAdminProof,
   input: z.input<typeof ManualExtraSchema>,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: SalonPlanExtrasCommandDeps = defaultSalonPlanExtrasCommandDeps
 ): Promise<Result<void>> {
   const parsed = ManualExtraSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
@@ -95,7 +115,7 @@ export async function saveSalonManualExtraConfig(
   }
 
   try {
-    await saveSalonPlanOverride({
+    await deps.saveSalonPlanOverride(proof, {
       salonId: parsed.data.salonId,
       moduleKey: parsed.data.moduleKey || null,
       metricKey: parsed.data.metricKey || null,
@@ -113,7 +133,7 @@ export async function saveSalonManualExtraConfig(
       isGift: parsed.data.isGift,
       priceOverride: null,
     });
-    const warnings = await publishAuditEvent("billing.plan_override_saved", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_override_saved" });
+    const warnings = await deps.publishAuditEvent("billing.plan_override_saved", { ...commercialPlanAudit(actorUserId, parsed.data.salonId), action: "commercial_plan_override_saved" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo guardar el extra."));
@@ -121,13 +141,15 @@ export async function saveSalonManualExtraConfig(
 }
 
 export async function cancelSalonExtraConfig(
+  proof: PlatformAdminProof,
   overrideId: string,
   salonId: string,
-  actorUserId?: string | null
+  actorUserId?: string | null,
+  deps: SalonPlanExtrasCommandDeps = defaultSalonPlanExtrasCommandDeps
 ): Promise<Result<void>> {
   try {
-    await updateSalonPlanOverrideStatus(salonId, overrideId, "canceled");
-    const warnings = await publishAuditEvent("billing.plan_extra_canceled", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_extra_canceled" });
+    await deps.updateSalonPlanOverrideStatus(proof, salonId, overrideId, "canceled");
+    const warnings = await deps.publishAuditEvent("billing.plan_extra_canceled", { ...commercialPlanAudit(actorUserId, salonId), action: "commercial_plan_extra_canceled" });
     return ok(undefined, warnings);
   } catch (error) {
     return err(toPublicErrorMessage(error, "No se pudo cancelar el extra."));

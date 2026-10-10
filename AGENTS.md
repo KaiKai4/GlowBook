@@ -45,6 +45,7 @@ Reglas (las comprueba `.dependency-cruiser.cjs` por patrón, sin listas de archi
 - `use-cases/` no importa `src/infra/supabase` ni `@supabase/*`: el acceso a datos pasa por `data/` (`use-cases-no-db`).
 - `app/` y `components/` solo importan Supabase como tipo (`presentation-no-runtime-db`); `src/app/_composition` queda fuera de la regla.
 - Los clientes `service_role` (`src/infra/supabase/admin.ts`, `auth-admin.ts`) solo se importan desde `src/infra` o `features/*/data` (`admin-client-boundary`, ADR 0010).
+- La prueba `PlatformAdminProof` (`src/infra/auth/platform-admin-proof.ts`, ADR 0028) solo la emite el composition root (`src/app/_composition`) mediante `requirePlatformAdminProof`. Fuera de `src/infra/auth` y `src/app/_composition` solo se puede importar como tipo (`platform-admin-proof-issuer`). Los repos de plataforma de billing la exigen como primer parámetro.
 - No hay dependencias circulares (`no-circular`). No hay violaciones conocidas: `npx depcruise src --config .dependency-cruiser.cjs` termina en cero, sin baseline.
 - Control: paso `architecture` (`scripts/check-architecture.mjs` y `dependency-cruiser`).
 

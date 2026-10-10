@@ -34,6 +34,7 @@ function ruleTarget(name: string): string {
 /** Subconjunto de cada dependencia que interesa a las reglas. */
 export interface CruisedDependency {
   resolved: string;
+  dependencyTypes?: readonly string[];
 }
 
 /** Subconjunto de cada módulo cruzado: archivo fuente y sus dependencias. */
@@ -85,6 +86,14 @@ const INFRA_FROM = /^src\/infra\//;
 const DOMAIN_FROM = /^src\/features\/[^/]+\/domain\//;
 const USE_CASES_FROM = /^src\/features\/[^/]+\/use-cases\//;
 
+/** Quien puede importar la emisión de PlatformAdminProof (regla platform-admin-proof-issuer). */
+const PROOF_ISSUER_FORBIDDEN = [ruleTarget("platform-admin-proof-issuer")];
+const PROOF_FROM = /^src\/(?!app\/_composition\/|infra\/auth\/)/;
+
+/** Solo los repos de billing importan billing-db (regla billing-db-importers). */
+const BILLING_DB_FORBIDDEN = [ruleTarget("billing-db-importers")];
+const BILLING_DB_FROM = /^src\/(?!features\/billing\/data\/[^/]+\.repo\.ts$)/;
+
 /** Directorios `subdir` (domain, use-cases...) de todos los módulos, relativos a la raíz. */
 function moduleDirectories(subdir: string): string[] {
   if (!existsSync(FEATURES_DIR)) return [];
@@ -94,9 +103,10 @@ function moduleDirectories(subdir: string): string[] {
     .filter((relative) => existsSync(path.join(ROOT, relative)));
 }
 
-async function cruiseLayers(): Promise<CruisedModule[]> {
-  const targets = ["src/infra", ...moduleDirectories("domain"), ...moduleDirectories("use-cases")];
-  const result = await cruise(targets, {
+async function cruiseLayers(
+  targets: readonly string[] = ["src/infra", ...moduleDirectories("domain"), ...moduleDirectories("use-cases")],
+): Promise<CruisedModule[]> {
+  const result = await cruise([...targets], {
     includeOnly: "^(src/|node_modules/(react|react-dom|next|server-only|@supabase)/)",
     doNotFollow: { path: "node_modules" },
     exclude: { path: "(\\.test\\.tsx?$|^src/test/)" },
@@ -205,6 +215,39 @@ describe("límites de capas en el grafo real", () => {
       expect(findForbiddenDependencies(modules, USE_CASES_FROM, USE_CASES_DB_FORBIDDEN)).toEqual(
         [],
       );
+    },
+    TIMEOUT_MS,
+  );
+});
+
+describe("prueba de platform admin (PlatformAdminProof, ADR 0028)", () => {
+  const TIMEOUT_MS = 120_000;
+
+  it(
+    "solo el composition root y src/infra/auth importan la emisión (type-only permitido)",
+    async () => {
+      const modules = await cruiseLayers(["src"]);
+      // La regla solo prohíbe imports de runtime: se descartan las dependencias de solo tipo.
+      const runtime: CruisedModule[] = modules.map((entry) => ({
+        source: entry.source,
+        dependencies: entry.dependencies.filter(
+          (dependency) => !dependency.dependencyTypes?.includes("type-only"),
+        ),
+      }));
+      expect(runtime.some((entry) => entry.source === "src/app/_composition/request-context.ts")).toBe(
+        true,
+      );
+      expect(findForbiddenDependencies(runtime, PROOF_FROM, PROOF_ISSUER_FORBIDDEN)).toEqual([]);
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "solo los repos de billing importan billing-db (billingDb, service_role)",
+    async () => {
+      const modules = await cruiseLayers(["src"]);
+      expect(modules.some((entry) => entry.source === "src/features/billing/data/commercial-plans.repo.ts")).toBe(true);
+      expect(findForbiddenDependencies(modules, BILLING_DB_FROM, BILLING_DB_FORBIDDEN)).toEqual([]);
     },
     TIMEOUT_MS,
   );

@@ -12,6 +12,8 @@ import {
   findEffectivePlanRowsForSalon,
 } from "./salon-subscriptions-reads.repo";
 import { hasOpenPlanAlert, recordPlanAlert, updateSalonPlanOverrideStatus } from "./salon-subscriptions-writes.repo";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
 // Variantes de inquilino (cliente del usuario, RLS) frente a las de plataforma (service_role).
 // Aquí se afirma qué cliente usa cada función y que las lecturas del salón no piden
@@ -178,7 +180,7 @@ describe("findEffectivePlanRowsForPlatform: lecturas de plataforma (service_role
     const fake = createBillingSupabaseFake(admins);
     admin.factory.mockReturnValue(fake);
 
-    const rows = await findEffectivePlanRowsForPlatform(SALON_ID);
+    const rows = await findEffectivePlanRowsForPlatform(ADMIN_PROOF, SALON_ID);
 
     expect(server.factory).not.toHaveBeenCalled();
     expect(selectedColumns(fake, "salon_plan_assignments")).toContain("notes");
@@ -258,7 +260,7 @@ describe("escrituras de plataforma sobre overrides: salón y una sola fila", () 
       createBillingSupabaseFake({ tables: { salon_plan_overrides: { data: [], error: null } } })
     );
 
-    await expect(updateSalonPlanOverrideStatus(SALON_ID, "ov-ajeno", "canceled")).rejects.toThrow(
+    await expect(updateSalonPlanOverrideStatus(ADMIN_PROOF, SALON_ID, "ov-ajeno", "canceled")).rejects.toThrow(
       "se actualizaron 0"
     );
   });

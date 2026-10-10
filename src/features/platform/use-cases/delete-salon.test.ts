@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deleteSalonCompletely } from "../data/delete-salon.repo";
-import { deleteSalon } from "./delete-salon";
-import { publishAuditEvent } from "@/features/audit";
+import {
+  deleteSalon as deleteSalonWithDeps,
+  type DeleteSalonDeps,
+  type DeleteSalonInput,
+} from "./delete-salon";
 
-vi.mock("../data/delete-salon.repo", () => ({
-  deleteSalonCompletely: vi.fn(),
-}));
+// Fakes tipados de las dependencias: ningún test toca Supabase ni auditoría real.
+const deps: DeleteSalonDeps = {
+  deleteSalonCompletely: vi.fn<DeleteSalonDeps["deleteSalonCompletely"]>(),
+  publishAuditEvent: vi.fn<DeleteSalonDeps["publishAuditEvent"]>(async () => []),
+};
 
-vi.mock("@/features/audit", () => ({
-  publishAuditEvent: vi.fn(async () => []),
-}));
+const deleteSalon = (input: DeleteSalonInput) => deleteSalonWithDeps(input, deps);
 
-const mockedDeleteSalonCompletely = vi.mocked(deleteSalonCompletely);
-const mockedPublishAuditEvent = vi.mocked(publishAuditEvent);
+const mockedDeleteSalonCompletely = vi.mocked(deps.deleteSalonCompletely);
+const mockedPublishAuditEvent = vi.mocked(deps.publishAuditEvent);
 const actorUserId = "00000000-0000-4000-8000-000000000001";
 
 describe("delete salón", () => {

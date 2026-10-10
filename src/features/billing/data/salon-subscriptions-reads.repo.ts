@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { CommercialLimitMetric, PlanRuleOverride, SalonPlanOverride } from "../domain/commercial-plan";
-import { billingDb, billingSalonDb, rowsOrThrow, type BillingDb } from "./billing-db";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+import { billingSalonDb, platformDb, rowsOrThrow, type BillingDb } from "./billing-db";
 import { findActiveMetrics, loadPlanWithChildren } from "./commercial-plans.repo";
 import { calculateSalonUsage } from "./salon-subscriptions-usage.repo";
 import {
@@ -34,8 +35,8 @@ const PAYMENT_HISTORY_LIMIT = 12;
 //   - ...ForPlatform: service_role y columnas completas (panel /admin).
 //   - ...ForSalon: cliente del usuario (RLS) y columnas concedidas al salón.
 
-export async function findSubscriptionRows() {
-  const supabase = billingDb();
+export async function findSubscriptionRows(proof: PlatformAdminProof) {
+  const supabase = platformDb(proof);
   const [assignments, overrides, alerts] = await Promise.all([
     supabase.from("salon_plan_assignments").select(ASSIGNMENT_COLUMNS).order("created_at", { ascending: true }),
     supabase.from("salon_plan_overrides").select(OVERRIDE_COLUMNS).order("created_at", { ascending: true }),
@@ -49,8 +50,8 @@ export async function findSubscriptionRows() {
 }
 
 /** Plan efectivo para plataforma (service_role, columnas completas). */
-export async function findEffectivePlanRowsForPlatform(salonId: string) {
-  const supabase = billingDb();
+export async function findEffectivePlanRowsForPlatform(proof: PlatformAdminProof, salonId: string) {
+  const supabase = platformDb(proof);
   const [metrics, assignment, overrides] = await Promise.all([
     findActiveMetrics(supabase),
     findCurrentAssignment(supabase, salonId),
@@ -70,8 +71,8 @@ export async function findEffectivePlanRowsForSalon(salonId: string) {
   return finishEffectivePlan(supabase, salonId, metrics, assignment, overrides);
 }
 
-export async function findAssignmentStartsAt(salonId: string): Promise<string | null> {
-  const supabase = billingDb();
+export async function findAssignmentStartsAt(proof: PlatformAdminProof, salonId: string): Promise<string | null> {
+  const supabase = platformDb(proof);
   const { data, error } = await supabase
     .from("salon_plan_assignments")
     .select("starts_at")
@@ -81,11 +82,11 @@ export async function findAssignmentStartsAt(salonId: string): Promise<string | 
   return data?.starts_at ?? null;
 }
 
-export async function findAssignmentForPayment(salonId: string): Promise<{
+export async function findAssignmentForPayment(proof: PlatformAdminProof, salonId: string): Promise<{
   plan_id: string;
   current_period_end: string | null;
 } | null> {
-  const supabase = billingDb();
+  const supabase = platformDb(proof);
   const { data, error } = await supabase
     .from("salon_plan_assignments")
     .select("plan_id, current_period_end")
@@ -95,8 +96,8 @@ export async function findAssignmentForPayment(salonId: string): Promise<{
   return data;
 }
 
-export async function findSalonPayments(salonId: string, limit = PAYMENT_HISTORY_LIMIT): Promise<PaymentRow[]> {
-  const supabase = billingDb();
+export async function findSalonPayments(proof: PlatformAdminProof, salonId: string, limit = PAYMENT_HISTORY_LIMIT): Promise<PaymentRow[]> {
+  const supabase = platformDb(proof);
   const result = await supabase
     .from("salon_plan_payments")
     .select(PAYMENT_COLUMNS)
@@ -106,8 +107,8 @@ export async function findSalonPayments(salonId: string, limit = PAYMENT_HISTORY
   return rowsOrThrow(result);
 }
 
-export async function findOpenSalonAlerts(salonId: string): Promise<PlanAlert[]> {
-  const supabase = billingDb();
+export async function findOpenSalonAlerts(proof: PlatformAdminProof, salonId: string): Promise<PlanAlert[]> {
+  const supabase = platformDb(proof);
   const result = await supabase
     .from("salon_plan_alerts")
     .select(ALERT_COLUMNS)

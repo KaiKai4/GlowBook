@@ -5,7 +5,7 @@ invitaciones de colaborador.
 
 Interface principal:
 
-- `use-cases/employee-profile.ts`
+- `use-cases/employee-profile-create.ts` y `use-cases/employee-profile-update.ts` (alta y edicion de perfil; pasos reutilizables en `use-cases/employee-profile-steps.ts`)
 - `use-cases/employee-role.ts` (cambio de rol)
 - `use-cases/employee-invitation-issue.ts` (emision y limpieza de invitaciones de acceso)
 - `use-cases/employee-revocation.ts` (revocacion y reinicio de acceso)
@@ -23,7 +23,7 @@ Autoridad final:
 
 Adapters externos:
 
-- `data/employees.repo.ts` para datos de colaboradores.
+- `data/employees-read.repo.ts` (lecturas), `data/employees-write.repo.ts` (RPC y actualizacion) y `data/work-schedules.repo.ts` (horarios) para datos de colaboradores; la cadena select compartida vive en `data/employees-select.ts`.
 - `data/employee-access.repo.ts` para perfiles y roles.
 - `data/employee-invitations.repo.ts` para todas las consultas de invitaciones.
 - `data/employee-auth.repo.ts` para Auth Admin de colaboradores.

@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "@/infra/result";
 import { createEmployee, updateEmployee } from "./employee-profile-commands";
 import { admitNewEmployee } from "./employee-admission";
-import { createEmployeeProfile, updateEmployeeProfile } from "./employee-profile";
+import { createEmployeeProfile } from "./employee-profile-create";
+import { updateEmployeeProfile } from "./employee-profile-update";
 import { formDataOf } from "@/test/action-fixtures";
 
-vi.mock("./employee-profile", () => ({
+vi.mock("./employee-profile-create", () => ({
   createEmployeeProfile: vi.fn(),
+}));
+vi.mock("./employee-profile-update", () => ({
   updateEmployeeProfile: vi.fn(),
 }));
 vi.mock("./employee-admission", async (importOriginal) => ({

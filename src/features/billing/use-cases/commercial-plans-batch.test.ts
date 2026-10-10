@@ -1,29 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { findCommercialAddons } from "../data/commercial-addons.repo";
-import {
-  findPlanCatalog,
-  savePlanLimit,
-  savePlanModule,
-} from "../data/commercial-plans.repo";
+import { findPlanCatalog } from "../data/commercial-plans.repo";
 import { findSubscriptionRows } from "../data/salon-subscriptions.repo";
 import type { AssignmentRow } from "../data/salon-subscriptions.rows";
-import { publishAuditEvent } from "@/features/audit";
 import type { CommercialPlan } from "../domain/commercial-plan";
 import { err, ok } from "@/infra/result";
 import { plan } from "@/test/billing-plan-fixtures";
+import { fakeCommercialPlanDeps } from "@/test/billing-command-fakes";
 import {
   getCommercialPlansPage,
   getPlanCatalogSummary,
   saveCommercialPlanLimitsBatch,
   saveCommercialPlanModulesBatch,
 } from "./commercial-plans";
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
-// Lecturas del catálogo de planes para el panel y escrituras en lote de módulos
-// y límites de un plan. Cada lote valida el plan antes de guardar cualquier fila.
+// Lecturas del catálogo de planes para el panel (vi.mock de data/) y escrituras en
+// lote de módulos y límites de un plan (fakes inyectados). Cada lote valida el plan
+// antes de guardar cualquier fila.
 
 vi.mock("../data/commercial-plans.repo", () => ({
   archiveCommercialPlan: vi.fn(),
   deleteCommercialPlan: vi.fn(),
+  countPlanAssignments: vi.fn(),
   findPlanCatalog: vi.fn(),
   saveCommercialPlan: vi.fn(),
   savePlanLimit: vi.fn(),
@@ -60,14 +60,12 @@ const ACTOR_ID = "00000000-0000-4000-8000-0000000000f2";
 const findCatalogMock = vi.mocked(findPlanCatalog);
 const findAddonsMock = vi.mocked(findCommercialAddons);
 const findSubscriptionsMock = vi.mocked(findSubscriptionRows);
-const savePlanModuleMock = vi.mocked(savePlanModule);
-const savePlanLimitMock = vi.mocked(savePlanLimit);
-const auditMock = vi.mocked(publishAuditEvent);
+
+let deps: ReturnType<typeof fakeCommercialPlanDeps>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  savePlanModuleMock.mockResolvedValue(undefined);
-  savePlanLimitMock.mockResolvedValue(undefined);
+  deps = fakeCommercialPlanDeps();
   findCatalogMock.mockResolvedValue({ modules: [], metrics: [], plans: [] });
   findAddonsMock.mockResolvedValue([]);
   findSubscriptionsMock.mockResolvedValue({ assignments: [], overrides: [], alerts: [] });
@@ -86,7 +84,7 @@ describe("getPlanCatalogSummary", () => {
     });
     findCatalogMock.mockResolvedValueOnce({ modules: [], metrics: [], plans: [full] });
 
-    expect(await getPlanCatalogSummary()).toEqual([
+    expect(await getPlanCatalogSummary(ADMIN_PROOF)).toEqual([
       { id: "plan-basic", name: "Básico", currency: "USD", monthlyPrice: 20, trialDays: 14, status: "active" },
     ]);
   });
@@ -108,14 +106,14 @@ describe("getCommercialPlansPage", () => {
       alerts: [],
     });
 
-    const page = await getCommercialPlansPage();
+    const page = await getCommercialPlansPage(ADMIN_PROOF);
 
     expect(page.plans.map((item) => item.id)).toEqual(["plan-a", "plan-b"]);
     expect(page.assignmentsByPlan).toEqual({ "plan-a": 2, "plan-b": 1 });
   });
 
   it("devuelve conteos vacíos cuando ningún plan tiene asignaciones", async () => {
-    const page = await getCommercialPlansPage();
+    const page = await getCommercialPlansPage(ADMIN_PROOF);
 
     expect(page.assignmentsByPlan).toEqual({});
     expect(page.plans).toEqual([]);
@@ -124,32 +122,33 @@ describe("getCommercialPlansPage", () => {
 
 describe("saveCommercialPlanModulesBatch", () => {
   it("rechaza un plan inválido y una lista de módulos vacía sin guardar", async () => {
-    expect(await saveCommercialPlanModulesBatch({ planId: "x", allModuleKeys: ["reports"] })).toEqual(
+    expect(await saveCommercialPlanModulesBatch(ADMIN_PROOF, { planId: "x", allModuleKeys: ["reports"] }, undefined, deps)).toEqual(
       err("Selecciona un plan.")
     );
-    expect(await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: [] })).toEqual(
+    expect(await saveCommercialPlanModulesBatch(ADMIN_PROOF, { planId: PLAN_ID, allModuleKeys: [] }, undefined, deps)).toEqual(
       err("No hay módulos para guardar.")
     );
-    expect(savePlanModuleMock).not.toHaveBeenCalled();
+    expect(deps.savePlanModule).not.toHaveBeenCalled();
   });
 
   it("guarda cada módulo marcando como habilitados solo los indicados, sin espacios", async () => {
-    const result = await saveCommercialPlanModulesBatch(
+    const result = await saveCommercialPlanModulesBatch(ADMIN_PROOF, 
       {
         planId: PLAN_ID,
         enabledModuleKeys: [" appointments ", "reports"],
         allModuleKeys: ["appointments", "reports", "employees"],
       },
-      ACTOR_ID
+      ACTOR_ID,
+      deps
     );
 
     expect(result).toEqual(ok(undefined));
-    expect(savePlanModuleMock.mock.calls).toEqual([
-      [{ planId: PLAN_ID, moduleKey: "appointments", enabled: true }],
-      [{ planId: PLAN_ID, moduleKey: "reports", enabled: true }],
-      [{ planId: PLAN_ID, moduleKey: "employees", enabled: false }],
+    expect(deps.savePlanModule.mock.calls).toEqual([
+      [ADMIN_PROOF, { planId: PLAN_ID, moduleKey: "appointments", enabled: true }],
+      [ADMIN_PROOF, { planId: PLAN_ID, moduleKey: "reports", enabled: true }],
+      [ADMIN_PROOF, { planId: PLAN_ID, moduleKey: "employees", enabled: false }],
     ]);
-    expect(auditMock).toHaveBeenCalledWith("billing.plan_module_saved", 
+    expect(deps.publishAuditEvent).toHaveBeenCalledWith("billing.plan_module_saved",
       expect.objectContaining({
         actorUserId: ACTOR_ID,
         action: "commercial_plan_module_saved",
@@ -159,18 +158,18 @@ describe("saveCommercialPlanModulesBatch", () => {
   });
 
   it("deja todos los módulos apagados cuando no llega ninguno habilitado", async () => {
-    await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: ["reports"] });
+    await saveCommercialPlanModulesBatch(ADMIN_PROOF, { planId: PLAN_ID, allModuleKeys: ["reports"] }, undefined, deps);
 
-    expect(savePlanModuleMock).toHaveBeenCalledWith({ planId: PLAN_ID, moduleKey: "reports", enabled: false });
+    expect(deps.savePlanModule).toHaveBeenCalledWith(ADMIN_PROOF, { planId: PLAN_ID, moduleKey: "reports", enabled: false });
   });
 
   it("devuelve el prefijo propio si algún módulo no se puede guardar, sin auditar", async () => {
-    savePlanModuleMock.mockRejectedValueOnce(new Error("upsert rechazado"));
+    deps.savePlanModule.mockRejectedValueOnce(new Error("upsert rechazado"));
 
-    const result = await saveCommercialPlanModulesBatch({ planId: PLAN_ID, allModuleKeys: ["reports"] });
+    const result = await saveCommercialPlanModulesBatch(ADMIN_PROOF, { planId: PLAN_ID, allModuleKeys: ["reports"] }, undefined, deps);
 
     expect(result).toEqual(err(expect.stringContaining("No se pudieron guardar los módulos del plan.")));
-    expect(auditMock).not.toHaveBeenCalled();
+    expect(deps.publishAuditEvent).not.toHaveBeenCalled();
   });
 });
 
@@ -184,21 +183,21 @@ describe("saveCommercialPlanLimitsBatch", () => {
   } as const;
 
   it("rechaza un plan inválido, una lista vacía o una métrica vacía sin guardar", async () => {
-    expect(await saveCommercialPlanLimitsBatch({ planId: "x", limits: [limit] })).toEqual(err("Selecciona un plan."));
-    expect(await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [] })).toEqual(
+    expect(await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: "x", limits: [limit] }, undefined, deps)).toEqual(err("Selecciona un plan."));
+    expect(await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: PLAN_ID, limits: [] }, undefined, deps)).toEqual(
       err("No hay límites para guardar.")
     );
-    expect(await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [{ ...limit, metricKey: "  " }] })).toEqual(
+    expect(await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: PLAN_ID, limits: [{ ...limit, metricKey: "  " }] }, undefined, deps)).toEqual(
       err("Selecciona un límite.")
     );
-    expect(savePlanLimitMock).not.toHaveBeenCalled();
+    expect(deps.savePlanLimit).not.toHaveBeenCalled();
   });
 
   it("guarda cada límite asociado al plan y audita la acción en lote", async () => {
-    const result = await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [limit] }, ACTOR_ID);
+    const result = await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: PLAN_ID, limits: [limit] }, ACTOR_ID, deps);
 
     expect(result).toEqual(ok(undefined));
-    expect(savePlanLimitMock).toHaveBeenCalledWith({
+    expect(deps.savePlanLimit).toHaveBeenCalledWith(ADMIN_PROOF, {
       metricKey: "appointments_monthly",
       maxValue: 100,
       enforcementMode: "block",
@@ -206,15 +205,15 @@ describe("saveCommercialPlanLimitsBatch", () => {
       countScope: "monthly",
       planId: PLAN_ID,
     });
-    expect(auditMock).toHaveBeenCalledWith("billing.plan_limit_saved", 
+    expect(deps.publishAuditEvent).toHaveBeenCalledWith("billing.plan_limit_saved",
       expect.objectContaining({ actorUserId: ACTOR_ID, action: "commercial_plan_limit_saved", targetResourceId: PLAN_ID })
     );
   });
 
   it("aplica los valores por defecto cuando el límite llega sin modo, umbral ni alcance", async () => {
-    await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [{ metricKey: "employees_active" }] });
+    await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: PLAN_ID, limits: [{ metricKey: "employees_active" }] }, undefined, deps);
 
-    expect(savePlanLimitMock).toHaveBeenCalledWith({
+    expect(deps.savePlanLimit).toHaveBeenCalledWith(ADMIN_PROOF, {
       metricKey: "employees_active",
       maxValue: null,
       enforcementMode: "warn",
@@ -225,27 +224,31 @@ describe("saveCommercialPlanLimitsBatch", () => {
   });
 
   it("rechaza un umbral fuera de 1 a 100 sin guardar", async () => {
-    const badThreshold = await saveCommercialPlanLimitsBatch({
-      planId: PLAN_ID,
-      limits: [{ ...limit, warningThreshold: 101 }],
-    });
+    const badThreshold = await saveCommercialPlanLimitsBatch(ADMIN_PROOF, 
+      {
+        planId: PLAN_ID,
+        limits: [{ ...limit, warningThreshold: 101 }],
+      },
+      undefined,
+      deps
+    );
 
     expect(badThreshold.ok).toBe(false);
-    expect(savePlanLimitMock).not.toHaveBeenCalled();
+    expect(deps.savePlanLimit).not.toHaveBeenCalled();
   });
 
   it("un máximo vacío se guarda como null (sin límite), no como 0", async () => {
-    await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [{ metricKey: "employees_active", maxValue: "" }] });
+    await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: PLAN_ID, limits: [{ metricKey: "employees_active", maxValue: "" }] }, undefined, deps);
 
-    expect(savePlanLimitMock).toHaveBeenCalledWith(expect.objectContaining({ maxValue: null }));
+    expect(deps.savePlanLimit).toHaveBeenCalledWith(ADMIN_PROOF, expect.objectContaining({ maxValue: null }));
   });
 
   it("devuelve el prefijo propio si algún límite no se puede guardar, sin auditar", async () => {
-    savePlanLimitMock.mockRejectedValueOnce(new Error("upsert rechazado"));
+    deps.savePlanLimit.mockRejectedValueOnce(new Error("upsert rechazado"));
 
-    const result = await saveCommercialPlanLimitsBatch({ planId: PLAN_ID, limits: [limit] });
+    const result = await saveCommercialPlanLimitsBatch(ADMIN_PROOF, { planId: PLAN_ID, limits: [limit] }, undefined, deps);
 
     expect(result).toEqual(err(expect.stringContaining("No se pudieron guardar los límites del plan.")));
-    expect(auditMock).not.toHaveBeenCalled();
+    expect(deps.publishAuditEvent).not.toHaveBeenCalled();
   });
 });

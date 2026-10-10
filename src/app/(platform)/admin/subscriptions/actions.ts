@@ -24,7 +24,7 @@ const assignPlanFlow = definePlatformAction<FormData, AssignPlanInput, string>({
   rateLimit: { scope: "admin:assignPlanAction" },
   parse: (formData) => ok(readAssignPlanInput(formData)),
   run: async (input, session) => {
-    const result = await assignSalonCommercialPlanConfig(input, session.userId);
+    const result = await assignSalonCommercialPlanConfig(session.proof, input, session.userId);
     return result.ok ? ok("Plan asignado.") : result;
   },
   revalidate: () => SUBSCRIPTION_PATHS,
@@ -41,7 +41,7 @@ const giveAddonFlow = definePlatformAction<FormData, GiveAddonInput, string>({
   rateLimit: { scope: "admin:giveAddonAction" },
   parse: (formData) => ok(readGiveAddonInput(formData)),
   run: async (input, session) => {
-    const result = await assignSalonAddonConfig(input, session.userId);
+    const result = await assignSalonAddonConfig(session.proof, input, session.userId);
     return result.ok
       ? ok(input.isGift ? "Extra regalado al salón." : "Extra asignado al salón.")
       : result;
@@ -60,7 +60,7 @@ const giveManualExtraFlow = definePlatformAction<FormData, ManualExtraInput, str
   rateLimit: { scope: "admin:giveManualExtraAction" },
   parse: (formData) => ok(readManualExtraInput(formData)),
   run: async (input, session) => {
-    const result = await saveSalonManualExtraConfig(input, session.userId);
+    const result = await saveSalonManualExtraConfig(session.proof, input, session.userId);
     return result.ok ? ok("Cortesia guardada.") : result;
   },
   revalidate: () => SUBSCRIPTION_PATHS,
@@ -77,7 +77,7 @@ const registerPaymentFlow = definePlatformAction<FormData, RegisterPaymentInput,
   rateLimit: { scope: "admin:registerPaymentAction" },
   parse: (formData) => ok(readRegisterPaymentInput(formData)),
   run: async (input, session) => {
-    const result = await registerSalonPlanPaymentConfig(input, session.userId);
+    const result = await registerSalonPlanPaymentConfig(session.proof, input, session.userId);
     return result.ok
       ? ok("Pago registrado. La suscripción quedó activa con su mes de uso.", result.warnings)
       : result;
@@ -106,7 +106,7 @@ const resolveAlertFlow = definePlatformAction<AlertRaw, AlertRaw, void>({
     return salonId.ok ? ok(raw) : salonId;
   },
   run: async ({ alertId, salonId }, session) => {
-    const result = await resolveSalonPlanAlertConfig(alertId, salonId, session.userId);
+    const result = await resolveSalonPlanAlertConfig(session.proof, alertId, salonId, session.userId);
     return result.ok ? ok(undefined) : result;
   },
   revalidate: () => SUBSCRIPTION_PATHS,
@@ -132,7 +132,7 @@ const cancelExtraFlow = definePlatformAction<ExtraRaw, ExtraRaw, void>({
     return salonId.ok ? ok(raw) : salonId;
   },
   run: async ({ overrideId, salonId }, session) => {
-    const result = await cancelSalonExtraConfig(overrideId, salonId, session.userId);
+    const result = await cancelSalonExtraConfig(session.proof, overrideId, salonId, session.userId);
     return result.ok ? ok(undefined) : result;
   },
   revalidate: () => SUBSCRIPTION_PATHS,

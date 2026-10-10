@@ -8,6 +8,7 @@ import {
   isPlatformAdmin,
   requireActiveProfile,
   requirePlatformAdmin,
+  requirePlatformAdminProof,
   requireProfile,
 } from "./request-context";
 
@@ -229,5 +230,34 @@ describe("requirePlatformAdmin", () => {
     useAdmin({ user_id: USER_ID });
 
     expect(await requirePlatformAdmin()).toBe(USER_ID);
+  });
+});
+
+describe("requirePlatformAdminProof", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("redirects to /login when nobody is signed in", async () => {
+    useServer(null);
+    useAdmin({ user_id: USER_ID });
+
+    await expect(requirePlatformAdminProof()).rejects.toThrow("NEXT_REDIRECT:/login");
+  });
+
+  it("redirects to /login when the user is not a platform admin", async () => {
+    useServer({ id: USER_ID });
+    useAdmin(null);
+
+    await expect(requirePlatformAdminProof()).rejects.toThrow("NEXT_REDIRECT:/login");
+  });
+
+  it("returns a proof whose userId is the verified session user", async () => {
+    useServer({ id: USER_ID });
+    useAdmin({ user_id: USER_ID });
+
+    const proof = await requirePlatformAdminProof();
+
+    expect(proof.userId).toBe(USER_ID);
   });
 });

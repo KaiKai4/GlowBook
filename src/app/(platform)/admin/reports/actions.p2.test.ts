@@ -1,6 +1,7 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { setFeedbackReportStatus } from "@/features/platform/use-cases/set-feedback-report-status";
 import { ok } from "@/infra/result";
 import { formDataOf } from "@/test/action-fixtures";
@@ -9,7 +10,7 @@ import { setFeedbackStatusAction } from "./actions";
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn() }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn() }));
 vi.mock("@/infra/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc }) }));
 vi.mock("@/infra/observability", () => ({ captureError: vi.fn() }));
 vi.mock("@/features/platform/use-cases/set-feedback-report-status", () => ({
@@ -21,7 +22,7 @@ const REPORT_ID = "00000000-0000-4000-8000-0000000000f1";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requirePlatformAdmin).mockResolvedValue(ADMIN_ID);
+  vi.mocked(requirePlatformAdminProof).mockResolvedValue(issuePlatformAdminProof(ADMIN_ID));
   rpc.mockResolvedValue({ data: [{ allowed: true }], error: null });
   vi.mocked(setFeedbackReportStatus).mockResolvedValue(ok(undefined));
 });

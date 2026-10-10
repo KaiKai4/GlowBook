@@ -1,11 +1,8 @@
 import { admitNewEmployee, type EmployeeAdmissionInput } from "./employee-admission";
 import { parseCreateEmployeeForm, parseUpdateEmployeeForm, readIdempotencyKey } from "./parse-employee-input";
-import {
-  createEmployeeProfile,
-  updateEmployeeProfile,
-  type CreateEmployeeResult,
-  type EmployeeWriteResult,
-} from "./employee-profile";
+import { createEmployeeProfile } from "./employee-profile-create";
+import { updateEmployeeProfile } from "./employee-profile-update";
+import type { CreateEmployeeResult, EmployeeWriteResult } from "./employee-profile-results";
 import type { Result } from "@/infra/result";
 
 export interface CreateEmployeeFlowInput {

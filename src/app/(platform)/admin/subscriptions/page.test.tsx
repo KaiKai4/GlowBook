@@ -1,16 +1,18 @@
+import { issuePlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { getSalonSubscriptionDetail } from "@/features/billing/use-cases/salon-subscription-detail";
 import { getSubscriptionsPage } from "@/features/billing/use-cases/salon-subscriptions-page";
 import { getPlatformSalonOverviews } from "@/features/platform/use-cases/get-platform-salon-overviews";
-import { requirePlatformAdmin } from "@/app/_composition/request-context";
+import { requirePlatformAdminProof } from "@/app/_composition/request-context";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { makeDetail, makeRow } from "@/test/ui-admin-fixtures";
 import { makeOverviewsView, makeSubscriptionsData } from "@/test/ui-admin-page-fixtures";
 import PlatformSubscriptionsPage from "./page";
+const ADMIN_PROOF = issuePlatformAdminProof("admin-1");
 
-vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdmin: vi.fn(async () => "admin-1") }));
+vi.mock("@/app/_composition/request-context", () => ({ requirePlatformAdminProof: vi.fn(async () => issuePlatformAdminProof("admin-1")) }));
 vi.mock("@/features/platform/use-cases/get-platform-salon-overviews", () => ({
   getPlatformSalonOverviews: vi.fn(),
 }));
@@ -60,7 +62,7 @@ describe("PlatformSubscriptionsPage", () => {
         totals: { mrr: 30, salonsWithPlan: 1, trialing: 2, openAlerts: 0 },
       })
     );
-    vi.mocked(getSalonSubscriptionDetail).mockImplementation(async (salonId: string) => makeDetail({ salonId }));
+    vi.mocked(getSalonSubscriptionDetail).mockImplementation(async (_proof, salonId: string) => makeDetail({ salonId }));
   });
 
   afterEach(() => {
@@ -72,8 +74,8 @@ describe("PlatformSubscriptionsPage", () => {
   it("exige rol de plataforma y arma los datos con los salones de la plataforma", async () => {
     mounted = await render();
 
-    expect(requirePlatformAdmin).toHaveBeenCalled();
-    expect(getSubscriptionsPage).toHaveBeenCalledWith([]);
+    expect(requirePlatformAdminProof).toHaveBeenCalled();
+    expect(getSubscriptionsPage).toHaveBeenCalledWith(ADMIN_PROOF, []);
   });
 
   it("muestra el MRR estimado, los salones con plan y los trials", async () => {
@@ -92,21 +94,21 @@ describe("PlatformSubscriptionsPage", () => {
   it("selecciona el primer salón por defecto y carga su detalle", async () => {
     mounted = await render();
 
-    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith("salon-1");
+    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith(ADMIN_PROOF, "salon-1");
     expect(mounted.container.querySelector("h2")?.textContent).toBe("Salón Luna");
   });
 
   it("selecciona el salón de la URL cuando existe en la lista", async () => {
     mounted = await render({ salon: "salon-2" });
 
-    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith("salon-2");
+    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith(ADMIN_PROOF, "salon-2");
     expect(mounted.container.querySelector("h2")?.textContent).toBe("Barbería Norte");
   });
 
   it("ignora un salón de la URL que no está en la lista y usa el primero", async () => {
     mounted = await render({ salon: "salon-fantasma" });
 
-    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith("salon-1");
+    expect(getSalonSubscriptionDetail).toHaveBeenCalledWith(ADMIN_PROOF, "salon-1");
   });
 
   it("indica que no hay salones cuando la lista de suscripciones está vacía", async () => {

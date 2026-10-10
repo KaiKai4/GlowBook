@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findInventoryPurchaseHistory } from "../data/inventory.repo";
-import { getInventoryPurchaseExpenseHistory } from "./inventory-purchase-expenses";
+import type { findInventoryPurchaseHistory } from "../data/inventory.repo";
+import {
+  getInventoryPurchaseExpenseHistory,
+  type InventoryPurchaseExpenseDeps,
+} from "./inventory-purchase-expenses";
 
-vi.mock("../data/inventory.repo", () => ({
-  findInventoryPurchaseHistory: vi.fn(),
-}));
-
-const mockedFindHistory = vi.mocked(findInventoryPurchaseHistory);
+// Fake tipado de la lectura: el caso de uso recibe la dependencia por parámetro.
+const mockedFindHistory = vi.fn<InventoryPurchaseExpenseDeps["findPurchaseHistory"]>();
+const deps: InventoryPurchaseExpenseDeps = { findPurchaseHistory: mockedFindHistory };
 
 function purchase(overrides: Record<string, unknown> = {}) {
   return {
@@ -38,7 +39,7 @@ describe("getInventoryPurchaseExpenseHistory (ramas)", () => {
       }) as Awaited<ReturnType<typeof findInventoryPurchaseHistory>>[number],
     ]);
 
-    const [entry] = await getInventoryPurchaseExpenseHistory("salon-1");
+    const [entry] = await getInventoryPurchaseExpenseHistory("salon-1", deps);
 
     expect(entry).toEqual({
       id: "buy-1",
@@ -58,7 +59,7 @@ describe("getInventoryPurchaseExpenseHistory (ramas)", () => {
       >[number],
     ]);
 
-    const [entry] = await getInventoryPurchaseExpenseHistory("salon-1");
+    const [entry] = await getInventoryPurchaseExpenseHistory("salon-1", deps);
 
     expect(entry?.detail).toBe("Reposicion mensual");
   });
@@ -70,7 +71,7 @@ describe("getInventoryPurchaseExpenseHistory (ramas)", () => {
       >[number],
     ]);
 
-    const [entry] = await getInventoryPurchaseExpenseHistory("salon-1");
+    const [entry] = await getInventoryPurchaseExpenseHistory("salon-1", deps);
 
     expect(entry).toMatchObject({ amount: 0, commerceName: null, detail: "Compra de productos" });
   });
@@ -78,7 +79,7 @@ describe("getInventoryPurchaseExpenseHistory (ramas)", () => {
   it("devuelve lista vacia cuando el salón no tiene compras", async () => {
     mockedFindHistory.mockResolvedValue([]);
 
-    expect(await getInventoryPurchaseExpenseHistory("salon-1")).toEqual([]);
+    expect(await getInventoryPurchaseExpenseHistory("salon-1", deps)).toEqual([]);
     expect(mockedFindHistory).toHaveBeenCalledWith("salon-1");
   });
 });

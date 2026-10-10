@@ -1,30 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  findAppointmentCreationResources,
-  findOccupiedSlotsByEmployeeForCommand,
-  findExceptionDatesByEmployeeForCommand,
-  findWorkSchedulesByEmployeeForCommand,
-} from "../data/appointment-commands.repo";
-import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
 import { createAppointment } from "./create-appointment";
+import { createAppointmentCommandFakes, createDepsFrom } from "@/test/appointment-command-fakes";
 
-vi.mock("../data/appointment-commands.repo", () => ({
-  findAppointmentCreationResources: vi.fn(),
-  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
-  findExceptionDatesByEmployeeForCommand: vi.fn(),
-  findWorkSchedulesByEmployeeForCommand: vi.fn(),
-}));
-vi.mock("../data/rpc/create-appointment", () => ({
-  createAppointmentWithRpc: vi.fn(),
-}));
+const fakes = createAppointmentCommandFakes();
+const runCreate: typeof createAppointment = (input, ctx) => createAppointment(input, ctx, createDepsFrom(fakes));
 
 const idempotencyKey = "00000000-0000-4000-8000-0000000000c1";
 
-const mockedFindAppointmentCreationResources = vi.mocked(findAppointmentCreationResources);
-const mockedFindEmployeeWorkSchedulesForCommand = vi.mocked(findWorkSchedulesByEmployeeForCommand);
-const mockedFindEmployeeExceptionDatesForCommand = vi.mocked(findExceptionDatesByEmployeeForCommand);
-const mockedFindEmployeeOccupiedSlotsForCommand = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
-const mockedCreateAppointmentWithRpc = vi.mocked(createAppointmentWithRpc);
+const mockedFindAppointmentCreationResources = fakes.findAppointmentCreationResources;
+const mockedFindEmployeeWorkSchedulesForCommand = fakes.findWorkSchedulesByEmployeeForCommand;
+const mockedFindEmployeeExceptionDatesForCommand = fakes.findExceptionDatesByEmployeeForCommand;
+const mockedFindEmployeeOccupiedSlotsForCommand = fakes.findOccupiedSlotsByEmployeeForCommand;
+const mockedCreateAppointmentWithRpc = fakes.createAppointmentWithRpc;
 
 const salonId = "00000000-0000-0000-0000-000000000001";
 const userId = "00000000-0000-0000-0000-000000000002";
@@ -94,7 +81,7 @@ describe("create appointment command", () => {
   });
 
   it("builds a validated RPC payload through the command adapter", async () => {
-    const result = await createAppointment(
+    const result = await runCreate(
       {
         customer_id: customerId,
         start_time: startTime,
@@ -143,7 +130,7 @@ describe("create appointment command", () => {
       assignments: [],
     });
 
-    const result = await createAppointment(
+    const result = await runCreate(
       {
         customer_id: customerId,
         start_time: startTime,
@@ -167,7 +154,7 @@ describe("create appointment command", () => {
       reason: "slot_taken",
     });
 
-    const result = await createAppointment(
+    const result = await runCreate(
       {
         customer_id: customerId,
         start_time: startTime,
@@ -187,7 +174,7 @@ describe("create appointment command", () => {
   it("devuelve el aviso de cliente inactivo cuando la causa es inactive_customer", async () => {
     mockedCreateAppointmentWithRpc.mockResolvedValue({ ok: false, reason: "inactive_customer" });
 
-    const result = await createAppointment(
+    const result = await runCreate(
       {
         customer_id: customerId,
         start_time: startTime,
@@ -209,7 +196,7 @@ describe("create appointment command", () => {
       reason: "unknown",
     });
 
-    const result = await createAppointment(
+    const result = await runCreate(
       {
         customer_id: customerId,
         start_time: startTime,

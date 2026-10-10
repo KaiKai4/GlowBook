@@ -2,7 +2,7 @@ import "server-only";
 
 import { getAssignableRoleOptions } from "@/features/access";
 import { getCategoryServiceOptions } from "@/features/services";
-import { findEmployeeListRows } from "../data/employees.repo";
+import { findEmployeeListRows } from "../data/employees-read.repo";
 
 type EmployeeCategoryRef = {
   category: { id: string; name: string } | null;

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { findEmployees } from "../data/employees.repo";
+import { findEmployees } from "../data/employees-read.repo";
 import { getEmployeeSchedulingOptions } from "./employee-scheduling-options";
 
-vi.mock("../data/employees.repo", () => ({
+vi.mock("../data/employees-read.repo", () => ({
   findEmployees: vi.fn(),
 }));
 

@@ -1,15 +1,7 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/infra/supabase/server";
 import type { ServiceCategoryRef } from "@/features/employees/domain/collaborator-assignment";
-import {
-  createEmployeeWithAssignmentsRpc,
-  type CreateEmployeeRpcFields,
-} from "@/features/employees/data/rpc/create-employee-rpc";
-import {
-  updateEmployeeProfileRpc,
-  type UpdateEmployeeProfileRpcFields,
-} from "@/features/employees/data/rpc/update-employee-rpc";
-import type { Database } from "@/types/database.types";
+import { EMPLOYEE_DETAIL_SELECT } from "./employees-select";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -50,17 +42,7 @@ function scopedEmployeesQuery<Select extends string>(
 
 export async function findEmployees(salonId: string, isActive?: boolean) {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await scopedEmployeesQuery(
-    supabase,
-    `
-      *,
-      services:employee_services(service:services(id, name, duration_minutes, price)),
-      categories:employee_categories(category:service_categories(id, name)),
-      work_schedules(id, day_of_week, start_time, end_time, is_active)
-    `,
-    salonId,
-    isActive
-  );
+  const { data, error } = await scopedEmployeesQuery(supabase, EMPLOYEE_DETAIL_SELECT, salonId, isActive);
   if (error) throw error;
   return data ?? [];
 }
@@ -105,12 +87,7 @@ export async function findEmployeeById(id: string, salonId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("employees")
-    .select(`
-      *,
-      services:employee_services(service:services(id, name, duration_minutes, price)),
-      categories:employee_categories(category:service_categories(id, name)),
-      work_schedules(id, day_of_week, start_time, end_time, is_active)
-    `)
+    .select(EMPLOYEE_DETAIL_SELECT)
     .eq("id", id)
     .eq("salon_id", salonId)
     .maybeSingle();
@@ -170,75 +147,3 @@ export async function findActiveAssignmentReferences(
 
   return { activeCategoryIds, services };
 }
-
-// Alta y edicion de perfil van por RPC transaccionales: colaborador, asignaciones
-// y email se escriben juntos o no se escribe nada (ver migracion 067).
-export async function createEmployee(
-  input: CreateEmployeeRpcFields,
-  serviceIds: string[],
-  categoryIds: string[],
-  idempotencyKey: string
-): Promise<{ id: string }> {
-  const { employeeId } = await createEmployeeWithAssignmentsRpc({
-    employee: input,
-    serviceIds,
-    categoryIds,
-    idempotencyKey,
-  });
-  return { id: employeeId };
-}
-
-export async function updateEmployeeProfileRecord(
-  employeeId: string,
-  input: {
-    fields: UpdateEmployeeProfileRpcFields;
-    serviceIds?: string[];
-    categoryIds?: string[];
-    unlinkProfile: boolean;
-    idempotencyKey: string;
-  }
-): Promise<void> {
-  await updateEmployeeProfileRpc({ employeeId, ...input });
-}
-
-export async function updateEmployee(
-  id: string,
-  salonId: string,
-  input: Database["public"]["Tables"]["employees"]["Update"]
-) {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("employees")
-    .update(input)
-    .eq("id", id)
-    .eq("salon_id", salonId)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function upsertWorkSchedule(
-  salonId: string,
-  schedule: Omit<Database["public"]["Tables"]["work_schedules"]["Insert"], "salon_id">
-) {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("work_schedules")
-    .upsert({ ...schedule, salon_id: salonId }, { onConflict: "salon_id,employee_id,day_of_week,start_time,end_time" })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteWorkSchedule(id: string, salonId: string) {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("work_schedules")
-    .delete()
-    .eq("id", id)
-    .eq("salon_id", salonId);
-  if (error) throw error;
-}
-

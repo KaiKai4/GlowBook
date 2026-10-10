@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findActiveEmployeeNames, findEmployees } from "../data/employees.repo";
+import { findActiveEmployeeNames, findEmployees } from "../data/employees-read.repo";
 import { getEmployeeCalendarOptions } from "./employee-calendar-options";
 import { getEmployeeSchedulingOptions } from "./employee-scheduling-options";
 
@@ -7,7 +7,7 @@ import { getEmployeeSchedulingOptions } from "./employee-scheduling-options";
 // servicios inactivos fuera cuando se conoce el catálogo activo, y referencias
 // vacías ignoradas sin romper el mapeo.
 
-vi.mock("../data/employees.repo", () => ({
+vi.mock("../data/employees-read.repo", () => ({
   findActiveEmployeeNames: vi.fn(),
   findEmployees: vi.fn(),
 }));

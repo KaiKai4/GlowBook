@@ -1,4 +1,5 @@
 import "server-only";
+import type { PlatformAdminProof } from "@/infra/auth/platform-admin-proof";
 import { toPublicErrorMessage } from "@/infra/errors";
 import { z } from "@/infra/validation/zod";
 import { err, ok, type Result } from "@/infra/result";
@@ -8,10 +9,11 @@ import {
   derivePaymentPeriod,
   todayIso,
 } from "../domain/assignment-schedule";
-import { findPlanWithChildren } from "../data/commercial-plans.repo";
+import { findPlanWithChildren, findPlanWithChildrenAtAcceptance } from "../data/commercial-plans.repo";
 import {
   activatePaidPeriod,
   assignSalonPlan,
+  assignSalonPlanAtAcceptance,
   findAssignmentForPayment,
   findAssignmentStartsAt,
   recordSalonPlanPayment,
@@ -41,6 +43,7 @@ const PaymentSchema = z.object({
 });
 
 export async function assignSalonCommercialPlanConfig(
+  proof: PlatformAdminProof,
   input: z.input<typeof AssignmentSchema>,
   actorUserId?: string | null
 ): Promise<Result<void>> {
@@ -48,8 +51,8 @@ export async function assignSalonCommercialPlanConfig(
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
     const [plan, existingStartsAt] = await Promise.all([
-      findPlanWithChildren(parsed.data.planId),
-      findAssignmentStartsAt(parsed.data.salonId),
+      findPlanWithChildren(proof, parsed.data.planId),
+      findAssignmentStartsAt(proof, parsed.data.salonId),
     ]);
     if (!plan) return err("El plan seleccionado no existe.");
 
@@ -60,7 +63,7 @@ export async function assignSalonCommercialPlanConfig(
       existingStartsAt,
     });
 
-    await assignSalonPlan({
+    await assignSalonPlan(proof, {
       salonId: parsed.data.salonId,
       planId: parsed.data.planId,
       status: parsed.data.status,
@@ -87,7 +90,7 @@ export async function autoAssignPlanOnAcceptance(input: {
   acceptedByUserId: string;
 }): Promise<Result<void>> {
   try {
-    const plan = await findPlanWithChildren(input.planId);
+    const plan = await findPlanWithChildrenAtAcceptance(input.planId);
     if (!plan) return err("El plan de la invitación ya no existe.");
 
     const status = plan.trialDays > 0 ? "trialing" : "active";
@@ -98,7 +101,7 @@ export async function autoAssignPlanOnAcceptance(input: {
       existingStartsAt: null,
     });
 
-    await assignSalonPlan({
+    await assignSalonPlanAtAcceptance({
       salonId: input.salonId,
       planId: input.planId,
       status,
@@ -119,23 +122,24 @@ export async function autoAssignPlanOnAcceptance(input: {
  * activa la suscripción y fija el mes de uso (periodo) que cubre ese pago.
  */
 export async function registerSalonPlanPaymentConfig(
+  proof: PlatformAdminProof,
   input: z.input<typeof PaymentSchema>,
   actorUserId?: string | null
 ): Promise<Result<void>> {
   const parsed = PaymentSchema.safeParse(input);
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
   try {
-    const assignment = await findAssignmentForPayment(parsed.data.salonId);
+    const assignment = await findAssignmentForPayment(proof, parsed.data.salonId);
     if (!assignment) return err("Este salón no tiene plan asignado. Asígnale un plan primero.");
 
-    const plan = await findPlanWithChildren(assignment.plan_id);
+    const plan = await findPlanWithChildren(proof, assignment.plan_id);
     const paidAt = parsed.data.paidAt || todayIso();
     const period = derivePaymentPeriod({
       paidAt,
       currentPeriodEnd: assignment.current_period_end,
     });
 
-    await recordSalonPlanPayment({
+    await recordSalonPlanPayment(proof, {
       salonId: parsed.data.salonId,
       planId: assignment.plan_id,
       amount: parsed.data.amount,
@@ -145,7 +149,7 @@ export async function registerSalonPlanPaymentConfig(
       periodEnd: period.periodEnd,
       notes: parsed.data.notes,
     });
-    await activatePaidPeriod({
+    await activatePaidPeriod(proof, {
       salonId: parsed.data.salonId,
       periodStart: period.periodStart,
       periodEnd: period.periodEnd,
