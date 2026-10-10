@@ -14,6 +14,7 @@ import { firstIssueMessage } from "@/infra/validation/first-issue";
 // orquestan: leen el FormData, llaman a esta funcion y despues al caso de uso.
 
 const INVALID_SERVICES_MESSAGE = "Datos de servicios invalidos.";
+const INVALID_NEW_CUSTOMER_MESSAGE = "Datos del cliente nuevo invalidos.";
 const INVALID_CHARGES_MESSAGE = "Cobros de servicios invalidos.";
 
 type RawForm = Record<string, FormDataEntryValue>;
@@ -30,7 +31,19 @@ export function parseCreateAppointmentForm(form: RawForm): Result<CreateAppointm
   const assignments = parseJsonField(form.assignments, INVALID_SERVICES_MESSAGE);
   if (!assignments.ok) return assignments;
 
-  const parsed = CreateAppointmentSchema.safeParse({ ...form, assignments: assignments.value });
+  // El cliente nuevo viaja como JSON; si no viene, el schema exige customer_id.
+  let newCustomer: unknown;
+  if (form.new_customer !== undefined) {
+    const parsedCustomer = parseJsonField(form.new_customer, INVALID_NEW_CUSTOMER_MESSAGE);
+    if (!parsedCustomer.ok) return parsedCustomer;
+    newCustomer = parsedCustomer.value;
+  }
+
+  const parsed = CreateAppointmentSchema.safeParse({
+    ...form,
+    assignments: assignments.value,
+    new_customer: newCustomer,
+  });
   if (!parsed.success) return err(firstIssueMessage(parsed.error));
   return ok(parsed.data);
 }

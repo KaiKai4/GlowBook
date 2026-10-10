@@ -3,7 +3,6 @@ import {
   ArchivedCustomerLookupSchema,
   CreateCustomerSchema,
   CustomerPhoneLookupSchema,
-  FindOrCreateCustomerSchema,
   UpdateCustomerSchema,
 } from "./schemas";
 
@@ -106,17 +105,4 @@ describe("customers schemas", () => {
     });
   });
 
-  describe("FindOrCreateCustomerSchema", () => {
-    it("exige nombre y apellido y valida el telefono opcional", () => {
-      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "Ana", lastName: "Pérez" }).success).toBe(true);
-      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "Ana", lastName: "Pérez", phone: "61234567" }).success).toBe(true);
-      expect(FindOrCreateCustomerSchema.safeParse({ firstName: " ", lastName: "Pérez" }).success).toBe(false);
-      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "Ana", lastName: "Pérez", phone: "2123-4567" }).success).toBe(false);
-    });
-
-    it("limita la longitud de nombre y apellido a 100 caracteres", () => {
-      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "a".repeat(101), lastName: "P" }).success).toBe(false);
-      expect(FindOrCreateCustomerSchema.safeParse({ firstName: "A", lastName: "b".repeat(101) }).success).toBe(false);
-    });
-  });
 });

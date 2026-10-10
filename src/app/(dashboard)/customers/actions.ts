@@ -6,11 +6,9 @@ import {
   ArchivedCustomerLookupSchema,
   CreateCustomerSchema,
   CustomerPhoneLookupSchema,
-  FindOrCreateCustomerSchema,
   UpdateCustomerSchema,
   type ArchivedCustomerLookupInput,
   type CreateCustomerInput,
-  type FindOrCreateCustomerInput,
   type UpdateCustomerInput,
 } from "@/features/customers/schemas";
 import {
@@ -23,7 +21,6 @@ import { updateCustomerProfile } from "@/features/customers/use-cases/customer-p
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import {
   deleteTemporaryCustomer,
-  findOrCreateTemporaryCustomer,
   promoteCustomer,
 } from "@/features/customers/use-cases/customer-temporary";
 import { err, ok, type Result } from "@/infra/result";
@@ -43,7 +40,6 @@ const parseCreateCustomer = parseWithSchema(CreateCustomerSchema);
 const parseUpdateCustomer = parseWithSchema(UpdateCustomerSchema);
 const parseCustomerPhone = parseWithSchema(CustomerPhoneLookupSchema);
 const parseArchivedLookup = parseWithSchema(ArchivedCustomerLookupSchema);
-const parseFindOrCreateCustomer = parseWithSchema(FindOrCreateCustomerSchema);
 
 function parseCustomerId(customerId: string): Result<string> {
   const id = parseUuid(customerId);
@@ -83,23 +79,6 @@ const reactivateCustomerFlow = defineAction<string, string, void>({
   parse: parseCustomerId,
   run: (customerId, session) => reactivateCustomer(customerId, session.salonId),
   revalidate: () => CUSTOMER_FLOW_PATHS,
-});
-
-const findOrCreateCustomerFlow = defineAction<
-  { firstName: string; lastName: string; phone?: string },
-  FindOrCreateCustomerInput,
-  string
->({
-  permission: { key: PERMISSIONS.CUSTOMERS_MANAGE, deniedMessage: CUSTOMERS_DENIED },
-  rateLimit: CUSTOMERS_RATE_LIMIT,
-  parse: parseFindOrCreateCustomer,
-  run: (raw, session) =>
-    findOrCreateTemporaryCustomer({
-      salonId: session.salonId,
-      firstName: raw.firstName,
-      lastName: raw.lastName,
-      phone: raw.phone,
-    }),
 });
 
 const promoteCustomerFlow = defineAction<string, string, void>({
@@ -168,16 +147,6 @@ export async function findArchivedCustomerByContactAction(
 
 export async function reactivateCustomerAction(customerId: string): Promise<Result<void>> {
   return reactivateCustomerFlow(customerId);
-}
-
-// Creates a temporary customer for appointment booking.
-// The customer is invisible in all lists until promoted (on complete or cancel+save).
-export async function findOrCreateCustomerAction(
-  firstName: string,
-  lastName: string,
-  phone?: string
-): Promise<Result<string>> {
-  return findOrCreateCustomerFlow({ firstName, lastName, phone });
 }
 
 // Promotes a temporary customer to permanent (visible in customer list, active).

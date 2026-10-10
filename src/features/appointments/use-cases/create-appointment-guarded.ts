@@ -22,5 +22,7 @@ export async function createAppointmentGuarded(
   const limit = await checkPlanLimit({ salonId, metricKey: "appointments.total" });
   if (!limit.ok) return err(limit.error);
 
+  // Cliente nuevo: no se comprueba el cupo de clientes. Se crea temporal e inactivo, asi que no
+  // consume customers.active; el limite se aplica al convertirlo en definitivo.
   return createAppointment(input, { salonId, userId, idempotencyKey: input.idempotency_key });
 }

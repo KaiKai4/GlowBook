@@ -2974,6 +2974,13 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            resolve_new_customer: {
+                Args: {
+                    p_data: Json;
+                    p_salon: string;
+                };
+                Returns: string;
+            };
             salon_id: {
                 Args: Record<PropertyKey, never>;
                 Returns: string;

@@ -24,6 +24,18 @@ interface Deps {
   idempotencyKey: string;
 }
 
+const INACTIVE_CUSTOMER_MESSAGE =
+  "Este cliente no esta disponible para nuevas citas. Restauralo desde Clientes para conservar su historial.";
+
+function toRpcNewCustomer(customer: NonNullable<CreateAppointmentInput["new_customer"]>) {
+  const phone = customer.phone?.trim();
+  return {
+    first_name: customer.first_name,
+    last_name: customer.last_name,
+    ...(phone ? { phone } : {}),
+  };
+}
+
 export async function createAppointment(
   input: CreateAppointmentInput,
   { salonId, userId, idempotencyKey }: Deps
@@ -41,7 +53,10 @@ export async function createAppointment(
     return err("Datos inválidos.");
   }
 
-  if (!resources.customerExists) return err("Cliente no encontrado en este salón.");
+  // Con cliente nuevo no hay id que comprobar: la RPC lo resuelve en la misma transaccion.
+  if (input.customer_id !== undefined && !resources.customerExists) {
+    return err("Cliente no encontrado en este salón.");
+  }
   if (!resources.salonConfig) return err("Salón no encontrado.");
 
   if (resources.assignments.some((assignment) => !assignment.service || !assignment.employee)) {
@@ -116,7 +131,9 @@ export async function createAppointment(
 
   const rpcPayload: CreateAppointmentRpcPayload = {
     salon_id: salonId,
-    customer_id: input.customer_id,
+    ...(input.new_customer
+      ? { new_customer: toRpcNewCustomer(input.new_customer) }
+      : { customer_id: input.customer_id }),
     created_by: userId,
     notes: input.notes ?? "",
     items: payloads.map((payload) => ({
@@ -143,6 +160,9 @@ export async function createAppointment(
   if (!created.ok) {
     if (created.errorMessage?.includes("no_overlap_per_employee")) {
       return err("El profesional ya tiene una cita en ese horario. Elige otro horario.");
+    }
+    if (created.errorMessage?.includes("no esta disponible para nuevas citas")) {
+      return err(INACTIVE_CUSTOMER_MESSAGE);
     }
     return err("Error al crear la cita. Intenta de nuevo.");
   }

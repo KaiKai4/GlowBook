@@ -8,9 +8,18 @@ import { errorMessageOf } from "./error-message";
 
 const CreateAppointmentResultSchema = z.string().uuid();
 
+/** Cliente nuevo que la RPC da de alta en la misma transaccion (alta temporal o cliente con ese telefono). */
+interface CreateAppointmentRpcNewCustomer {
+  first_name: string;
+  last_name: string;
+  phone?: string;
+}
+
+/** Exactamente uno de customer_id o new_customer (la RPC rechaza ambos o ninguno). */
 export interface CreateAppointmentRpcPayload {
   salon_id: string;
-  customer_id: string;
+  customer_id?: string;
+  new_customer?: CreateAppointmentRpcNewCustomer;
   created_by: string;
   notes: string;
   items: Array<{

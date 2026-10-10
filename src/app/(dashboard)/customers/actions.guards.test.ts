@@ -9,7 +9,6 @@ import { updateCustomerProfile } from "@/features/customers/use-cases/customer-p
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import {
   deleteTemporaryCustomer,
-  findOrCreateTemporaryCustomer,
   promoteCustomer,
 } from "@/features/customers/use-cases/customer-temporary";
 import { err, ok } from "@/infra/result";
@@ -20,7 +19,6 @@ import {
   deleteCustomerAction,
   deleteTemporaryCustomerAction,
   findArchivedCustomerByContactAction,
-  findOrCreateCustomerAction,
   promoteCustomerAction,
   reactivateCustomerAction,
   updateCustomerAction,
@@ -42,7 +40,6 @@ vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
 }));
 vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
   deleteTemporaryCustomer: vi.fn(),
-  findOrCreateTemporaryCustomer: vi.fn(),
   promoteCustomer: vi.fn(),
 }));
 
@@ -90,13 +87,11 @@ describe("customers actions: rate limit por accion", () => {
     const formData = formDataOf({ first_name: "Ana", last_name: "Ruiz" });
 
     expect(await reactivateCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
-    expect(await findOrCreateCustomerAction("Ana", "Ruiz")).toEqual(LIMITED);
     expect(await promoteCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
     expect(await deleteTemporaryCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
     expect(await updateCustomerAction(CUSTOMER_ID, null, formData)).toEqual(LIMITED);
     expect(await deleteCustomerAction(CUSTOMER_ID)).toEqual(LIMITED);
     expect(reactivateCustomer).not.toHaveBeenCalled();
-    expect(findOrCreateTemporaryCustomer).not.toHaveBeenCalled();
     expect(promoteCustomer).not.toHaveBeenCalled();
     expect(deleteTemporaryCustomer).not.toHaveBeenCalled();
     expect(updateCustomerProfile).not.toHaveBeenCalled();
@@ -104,11 +99,4 @@ describe("customers actions: rate limit por accion", () => {
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("findOrCreateCustomerAction y los casos de uso de cliente usan al usuario del perfil", async () => {
-    vi.mocked(assertActionRateLimit).mockResolvedValue(ok(undefined));
-    vi.mocked(findOrCreateTemporaryCustomer).mockResolvedValue(ok("temp-id"));
-
-    expect(await findOrCreateCustomerAction("Ana", "Ruiz")).toEqual(ok("temp-id"));
-    expect(assertActionRateLimit).toHaveBeenCalledWith(manager.id, "customers", { max: 60, windowMs: 60_000 });
-  });
 });

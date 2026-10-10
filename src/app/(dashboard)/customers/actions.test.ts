@@ -8,7 +8,6 @@ import { createCustomerProfile, updateCustomerProfile } from "@/features/custome
 import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-cases/customer-lifecycle";
 import {
   deleteTemporaryCustomer,
-  findOrCreateTemporaryCustomer,
   promoteCustomer,
 } from "@/features/customers/use-cases/customer-temporary";
 import {
@@ -22,7 +21,6 @@ import {
   checkCustomerPhoneAction,
   findArchivedCustomerByContactAction,
   reactivateCustomerAction,
-  findOrCreateCustomerAction,
   promoteCustomerAction,
   deleteTemporaryCustomerAction,
   updateCustomerAction,
@@ -46,7 +44,6 @@ vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
 }));
 vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
   deleteTemporaryCustomer: vi.fn(),
-  findOrCreateTemporaryCustomer: vi.fn(),
   promoteCustomer: vi.fn(),
 }));
 vi.mock("@/features/customers/use-cases/customer-duplicates", () => ({
@@ -221,17 +218,6 @@ describe("customers actions", () => {
       expect(findArchivedCustomerByContact).not.toHaveBeenCalled();
     });
 
-    it("findOrCreateCustomerAction rechaza un nombre vacío o un teléfono inválido sin crear", async () => {
-      expect(await findOrCreateCustomerAction("   ", "Pérez")).toEqual({
-        ok: false,
-        error: "El nombre es obligatorio",
-      });
-      expect(await findOrCreateCustomerAction("Ana", "Pérez", "2123-4567")).toEqual({
-        ok: false,
-        error: "El celular debe tener 8 digitos y comenzar con 6.",
-      });
-      expect(findOrCreateTemporaryCustomer).not.toHaveBeenCalled();
-    });
   });
 
   describe("ciclo de vida", () => {
@@ -265,25 +251,6 @@ describe("customers actions", () => {
   });
 
   describe("clientes temporales", () => {
-    it("findOrCreateCustomerAction rechaza sin permiso y delega el alta temporal", async () => {
-      vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-      expect(await findOrCreateCustomerAction("Ana", "Pérez")).toEqual({ ok: false, error: noPermissionError });
-      expect(findOrCreateTemporaryCustomer).not.toHaveBeenCalled();
-
-      vi.mocked(requireActiveProfile).mockResolvedValue(manager);
-      vi.mocked(findOrCreateTemporaryCustomer).mockResolvedValue(ok("cust-temp"));
-      expect(await findOrCreateCustomerAction("Ana", "Pérez", "61234567")).toEqual({
-        ok: true,
-        value: "cust-temp",
-      });
-      expect(findOrCreateTemporaryCustomer).toHaveBeenCalledWith({
-        salonId: SALON_ID,
-        firstName: "Ana",
-        lastName: "Pérez",
-        phone: "61234567",
-      });
-    });
-
     it("promoteCustomerAction promueve y revalida /customers", async () => {
       vi.mocked(promoteCustomer).mockResolvedValue(ok(undefined));
 

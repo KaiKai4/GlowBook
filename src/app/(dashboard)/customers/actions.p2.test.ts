@@ -9,7 +9,6 @@ import { archiveCustomer, reactivateCustomer } from "@/features/customers/use-ca
 import { createCustomerProfile, updateCustomerProfile } from "@/features/customers/use-cases/customer-profile";
 import {
   deleteTemporaryCustomer,
-  findOrCreateTemporaryCustomer,
   promoteCustomer,
 } from "@/features/customers/use-cases/customer-temporary";
 import { PERMISSIONS } from "@/features/access";
@@ -23,7 +22,6 @@ import {
   deleteCustomerAction,
   deleteTemporaryCustomerAction,
   findArchivedCustomerByContactAction,
-  findOrCreateCustomerAction,
   promoteCustomerAction,
   reactivateCustomerAction,
   updateCustomerAction,
@@ -50,7 +48,6 @@ vi.mock("@/features/customers/use-cases/customer-lifecycle", () => ({
 }));
 vi.mock("@/features/customers/use-cases/customer-temporary", () => ({
   deleteTemporaryCustomer: vi.fn(),
-  findOrCreateTemporaryCustomer: vi.fn(),
   promoteCustomer: vi.fn(),
 }));
 
@@ -135,28 +132,6 @@ describe("customers actions: guardas de identificador y límite", () => {
 
     expect(await reactivateCustomerAction(RECORD_ID)).toEqual({ ok: false, error: "No encontrado." });
     expect(revalidatePath).not.toHaveBeenCalled();
-  });
-
-  it("findOrCreateCustomerAction rechaza sin permiso y no crea el temporal", async () => {
-    vi.mocked(requireActiveProfile).mockResolvedValue(buildProfile());
-
-    expect(await findOrCreateCustomerAction("Ana", "Pérez")).toEqual({
-      ok: false,
-      error: "No tienes permiso para gestionar clientes.",
-    });
-    expect(findOrCreateTemporaryCustomer).not.toHaveBeenCalled();
-  });
-
-  it("findOrCreateCustomerAction delega en el cliente temporal del salón", async () => {
-    vi.mocked(findOrCreateTemporaryCustomer).mockResolvedValue(ok("tmp-1"));
-
-    expect(await findOrCreateCustomerAction("Ana", "Pérez", "+507 6000-0000")).toEqual(ok("tmp-1"));
-    expect(findOrCreateTemporaryCustomer).toHaveBeenCalledWith({
-      salonId: SALON_ID,
-      firstName: "Ana",
-      lastName: "Pérez",
-      phone: "+507 6000-0000",
-    });
   });
 
   it("promoteCustomerAction rechaza un identificador inválido", async () => {

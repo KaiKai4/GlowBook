@@ -48,17 +48,6 @@ export const ArchivedCustomerLookupSchema = z.object({
     .optional(),
 });
 
-export const FindOrCreateCustomerSchema = z.object({
-  firstName: z.string().trim().min(1, "El nombre es obligatorio").max(100),
-  lastName: z.string().trim().min(1, "El apellido es obligatorio").max(100),
-  phone: z
-    .string()
-    .max(PHONE_LOOKUP_MAX)
-    .optional()
-    .refine(isValidOptionalPhone, phoneValidationMessage()),
-});
-
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
 export type ArchivedCustomerLookupInput = z.infer<typeof ArchivedCustomerLookupSchema>;
-export type FindOrCreateCustomerInput = z.infer<typeof FindOrCreateCustomerSchema>;

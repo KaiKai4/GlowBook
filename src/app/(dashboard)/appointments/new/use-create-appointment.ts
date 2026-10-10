@@ -10,7 +10,6 @@ import {
 import { zonedWallTimeToUtc } from "@/infra/format/dates";
 import type { AppointmentServiceRow } from "@/features/appointments/domain/wizard-availability";
 import { createAppointmentAction } from "../actions";
-import { findOrCreateCustomerAction } from "../../customers/actions";
 
 export interface CreateAppointmentDraft {
   mode: "existing" | "new";
@@ -23,6 +22,15 @@ export interface CreateAppointmentDraft {
   timezone: string;
   rows: AppointmentServiceRow[];
   notes: string;
+}
+
+function newCustomerPayload(draft: CreateAppointmentDraft) {
+  const phone = draft.newPhone.trim();
+  return {
+    first_name: draft.newFirst,
+    last_name: draft.newLast,
+    ...(phone ? { phone } : {}),
+  };
 }
 
 export function useCreateAppointment() {
@@ -39,33 +47,27 @@ export function useCreateAppointment() {
     setSubmitError(null);
 
     startSubmit(async () => {
-      let customerId = draft.customerId;
-
-      if (draft.mode === "new") {
-        const customerResult = await findOrCreateCustomerAction(
-          draft.newFirst,
-          draft.newLast,
-          draft.newPhone || undefined
-        );
-        if (!customerResult.ok) {
-          setSubmitError(customerResult.error);
-          return;
-        }
-        customerId = customerResult.value;
-      }
-
       // Wall-clock time in the salon timezone, never the browser's local zone.
       const startTime = zonedWallTimeToUtc(draft.date, draft.time, draft.timezone).toISOString();
       const assignments = JSON.stringify(
         draft.rows.map((row) => ({ service_id: row.serviceId, employee_id: row.employeeId }))
       );
+      // Cliente nuevo: viaja dentro de la cita. Una sola accion: si la cita falla, no queda cliente huerfano.
+      const customer =
+        draft.mode === "new"
+          ? { new_customer: newCustomerPayload(draft) }
+          : { customer_id: draft.customerId };
 
       const result = await submit(
-        { customer_id: customerId, start_time: startTime, notes: draft.notes, assignments },
+        { ...customer, start_time: startTime, notes: draft.notes, assignments },
         (idempotencyKey) => {
           const formData = new FormData();
           formData.set("idempotency_key", idempotencyKey);
-          formData.set("customer_id", customerId);
+          if (draft.mode === "new") {
+            formData.set("new_customer", JSON.stringify(newCustomerPayload(draft)));
+          } else {
+            formData.set("customer_id", draft.customerId);
+          }
           formData.set("start_time", startTime);
           formData.set("notes", draft.notes);
           formData.set("assignments", assignments);

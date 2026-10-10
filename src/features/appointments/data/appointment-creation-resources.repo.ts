@@ -13,7 +13,8 @@ export async function findAppointmentCreationResources({
   assignments,
 }: {
   salonId: string;
-  customerId: string;
+  /** Ausente con cliente nuevo: todavia no existe y la RPC lo da de alta. */
+  customerId?: string;
   assignments: AppointmentCreationAssignmentRequest[];
 }): Promise<AppointmentCreationResources> {
   const supabase = await createSupabaseServerClient();
@@ -22,12 +23,14 @@ export async function findAppointmentCreationResources({
 
   const [customerResult, salonResult, businessHoursResult, servicesResult, employeesResult] =
     await Promise.all([
-      supabase
-        .from("customers")
-        .select("id")
-        .eq("id", customerId)
-        .eq("salon_id", salonId)
-        .maybeSingle(),
+      customerId === undefined
+        ? Promise.resolve({ data: null, error: null })
+        : supabase
+            .from("customers")
+            .select("id")
+            .eq("id", customerId)
+            .eq("salon_id", salonId)
+            .maybeSingle(),
       supabase
         .from("salons")
         .select(
