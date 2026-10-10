@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
 import {
   findAppointmentCreationResources,
-  findEmployeeExceptionDatesForCommand,
-  findEmployeeOccupiedSlotsForCommand,
-  findEmployeeWorkSchedulesForCommand,
+  findExceptionDatesByEmployeeForCommand,
+  findOccupiedSlotsByEmployeeForCommand,
+  findWorkSchedulesByEmployeeForCommand,
   type AppointmentCreationResources,
 } from "../data/appointment-commands.repo";
 import { createAppointmentWithRpc } from "../data/rpc/create-appointment";
@@ -13,9 +13,9 @@ import { createAppointment } from "./create-appointment";
 
 vi.mock("../data/appointment-commands.repo", () => ({
   findAppointmentCreationResources: vi.fn(),
-  findEmployeeExceptionDatesForCommand: vi.fn(),
-  findEmployeeOccupiedSlotsForCommand: vi.fn(),
-  findEmployeeWorkSchedulesForCommand: vi.fn(),
+  findExceptionDatesByEmployeeForCommand: vi.fn(),
+  findOccupiedSlotsByEmployeeForCommand: vi.fn(),
+  findWorkSchedulesByEmployeeForCommand: vi.fn(),
 }));
 vi.mock("../data/rpc/create-appointment", () => ({
   createAppointmentWithRpc: vi.fn(),
@@ -35,9 +35,9 @@ const startIso = "2030-01-01T14:00:00.000Z";
 
 const mockedResources = vi.mocked(findAppointmentCreationResources);
 const mockedRpc = vi.mocked(createAppointmentWithRpc);
-const mockedSchedules = vi.mocked(findEmployeeWorkSchedulesForCommand);
-const mockedExceptions = vi.mocked(findEmployeeExceptionDatesForCommand);
-const mockedOccupied = vi.mocked(findEmployeeOccupiedSlotsForCommand);
+const mockedSchedules = vi.mocked(findWorkSchedulesByEmployeeForCommand);
+const mockedExceptions = vi.mocked(findExceptionDatesByEmployeeForCommand);
+const mockedOccupied = vi.mocked(findOccupiedSlotsByEmployeeForCommand);
 const mockedCaptureError = vi.mocked(captureError);
 
 const validAssignment: AppointmentCreationResources["assignments"][number] = {
@@ -90,11 +90,17 @@ describe("createAppointment: cliente nuevo", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockedResources.mockResolvedValue(newCustomerResources());
-    mockedSchedules.mockResolvedValue([
-      { day_of_week: 1, is_active: true, start_time: "08:00", end_time: "18:00" },
-    ]);
-    mockedExceptions.mockResolvedValue([]);
-    mockedOccupied.mockResolvedValue([]);
+    // Los repos de disponibilidad devuelven mapas por profesional (carga en lote).
+    mockedSchedules.mockResolvedValue(
+      new Map([
+        [
+          employeeId,
+          [{ day_of_week: 1, is_active: true, start_time: "08:00", end_time: "18:00" }],
+        ],
+      ])
+    );
+    mockedExceptions.mockResolvedValue(new Map());
+    mockedOccupied.mockResolvedValue(new Map());
     mockedRpc.mockResolvedValue({ ok: true, appointmentId: "appointment-new" });
   });
 
@@ -139,8 +145,10 @@ describe("createAppointment: cliente nuevo", () => {
   });
 
   it("traduce el rechazo de cliente inactivo al mensaje de restauración", async () => {
+    // El adaptador clasifica el fallo por causa tipada, no por el texto del mensaje.
     mockedRpc.mockResolvedValue({
       ok: false,
+      reason: "inactive_customer",
       errorMessage: "El cliente no esta disponible para nuevas citas (inactivo)",
     });
 
