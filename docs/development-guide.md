@@ -1,6 +1,6 @@
 # Guia De Desarrollo
 
-Flujo diario para trabajar en GlowBook en local: preparar el entorno, levantar la base de datos, cambiar el esquema, escribir pruebas y entregar un cambio. Las reglas que deben cumplirse están en `AGENTS.md`; esta guía explica cómo cumplirlas.
+Flujo diario para trabajar en GlowBook en local: preparar el entorno, levantar la base de datos, cambiar el esquema, escribir pruebas y entregar un cambio. Las reglas que deben cumplirse están en `AGENTS.md`; esta guía explica cómo cumplirlas. Es la única guía de setup y flujo diario: el resto de documentos enlazan aquí en vez de repetir comandos (ADR 0031).
 
 Documentos relacionados: `AGENTS.md` (reglas), `docs/testing.md` (pruebas, verificador y BD local), `docs/database-contracts.md` (contratos de BD), `docs/runbooks/deploy.md` (publicación), `CONTEXT.md` (vocabulario).
 

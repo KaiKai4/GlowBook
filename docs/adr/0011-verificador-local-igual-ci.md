@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada.
+Aceptada. Por ADR 0031, `docs-links` y `ci-parity` se fusionan en el paso `meta`, y `code-map` sale del manifiesto (se regenera en pre-commit).
 
 ## Contexto
 

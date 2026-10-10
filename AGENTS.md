@@ -10,9 +10,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # GlowBook: reglas canónicas
 
-Este archivo es la **única fuente de reglas** para personas y agentes. `CLAUDE.md` solo importa este archivo. Cada regla indica el control que la comprueba: si una regla no tiene control, se marca como convención y se revisa en code review.
+Este archivo es el **índice canónico de reglas** para personas y agentes: enumera cada regla y enlaza a `DESIGN.md` (UI), `SECURITY.md` y `docs/security.md` (seguridad) y `docs/testing.md` (pruebas y verificador). `CLAUDE.md` solo importa este archivo. Cada regla indica el control que la comprueba: si una regla no tiene control, se marca como convención y se revisa en code review.
 
-Documentos relacionados: `CONTEXT.md` (vocabulario de dominio), `DESIGN.md` (UI), `SECURITY.md` (seguridad), `docs/README.md` (índice), `docs/testing.md` (pruebas y verificador), `docs/development-guide.md` (flujo local), `docs/runbooks/deploy.md` (despliegue y operación), `docs/adr/` (decisiones).
+Documentos relacionados: `CONTEXT.md` (vocabulario de dominio), `docs/README.md` (índice de la documentación vigente), `docs/development-guide.md` (única guía de setup y flujo diario), `docs/runbooks/deploy.md` (despliegue y operación), `docs/adr/` (decisiones).
 
 ## 1. Producto y stack
 
@@ -49,7 +49,7 @@ Reglas (las comprueba `.dependency-cruiser.cjs` por patrón, sin listas de archi
 - No hay dependencias circulares (`no-circular`). No hay violaciones conocidas: `npx depcruise src --config .dependency-cruiser.cjs` termina en cero, sin baseline.
 - Control: paso `architecture` (`scripts/check-architecture.mjs` y `dependency-cruiser`).
 
-Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por módulo, agrupado por capa) y `docs/code-map/graph.json` (el mismo grafo en JSON). Para ver quién depende de quién, consulta el mapa antes de rastrear imports. Se regenera con `node scripts/quality/code-map.mjs`; el paso `code-map` falla si está desactualizado.
+Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por módulo, agrupado por capa) y `docs/code-map/graph.json` (el mismo grafo en JSON). Para ver quién depende de quién, consulta el mapa antes de rastrear imports. Se regenera con `node scripts/quality/code-map.mjs`, que el hook `pre-commit` ejecuta (ADR 0031).
 
 ## 3. Multi-tenancy y RLS
 
@@ -147,22 +147,15 @@ Mapa de código: `docs/code-map/modules.mmd` (diagrama Mermaid, un nodo por mód
 
 ## 15. Comandos
 
+Lista corta; el detalle de setup, base de datos local y uso diario está en `docs/development-guide.md` (sección 11) y `docs/testing.md`.
+
 ```bash
-npm ci                    # instalar dependencias (respeta package-lock.json)
-npm run dev               # servidor de desarrollo
-npm run verify:fast       # ciclo diario (tier fast)
-npm run verify:full       # definición de terminado (tier full)
-npm run test              # Vitest, proyecto unit
-npm run test:integration  # Vitest, proyecto integration (requiere BD local)
-npm run type-check        # TypeScript sin emitir
-npm run lint              # ESLint con cero avisos
-npm run db:start          # Supabase local
-npm run db:reset          # reconstruye la BD local desde las migraciones
-npm run db:test           # pgTAP
-npm run db:types          # regenera tipos desde la BD local
+npm run dev          # servidor de desarrollo
+npm run verify:fast  # ciclo diario
+npm run verify:full  # definición de terminado
 ```
 
-Los comandos `release:migrations`, `staging:migrations` y `bootstrap:admin` apuntan a entornos remotos. No forman parte de la verificación local y no se ejecutan desde pruebas ni agentes sin instrucción explícita de la persona responsable (`docs/environments.md`).
+Los comandos que apuntan a entornos remotos (`release:*`, `staging:*`, `bootstrap:admin`) no forman parte de la verificación local y no se ejecutan desde pruebas ni agentes sin instrucción explícita de la persona responsable (`docs/environments.md`).
 
 ## 16. Definición de terminado
 
@@ -171,16 +164,16 @@ Un cambio está terminado cuando se cumplen **las cuatro** condiciones:
 1. `npm run verify:full` sale con código 0 en un checkout limpio, con Docker en ejecución (control: el propio verificador, que es el mismo que CI).
 2. Hay pruebas de la conducta nueva y de la regresión que se corrige. Un bug corregido sin prueba que falle antes del cambio no está terminado.
 3. Si el cambio toma una decisión que no es obvia (contrato de BD, capa, dependencia, herramienta, excepción de seguridad o auditoría), hay un ADR nuevo en `docs/adr/` y está en el índice.
-4. La documentación afectada se actualiza en el mismo cambio. El paso `docs-links` comprueba que los enlaces y rutas citadas existen.
+4. La documentación afectada se actualiza en el mismo cambio. El paso `meta` comprueba que los enlaces y rutas citadas existen.
 
 Un cambio no se da por terminado con `verify:fast` solo, ni con CI en rojo, ni con un paso omitido.
 
 ## 17. Ramas, commits y revisión
 
 - Commits en español con formato `tipo(ámbito): mensaje` (por ejemplo `fix(citas): ...`).
-- Los hooks de Husky no se saltan (`--no-verify` prohibido): `pre-commit` ejecuta `secrets` y `lint`; `pre-push` ejecuta `verify:fast`.
+- Los hooks de Husky no se saltan (`--no-verify` prohibido): `pre-commit` ejecuta `secrets` y `lint` y regenera el mapa de código; `pre-push` ejecuta `verify:fast` (ADR 0031).
 - La plantilla de PR (`.github/pull_request_template.md`) pide evidencia de `verify:full`.
-- Control: `ci-parity` (CI y manifiesto de pasos coinciden) y `check-ci-parity.mjs`.
+- Control: paso `meta` (`check-ci-parity.mjs`: CI y manifiesto de pasos coinciden; `check-doc-links.mjs`).
 
 ## 18. Desarrollo y publicación
 

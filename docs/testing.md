@@ -102,15 +102,7 @@ npx vitest run --project unit --maxWorkers=2 <rutas>
 
 ## Comandos
 
-| Comando | Qué hace |
-|---|---|
-| `npm run verify:fast` | Tier `fast`: pasos estáticos y unitarios. Es el ciclo diario y el hook `pre-push`. |
-| `npm run verify:full` | Tier `full`: todo lo de `fast` más auditoría, SBOM, BD local, cobertura, build, E2E y Lighthouse. Es la definición de terminado. |
-| `npm run verify:job -- <job>` | Ejecuta los pasos de un job de CI: `static`, `unit`, `db`, `browser`, `lighthouse` o `sbom`. |
-| `node scripts/quality/verify.mjs --step <id> [--step <id>]` | Ejecuta pasos concretos, en el orden del manifiesto. |
-| `node scripts/quality/verify.mjs --tier fast --keep-going` | No se detiene en el primer fallo; informa de todos. |
-| `npm run db:start` / `db:reset` / `db:test` / `db:types` | BD local: levantar, reconstruir desde migraciones, pgTAP y regenerar tipos. |
-| `npm run lint` / `npm run type-check` | ESLint con cero avisos y TypeScript sin emitir. |
+Los comandos del verificador (`npm run verify:fast`, `npm run verify:full`, `npm run verify:job -- <job>` y `node scripts/quality/verify.mjs --step <id>`) y la BD local están en `docs/development-guide.md`, secciones 3 y 11. Aquí solo se describe qué hace cada tier: `fast` es el ciclo diario y el hook `pre-push`; `full` añade auditoría, SBOM, BD local, cobertura, build, E2E y Lighthouse, y es la definición de terminado. `verify:job` ejecuta los pasos de un job de CI (`static`, `unit`, `db`, `browser`, `lighthouse` o `sbom`). Con `--keep-going` el verificador no se detiene en el primer fallo.
 
 Cada paso tiene un límite de tiempo (`timeoutMs`). Si expira, el runner termina el árbol de procesos y marca el paso como `timeout`. Los pasos estáticos tienen 2 minutos; los que usan base de datos, pruebas, build, E2E, Lighthouse o cobertura, 10 minutos.
 
@@ -129,9 +121,7 @@ Todos son del job `static`, salvo `unit` y `scripts-tests`, que corren en el job
 | `dead-code` | static | `knip` (incluye tests) y `knip --production` (solo código de producción). |
 | `architecture` | static | `scripts/check-architecture.mjs` y `dependency-cruiser` sobre `src/`, sin baseline ni `--ignore-known`. Cero violaciones (ADR 0019). Las invariantes `infra-no-upward`, `domain-pure` y `use-cases-no-db` también se afirman en `src/infra/architecture-boundaries.test.ts`, que lee sus patrones de la configuración. Las reglas de `src/app` y `src/components` (`app-via-feature-index`, `app-via-feature-index-no-type-exemption`) solo se comprueban en `dependency-cruiser`. |
 | `module-size` | static | Ningún archivo de `src/` ni `scripts/` supera 300 líneas, salvo la excepción permanente de tipos generados. Sin baseline. |
-| `code-map` | static | `docs/code-map/` está al día con el grafo de dependencias (`code-map.mjs --check`). Regenerar con `node scripts/quality/code-map.mjs`. |
-| `docs-links` | static | Enlaces Markdown relativos y rutas en backticks de la documentación vigente existen (`scripts/quality/check-doc-links.mjs`). |
-| `ci-parity` | static | Cada paso del manifiesto está en CI y CI no ejecuta herramientas de calidad sueltas. |
+| `meta` | static | Dos comprobaciones en secuencia: enlaces Markdown relativos y rutas en backticks de la documentación vigente (`check-doc-links.mjs`), y paridad entre CI y el manifiesto con CI sin herramientas sueltas (`check-ci-parity.mjs`). |
 | `lint` | static | ESLint con `--max-warnings 0`. |
 | `types` | static | `tsc --noEmit` de la aplicación y de `scripts/tsconfig.json`. |
 | `unit` | unit | Vitest, proyecto `unit`. |
@@ -173,7 +163,6 @@ Controles absolutos (sin baseline, ADR 0019). Fallan con cualquier caso:
 | Tokens de diseño | `scripts/quality/check-design-tokens.mjs` | Cero clases de paleta cruda, hex, tamaños o pesos fuera de escala en `src/`. |
 | Tamaño de módulos | `scripts/quality/check-module-size.mjs` | Ningún archivo de `src/` o `scripts/` supera 300 líneas. Única excepción permanente: `src/types/database.types.ts` (generado), en `quality/module-size-exceptions.json`. |
 | Violaciones de grafo | `dependency-cruiser` (paso `architecture`) | Cero violaciones sobre `src/`. Sin `--ignore-known`. |
-| Mapa de código | `scripts/quality/code-map.mjs --check` | `docs/code-map/` coincide con el grafo regenerado. |
 
 Umbrales de cobertura (definidos en `scripts/quality/check-coverage.mjs`):
 
@@ -196,8 +185,8 @@ Reglas de uso:
 1. Escribe el comprobador como script en `scripts/quality/` (o usa una herramienta existente).
 2. Escribe pruebas de conducta del comprobador con `node:test` o Vitest, y registra el test en la lista del paso `scripts-tests` si es `node:test`.
 3. Añade la entrada en `STEPS` (`scripts/quality/steps.mjs`) con `id`, `tier`, `jobs`, `description`, `cmd`, `timeoutMs` y `needsDb` si requiere BD.
-4. Añádelo al job de CI correspondiente con `npm run verify:job -- <job>`. No añadas herramientas sueltas en CI: `ci-parity` lo rechaza.
-5. Ejecuta `node scripts/quality/verify.mjs --step <id>` y `node scripts/quality/check-ci-parity.mjs`.
+4. Añádelo al job de CI correspondiente con `npm run verify:job -- <job>`. No añadas herramientas sueltas en CI: el paso `meta` lo rechaza.
+5. Ejecuta `node scripts/quality/verify.mjs --step <id>` y `node scripts/quality/verify.mjs --step meta`.
 6. Documenta el paso en la tabla de este documento y, si la decisión no es obvia, crea un ADR.
 7. Un control nuevo es absoluto por defecto. Si necesita una baseline, justifícala en un ADR y añade su trinquete con un script de actualización que solo baje.
 
@@ -243,14 +232,14 @@ Las transiciones que incluyen WebCrypto o Server Actions se esperan por su resul
 
 Husky se instala con `npm install` mediante `prepare` (`core.hooksPath=.husky/_`).
 
-- `pre-commit`: `node scripts/quality/verify.mjs --step secrets --step lint`.
+- `pre-commit`: `node scripts/quality/verify.mjs --step secrets --step lint`, y después regenera `docs/code-map/` y lo añade al índice (`code-map.mjs` + `git add`).
 - `pre-push`: `npm run verify:fast`.
 
 Los hooks no sustituyen `verify:full`. Nunca se saltan con `--no-verify`.
 
 ## Paridad De CI Y Scripts De Operación
 
-`check-ci-parity` (paso `ci-parity`) comprueba que cada job del manifiesto está en CI y que CI no ejecuta herramientas de calidad sueltas (eslint, tsc, vitest, playwright, knip, depcruise, lhci, squawk, secretlint o `next build`). No prohibe los scripts de operación:
+`check-ci-parity` (paso `meta`) comprueba que cada job del manifiesto está en CI y que CI no ejecuta herramientas de calidad sueltas (eslint, tsc, vitest, playwright, knip, depcruise, lhci, squawk, secretlint o `next build`). No prohibe los scripts de operación:
 
 - `synthetic.yml` ejecuta `scripts/quality/synthetic-check.mjs` y `scripts/ops/synthetic-alert-cli.mjs`.
 - `release.yml` ejecuta `scripts/release/*.mjs` y `scripts/production-migration-gate.mjs`.

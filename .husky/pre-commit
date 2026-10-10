@@ -1,1 +1,3 @@
 node scripts/quality/verify.mjs --step secrets --step lint
+node scripts/quality/code-map.mjs
+git add docs/code-map

@@ -1,7 +1,7 @@
 # DESIGN.md — GlowBook
 
 Sistema de diseno canonico de GlowBook. Fuente de tokens: `src/app/globals.css` (bloque `@theme`). Principios tomados de `PRODUCT.md`.
-Este documento es la referencia para migrar clases de paleta cruda a tokens semanticos. No cambia el aspecto actual hasta que cada componente se migre.
+La migración de clases de paleta cruda a tokens semanticos está cerrada desde 2026-10-10: el paso `design-tokens` no admite casos (sin baseline), así que no queda ningún componente pendiente de migrar. Este documento es la referencia de tokens y no cambia el aspecto actual.
 
 ## 1. Principios
 
