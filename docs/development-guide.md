@@ -65,6 +65,14 @@ En `src/app/`, las Server Actions solo exigen sesión, comprueban permisos con `
 
 Antes de crear carpetas nuevas, usa los nombres de `CONTEXT.md`.
 
+### Convención de nombres
+
+- **Casos de uso** (`use-cases/`): el nombre describe la operación con un verbo o el concepto (`record-expense.ts`, `parse-role-input.ts`). No llevan sufijos `-guarded`, `-flow`, `-flows`, `-writes` ni `-form`. Si un archivo contiene reglas de negocio (p. ej. cupos de plan), se llama `*-checks.ts` o por su operación, no por el mecanismo.
+- **Flujos de acción** (el pipeline de `defineAction`): viven en los `actions*.ts` de `src/app`, con su nombre de módulo. No se crean archivos `*-flow.ts` aparte.
+- **Parseo de entrada** (FormData o campos crudos): `parse-*-input.ts` o `*-input.ts`, con funciones `parse*`.
+- **Variables**: `result` para un valor `Result<T>` y `formData` para un `FormData`. No uses `res`, `r`, `outcome`, `fd` ni `form` para estos tipos.
+- **Unidades de tiempo**: nombres completos (`hours`, `minutes`, `seconds`), nunca una letra (`h`, `m`, `s`).
+
 ## 6. Pruebas
 
 | Tipo | Ubicación | Comando |

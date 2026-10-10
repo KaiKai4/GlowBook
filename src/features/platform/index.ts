@@ -11,5 +11,5 @@ export { getPlatformAuditLog } from "./use-cases/get-platform-audit-log";
 export { getPlatformInvitations } from "./use-cases/get-platform-invitations";
 export { getPlatformSalonOverviews } from "./use-cases/get-platform-salon-overviews";
 export { setFeedbackReportStatus } from "./use-cases/set-feedback-report-status";
-export { readFeedbackStatusForm, type FeedbackStatusForm } from "./use-cases/set-feedback-status-form";
+export { readFeedbackStatusForm, type FeedbackStatusForm } from "./use-cases/parse-feedback-status-input";
 export { getPlatformFeedbackReports } from "./use-cases/get-platform-feedback-reports";

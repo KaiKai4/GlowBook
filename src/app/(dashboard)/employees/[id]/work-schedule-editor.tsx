@@ -34,14 +34,14 @@ export function WorkScheduleEditor({
   function handleAdd(formData: FormData) {
     setError(null);
     startAdd(async () => {
-      const res = await addWorkScheduleAction(null, formData);
-      if (res.ok) {
+      const result = await addWorkScheduleAction(null, formData);
+      if (result.ok) {
         formRef.current?.reset();
         setStartTime("09:00");
         setEndTime("17:00");
         setOpen(false);
       } else {
-        setError(res.error);
+        setError(result.error);
       }
     });
   }
@@ -49,8 +49,8 @@ export function WorkScheduleEditor({
   function handleDelete(scheduleId: string) {
     setError(null);
     startDelete(async () => {
-      const res = await deleteWorkScheduleAction(scheduleId, employeeId);
-      if (!res.ok) setError(res.error);
+      const result = await deleteWorkScheduleAction(scheduleId, employeeId);
+      if (!result.ok) setError(result.error);
     });
   }
 

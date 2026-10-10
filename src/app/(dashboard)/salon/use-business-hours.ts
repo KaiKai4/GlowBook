@@ -28,11 +28,11 @@ export function useBusinessHours(businessHours: BusinessDay[]) {
       return;
     }
     startHours(async () => {
-      const res = await updateBusinessHoursAction(JSON.stringify(hours));
-      if (res.ok) {
+      const result = await updateBusinessHoursAction(JSON.stringify(hours));
+      if (result.ok) {
         setSaved(true);
         setSavedHours(hours);
-      } else setError(res.error);
+      } else setError(result.error);
     });
   }
 

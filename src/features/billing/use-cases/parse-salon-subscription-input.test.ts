@@ -4,7 +4,7 @@ import {
   readGiveAddonInput,
   readManualExtraInput,
   readRegisterPaymentInput,
-} from "./salon-subscriptions-form";
+} from "./parse-salon-subscription-input";
 
 function fields(values: Record<string, string>): FormData {
   const data = new FormData();

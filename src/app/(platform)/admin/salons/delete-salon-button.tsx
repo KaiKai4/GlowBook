@@ -31,12 +31,12 @@ export function DeleteSalonButton({ salonId, salonName }: Props) {
   function handleDelete() {
     setError(null);
     startTransition(async () => {
-      const res = await deleteSalonAction(salonId, confirmation.trim());
-      if (res.ok) {
+      const result = await deleteSalonAction(salonId, confirmation.trim());
+      if (result.ok) {
         handleClose();
         router.refresh();
       } else {
-        setError(res.error ?? "No se pudo eliminar el salón.");
+        setError(result.error ?? "No se pudo eliminar el salón.");
       }
     });
   }

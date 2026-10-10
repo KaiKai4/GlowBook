@@ -39,9 +39,9 @@ export function ActiveEmployeeAccessPanel({
   function handleRoleSave() {
     setRoleError(null);
     startRoleSave(async () => {
-      const res = await changeEmployeeRoleAction(profileId, roleId || null);
-      if (res.ok) setRoleSaved(true);
-      else setRoleError(res.error);
+      const result = await changeEmployeeRoleAction(profileId, roleId || null);
+      if (result.ok) setRoleSaved(true);
+      else setRoleError(result.error);
     });
   }
 
@@ -50,15 +50,15 @@ export function ActiveEmployeeAccessPanel({
     setResetWarning(null);
     startReset(async () => {
       // "Sin rol" debe enviarse como null: no reutilizar el rol anterior (conservaría permisos).
-      const res = await resetEmployeeAccessAction(employeeId, roleId || null);
-      if (res.ok) {
+      const result = await resetEmployeeAccessAction(employeeId, roleId || null);
+      if (result.ok) {
         setResetLink({
-          url: `${window.location.origin}/join/${res.value.token}`,
-          expiresAt: res.value.expiresAt,
+          url: `${window.location.origin}/join/${result.value.token}`,
+          expiresAt: result.value.expiresAt,
         });
-        if (res.warnings?.length) setResetWarning(res.warnings.join(" "));
+        if (result.warnings?.length) setResetWarning(result.warnings.join(" "));
       } else {
-        setRoleError(res.error);
+        setRoleError(result.error);
       }
     });
   }

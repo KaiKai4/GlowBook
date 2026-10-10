@@ -7,7 +7,7 @@ import {
   changeEmployeeRoleFlow,
   generateEmployeeInviteFlow,
   resetEmployeeAccessFlow,
-} from "./employee-role-flows";
+} from "./employee-role-commands";
 
 const ROLES_DISABLED_MESSAGE = "Los roles estan deshabilitados para este salon.";
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { formDataOf } from "@/test/action-fixtures";
 import { err, ok } from "@/infra/result";
-import { parseCreateRoleForm, parseUpdateRolePermissionsForm } from "./role-form-input";
+import { parseCreateRoleForm, parseUpdateRolePermissionsForm } from "./parse-role-input";
 
 const ROLE_ID = "00000000-0000-4000-8000-0000000000bb";
 const INVALID_PERMISSIONS = err("Permisos invalidos.");

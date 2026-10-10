@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "@/infra/result";
-import { createEmployeeFlow, updateEmployeeFlow } from "./employee-profile-flow";
+import { createEmployeeFlow, updateEmployeeFlow } from "./employee-profile-commands";
 import { admitNewEmployee } from "./employee-admission";
 import { createEmployeeProfile, updateEmployeeProfile } from "./employee-profile";
 import { formDataOf } from "@/test/action-fixtures";

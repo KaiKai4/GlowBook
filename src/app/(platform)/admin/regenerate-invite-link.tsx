@@ -15,9 +15,9 @@ export function RegenerateInviteLink({ invitationId }: { invitationId: string })
   function handleRegenerate() {
     setError(null);
     startTransition(async () => {
-      const res = await regenerateSalonInvitationAction(invitationId);
-      if (res.ok) setToken(res.value);
-      else setError(res.error);
+      const result = await regenerateSalonInvitationAction(invitationId);
+      if (result.ok) setToken(result.value);
+      else setError(result.error);
     });
   }
 

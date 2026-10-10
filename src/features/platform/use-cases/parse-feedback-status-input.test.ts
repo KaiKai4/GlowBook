@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFeedbackStatusForm } from "./set-feedback-status-form";
+import { readFeedbackStatusForm } from "./parse-feedback-status-input";
 
 describe("readFeedbackStatusForm", () => {
   it("'resolved' marca el reporte como resuelto", () => {

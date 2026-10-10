@@ -36,18 +36,18 @@ export function PendingEmployeeAccessPanel({
   function handleGenerate() {
     setInviteError(null);
     startInvite(async () => {
-      const res = await generateEmployeeInviteAction(employeeId, selectedRole || null);
-      if (res.ok) {
+      const result = await generateEmployeeInviteAction(employeeId, selectedRole || null);
+      if (result.ok) {
         setInvitation({
-          expiresAt: res.value.expiresAt,
+          expiresAt: result.value.expiresAt,
           roleId: selectedRole || null,
         });
         setFreshLink({
-          url: `${window.location.origin}/join/${res.value.token}`,
-          expiresAt: res.value.expiresAt,
+          url: `${window.location.origin}/join/${result.value.token}`,
+          expiresAt: result.value.expiresAt,
         });
       } else {
-        setInviteError(res.error);
+        setInviteError(result.error);
       }
     });
   }

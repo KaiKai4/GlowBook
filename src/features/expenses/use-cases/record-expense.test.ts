@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { err, ok } from "@/infra/result";
 import { createExpense, createInventoryPurchaseExpense } from "./expenses";
-import { createExpenseWithPlanLimits, createInventoryPurchaseWithPlanLimits } from "./expense-writes";
+import { createExpenseWithPlanLimits, createInventoryPurchaseWithPlanLimits } from "./record-expense";
 
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),

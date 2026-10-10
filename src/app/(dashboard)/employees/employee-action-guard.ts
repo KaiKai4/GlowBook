@@ -2,7 +2,7 @@ import { RATE_LIMIT_POLICIES } from "@/infra/security/rate-limit-policies";
 import { PERMISSIONS, type ActionContext } from "@/features/access";
 import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import type { EmployeeAdmissionInput } from "@/features/employees/use-cases/employee-admission";
-import type { RoleGate } from "@/features/employees/use-cases/employee-role-flows";
+import type { RoleGate } from "@/features/employees/use-cases/employee-role-commands";
 import { err, ok, type Result } from "@/infra/result";
 import { parseUuid } from "@/infra/validation/route-id";
 

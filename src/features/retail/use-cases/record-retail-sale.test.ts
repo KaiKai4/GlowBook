@@ -3,7 +3,7 @@ import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import { assertSalonPaymentMethodEnabled } from "@/features/salon";
 import { err, ok } from "@/infra/result";
 import { createRetailSale } from "./retail-sales";
-import { createRetailSaleWithPlanLimits } from "./retail-sale-writes";
+import { createRetailSaleWithPlanLimits } from "./record-retail-sale";
 
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),

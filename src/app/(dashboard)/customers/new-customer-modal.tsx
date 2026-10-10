@@ -52,12 +52,12 @@ export function NewCustomerModal() {
     if (!archivedMatch) return;
     setError(null);
     start(async () => {
-      const res = await reactivateCustomerAction(archivedMatch.id);
-      if (res.ok) {
+      const result = await reactivateCustomerAction(archivedMatch.id);
+      if (result.ok) {
         handleClose();
         router.refresh();
       } else {
-        setError(res.error ?? "No se pudo reactivar el cliente.");
+        setError(result.error ?? "No se pudo reactivar el cliente.");
       }
     });
   }
@@ -68,19 +68,19 @@ export function NewCustomerModal() {
       return;
     }
     setError(null);
-    const fd = new FormData();
-    fd.set("first_name", firstName.trim());
-    fd.set("last_name", lastName.trim());
-    if (phone.trim()) fd.set("phone", phone.trim());
-    if (email.trim()) fd.set("email", email.trim());
-    if (notes.trim()) fd.set("notes", notes.trim());
+    const formData = new FormData();
+    formData.set("first_name", firstName.trim());
+    formData.set("last_name", lastName.trim());
+    if (phone.trim()) formData.set("phone", phone.trim());
+    if (email.trim()) formData.set("email", email.trim());
+    if (notes.trim()) formData.set("notes", notes.trim());
     start(async () => {
-      const res = await createCustomerAction(null, fd);
-      if (res.ok) {
+      const result = await createCustomerAction(null, formData);
+      if (result.ok) {
         handleClose();
         router.refresh();
       } else {
-        setError(res.error ?? "Error al crear el cliente.");
+        setError(result.error ?? "Error al crear el cliente.");
       }
     });
   }

@@ -62,14 +62,14 @@ export function CancelAppointmentDialog({
     setError(null);
     start(async () => {
       const disposition = customerDispositionIntent();
-      const res = await submit({ appointment_id: appt.id, customer_disposition: disposition }, (idempotencyKey) => {
-        const fd = new FormData();
-        fd.set("idempotency_key", idempotencyKey);
-        fd.set("appointment_id", appt.id);
-        fd.set("customer_disposition", disposition);
-        return cancelAppointmentAction(fd);
+      const result = await submit({ appointment_id: appt.id, customer_disposition: disposition }, (idempotencyKey) => {
+        const formData = new FormData();
+        formData.set("idempotency_key", idempotencyKey);
+        formData.set("appointment_id", appt.id);
+        formData.set("customer_disposition", disposition);
+        return cancelAppointmentAction(formData);
       });
-      if (!res.ok) { setError(res.error ?? "Error al cancelar."); return; }
+      if (!result.ok) { setError(result.error ?? "Error al cancelar."); return; }
 
       if (withWhatsApp && appt.customer?.phone) {
         const msg = buildCancellationMessage({ appt, template, salonName, tz });
@@ -78,7 +78,7 @@ export function CancelAppointmentDialog({
 
       router.refresh();
       // La cita está cancelada; los avisos son de pasos posteriores (cliente) y se muestran sin cerrar.
-      const warnings = res.warnings ?? [];
+      const warnings = result.warnings ?? [];
       if (warnings.length > 0) {
         setWarning(warnings.join(" "));
         return;

@@ -31,9 +31,9 @@ function usePanelPicker(
     setError(null);
     applyAttribute(target.selector, target.attribute, key);
     startSave(async () => {
-      const res = await save(key);
-      if (!res.ok) {
-        setError(res.error);
+      const result = await save(key);
+      if (!result.ok) {
+        setError(result.error);
         setSelected(previous);
         applyAttribute(target.selector, target.attribute, previous);
       }

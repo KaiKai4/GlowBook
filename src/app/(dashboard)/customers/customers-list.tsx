@@ -31,10 +31,10 @@ export function CustomersList({ customers, mode }: { customers: Customer[]; mode
   async function reactivate(customerId: string) {
     setReactivationError(null);
     setReactivatingId(customerId);
-    const res = await reactivateCustomerAction(customerId);
+    const result = await reactivateCustomerAction(customerId);
     setReactivatingId(null);
-    if (res.ok) router.refresh();
-    else setReactivationError(res.error ?? "No se pudo reactivar el cliente.");
+    if (result.ok) router.refresh();
+    else setReactivationError(result.error ?? "No se pudo reactivar el cliente.");
   }
 
   const columns: DataTableColumn<Customer>[] = [

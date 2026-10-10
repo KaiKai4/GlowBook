@@ -52,12 +52,12 @@ export function usePaymentMethods(paymentMethods: PaymentMethod[]) {
     }
 
     startPayments(async () => {
-      const res = await updateSalonPaymentMethodsAction(methodsToSave);
-      if (res.ok) {
+      const result = await updateSalonPaymentMethodsAction(methodsToSave);
+      if (result.ok) {
         setSaved(true);
         setEnabledPayments(methodsToSave);
         setSavedPayments(methodsToSave);
-      } else setError(res.error);
+      } else setError(result.error);
     });
   }
 

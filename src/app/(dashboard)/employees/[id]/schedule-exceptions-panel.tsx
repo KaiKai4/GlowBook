@@ -59,14 +59,14 @@ export function ScheduleExceptionsPanel({
     }
     setError(null);
     startTransition(async () => {
-      const res = await addScheduleExceptionAction(employeeId, date, reason);
-      if (res.ok) {
+      const result = await addScheduleExceptionAction(employeeId, date, reason);
+      if (result.ok) {
         toast.success("Día libre registrado.");
         setDate("");
         setReason("");
         router.refresh();
       } else {
-        setError(res.error);
+        setError(result.error);
       }
     });
   }
@@ -74,13 +74,13 @@ export function ScheduleExceptionsPanel({
   function handleRemove(exceptionId: string) {
     setRemovingId(exceptionId);
     startTransition(async () => {
-      const res = await removeScheduleExceptionAction(employeeId, exceptionId);
+      const result = await removeScheduleExceptionAction(employeeId, exceptionId);
       setRemovingId(null);
-      if (res.ok) {
+      if (result.ok) {
         toast.success("Día libre eliminado.");
         router.refresh();
       } else {
-        toast.error(res.error ?? "No se pudo eliminar el día libre.");
+        toast.error(result.error ?? "No se pudo eliminar el día libre.");
       }
     });
   }

@@ -18,6 +18,6 @@ export { isPlatformAdminUser } from "./data/platform-admins.repo";
 export { createRoleWithPermissions } from "./use-cases/create-role";
 export { deleteSalonRole } from "./use-cases/delete-role";
 export { updateRolePermissions } from "./use-cases/update-role-permissions";
-export { parseCreateRoleForm, parseUpdateRolePermissionsForm } from "./use-cases/role-form-input";
+export { parseCreateRoleForm, parseUpdateRolePermissionsForm } from "./use-cases/parse-role-input";
 export { getRolesPage } from "./use-cases/get-roles-page";
 export { loadSalonAccessState, loadSessionProfile } from "./use-cases/session-access";

@@ -15,11 +15,11 @@ export function useSalonName(salonName: string) {
     setNameError(null);
     setNameSaved(false);
     startName(async () => {
-      const res = await updateSalonInfoAction(null, formData);
-      if (res.ok) {
+      const result = await updateSalonInfoAction(null, formData);
+      if (result.ok) {
         setNameSaved(true);
         setSavedName(nameValue);
-      } else setNameError(res.error);
+      } else setNameError(result.error);
     });
   }
 

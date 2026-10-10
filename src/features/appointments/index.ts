@@ -24,13 +24,13 @@ export {
 export { confirmAppointment } from "./use-cases/confirm-appointment";
 export { completeAppointment } from "./use-cases/complete-appointment";
 export type { CompleteAppointmentRpcResult as CompleteAppointmentResult } from "./data/rpc/complete-appointment";
-export { createAppointmentGuarded } from "./use-cases/create-appointment-guarded";
+export { createAppointmentGuarded } from "./use-cases/create-appointment-checks";
 export { updateAppointmentSchedule } from "./use-cases/update-appointment";
 export {
   parseCompleteAppointmentForm,
   parseCreateAppointmentForm,
   parseUpdateAppointmentScheduleForm,
-} from "./use-cases/appointment-form-parsing";
+} from "./use-cases/parse-appointment-input";
 export {
   AppointmentLifecycleSchema,
   CancelAppointmentSchema,

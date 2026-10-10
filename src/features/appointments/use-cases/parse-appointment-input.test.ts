@@ -4,7 +4,7 @@ import {
   parseCompleteAppointmentForm,
   parseCreateAppointmentForm,
   parseUpdateAppointmentScheduleForm,
-} from "./appointment-form-parsing";
+} from "./parse-appointment-input";
 
 const CUSTOMER_ID = "8f1c2d3e-4a5b-4c6d-8e7f-901112131415";
 const APPOINTMENT_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";

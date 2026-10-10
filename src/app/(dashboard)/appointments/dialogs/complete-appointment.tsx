@@ -152,7 +152,7 @@ function CompleteAppointmentForm({
     );
 
     start(async () => {
-      const res = await submitIntent(
+      const result = await submitIntent(
         {
           appointment_id: appt.id,
           payment_method: payment,
@@ -160,24 +160,24 @@ function CompleteAppointmentForm({
           item_charges: itemCharges,
         },
         (idempotencyKey) => {
-          const fd = new FormData();
-          fd.set("idempotency_key", idempotencyKey);
-          fd.set("appointment_id", appt.id);
-          fd.set("payment_method", payment);
-          fd.set("completion_price_note", completionPriceNote);
-          fd.set("item_charges", itemCharges);
-          return completeAppointmentAction(null, fd);
+          const formData = new FormData();
+          formData.set("idempotency_key", idempotencyKey);
+          formData.set("appointment_id", appt.id);
+          formData.set("payment_method", payment);
+          formData.set("completion_price_note", completionPriceNote);
+          formData.set("item_charges", itemCharges);
+          return completeAppointmentAction(null, formData);
         }
       );
       // El resultado del cobro lo confirma el servidor: su total final sustituye a la vista previa.
-      if (res.ok) {
-        setCompletedTotal(res.value.total_price);
+      if (result.ok) {
+        setCompletedTotal(result.value.total_price);
         setCompleted(true);
         await launchCompletionConfetti(completeButtonRef.current);
         router.refresh();
         window.setTimeout(onClose, 700);
       } else {
-        setError(res.error ?? "Error al completar la cita.");
+        setError(result.error ?? "Error al completar la cita.");
       }
     });
   }

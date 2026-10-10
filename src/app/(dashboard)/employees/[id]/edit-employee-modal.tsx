@@ -77,27 +77,27 @@ export function EditEmployeeModal({
       return;
     }
 
-    const fd = new FormData();
-    fd.set("first_name", firstName.trim());
-    fd.set("last_name", lastName.trim());
-    fd.set("phone", phone.trim());
-    fd.set("email", email.trim());
-    fd.set("specialty", specialty.trim());
-    fd.set("commission_percentage", commission || "0");
-    categoryIds.forEach((id) => fd.append("category_ids", id));
-    serviceIds.forEach((id) => fd.append("service_ids", id));
+    const formData = new FormData();
+    formData.set("first_name", firstName.trim());
+    formData.set("last_name", lastName.trim());
+    formData.set("phone", phone.trim());
+    formData.set("email", email.trim());
+    formData.set("specialty", specialty.trim());
+    formData.set("commission_percentage", commission || "0");
+    categoryIds.forEach((id) => formData.append("category_ids", id));
+    serviceIds.forEach((id) => formData.append("service_ids", id));
 
     setError(null);
     startTransition(async () => {
-      const res = await submit(formDataEntries(fd), (idempotencyKey) =>
-        updateEmployeeAction(employee.id, null, withIdempotencyKey(fd, idempotencyKey))
+      const result = await submit(formDataEntries(formData), (idempotencyKey) =>
+        updateEmployeeAction(employee.id, null, withIdempotencyKey(formData, idempotencyKey))
       );
-      if (res.ok) {
-        if (res.warnings?.length) toast.warning(res.warnings.join(" "));
+      if (result.ok) {
+        if (result.warnings?.length) toast.warning(result.warnings.join(" "));
         setOpen(false);
         router.refresh();
       } else {
-        setError(res.error ?? "No se pudo actualizar el colaborador.");
+        setError(result.error ?? "No se pudo actualizar el colaborador.");
       }
     });
   }

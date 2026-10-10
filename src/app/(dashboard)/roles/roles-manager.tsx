@@ -112,12 +112,12 @@ export function RolesManager({
     formData.set("permission_keys", JSON.stringify(newPerms));
     setCreateError(null);
     startCreate(async () => {
-      const res = await createRoleAction(null, formData);
-      if (res.ok) {
+      const result = await createRoleAction(null, formData);
+      if (result.ok) {
         setCreateOpen(false);
         setNewPerms([]);
       } else {
-        setCreateError(res.error);
+        setCreateError(result.error);
       }
     });
   }
@@ -187,14 +187,14 @@ function RoleCard({ role }: { role: Role }) {
   }
 
   function handleSave() {
-    const fd = new FormData();
-    fd.set("role_id", role.id);
-    fd.set("permission_keys", JSON.stringify(selected));
+    const formData = new FormData();
+    formData.set("role_id", role.id);
+    formData.set("permission_keys", JSON.stringify(selected));
     setError(null);
     startSave(async () => {
-      const res = await updateRolePermissionsAction(null, fd);
-      if (res.ok) setSaved(true);
-      else setError(res.error);
+      const result = await updateRolePermissionsAction(null, formData);
+      if (result.ok) setSaved(true);
+      else setError(result.error);
     });
   }
 

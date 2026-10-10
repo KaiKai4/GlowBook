@@ -18,18 +18,18 @@ export function useAppointmentConfirm(appointmentId: string, onDone: () => void)
 
   function handleConfirm() {
     startConfirm(async () => {
-      const res = await submit({ appointment_id: appointmentId }, (idempotencyKey) => {
-        const fd = new FormData();
-        fd.set("idempotency_key", idempotencyKey);
-        fd.set("appointment_id", appointmentId);
-        return confirmAppointmentAction(fd);
+      const result = await submit({ appointment_id: appointmentId }, (idempotencyKey) => {
+        const formData = new FormData();
+        formData.set("idempotency_key", idempotencyKey);
+        formData.set("appointment_id", appointmentId);
+        return confirmAppointmentAction(formData);
       });
-      if (res.ok) {
+      if (result.ok) {
         toast.success("Cita confirmada.");
         router.refresh();
         onDone();
       } else {
-        toast.error(res.error ?? "No se pudo confirmar la cita.");
+        toast.error(result.error ?? "No se pudo confirmar la cita.");
       }
     });
   }

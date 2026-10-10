@@ -12,4 +12,4 @@ export {
 
 export { getInventoryProductOptions } from "./use-cases/inventory-product-options";
 export { deleteInventoryProduct, updateInventoryProductProfile, getInventoryPage } from "./use-cases/inventory-products";
-export { createInventoryProductWithPlanLimits, transferInventoryStockWithPlanLimits } from "./use-cases/inventory-product-writes";
+export { createInventoryProductWithPlanLimits, transferInventoryStockWithPlanLimits } from "./use-cases/manage-inventory-products";

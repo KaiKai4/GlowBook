@@ -3,7 +3,7 @@ import { getSalonSchedulingConfig } from "@/features/salon";
 import { err, ok } from "@/infra/result";
 import { addEmployeeScheduleException } from "./employee-exceptions";
 import { reactivateEmployee } from "./employee-lifecycle";
-import { addScheduleExceptionFlow, reactivateEmployeeFlow } from "./employee-lifecycle-flows";
+import { addScheduleExceptionFlow, reactivateEmployeeFlow } from "./employee-lifecycle-commands";
 
 vi.mock("./employee-lifecycle", () => ({ reactivateEmployee: vi.fn() }));
 vi.mock("./employee-exceptions", () => ({ addEmployeeScheduleException: vi.fn() }));

@@ -22,9 +22,9 @@ export function RoleDeleteButton({ roleId, roleName }: { roleId: string; roleNam
   function handleConfirm() {
     setError(null);
     startDelete(async () => {
-      const res = await deleteRoleAction(roleId);
-      if (res.ok) setOpen(false);
-      else setError(res.error);
+      const result = await deleteRoleAction(roleId);
+      if (result.ok) setOpen(false);
+      else setError(result.error);
     });
   }
 

@@ -105,12 +105,12 @@ async function applyCustomerDisposition(
     const action = temporaryCustomerActionFor(isTemporary, disposition === "promote" ? "save" : "discard");
 
     if (action === "promote") {
-      const res = await deps.promoteCustomer(customerId, salonId);
-      return res.ok ? [] : [`${PROMOTE_WARNING} ${res.error}`];
+      const result = await deps.promoteCustomer(customerId, salonId);
+      return result.ok ? [] : [`${PROMOTE_WARNING} ${result.error}`];
     }
     if (action === "discard") {
-      const res = await deps.deleteTemporaryCustomer(customerId, salonId);
-      return res.ok ? [] : [`${DISCARD_WARNING} ${res.error}`];
+      const result = await deps.deleteTemporaryCustomer(customerId, salonId);
+      return result.ok ? [] : [`${DISCARD_WARNING} ${result.error}`];
     }
     return [];
   } catch (error) {

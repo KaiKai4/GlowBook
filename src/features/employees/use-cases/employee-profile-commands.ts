@@ -1,5 +1,5 @@
 import { admitNewEmployee, type EmployeeAdmissionInput } from "./employee-admission";
-import { parseCreateEmployeeForm, parseUpdateEmployeeForm, readIdempotencyKey } from "./employee-form-input";
+import { parseCreateEmployeeForm, parseUpdateEmployeeForm, readIdempotencyKey } from "./parse-employee-input";
 import {
   createEmployeeProfile,
   updateEmployeeProfile,

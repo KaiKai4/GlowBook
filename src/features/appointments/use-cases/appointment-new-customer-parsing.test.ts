@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCreateAppointmentForm } from "./appointment-form-parsing";
+import { parseCreateAppointmentForm } from "./parse-appointment-input";
 
 const CUSTOMER_ID = "00000000-0000-4000-8000-0000000000a1";
 const KEY = "00000000-0000-4000-8000-0000000000c3";

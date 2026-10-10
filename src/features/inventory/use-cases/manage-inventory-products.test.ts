@@ -7,7 +7,7 @@ import { createInventoryProduct, getInventoryPage } from "./inventory-products";
 import {
   createInventoryProductWithPlanLimits,
   transferInventoryStockWithPlanLimits,
-} from "./inventory-product-writes";
+} from "./manage-inventory-products";
 
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),

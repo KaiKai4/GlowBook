@@ -35,13 +35,13 @@ export function EmployeesGrid({
   function handleReactivateEmployee(employeeId: string) {
     setReactivatingId(employeeId);
     startReactivation(async () => {
-      const res = await reactivateEmployeeAction(employeeId);
+      const result = await reactivateEmployeeAction(employeeId);
       setReactivatingId(null);
-      if (res.ok) {
+      if (result.ok) {
         toast.success("Colaborador reactivado.");
         router.refresh();
       } else {
-        setReactivateError(res.error ?? "No se pudo reactivar el colaborador.");
+        setReactivateError(result.error ?? "No se pudo reactivar el colaborador.");
       }
     });
   }

@@ -3,7 +3,7 @@ import { checkPlanLimit, checkPlanModuleAccess } from "@/features/billing";
 import type { CreateAppointmentInput } from "@/features/appointments/schemas";
 import { err, ok } from "@/infra/result";
 import { createAppointment } from "./create-appointment";
-import { createAppointmentGuarded } from "./create-appointment-guarded";
+import { createAppointmentGuarded } from "./create-appointment-checks";
 
 vi.mock("@/features/billing", () => ({
   salonModuleScopeFromProfile: vi.fn((profile: unknown) => profile),
