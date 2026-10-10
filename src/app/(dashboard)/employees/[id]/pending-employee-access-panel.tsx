@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Link2, RefreshCw, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { generateEmployeeInviteAction } from "../actions";
+import { generateEmployeeInviteAction } from "../actions-access";
 import { EmployeeInviteLinkCard } from "../employee-invite-link-card";
 import type { PendingEmployeeInvitation, RoleOption } from "../types";
 

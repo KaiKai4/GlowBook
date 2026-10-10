@@ -11,7 +11,7 @@ import {
   useSubmissionIntent,
 } from "@/components/forms/use-submission-intent";
 import { formDataEntries, withIdempotencyKey } from "@/components/forms/form-data-intent";
-import { updateEmployeeAction } from "../actions";
+import { updateEmployeeAction } from "../actions-profile";
 import { CategoryServicePicker } from "../category-service-picker";
 import type { CategoryOption } from "../types";
 

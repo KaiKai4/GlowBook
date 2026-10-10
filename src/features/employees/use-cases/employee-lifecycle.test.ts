@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { archiveEmployee, reactivateEmployee } from "./employee-lifecycle";
 import { findEmployeeById, updateEmployee } from "../data/employees.repo";
-import {
-  checkEmployeeAccessRevocable,
-  clearEmployeeInvitations,
-  deleteEmployeeAuthAccount,
-} from "./employee-access";
+import { clearEmployeeInvitations } from "./employee-invitation-issue";
+import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount } from "./employee-revocation";
 
 vi.mock("../data/employees.repo", () => ({
   findEmployeeById: vi.fn(),
   updateEmployee: vi.fn(),
 }));
 
-vi.mock("./employee-access", () => ({
-  checkEmployeeAccessRevocable: vi.fn(),
+vi.mock("./employee-invitation-issue", () => ({
   clearEmployeeInvitations: vi.fn(),
+}));
+
+vi.mock("./employee-revocation", () => ({
+  checkEmployeeAccessRevocable: vi.fn(),
   deleteEmployeeAuthAccount: vi.fn(),
 }));
 

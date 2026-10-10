@@ -13,7 +13,7 @@ vi.mock("@/components/ui/toast", () => ({
 }));
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buttonWithAriaLabel, buttonWithText, click, fieldByLabel, setFieldValue } from "@/test/ui-people-dom";
-import { updateEmployeeAction } from "../actions";
+import { updateEmployeeAction } from "../actions-profile";
 import type { CategoryOption } from "../types";
 import { EditEmployeeModal } from "./edit-employee-modal";
 import { act } from "react";
@@ -102,7 +102,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => routerMock,
 }));
 
-vi.mock("../actions", () => ({
+vi.mock("../actions-profile", () => ({
   updateEmployeeAction: vi.fn(),
 }));
 

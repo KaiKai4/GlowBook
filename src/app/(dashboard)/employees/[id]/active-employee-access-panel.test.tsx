@@ -7,11 +7,11 @@ import {
   click,
   flushAsync,
 } from "@/test/ui-people-dom";
-import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions";
+import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions-access";
 import { ActiveEmployeeAccessPanel } from "./active-employee-access-panel";
 import type { RoleOption } from "../types";
 
-vi.mock("../actions", () => ({
+vi.mock("../actions-access", () => ({
   changeEmployeeRoleAction: vi.fn(),
   resetEmployeeAccessAction: vi.fn(),
 }));

@@ -3,11 +3,8 @@ import {
   findEmployeeById,
   updateEmployee,
 } from "@/features/employees/data/employees.repo";
-import {
-  checkEmployeeAccessRevocable,
-  clearEmployeeInvitations,
-  deleteEmployeeAuthAccount,
-} from "./employee-access";
+import { clearEmployeeInvitations } from "./employee-invitation-issue";
+import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount } from "./employee-revocation";
 import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
 import type { Result } from "@/infra/result";
 

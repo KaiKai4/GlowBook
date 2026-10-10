@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  findAssignableEmployeeRole,
-  findEmployeeInvitationForJoin,
-  insertEmployeeProfile,
-  linkEmployeeProfile,
-  markEmployeeInvitationAccepted,
-} from "../data/employee-access.repo";
+import { findAssignableEmployeeRole, insertEmployeeProfile, linkEmployeeProfile } from "../data/employee-access.repo";
+import { findEmployeeInvitationForJoin, markEmployeeInvitationAccepted } from "../data/employee-invitations.repo";
 import {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,
@@ -14,9 +9,12 @@ import { acceptEmployeeInvitation } from "./employee-invitations";
 
 vi.mock("../data/employee-access.repo", () => ({
   findAssignableEmployeeRole: vi.fn(),
-  findEmployeeInvitationForJoin: vi.fn(),
   insertEmployeeProfile: vi.fn(),
   linkEmployeeProfile: vi.fn(),
+}));
+
+vi.mock("../data/employee-invitations.repo", () => ({
+  findEmployeeInvitationForJoin: vi.fn(),
   markEmployeeInvitationAccepted: vi.fn(),
 }));
 

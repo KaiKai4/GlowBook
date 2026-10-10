@@ -1,8 +1,6 @@
-import {
-  changeEmployeeRole,
-  createEmployeeInviteForExistingEmployee,
-  resetEmployeeAccess,
-} from "./employee-access";
+import { changeEmployeeRole } from "./employee-role";
+import { createEmployeeInviteForExistingEmployee } from "./employee-invitation-issue";
+import { resetEmployeeAccess } from "./employee-revocation";
 import { err, type Result } from "@/infra/result";
 
 const ROLES_DISABLED_MESSAGE = "Los roles estan deshabilitados para este salon.";

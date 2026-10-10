@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { deleteEmployeeAction } from "../actions";
+import { deleteEmployeeAction } from "../actions-profile";
 
 interface Props {
   employeeId: string;

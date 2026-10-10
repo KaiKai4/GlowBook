@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buttonWithAriaLabel, buttonWithText, click, fieldByLabel, flushAsync, setFieldValue } from "@/test/ui-people-dom";
-import { addScheduleExceptionAction, removeScheduleExceptionAction } from "../actions";
+import { addScheduleExceptionAction, removeScheduleExceptionAction } from "../actions-schedule";
 import { ScheduleExceptionsPanel } from "./schedule-exceptions-panel";
 
 const routerMock = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn(), push: vi.fn() }));
@@ -16,7 +16,7 @@ vi.mock("@/components/ui/toast", () => ({
   useToast: () => toastMock,
 }));
 
-vi.mock("../actions", () => ({
+vi.mock("../actions-schedule", () => ({
   addScheduleExceptionAction: vi.fn(),
   removeScheduleExceptionAction: vi.fn(),
 }));

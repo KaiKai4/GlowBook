@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Trash2, Plus } from "lucide-react";
-import { addWorkScheduleAction, deleteWorkScheduleAction } from "../actions";
+import { addWorkScheduleAction, deleteWorkScheduleAction } from "../actions-schedule";
 
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 

@@ -15,7 +15,7 @@ import {
   createEmployeeAction,
   findArchivedEmployeeByEmailAction,
   reactivateEmployeeAction,
-} from "./actions";
+} from "./actions-profile";
 import type {
   ArchivedEmployeeMatch,
   CreateEmployeeResult,

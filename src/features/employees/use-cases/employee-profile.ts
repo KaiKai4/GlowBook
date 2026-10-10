@@ -8,14 +8,10 @@ import {
   updateEmployeeProfileRecord,
 } from "@/features/employees/data/employees.repo";
 import { validateEmployeeAssignments } from "@/features/employees/use-cases/employee-assignments";
-import {
-  checkEmployeeAccessRevocable,
-  deleteEmployeeAuthAccount,
-  generateEmployeeInvitation,
-  replacePendingEmployeeInvitation,
-} from "./employee-access";
+import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount } from "./employee-revocation";
+import { replacePendingEmployeeInvitation } from "./employee-invitation-issue";
 import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
-import { findLatestPendingEmployeeInvitationRole } from "@/features/employees/data/employee-access.repo";
+import { findLatestPendingEmployeeInvitationRole } from "@/features/employees/data/employee-invitations.repo";
 import type { UpdateEmployeeProfileRpcFields } from "@/features/employees/data/rpc/update-employee-rpc";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@/features/employees/schemas";
 import type { Result } from "@/infra/result";
@@ -106,7 +102,7 @@ export async function createEmployeeProfile(
     );
 
     if (email && roleId) {
-      const invite = await generateEmployeeInvitation({
+      const invite = await replacePendingEmployeeInvitation({
         employeeId: created.id,
         salonId,
         email,

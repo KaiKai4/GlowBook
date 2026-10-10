@@ -1,13 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureError } from "@/infra/observability";
-import {
-  findAssignableEmployeeRole,
-  findEmployeeInvitationForJoin,
-  insertEmployeeProfile,
-  linkEmployeeProfile,
-  markEmployeeInvitationAccepted,
-  type EmployeeInvitationForJoin,
-} from "../data/employee-access.repo";
+import { findAssignableEmployeeRole, insertEmployeeProfile, linkEmployeeProfile } from "../data/employee-access.repo";
+import { findEmployeeInvitationForJoin, markEmployeeInvitationAccepted, type EmployeeInvitationForJoin } from "../data/employee-invitations.repo";
 import {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,
@@ -27,9 +21,12 @@ vi.mock("@/infra/observability", () => ({
 
 vi.mock("../data/employee-access.repo", () => ({
   findAssignableEmployeeRole: vi.fn(),
-  findEmployeeInvitationForJoin: vi.fn(),
   insertEmployeeProfile: vi.fn(),
   linkEmployeeProfile: vi.fn(),
+}));
+
+vi.mock("../data/employee-invitations.repo", () => ({
+  findEmployeeInvitationForJoin: vi.fn(),
   markEmployeeInvitationAccepted: vi.fn(),
 }));
 

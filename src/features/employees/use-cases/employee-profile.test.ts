@@ -8,13 +8,9 @@ import {
   updateEmployeeProfileRecord,
 } from "../data/employees.repo";
 import { validateEmployeeAssignments } from "./employee-assignments";
-import { findLatestPendingEmployeeInvitationRole } from "../data/employee-access.repo";
-import {
-  checkEmployeeAccessRevocable,
-  deleteEmployeeAuthAccount,
-  generateEmployeeInvitation,
-  replacePendingEmployeeInvitation,
-} from "./employee-access";
+import { findLatestPendingEmployeeInvitationRole } from "../data/employee-invitations.repo";
+import { checkEmployeeAccessRevocable, deleteEmployeeAuthAccount } from "./employee-revocation";
+import { replacePendingEmployeeInvitation } from "./employee-invitation-issue";
 import { OLD_ACCOUNT_NOT_DELETED_WARNING } from "./employee-access-warnings";
 import {
   createEmployeeProfile,
@@ -40,14 +36,16 @@ vi.mock("./employee-assignments", () => ({
   validateEmployeeAssignments: vi.fn(),
 }));
 
-vi.mock("../data/employee-access.repo", () => ({
+vi.mock("../data/employee-invitations.repo", () => ({
   findLatestPendingEmployeeInvitationRole: vi.fn(),
 }));
 
-vi.mock("./employee-access", () => ({
+vi.mock("./employee-revocation", () => ({
   checkEmployeeAccessRevocable: vi.fn(),
   deleteEmployeeAuthAccount: vi.fn(),
-  generateEmployeeInvitation: vi.fn(),
+}));
+
+vi.mock("./employee-invitation-issue", () => ({
   replacePendingEmployeeInvitation: vi.fn(),
 }));
 
@@ -67,7 +65,7 @@ const mockedFindEmployeeById = vi.mocked(findEmployeeById);
 const mockedUpdateRecord = vi.mocked(updateEmployeeProfileRecord);
 const mockedValidateAssignments = vi.mocked(validateEmployeeAssignments);
 const mockedFindLatestInvite = vi.mocked(findLatestPendingEmployeeInvitationRole);
-const mockedGenerateInvite = vi.mocked(generateEmployeeInvitation);
+const mockedGenerateInvite = vi.mocked(replacePendingEmployeeInvitation);
 const mockedReplaceInvite = vi.mocked(replacePendingEmployeeInvitation);
 const mockedCheckRevocable = vi.mocked(checkEmployeeAccessRevocable);
 const mockedDeleteAuthAccount = vi.mocked(deleteEmployeeAuthAccount);

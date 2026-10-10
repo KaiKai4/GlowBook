@@ -6,7 +6,7 @@ import { CalendarOff, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { addScheduleExceptionAction, removeScheduleExceptionAction } from "../actions";
+import { addScheduleExceptionAction, removeScheduleExceptionAction } from "../actions-schedule";
 
 interface ScheduleException {
   id: string;

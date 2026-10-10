@@ -26,7 +26,7 @@ vi.mock("@/features/employees/use-cases/get-employees-page", () => ({
   getEmployeesPage: vi.fn(),
 }));
 
-vi.mock("./actions", () => ({
+vi.mock("./actions-profile", () => ({
   createEmployeeAction: vi.fn(),
   findArchivedEmployeeByEmailAction: vi.fn(),
   reactivateEmployeeAction: vi.fn(),

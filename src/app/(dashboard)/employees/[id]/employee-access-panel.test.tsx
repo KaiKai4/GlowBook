@@ -4,7 +4,7 @@ import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { EmployeeAccessPanel } from "./employee-access-panel";
 import type { RoleOption } from "../types";
 
-vi.mock("../actions", () => ({
+vi.mock("../actions-access", () => ({
   changeEmployeeRoleAction: vi.fn(),
   resetEmployeeAccessAction: vi.fn(),
   generateEmployeeInviteAction: vi.fn(),

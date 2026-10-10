@@ -4,23 +4,20 @@ import { PERMISSIONS } from "@/features/access";
 import { requireActiveProfile } from "@/app/_composition/request-context";
 import { assertActionRateLimit } from "@/infra/security/rate-limit";
 import { checkPlanLimit, checkPlanModuleAccess, isEffectiveSalonModuleEnabled } from "@/features/billing";
-import { changeEmployeeRole, resetEmployeeAccess } from "@/features/employees/use-cases/employee-access";
+import { changeEmployeeRole } from "@/features/employees/use-cases/employee-role";
 import { archiveEmployee } from "@/features/employees/use-cases/employee-lifecycle";
-import { addEmployeeWorkSchedule } from "@/features/employees/use-cases/employee-schedule";
 import {
   createEmployeeProfile,
   updateEmployeeProfile,
 } from "@/features/employees/use-cases/employee-profile";
 import { err, ok } from "@/infra/result";
 import { buildProfile, formDataOf, RECORD_ID, SALON_ID } from "@/test/action-fixtures";
+import { changeEmployeeRoleAction } from "./actions-access";
 import {
-  addWorkScheduleAction,
-  changeEmployeeRoleAction,
   createEmployeeAction,
   deleteEmployeeAction,
-  resetEmployeeAccessAction,
   updateEmployeeAction,
-} from "./actions";
+} from "./actions-profile";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/app/_composition/request-context", () => ({ requireActiveProfile: vi.fn() }));
@@ -31,22 +28,12 @@ vi.mock("@/features/billing", () => ({
   checkPlanModuleAccess: vi.fn(),
   isEffectiveSalonModuleEnabled: vi.fn(),
 }));
-vi.mock("@/features/employees/use-cases/employee-access", () => ({
+vi.mock("@/features/employees/use-cases/employee-role", () => ({
   changeEmployeeRole: vi.fn(),
-  createEmployeeInviteForExistingEmployee: vi.fn(),
-  resetEmployeeAccess: vi.fn(),
 }));
 vi.mock("@/features/employees/use-cases/employee-lifecycle", () => ({
   archiveEmployee: vi.fn(),
   reactivateEmployee: vi.fn(),
-}));
-vi.mock("@/features/employees/use-cases/employee-schedule", () => ({
-  addEmployeeWorkSchedule: vi.fn(),
-  removeEmployeeWorkSchedule: vi.fn(),
-}));
-vi.mock("@/features/employees/use-cases/employee-exceptions", () => ({
-  addEmployeeScheduleException: vi.fn(),
-  removeEmployeeScheduleException: vi.fn(),
 }));
 vi.mock("@/features/employees/use-cases/employee-profile", () => ({
   createEmployeeProfile: vi.fn(),
@@ -59,7 +46,6 @@ vi.mock("@/features/salon/use-cases/salon-scheduling-config", () => ({
 
 const employeesManager = buildProfile({ permissions: [PERMISSIONS.EMPLOYEES_MANAGE] });
 const permissionError = "No tienes permiso para gestionar colaboradores.";
-const rolesDisabledError = "Los roles estan deshabilitados para este salon.";
 const validEmployee = { first_name: "Marta", last_name: "Ruiz", phone: "61234567" };
 const IDEMPOTENCY_KEY = "00000000-0000-4000-8000-0000000000f1";
 
@@ -68,7 +54,7 @@ function employeeForm(values: Record<string, string>): FormData {
   return formDataOf({ idempotency_key: IDEMPOTENCY_KEY, ...values });
 }
 
-describe("employees actions", () => {
+describe("employees actions (ficha del colaborador)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireActiveProfile).mockResolvedValue(employeesManager);
@@ -189,92 +175,6 @@ describe("employees actions", () => {
         IDEMPOTENCY_KEY
       );
       expect(revalidatePath).toHaveBeenCalledWith("/employees");
-      expect(revalidatePath).toHaveBeenCalledWith(`/employees/${RECORD_ID}`);
-    });
-  });
-
-  describe("roles de acceso", () => {
-    it("cambiar rol y resetear acceso se bloquean si los roles están deshabilitados", async () => {
-      vi.mocked(isEffectiveSalonModuleEnabled).mockResolvedValue(false);
-
-      expect(await changeEmployeeRoleAction(RECORD_ID, RECORD_ID)).toEqual({
-        ok: false,
-        error: rolesDisabledError,
-      });
-      expect(await resetEmployeeAccessAction(RECORD_ID, RECORD_ID)).toEqual({
-        ok: false,
-        error: rolesDisabledError,
-      });
-      expect(changeEmployeeRole).not.toHaveBeenCalled();
-      expect(resetEmployeeAccess).not.toHaveBeenCalled();
-    });
-
-    it("cambia el rol del colaborador y revalida solo si tiene éxito", async () => {
-      vi.mocked(changeEmployeeRole).mockResolvedValue(ok(undefined));
-
-      expect(await changeEmployeeRoleAction(RECORD_ID, null)).toEqual({ ok: true, value: undefined });
-      expect(changeEmployeeRole).toHaveBeenCalledWith(SALON_ID, RECORD_ID, null);
-      expect(revalidatePath).toHaveBeenCalledWith("/employees");
-    });
-
-    it("el reseteo de acceso devuelve el enlace y revalida el listado y la ficha", async () => {
-      const invite = { ok: true as const, value: { token: "t-1", expiresAt: "2026-10-10T00:00:00.000Z" } };
-      vi.mocked(resetEmployeeAccess).mockResolvedValue(invite);
-
-      expect(await resetEmployeeAccessAction(RECORD_ID, RECORD_ID)).toEqual(invite);
-      expect(resetEmployeeAccess).toHaveBeenCalledWith({
-        employeeId: RECORD_ID,
-        salonId: SALON_ID,
-        roleId: RECORD_ID,
-      });
-      expect(revalidatePath).toHaveBeenCalledWith(`/employees/${RECORD_ID}`);
-    });
-
-    it("el reseteo fallido no revalida", async () => {
-      vi.mocked(resetEmployeeAccess).mockResolvedValue(err("El colaborador no tiene email."));
-
-      expect(await resetEmployeeAccessAction(RECORD_ID, null)).toEqual({
-        ok: false,
-        error: "El colaborador no tiene email.",
-      });
-      expect(revalidatePath).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("horario de trabajo", () => {
-    it("no persiste un horario con formato de hora inválido", async () => {
-      const result = await addWorkScheduleAction(
-        null,
-        employeeForm({
-          employee_id: RECORD_ID,
-          day_of_week: "1",
-          start_time: "9am",
-          end_time: "18:00",
-        })
-      );
-
-      expect(result.ok).toBe(false);
-      expect(addEmployeeWorkSchedule).not.toHaveBeenCalled();
-    });
-
-    it("añade el horario válido y revalida la ficha del colaborador", async () => {
-      vi.mocked(addEmployeeWorkSchedule).mockResolvedValue(ok(undefined));
-
-      const result = await addWorkScheduleAction(
-        null,
-        employeeForm({
-          employee_id: RECORD_ID,
-          day_of_week: "1",
-          start_time: "09:00",
-          end_time: "18:00",
-        })
-      );
-
-      expect(result).toEqual({ ok: true, value: undefined });
-      expect(addEmployeeWorkSchedule).toHaveBeenCalledWith(
-        SALON_ID,
-        expect.objectContaining({ employee_id: RECORD_ID, day_of_week: 1, start_time: "09:00" })
-      );
       expect(revalidatePath).toHaveBeenCalledWith(`/employees/${RECORD_ID}`);
     });
   });

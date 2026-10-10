@@ -1,12 +1,14 @@
 import { captureError } from "@/infra/observability";
 import {
   findAssignableEmployeeRole,
-  findEmployeeInvitationForJoin,
   insertEmployeeProfile,
   linkEmployeeProfile,
+} from "@/features/employees/data/employee-access.repo";
+import {
+  findEmployeeInvitationForJoin,
   markEmployeeInvitationAccepted,
   type EmployeeInvitationForJoin,
-} from "@/features/employees/data/employee-access.repo";
+} from "@/features/employees/data/employee-invitations.repo";
 import {
   createEmployeeAuthUser,
   deleteEmployeeAuthUser,

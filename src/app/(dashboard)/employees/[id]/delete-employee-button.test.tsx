@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountComponent, type MountedComponent } from "@/test/render-dom";
 import { buttonWithText, click, flushAsync } from "@/test/ui-people-dom";
-import { deleteEmployeeAction } from "../actions";
+import { deleteEmployeeAction } from "../actions-profile";
 import { DeleteEmployeeButton } from "./delete-employee-button";
 
 const routerMock = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn(), push: vi.fn() }));
@@ -11,7 +11,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => routerMock,
 }));
 
-vi.mock("../actions", () => ({
+vi.mock("../actions-profile", () => ({
   deleteEmployeeAction: vi.fn(),
 }));
 

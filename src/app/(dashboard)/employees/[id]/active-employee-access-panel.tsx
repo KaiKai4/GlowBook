@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions";
+import { changeEmployeeRoleAction, resetEmployeeAccessAction } from "../actions-access";
 import { EmployeeInviteLinkCard } from "../employee-invite-link-card";
 import type { RoleOption } from "../types";
 

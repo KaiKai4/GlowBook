@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
-import { reactivateEmployeeAction } from "./actions";
+import { reactivateEmployeeAction } from "./actions-profile";
 import type { EmployeeListItem } from "./types";
 
 interface EmployeesGridProps {

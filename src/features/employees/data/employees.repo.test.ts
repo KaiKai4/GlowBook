@@ -12,7 +12,6 @@ import {
   findEmployeeById,
   findEmployeeListRows,
   findEmployees,
-  findLatestEmployeeInvitation,
   deleteWorkSchedule,
   updateEmployee,
   updateEmployeeProfileRecord,
@@ -390,42 +389,4 @@ describe("employees repo", () => {
     });
   });
 
-  describe("findLatestEmployeeInvitation", () => {
-    it("devuelve la invitación más reciente sin exponer el token", async () => {
-      const row = {
-        id: "inv-1",
-        email: "ana@salon.test",
-        role_id: null,
-        expires_at: "2026-10-16T00:00:00.000Z",
-        accepted_at: null,
-      };
-      useTables({ employee_invitations: [{ data: row }] });
-
-      await expect(findLatestEmployeeInvitation(EMPLOYEE_ID, SALON_ID)).resolves.toEqual(row);
-
-      expect(db.argsOf("employee_invitations", "select")).toEqual([
-        "id, email, role_id, expires_at, accepted_at",
-      ]);
-      expect(eqCalls("employee_invitations")).toEqual([
-        ["employee_id", EMPLOYEE_ID],
-        ["salon_id", SALON_ID],
-      ]);
-      expect(db.argsOf("employee_invitations", "order")).toEqual([
-        "created_at",
-        { ascending: false },
-      ]);
-    });
-
-    it("devuelve null cuando no hay invitaciones", async () => {
-      useTables({ employee_invitations: [{ data: null }] });
-
-      await expect(findLatestEmployeeInvitation(EMPLOYEE_ID, SALON_ID)).resolves.toBeNull();
-    });
-
-    it("propaga el error de la consulta en vez de devolver null", async () => {
-      useTables({ employee_invitations: [{ error: { message: "caido" } }] });
-
-      await expect(findLatestEmployeeInvitation(EMPLOYEE_ID, SALON_ID)).rejects.toEqual({ message: "caido" });
-    });
-  });
 });

@@ -27,7 +27,7 @@ import {
   createEmployeeAction,
   findArchivedEmployeeByEmailAction,
   reactivateEmployeeAction,
-} from "./actions";
+} from "./actions-profile";
 import { EmployeeCreateForm } from "./employee-create-form";
 import type { CategoryOption, RoleOption } from "./types";
 import { SAVED_WITH_WARNINGS_MESSAGE } from "@/components/forms/use-submission-intent";
@@ -89,7 +89,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => routerMock,
 }));
 
-vi.mock("./actions", () => ({
+vi.mock("./actions-profile", () => ({
   createEmployeeAction: vi.fn(),
   findArchivedEmployeeByEmailAction: vi.fn(),
   reactivateEmployeeAction: vi.fn(),

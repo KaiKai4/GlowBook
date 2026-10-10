@@ -15,7 +15,7 @@ vi.mock("@/components/ui/toast", () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 
-vi.mock("./actions", () => ({
+vi.mock("./actions-profile", () => ({
   reactivateEmployeeAction: vi.fn(),
   createEmployeeAction: vi.fn(),
   findArchivedEmployeeByEmailAction: vi.fn(),

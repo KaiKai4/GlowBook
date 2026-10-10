@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok, type Result } from "@/infra/result";
-import {
-  changeEmployeeRole,
-  createEmployeeInviteForExistingEmployee,
-  resetEmployeeAccess,
-} from "./employee-access";
+import { changeEmployeeRole } from "./employee-role";
+import { createEmployeeInviteForExistingEmployee } from "./employee-invitation-issue";
+import { resetEmployeeAccess } from "./employee-revocation";
 import {
   changeEmployeeRoleFlow,
   generateEmployeeInviteFlow,
@@ -13,9 +11,15 @@ import {
 
 const ROLES_DISABLED_MESSAGE = "Los roles estan deshabilitados para este salon.";
 
-vi.mock("./employee-access", () => ({
+vi.mock("./employee-role", () => ({
   changeEmployeeRole: vi.fn(),
+}));
+
+vi.mock("./employee-invitation-issue", () => ({
   createEmployeeInviteForExistingEmployee: vi.fn(),
+}));
+
+vi.mock("./employee-revocation", () => ({
   resetEmployeeAccess: vi.fn(),
 }));
 
